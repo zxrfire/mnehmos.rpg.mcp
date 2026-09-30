@@ -54,6 +54,8 @@ import { regionOf } from './what-people-are-saying.js';
 import { drawOriginForSomebodyAlreadyAtOrdinal } from './where-the-seeded-population-was-born.js';
 import { insideSomebodysWalls, nowhereToStand } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import type { WorldState } from './world-state.js';
+import { theyTakeGroundAndMakeItTheirs } from './somewhere-that-is-theirs.js';
+import { linkLocations } from './locations.js';
 
 /** Rogues at Foundation or above, for every person on a roll at Foundation or above in their province. */
 export const ROGUES_FOR_EVERY_CULTIVATOR_ON_A_ROLL = 0.8;
@@ -187,6 +189,24 @@ export function seedTheRogues(
             };
             state.npcs.push(npc);
             made.push(npc);
+            const homes = places.filter(({ place }) => !place.controllingFactionId && !place.data.factionId
+                && (place.kind === 'wilds' || place.kind === 'cave' || place.kind === 'ruin'));
+            const home = homes.find(({ place }) => place.id === at.place.id)?.place
+                ?? homes[forStream(state.seed, 'rogue-residence', id).int(0, Math.max(0, homes.length - 1))]?.place;
+            if (home) {
+                const settled = theyTakeGroundAndMakeItTheirs(state, {
+                    residentId: npc.id, onDay: presentDay, parentId: home.id,
+                    name: `${npc.name}'s residence`,
+                    shape: { ambient: home.ambient, qiDensity: home.qiDensity,
+                        description: `A residence cut into unheld ground. A name plate above its door reads ${npc.name}.` }
+                });
+                Object.assign(state, settled.state);
+                if (settled.residence) linkLocations(home, settled.residence, 'path', 0.1);
+                if (home.id !== at.place.id) {
+                    const index = state.npcs.findIndex(person => person.id === npc.id);
+                    state.npcs[index] = { ...state.npcs[index]!, locationId: at.place.id };
+                }
+            }
         }
     }
     return made;

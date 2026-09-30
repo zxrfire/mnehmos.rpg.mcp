@@ -228,6 +228,7 @@ export async function aWalkInsideTheWalls(
     game.atHand = game.atHand ?? await game.loadWorld();
     const world = game.atHand;
     if (!world) return null;
+    if (worldLocationFor(world, said)?.tags.includes('gate_town')) return null;
 
     const compounds = whereCompoundsAre(world);
     const hereId = game.worldPlaceOf(cultivator);

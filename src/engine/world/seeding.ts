@@ -6,6 +6,8 @@
 import { seedTheDisciplesAWorldOpensWith } from './the-disciples-a-world-opens-with.js';
 import { whoGrantsThisVein, whoseVeinsChangeHands } from './a-vein-is-taken-given-up-or-granted.js';
 import { howFarFromTheSeat } from './a-communication-talisman-carries-word-home.js';
+import { aLongRangeCommunicationSlip, theTwinOfALongSlip } from './a-long-range-communication-slip.js';
+import { canRefineGrade } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import { DAYS_PER_YEAR, computeCultivationRate } from '../cultivation/cultivation.js';
 import { bestReadable } from '../cultivation/manual-quality.js';
 import {
@@ -106,7 +108,7 @@ import {
     whatEachHouseHasGivenAway,
     whyItIsTheirs
 } from './a-house-bestows-a-thing-on-somebody-who-earned-it.js';
-import { transferPossession } from './possessions.js';
+import { transferPossession, makeObject } from './possessions.js';
 import { setWhatEverybodyIsAt } from './what-somebody-is-at-when-you-walk-up.js';
 import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
@@ -348,6 +350,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const factions = seedFactions(state, opts.catalog, regionLocations, presentDay);
     const npcs = seedPopulation(
         state, opts.catalog, factions, population, presentDay, rollWorthModelling);
+    npcs.push(...seedGateTownResidents(state, presentDay));
     seedTheRemainingVeinGrants(state, presentDay);
     // AFTER the population, so every procedural person draws exactly what they
     // drew before this existed, and BEFORE the lineages, so the family the
@@ -398,6 +401,18 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // of them into the world, so the immortal weapon a house's whole standing
     // rests on existed only in a catalog nothing read. See `goods.ts`.
     state.objects.push(...seedArtifacts(state));
+    for (const faction of state.factions) {
+        const maker = state.npcs.filter(npc => npc.factionId === faction.id && npc.status === 'alive'
+            && canRefineGrade('heaven', npc.cultivation.realmOrdinal))
+            .sort((a, b) => b.cultivation.realmOrdinal - a.cultivation.realmOrdinal)[0];
+        if (maker && faction.seatLocationId) {
+            const slip = aLongRangeCommunicationSlip({
+            id: `obj-long-slip-${maker.id}`, makerId: maker.id, makerName: maker.name,
+            holderId: maker.id, holderName: maker.name, houseId: faction.id, onDay: presentDay
+            });
+            state.objects.push(slip, theTwinOfALongSlip(slip, faction.seatLocationId));
+        }
+    }
     // And the hulls, which is the same defect one catalog over. See
     // `seedTheCraftThatAreObjects`: no world has ever contained a spirit boat.
     state.objects.push(...seedTheCraftThatAreObjects(state));
@@ -658,12 +673,14 @@ function seedRegions(
             state.locations.push(makeLocation({
                 id: placeLocationId(region.id, place.name),
                 name: place.name,
-                kind: placeKindFor(place.kind),
-                parentId: location.id,
+                kind: place.interior?.gateOrdinal === undefined ? placeKindFor(place.kind) : 'ruin',
+                parentId: place.interior ? placeLocationId(region.id, place.interior.parentPlaceName) : location.id,
                 description: place.note,
                 ambient: place.ambient,
                 qiDensity: region.qiDensity,
-                thresholds: makeThresholds(0, 0, 0, Math.max(0, ceiling - 4)),
+                thresholds: place.interior?.gateOrdinal === undefined
+                    ? makeThresholds(0, 0, 0, Math.max(0, ceiling - 4))
+                    : makeThresholds(0, place.interior.gateOrdinal, place.interior.gateOrdinal, place.interior.gateOrdinal),
                 hazards: region.hazards.slice(),
                 environment: makeEnvironment({
                     // THE PLACE'S OWN GROUND, not its province's average.
@@ -684,10 +701,20 @@ function seedRegions(
                 tags: ['place', place.kind],
                 data: {
                     catalogRegionId: region.id,
+                    ...(place.interior ? { inscription: place.interior.inscription ?? null,
+                        comprehensionKey: place.interior.comprehensionKey ?? null,
+                        comprehensionOrdinal: place.interior.comprehensionOrdinal ?? 0 } : {}),
                     // Read by the demography when it draws a birthplace.
                     populationWeight: PLACE_POPULATION_WEIGHT[place.kind] ?? 1
                 }
             }));
+            for (const [index, document] of (place.interior?.contents ?? []).entries()) {
+                state.objects.push(makeObject({ id: `obj-document-${placeLocationId(region.id, place.name)}-${index}`,
+                    name: document.name, kind: 'other', locationId: placeLocationId(region.id, place.name),
+                    description: 'A written document in the old western-road script.', tags: ['document'],
+                    data: { inscription: document.text, comprehensionKey: place.interior!.comprehensionKey ?? '',
+                        comprehensionOrdinal: place.interior!.comprehensionOrdinal ?? 0 } }));
+            }
         }
 
         // The vein. It is the reason the region has politics at all, and it is
@@ -894,8 +921,18 @@ function seedSectGround(
     });
     ground.origin.fromDay = presentDay - years(300);
     state.locations.push(ground);
-    // The road from the province to the gate. Ordinary link, ordinary travel.
-    linkLocations(region, ground, 'road', 2);
+    const town = makeLocation({
+        id: `loc-town-${cf.id}`, name: `${cf.name} town`, kind: 'settlement',
+        parentId: region.id, qiDensity: region.qiDensity, ambient: region.ambient,
+        description: `A town outside ${cf.name}'s wall. Food stalls, an inn and the house's notice wall stand along the gate road.`,
+        discovered: false, tags: ['gate_town', 'food', 'notice-wall'],
+        data: { gateOf: cf.id, gateId: ground.id, populationWeight: PLACE_POPULATION_WEIGHT.sect_town,
+            catalogRegionId: region.data.catalogRegionId as string ?? '' }
+    });
+    state.locations.push(town);
+    const approach = cf.seatPlaceName ? state.locations.find(place => place.name === cf.seatPlaceName) ?? region : region;
+    linkLocations(approach, town, 'road', approach.id === region.id ? 2 : 0.1);
+    linkLocations(town, ground, 'road', 0.1);
 
     // And the inside of it. A sect seat with no interior is a name with two roads
     // out of it: measured before this existed, the Azure Cloud Pavilion - the house
@@ -912,6 +949,28 @@ function seedSectGround(
     for (const room of compound.locations) state.locations.push(room);
 
     return ground;
+}
+
+/** Gate towns do not dilute the settlement population; their residents are additional lives. */
+function seedGateTownResidents(state: WorldState, onDay: number): NpcRecord[] {
+    const made: NpcRecord[] = [];
+    const names = new Set(state.npcs.map(npc => npc.name));
+    for (const town of state.locations.filter(place => place.tags.includes('gate_town'))) {
+        for (const occupation of ['food seller', 'innkeeper', 'petition scribe']) {
+            const npc = createNpc(state.seed, {
+                id: `npc-${town.id}-${occupation.replace(/ /g, '-')}`,
+                bornOnDay: onDay - years(30), onDay, locationId: town.id,
+                occupation, takenNames: names, tags: ['gate-town-resident']
+            });
+            npc.activity = { kind: occupation === 'food seller' ? 'trade' : occupation === 'innkeeper' ? 'at_a_table' : 'idle',
+                note: occupation === 'food seller' ? 'Selling food at a stall.' : occupation === 'innkeeper' ? 'Receiving lodgers at an inn.' : 'Waiting for somebody who needs a petition written.',
+                withIds: [], sinceDay: onDay, untilDay: null };
+            names.add(npc.name);
+            state.npcs.push(npc);
+            made.push(npc);
+        }
+    }
+    return made;
 }
 
 /**

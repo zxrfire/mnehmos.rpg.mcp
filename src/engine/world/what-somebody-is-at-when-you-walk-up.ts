@@ -642,7 +642,7 @@ export function setWhatEverybodyIsAt(state: WorldState, onDay: number): void {
     // ── WHAT EACH OF THEM OPENS AT ───────────────────────────────────────
     for (let at = 0; at < state.npcs.length; at++) {
         const npc = state.npcs[at]!;
-        if (npc.status !== 'alive') continue;
+        if (npc.status !== 'alive' || npc.activity !== null) continue;
         state.npcs[at] = {
             ...npc,
             activity: whatTheyOpenAt({

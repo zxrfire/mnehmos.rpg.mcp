@@ -802,11 +802,11 @@ export const POCKET_PICKING =
  * sentence has to claim the room before anything routes here.
  */
 const A_ROOM_OF_YOUR_OWN =
-    /\b(?:my|our)\s+(?:own\s+)?(?:room|rooms|quarters|bunk|dorm|dormitory|lodgings)\b/;
+    /\b(?:my|our)\s+(?:own\s+)?(?:room|rooms|quarters|bunk|dorm|dormitory|lodgings|residence|abode)\b/;
 
 /** Coming out of it rather than going into it. */
 const OUT_OF_A_ROOM_OF_YOUR_OWN =
-    /\b(?:from|out of|outta|back from)\s+(?:my|our)\s+(?:own\s+)?(?:room|rooms|quarters|bunk|dorm|dormitory|lodgings)\b/;
+    /\b(?:from|out of|outta|back from)\s+(?:my|our)\s+(?:own\s+)?(?:room|rooms|quarters|bunk|dorm|dormitory|lodgings|residence|abode)\b/;
 
 const LEAVING_IT_IN_THE_ROOM =
     'put|puts|putting|leave|leaves|leaving|left|stow|stows|stowing|stowed|'
@@ -5012,6 +5012,12 @@ function planIntent(input: string): PlannedAction {
     // their own verb, and the two that move something need a thing named
     // between the verb and the room. "I cultivate in my room" and "I go to my
     // room" fall straight through, which is what they should do.
+    if (/\b(?:establish|build|make)\b.*\b(?:residence|abode)\b/.test(text)) {
+        return { action: 'stow', target: 'residence' };
+    }
+    if (/\bleave\b.*\binheritance\b/.test(text)) {
+        return { action: 'legacy', target: 'inheritance' };
+    }
     if (A_ROOM_OF_YOUR_OWN.test(text)) {
         const thing = whatIsGoingInOrOutOfTheRoom(input);
         if (OUT_OF_A_ROOM_OF_YOUR_OWN.test(text)

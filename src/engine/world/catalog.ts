@@ -83,6 +83,7 @@ export interface CatalogFaction {
     recruits: boolean;
     /** Coarse seat, matched against region ids and place names. */
     territory: string;
+    seatPlaceName?: string;
     /** Symmetric across the catalog. */
     rivalIds: string[];
     governance: GovernanceModel;
@@ -216,6 +217,8 @@ export interface CatalogFaction {
 }
 
 export interface CatalogPlace {
+    interior?: { parentPlaceName: string; inscription?: string; comprehensionKey?: string;
+        comprehensionOrdinal?: number; gateOrdinal?: number; contents?: { name: string; text: string }[] };
     name: string;
     kind: 'hamlet' | 'village' | 'market_town' | 'sect_town' | 'city' | 'waystation' | 'site';
     ambient: AmbientQi;
@@ -439,6 +442,7 @@ interface RawSect {
     admissionOrdinal?: number;
     recruits?: boolean;
     territory?: string;
+    seatPlaceName?: string;
     rivals?: readonly string[];
     description?: string;
     teaches?: readonly string[];
@@ -488,6 +492,7 @@ interface RawRegion {
         ambient: AmbientQi;
         note: string;
         heldByFactionId?: string | null;
+        interior?: CatalogPlace['interior'];
         connections?: { otherPlaceName: string; kind: string; travelDays: number }[];
     }[];
     connections?: { otherRegionId: string; kind: string; travelDays: number }[];
@@ -519,6 +524,7 @@ function mapFaction(
         admissionOrdinal: clampOrdinal(raw.admissionOrdinal ?? 3),
         recruits: raw.recruits ?? true,
         territory: raw.territory ?? '',
+        seatPlaceName: raw.seatPlaceName,
         rivalIds: (raw.rivals ?? []).slice(),
         governance: normaliseGovernance(parent?.governance),
         holdsByReputation: parent?.holdsByReputation === true,
@@ -618,6 +624,7 @@ function mapRegion(raw: RawRegion, register: readonly RawPrefecture[]): CatalogR
             kind: p.kind as CatalogPlace['kind'],
             ambient: p.ambient,
             note: p.note,
+            interior: p.interior,
             heldByFactionId: whoAdministers(p, register),
             connections: (p.connections ?? []).map(c => ({
                 otherPlaceName: c.otherPlaceName,
@@ -782,4 +789,3 @@ function clampOrdinal(n: number): number {
     if (!Number.isFinite(n)) return 0;
     return Math.max(0, Math.min(MAX_ORDINAL, Math.floor(n)));
 }
-

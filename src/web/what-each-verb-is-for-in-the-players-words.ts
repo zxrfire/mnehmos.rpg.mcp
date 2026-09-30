@@ -473,8 +473,8 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             The room comes with the rung: what it holds is read off the house's own stipend at
             that rung, so promotion is the only thing that makes it bigger. It wants the
             house's ground underfoot - a room does not reach across a province - and what is
-            left in it survives travelling away and survives a reload. A cultivator on nobody's
-            roll has no room and is told so plainly. Passes no time.`
+            left in it survives travelling away and survives a reload. A rogue can establish a residence on unheld ground and use that residence's
+            store. Establishing it and storing goods pass no time.`
     },
     list_techniques: {
         takes: [],
@@ -686,8 +686,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             beyond theirs. "intent" is "counters" to read who would hold a thing and on what
             terms, "bury" to put a cache in the ground (spends days), "dig" to go and get one
             back, "lodge" to leave something with a named house against a phrase, "claim" to
-            collect one. "target" names the house for the last two. Default to "counters" when
-            the player is asking rather than doing.`
+            collect one. "target" names the house for the last two. "I leave an inheritance" instead places held manuals and artifacts in a gated ruin
+            while the giver remains alive; the gate cannot exceed their own rung. Default
+            to "counters" when the player is asking rather than doing.`
     },
     petition: {
         takes: ['target', 'intent', 'topic'],

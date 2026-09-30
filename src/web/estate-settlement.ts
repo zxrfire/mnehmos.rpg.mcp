@@ -285,7 +285,7 @@ export function settleWhatTheyWereCarrying(deps: EstateDeps): EstateOutcome {
 
     const counted = countedOnTheBody(db, cultivator);
     if (world) {
-        theirSlipsBreak(world.objects, cultivator.id);
+        theirSlipsBreak(world.objects, cultivator.id, null, world.currentDay);
         theirJadeBreaks(world.objects, cultivator.id, Math.floor(world.currentDay));
     }
     const found = world

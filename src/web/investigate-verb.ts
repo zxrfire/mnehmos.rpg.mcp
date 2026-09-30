@@ -52,6 +52,8 @@ import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { HERBS, isExtinct } from '../data/cultivation/herbs.js';
 import { WORKING_KNOWLEDGE_MARGIN } from './hearsay.js';
+import { assessCapability, makeRequirements, makeSubject } from '../engine/world/capability.js';
+import { capabilityActorFor } from '../server/consolidated/cultivation-perception.js';
 /**
  * A word that is a pointer rather than a name. See the refusal it produces.
  */
@@ -172,10 +174,7 @@ export const investigateVerb = {
      * real catalog entry, so a player cannot examine a person the world does
      * not contain and receive a description of them.
      *
-     * TODO(world): once `assessCapability` is wired, run the `understand`
-     * predicate over the subject so that an inscription above the cultivator's
-     * comprehension yields partial or wrong readings rather than the full
-     * record. Comprehension is archaeology, and it should be able to fail.
+     * Inscription readings use the understand predicate and name the knowledge a failed read needs.
      */
     investigate(
         this: GameService,
@@ -205,6 +204,25 @@ export const investigateVerb = {
         // verbs that take a scope to find somebody to swear an oath to or a
         // house to petition have no business resolving a sword. An absent list
         // is how `resolveObject` is told nobody asked.
+        const inscriptionHere = this.atHand?.locations.find(row => row.id === this.worldPlaceOf(cultivator));
+        const paper = this.atHand?.objects.find(row => row.possessorId === cultivator.id
+            && row.tags.includes('document') && matchScore(query, row.name) >= MATCH_THRESHOLD);
+        const written = paper ?? (/\b(?:inscriptions?|murals?|paintings?)\b/i.test(query) ? inscriptionHere : undefined);
+        if (written) {
+            const inscription = written.data.inscription;
+            if (typeof inscription === 'string') {
+                const key = typeof written.data.comprehensionKey === 'string'
+                    ? written.data.comprehensionKey : `inscription:${written.id}`;
+                const read = assessCapability(capabilityActorFor(cultivator, this.atHand ?? undefined), makeSubject({
+                    kind: 'inscription', id: written.id, name: 'the inscription',
+                    requirements: makeRequirements({ understand: Number(written.data.comprehensionOrdinal ?? 0) }),
+                    comprehensionKeys: [key]
+                })).understand;
+                return this.freeAction(run, 'investigate', factsForInvestigation(cultivator, ambient,
+                    'the inscription', read.holds ? [inscription]
+                        : [`The marks are visible. Reading them requires ${key.replace(/[-:]/g, ' ')} knowledge or somebody who can translate them.`]));
+            }
+        }
         const chamber = ruinChamberHere(this, cultivator);
         const hereId = this.atHand ? worldLocationFor(this.atHand, cultivator.location)?.id : undefined;
         const scope = { ...this.scopeFor(cultivator), objects: (this.atHand?.objects ?? []).filter(row =>

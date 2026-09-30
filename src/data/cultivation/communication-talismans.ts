@@ -1,46 +1,8 @@
 /**
- * Communication talismans: the slip a house's people carry to send word home.
- *
- * The design owner: *"you can imagine people out on a sect have communication
- * talismans"*, *"that also gives a way for the people the sect stations out to
- * report back"*. And on what kind of thing one is: *"these are too common and
- * single use, don't bother making them tracked, they're just counted"*, *"you
- * just have a fungible stack"*, *"each communication talisman is marked with a
- * house"*, and they can be made by *"anyone foundation or above"*.
- *
- * So this is one catalog row and three facts about it, and nothing here decides
- * anything:
- *
- *   what it carries    a short message, to the house whose mark it carries, the
- *                      day it is burnt. Not a strike and not a way out; see
- *                      `a-talisman-is-one-act-somebody-already-paid-for.ts` for
- *                      the two slips that are rows with a history
- *   how far            {@link THE_COMMUNICATION_TALISMAN}'s own reach, in walking
- *                      days. A property of the slip, not of whoever cut it
- *   who can cut one    {@link WHO_CAN_CUT_A_COMMUNICATION_TALISMAN}, one rung
- *
- * ── ONE ROW, AND WHY NOT A GRADE TABLE ───────────────────────────────────
- *
- * Mortal grade, because that is the owner's ruling said in this engine's words:
- * `howAGradeIsStored('mortal')` is `counted`, so a stack is a number and a burnt
- * one leaves nothing. A longer-reaching slip would be worth having - the genre's
- * ten-thousand-li slip, which a house would sign for - and it would be a
- * heaven-grade row, which `howAGradeIsStored` makes TRACKED, a row with a
- * history like the strike and the way out. It is not built. A second counted
- * row would only be a second number for how far word goes.
- *
- * ── THE REACH ────────────────────────────────────────────────────────────
- *
- * Twelve walking days: the near provinces. That is the figure this setting
- * already gives a thousand li when it is flown (`thousand-li-cloud-tread`, in
- * `docs/world/climbing/capability-gaps-by-realm.md`), and it is chosen against
- * the map rather than for a round number. Measured on two seeded worlds at
- * twenty-five years, walking days from a house's seat: every post a house keeps
- * is 0 (a town in its own province), every door in its province is 0, a party
- * out on an errand runs p50 0-15 and p90 11-17 with a longest of 26, and the
- * whole world is 28 across. So a stationed member always reaches home, a party
- * usually does, and a party on the far side of the world has to wait - which is
- * the limit being a fact about the map rather than a rule.
+ * House communication talismans: ordinary pairs are counted; heaven pairs are tracked.
+ * Ordinary reach is twelve walking days, the setting's thousand-li span.
+ * A ten-thousand-li heaven slip carries ten times that distance. Both burn once.
+ * Graded crafting, ownership, hall twins and provenance live in the ordinary object store.
  */
 
 import { FOUNDATION_ORDINAL } from '../../engine/cultivation/realms.js';
@@ -50,7 +12,7 @@ export interface ACommunicationTalisman {
     id: string;
     /** The engine's own word for it. A player may call it other things. */
     name: string;
-    /** Counted grades only. See the header for the one that would not be. */
+    /** The grade decides whether a slip is counted or tracked. */
     grade: TechniqueGrade;
     /** How far a burnt one carries word, in walking days. */
     reachWalkingDays: number;
@@ -65,6 +27,12 @@ export const THE_COMMUNICATION_TALISMAN: ACommunicationTalisman = {
     reachWalkingDays: 12,
     what: 'A slip marked with a house. Burnt, it carries a short message to that house the same '
         + 'day, as far as the near provinces, and then there is no slip.'
+};
+
+export const THE_LONG_RANGE_COMMUNICATION_TALISMAN: ACommunicationTalisman = {
+    id: 'heaven-communication-talisman', name: 'heaven communication talisman',
+    grade: 'heaven', reachWalkingDays: 120,
+    what: 'A single-use slip keyed to its bearer and marked with a house. Its twin is kept in that house\'s hall. It carries word across ten thousand li.'
 };
 
 /**

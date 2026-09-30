@@ -14,6 +14,8 @@ Every tool the runtime agent can call, one file per tool. This is the boundary t
 through a contract in here**, and each one validates its arguments before anything touches
 the database.
 
+`standingOf` accepts the current world to derive a generated place's province from its containment chain. Gate-town names also resolve through the house catalog, including their settlement kind, for tool callers without a world argument.
+
 ADMIN field-value syntax without equals signs starts with a field immediately
 after the action. An adjective inside an item description remains sentence input.
 

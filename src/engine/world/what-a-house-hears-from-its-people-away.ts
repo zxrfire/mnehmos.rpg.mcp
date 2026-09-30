@@ -70,6 +70,7 @@ import {
     couldCutACommunicationTalisman
 } from '../../data/cultivation/communication-talismans.js';
 import { getSendingReason, type SendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import { longRangeSlipHeld } from './a-long-range-communication-slip.js';
 import { theReasonBehind, whatAHouseHasOnItsBoard } from '../encounters/what-a-house-has-on-its-board.js';
 import {
     addToTheStack,
@@ -274,7 +275,7 @@ export function wordFromThePeopleAway(
     const howFar = howFarFromTheSeat(state.locations);
     // An ended house's slips go first, so the index below never holds them.
     takeAwayWhatAnswersToNobody(
-        state.objects, new Set(state.factions.filter(h => h.dissolvedOnDay === null).map(h => h.id))
+        state.objects, new Set(state.factions.filter(h => h.dissolvedOnDay === null).map(h => h.id)), day
     );
     // Opened once, and closed once at the end. See `theStacksInHand`.
     const stacks = theStacksInHand(state.objects);
@@ -452,7 +453,8 @@ export function wordFromThePeopleAway(
             // Standing in the compound, they say it. That is the other road and
             // it is not this pass's.
             if (npc.locationId === house.seatLocationId) continue;
-            if (stacks.carriedAtFirst(npc.id, house.id) === 0 && !toppedUpOn.has(npc.id)) {
+            if (stacks.carriedAtFirst(npc.id, house.id) === 0 && !toppedUpOn.has(npc.id)
+                && !longRangeSlipHeld(state.objects, npc.id, house.id)) {
                 out.recruitsStillOwed++;
                 continue;
             }
@@ -834,7 +836,8 @@ function whatThePeopleAwaySendWordOf(
             if (npc.status !== 'alive' || !doing || !isTheWorldsToMove(npc)) continue;
             if (doing.kind !== 'stationed' && doing.kind !== 'out_with_a_party') continue;
             if (npc.locationId === seat) continue;
-            if (input.stacks.carriedAtFirst(npc.id, house.id) === 0 && !input.toppedUpOn.has(npc.id)) continue;
+            if (input.stacks.carriedAtFirst(npc.id, house.id) === 0 && !input.toppedUpOn.has(npc.id)
+                && !longRangeSlipHeld(state.objects, npc.id, house.id)) continue;
 
             const toppedUp = input.toppedUpOn.get(npc.id) ?? null;
             // Before this span they had no slip, or they would have sent it

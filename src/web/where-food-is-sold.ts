@@ -34,9 +34,10 @@ export function whereFoodComesFromHere(game: GameService, cultivator: Cultivator
         const hullDays = theRationsAboard(game.repos.db, cultivator);
         return hullDays > 0 ? { sold: false, hullDays } : { sold: false };
     }
-    const standing = standingOf(cultivator);
+    const standing = standingOf(cultivator, game.atHand);
     if (standing.settlementKind !== null) return { sold: true, where: `in ${standing.placeName ?? cultivator.location}` };
     const here = theAreaTheyAreIn(game.atHand, cultivator);
+    if (here?.place.kind === 'settlement') return { sold: true, where: `at the market in ${here.place.name}` };
     const house = game.atHand && here ? theHouseWhoseGateThisIs(game.atHand, here.place.name) : null;
     if (!house) return { sold: false };
     if (cultivator.sectId === house.factionId
@@ -52,7 +53,7 @@ export function whereFoodComesFromHere(game: GameService, cultivator: Cultivator
 
 /** The settlements of this province the player knows by where they are, the largest first. */
 export function theTownsTheyKnowHere(game: GameService, cultivator: Cultivator): string[] {
-    const province = REGIONS.find(region => region.id === standingOf(cultivator).regionId);
+    const province = REGIONS.find(region => region.id === standingOf(cultivator, game.atHand).regionId);
     if (!province) return [];
     const known = new Set(game.knowledge.awareness(cultivator.id, 'place')
         .filter(row => row.stage !== 'unaware' && row.stage !== 'whisper' && row.stage !== 'named')

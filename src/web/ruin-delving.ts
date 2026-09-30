@@ -28,6 +28,11 @@ import { factsForToolResult } from './facts.js';
 import { loosePlaceKey } from './knowledge.js';
 import { matchScore, MATCH_THRESHOLD, worldLocationFor } from './entities.js';
 import { whatTheStoneworkOfARuinSays } from './ruin-stonework.js';
+import { foundGroundOf } from './ground-the-world-found.js';
+import { readAdmission } from '../data/cultivation/inheritance-trials.js';
+import { rankName } from '../engine/cultivation/realms.js';
+import { manualIdOf } from '../engine/world/manuals.js';
+import { recordACopyHeld } from '../server/consolidated/technique-manage.js';
 
 const POSITION = 'ruin_chamber';
 interface ChamberPosition {
@@ -199,6 +204,11 @@ export async function delveRuin(
         if (step !== 'enter' && step !== 'delve' && step !== 'wear' && step !== 'take') return null;
         return say(service, run, [`${site.name} is elsewhere. You are at ${me.location}.`], true);
     }
+    const admission = foundGroundOf(site).access;
+    if (admission && !readAdmission(admission, me.realmOrdinal).admitted
+        && step !== 'approach' && step !== 'outside' && step !== 'leave') {
+        return say(service, run, [`The gate admits nobody above ${rankName(admission.admits === 'nobody_above_the_line' ? admission.ceilingOrdinal : site.thresholds.mastery)}.`], true);
+    }
     if (step === 'approach' || step === 'outside') {
         if (held) {
             const chamber = wingsOf(site).find(row => row.id === held.chamberId);
@@ -284,6 +294,8 @@ export async function delveRuin(
                     toHolderId: me.id, toHolderName: me.name, how: 'found', source: site.name,
                     note: `Recovered while working ${current!.name}.` });
                 world.objects[world.objects.findIndex(row => row.id === object.id)] = { ...taken, locationId: null };
+                const manual = manualIdOf(object);
+                if (manual) recordACopyHeld(service.db, me.id, manual);
             }
             append(done, loose.length > 0
                 ? [`You picked up ${loose.map(row => row.name).join(', ')}.`]

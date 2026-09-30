@@ -424,6 +424,8 @@ import {
     type Resident
 } from './above.js';
 import { standInTheWorld } from './the-player-as-a-row-the-world-can-invite.js';
+import { establishLowerGround } from './establishing-lower-ground.js';
+import { getSite } from '../data/cultivation/inheritance-trials.js';
 import { DAO_GROUND_TAG } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
 import { FOUND_BY_PROSPECTING_TAG } from '../engine/world/how-the-world-keeps-finding-more-ruins.js';
 import {
@@ -5340,6 +5342,8 @@ ${noticedWaiting}`;
                 return this.destroy(run, cultivator, action.target);
 
             case 'stow':
+                if (/\b(?:establish|build|make)\b.*\b(?:residence|abode)\b/i.test(rawInput))
+                    return establishLowerGround(this, run, cultivator, 'residence', rawInput);
                 return this.stow(
                     run, cultivator, action.intent as StowIntent | undefined, action.target
                 );
@@ -5412,10 +5416,18 @@ ${noticedWaiting}`;
                     run, cultivator, ambient, action.target, action.topic
                 );
 
-            case 'site':
+            case 'site': {
+                const ground = this.atHand?.locations.find(row => row.id === this.worldPlaceOf(cultivator));
+                if (ground?.tags.includes('gate_town') && /\b(?:travel|walk|go|head|approach)\b.*\b(?:the\s+)?gate\s*[.!]?$/i.test(rawInput)) {
+                    const gate = this.atHand?.locations.find(row => row.id === ground.data.gateId);
+                    if (gate) return this.move(run, cultivator, ambient, gate.name, 'travel');
+                }
                 return this.site(run, cultivator, ambient, action.target, action.intent);
+            }
 
             case 'legacy':
+                if (/\bleave\b.*\binheritance\b/i.test(rawInput))
+                    return establishLowerGround(this, run, cultivator, 'inheritance', rawInput);
                 return this.legacyAct(
                     run, cultivator, action.intent, action.target, rawInput, action.days
                 );
@@ -7440,7 +7452,7 @@ ${noticed}`;
         // Not a refusal to haggle. The figure is the same figure for the next
         // person in the queue because the person handing it over did not set
         // it, which is the sentence `whyAQuotedPriceDoesNotMove` exists to say.
-        const regionId = standingOf(cultivator).regionId;
+        const regionId = standingOf(cultivator, this.atHand).regionId;
         const stall = manualsAStallCarries();
         const onTheStall = (named.length >= 2
             ? stall.find(book => matchScore(named, book.name) > MATCH_THRESHOLD)
@@ -7808,7 +7820,7 @@ ${noticed}`;
         // knows why, rather than being silently dropped here.
         const wanted = (target ?? '').trim();
         // WHAT IS GOING *HERE*
-        const here = standingOf(cultivator).settlementKind ?? undefined;
+        const here = standingOf(cultivator, this.atHand).settlementKind ?? undefined;
         const offered = findWorkForOrdinal(cultivator.realmOrdinal, here);
         const names = (name: string): boolean => wanted.length >= 3
             && (wanted.toLowerCase().includes(name.toLowerCase())
@@ -10329,7 +10341,7 @@ ${noticed}`;
         const row = category === undefined && named.length >= 3 ? resolvePrice(named) : null;
         const priced = row ? getPrice(row.id) : undefined;
         if (priced) {
-            const regionId = standingOf(cultivator).regionId;
+            const regionId = standingOf(cultivator, this.atHand).regionId;
             const cash = localPrice(regionId, priced.cash);
             const stones = Math.max(1, Math.ceil(cashToStones(cash)));
             const quoted = factsForToolResult(`${priced.name}, priced.`, [
@@ -10381,7 +10393,7 @@ ${noticed}`;
             })();
 
         if (lots.length > 0) {
-            const regionId = standingOf(cultivator).regionId;
+            const regionId = standingOf(cultivator, this.atHand).regionId;
             const local = localPrice(regionId, 100) / 100;
             const quote = quotePouchSale(lots, { ordinal: cultivator.realmOrdinal }, local);
             // WRITTEN HERE RATHER THAN TAKEN OFF `quote.lots[].line`, because
@@ -10444,7 +10456,7 @@ ${noticed}`;
             }
         }
         if (category === undefined && named.length >= 3) {
-            const regionId = standingOf(cultivator).regionId;
+            const regionId = standingOf(cultivator, this.atHand).regionId;
             const onTheStall = manualsAStallCarries()
                 .find(book => matchScore(named, book.name) > MATCH_THRESHOLD);
             if (onTheStall) {
@@ -12771,7 +12783,7 @@ ${opened.text}` : receipt,
         const hurt = untreatedInjuries(cultivator.injuries);
         const visit = getPrice(GameService.PRICE_PHYSICIAN_VISIT)!;
         const course = getPrice(GameService.PRICE_COURSE_OF_CARE)!;
-        const regionId = standingOf(cultivator).regionId;
+        const regionId = standingOf(cultivator, this.atHand).regionId;
         // `buy` routes both of these two board rows straight into this method,
         // so they have to be priced the way `buy` prices everything else or the
         // same sentence reaches two different figures. Both rows are medicine,
@@ -13177,7 +13189,7 @@ ${opened.text}` : receipt,
             );
         }
 
-        const regionId = standingOf(cultivator).regionId;
+        const regionId = standingOf(cultivator, this.atHand).regionId;
         // TWO THINGS MOVE A PRICE AND THEY ARE NOT THE SAME KIND OF THING.
         // `localPrice` is what this province is LIKE and never changes; the
         // ground term is what is TRUE here today and lifts. This path asked
@@ -13513,7 +13525,7 @@ ${opened.text}` : receipt,
         query: string
     ): Promise<Execution | null> {
         const stock = manualsAStallCarries();
-        const regionId = standingOf(cultivator).regionId;
+        const regionId = standingOf(cultivator, this.atHand).regionId;
         const askingFor = (book: { id: string; cash: number }): number =>
             Math.max(1, Math.ceil(cashToStones(localPrice(regionId, book.cash))));
 
@@ -13959,7 +13971,7 @@ ${opened.text}` : receipt,
             ));
         }
 
-        const regionId = standingOf(cultivator).regionId;
+        const regionId = standingOf(cultivator, this.atHand).regionId;
         // The same multiplier the buy board is quoted through, so a province
         // where things cost more is a province where things fetch more.
         const local = localPrice(regionId, 100) / 100;
@@ -14117,7 +14129,7 @@ ${opened.text}` : receipt,
             ));
         }
 
-        const regionId = standingOf(cultivator).regionId;
+        const regionId = standingOf(cultivator, this.atHand).regionId;
         const quote = quoteSale({
             item: { requiredOrdinal: cultivator.realmOrdinal },
             listStones: list,
@@ -14253,7 +14265,7 @@ ${opened.text}` : receipt,
         const ownerSect = ownerFactionId ? getSect(ownerFactionId) : null;
 
         // ── WHAT A COUNTER GIVES, THROUGH THE ONE SALE AUTHORITY ─────────
-        const regionId = standingOf(cultivator).regionId;
+        const regionId = standingOf(cultivator, this.atHand).regionId;
         const local = localPrice(regionId, 100) / 100;
         const quote = quoteSale({
             item: { requiredOrdinal: opens },
@@ -18084,7 +18096,7 @@ ${fit.line}`;
      */
     private seedTheGroundAroundHome(cultivator: Cultivator): number {
         if (!this.atHand) return 0;
-        const home = requireRegion(standingOf(cultivator).regionId);
+        const home = requireRegion(standingOf(cultivator, this.atHand).regionId);
 
         let granted = 0;
         for (const record of this.quietGroundIn(home.name)) {
@@ -18944,6 +18956,19 @@ ${fit.line}`;
         // AND WHAT THEY ARE CARRYING
         const world = this.atHand;
         if (!world) return context;
+        const here = world.locations.find(place => place.id === this.worldPlaceOf(cultivator));
+        const marker = this.sites.atHand(run.id);
+        const markedSite = marker ? getSite(marker.catalogId) : null;
+        const readings = [
+            ...(markedSite?.kind === 'grave' ? [{ domain: 'formation' as const, subject: 'grave-reading',
+                label: 'a grave marker you have read', id: markedSite.id }] : []),
+            ...(typeof here?.data.comprehensionKey === 'string' ? [{ domain: 'formation' as const,
+                subject: here.data.comprehensionKey, label: 'the inscription', id: here.id }] : []),
+            ...world.objects.filter(object => object.possessorId === cultivator.id
+                && object.tags.includes('document') && typeof object.data.comprehensionKey === 'string')
+                .map(object => ({ domain: 'formation' as const, subject: String(object.data.comprehensionKey), label: object.name, id: object.id }))
+        ];
+        context.daoGrounds = [...(context.daoGrounds ?? []), ...readings];
         const carried = thingsCarriedThatTeachARoad(world, howAPlayerHolds(
             world,
             groundUnderfoot(world, cultivator.location, loosePlaceKey)
@@ -19775,7 +19800,7 @@ ${fit.line}`;
             this.rateTermsFor(cultivator).techniqueCap,
             copyNamesHeldBy(this.db, cultivator.id)
         );
-        const regionId = standingOf(cultivator).regionId;
+        const regionId = standingOf(cultivator, this.atHand).regionId;
         const trading = readWhatIsOnOfferHere(
             cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
         );

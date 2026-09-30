@@ -131,16 +131,13 @@ of everything that exists stays something the world has to say out loud.
 rather than in a rule: a `Sighting` has no name field, so the module cannot leak one
 because it is never handed one.
 
-### What the engine has no answer for yet
+### Following a located thing before learning its name
 
-**The awareness ladder below has no rung for what perception produces.** It runs
-`unaware -> whisper -> named -> placed`, which assumes the name arrives first and is then
-located. Seeing inverts that: you know exactly where a thing is and have no idea what it
-is called. There is currently nowhere to record that, so a sighting is a read and not a
-knowledge row, and **a player cannot yet set out for something they have only seen.** The
-setting already knows what that would look like - a Burial Sands finder *"sells the
-location once and does not lead the buyer to it; the buyer takes the direction and the
-distance and finds it themselves"* - so the shape exists and the machinery does not.
+A perception records a location id and the visible bearing and shape, without a
+name. `where can I go` numbers these retained sightings; `travel to sighting 2`
+follows the second one through ordinary movement. The reference survives reloads.
+Arrival establishes the place's name through the existing encounter record. The
+named awareness ladder still records names learned from people and papers.
 
 ## Making somebody tell you
 

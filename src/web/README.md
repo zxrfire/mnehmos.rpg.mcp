@@ -2736,3 +2736,7 @@ rides to the seat, which `move` already knew how to do.
   verb asks who is standing here without caring which of the two person tables they came from.
 
 Formation construction is a `craft` action: name a known formation art. Its own qi cost is charged only when a stationary object is raised. Repeating the same art on the same ground replaces the builder's previous formation. House wards continue to use their separate construction rule. An explicitly offered match settling a grave personal account writes a binding only after the existing acceptance and house checks succeed; leaving reads the original account from the oath's link.
+
+Local paths shorter than a day are walks and do not enter the whole-day span engine. Gate towns and fixed-rock interiors use these paths. Ranged perception retains numbered, unnamed sighting references for ordinary travel. `establishing-lower-ground.ts` routes living residence and inheritance sentences into ordinary locations and ownership; inscription and grave reads apply `assessCapability` with `understand`. Conveyance delivery retires tracked material rows alongside pouch counts.
+
+Establishing an existing residence reports its ground without moving the holder or creating another road. Leaving an inheritance surrenders the giver's ownership; another owner's claim survives. Its ceiling cannot exceed the giver's rung, and its survival floor is the start of that realm.

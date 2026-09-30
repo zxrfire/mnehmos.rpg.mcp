@@ -73,6 +73,7 @@ export function openDoorsInTheWorld(): DoorInTheField[] {
 export function postingGroundOf(place: string | null | undefined): PostingGround {
     const wanted = (place ?? '').trim().toLowerCase();
     if (wanted.length === 0) return 'unplaceable';
+    if (SECTS.some(house => `${house.name} town`.toLowerCase() === wanted)) return 'sect_town';
     for (const region of REGIONS) {
         for (const known of region.places) {
             if (known.name.trim().toLowerCase() === wanted) return known.kind;
@@ -85,6 +86,8 @@ export function postingGroundOf(place: string | null | undefined): PostingGround
 export function provinceOfPlace(place: string | null | undefined): string | null {
     const wanted = (place ?? '').trim().toLowerCase();
     if (wanted.length === 0) return null;
+    const house = SECTS.find(house => `${house.name} town`.toLowerCase() === wanted);
+    if (house) return provinceForFaction(house.id)?.id ?? null;
     for (const region of REGIONS) {
         if (!region.places.some(p => p.name.trim().toLowerCase() === wanted)) continue;
         return provinceForRegion(region.id)?.id ?? null;

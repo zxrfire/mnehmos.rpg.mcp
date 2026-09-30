@@ -415,7 +415,7 @@ Takes `target`.
 
 ### `stow`
 
-leave a thing in the room the player's house gave them, take one back, or look at what is in there. "intent" is which of the three and "target" names the thing. The room comes with the rung: what it holds is read off the house's own stipend at that rung, so promotion is the only thing that makes it bigger. It wants the house's ground underfoot - a room does not reach across a province - and what is left in it survives travelling away and survives a reload. A cultivator on nobody's roll has no room and is told so plainly. Passes no time.
+leave a thing in the room the player's house gave them, take one back, or look at what is in there. "intent" is which of the three and "target" names the thing. The room comes with the rung: what it holds is read off the house's own stipend at that rung, so promotion is the only thing that makes it bigger. It wants the house's ground underfoot - a room does not reach across a province - and what is left in it survives travelling away and survives a reload. A rogue can establish a residence on unheld ground and use that residence's store. Establishing it and storing goods pass no time.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'stow'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
 
@@ -523,7 +523,7 @@ Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `
 
 an inheritance ground: a trial somebody built to be inherited from, or a grave that was arranged for nobody. "target" names it; "intent" is one of approach (get to it, or ask what there is), outside (read it from the threshold without going in), enter (go in - this SPENDS DAYS and can kill), take (carry out what is behind the door). Choose "outside" when the player is looking rather than going, and "enter" only when they plainly said so. At a world ruin, delve walks toward a chamber named by target (or further in), survey reads the current chamber and the player's room notes, wear inhabits an identity preserved by an old formation, and leave walks back out. These use the same clock as every other act.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'site'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.site` · the deterministic parser reaches it · spends in-world time.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'site'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.worldPlaceOf` · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`, `intent`.
 
@@ -531,7 +531,7 @@ Intents: `approach`, `outside`, `enter`, `take`, `delve`, `survey`, `wear`, `lea
 
 ### `legacy`
 
-putting things beyond your own death, and collecting what somebody else put beyond theirs. "intent" is "counters" to read who would hold a thing and on what terms, "bury" to put a cache in the ground (spends days), "dig" to go and get one back, "lodge" to leave something with a named house against a phrase, "claim" to collect one. "target" names the house for the last two. Default to "counters" when the player is asking rather than doing.
+putting things beyond your own death, and collecting what somebody else put beyond theirs. "intent" is "counters" to read who would hold a thing and on what terms, "bury" to put a cache in the ground (spends days), "dig" to go and get one back, "lodge" to leave something with a named house against a phrase, "claim" to collect one. "target" names the house for the last two. "I leave an inheritance" instead places held manuals and artifacts in a gated ruin while the giver remains alive; the gate cannot exceed their own rung. Default to "counters" when the player is asking rather than doing.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'legacy'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.legacyAct` · the deterministic parser reaches it · spends in-world time.
 

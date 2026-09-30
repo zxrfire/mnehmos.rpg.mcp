@@ -895,7 +895,7 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // the person it is keyed to, so both halves of their pairs go when they do,
     // here and before anybody goes through the body: there is nothing for a
     // looter to take. See `theirSlipsBreak`.
-    theirSlipsBreak(state.objects, deceased.id);
+    theirSlipsBreak(state.objects, deceased.id, null, onDay);
     // And any pair of communication jade they were half of, both halves, which
     // answer to nothing once one end of them is gone and are collected rather
     // than left in the world's things. Before the estate, so nobody inherits

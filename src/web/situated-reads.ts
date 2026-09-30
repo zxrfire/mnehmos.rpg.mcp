@@ -57,7 +57,7 @@ import {
     stagnationYearsForOrdinal
 } from '../schema/cultivation.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
-import { daoHeartFor, listPouch } from '../server/consolidated/cultivation-support.js';
+import { daoHeartFor, listPouch, readJsonFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 import { copyNamesHeldBy } from '../server/consolidated/technique-manage.js';
 import {
     handleList,
@@ -233,7 +233,7 @@ export const situatedReads = {
             copyNamesHeldBy(this.db, cultivator.id)
         );
         const eligibility = canAttemptBreakthrough(cultivator);
-        const where = standingOf(cultivator);
+        const where = standingOf(cultivator, this.atHand);
         const region = requireRegion(where.regionId);
 
         // The rank, read off the same two functions `handlePromote` gates on.
@@ -525,7 +525,7 @@ export const situatedReads = {
          */
         target?: string
     ): Execution {
-        const here = standingOf(cultivator);
+        const here = standingOf(cultivator, this.atHand);
         const fromRegion = requireRegion(here.regionId);
 
         // What it costs to reach each other province, off the region's own
@@ -633,6 +633,7 @@ export const situatedReads = {
                 unnamed++;
                 const standing = this.occupancyOf(record.name);
                 onTheGround.push({
+                    locationId: record.id,
                     kind: record.kind,
                     bearing: fromRegion.bearing,
                     days: null,
@@ -669,6 +670,7 @@ export const situatedReads = {
                 if (key === loosePlaceKey(cultivator.location ?? '')) continue;
                 const standing = this.occupancyOf(place.name);
                 onTheGround.push({
+                    locationId: this.atHand ? worldLocationFor(this.atHand, place.name)?.id : undefined,
                     kind: place.kind,
                     bearing: region.bearing,
                     days,
@@ -683,6 +685,15 @@ export const situatedReads = {
             from: fromRegion.bearing,
             onTheGround
         });
+        if (overlook.located?.length) {
+            const retained = readJsonFlag<{ id: string; description: string }[]>(this.db, cultivator.id, 'located_places') ?? [];
+            for (const sighting of overlook.located) {
+                if (!retained.some(row => row.id === sighting.id)) retained.push(sighting);
+                const number = retained.findIndex(row => row.id === sighting.id) + 1;
+                overlook.lines.push(`Sighting ${number}: ${sighting.description}`);
+            }
+            writeFlag(this.db, cultivator.id, 'located_places', JSON.stringify(retained));
+        }
 
         // AND THE GATES
         for (const record of this.housesWithGroundIn(fromRegion.name)) {
@@ -1040,7 +1051,7 @@ export const situatedReads = {
                 cultivator.spiritStones,
                 // The province they are standing in, so the panel quotes the
                 // figure `buy` will charge rather than the board's base.
-                standingOf(cultivator).regionId,
+                standingOf(cultivator, this.atHand).regionId,
                 // And what is TRUE of that ground today, which is the other
                 // half of what `buy` charges.
                 this.groundPriceMultiplier(cultivator, 'medicine'),
@@ -1087,7 +1098,7 @@ export const situatedReads = {
                     hurt.filter(injury => isPermanentWound(injury.woundType)),
                     cultivator.realmOrdinal,
                     cultivator.spiritStones,
-                    standingOf(cultivator).regionId,
+                    standingOf(cultivator, this.atHand).regionId,
                     this.groundPriceMultiplier(cultivator, 'medicine'),
                     {
                         gate: this.knowledge,
@@ -1245,7 +1256,7 @@ export const situatedReads = {
         here: AmbientQi
     ): { name: string; ambient: AmbientQi; travelDays: number | null }[] {
         const rateHere = AMBIENT_QI_RATE_MULTIPLIER[here];
-        const from = requireRegion(standingOf(cultivator).regionId);
+        const from = requireRegion(standingOf(cultivator, this.atHand).regionId);
 
         // What it costs to reach each other province, off this region's own
         // `connections`. Absent means no stated road, which is a real state and

@@ -1,5 +1,6 @@
 import { raiseFormation, whatAnArtCanRaiseTo } from '../engine/world/a-formation-stands-at-the-lower-of-the-art-and-the-builder.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
+import { aLongRangeCommunicationSlip, theTwinOfALongSlip } from '../engine/world/a-long-range-communication-slip.js';
 /**
  * The `craft` verb: a player at a bench, and what comes off it.
  *
@@ -165,6 +166,11 @@ export const craftVerbs = {
         // Communication talismans are counted stock cut by the handful, not a
         // bench's one thing. See `sending-word-on-a-communication-talisman.ts`.
         if (whatIsBeingCut(said) !== null) {
+            if (/\bheaven(?:-grade)?\b/i.test(said)) {
+                if (!cultivator.sectId) return refused('engine.cutCommunicationTalisman', 'craft',
+                    factsForRefusal('There is no house to mark it with.', 'A communication talisman needs a house whose hall keeps its twin.'));
+                return this.atYourOwnBench(run, cultivator, said, today);
+            }
             return await this.cutCommunicationTalismans(run, cultivator, ambient, said);
         }
 
@@ -179,12 +185,14 @@ export const craftVerbs = {
             return await this.atYourOwnBench(run, cultivator, said, today);
         }
 
+        this.atHand ??= await this.loadWorld();
         const plan: BuildPlan = planTheBuild({
             db: this.db,
             cultivator,
             said: (target ?? '').trim(),
             raw: rawInput,
             today,
+            objects: this.atHand?.objects,
             ...(days === undefined ? {} : { days })
         });
 
@@ -244,7 +252,7 @@ export const craftVerbs = {
         const landed = landTheBuild({
             db: this.db,
             cultivator: after,
-            plan,
+            plan: { ...plan, daysToWork: Math.min(plan.daysToWork!, spent.timeSkip?.simulatedDays ?? plan.daysToWork!) },
             runSeed: run.seed,
             today: Math.floor(this.repos.runs.getById(run.id)?.elapsedDays ?? run.elapsedDays),
             // Where a tracked craft is moored. `cultivator.location` is free
@@ -253,8 +261,10 @@ export const craftVerbs = {
             // `Cultivator.location` is nullable and a mooring is a place, so
             // a body that is nowhere the world has a name for moors what it
             // builds at the honest answer rather than at an empty string.
-            mooredAt: after.location ?? 'nowhere anybody has named'
+            mooredAt: after.location ?? 'nowhere anybody has named',
+            objects: this.atHand?.objects
         });
+        if (this.atHand && Object.keys(plan.toConsume ?? {}).length > 0) this.theWorldMoved();
 
         // ── AND IT BECOMES A ROW ─────────────────────────────────────────
         //
@@ -416,6 +426,14 @@ export const craftVerbs = {
         });
         // The world is marked moved only where something moved. A take that
         // returns nothing has written nothing, which is what makes this safe.
+        if (made.minted && /\bcommunication\s+talisman/i.test(said) && plan.ask!.grade === 'heaven' && cultivator.sectId) {
+            made.minted = aLongRangeCommunicationSlip({ id: made.minted.id,
+                makerId: cultivator.id, makerName: cultivator.name, holderId: cultivator.id,
+                holderName: cultivator.name, houseId: cultivator.sectId, onDay: this.atHand?.currentDay ?? today });
+            made.lines = [`${made.minted.name} is made, keyed to you, with its twin in your house's hall.`];
+            const seat = this.atHand?.factions.find(house => house.id === cultivator.sectId)?.seatLocationId;
+            if (seat) rowsNow.push(theTwinOfALongSlip(made.minted, seat));
+        }
         if (made.minted) {
             rowsNow.push(made.minted);
             this.theWorldMoved();

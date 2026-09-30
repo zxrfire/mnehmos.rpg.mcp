@@ -624,6 +624,7 @@ export const travelVerbs = {
         // anywhere else is. The one case that does not become a name is the
         // abode on the other side of the Lid, which is not walked to.
         let said = target;
+        this.atHand ??= await this.loadWorld();
         // CARRYING ON IS THE ROAD THAT STOPPED. "keep going" names nowhere, and
         // with a road stopped where they stand there is only one way it means.
         if ((said ?? '').trim().length === 0) {
@@ -668,6 +669,12 @@ export const travelVerbs = {
         // See `walking-inside-the-walls.ts` for what decides it.
         // An area of the place they stand in first - the inn, the cloth row, in through the gate -
         // which is a walk and not a road. See `walking-across-a-place.ts`.
+        const underfoot = this.atHand?.locations.find(row => row.id === this.worldPlaceOf(cultivator));
+        if (underfoot?.tags.includes('gate_town') && /^(?:the\s+)?gate$/i.test(said ?? '')) {
+            said = this.atHand?.locations.find(row => row.id === underfoot.data.gateId)?.name ?? said;
+        } else if (underfoot?.kind === 'sect_seat' && /^(?:the\s+)?town$/i.test(said ?? '')) {
+            said = this.atHand?.locations.find(row => row.data.gateId === underfoot.id)?.name ?? said;
+        }
         const acrossThePlace = await aWalkAcrossThePlace(this, run, cultivator, said);
         if (acrossThePlace) return acrossThePlace;
         // ABOARD A SHIP AT SEA the one way is where it is bound, and going there is sailing on.
@@ -681,7 +688,11 @@ export const travelVerbs = {
         }
         const insideTheWalls = await aWalkInsideTheWalls(this, run, cultivator, said);
         if (insideTheWalls) return insideTheWalls;
-        const named = resolvePlace(destinationNamed(said));
+        const sightingNumber = /^(?:the\s+)?sighting\s+(\d+)$/i.exec((said ?? '').trim());
+        const sightings = readJsonFlag<{ id: string; description: string }[]>(this.db, cultivator.id, 'located_places') ?? [];
+        const located = sightingNumber ? sightings[Number(sightingNumber[1]) - 1] : undefined;
+        const locatedRow = located && this.atHand?.locations.find(row => row.id === located.id);
+        const named = resolvePlace(locatedRow?.name ?? destinationNamed(said));
         // ── A HOUSE IS SOMEWHERE YOU CAN GO, AND WHERE YOU GO IS ITS TOWN ──
         //
         // Measured on three pinned worlds, day 0, 38 seated houses each: `I
@@ -695,10 +706,14 @@ export const travelVerbs = {
         // on the gate and whether anybody would host is read when they get
         // there, because who is standing at a gate is a fact about the gate and
         // not about where the walk started.
-        const house = this.atHand && named
+        const namedTown = this.atHand && named && worldLocationFor(this.atHand, named.name)?.tags.includes('gate_town');
+        const house = this.atHand && named && !namedTown
             ? theHouseThisNameReaches(this.atHand, named.name)
             : null;
-        const place = house ? resolvePlace(house.seat.name) ?? named : named;
+        const town = house && cultivator.sectId !== house.factionId
+            && loosePlaceKey(named!.name) === loosePlaceKey(house.factionName)
+            ? this.atHand?.locations.find(row => row.data.gateOf === house.factionId) : null;
+        const place = house ? resolvePlace(town?.name ?? house.seat.name) ?? named : named;
         // AND NOT FROM ANYWHERE ELSE. A room's name reached the world's loose
         // match, which takes an id ending in `-lecture-hall` and so would have
         // sent somebody down a road into whichever house the world listed first.
@@ -945,6 +960,15 @@ export const travelVerbs = {
         // the fabricated-zero mistake `whereCouldTheyGo` records having made
         // once already, so an unpriced journey still costs the flat day.
         const onTheRoad = this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
+        if (onTheRoad < 1 && worldRow) {
+            this.repos.cultivators.update(cultivator.id, { location: arrivedAt });
+            const walked = { ...cultivator, location: arrivedAt };
+            this.noteEncounter(walked, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
+                'witnessed', 'Reached by a local walk.');
+            noteWhoseGroundThisIs(this, walked, run, arrivedAt);
+            return this.freeAction(run, 'move', factsForToolResult(`You are at ${arrivedAt}.`,
+                [`The local path from ${cultivator.location} reaches ${arrivedAt}.`]));
+        }
 
         // ── A STOPPED ROAD GOES ON FROM WHERE IT STOPPED ─────────────────
         //
@@ -1236,7 +1260,7 @@ export const travelVerbs = {
      */
     daysOnTheRoadTo(this: GameService, cultivator: Cultivator, destination: string): number | null {
         const bare = (name: string) => name.replace(/^the\s+/i, '').trim().toLowerCase();
-        const from = requireRegion(standingOf(cultivator).regionId);
+        const from = requireRegion(standingOf(cultivator, this.atHand).regionId);
         // A place only the world names - a house's grounds, a site - is in a
         // province too, and the world's own row knows which.
         const inTheWorld = (name: string): string | null => {
@@ -1249,6 +1273,10 @@ export const travelVerbs = {
         // row the catalog states once.
         const nextDoor = placeRoadDays(placeName(cultivator), destination);
         if (nextDoor !== null) return nextDoor;
+        const start = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
+        const end = this.atHand && worldLocationFor(this.atHand, destination);
+        const linked = start && end && start.links.find(link => link.toLocationId === end.id && link.open && !link.requiresKeyId);
+        if (linked) return linked.travelDays;
 
         const toRegionId = regionIdOfPlace(destination)
             ?? REGIONS.find(region => bare(region.name) === bare(destination))?.id
@@ -2092,7 +2120,7 @@ export const travelVerbs = {
                 ? aShipSailsOn(this, run, cultivator, voyage, null, 'carrying_on')
                 : stillAtSea(voyage, 'passage');
         }
-        const here = standingOf(cultivator);
+        const here = standingOf(cultivator, this.atHand);
         const counter = counterPlaceNameAt(placeName(cultivator));
         const today = Math.floor(run.elapsedDays);
         const rate = localPrice(here.regionId, SPAN_CASH_PER_WALKED_DAY);

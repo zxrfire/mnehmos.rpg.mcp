@@ -6,14 +6,23 @@ There are two instruments and the difference between them is who is at the far
 end. Each is written up fully beside its own code; what was missing was the one
 page that says which is which, so this is that page and it restates neither.
 
-**A communication talisman goes to a HALL.** Counted rather than tracked,
-because they are common and single use; marked with a house; keyed to the person
+**A communication talisman goes to a HALL.** Ordinary mortal slips are counted because they are common and single use;
+heaven slips and their hall twins are tracked individual objects; marked with a house; keyed to the person
 carrying it, so burning one sends word AS them; cut in pairs, with the twin kept
 in the hall where the house's lamps burn. A slip burnt anywhere arrives at its
 twin and is read there by a person, because a house cannot receive a message.
 It has a reach, and a hall further off than a slip carries is a refusal that says
 so. Nothing comes back on it: an answer reaches you when you are at the house or
 somebody walks it to you.
+
+A heaven-grade communication talisman carries 120 walking days, against twelve
+for an ordinary slip. `I cut a heaven-grade communication talisman` uses the
+ordinary heaven-grade bench recipe and crafting span. It is keyed to the cutter
+and their house; its tracked hall twin must still be there. Sending burns both
+objects and appends the message fact to their provenance. Seeded capable house
+members carry the same slips, and the yearly report pass can spend them. An
+unreachable hall or absent twin spends nothing. Leaving the house or dying
+breaks the pair through the same cleanup as ordinary slips.
 
 **A pair of communication jade goes to a PERSON.** Two tracked halves naming each
 other, one held by each of two people, spent by nobody and usable as often as

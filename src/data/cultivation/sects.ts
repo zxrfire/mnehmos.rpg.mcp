@@ -71,6 +71,7 @@
  */
 
 import type { Sect, SpiritRootKey, TechniqueCategory } from '../../schema/cultivation.js';
+import { SPRING_HOUSES } from './spring-houses.js';
 import { APEX_INSTITUTIONS } from './governance-and-water-rights.js';
 import {
     delegatedFrom,
@@ -259,6 +260,8 @@ export interface SectEntry extends Sect {
     rivals: readonly string[];
     /** Where the sect sits, in coarse terms worldgen can attach to a region. */
     territory: string;
+    /** A catalog place the gate road starts at, where the seat is more precise than a province. */
+    seatPlaceName?: string;
     /**
      * False for powers that take no applicants at all.
      *
@@ -3035,7 +3038,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
  * the ancient houses. Houses satisfy `SectSchema` exactly as sects do, so
  * every existing lookup, admission check and rivalry rule covers both.
  */
-export const SECTS: readonly SectEntry[] = [...REGIONAL_SECTS, ...DAO_HOUSES];
+export const SECTS: readonly SectEntry[] = [...REGIONAL_SECTS, ...SPRING_HOUSES, ...DAO_HOUSES];
 
 /**
  * Houses that no longer exist, and are still load-bearing. A destroyed house

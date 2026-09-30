@@ -69,6 +69,8 @@ export function withinSight(horizonDays: number, days: number | null): boolean {
  * One thing on the ground, as it looks from above it.
  */
 export interface Sighting {
+    /** Internal position reference; it never carries the place's name. */
+    locationId?: string;
     /**
      * What kind of thing it is, physically. A `LocationKind`, which the caller
      * has already taken off the row - this module turns it into what it looks
@@ -102,6 +104,7 @@ export interface OverlookInput {
 }
 
 export interface OverlookRead {
+    located?: { id: string; description: string }[];
     headline: string;
     lines: string[];
     structure: string[];
@@ -285,7 +288,8 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
             A_SIGHTING_HAS_NO_NAME_ON_IT
         ],
         structure,
-        seen: seen.length
+        seen: seen.length,
+        located: seen.flatMap(row => row.locationId ? [{ id: row.locationId, description: sightingLine(row, input.from) }] : [])
     };
 }
 

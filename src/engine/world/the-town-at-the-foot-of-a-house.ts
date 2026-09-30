@@ -1,53 +1,9 @@
 /**
- * The town at a house's gate: everybody who wants something from it and cannot
- * walk in.
- *
- * A compound with nothing outside it leaves a refused visitor standing nowhere.
- * Measured on three pinned worlds before this existed: 38 seated houses each,
- * and `I travel to <house>` reached 0 of them.
- *
- * DERIVED, NEVER AUTHORED. Same shape as `growCompound`: the house's own
- * columns decide how big the town is and what trades in it. A house that
- * recruits has applicants and the people it refused; a house that makes things
- * sells its seconds; a house whose arrays have gone dark is being quietly
- * stripped by the people at its foot. There is no `if (factionId === ...)` here
- * and there must never be one.
- *
- * ── IT IS A READING OF THE SEAT AND NOT A SECOND PLACE, AND THAT WAS MEASURED
- *
- * The first cut seeded one `settlement` row per house, linked to the province on
- * one side and to the gate on the other. It worked, and it halved the world.
- *
- * A world opens with `population: 400` spread over 22 settlements - about
- * eighteen people each - and 38 more places took that to seven. Over eighty
- * years of ordinary births and deaths the tail then dies out, and an empty
- * settlement produces person-free events forever, which is the condition
- * `demography.test.ts` exists to hold. Both arms in one command, one seed, only
- * the towns removed between them:
- *
- *     without the town rows   22 settlements, 0 empty after 80 years
- *     with them               60 settlements, 8 empty
- *
- * Reweighting moved the number and never reached zero: at a village's weight 8
- * were empty, at a market town's 3 were, and two of those were catalog places
- * that had been fine before. **The map got denser and the population did not.**
- * Holding the density would need about 1,090 people, which is 2.7x the world
- * simulation's cost and is not a change to make in passing.
- *
- * So the seat carries it. `seedSectGround` already describes its own row as
- * *gate, forecourt, halls*, the outer precinct of a recruiting house is already
- * open ground with an entry threshold of zero, and what was missing was never a
- * square - it was the market, the standing crowd, and the door saying no. Those
- * are computed on arrival from the house's catalog row, so nothing is stored,
- * nothing drifts, and the world's demography is untouched.
- *
- * **What this does NOT give**, written down as the gap it is: the town is not
- * somewhere with its own road, its own residents in `npcs`, or its own
- * encounters. A player cannot walk down from the gate to the market and back.
- * Closing that needs a world population scaled to the map it is spread over,
- * and that is a decision for whoever owns the simulation's cost.
- *
- * PURE. A catalog row in, a reading out.
+ * A gate town reads its trades from the house above it.
+ * Seeding gives it a separate road and three additional residents. Those lives
+ * are added to the population target rather than divided out of the existing
+ * settlements: the earlier shared-pool design left eight towns empty after
+ * eighty years, against zero without it.
  */
 
 import { getSect, type SectEntry } from '../../data/cultivation/sects.js';

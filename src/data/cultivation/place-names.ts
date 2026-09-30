@@ -168,6 +168,8 @@ export const PLACE = {
     // season that convenes it - which is the register `Insects Awaken` is in.
     WIND_MARKET: 'Wind Turn',
     SAND_WELL: 'Truce Spring',
+    PAINTED_ESCARPMENT: 'Ochre Escarpment',
+    SPRING_ARCHIVE: 'Silica Crypt',
     STUBBORN_PIT: 'Stubborn Pit',
     THE_SHORT_ROAD: 'The Short Road',
     TUOS_WALL: 'Tuo\'s Rampart',

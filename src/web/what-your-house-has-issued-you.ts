@@ -91,7 +91,7 @@ export function settleWhatYourHouseHasIssuedYou(
         && o.tags.includes('issued')
         && o.data?.memberId === cultivator.id
         && o.ownerId !== houseId);
-    if (handBackWhatTheyNoLongerBelongTo(world.objects, id => (id === cultivator.id ? houseId : undefined)) > 0) {
+    if (handBackWhatTheyNoLongerBelongTo(world.objects, id => (id === cultivator.id ? houseId : undefined), world.currentDay) > 0) {
         const byHouse = new Map<string, string[]>();
         for (const row of leaving) {
             const names = byHouse.get(row.ownerName) ?? [];
@@ -107,7 +107,7 @@ export function settleWhatYourHouseHasIssuedYou(
     for (const slips of theCommunicationTalismansOnYou(game.db, cultivator.id)) {
         if (slips.houseId === houseId) continue;
         if (!removeFromPouch(game.db, cultivator.id, pouchIdForCommunicationTalismans(slips.houseId), slips.count)) continue;
-        theirSlipsBreak(world.objects, cultivator.id, slips.houseId);
+        theirSlipsBreak(world.objects, cultivator.id, slips.houseId, world.currentDay);
         const name = world.factions.find(f => f.id === slips.houseId)?.name ?? 'a house that has ended';
         lines.push(`${slips.count} communication talisman${slips.count === 1 ? '' : 's'} marked with ${name} `
             + 'broke with its token: they were keyed to you as one of it.');

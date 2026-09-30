@@ -294,7 +294,13 @@ export const RegionPlaceSchema = z.object({
      * is nothing having been written, which a reader must not turn into a
      * vacuum.
      */
-    heldByFactionId: z.string().nullable().optional()
+    heldByFactionId: z.string().nullable().optional(),
+    interior: z.object({
+        parentPlaceName: z.string(), inscription: z.string().optional(),
+        comprehensionKey: z.string().optional(), comprehensionOrdinal: z.number().optional(),
+        gateOrdinal: z.number().optional(),
+        contents: z.array(z.object({ name: z.string(), text: z.string() })).optional()
+    }).optional()
 });
 export type RegionPlace = z.infer<typeof RegionPlaceSchema>;
 

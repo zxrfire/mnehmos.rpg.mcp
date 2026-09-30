@@ -12,6 +12,8 @@ import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { getPill, getTechnique, PILLS, TECHNIQUES } from '../data/cultivation/index.js';
 import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
+import { appraiseTheGrave } from './headstone-reading.js';
+import { capabilityActorFor } from '../server/consolidated/cultivation-perception.js';
 import {
     type AdmissionReading,
     SITES,
@@ -562,7 +564,13 @@ export const siteVerbs = {
             confidence: 1
         });
 
-        const facts = factsForSiteFace(cultivator, face, arriving);
+        const visibleFace = face.grave ? { ...face, whatAKnowledgeablePartyReads: '', whatAnIgnorantPartyConcludes: '' } : face;
+        const facts = factsForSiteFace(cultivator, visibleFace, arriving);
+        if (face.grave) {
+            const appraisal = appraiseTheGrave(capabilityActorFor(cultivator, this.atHand ?? undefined), face.grave);
+            facts.lines.push(...appraisal);
+            facts.prose = facts.lines.join('\n\n');
+        }
         const execution = this.freeAction(run, 'site', facts);
         execution.calls = [
             {

@@ -59,3 +59,5 @@ The grant covers the working ground; it does not grant a strait or a city above 
   `web/where-this-cultivator-could-go.ts`, `web/what-you-can-tell-about-the-ground.ts`.
 - [`../../../engine/spatial/README.md`](../../../engine/spatial/README.md) - the pathfinder
   used by place and province journeys through `findGraphPath`, with costs from the roads.
+
+A place may declare a nested `interior` with an inscription, comprehension key and threshold, gate ordinal, and document stock. Seeding resolves its parent into the ordinary location tree and puts its documents in the object store. Truce Spring, Ochre Escarpment and Silica Crypt use this shape; only the spring rock is fixed, while the surrounding shows remain moving and unheld.

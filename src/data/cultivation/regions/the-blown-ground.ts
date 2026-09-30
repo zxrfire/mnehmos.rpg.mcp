@@ -1,7 +1,6 @@
 /**
  * The Burial Sands: a rich vein under loose cover that moves, in the wedge the four
- * arms leave between them, held by nobody because nothing here lasts long enough to
- * be granted.
+ * arms leave between them. Moving shows are unheld; fixed spring rock is the exception.
  */
 
 import { z } from 'zod';
@@ -161,7 +160,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
     derivations: [
         'The unit of possession is a surfacing rather than an area, and a surfacing closes, so nothing here outlives the instrument that would be used to hold it - which is why there is no grant book, no lease, no tenancy and nobody to be polite to',
         'A survey here is possible, cheap and correct, and is worth nothing within the year. This is the only ground in the world that is surveyed constantly and granted not at all, and the trade that thrives is finding rather than surveying',
-        'Nothing is built, because a wall stops the sand for one season and is a dune the next, so every institution that has ever operated here is a camp, and a camp that stops moving is either buried or robbed',
+        'Walls on loose sand become dunes within a season. Truce Spring and its exposed cliff are fixed rock: houses build there, and their control ends at the water. Every institution on the moving shows is a camp.',
         'There is no certified datum, so no oath binds and no boundary can be arbitrated - the same reason the Immovable Mountain Temple maintains no perimeter in the Yellow Plain, arrived at from a different direction and much harder',
         'A find is sold once, immediately, to whoever is nearest, at the finder\'s price, because the buyer cannot go back for it - which inverts the whole salvage trade, where the seller\'s problem is provenance and here the buyer\'s problem is that the site will be gone',
         'People who cannot stand at a gate anywhere else can stand here, so the population is entirely arrivals with a reason, and everybody knows that about everybody'
@@ -334,7 +333,8 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         },
         {
             name: PLACE.SAND_WELL,
-            kind: 'site', ambient: 'thin', note: 'Water under the sand, dug for and shared because there is no second one within four days. The only fixed point in the whole wedge and the only thing here nobody has ever fought over.',
+            kind: 'village', ambient: 'thin', heldByFactionId: 'sect-lunargent',
+            note: 'A fixed spring at the foot of exposed rock. Lunargent Sect keeps its water; Amaranth Sect keeps the granaries beside it. The sand sings in the wind outside the rock.',
             connections: [
                 {
                     kind: 'path',
@@ -352,6 +352,18 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 }
             ]
         },
+        { name: PLACE.PAINTED_ESCARPMENT, kind: 'site', ambient: 'normal',
+            note: 'Meditation caves cut into the fixed cliff above Truce Spring. Painted donors cover older, scraped portraits.',
+            interior: { parentPlaceName: PLACE.SAND_WELL, comprehensionOrdinal: 21, comprehensionKey: 'western-road-script',
+                inscription: 'The donors paid for water and meditation cells. Older portraits were scraped away; the western-road authority named on the oldest paint no longer exists.' },
+            connections: [{ kind: 'path', otherPlaceName: PLACE.SAND_WELL, description: 'A stair cut into the spring rock.', travelDays: 0.1 }] },
+        { name: PLACE.SPRING_ARCHIVE, kind: 'site', ambient: 'normal',
+            note: 'An archive cave above the spring with a warded door. The lintel is inscribed in the old western-road script.',
+            interior: { parentPlaceName: PLACE.PAINTED_ESCARPMENT, gateOrdinal: 17,
+                comprehensionOrdinal: 21, comprehensionKey: 'western-road-script',
+                inscription: 'The lintel names an archive of the former western-road authority. The door was closed when that road was cut.',
+                contents: [{ name: 'Velum Charter', text: 'This copy names the predecessors of Lunargent Sect as keepers of Truce Spring and its rock. It grants no moving dune. The issuing western-road authority is extinct; this copy alone cannot establish an unbroken succession.' }] },
+            connections: [{ kind: 'path', otherPlaceName: PLACE.PAINTED_ESCARPMENT, description: 'A passage along the painted cliff.', travelDays: 0.1 }] },
         { name: PLACE.STUBBORN_PIT, kind: 'site', ambient: 'spirit_tide', note: 'A show that has been open nineteen years, which is longer than a grant runs, and is consequently the only ground here anybody has killed over more than once.' },
         { name: PLACE.THE_SHORT_ROAD, kind: 'site', ambient: 'thin', note: 'The direct line, named for the saving it promises against the gorge road. It saves eight days when it works and nobody has published how often it works.' },
         { name: PLACE.TUOS_WALL, kind: 'site', ambient: 'thin', note: 'Where a house tried to stand still. About two hundred paces of it are above the sand and the rest is not, and nobody now living can name what it was called.' },
@@ -508,7 +520,7 @@ function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
         // `whatItMakesTrue` gives.
         politics: 'no_authority',
         politicsNote: ground.whyItCannotBeHeld,
-        factionIds: [],
+        factionIds: ['sect-lunargent', 'sect-amaranth'],
         branches: ground.whoIsOnIt
             .filter((p): p is typeof p & { factionId: string } => p.factionId !== null)
             .map(p => ({

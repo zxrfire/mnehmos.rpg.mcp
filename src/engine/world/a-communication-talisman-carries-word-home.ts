@@ -58,6 +58,9 @@
  */
 
 import { THE_COMMUNICATION_TALISMAN } from '../../data/cultivation/communication-talismans.js';
+import { longRangeSlipHeld, twinOfLongSlip } from './a-long-range-communication-slip.js';
+import { THE_LONG_RANGE_COMMUNICATION_TALISMAN } from '../../data/cultivation/communication-talismans.js';
+import { ruin, isRuined } from './possessions.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeFact, type HistoricalActor, type HistoricalFact } from './history.js';
 import type { LocationRecord } from './locations.js';
@@ -511,11 +514,18 @@ export function takeOffTheStack(
 export function theirSlipsBreak(
     objects: ObjectRecord[],
     personId: string,
-    onlyOfHouse: string | null = null
+    onlyOfHouse: string | null = null,
+    onDay = 0
 ): number {
     let broke = 0;
     for (let i = 0; i < objects.length; i++) {
         const o = objects[i]!;
+        if ((o.tags.includes('long-range-communication') || o.tags.includes('long-range-communication-twin'))
+            && o.data.keyedTo === personId && (onlyOfHouse === null || markOn(o) === onlyOfHouse) && !isRuined(o)) {
+            objects[i] = ruin(o, { onDay, source: 'the keyed identity no longer answers' });
+            broke++;
+            continue;
+        }
         if (!isAStackOfCommunicationTalismans(o) || whatTheSlipsAre(o) === 'blanks') continue;
         if (whoseSlipsTheyAre(o) !== personId) continue;
         if (onlyOfHouse !== null && markOn(o) !== onlyOfHouse) continue;
@@ -537,12 +547,18 @@ export function theirSlipsBreak(
  */
 export function takeAwayWhatAnswersToNobody(
     objects: ObjectRecord[],
-    standing: ReadonlySet<string>
+    standing: ReadonlySet<string>,
+    onDay = 0
 ): number {
     let gone = 0;
     let write = 0;
     for (let read = 0; read < objects.length; read++) {
-        const o = objects[read]!;
+        let o = objects[read]!;
+        if ((o.tags.includes('long-range-communication') || o.tags.includes('long-range-communication-twin'))
+            && !standing.has(String(o.data.markedBy)) && !isRuined(o)) {
+            o = ruin(o, { onDay, source: 'the marked house has ended', note: 'There is no hall left to receive word.' });
+            gone++;
+        }
         if (isAStackOfCommunicationTalismans(o)) {
             const mark = markOn(o);
             if (mark === null || !standing.has(mark)) {
@@ -571,10 +587,18 @@ export function takeAwayWhatAnswersToNobody(
  */
 export function handBackTheirSlips(
     objects: ObjectRecord[],
-    rollOf: (personId: string) => string | null | undefined
+    rollOf: (personId: string) => string | null | undefined,
+    onDay = 0
 ): number {
     const leaving: { personId: string; houseId: string }[] = [];
     for (const o of objects) {
+        if (o.tags.includes('long-range-communication') && !isRuined(o)) {
+            const whose = typeof o.data.keyedTo === 'string' ? o.data.keyedTo : null;
+            const mark = markOn(o);
+            if (whose && mark && rollOf(whose) !== undefined && rollOf(whose) !== mark)
+                leaving.push({ personId: whose, houseId: mark });
+            continue;
+        }
         if (!isAStackOfCommunicationTalismans(o) || whatTheSlipsAre(o) !== 'keyed' || quantityOf(o) === 0) continue;
         const mark = markOn(o);
         const whose = whoseSlipsTheyAre(o);
@@ -583,7 +607,7 @@ export function handBackTheirSlips(
         if (onRoll !== undefined && onRoll !== mark) leaving.push({ personId: whose, houseId: mark });
     }
     let broke = 0;
-    for (const one of leaving) broke += theirSlipsBreak(objects, one.personId, one.houseId);
+    for (const one of leaving) broke += theirSlipsBreak(objects, one.personId, one.houseId, onDay);
     return broke;
 }
 
@@ -875,6 +899,21 @@ export function burnACommunicationTalisman(state: WorldState, input: SendingWord
         : howManyTheyCarry(state.objects, input.senderId, input.houseId);
     const reach = whetherWordReachesTheHouse(state, input);
     if (reach.house === null) return { sent: false, why: 'no_house', walkingDays: null, carrying };
+    const longSlip = longRangeSlipHeld(state.objects, input.senderId, input.houseId);
+    if (longSlip && (carrying === 0 || !reach.reaches) && reach.walkingDays !== null
+        && reach.walkingDays <= THE_LONG_RANGE_COMMUNICATION_TALISMAN.reachWalkingDays) {
+        const twin = twinOfLongSlip(state.objects, longSlip, reach.house.seatLocationId!);
+        if (!twin) return { sent: false, why: 'no_twin', walkingDays: reach.walkingDays, carrying };
+        const fact = theWordArrives(state, { ...input, walkingDays: reach.walkingDays });
+        if (fact === null) return { sent: false, why: 'no_house', walkingDays: reach.walkingDays, carrying };
+        state.objects[state.objects.findIndex(row => row.id === longSlip.id)] = ruin(longSlip, {
+            onDay: input.onDay, source: 'burnt to send word home', factId: fact.id
+        });
+        state.objects[state.objects.findIndex(row => row.id === twin.id)] = ruin(twin, {
+            onDay: input.onDay, source: 'received word from its paired slip', factId: fact.id
+        });
+        return { sent: true, fact, left: carrying, walkingDays: reach.walkingDays };
+    }
     if (carrying === 0) return { sent: false, why: 'no_slip', walkingDays: reach.walkingDays, carrying };
     const twins = input.stacks
         ? input.stacks.twinsKept(input.houseId, input.senderId)

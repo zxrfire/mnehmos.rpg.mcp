@@ -1,65 +1,4 @@
-/**
- * What the outside of a grave tells anybody who stops and reads it.
- *
- * ── THE OWNER'S QUESTIONS, IN THE OWNER'S ORDER ──────────────────────────
- *
- *   "A TOMB? WHAT CULTIVATION LEVEL IS THE EXPERT? IS THERE A TRIAL!!!? GO GO
- *    GO!!!"
- *
- * The second one is the load-bearing one, and the engine already holds the
- * answer: `Grave.occupantOrdinal` is on the pre-entry face, ungated, because
- * the rank is cut into the lintel. What the engine did with it was print
- *
- *   "The manner of death is legible off the marker: old age, 160 years ago, at
- *    ordinal 44. interred by a sect."
- *
- * **at ordinal 44.** The single most useful fact about a tomb, rendered as a
- * database column, three lines under authored prose that says it properly - *"a
- * course of inscription along the lintel giving a name, a rank at the end of
- * Tribulation Transcendence, a date"*. Every other surface in this package puts
- * a rung through `rankName` or `theRung`; this one did not.
- *
- * ── AND THE RULE THAT WAS WRITTEN AND NEVER READ ─────────────────────────
- *
- * `WHAT_THE_LIGHTNING_TOOK` and `GRAVE_CONTENTS_BANDS` had **zero readers
- * outside the file that declares them**. They carry the setting's sharpest
- * ruling about tombs and it runs opposite to intuition: heavenly tribulation
- * destroys nearly everything the cultivator was carrying, so a tribulation
- * grave is a short list and every item on it survived the heaviest thing in the
- * world, while anybody who died in bed at four hundred leaves a full inventory
- * that nothing has ever tested.
- *
- * The bands are data so tests can assert against the same table the entries
- * were authored from - and nothing in the played game had ever asked.
- *
- * ── WHAT IS FREE, AND WHAT IS A TRADE ────────────────────────────────────
- *
- * `docs/world/places/ruins.md` rules that **reading a site is a skill and is
- * not a realm** - it runs through `assessCapability`'s `understand` predicate,
- * where comprehension keys are absolute, so a scholar places a site a cultivator
- * four realms above them cannot. So the split here is deliberate and the line is
- * where the catalog already puts it:
- *
- *   FREE      what is cut into the marker. The rank, the date, how they died,
- *             what happened to the remains. `inheritance-trials.ts` says the
- *             manner of death is *"the single most useful thing a knowledgeable
- *             party reads off a headstone and the thing an ignorant one walks
- *             straight past"* - so it is on the stone, and what a tribulation
- *             does to what somebody was carrying is the most famous fact in this
- *             world rather than an esoteric one.
- *   A TRADE   the appraisal. That the rich crypt is the weaker one, that a
- *             proven object sells for a multiple, what a house like that valued
- *             and where it would have put it. That is the grave-reader's whole
- *             profession and **it is not wired** - see the note at the foot of
- *             this file.
- *
- * Nothing here reaches the interior. It reads two enum values and an integer off
- * the pre-entry face and says what they imply in general; it never touches the
- * contents list, which is what `outsideViewOf`'s missing `interior` key exists
- * to make impossible.
- *
- * PURE. Marker facts in, lines out. No I/O, no RNG, no mutation.
- */
+/** Marker facts remain readable. Learned grave appraisal uses the understand predicate. */
 
 import {
     GRAVE_CONTENTS_BANDS, WHAT_THE_LIGHTNING_TOOK,
@@ -68,7 +7,21 @@ import {
     type Burial,
     type MannerOfDeath
 } from '../data/cultivation/inheritance-trials.js';
-import { rankName } from '../engine/cultivation/realms.js';
+import { rankName, MAX_ORDINAL } from '../engine/cultivation/realms.js';
+import { assessCapability, makeRequirements, makeSubject, type CapabilityActor } from '../engine/world/capability.js';
+
+/** Grave appraisal is a learned trade; the marker itself remains readable. */
+export function appraiseTheGrave(actor: CapabilityActor, facts: HeadstoneFacts): string[] {
+    const read = assessCapability(actor, makeSubject({
+        kind: 'inscription', id: 'grave-appraisal', name: 'grave appraisal',
+        requirements: makeRequirements({ understand: MAX_ORDINAL }),
+        comprehensionKeys: ['grave-reading']
+    })).understand;
+    if (!read.holds) return ['Appraising this grave requires grave-reading knowledge or a grave reader. The rank and date remain legible.'];
+    return tribulationTouched(facts.mannerOfDeath)
+        ? ['A tribulation grave normally holds few objects. Surviving objects are proven against tribulation; a long inventory is evidence of later additions.']
+        : ['An intact crypt can hold more objects than a tribulation grave. Their number does not establish their strength; none were proven by the occupant\'s death.'];
+}
 
 /** Exactly what the pre-entry face already carries for a grave. */
 export interface HeadstoneFacts {
@@ -152,25 +105,3 @@ export function headstoneStructure(facts: HeadstoneFacts): string {
         + `GRAVE_CONTENTS_BANDS.${profile}: ${band.minItems}-${band.maxItems} item(s), `
         + `allProven=${band.allProven}.`;
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// WHAT IS NOT HERE, AND IT IS THE HALF WITH THE MONEY IN IT
-//
-// The APPRAISAL. `WHAT_THE_LIGHTNING_TOOK` carries three more rulings that
-// nothing reads: that the rich crypt is usually the weaker one, that a proven
-// object sells for a multiple that looks insane on an inventory count, and that
-// a tribulation grave with a long inventory has been salted. Those are the
-// grave-reader's trade rather than what is on the stone, and `ruins.md` rules
-// that such a read runs through `assessCapability`'s `understand` predicate on
-// absolute comprehension keys - so a scholar places a site a cultivator four
-// realms above them cannot.
-//
-// That predicate is not consulted anywhere on this surface, so today every
-// reader gets exactly the same reading. Wiring it needs the comprehension key
-// for grave-reading to exist and `assessCapability` to be reachable from the
-// site verbs, and both are somebody's decision rather than a gap to fill in
-// passing. The rule `ruins.md` sets for when it IS wired: a failed read is
-// informative and never blank - it returns the NAME OF WHAT IS MISSING, so
-// somebody who cannot appraise it is told that an appraisal exists and that
-// they would need the reading or a person who has it.
-// ─────────────────────────────────────────────────────────────────────────

@@ -1,92 +1,4 @@
-/**
- * A build the player left on the stocks, and what it takes to finish it.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHY THIS EXISTS
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.ts` is
- * complete and live, and until this module the only thing that ever called it
- * was `the-world-changing-on-its-own.ts` - so houses laid keels, ran out of
- * cores, worked at a bill for years and launched, and a player could not
- * attempt any of it. That is AGENTS.md's commonest defect with the halves the
- * usual way round: the world binds NPCs and not the player.
- *
- * Nothing about building is decided here. The bill, what satisfies a line, how
- * far the work may run ahead of the materials, the odds and what a launch mints
- * are all the engine module's, and this file is the player's side of the same
- * four functions the world side calls: read what they hold into `MaterialLot`s,
- * reconstruct the slip off the cell that holds it, hand both over, write the
- * answer down.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE SLIP LIVES IN `cultivator_flags`
- * ═════════════════════════════════════════════════════════════════════════
- *
- * A build is stateful across turns - you lay a keel, find you are four hides
- * short, go and hunt, come back - so it needs somewhere to sit between turns.
- * `cultivator_flags` is the generic sparse per-cultivator store, it needs no
- * migration while several agents are in `migrations.cultivation.ts` at once,
- * and `standing.ts` already keeps a JSON document per house in it. This keeps
- * one document, because a yard split across three slips finishes none of them -
- * the same reason the engine module makes work unable to outrun the materials.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHAT A PLAYER CAN ACTUALLY PUT INTO A HULL, AND WHAT THEY CANNOT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Only COUNTED material, which is mortal and earth grade -
- * `howAMaterialIsStored` is the authority and this file does not decide it a
- * second time. A player's heaven-grade material is a tracked `ObjectRecord`
- * with a provenance chain, minted by `hunt` and pushed into the world state,
- * and there is no path anywhere in this engine for retiring such an object into
- * something else. Deleting the pouch row and leaving the object standing in the
- * ledger would be a build that reports having consumed a thing the world still
- * says you are holding, which is the class of defect this repository spent a
- * day finding four of.
- *
- * So the core line is refused with its reason said out loud rather than
- * silently met. See {@link WHY_A_CORE_IS_NOT_YET_SPENDABLE}.
- *
- * ── AND THE ENGINE AND THE WORLD DISAGREE ABOUT THIS, WHICH IS A FINDING ──
- *
- * A house holds its beast material as a bare count keyed by grade and
- * core-ness - `yardKey` in `the-world-changing-on-its-own.ts` - so a heaven
- * grade core in a faction's yard has no id, no history and nobody to ask about
- * it. `howAMaterialIsStored` says the same physical thing in a player's pouch
- * is a tracked row with a chain. Both cannot be right, and until somebody
- * rules, a player cannot spend a core a house spends by decrementing a cell.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHO MAY LAY A KEEL
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `canRefineGrade`, which is the same gate that decides who refines a grade of
- * medicine, asked through `requiredOrdinalForRecipe`. Mortal grade opens at Qi
- * Condensation, so a nobody CAN build a drawn carriage, and that is the
- * catalog's answer rather than one chosen here. Anything above it is refused
- * with the rung named and a bill the player could work instead - a refusal
- * names a route.
- *
- * The player is one pair of hands. `workOn` takes `hands` because a yard has
- * several; a person has one, and the days do not divide.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE SENTENCE THAT REACHES IT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `craft` is a member of `ACTION_NAMES` and `craft-verbs.ts` is the caller.
- * The section this replaces said the wiring had been written in a detached
- * worktree and never landed, and told the next reader to `grep -rn
- * "planTheBuild" src/` before believing it. That grep found a test and a doc
- * comment for as long as the paragraph stood.
- *
- * What it costs to keep true: the pattern-table branch sits immediately ahead
- * of the two alchemy rules, because the second of those fires on
- * `make|craft|cook|brew` beside an alchemical noun and would otherwise ask
- * `resolveRecipe` for a pill called "a carriage". `tests/web/building-a-carriage.test.ts`
- * pins that ordering from the player's end.
- */
+/** A conveyance build persists across turns. Tracked materials are retired through ruin when delivered. */
 
 import type Database from 'better-sqlite3';
 
@@ -114,7 +26,8 @@ import {
     type ConveyanceRecipe,
     type MaterialLot
 } from '../engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.js';
-import type { ObjectRecord } from '../engine/world/possessions.js';
+import { ruin, type ObjectRecord } from '../engine/world/possessions.js';
+import { theRowsThatGoWithAStack } from './stack-and-its-row.js';
 import { howAMaterialIsStored } from '../engine/world/hunting-a-spirit-beast.js';
 import { getBeastMaterial } from '../data/cultivation/beasts.js';
 import {
@@ -124,7 +37,7 @@ import {
 } from '../data/cultivation/what-a-house-moves-its-people-on.js';
 import {
     clearFlag,
-    listPouch,
+    everythingInThePouch,
     readJsonFlag,
     removeFromPouch,
     writeFlag
@@ -151,18 +64,6 @@ export interface OnTheStocks extends Berth {
  * intention. Same rule as `train`'s.
  */
 export const DAYS_AT_THE_BENCH = 30;
-
-/**
- * Why a core cannot be delivered yet, in the words the player gets.
- *
- * Exported so the test that pins this decision can quote it rather than
- * re-describe it, and so the sentence exists in exactly one place.
- */
-export const WHY_A_CORE_IS_NOT_YET_SPENDABLE =
-    'Every core in the world is heaven grade, and a heaven-grade thing in your hands is one '
-    + 'specific object with a record of where it came from and who has held it. There is no way '
-    + 'yet to put such a thing into a hull and have the record say so, and putting it in without '
-    + 'the record saying so would leave you holding something you had already spent.';
 
 export function readTheStocks(
     db: Database.Database,
@@ -199,57 +100,29 @@ export function clearTheStocks(db: Database.Database, cultivatorId: string): voi
 /**
  * The pouch as material lots.
  *
- * Counted material only, and the filter is `howAMaterialIsStored` rather than a
- * grade written here. `hunt` puts a pouch row beside the object row for a
- * tracked material, so the row exists for everything - what decides whether it
- * may be spent is which tier the thing is in.
+ * Tracked materials need their individual held rows as well as their pouch count.
  */
 export function lotsInThePouch(
     db: Database.Database,
-    cultivatorId: string
+    cultivatorId: string,
+    objects: readonly ObjectRecord[] = []
 ): MaterialLot[] {
     const lots: MaterialLot[] = [];
-    for (const entry of listPouch(db, cultivatorId)) {
+    for (const entry of everythingInThePouch(db, cultivatorId)) {
         const material = getBeastMaterial(entry.itemId);
         if (!material) continue;
-        if (howAMaterialIsStored(material) !== 'counted') continue;
+        const count = howAMaterialIsStored(material) === 'counted'
+            ? entry.quantity
+            : theRowsThatGoWithAStack(objects, cultivatorId, material.id, entry.quantity).length;
         lots.push({
             id: material.id,
             grade: material.grade,
             core: material.core,
-            count: Math.max(0, Math.floor(entry.quantity))
+            count: Math.max(0, Math.floor(count))
         });
     }
     return lots;
 }
-
-/** Tracked material being carried, which the bill can see and cannot take. */
-export function trackedMaterialHeld(
-    db: Database.Database,
-    cultivatorId: string
-): { id: string; name: string; core: boolean; count: number }[] {
-    const held: { id: string; name: string; core: boolean; count: number }[] = [];
-    for (const entry of listPouch(db, cultivatorId)) {
-        const material = getBeastMaterial(entry.itemId);
-        if (!material) continue;
-        if (howAMaterialIsStored(material) === 'counted') continue;
-        held.push({
-            id: material.id,
-            name: material.name,
-            core: material.core,
-            count: Math.max(0, Math.floor(entry.quantity))
-        });
-    }
-    return held;
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// WHICH BILL THEY MEANT
-//
-// A closed list of words against a closed list of recipes, which is the same
-// kind of lookup `priceRowForSomethingToRide` and `resolvePill` already are. It
-// reads no prose and decides nothing but which row was meant.
-// ─────────────────────────────────────────────────────────────────────────
 
 const WHAT_PEOPLE_CALL_A_BUILD: Readonly<Record<string, string>> = Object.freeze({
     boat: 'build-spirit-boat',
@@ -367,7 +240,7 @@ function billLines(
             + '.'
         );
         if (short.some(s => s.line.mustBeCore)) {
-            lines.push(WHY_A_CORE_IS_NOT_YET_SPENDABLE);
+            lines.push("A core must be carried as an individual object with its provenance, as well as counted in the pouch.");
         }
     }
     return lines;
@@ -460,6 +333,7 @@ export interface PlanInput {
     today: number;
     /** A span the player named, if they named one. */
     days?: number;
+    objects?: readonly ObjectRecord[];
 }
 
 /**
@@ -472,7 +346,7 @@ export interface PlanInput {
 export function planTheBuild(input: PlanInput): BuildPlan {
     const { db, cultivator, today } = input;
     const said = (input.said ?? '').trim();
-    const lots = lotsInThePouch(db, cultivator.id);
+    const lots = lotsInThePouch(db, cultivator.id, input.objects);
     const stocks = readTheStocks(db, cultivator.id);
 
     // ── WALKING AWAY FROM IT ─────────────────────────────────────────────
@@ -605,7 +479,6 @@ export function planTheBuild(input: PlanInput): BuildPlan {
     // charging days for standing next to it would be the softening AGENTS.md
     // forbids with the sign reversed.
     if (room === 0 && !readyToLaunch(berth, recipe)) {
-        const held = trackedMaterialHeld(db, cultivator.id).filter(m => m.core);
         // Any delivery this turn is REAL and is recorded here for the same
         // reason the abandon branch clears here: the two must not come apart.
         // In practice nothing arrives on this path - every bill in the catalog
@@ -624,13 +497,6 @@ export function planTheBuild(input: PlanInput): BuildPlan {
                 ...lines,
                 'The hands have gone as far as the materials reach. Short of '
                 + short.map(s => `${s.short} of ${s.line.wants}`).join('; ') + '.',
-                ...(short.some(s => s.line.mustBeCore)
-                    ? [WHY_A_CORE_IS_NOT_YET_SPENDABLE
-                        + (held.length > 0
-                            ? ` You are carrying ${held.map(m => m.name).join(', ')}, and `
-                              + 'that is exactly the difficulty.'
-                            : '')]
-                    : []),
                 'Go and get the rest. The slip keeps.'
             ],
             structure: [
@@ -697,6 +563,7 @@ export interface LandInput {
     today: number;
     /** Where it is moored if it turns out to be a tracked thing. */
     mooredAt: string;
+    objects?: ObjectRecord[];
 }
 
 /**
@@ -726,17 +593,20 @@ export function landTheBuild(input: LandInput): BuildOutcome {
     // Before anything else, because a slip that records a delivery the pouch
     // still holds is the exact fabrication this whole module exists to avoid.
     for (const [id, n] of Object.entries(plan.toConsume ?? {})) {
+        const material = getBeastMaterial(id);
+        const tracked = material && howAMaterialIsStored(material) !== 'counted';
+        const rows = theRowsThatGoWithAStack(input.objects ?? [], cultivator.id, id, n);
+        if (tracked && rows.length !== n) throw new Error('The tracked material is no longer held.');
         const ok = removeFromPouch(db, cultivator.id, id, n);
+        if (!ok) throw new Error('The material is no longer in the pouch.');
+        for (const at of rows) input.objects![at] = ruin(input.objects![at]!, {
+            onDay: today, source: `worked into ${recipe.name}`
+        });
         calls.push({
             name: 'storage.removeFromPouch',
             summary: `${id} x${n} out of ${cultivator.id}'s pouch and onto ${recipe.id}`
-                + (ok ? '.' : ' REFUSED - the pouch was short.')
+                + '.'
         });
-        if (!ok) {
-            structure.push(
-                `${id} x${n} could not be taken; the delivery was not recorded either.`
-            );
-        }
     }
 
     let berth: Berth = plan.berth!;

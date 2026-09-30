@@ -22,7 +22,6 @@ import type Database from 'better-sqlite3';
 import { makeGame } from './harness';
 import {
     DAYS_AT_THE_BENCH,
-    WHY_A_CORE_IS_NOT_YET_SPENDABLE,
     landTheBuild,
     lotsInThePouch,
     planTheBuild,
@@ -250,14 +249,8 @@ describe('beginning something, and coming back to it', () => {
 });
 
 describe('what a player may put into a hull', () => {
-    /**
-     * The line this module refuses to cross, pinned so it cannot be crossed
-     * quietly. A core is a tracked object with a chain; nothing in this engine
-     * retires such a thing into something else, and spending the pouch row
-     * while the object stands in the ledger would be a report of an act that
-     * did not happen.
-     */
-    it('does not deliver a tracked material, and says why', async () => {
+    // A bare pouch count is not an individually held core. Played retirement is covered in documented-ground-in-play.
+    it('does not spend a pouch count without the tracked core it represents', async () => {
         // Earth-grade plate and sinew, and three cores. The iron-rimmed carriage's bill
         // is 16 + 8 at earth grade and one core, so the earth half is met and
         // the core is the only thing left.
@@ -265,7 +258,7 @@ describe('what a player may put into a hull', () => {
             'mat-tiger-fang': 16, 'mat-ox-horn': 8, 'mat-tiger-core': 3
         });
         const lots = lotsInThePouch(db, fresh().id);
-        expect(lots.some(l => l.id === 'mat-tiger-core')).toBe(false);
+        expect(lots.find(l => l.id === 'mat-tiger-core')?.count ?? 0).toBe(0);
         expect(lots.some(l => l.id === 'mat-tiger-fang')).toBe(true);
 
         // Lift them to Core Formation so the earth bill is theirs to work, and
@@ -283,7 +276,7 @@ describe('what a player may put into a hull', () => {
 
         const stalled = planTheBuild({ db, cultivator: fresh(), said: '', today: 200 });
         expect(stalled.kind).toBe('refused');
-        expect(stalled.lines.join(' ')).toContain(WHY_A_CORE_IS_NOT_YET_SPENDABLE);
+        expect(stalled.lines.join(' ')).toContain('core');
         expect(pouchQuantity(db, fresh().id, 'mat-tiger-core')).toBe(3);
     }, 60_000);
 });

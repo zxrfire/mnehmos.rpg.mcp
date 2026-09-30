@@ -9,7 +9,7 @@ import { CUT_IN_A_SITTING } from '../data/cultivation/communication-talismans.js
 
 /** The ways a player names the slip. The engine's word, and the genre's others. */
 const THE_SLIP =
-    '(?:(?:sound\\s+)?(?:communication|transmission|message|messaging|voice)\\s+(?:talismans?|slips?|charms?))';
+    '(?:(?:heaven(?:-grade|\\s+grade)?\\s+)?(?:sound\\s+)?(?:communication|transmission|message|messaging|voice)\\s+(?:talismans?|slips?|charms?))';
 
 const BURNING = '(?:burn|burns|burning|burnt|burned|use|uses|using|crush|crushes|crushing|light|lights|lighting|activate|activates|tear|tears|break|breaks|breaking|broke|snap|snaps|snapping)';
 
@@ -150,4 +150,3 @@ export function whatIsBeingCut(said: string): { count: number; forTheHouse: bool
     const forTheHouse = /\bfor\s+(?:the|my|our)\s+(?:sect|house|hall|clan|family|stores?|treasury|elders?)\b/.test(text);
     return { count, forTheHouse };
 }
-

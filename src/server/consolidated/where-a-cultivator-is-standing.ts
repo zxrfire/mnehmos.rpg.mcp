@@ -6,6 +6,8 @@ import { HOME_REGION_ID, REGIONS, requireRegion } from '../../data/cultivation/r
 import type { Settlement } from '../../data/cultivation/mortal-world.js';
 import type { Cultivator } from '../../schema/cultivation.js';
 import { getSect } from '../../data/cultivation/sects.js';
+import type { WorldState } from '../../engine/world/world-state.js';
+import { theProvinceAround } from '../../engine/world/ground-holder.js';
 
 export interface Standing {
     regionId: string;
@@ -18,7 +20,7 @@ export interface Standing {
 /**
  * Match a free-text location against the gazetteer.
  */
-export function standingOf(cultivator: Cultivator): Standing {
+export function standingOf(cultivator: Cultivator, world: WorldState | null = null): Standing {
     const needle = (cultivator.location ?? '').trim().toLowerCase();
     for (const region of REGIONS) {
         for (const place of region.places) {
@@ -34,6 +36,16 @@ export function standingOf(cultivator: Cultivator): Standing {
             };
         }
     }
+    const here = world?.locations.find(place => place.name.toLowerCase() === needle);
+    const provinceId = here && theProvinceAround(world!.locations, here.id);
+    const province = provinceId && world?.locations.find(place => place.id === provinceId);
+    const catalog = province && REGIONS.find(region => region.id === province.data.catalogRegionId);
+    if (here && catalog) return {
+        regionId: catalog.id, regionName: catalog.name,
+        settlementKind: here.tags.includes('gate_town') ? 'sect_town' : null,
+        placeName: here.kind === 'sect_seat' ? null : here.name
+    };
+
     // STANDING ON A PROVINCE ITSELF, which is an ordinary thing to do: the world
     // holds a row for each one and "I travel to The Buddha Precipice" lands the player
     // on it. Without this the loop above found no place, fell through to the home
@@ -61,14 +73,14 @@ export function standingOf(cultivator: Cultivator): Standing {
     // and the same road back seventeen, from the wrong province.
     const housesProvince = REGIONS.find(region => region.factionIds.some(id => {
         const house = getSect(id)?.name.toLowerCase();
-        return house !== undefined && (needle === house || needle === `${house} grounds`);
+        return house !== undefined && (needle === house || needle === `${house} grounds` || needle === `${house} town`);
     }));
     if (housesProvince) {
         return {
             regionId: housesProvince.id,
             regionName: housesProvince.name,
-            settlementKind: null,
-            placeName: null
+            settlementKind: needle.endsWith(' town') ? 'sect_town' : null,
+            placeName: needle.endsWith(' town') ? cultivator.location : null
         };
     }
 

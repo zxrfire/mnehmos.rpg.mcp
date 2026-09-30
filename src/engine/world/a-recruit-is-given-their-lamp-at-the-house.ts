@@ -255,7 +255,8 @@ export function whereThisHouseBurnsItsLamps(
  */
 export function handBackWhatTheyNoLongerBelongTo(
     objects: ObjectRecord[],
-    rollOf: (personId: string) => string | null | undefined
+    rollOf: (personId: string) => string | null | undefined,
+    onDay = 0
 ): number {
     let handed = 0;
     for (let i = 0; i < objects.length; i++) {
@@ -270,7 +271,7 @@ export function handBackWhatTheyNoLongerBelongTo(
         objects[i] = { ...object, possessorId: null };
         handed++;
     }
-    return handed + (handBackTheirSlips(objects, rollOf) > 0 ? 1 : 0);
+    return handed + (handBackTheirSlips(objects, rollOf, onDay) > 0 ? 1 : 0);
 }
 
 /**
@@ -389,7 +390,7 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
     // Leaving means handing it back. See `handBackWhatTheyNoLongerBelongTo`.
     const onRollOf = new Map<string, string | null>();
     for (const npc of state.npcs) if (npc.status === 'alive') onRollOf.set(npc.id, npc.factionId);
-    handBackWhatTheyNoLongerBelongTo(state.objects, id => onRollOf.get(id));
+    handBackWhatTheyNoLongerBelongTo(state.objects, id => onRollOf.get(id), state.currentDay);
 
     // Who is wearing whose robes, gathered once after the hand-back.
     const robed = new Set<string>();

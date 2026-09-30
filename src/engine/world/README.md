@@ -3757,3 +3757,9 @@ points. Do not quote -2.16 as a constant.
   world rather than only reading it: what a house asks of somebody, and what a match changes.
 
 Ruin scale reads `WHAT_SCALE_DECIDES`: it multiplies the parties needed to hold ground, excludes chambers and single buildings from house claims, and lets public discoveries enter regional news. Generated ruins retain their scale on the location row. Protector appointments are derived from living candidates and elder agreement, never catalog beast pairing; the house holdings read exposes office occupancy without naming unknown occupants.
+
+Gate towns are ordinary settlements tagged `gate_town`, joined to a house gate and its approach. Their three additional residents count toward the world population target; existing settlements keep their original population pool. Ordinary births and town events include them. Seeded rogues settle residences through `theyTakeGroundAndMakeItTheirs`. Heaven communication slips and their hall twins are individual objects; the ordinary yearly word pass burns them when ordinary slips cannot reach, and token/lamp cleanup retires them.
+
+Material hunts returning cores mint individual catalog material objects at the house yard. Yard construction retires those rows with provenance; bulk materials remain resource counts. A core count without an object cannot fund construction.
+
+A seeded rogue with reachable unheld ground has a residence there. A rogue drawn in town can be away from that residence; owning a home does not remove them from the town's cast.

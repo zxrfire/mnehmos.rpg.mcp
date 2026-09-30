@@ -59,7 +59,7 @@ import {
 } from './what-a-house-opens-its-treasury-for.js';
 import { takeFromTheHouse } from './a-house-holds-its-own.js';
 import { HALLS_DOWN } from './what-a-year-of-war-does-to-a-compound.js';
-import { transferPossession, type ObjectRecord } from './possessions.js';
+import { transferPossession, makeObject, ruin, isRuined, howAGradeIsStored, type ObjectRecord } from './possessions.js';
 import { theArtLeftInThisGround } from './a-legacy-has-a-name-on-it-and-a-treasury-has-stock.js';
 import { recordCrossing } from './recording-what-a-crossing-did.js';
 import { aCrossingEntersTheWorld } from './a-crossing-enters-the-world-as-news.js';
@@ -356,7 +356,7 @@ import {
     type MaterialLot
 } from './building-a-conveyance-out-of-what-a-hunt-brings-back.js';
 import { canRefineGrade } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
-import { BEAST_CORE_ORDINAL } from '../../data/cultivation/beasts.js';
+import { BEAST_CORE_ORDINAL, BEAST_MATERIALS } from '../../data/cultivation/beasts.js';
 import { getTechnique, gradeForOrdinal } from '../../data/cultivation/techniques.js';
 import { STOCK_GRADES } from './what-a-place-still-has-in-the-ground.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
@@ -3487,7 +3487,7 @@ function settleSending(state: WorldState, input: {
 
     // AND ONLY WHAT IS WORTH REPEATING BECOMES NEWS
     if (sending.outcome === 'finished' && reason.id === 'sending-for-materials') {
-        creditWhatCameBack(faction, partyOrdinal(party), party.length);
+        creditWhatCameBack(state, faction, partyOrdinal(party), party.length, sending.returnsOnDay);
     }
 
     // ── AND A PARTY THAT OPENED A HOLE CARRIES OUT WHAT WAS IN IT ────
@@ -4608,25 +4608,38 @@ function berthKey(recipeId: string, what: string): string {
  */
 const WHAT_A_PARTY_BRINGS_BACK = 6;
 
-function creditWhatCameBack(faction: FactionRecord, partyOrdinal: number, hands: number): void {
+function creditWhatCameBack(state: WorldState, faction: FactionRecord, partyOrdinal: number, hands: number, onDay: number): void {
     const grade = gradeForOrdinal(partyOrdinal);
     const bulk = Math.max(1, Math.round(WHAT_A_PARTY_BRINGS_BACK * Math.max(1, hands) / 5));
     const key = yardKey(grade, false);
     faction.resources[key] = (faction.resources[key] ?? 0) + bulk;
     if (partyOrdinal >= BEAST_CORE_ORDINAL) {
-        const cores = yardKey(gradeForOrdinal(partyOrdinal), true);
-        faction.resources[cores] = (faction.resources[cores] ?? 0) + 1;
+        const material = BEAST_MATERIALS.filter(row => row.core && row.harvestOrdinal <= partyOrdinal)
+            .sort((a, b) => b.harvestOrdinal - a.harvestOrdinal)[0];
+        if (material) {
+            const id = `obj-yard-core-${faction.id}-${onDay}-${state.objects.length}`;
+            state.objects.push(transferPossession(makeObject({ id, name: material.name, kind: 'material',
+                ownerId: faction.id, ownerName: faction.name, locationId: faction.seatLocationId,
+                tags: ['yard-stock'], data: { materialId: material.id, core: true, grade: material.grade } }),
+                { onDay, toHolderId: null, toHolderName: 'the house yard', how: 'found', source: 'returned from a material hunt' }));
+        }
     }
 }
 
 /** The yard, in the three fields a bill reads. Nothing else is looked at. */
-function lotsInTheYard(faction: FactionRecord): MaterialLot[] {
+function lotsInTheYard(state: WorldState, faction: FactionRecord): MaterialLot[] {
     const lots: MaterialLot[] = [];
     for (const grade of STOCK_GRADES) {
         for (const core of [false, true]) {
+            if (core && howAGradeIsStored(grade) === 'tracked') continue;
             const count = faction.resources[yardKey(grade, core)] ?? 0;
             if (count > 0) lots.push({ id: yardKey(grade, core), grade, core, count });
         }
+    }
+    for (const object of state.objects) {
+        if (object.ownerId !== faction.id || object.possessorId !== null || object.locationId !== faction.seatLocationId
+            || !object.tags.includes('yard-stock') || !object.data.core || isRuined(object)) continue;
+        lots.push({ id: object.id, grade: object.data.grade as TechniqueGrade, core: true, count: 1 });
     }
     return lots;
 }
@@ -4679,11 +4692,14 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
             workDaysDone: faction.resources[berthKey(recipe.id, 'work')] ?? 0
         };
 
-        berth = deliver(berth, recipe, lotsInTheYard(faction));
-        // What went onto the slip came out of the yard. `deliver` reports it by
-        // lot id and the lot ids ARE the ledger keys, which is why they are
-        // built from `yardKey` rather than named.
+        berth = deliver(berth, recipe, lotsInTheYard(state, faction));
+        // Delivery spends ledger stock by key and tracked cores by object id.
         for (const [key, taken] of Object.entries(berth.spent)) {
+            const at = state.objects.findIndex(object => object.id === key);
+            if (at >= 0) {
+                state.objects[at] = ruin(state.objects[at]!, { onDay: day, source: `worked into ${recipe.name}` });
+                continue;
+            }
             faction.resources[key] = Math.max(0, (faction.resources[key] ?? 0) - taken);
         }
         const worked = workOn(berth, recipe, { days: DAYS_PER_YEAR, hands });

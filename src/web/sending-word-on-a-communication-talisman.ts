@@ -86,6 +86,9 @@ import { BENCH_FOCUS } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
 import { whatIsBeingCut } from './communication-talisman-phrasings.js';
 import { positionIn } from './standing.js';
+import { longRangeSlipHeld, twinOfLongSlip } from '../engine/world/a-long-range-communication-slip.js';
+import { ruin } from '../engine/world/possessions.js';
+import { THE_LONG_RANGE_COMMUNICATION_TALISMAN } from '../data/cultivation/communication-talismans.js';
 import {
     whetherTheyMayCutForTheHouse,
     whyTheHousesSlipsAreNotTheirsToCut
@@ -321,6 +324,10 @@ export const communicationTalismanVerbs = {
         }
 
         const held = theCommunicationTalismansOnYou(this.db, cultivator.id);
+        for (const house of world.factions) {
+            if (longRangeSlipHeld(world.objects, cultivator.id, house.id) && !held.some(row => row.houseId === house.id))
+                held.push({ houseId: house.id, count: 0 });
+        }
         const who = whoTheWordIsFor(world, cultivator, target ?? '', held);
         if ('refusal' in who) return refuse('Word to whom?', who.refusal, `send word: no hall for "${target ?? ''}".`);
         const says = (topic ?? '').trim().slice(0, 240);
@@ -332,7 +339,8 @@ export const communicationTalismanVerbs = {
         const house = world.factions.find(f => f.id === who.houseId);
         const houseName = house?.name ?? 'that house';
         const ofThisMark = held.find(h => h.houseId === who.houseId)?.count ?? 0;
-        if (ofThisMark === 0) {
+        const longSlip = longRangeSlipHeld(world.objects, cultivator.id, who.houseId);
+        if (ofThisMark === 0 && !longSlip) {
             const others = held.map(h => world.factions.find(f => f.id === h.houseId)?.name ?? h.houseId);
             return refuse(
                 'You have no slip for it.',
@@ -344,7 +352,7 @@ export const communicationTalismanVerbs = {
                 `send word: 0 slips marked ${who.houseId}; carrying ${held.map(h => `${h.count} of ${h.houseId}`).join(', ') || 'none'}.`
             );
         }
-        if (howManyTwinsTheHallKeeps(world.objects, who.houseId, cultivator.id) === 0) {
+        if (!longSlip && howManyTwinsTheHallKeeps(world.objects, who.houseId, cultivator.id) === 0) {
             return refuse(
                 'Its twin is gone.',
                 `The hall of ${houseName} keeps no twin of the slips you carry, so a slip you burnt would arrive nowhere. `
@@ -358,21 +366,30 @@ export const communicationTalismanVerbs = {
         if (reach.house === null) {
             return refuse('There is no hall for it to reach.', `${houseName} has no hall standing for word to go to.`, 'send word: house gone or seatless.');
         }
-        if (!reach.reaches) {
+        const useLongSlip = Boolean(longSlip && (ofThisMark === 0 || !reach.reaches));
+        const longTwin = useLongSlip ? twinOfLongSlip(world.objects, longSlip!, reach.house.seatLocationId!) : null;
+        if (useLongSlip && !longTwin) return refuse('Its twin is gone.',
+            `The hall of ${houseName} has no twin of this heaven-grade slip. Nothing burnt.`, 'send word: tracked twin absent.');
+        const reachDays = useLongSlip ? THE_LONG_RANGE_COMMUNICATION_TALISMAN.reachWalkingDays : THE_COMMUNICATION_TALISMAN.reachWalkingDays;
+        const slipReaches = useLongSlip ? reach.walkingDays !== null
+            && reach.walkingDays <= THE_LONG_RANGE_COMMUNICATION_TALISMAN.reachWalkingDays : reach.reaches;
+        if (!slipReaches) {
             return refuse(
                 'It will not carry that far.',
                 reach.walkingDays === null
                     ? `No road the world knows runs from here to ${houseName}, and a communication talisman carries `
-                      + `${THE_COMMUNICATION_TALISMAN.reachWalkingDays} walking days along one.`
+                      + `${reachDays} walking days along one.`
                     : `${houseName} is ${reach.walkingDays} walking days from here, and a communication talisman `
-                      + `carries ${THE_COMMUNICATION_TALISMAN.reachWalkingDays}.`,
+                      + `carries ${reachDays}.`,
                 `send word: ${reach.walkingDays ?? 'no road'} walking days against a reach of `
-                + `${THE_COMMUNICATION_TALISMAN.reachWalkingDays}. Nothing burnt.`
+                + `${reachDays}. Nothing burnt.`
             );
         }
 
-        removeFromPouch(this.db, cultivator.id, pouchIdForCommunicationTalismans(who.houseId), 1);
-        takeOneTwin(world.objects, who.houseId, cultivator.id);
+        if (!useLongSlip) {
+            removeFromPouch(this.db, cultivator.id, pouchIdForCommunicationTalismans(who.houseId), 1);
+            takeOneTwin(world.objects, who.houseId, cultivator.id);
+        }
         const reader = whoReadsTheHall(world, who.houseId);
         const fact = theWordArrives(world, {
             senderId: cultivator.id,
@@ -385,11 +402,19 @@ export const communicationTalismanVerbs = {
             says,
             walkingDays: reach.walkingDays
         });
+        if (useLongSlip) {
+            world.objects[world.objects.findIndex(row => row.id === longSlip!.id)] = ruin(longSlip!, {
+                onDay: world.currentDay, source: 'burnt to send word home', factId: fact?.id
+            });
+            world.objects[world.objects.findIndex(row => row.id === longTwin!.id)] = ruin(longTwin!, {
+                onDay: world.currentDay, source: 'received word from its paired slip', factId: fact?.id
+            });
+        }
         this.theWorldMoved();
 
-        const left = ofThisMark - 1;
+        const left = useLongSlip ? ofThisMark : ofThisMark - 1;
         const lines = [
-            `You burn a communication talisman keyed to you, and the word arrives at its twin in the hall of `
+            `You burn a ${useLongSlip ? 'heaven-grade communication talisman' : 'communication talisman'} keyed to you, and the word arrives at its twin in the hall of `
             + `${houseName}: ${says}`,
             reader === null
                 ? `Nobody of ${houseName} is at its hall to read it.`
