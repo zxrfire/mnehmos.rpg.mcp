@@ -45,6 +45,7 @@
  */
 
 import { DAYS_PER_YEAR, guidanceMultiplier, shareOfAttention } from '../engine/cultivation/cultivation.js';
+import { theirFaceMoves, whatBeingWatchedIsWorth } from '../engine/world/what-a-face-is-worth.js';
 import { isTeachingSomebody } from '../engine/world/an-npc-striking-at-the-next-wall.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { setLocation, type NpcActivity, type NpcRecord } from '../engine/world/npc-state.js';
@@ -1073,6 +1074,10 @@ export const attentionVerbs = {
 
         const lived = spent.timeSkip?.simulatedDays ?? days;
         const membership = this.repos.sects.getMembership(cultivator.id);
+        if (lived > 0) {
+            theirFaceMoves(world, cultivator.id, whatBeingWatchedIsWorth(free.length) * Math.min(1, lived / days), today + lived);
+            this.theWorldMoved();
+        }
         const ofTheHouse = membership ? free.filter(npc => npc.factionId === membership.sectId).length : 0;
         const credit = membership
             ? whatATalkIsWorthToTheHouse(cultivator.realmOrdinal, lived, ofTheHouse, free.length)

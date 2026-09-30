@@ -21,6 +21,15 @@ artifacts in both carried stores, including during a fight, before spending anot
 Medicine prizes transfer singular objects; swallowing a golden pill spends its row
 through the existing realm-boundary resolver. The live register reads current possessions.
 
+`I enter the public competition` records an entrant at the host and reports the
+persisted board when due. Attendance comes from the player's sheet, because the
+world's player projection deliberately stands nowhere. Lessons credit the sheet
+once; reading the board never rerolls or repays it. `I accept Qiu Fen as my
+disciple` resolves the named person in the current area, asks consent, and writes
+the existing mutual bond and lifelong obligations. It does not run house intake.
+Interior knowledge uses the membership's game-day join date against the world
+clock; learning a hidden room never grants permission to enter it.
+
 ADMIN free-text encounter traits are read by `admin-spawn-spec.ts`, through the
 configured narrator's provider and model. Its strict JSON schema accepts requested
 facts only; the spawn handler validates the body, species, house and rung before

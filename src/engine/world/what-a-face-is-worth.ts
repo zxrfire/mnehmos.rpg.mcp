@@ -25,36 +25,23 @@
  *
  * ── WHAT WRITES FACE ──────────────────────────────────────────────────────
  *
- * Challenges and killings move face, as do exposure, disciple breakthroughs,
- * conclaves, public insults and completed or failed work. Each caller supplies
- * the people who saw the event; this module only records the resulting change.
+ * Challenges, killings, exposure, disciple breakthroughs, conclaves, insults,
+ * lectures, promotions, and completed work move face. Each caller supplies the
+ * people who saw the event; this module only records the resulting change.
  *
- * ── THE WRITERS THIS WANTS, NAMED RATHER THAN BUILT ──────────────────────
+ * The audit found zero face among twelve seniors carrying a removal from office
+ * on `afford-a` at a thousand years: only combat wrote it then. Player talks,
+ * yearly lectures, player and NPC promotions, completed maker commissions, and
+ * open competition boards now credit this field. Failed or interrupted
+ * commissions earn nothing.
  *
- * Deliberately not built: a currency is worth more designed once than wired in
- * a hurry at the end of a night. The natural writers, each already an event
- * somebody witnesses, with the machinery that already knows the witnesses:
+ * Each live writer has the witnesses its event already knows: lectures use the
+ * attention pass, promotions use the house's placement change, commissions use
+ * their grade and delivery, and conclaves resolve in public. An acknowledgement
+ * by a senior remains a possible writer when that public event exists.
  *
- *   a lecture that lands        `theWanderersGoAbout` and the attention pass
- *                               already count listeners.
- *   a promotion, and a removal  `assessPromotions` and `whatASentenceDoesToTheirPlace`
- *                               both move somebody in front of their house.
- *   a commission finished       the crafting path knows the grade asked for and
- *                               the grade delivered.
- *   a seat won or lost          the conclave already resolves in public.
- *   an acknowledgement          somebody senior naming somebody junior in front
- *                               of others, which the attention pass could write.
- *
- * Each is one call to {@link theirFaceMoves} scaled by
- * {@link whatBeingWatchedIsWorth}, which is the point: the scale below already
- * takes witnesses and the gap, so a writer only has to say what happened and
- * who saw it.
- *
- * UNTIL THEN, READ THIS FIELD KNOWING WHAT IT HOLDS. Anything weighing face
- * against another quantity is weighing a number that is zero for everybody who
- * has never been in a duel or killed somebody far beneath them. The removal
- * weight in `bringing-what-you-know-about-somebody-to-the-room.ts` reads it and
- * gets nothing from it, which is how this was found.
+ * Every writer calls {@link theirFaceMoves} scaled by
+ * {@link whatBeingWatchedIsWorth}; it says what happened and who saw it.
  *
  * ── THE SCALE ────────────────────────────────────────────────────────────
  *
@@ -81,16 +68,7 @@ import { upsertRelationship, type NpcRecord } from './npc-state.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import type { WorldState } from './world-state.js';
 
-/*
- * WHAT MOVES IT TODAY, AND WHAT SHOULD. A challenge answered, a public win, a
- * public defeat, a refusal, stepping into somebody else's duel and breaking
- * declared terms all move it, through `a-challenge-is-answered-on-the-yard.ts`.
- * The owner's list has two more on it that belong to passes other people own:
- * BEING EXPOSED, which is the knowledge layer working out who did something,
- * and BEING DRIVEN OFF in front of people, which is the killing and rogue path.
- * Both should call `theirFaceMoves` when they land rather than keeping a second
- * number; there is one number and this is it.
- */
+
 
 /** One public win over an equal, in front of a roll's worth of people. */
 export const A_PUBLIC_WIN = 1;

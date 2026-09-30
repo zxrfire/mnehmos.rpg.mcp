@@ -3169,9 +3169,9 @@ export const AZURE_CLOUD_INTAKE = {
     theScouts: {
         howMany: 'Six, standing, plus whoever a Sword Elder is currently borrowing.',
         whoTheyAre: 'Inner Disciples at Foundation Establishment or a little above, chosen for patience and an ordinary face rather than for strength. It is a posting of eight to twelve years and it is not considered a promotion.',
-        theRoute: 'A fixed circuit of markets, festivals, hiring fairs, temple days and mine gates, walked on a schedule that repeats every fourteen months, so the same scout sees the same county at the same time of year and can tell what has changed in it.',
+        theRoute: 'The yearly pass visits the next six open mortal settlements on its circuit, using the actual available hands. The old fourteen-month schedule was lore without a travelling pass; the live circuit advances on the world year.',
         theMethod: 'Watching, mostly. Then a conversation that is not about cultivation, then a small thing to carry, or lift, or listen for, that measures something without the subject knowing they were measured. A scout who has found somebody makes an offer with a date on it and does not explain what it is for.',
-        theQuota: 'Two put forward a year, and a scout who puts forward nobody for three years is rotated out without prejudice. The quota is why a scout who has found nothing by autumn starts taking chances, and why the worst candidates in any given intake arrive in the last two months of the year.',
+        theQuota: 'At most two put forward per available scout in a year. The quota is a ceiling, not a guarantee that somebody is found. The pass never manufactures a successful candidate to fill it.',
         theCover: 'They travel as buyers of ordinary things - hides, dye, seed stock, salvage - and the cover is real, because a buyer who never buys is remembered. Several of them are locally believed to be poor merchants with an odd habit of asking after other people\'s children.',
         whatItIsLikeToMeetOne:
             'A player should be able to meet one, be looked at, be asked three mild questions and be handed something to hold, and never learn what happened. The scene works best when nothing is explained and the offer, if it comes, comes months later through somebody else.'
@@ -3212,11 +3212,11 @@ export const AZURE_CLOUD_INTAKE = {
 
     // ── handoff ───────────────────────────────────────────────────────
     engineHandoff:
-        'This is the content-side statement of a placement channel that does not exist in the engine yet. `thin_county` and `market_town` both carry `placement.reach: 0` in `src/engine/cultivation/origin.ts`, which is correct for every other route and wrong for this one: the Pavilion reaches into exactly those two tiers, on its own initiative, at no cost to the candidate. Wiring it needs a reach that is granted by an institution rather than owned by the origin, a low probability, an age band, and entry below the lowest rank rather than at it. No engine file is edited here.',
+        'The yearly scout pass reaches children aged seven through fourteen from thin_county and market_town origins. Six available Foundation hands visit a circuit of open mortal settlements. Each nominates at most two children; single or mutated roots have a three-percent chance, dual roots one percent, and other roots one tenth of a percent. The Pavilion pays the ordinary ration price for a year, moves the candidate onto probation, and records its actual starting day. A probationer has no faction membership, rung, stipend or outside protection. Later passes pay for another year of food, offer root-suited guest primers and use the existing age-and-progress placement ladder to place, retain or turn them out. A house unable to fund another year returns the candidate home.',
     engineGaps: [
         'PROBATIONARY RANK. A probationer carries the sect id and is not a member. Anything that gates social effect on membership must test the rank rather than the presence of a `sectId`, and if the engine currently reads "has a sectId" as "may claim the sect", this rule is what turns that into a live bug. The name claim, gate access, sect-backed reputation and any protection a faction extends to its own all need to check the rank.',
         'PROBATION FLOOR. `admissionOrdinal` is a single number and `rankRealmBand` in `members.ts` derives every band from it, so it cannot express a door at 0 and a disciple bar at 3 at the same time. Held here as `SECT_ADMISSION.guestFromOrdinal` on the content side; lifting it into the schema as a second floor is the clean fix, and until then `admissionOrdinal` must stay at the membership bar or the whole ladder slides down.',
-        'PLACEMENT BY INSTITUTION. Reach that belongs to the reaching party rather than to the origin tier, which is the general shape of this and would also serve any other body that goes looking.'
+        'PLACEMENT BY INSTITUTION is live in scouts-place-children-on-probation.ts. The child keeps the rolled root, and its origin reach remains zero; the scout supplies the route.'
     ]
 } as const;
 

@@ -26,9 +26,17 @@ import { characterOf } from './what-a-ruin-has-on-its-shelves.js';
 import { getLocation, indexById, type WorldState } from './world-state.js';
 import {
     whatAHouseAsksOf,
+    feeForSittingOn,
+    MONTHS_A_TERM_ON_HELD_GROUND,
+    whatTheyCouldWriteOutForAHouse,
     type ShortOfTheTerms,
     type WhatTheyCouldPutUp
 } from './what-a-house-asks-of-somebody-not-of-it.js';
+import { makeObject } from './possessions.js';
+import { makeFact } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { isTheWorldsToMove, isAwayOnSomething } from './npc-state.js';
+import { getTechnique, capOf } from '../../data/cultivation/techniques.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SEEDING THE GROUND
@@ -206,8 +214,8 @@ export interface SomebodyStanding {
     /** Index into their own house's ladder. Negative for anybody in no house. */
     factionRankIndex: number;
     /**
-     * What they could put up at a gate that asks for something. Absent means
-     * nothing, which is where every `NpcRecord` in the world stands today.
+     * The actual purse, arts and open favours offered at a held ground's gate.
+     * Affording an offer is distinct from the admission receipt.
      */
     couldPutUp?: WhatTheyCouldPutUp;
 }
@@ -359,18 +367,90 @@ export function standingOfNpc(state: WorldState, npc: NpcRecord): SomebodyStandi
         ordinal: npc.cultivation.realmOrdinal,
         regionCatalogId: regionCatalogIdOf(state, npc.locationId),
         factionId: npc.factionId,
-        factionRankIndex: npc.factionRankIndex
+        factionRankIndex: npc.factionRankIndex,
+        couldPutUp: {
+            spiritStones: npc.spiritStones,
+            holds: npc.cultivation.techniqueIds,
+            onGoodTermsWith: state.obligations.filter(o => o.kind === 'favor' && o.subjectId === npc.id
+                && o.status === 'open').map(o => o.holderId)
+        }
     };
 }
 
 /**
  * Every dao ground this person can actually get at.
  */
-export function daoGroundsInReachOf(state: WorldState, npc: NpcRecord): RoadInReach[] {
+export function daoGroundsInReachOf(state: WorldState, npc: NpcRecord, onDay = state.currentDay): RoadInReach[] {
     return daoGroundsAround(state, standingOfNpc(state, npc))
-        .filter(row => row.standing.inReach)
+        .filter(row => {
+            const paidGate = row.ground.access === 'held' && row.ground.heldByFactionId !== npc.factionId
+                && ['a fee', 'a copy', 'good relations'].includes(row.ground.admits);
+            if (!paidGate) return row.standing.inReach;
+            const admitted = state.history.facts.some(f => f.data.daoAdmission === true
+                && f.data.visitorId === npc.id && f.data.groundId === row.sourceId
+                && f.day <= onDay && Number(f.data.untilDay) > onDay);
+            return admitted && npc.cultivation.realmOrdinal >= row.ground.fromOrdinal && (row.standing.inReach
+                || ['the_fee', 'nothing_to_write_out', 'a_stranger_to_them'].includes(row.standing.shortBy ?? ''));
+        })
         .map(({ domain, subject, sourceId, sourceName, how }) =>
             ({ domain, subject, sourceId, sourceName, how }));
+}
+
+/** A visitor pays once for a season. The admission fact is the receipt all reads use. */
+function outsidersPayForDaoGround(state: WorldState, day: number): void {
+    const receivers = new Map(state.factions.filter(f => f.dissolvedOnDay === null).flatMap(house => {
+        const keeper = state.npcs.find(n => isTheWorldsToMove(n) && n.status === 'alive'
+            && n.factionId === house.id && n.locationId === house.seatLocationId
+            && !(n.activity && isAwayOnSomething(n.activity.kind)));
+        return keeper ? [[house.id, keeper] as const] : [];
+    }));
+    for (let at = 0; at < state.npcs.length; at++) {
+        const npc = state.npcs[at]!;
+        if (!isTheWorldsToMove(npc) || npc.status !== 'alive' || npc.activity) continue;
+        const walked = new Set(roadsWalkedBy({ knownTechniques: npc.cultivation.techniqueIds,
+            age: ageOf(npc, day) }).map(road => road.domain));
+        const ground = daoGroundsAround(state, standingOfNpc(state, npc)).find(row => row.standing.inReach
+            && row.ground.access === 'held' && row.ground.heldByFactionId !== npc.factionId
+            && receivers.has(row.ground.heldByFactionId ?? '')
+            && ['a fee', 'a copy', 'good relations'].includes(row.ground.admits) && !walked.has(row.domain));
+        if (!ground) continue;
+        if (state.history.facts.some(f => f.data.daoAdmission === true && f.data.visitorId === npc.id
+            && f.data.groundId === ground.sourceId && Number(f.data.untilDay) > day)) continue;
+        const house = state.factions.find(f => f.id === ground.ground.heldByFactionId && f.dissolvedOnDay === null);
+        if (!house) continue;
+        const keeper = receivers.get(house.id);
+        if (!keeper) continue;
+        let payment = 'the relationship they already hold';
+        let stones = 0;
+        if (ground.ground.admits === 'a fee') {
+            stones = feeForSittingOn(ground.ground.fromOrdinal) ?? 0;
+            if (stones <= 0 || npc.spiritStones < stones) continue;
+            state.npcs[at] = { ...npc, spiritStones: npc.spiritStones - stones, updatedOnDay: day };
+            house.resources.spirit_stones = (house.resources.spirit_stones ?? 0) + stones;
+            payment = `${stones} spirit stones`;
+        } else if (ground.ground.admits === 'a copy') {
+            const alreadyHeld = new Set(state.objects.filter(o => o.possessorId === house.id)
+                .map(o => o.data.techniqueId));
+            const art = whatTheyCouldWriteOutForAHouse(house.id, npc.cultivation.realmOrdinal,
+                npc.cultivation.techniqueIds.filter(id => !alreadyHeld.has(id)));
+            if (!art) continue;
+            const name = getTechnique(art)!.name;
+            state.objects.push(makeObject({ id: `dao-copy-${npc.id}-${ground.sourceId}-${day}`,
+                name: `a copy of ${name}`, kind: 'manual', significance: 'notable', ownerId: house.id,
+                ownerName: house.name, possessorId: house.id, locationId: house.seatLocationId,
+                data: { techniqueId: art, cap: getTechnique(art)!.cap ?? capOf(getTechnique(art)!),
+                    copies: 1, writtenOutBy: npc.id, writtenOnDay: day },
+                tags: ['manual', `house:${house.id}`] }));
+            payment = `a copy of ${name}`;
+        }
+        appendWorldFact(state, makeFact({ day, kind: 'grudge_settled', visibility: 'faction',
+            summary: `${npc.name} gave ${house.name} ${payment} for a season at ${ground.sourceName}.`,
+            locationId: ground.sourceId, factionIds: [house.id],
+            actors: [{ id: npc.id, name: npc.name, role: 'visitor' },
+                { id: keeper.id, name: keeper.name, role: 'received payment' }],
+            data: { daoAdmission: true, visitorId: npc.id, groundId: ground.sourceId,
+                untilDay: day + MONTHS_A_TERM_ON_HELD_GROUND * 30, stones } }));
+    }
 }
 
 /**
@@ -480,14 +560,14 @@ export function roadsCarriedByObjectsInReachOf(
  * Every road WITHIN REACH of this cultivator: the arts in their hands, the ground
  * they can get at, and the objects that were spent on them.
  */
-export function roadsInReachOf(state: WorldState, npc: NpcRecord): RoadInReach[] {
+export function roadsInReachOf(state: WorldState, npc: NpcRecord, onDay = state.currentDay): RoadInReach[] {
     const out: RoadInReach[] = [];
     const seen = new Set<InsightDomain>();
 
     for (const road of [
         ...roadsBoughtWithMaterialsBy(state, npc.id),
         ...roadsCarriedByObjectsInReachOf(state, npc),
-        ...daoGroundsInReachOf(state, npc)
+        ...daoGroundsInReachOf(state, npc, onDay)
     ]) {
         if (seen.has(road.domain)) continue;
         seen.add(road.domain);
@@ -569,6 +649,7 @@ export function applyRoadsComprehended(
     year: number,
     day: number
 ): RoadsPassResult {
+    outsidersPayForDaoGround(state, day);
     const result: RoadsPassResult = {
         groundsFound: 0,
         groundsNewlyFound: 0,

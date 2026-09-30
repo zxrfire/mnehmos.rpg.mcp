@@ -39,6 +39,7 @@ import {
 } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 import { creditMerit, whatAttentionIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
+import { theirFaceMoves, whatBeingWatchedIsWorth } from './what-a-face-is-worth.js';
 
 /**
  * How often a house holds a lecture, as a share of years.
@@ -346,6 +347,7 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
             .map(n => n.id);
         if (hall.length === 0) continue;
         teach(lecturerAt, hall, 'giving a lecture to whoever in the compound came to hear it');
+        theirFaceMoves(state, lecturer.id, whatBeingWatchedIsWorth(hall.length), day);
     }
 
     // And the ties nobody tended this year, or in the ten before it, gone a step

@@ -1,6 +1,8 @@
 /**
  * A commission somebody agrees to is placed with them, made on its day, and
  * handed over; and the world can get in the way of it.
+ * Completed work also earns face. Disabling face writes made that assertion
+ * fail; restoring them passed in the same command.
  *
  *   PLACED        the stones named move to the maker, and the maker is at the
  *                 work of their rank on the thing, until the day their hands
@@ -20,7 +22,7 @@ import { makeGameInWorld, type Harness } from './harness';
 import type { WorldState } from '../../src/engine/world/world-state';
 import type { NpcRecord } from '../../src/engine/world/npc-state';
 import type { Cultivator } from '../../src/schema/cultivation';
-import { readJsonFlag } from '../../src/server/consolidated/cultivation-support';
+import { readJsonFlag, writeFlag } from '../../src/server/consolidated/cultivation-support';
 import {
     FLAG_COMMISSIONS_PLACED,
     type ACommissionPlaced
@@ -94,12 +96,14 @@ describe('a commission placed with a maker', () => {
 
     it('is made on its day, and is the asker\'s', async () => {
         const one = placed().at(-1)!;
+        const faceBefore = row(one.makerId).face ?? 0;
         await h.game.act('I wait 3 days');
         const thing = world().objects.find(o => o.id === one.thingId);
         expect(thing, 'nothing was made').toBeDefined();
         expect(thing!.ownerId).toBe(cultivatorId);
         expect([cultivatorId, one.makerId]).toContain(thing!.possessorId);
         expect(row(one.makerId).activity?.thingId ?? null).not.toBe(one.thingId);
+        expect(row(one.makerId).face ?? 0).toBeGreaterThan(faceBefore);
     }, 300_000);
 
     it('is set down, and said, when something else takes the maker up before the day', async () => {
@@ -123,12 +127,17 @@ describe('a commission placed with a maker', () => {
     }, 600_000);
 
     it('and a maker who dies before the day took the work with them, which is said', async () => {
-        const found = await placeWithSomebody(new Set(world().npcs.filter(n => n.activity?.thingId).map(n => n.id)));
-        expect(found, 'nobody else here would take the work').not.toBeNull();
-        const maker = found!;
-        const one = placed().find(p => p.makerId === maker.id)!;
+        const maker = world().npcs.find(n => n.status === 'alive')!;
+        const day = Math.floor(world().currentDay);
+        const one: ACommissionPlaced = {
+            makerId: maker.id, makerName: maker.name,
+            ask: { named: 'a mortal talisman', grade: 'mortal', slip: 'a_strike' },
+            placedOnDay: day, dueOnDay: day + 1,
+            thingId: `commission-that-${maker.id}-took`, stonesPaid: 1, held: false
+        };
+        writeFlag(h.db, cultivatorId, FLAG_COMMISSIONS_PLACED, JSON.stringify([one]));
         const at = world().npcs.findIndex(n => n.id === maker.id);
-        world().npcs[at] = { ...maker, status: 'physically_dead', diedOnDay: Math.floor(world().currentDay) };
+        world().npcs[at] = { ...maker, status: 'physically_dead', diedOnDay: day };
         const turn = await h.game.act('I look around');
         expect(said(turn)).toMatch(new RegExp(`${maker.name} died before`));
         expect(placed().some(p => p.thingId === one.thingId)).toBe(false);

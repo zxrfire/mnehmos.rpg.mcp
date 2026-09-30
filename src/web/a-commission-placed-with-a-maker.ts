@@ -33,7 +33,8 @@
  * took the work with them. A maker whose activity was replaced before the day
  * set the work down: the materials are gone into it, and somebody who was paid
  * owes the thing.
- */
+*/
+import { theirFaceMoves, whatBeingWatchedIsWorth } from '../engine/world/what-a-face-is-worth.js';
 
 import { isAWorkedGrade, whatItIsMadeOf } from '../data/cultivation/what-an-artifact-is-made-of.js';
 import { forStream } from '../engine/cultivation/rng.js';
@@ -336,6 +337,8 @@ export function settleWhatWasPlacedWithAMaker(game: GameService, cultivator: Cul
             continue;
         }
         // ── A PAIR OF JADE IS TWO HALVES, made by the jade module's own maker ──
+        theirFaceMoves(world, maker.id, whatBeingWatchedIsWorth(
+            world.npcs.filter(n => n.status === 'alive' && n.locationId === maker.locationId && n.id !== maker.id).length), one.dueOnDay);
         if (asksForAPairOfJade(one.ask.named)) {
             const twin = one.twin ?? null;
             const pair = aPairOfCommunicationJade({

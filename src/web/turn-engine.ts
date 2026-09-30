@@ -220,7 +220,7 @@ import {
     THE_FACE_A_FUMBLE_TAKES,
     type WhatItWants
 } from '../engine/world/what-a-house-sends-its-sisters.js';
-import { theirFaceMoves } from '../engine/world/what-a-face-is-worth.js';
+import { theirFaceMoves, whatBeingWatchedIsWorth } from '../engine/world/what-a-face-is-worth.js';
 import { learnWhatTheLandTeachesThem } from './what-the-land-teaches-you.js';
 import { WHICH_KIND_A_WORD_ASKS_FOR } from './a-kind-is-not-a-name.js';
 import { theThingsOnTheSheet } from './things-on-the-sheet.js';
@@ -430,6 +430,7 @@ import {
 import { standInTheWorld } from './the-player-as-a-row-the-world-can-invite.js';
 import { establishLowerGround } from './establishing-lower-ground.js';
 import { getSite } from '../data/cultivation/inheritance-trials.js';
+import { accrueProgress } from '../engine/cultivation/cultivation.js';
 import { DAO_GROUND_TAG } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
 import { FOUND_BY_PROSPECTING_TAG } from '../engine/world/how-the-world-keeps-finding-more-ruins.js';
 import {
@@ -1274,6 +1275,10 @@ import {
 } from './what-is-on-you-and-in-your-hands.js';
 import { isAPosting, postingVerbs, settleWhereYourHouseHasPostedYou } from './holding-a-posting.js';
 import { settleWhetherYourMasterHasCalledYou } from './a-master-calls-their-disciples-in.js';
+import { acceptANamedDisciple } from './accepting-a-named-disciple.js';
+import { enterThePublicCompetition } from './entering-the-public-competition.js';
+import { settleOpenCompetitions } from '../engine/world/entering-an-open-competition.js';
+import { extinguishedLampsOpenInquiries } from '../engine/world/an-extinguished-lamp-opens-an-inquiry.js';
 import { whoCouldPutSomebodyOffTheRoll } from './who-could-put-somebody-off-the-roll.js';
 import { settleWhoIsAlreadyOnThisGround, theyAreToldNo } from './somebody-tells-you-to-get-off-this-ground.js';
 import {
@@ -2707,6 +2712,7 @@ export class GameService {
 
         // THE PLAYER IS ON THE ROSTER, AND THE SHEET IS THE SOURCE
         this.refreshThePlayerRow(cultivator);
+        const worldDayBeforeTheTurn = Math.floor(this.atHand?.currentDay ?? 0);
 
         // A QUESTION THE ENGINE LEFT OPEN IS ANSWERED FIRST
         const inAFight = theFightStillStands(this.fight, run.id, cultivator.id)
@@ -3332,6 +3338,31 @@ export class GameService {
         }
 
         // AND WHAT THEY HAVE PLACED WITH A MAKER, made, handed over or set down.
+        if (this.atHand) {
+            const today = Math.floor(this.atHand.currentDay);
+            const factsBefore = this.atHand.history.facts.length;
+            extinguishedLampsOpenInquiries(this.atHand, today);
+            const boardsJustSettled = settleOpenCompetitions(this.atHand, today, today, {
+                id: this.currentRun().cultivator.id,
+                locationId: this.worldPlaceOf(this.currentRun().cultivator)
+            });
+            for (const fact of boardsJustSettled.filter(f => f.actors.some(a => a.id === cultivator.id))) {
+                const learningDays = Number(fact.data.trainingDays ?? 0);
+                if (learningDays <= 0) continue;
+                const learner = this.currentRun().cultivator;
+                const learned = accrueProgress(learner, learningDays, {
+                    ambient: this.ambientFor(learner, this.currentRun().run), options: this.rateTermsFor(learner)
+                });
+                this.repos.cultivators.update(learner.id, { cultivationProgress: learned.newProgress });
+                after.cultivator = this.currentRun().cultivator;
+            }
+            for (const fact of this.atHand.history.facts.filter(f => f.data.openCompetition === true
+                && f.data.result === true && f.day >= worldDayBeforeTheTurn && f.day <= today
+                && f.actors.some(a => a.id === this.currentRun().cultivator.id))) {
+                sayThisWhateverTheNarratorDoes(execution.facts, fact.summary);
+            }
+            if (this.atHand.history.facts.length > factsBefore) this.theWorldMoved();
+        }
         const commissioned = settleWhatWasPlacedWithAMaker(this, this.currentRun().cultivator);
         if (commissioned) {
             execution.calls.push({
@@ -5719,7 +5750,8 @@ ${noticedWaiting}`;
                     if (atTheGate) return whatTheGateSaysOfItsWork(this, run, cultivator, atTheGate);
                     const wall = readTheWall(
                         this.knowledge, cultivator, run, this.whoIsBeingLookedFor(),
-                        theNoticesTurnedIn(this, cultivator.id)
+                        theNoticesTurnedIn(this, cultivator.id),
+                        this.atHand ? { seed: this.atHand.seed, onDay: Math.floor(this.atHand.currentDay) } : undefined
                     );
                     // THE ONE DATED INVITATION THIS GAME OFFERS, AND THE NEXT
                     // SENTENCE COULD NOT POINT AT IT.
@@ -8329,6 +8361,12 @@ ${noticed}`;
         // parsed to `unclear`, so a player could join a house and then do
         // nothing whatever about it for the rest of the run.
         switch (intent) {
+            case 'take_disciple':
+                this.atHand = this.atHand ?? await this.loadWorld();
+                return acceptANamedDisciple(this, run, cultivator, target);
+            case 'compete':
+                this.atHand = this.atHand ?? await this.loadWorld();
+                return enterThePublicCompetition(this, run, cultivator);
             case 'hire_duty':
                 this.atHand = this.atHand ?? await this.loadWorld();
                 return hireForYourDuty(this, run, cultivator, target);
@@ -8568,12 +8606,22 @@ ${noticed}`;
                     'The dismissal'
                 );
             }
-            case 'promote':
-                return this.fromToolResult(
+            case 'promote': {
+                const before = this.repos.sects.getMembership(cultivator.id);
+                const result = this.fromToolResult(
                     'sect_manage.promote', 'sect',
                     await handlePromote({ action: 'promote', cultivatorId: cultivator.id }),
                     'The promotion'
                 );
+                const after = this.repos.sects.getMembership(cultivator.id);
+                if (before && after && after.rankIndex > before.rankIndex && this.atHand) {
+                    theirFaceMoves(this.atHand, cultivator.id, whatBeingWatchedIsWorth(
+                        this.atHand.npcs.filter(n => n.status === 'alive' && n.factionId === after.sectId).length),
+                    Math.floor(this.atHand.currentDay));
+                    this.theWorldMoved();
+                }
+                return result;
+            }
             case 'stipend':
                 return this.fromToolResult(
                     'sect_manage.stipend', 'sect',
@@ -8845,7 +8893,8 @@ ${noticed}`;
         const fromTheWall = whichHouseThePaperMeans(
             target,
             () => readTheWall(this.knowledge, cultivator, run, this.whoIsBeingLookedFor(),
-                theNoticesTurnedIn(this, cultivator.id))
+                theNoticesTurnedIn(this, cultivator.id),
+                this.atHand ? { seed: this.atHand.seed, onDay: Math.floor(this.atHand.currentDay) } : undefined)
         );
         // AND A REFERENCE THE WALL COULD NOT SETTLE IS STILL NOT A NAME.
         //
@@ -19838,7 +19887,8 @@ ${fit.line}`;
         const onDay = Math.floor(run.elapsedDays);
         const wall = readTheWall(
                         this.knowledge, cultivator, run, this.whoIsBeingLookedFor(),
-                        theNoticesTurnedIn(this, cultivator.id)
+                        theNoticesTurnedIn(this, cultivator.id),
+                        this.atHand ? { seed: this.atHand.seed, onDay: Math.floor(this.atHand.currentDay) } : undefined
                     );
         // WHAT THIS READ HAS ALREADY SAID ON THIS GROUND TODAY. The stamp is
         // the ground and the day, so the memory lapses by walking or by

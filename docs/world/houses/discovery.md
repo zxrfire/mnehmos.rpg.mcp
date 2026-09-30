@@ -397,13 +397,13 @@ tell you".
 the paper, so walking toward an intake brings it closer rather than pushing it away. Most
 notices name no day at all, which is the cheapest way to keep that promise.
 
-**What the engine has no answer for yet: a bounty.** The obvious fifth kind is a house
-paying for an account of a death it cannot explain - a lamp gone out and no body, which
-[`items.md`](../things/items.md) already reads from the other end as provenance. The
-channel would carry it unchanged; what is missing is the fact it would be gated on.
-A death currently reaches the house's own reading of its hall and stops there, so nothing
-can tell a death the house witnessed from one it only felt on the wall - and posting the
-second is content while posting the first is a funeral notice.
+**An unexplained extinguished lamp opens an inquiry.** The turn handler and yearly
+pass read the actual lamp and its holder's death. A death at home or witnessed by
+somebody of the house is accounted for. Otherwise the house records the missing
+account without inventing a culprit. If its treasury can fund the ordinary minimum
+purse, it posts a remains bounty through the existing public-paper channel. The paper
+asks for bones and where the holder died; the ordinary proof and first-payment rules
+apply. Each lamp opens one inquiry for that house.
 
 ## The hard rule for the narrator
 

@@ -37,7 +37,8 @@ import { brokenStatusesOn } from '../engine/cultivation/what-goes-wrong-at-a-rea
 import { medicineReaches } from '../engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
 import { noticesThatTheyAreThere } from '../engine/social/presence-recognition.js';
 import { grantsHeldWith } from '../engine/world/capability.js';
-import { billsOnTheWall } from '../engine/world/houses-that-have-to-advertise-for-disciples.js';
+import { billsOnTheWall, noticesOnTheWall } from '../engine/world/houses-that-have-to-advertise-for-disciples.js';
+import { housesWithSomethingToSay } from './what-is-posted-on-the-wall-here.js';
 import {
     couldFoldThere
 } from '../engine/world/how-far-somebody-can-fold-space-and-what-it-costs.js';
@@ -1382,6 +1383,16 @@ export const situatedReads = {
                 onPaper: true
             }));
 
+        const world = this.atHand;
+        if (world && ground !== 'unplaceable') {
+            const papers = noticesOnTheWall({ field: openDoorsInTheWorld(), speaking: housesWithSomethingToSay(undefined, onDay),
+                placeName: place, ground, placeProvinceId: provinceOfPlace(place), onDay, seed: run.seed,
+                competitionCalendar: { seed: world.seed, onDay: Math.floor(world.currentDay) } });
+            for (const paper of papers.filter(p => p.kind === 'open_competition' && p.onDay !== null && p.onDay > onDay)) {
+                dated.push({ name: `${paper.houseName} competition`, saying: paper.saying,
+                    inDays: paper.onDay! - onDay, onPaper: true });
+            }
+        }
         for (const sworn of openOathsHeldBy(this.repos, cultivator.id)) {
             if (sworn.dueOnDay === null || sworn.dueOnDay <= onDay) continue;
             const what = (sworn.terms ?? sworn.description).trim();

@@ -9,6 +9,12 @@ import { practiceAmongNeighbours, type VisitingPresence } from './summit-world.j
 
 import { searchingMastersTakeADisciple } from './the-disciples-a-world-opens-with.js';
 import { finishStructuralRecoveries } from './recovering-from-structural-medicine.js';
+import { theDayItFallsIn } from './a-competition-anybody-may-enter.js';
+import { settleOpenCompetitions } from './entering-an-open-competition.js';
+import { scoutsPlaceChildren } from './scouts-place-children-on-probation.js';
+import { extinguishedLampsOpenInquiries } from './an-extinguished-lamp-opens-an-inquiry.js';
+import { rumoursRevisePlans, theReportTheDeciderWantsChecked } from './rumours-revise-a-deciders-plans.js';
+import { theirFaceMoves, whatBeingWatchedIsWorth } from './what-a-face-is-worth.js';
 import { housesFindEmptyShelves } from './a-house-finds-an-empty-shelf.js';
 import { settleHiredDuties } from './a-hired-duty-is-served.js';
 import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
@@ -123,6 +129,7 @@ import { claimOpportunity, queryOpportunities, years } from './opportunities.js'
 import {
     activeGoals,
     addGoal,
+    closeGoal,
     createNpc,
     isAwayOnSomething,
     isTheWorldsToMove,
@@ -186,8 +193,7 @@ import {
     groundAtLocation,
     howSomebodyStandsToAGround,
     roadsInReachOf,
-    standingOfNpc,
-    type GroundAsTheRuleReadsIt
+    standingOfNpc
 } from './how-a-cultivator-comes-by-a-road.js';
 import { houseTeachingCeiling } from '../../data/cultivation/index.js';
 import {
@@ -195,7 +201,6 @@ import {
     howMuchTheirReasonsWeigh,
     whetherTheyGoThisYear,
     whatLeavingTheirHouseCosts,
-    whoWouldGoWithThem,
     whyTheyWouldLeave,
     type SomewhereWorthGoing,
     type WhyTheyWentOut
@@ -215,13 +220,9 @@ import {
 } from './a-disciple-takes-work-off-the-board.js';
 import { peopleTurnInWhatTheirHouseWants } from './what-a-house-gives-merit-for.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
-import {
-    howHardBeingHeldBackPresses,
-    noteWhoIsHeldBack,
-    whereTheyAreHeldBack
-} from './being-held-back-in-a-house.js';
+import { noteWhoIsHeldBack } from './being-held-back-in-a-house.js';
 import { whoSplitsAHouse } from './who-splits-a-house-and-who-goes-with-them.js';
-import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
+import { whatTheirLeavingStirs } from './what-somebody-senior-leaving-stirs.js';
 import { theWanderersGoAbout } from './the-wanderer-the-catalog-names-is-somebody.js';
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { woundsCloseThisYear } from './what-a-house-does-about-its-people-being-hurt.js';
@@ -246,7 +247,6 @@ import {
     whereTheyRunTo,
     whetherTheyFall
 } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
-import { theOathOnTheWayOut } from './the-word-an-npc-gave.js';
 import {
     applyOrdinaryLifeTies,
     applyPassedOver,
@@ -683,6 +683,7 @@ export function applyPressure(
             applyPostings(state, year, onDay);
         } });
         tasks.push({ key: 'internal-affairs', day: year * 365 + 63, run: (onDay: number) => {
+            extinguishedLampsOpenInquiries(state, onDay);
             events.push(...whatInternalAffairsNotices(
                 state,
                 onDay
@@ -733,7 +734,7 @@ export function applyPressure(
         tasks.push({ key: 'book-acquisition', day: year * 365 + 100, run: (onDay: number) => {
             applyBookAcquisition(state, year, onDay);
         } });
-        tasks.push({ key: 'road-comprehension', day: year * 365 + 110, run: (onDay: number) => {
+        tasks.push({ key: 'road-comprehension', day: year * 365 + 1, run: (onDay: number) => {
             applyRoadsComprehended(state, year, onDay);
         } });
         tasks.push({ key: 'offered-rites', day: year * 365 + 118, run: (onDay: number) => {
@@ -750,6 +751,9 @@ export function applyPressure(
         } });
         tasks.push({ key: 'recruitment', day: year * 365 + 150, run: (onDay: number) => {
             applyRecruitment(state, year, onDay);
+        } });
+        tasks.push({ key: 'scouts', day: year * 365 + 1, run: (onDay: number) => {
+            scoutsPlaceChildren(state, year, onDay);
         } });
         tasks.push({ key: 'own-children', day: year * 365 + 150, run: (onDay: number) => {
             theHousesTakeInTheirOwn(state, year, onDay);
@@ -774,6 +778,13 @@ export function applyPressure(
                 });
             }
         } });
+        for (const host of state.factions) {
+            if (host.dissolvedOnDay !== null) continue;
+            const competitionDay = theDayItFallsIn(state.seed, host, year);
+            if (competitionDay === null) continue;
+            tasks.push({ key: `open-competition:${host.id}:${competitionDay}`, day: competitionDay,
+                run: (onDay: number) => { settleOpenCompetitions(state, onDay, onDay); } });
+        }
         tasks.push({ key: 'doors', day: year * 365 + 165, run: (onDay: number) => {
             const doorsDay = onDay;
             const doorsYear = applyDoorsAndTheirPlaces(state, year, doorsDay);
@@ -814,6 +825,9 @@ export function applyPressure(
         tasks.push({ key: 'vein-holders', day: year * 365 + 173, run: (onDay: number) => {
             events.push(...applyWhoHoldsTheVeins(
                 state, onDay, howTheWarsStand(state, onDay)));
+        } });
+        tasks.push({ key: 'rumour-plans', day: year * 365 + 1, run: (onDay: number) => {
+            rumoursRevisePlans(state, onDay);
         } });
         tasks.push({ key: 'sendings', day: year * 365 + 175, run: (onDay: number) => {
             applySendings(
@@ -1660,7 +1674,7 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
             // past three domains; the ground their house lets them onto, the
             // ground their province leaves standing open, the ruin somebody dug
             // out and the material that was spent on them are the rest of it.
-            roadsInReachOf(state, npc),
+            roadsInReachOf(state, npc, day),
             undefined,
             undefined,
             state.obligations
@@ -2302,6 +2316,8 @@ function applyPromotions(state: WorldState, day: number): number {
         // earned, on the record, permanently.
         if (!isTheWorldsToMove(state.npcs[i])) continue;
         state.npcs[i] = { ...state.npcs[i], factionRankIndex: p.toRank, updatedOnDay: day };
+        theirFaceMoves(state, p.npcId, whatBeingWatchedIsWorth(
+            state.npcs.filter(n => n.status === 'alive' && n.factionId === p.factionId).length), day);
         recordPromotion(state, state.npcs[i], p, day);
     }
     // The other half of a promotion, which this call has always computed and
@@ -3148,6 +3164,7 @@ function applySendings(
             errands: cameBack
         });
 
+        const rumouredFind = theReportTheDeciderWantsChecked(state, faction.id);
         const house: HouseAsItStands = {
             id: faction.id,
             name: faction.name,
@@ -3156,7 +3173,7 @@ function applySendings(
             // The same three readings the player's board takes, so a house does
             // not visit somebody the world would not have put it in a room with,
             // and does not open a find the board would say it does not know of.
-            hasAFind: find !== null,
+            hasAFind: rumouredFind !== null || find !== null,
             sitsDownWith: circleCandidatesFor(state, faction).map(f => f.id),
             standsNearForbiddenGround:
                 forbiddenGroundInTheProvinceOf(state.locations, faction.seatLocationId),
@@ -3214,7 +3231,7 @@ function applySendings(
         const drawn = whereASendingGoes({
             needs: reason.needs,
             fromLocationId: faction.seatLocationId,
-            theFind: find?.locationId ?? null,
+            theFind: rumouredFind ?? find?.locationId ?? null,
             seatsInPlay: aboutHouses
                 .map(id => state.factions.find(
                     f => f.id === id && f.dissolvedOnDay === null
@@ -3463,6 +3480,110 @@ function applySendings(
         settleSending(state, { faction, sending, goingTo, named,
             counterparties: whoTheErrandWasWith(state, aboutHouses, goingTo),
             year, reachedPastItsWeight, onTheRoll: onTheRoll.length });
+        // The shared settlement below supersedes this inline pass.
+        /*
+        for (const missing of sending.lost) {
+            const index = at.get(missing.id);
+            if (index === undefined) continue;
+            // They came back. The sending's own count still says how many
+            // were lost, which over-reports by one here - the alternative is
+            // re-deriving the party's losses from the rows, which is the
+            // second copy of a fact this repo is made of warnings about.
+            const gone = theWorldLoses(
+                state.npcs[index],
+                sending.returnsOnDay,
+                `Went out for ${faction.name} on ${reason.name.toLowerCase()} and did not come back.`
+            );
+            if (!gone) continue;
+            state.npcs[index] = gone;
+        }
+
+        // AND ONLY WHAT IS WORTH REPEATING BECOMES NEWS
+        if (sending.outcome === 'finished' && reason.id === 'sending-for-materials') {
+            creditWhatCameBack(faction, partyOrdinal(party), party.length);
+        }
+
+        // ── AND A PARTY THAT OPENED A HOLE CARRIES OUT WHAT WAS IN IT ────
+        //
+        // RUINS YIELD MANUALS, which the setting has asserted in as many words
+        // since it was written and which no pass performed: `applyRoadsComprehended`
+        // yields dao ground and materials, the spoils pass moves what a house
+        // already held, and nothing anywhere put a book into anybody's hands out
+        // of the ground. So the road that opens at rung 37 and is taught nowhere
+        // was content the world could not reach, and the ladder stopped under it.
+        //
+        // Only the errand that is about a find, because that is the errand that
+        // gets somebody through a door. Nothing here decides how often - the
+        // frequency is how often a house has a find standing open in its own
+        // province and draws that reason, and what is behind the door is what
+        // `what-a-ruin-has-on-its-shelves.ts` says the ground was holding.
+        const carriedOut = sending.outcome === 'finished'
+            && reason.needs === 'a_find' && goingTo !== null
+            ? applyWhatThePartyCarriedOut(state, {
+                locationId: goingTo,
+                house: {
+                    id: faction.id, name: faction.name, seatLocationId: faction.seatLocationId
+                },
+                readers: party
+                    .map(member => at.get(member.id))
+                    .filter((index): index is number => index !== undefined)
+                    .map(index => state.npcs[index])
+                    .filter(row => row !== undefined && isTheWorldsToMove(row)),
+                onDay: sending.returnsOnDay
+            })
+            : [];
+
+        // AND THE GROUND CHANGES HANDS, OR IT DOES NOT. The whole of what the
+        // house went for, and the same three writes `vein_lost` makes - the
+        // place, the two holds, and what the people who lost it now carry.
+        if (named !== null) {
+            theGroundWasTakenOrItWasNot(state, {
+                faction, named, sending, day: sending.returnsOnDay,
+                rng: forStream(state.seed, 'taking-what-pays', faction.id, year)
+            });
+        }
+
+        // AND THE HOUSE LOSES WHAT IT SAID WAS AT STAKE.
+        //
+        // Skipped for the one errand that already has its own settlement: a
+        // house reaching for ground that pays is answered by
+        // `theGroundWasTakenOrItWasNot` above, which is the same stake applied
+        // by the path that knows which piece of ground and who was standing on
+        // it. Running both would charge it twice.
+        const took = named !== null || sending.outcome === 'finished'
+            ? null
+            : theHouseLostWhatItStaked(state, {
+                faction,
+                sending,
+                onDay: sending.returnsOnDay,
+                counterparties: whoTheErrandWasWith(state, aboutHouses, goingTo),
+                onTheRoll: onTheRoll.length
+            });
+
+        const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
+        if (reason.needs === 'a_find' && rumouredFind && goingTo === rumouredFind) {
+            for (let at = 0; at < state.npcs.length; at++) {
+                const decider = state.npcs[at]!;
+                if (decider.factionId !== faction.id) continue;
+                for (const goal of decider.goals.filter(g => g.status === 'active'
+                    && g.note.startsWith('rumour-plan:') && g.targetId === rumouredFind)) {
+                    state.npcs[at] = closeGoal(state.npcs[at]!, goal.id,
+                        sending.outcome === 'finished' ? 'achieved' : 'blocked', sending.returnsOnDay);
+                }
+            }
+        }
+        if (took !== null) news.data = { ...news.data, ...took };
+        if (carriedOut.length > 0) {
+            news.data = {
+                ...news.data,
+                roadsCarriedOut: carriedOut.map(b => b.techniqueId).join(' ')
+            };
+        }
+        if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING
+            || reachedPastItsWeight || named !== null || carriedOut.length > 0) {
+            appendWorldFact(state, news);
+        }
+        */
     }
     return sent;
 }
@@ -3563,6 +3684,17 @@ function settleSending(state: WorldState, input: {
         });
 
     const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
+    if (reason.needs === 'a_find' && goingTo !== null) {
+        for (let at = 0; at < state.npcs.length; at++) {
+            const decider = state.npcs[at]!;
+            if (decider.factionId !== faction.id) continue;
+            for (const goal of decider.goals.filter(goal => goal.status === 'active'
+                && goal.note.startsWith('rumour-plan:') && goal.targetId === goingTo)) {
+                state.npcs[at] = closeGoal(state.npcs[at]!, goal.id,
+                    sending.outcome === 'finished' ? 'achieved' : 'blocked', sending.returnsOnDay);
+            }
+        }
+    }
     if (took !== null) news.data = { ...news.data, ...took };
     if (carriedOut.length > 0) {
         news.data = {
@@ -3854,303 +3986,85 @@ function applyPeopleWalkingOut(
     if (!enabled) return 0;
     const slot = ((year % HOW_OFTEN_SOMEBODY_WEIGHS_IT) + HOW_OFTEN_SOMEBODY_WEIGHS_IT)
         % HOW_OFTEN_SOMEBODY_WEIGHS_IT;
+    const teaching = state.locations.flatMap(place => {
+        const ground = place.tags.includes(DAO_GROUND_TAG) ? groundAtLocation(place) : null;
+        return ground === null ? [] : [{ place, ground }];
+    });
+    const alive = new Set(state.npcs.filter(npc => npc.status === 'alive').map(npc => npc.id));
+    let out = 0;
 
-    // THE GROUND THAT TEACHES A ROAD, read once. There are two dozen of these
-    // in the world and this is asked of everybody on every roll.
-    const teaching: { place: LocationRecord; ground: GroundAsTheRuleReadsIt }[] = [];
-    for (const place of state.locations) {
-        if (!place.tags.includes(DAO_GROUND_TAG)) continue;
-        const ground = groundAtLocation(place);
-        if (ground) teaching.push({ place, ground });
-    }
-
-    // AND THE DOORS STANDING OPEN, by province, so somebody with no road to
-    // walk to still has something local worth leaving for.
-    const ruinsByProvince = new Map<string, LocationRecord[]>();
-    for (const place of state.locations) {
-        if (place.kind !== 'ruin' || !place.discovered || place.sealed) continue;
-        if (!isBelowTheLid(place) || place.tags.includes('forbidden')) continue;
-        const province = regionOf(state, place.id);
-        if (province === null) continue;
-        const here = ruinsByProvince.get(province);
-        if (here) here.push(place); else ruinsByProvince.set(province, [place]);
-    }
-
-    // What each house could pay, and what it teaches. One read per house
-    // rather than one per person.
-    const paidThisYear = new Map<string, boolean>();
-    const teachesTo = new Map<string, number | null>();
-    const rollSize = new Map<string, number>();
-    // AND NOT A MAP OF EVERY STATUS IN THE WORLD. It was one, and it cost a
-    // `Map.set` per person per year over a roster that holds the dead - twelve
-    // million of them across a five-century soak - to answer a question asked
-    // only of the handful of people whose slot comes up. `indexById` is
-    // memoised and answers the same thing for the ties that are actually read.
-    for (const npc of state.npcs) {
-        if (npc.status !== 'alive' || !npc.factionId) continue;
-        rollSize.set(npc.factionId, (rollSize.get(npc.factionId) ?? 0) + 1);
-    }
-    for (const house of state.factions) {
-        const payroll = (rollSize.get(house.id) ?? 0) * A_STIPEND_PER_MEMBER_PER_YEAR;
-        // THE SAME READING THE HOUSE'S OWN MOTIVE TAKES, so a house that could
-        // not pay and a disciple who was not paid are one fact rather than two.
-        paidThisYear.set(house.id, howThePurseIsRunning(
-            Number(house.resources.spirit_stones ?? 0), payroll) !== 'cannot_pay');
-        teachesTo.set(house.id, houseTeachingCeiling(house.id));
-    }
-
-    // WHO DECIDED IT, IN ONE PASS, BEFORE ANYBODY MOVES. The group is people
-    // who each decided, so everybody's own answer has to exist before it can be
-    // asked who is walking the same way.
-    const leaving: {
-        at: number;
-        npc: NpcRecord;
-        why: readonly WhyTheyWentOut[];
-        to: SomewhereWorthGoing;
-    }[] = [];
-
-    for (let i = 0; i < state.npcs.length; i++) {
-        const npc = state.npcs[i];
-        if (npc.status !== 'alive' || npc.factionId === null) continue;
-        // THE SLOT BEFORE THE EXPENSIVE READS. Four in five people are not
-        // being asked this year and everything below costs more than a hash.
-        if (reviewSlot(npc.id, HOW_OFTEN_SOMEBODY_WEIGHS_IT) !== slot) continue;
-        if (!isBelowTheLid(npc)) continue;
-        // Never the player's row: which house they are in and whether they
-        // walk out of it are theirs, and a pass that decided it would be the
-        // engine taking the decision the whole of this file is about.
-        if (!isTheWorldsToMove(npc)) continue;
-        // AND NOT A BEAST. It holds no purse, is taught nothing, and the roll
-        // it is on is an arrangement rather than a membership.
-        if (theSpeciesItIs(npc) !== null) continue;
-        // Somebody already out on the house's business is out on the house's
-        // business. They decide when they are back.
-        if (npc.activity && isAwayOnSomething(npc.activity.kind)) continue;
-        const house = state.factions.find(f => f.id === npc.factionId);
-        if (!house || house.dissolvedOnDay !== null) continue;
-        // The head of a house is the house. Nobody walks out of their own hall.
-        if (npc.factionRankIndex >= house.ranks.length - 1) continue;
+    for (let at = 0; at < state.npcs.length; at++) {
+        const npc = state.npcs[at]!;
+        if (npc.status !== 'alive' || npc.factionId === null || !isTheWorldsToMove(npc)
+            || theSpeciesItIs(npc) !== null || reviewSlot(npc.id, HOW_OFTEN_SOMEBODY_WEIGHS_IT) !== slot
+            || (npc.activity !== null && isAwayOnSomething(npc.activity.kind))) continue;
+        const house = state.factions.find(faction => faction.id === npc.factionId);
+        if (!house || house.dissolvedOnDay !== null || npc.factionRankIndex >= house.ranks.length - 1) continue;
 
         const standing = standingOfNpc(state, npc);
-        const roads: SomewhereWorthGoing[] = [];
-        for (const row of teaching) {
-            const how = howSomebodyStandsToAGround(row.ground, standing);
-            if (how.shortBy !== 'somewhere_else') continue;
-            if (npc.cultivation.realmOrdinal < row.ground.fromOrdinal) continue;
-            roads.push({
-                locationId: row.place.id,
-                name: row.place.name,
-                why: `The ${row.ground.domain} road is taught by standing at `
-                    + `${row.place.name}, and nothing nearer teaches it.`,
-                survivalOrdinal: row.place.thresholds.survival
-            });
-        }
-
-        const province = regionOf(state, npc.locationId);
-        const ruins: SomewhereWorthGoing[] = (
-            province === null ? [] : ruinsByProvince.get(province) ?? []
-        // NOT FOR SOMETHING BENEATH THEM. Ground calibrated at or under where
-        // they stand holds nothing past it, and nobody leaves a house for that.
-        ).filter(place => place.thresholds.mastery > npc.cultivation.realmOrdinal)
-        .map(place => ({
-            locationId: place.id,
-            name: place.name,
-            why: `${place.name} is standing open a few days from here.`,
-            survivalOrdinal: place.thresholds.survival
-        }));
-
-        const to = whereTheyWouldGo(roads, ruins);
-        if (to === null) continue;
-
-        let didNotComeBack = 0;
-        for (const tie of npc.relationships) {
-            const other = indexById(state.npcs, tie.targetId);
-            const was = other < 0 ? null : state.npcs[other]!.status;
-            if (was === 'physically_dead' || (other >= 0 && isLostTrackOf(state, state.npcs[other]!))) didNotComeBack++;
-        }
-
-        // Stamped by the promotion pass, which runs before this one each year,
-        // and read against the life they have: `being-held-back-in-a-house.ts`.
-        const lifespan = lifespanForOrdinal(npc.cultivation.realmOrdinal);
-        const heldBack = howHardBeingHeldBackPresses(whereTheyAreHeldBack(npc), day, lifespan);
-        const why = whyTheyWouldLeave({
+        const roads: SomewhereWorthGoing[] = teaching
+            .filter(({ place, ground }) => place.id !== npc.locationId
+                && npc.cultivation.realmOrdinal >= ground.fromOrdinal
+                && npc.cultivation.realmOrdinal >= place.thresholds.survival
+                && howSomebodyStandsToAGround(ground, standing).shortBy === 'somewhere_else')
+            .map(({ place, ground }) => ({
+                locationId: place.id, name: place.name, survivalOrdinal: place.thresholds.survival,
+                why: `The ${ground.domain} road is taught by standing at ${place.name}.`
+            }));
+        const here = regionOf(state, npc.locationId);
+        const ruins: SomewhereWorthGoing[] = state.locations
+            .filter(place => place.kind === 'ruin' && place.discovered && !place.sealed
+                && !place.tags.includes('forbidden') && place.id !== npc.locationId
+                && regionOf(state, place.id) === here
+                && place.thresholds.mastery > npc.cultivation.realmOrdinal
+                && place.thresholds.survival <= npc.cultivation.realmOrdinal)
+            .map(place => ({
+                locationId: place.id, name: place.name, survivalOrdinal: place.thresholds.survival,
+                why: `${place.name} is standing open, and holds more than they have.`
+            }));
+        const reasons = whyTheyWouldLeave({
             ordinal: npc.cultivation.realmOrdinal,
-            houseTeachingCeiling: teachesTo.get(house.id) ?? null,
-            theHousePaidThem: paidThisYear.get(house.id) ?? true,
-            peopleTheyKnewWhoDidNotComeBack: didNotComeBack,
+            houseTeachingCeiling: houseTeachingCeiling(house.id),
+            theHousePaidThem: howThePurseIsRunning(
+                Number(house.resources.spirit_stones ?? 0),
+                state.npcs.filter(other => other.status === 'alive' && other.factionId === house.id).length
+                    * A_STIPEND_PER_MEMBER_PER_YEAR
+            ) !== 'cannot_pay',
+            peopleTheyKnewWhoDidNotComeBack: npc.relationships.filter(tie => !alive.has(tie.targetId)).length,
             factionRankIndex: npc.factionRankIndex,
-            spiritStones: npc.spiritStones,
-            aRoadAProvinceAway: roads.length > 0,
-            beingHeldBack: heldBack
+            spiritStones: 0,
+            aRoadAProvinceAway: roads.length > 0
         });
-        if (!whetherTheyGoThisYear(
-            why, forStream(state.seed, 'walks-out', npc.id, year),
-            howMuchTheirReasonsWeigh(why, heldBack),
-            lifespan,
-            // AND WHAT GOING WOULD COST THEM: their house's arts and the years
-            // of taking up another road. `whatLeavingTheirHouseCosts`.
+        const to = whereTheyWouldGo(roads, ruins);
+        if (to === null || !whetherTheyGoThisYear(
+            reasons,
+            forStream(state.seed, 'walk-out', npc.id, year),
+            howMuchTheirReasonsWeigh(reasons),
+            lifespanForOrdinal(npc.cultivation.realmOrdinal),
             whatLeavingTheirHouseCosts({
-                npc, house, lifespanYears: lifespan, day,
-                onTheRoll: id => {
-                    const j = indexById(state.npcs, id);
-                    return j >= 0 && state.npcs[j]!.status === 'alive' && state.npcs[j]!.factionId === house.id;
-                }
-            }))) continue;
+                npc, house, lifespanYears: lifespanForOrdinal(npc.cultivation.realmOrdinal), day,
+                onTheRoll: id => alive.has(id) && state.npcs.some(other => other.id === id && other.factionId === house.id)
+            })
+        )) continue;
 
-        leaving.push({ at: i, npc, why, to });
-    }
-    if (leaving.length === 0) return 0;
-
-    // AND WHO IS WALKING THE SAME WAY. Each of these decided on their own
-    // account; what puts them on one road is that they already knew each other
-    // and were already standing in the same place.
-    const spoken = new Set<string>();
-    let out = 0;
-    for (const who of leaving) {
-        if (spoken.has(who.npc.id)) continue;
-        const withThem = whoWouldGoWithThem(leaving
-            .filter(other => other.npc.id !== who.npc.id && !spoken.has(other.npc.id))
-            .map(other => ({
-                id: other.npc.id,
-                goingTheSameWay: other.to.locationId === who.to.locationId,
-                // Off the same roll counts as knowing each other: two people
-                // walking out of one hall in one year have stood in the same
-                // rooms whether or not the ledger wrote a row about it.
-                knownToThem: other.npc.factionId === who.npc.factionId
-                    || relationshipWith(who.npc, other.npc.id) !== null
-                    || relationshipWith(other.npc, who.npc.id) !== null
-            })));
-        const onTheRoad = new Set(withThem.fellInOnTheRoad);
-        const withIds = [...withThem.setOutTogether, ...withThem.fellInOnTheRoad];
-        const party = [who, ...leaving.filter(o => withIds.includes(o.npc.id))];
-        for (const member of party) spoken.add(member.npc.id);
-        out += party.length;
-
-        const partyIds = party.map(m => m.npc.id);
-        const houseId = who.npc.factionId;
-        const houseRow = houseId === null
-            ? null : state.factions.find(f => f.id === houseId) ?? null;
-
-        // AND WHAT THEIR GOING STIRS, as big as how high they stood. Read off
-        // the rows as they were, before anybody is off the roll.
-        // See `what-somebody-senior-leaving-stirs.ts`.
-        let tiesCooled = 0;
-        let loudest = 0;
-        if (houseRow !== null) {
-            const going = new Set(partyIds);
-            for (const member of party) {
-                tiesCooled += whatTheirLeavingStirs(state, member.npc, houseRow, day, going);
-                loudest = Math.max(loudest, howLoudALeavingIs(member.npc.factionRankIndex, houseRow.ranks.length));
+        state.npcs[at] = addGoal({
+            ...setLocation(npc, to.locationId, day),
+            factionId: null,
+            factionRankIndex: -1,
+            tags: [...npc.tags, `${WALKED_OUT}${reasons[0]}`, `${CAME_OFF_A_ROLL_AT}${npc.cultivation.realmOrdinal}`],
+            activity: {
+                kind: 'their_own_business', note: `Left the compound. ${to.why}`,
+                withIds: [], sinceDay: day, untilDay: null, returnTo: null
             }
-        }
-
-        for (const member of party) {
-            // THE OATH AT THE DOOR, before the roll forgets them. A house asks
-            // for silence about its arts on the way out and the answer is the
-            // person's own: `the-word-an-npc-gave.ts` writes either the oath or
-            // the grudge a refusal leaves, onto the world's own ledger.
-            const houseAtTheDoor = member.npc.factionId === null
-                ? null : state.factions.find(f => f.id === member.npc.factionId) ?? null;
-            if (houseAtTheDoor !== null) {
-                theOathOnTheWayOut(state, member.npc, houseAtTheDoor, day);
-            }
-            const gone: NpcRecord = {
-                // The row as it now stands: what their going stirred wrote the other
-                // end of a tie onto it, and the snapshot would put that back.
-                ...setLocation(state.npcs[member.at]!, who.to.locationId, day),
-                // Off the roll. Nobody released them; they are simply not there
-                // any more, and `WHY_UNAFFILIATED` in `rogues.ts` has said since
-                // it was written that this is how most of that population
-                // arrives.
-                factionId: null,
-                factionRankIndex: -1,
-                tags: [...member.npc.tags, `${WALKED_OUT}${member.why[0]}`,
-                    `${CAME_OFF_A_ROLL_AT}${member.npc.cultivation.realmOrdinal}`],
-                activity: {
-                    // Chasing a thing they need, which is the kind's own words.
-                    // NOT `out_with_a_party`: that has a term and a place to
-                    // come back to, and Internal Affairs would call them overdue for
-                    // a journey nobody sent them on.
-                    kind: 'their_own_business',
-                    note: `Left the compound. ${who.to.why}`,
-                    withIds: partyIds.filter(id => id !== member.npc.id),
-                    sinceDay: day,
-                    untilDay: null,
-                    returnTo: null
-                }
-            };
-            state.npcs[member.at] = addGoal(gone, {
-                kind: 'cultivation',
-                text: who.to.why,
-                priority: 0.7,
-                obstacles: [...member.why]
-            }, day);
-        }
-
-        // AND THE GROUND ASKS WHAT IT ASKS. Nobody underwrote this trip: a
-        // party a house sends is pitched at what the house thinks it can
-        // survive, and these people pitched themselves. `thresholds.survival`
-        // is the world's own bar and is the only one applied.
-        const lost: NpcRecord[] = [];
-        for (const member of party) {
-            if (member.npc.cultivation.realmOrdinal >= who.to.survivalOrdinal) continue;
-            const gone = theWorldLoses(
-                state.npcs[member.at], day,
-                `Walked out of ${houseRow ? houseRow.name : 'a compound'} for `
-                + `${who.to.name} and did not come out of it.`
-            );
-            // They walked out and they came out of it.
-            if (!gone) continue;
-            state.npcs[member.at] = gone;
-            lost.push(member.npc);
-        }
-
-        // AND THE TIE A ROAD WRITES. Two people out of two different halls who
-        // were going the same way and are now walking it together: the whole of
-        // what falling in with somebody is, and it is an ordinary relationship
-        // row rather than a second notion of company.
-        for (const member of party) {
-            if (!onTheRoad.has(member.npc.id)) continue;
-            const a = state.npcs[who.at];
-            const b = state.npcs[member.at];
-            state.npcs[who.at] = upsertRelationship(a, {
-                targetId: b.id, targetName: b.name, kind: 'ally', standing: 0.2,
-                note: 'Fell in with them on the road.'
-            }, day);
-            state.npcs[member.at] = upsertRelationship(b, {
-                targetId: a.id, targetName: a.name, kind: 'ally', standing: 0.2,
-                note: 'Fell in with them on the road.'
-            }, day);
-        }
-
+        }, { kind: 'cultivation', text: to.why, priority: 0.7, obstacles: [...reasons] }, day);
         appendWorldFact(state, makeFact({
-            day,
-            kind: 'migration',
-            scale: 'local',
-            summary:
-                `${party.map(m => m.npc.name).join(', ')} left `
-                + `${houseRow ? `the ${houseName(houseRow.name)}` : 'the roll'} `
-                + `for ${who.to.name}. `
-                + `${reasonSaidPlainly(who.why[0])}`
-                + (lost.length > 0
-                    ? ` ${lost.length} of them did not come out of it.` : ''),
-            actors: party.map(m => ({ id: m.npc.id, name: m.npc.name, role: 'left' })),
-            locationId: who.to.locationId,
-            factionIds: houseId ? [houseId] : [],
-            visibility: loudest > WORTH_REPEATING ? 'regional' : 'faction',
-            magnitude: loudest,
-            data: {
-                walkedOut: true,
-                tiesCooled,
-                why: who.why.join('; '),
-                party: party.length,
-                fellInOnTheRoad: onTheRoad.size,
-                lost: lost.length,
-                unattributed:
-                    'A compound is a name or two short this season and is not saying which, '
-                    + 'and somebody on the road is wearing robes with the badge cut off.'
-            }
+            day, kind: 'migration', scale: 'local',
+            summary: `${npc.name} left ${houseName(house.name)} for ${to.name}. ${reasonSaidPlainly(reasons[0])}`,
+            actors: [{ id: npc.id, name: npc.name, role: 'left' }], locationId: to.locationId,
+            factionIds: [house.id], visibility: 'faction', magnitude: 0.2,
+            data: { walkedOut: true, why: reasons.join('; '), party: 1, fellInOnTheRoad: 0, lost: 0 }
         }));
+        out++;
     }
     return out;
 }

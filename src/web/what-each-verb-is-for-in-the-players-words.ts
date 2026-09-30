@@ -605,7 +605,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         takes: ['intent', 'target', 'topic'],
         intents: [
             'leave', 'promote', 'stipend', 'standing', 'join', 'siphon', 'order',
-            'recruit', 'admission', 'curriculum', 'expel', 'duty', 'hire_duty', 'report_missing', 'donate', 'guest',
+            'recruit', 'take_disciple', 'compete', 'admission', 'curriculum', 'expel', 'duty', 'hire_duty', 'report_missing', 'donate', 'guest',
             // Dispatched on by the engine and undeclared until now, so the phase-1
             // glossary never told a model they existed and nothing typed reached them.
             'summons', 'refuse',
@@ -648,7 +648,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             house is holding against its own and decide one where the room is theirs, "plead"
             to speak for somebody it is holding something against - "target" names them - and
             "siphon",
-            "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above
+            "compete" to enter the public competition at its host, and "take_disciple" with
+            "target" naming the person present for "I accept Qiu Fen as my disciple"; this
+            creates a personal bond rather than a house recruit. "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above
             a disciple buy. "expel" is a house putting somebody off its roll - said as doing it
             or as having it done, which are the same act - and what the power actually reaches is
             an ELDER's dismissal, at the top of the ladder: the answer names who holds it where

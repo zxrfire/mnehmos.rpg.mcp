@@ -51,11 +51,9 @@ export type ShortOfTheTerms = 'the_fee' | 'nothing_to_write_out' | 'a_stranger_t
 /**
  * What somebody can put up at a gate that asks for something.
  *
- * Absent means nothing, which is the honest reading for every record that does
- * not carry one. Every NPC in the world is in that position today: the world's
- * own people reach a house's ground by being of that house, and nobody has
- * built the pass where an NPC pays their way onto somebody else's terrace. That
- * is a gap and not a decision.
+ * Absent means nothing. `standingOfNpc` reads the actual purse, known arts and
+ * open favour ledger. `applyRoadsComprehended` charges the visitor or delivers
+ * their manual before recording a season of admission.
  */
 export interface WhatTheyCouldPutUp {
     spiritStones: number;

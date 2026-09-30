@@ -575,6 +575,7 @@ export function noticesOnTheWall(input: WallInput & {
     speaking: readonly HouseWithSomethingToSay[];
     /** A notice already turned in, by anybody: its paper has come down. */
     isDown?: (houseId: string, ask: TheAsk) => boolean;
+    competitionCalendar?: { seed: string; onDay: number };
 }): Notice[] {
     const slots = BILLS_A_WALL_CARRIES[input.ground];
     if (slots <= 0) return [];
@@ -695,8 +696,10 @@ export function noticesOnTheWall(input: WallInput & {
     // two doors.
     const dated = reaching
         .flatMap(house => {
-            const holding = whatThisHouseHasOnPaper(input.seed, house, input.onDay);
-            return holding === null ? [] : [{ house, onDay: holding.onDay }];
+            const holding = whatThisHouseHasOnPaper(input.competitionCalendar?.seed ?? input.seed,
+                house, input.competitionCalendar?.onDay ?? input.onDay);
+            return holding === null ? [] : [{ house, onDay: input.competitionCalendar
+                ? input.onDay + holding.onDay - input.competitionCalendar.onDay : holding.onDay }];
         })
         // Soonest first, and only one. A wall carrying three competition
         // notices is a wall that has stopped being about anything else, and the

@@ -276,6 +276,7 @@ export function theBuiltGroundUnder(
             ? {
                 sectId: membership.sectId,
                 rankIndex: membership.rankIndex,
+                joinedOnDay: membership.joinedOnDay,
                 rankCount: house.ranks.length
             }
             : null,

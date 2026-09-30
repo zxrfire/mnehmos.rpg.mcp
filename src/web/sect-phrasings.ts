@@ -92,7 +92,7 @@ export type SectIntent =
      * A price a house put on somebody's head: taking it up, or with `topic`
      * `claim`, bringing the house what it asked for. See `price-phrasings.ts`.
      */
-    | 'bounty';
+    | 'bounty' | 'compete' | 'take_disciple';
 
 /**
  * Which sect verb a sentence is asking for.
@@ -105,6 +105,7 @@ export type SectIntent =
  * promotion" reads as asking somebody a question).
  */
 export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
+    ['compete', /\b(?:enter|join|compete in|sign up for)\s+(?:the\s+|a\s+|public\s+|open\s+)*(?:competition|tournament|contest)\b/],
     ['promote', /\b(?:promote|promotes|promoted|promotion|raise me|elevate me|advance my rank|higher rank|next rank up|rise in rank)\b/],
     // `for what I am owed` is somebody ASKING a body for it, which is a petition
     // and is resolved by a different instrument that answers in its own terms.
@@ -505,7 +506,7 @@ export const DEFAULT_ERRAND = 'labour';
  * Taking somebody INTO a house, which is the opposite of asking to be let in.
  */
 export const SECT_RECRUIT_VERBS =
-    'recruit|recruits|recruiting|take on|takes on|taking on|take in|takes in|taking in|'
+    'accept|accepts|accepting|recruit|recruits|recruiting|take on|takes on|taking on|take in|takes in|taking in|'
     + 'bring in|brings in|bringing in|enlist|enlists|enlisting|induct|inducts|inducting|'
     + 'sign on|signs on|signing on|'
     /**
@@ -864,6 +865,8 @@ export function leadershipIntent(text: string, input: string): PlannedAction | n
         && !ASKING_TO_BE_TAKEN_IN.test(text)) {
         const kind = /\belders?\b/.test(text) && !/\bdisciples?\b/.test(text) ? 'elder' : 'disciple';
         const phrase = namedAfter(input, SECT_RECRUIT_VERBS);
+        const personal = phrase?.match(/^(.+?)\s+(?:on\s+)?as\s+my\s+(?:disciple|student|apprentice)\b/i);
+        if (personal) return { action: 'sect', intent: 'take_disciple', target: personal[1]!.trim() };
         return {
             action: 'sect',
             intent: 'recruit',

@@ -524,7 +524,23 @@ Two things keep it honest:
 
 ---
 
-## Taking a disciple reaches recruitment, not personal discipleship
+## Taking a named disciple is a personal bond
 
-`I take him on as my disciple` now reaches generic house recruitment. It does not retain the
-named target or create a master-and-disciple tie, so personal discipleship remains a gap.
+Personal acceptance previously fell into generic house recruitment and lost the person.
+`I accept Qiu Fen as my disciple` now keeps the named person in the player's area.
+The existing standing-gap rule decides whether the bond is coherent; the ordinary
+social attempt resolver decides consent. A refusal creates no disciple. Acceptance
+writes both ties, lifelong reciprocal teaching and service obligations, and the
+sealing fact. It creates neither a person nor house membership. Generic recruitment
+remains a house intake.
+
+It matters more than one sentence because of what it would carry:
+
+- It is the tie an extraction talisman travels along - you give one to **your own**, and
+  that is the whole reason the deep rooms are gated socially rather than by money.
+- It is the obligation behind "their enemies become your enemies".
+- It is what makes hiding a junior's talent, taking the blame for one, or teaching them just
+  enough to be useful into acts with a price rather than sentiments.
+
+The personal bond uses the existing obligation ledger and knowledge gate; it does not
+create another relationship or favour store.

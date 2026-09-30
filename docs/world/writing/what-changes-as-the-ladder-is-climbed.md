@@ -165,10 +165,11 @@ many people have to re-plan when it arrives.
 puts a played deed into the world as a fact and its header is about exactly this
 seam. `whatBeingToldOpens` and `whatIsSaidAbout` model somebody finding out and
 the gap between what is said and what is true. World events already carry
-`rumours`. **What is missing is the planner:** rumours are written as
-decorations hanging off events, and nothing in the world pass reads one and
-changes what a house intends to do. Until something does, order two exists as
-text and order three does not exist at all.
+`rumours`. **A decider now reads them:** the yearly planner uses the existing
+distance and standing reader to select a report about a ruin or other searchable
+ground. It adds a goal to verify that report. The house's ordinary `a_find`
+sending reads that intention as its destination, and the returned party closes
+or blocks the goal. Hearing a rumour changes a plan, never the truth of its claim.
 
 ## The prose register changes, and only in these ways
 

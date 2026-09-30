@@ -25,9 +25,9 @@
  * describing a consequence of an absent mechanism is this repo's dominant defect
  * in its purest form, and it is recorded here rather than quietly deleted
  * because the reasoning was right and only the mechanism was missing.
- * `a-competition-anybody-may-enter.ts` is now the open half; it puts the date on
- * a wall and nothing enters it yet, so the first sentence is a claim about a
- * thing that exists and the second is still waiting on entrants.
+ * `entering-an-open-competition.ts` now records entrants and resolves open
+ * boards. It moves NPC progress clocks; the turn handler credits the player's
+ * sheet through `accrueProgress`. A result read never pays the lesson again.
  *
  * Pure. A board in, days out. The caller moves the clock.
  */

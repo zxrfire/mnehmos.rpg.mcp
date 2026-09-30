@@ -322,6 +322,7 @@ export function migrateCultivation(db: Database.Database): void {
       rank_title TEXT NOT NULL DEFAULT '',
       contribution INTEGER NOT NULL DEFAULT 0,
       joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+      joined_on_day INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY (sect_id, cultivator_id),
       FOREIGN KEY (sect_id) REFERENCES sects(id) ON DELETE CASCADE,
@@ -728,6 +729,16 @@ function addCultivationColumns(db: Database.Database): void {
     }
 
     thePouchBelongsToWhoeverIsCarryingIt(db);
+    const membershipColumns = (db.prepare('PRAGMA table_info(sect_members)').all() as { name: string }[])
+        .map(column => column.name);
+    // Older memberships have no recoverable join day; tenure starts at this upgrade.
+    if (!membershipColumns.includes('joined_on_day')) {
+        console.error('[Migration] Adding joined_on_day to sect_members');
+        db.exec('ALTER TABLE sect_members ADD COLUMN joined_on_day INTEGER NOT NULL DEFAULT 0');
+        if (db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'world_runtime'").get()) {
+            db.exec('UPDATE sect_members SET joined_on_day = COALESCE((SELECT MAX(current_day) FROM world_runtime), 0)');
+        }
+    }
     theBooksJoinThePouch(db);
 }
 

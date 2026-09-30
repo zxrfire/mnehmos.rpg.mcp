@@ -346,7 +346,8 @@ export function readTheWall(
      */
     alsoAsking: ReadonlyMap<string, readonly TheAsk[]> = new Map(),
     /** The notices this reader turned in, whose paper has come down. See `a-notice-is-turned-in.ts`. */
-    turnedIn: ReadonlySet<string> = new Set()
+    turnedIn: ReadonlySet<string> = new Set(),
+    competitionCalendar?: { seed: string; onDay: number }
 ): WallReading {
     const placeName = (cultivator.location ?? '').trim();
     const onDay = Math.floor(run.elapsedDays);
@@ -360,6 +361,7 @@ export function readTheWall(
     };
     const notices = noticesOnTheWall({
         ...wall,
+        competitionCalendar,
         speaking: housesWithSomethingToSay(alsoAsking, onDay),
         // FIRST COME, FIRST PAID: a notice somebody turned in is down. See `a-notice-is-turned-in.ts`.
         isDown: theNoticesThatAreDown({ runSeed: run.seed, today: onDay, windowDays: A_BILL_STAYS_UP_FOR_DAYS, turnedIn })

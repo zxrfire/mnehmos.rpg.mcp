@@ -6,6 +6,10 @@ One class per table, each owning the SQL for it. Nothing above this layer writes
 nothing here decides anything: a repository stores what it is given and returns what it
 holds.
 
+`SectRepo.addMember` stores `joinedOnDay` once on entry. Rank and contribution
+updates preserve it; leaving and rejoining starts a new tenure. An explicit day
+is accepted, with the persisted world clock supplying callers that omit it.
+
 `CultivatorRepo.markDead` asks the existence engine what violent body destruction
 left before storing the ending. A remnant closes the run and survives in its world
 record; old age and starvation still store an ordinary terminal death.

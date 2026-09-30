@@ -104,7 +104,8 @@ export function aRoomsOwnName(room: LocationRecord): string {
 function namesThisRoom(room: LocationRecord, wanted: string): boolean {
     const own = aRoomsOwnName(room).toLowerCase();
     const purpose = (purposeOf(room) ?? '').replace(/_/g, ' ');
-    return own === wanted || purpose === wanted || (wanted.length >= 4 && own.endsWith(` ${wanted}`));
+    return asARoomIsNamed(room.name) === wanted || own === wanted || purpose === wanted
+        || (wanted.length >= 4 && own.endsWith(` ${wanted}`));
 }
 
 /**
@@ -144,7 +145,7 @@ export function intoTheRoomTheWorkIsDoneIn(
         ground: room,
         cultivator,
         standing: house
-            ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length }
+            ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length, joinedOnDay: membership.joinedOnDay }
             : null,
         onDay: Math.floor(world.currentDay)
     });
@@ -199,7 +200,7 @@ export function theDoorsOffThisYard(
             ground: room,
             cultivator,
             standing: membership && house
-                ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length }
+                ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length, joinedOnDay: membership.joinedOnDay }
                 : null,
             onDay: Math.floor(world.currentDay)
         });
@@ -281,7 +282,7 @@ export async function aWalkInsideTheWalls(
         ground,
         cultivator,
         standing: membership && house
-            ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length }
+            ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length, joinedOnDay: membership.joinedOnDay }
             : null,
         onDay: Math.floor(world.currentDay)
     });

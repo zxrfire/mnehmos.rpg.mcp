@@ -37,6 +37,15 @@ the live register count these possessions; transfers and spending retain provena
 NPC prospecting reaches incidental grave prizes through the same transfer, recording the
 arrival on its own stream. The catalog remains the opening allocation and procedure text.
 
+The yearly pass reaches `scouts-place-children-on-probation.ts`,
+`an-extinguished-lamp-opens-an-inquiry.ts`, `rumours-revise-a-deciders-plans.ts`,
+and `entering-an-open-competition.ts`. Scout probation keeps its start on the
+person's record and grants no membership. Lamp inquiries distinguish a witnessed
+death from a missing account and use ordinary bounty proof. Rumour goals belong
+to deciders and feed the ordinary sending planner. Paid Dao admission is a dated
+receipt in history; a purse or art alone never grants access. Lectures, promotions
+and successful commissions write the existing face field.
+
 The clock reads due effects through `pendingEffects`; physical presence outside compounds
 uses `npcsAt`. Witness pools ask `whoCouldHaveSeenIt`, keeping reach and participant reads
 on the same geographic rule. Conversation backing asks `readTie`, so an unaccounted-for
@@ -3438,10 +3447,13 @@ shared one, and `BILLS_A_WALL_CARRIES` now means standing business only.
 three years a competition was pending on **70%** of days, which is furniture; at every
 seven, **36%**, and all four cities carried one inside a player's first year.
 
-**What is not built yet, so nobody mistakes the absence for a decision:** nothing enters
-one. There is no player verb, no entrant, no result. And *which* house opens its gate is a
-calendar rather than a reason - the reason is `whatAContestIsWorthToThePeopleInIt` read
-over the house's own roll, and it needs a world this layer is deliberately not handed.
+**Entries and results are live.** `I enter the public competition` registers the player
+at its host, preserving their id in an entry fact. `entering-an-open-competition.ts`
+uses the gathering resolver's realm brackets for the public board. Nearby idle NPCs
+also enter, each on a seeded one-in-five draw. Results, absence, affiliation announced by the host, face, and lessons
+are persisted once. The yearly pass handles NPC boards; boards with the player wait
+for the turn handler to supply attendance from the character sheet. The calendar
+still chooses the hosting date; the contest's lesson credit reads the actual field.
 - **`a-year-at-the-doors.ts`** - the yearly pass, one call. It routes `shutAPublicRuin`
   rather than rebuilding it. **That module had no caller outside its own test**, which is
   the whole of why nothing in the world was ever held.

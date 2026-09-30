@@ -39,9 +39,9 @@
  * board and everything out of a deep one - which is why it would invite anybody.
  * Reading that needs the house's roll, and this layer is handed no world: the
  * wall is derived from the catalog, the seed and the day, which is what lets it
- * answer on a machine with no world open. When an open competition grows
- * entrants it will have a world, and that is where the reason belongs. Until
- * then this is a calendar and says so.
+ * answer on a machine with no world open. The open board now lives in
+ * `entering-an-open-competition.ts`, where its actual field earns lessons.
+ * This module remains the calendar; it does not invent a separate planner.
  */
 
 import { forStream } from '../cultivation/rng.js';

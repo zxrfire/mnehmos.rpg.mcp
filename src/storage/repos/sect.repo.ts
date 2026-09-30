@@ -22,6 +22,7 @@ interface SectMemberRow {
     rank_title: string;
     contribution: number;
     joined_at: string;
+    joined_on_day: number;
     updated_at: string;
 }
 
@@ -34,6 +35,7 @@ export interface SectMembership {
     rankTitle: string;
     contribution: number;
     joinedAt: string;
+    joinedOnDay: number;
 }
 
 /**
@@ -87,8 +89,8 @@ export class SectRepository {
         this.deleteStmt = db.prepare('DELETE FROM sects WHERE id = ?');
 
         this.addMemberStmt = db.prepare(`
-            INSERT INTO sect_members (sect_id, cultivator_id, rank_index, rank_title)
-            VALUES (@sectId, @cultivatorId, @rankIndex, @rankTitle)
+            INSERT INTO sect_members (sect_id, cultivator_id, rank_index, rank_title, joined_on_day)
+            VALUES (@sectId, @cultivatorId, @rankIndex, @rankTitle, @joinedOnDay)
             ON CONFLICT(sect_id, cultivator_id) DO UPDATE SET
                 rank_index = excluded.rank_index,
                 rank_title = excluded.rank_title,
@@ -229,7 +231,7 @@ export class SectRepository {
      * it), so joining a second sect is a defection, not an addition - the old
      * row is removed in the same transaction rather than left to collide.
      */
-    addMember(sectId: string, cultivatorId: string, rankIndex = 0): SectMembership | null {
+    addMember(sectId: string, cultivatorId: string, rankIndex = 0, onDay?: number): SectMembership | null {
         const sect = this.getById(sectId);
         if (!sect) return null;
 
@@ -241,7 +243,9 @@ export class SectRepository {
             if (existing && existing.sectId !== sectId) {
                 this.removeMemberStmt.run(existing.sectId, cultivatorId);
             }
-            this.addMemberStmt.run({ sectId, cultivatorId, rankIndex: index, rankTitle: title });
+            const clock = this.db.prepare('SELECT MAX(current_day) AS day FROM world_runtime').get() as { day: number | null };
+            const joinedOnDay = Math.max(0, Math.floor(onDay ?? clock.day ?? 0));
+            this.addMemberStmt.run({ sectId, cultivatorId, rankIndex: index, rankTitle: title, joinedOnDay });
             this.mirrorOnCultivatorStmt.run({ sectId, cultivatorId });
         });
         enrol();
@@ -372,7 +376,8 @@ function rowToMembership(row: SectMemberRow): SectMembership {
         rankIndex: row.rank_index,
         rankTitle: row.rank_title,
         contribution: row.contribution,
-        joinedAt: row.joined_at
+        joinedAt: row.joined_at,
+        joinedOnDay: row.joined_on_day
     };
 }
 
