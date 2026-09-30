@@ -19,7 +19,8 @@
  */
 
 import { assessLastCrossing } from '../src/engine/cultivation/breakthrough.js';
-import { immortalStock, CROSSINGS_ATTEMPTED_PER_MILLENNIUM } from '../src/engine/world/ladder-odds.js';
+import { CROSSINGS_ATTEMPTED_PER_MILLENNIUM } from '../src/engine/world/ladder-odds.js';
+import { immortalStock } from './immortal-stock.js';
 import { LAST_CROSSING_ORDINAL, progressRequiredForOrdinal } from '../src/engine/cultivation/realms.js';
 import { makeCultivator, makeInjuries } from '../tests/engine/cultivation/fixtures.js';
 import type { Cultivator } from '../src/schema/cultivation.js';
