@@ -63,6 +63,12 @@ Recorded receipts remain historical evidence, not a store of current stock.
 Implementation gaps belong in the setting docs, including
 [beast contracts](../../../docs/world/things/beast-contracts.md) and
 [medicine storage](../../../docs/world/things/items.md).
+Beast guidance and high-realm provenance supply short knowledge fields to situated
+questions and archives. Climb dates derive from the provenance numbers. Changed-beast
+implementation rationale lives in
+[changed beast reference](../../../docs/world/things/changed-beast-reference.md).
+The Court's opening seat titles are catalog facts; its live roll uses the ordinary
+house promotion rules, without automatic displacement by age.
 
 ---
 

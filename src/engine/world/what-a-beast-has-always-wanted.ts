@@ -60,7 +60,7 @@
  * *"and can now say so in words"* would be a goal that shifts at the crossing,
  * which is the thing that was overruled.
  *
- * `WHAT_GIVES_A_CHANGED_BEAST_AWAY.neverAList` governs this area. A want is a
+ * `docs/world/things/changed-beast-reference.md` governs this area. A want is a
  * fact. A personality is not, and there is no table of either below.
  */
 

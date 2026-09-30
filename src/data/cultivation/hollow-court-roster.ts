@@ -107,7 +107,7 @@ export const HOLLOW_COURT_ROSTER: readonly HollowCourtMember[] = [
         rankIndex: 3,
         realmOrdinal: 43,
         // Level with the Third and younger, which is why this is the higher
-        // seat. The ordering rule is in SEAT_ORDER and this is it applied.
+        // seat on the opening roster.
         ageYears: 3_900,
         whatIsAskedOfThem:
             'The rota, like the others, and one thing the others are not asked for: the argument. The Second holds that the Court should answer questions freely and keeps saying so.',

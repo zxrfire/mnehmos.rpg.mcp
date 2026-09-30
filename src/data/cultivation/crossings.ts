@@ -425,7 +425,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             { title: 'The First Seat who held the vein six hundred years and then went from it', yearsAgo: 2_900, was: 'First Seat, and the longest holder of that chair in the Court\'s record', afterCrossing: 'still_above' },
             // She is filed as the Third Seat because that is the chair she held
             // longest and the one the Court still calls her by. It is not the chair
-            // she went from. SEAT_ORDER ranks by ordinal descending, so every
+            // she went from. The opening seats rank by ordinal descending, so every
             // crossing above her moved her up a place - and she stood protector at
             // four of them. By the time it was her turn there was nobody left in
             // front of her, which is the whole shape of her life: she reached First

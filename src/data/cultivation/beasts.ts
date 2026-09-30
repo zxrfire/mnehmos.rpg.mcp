@@ -135,7 +135,7 @@ import {
     TechniqueGradeSchema,
     type SectAlignment
 } from '../../schema/cultivation.js';
-import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
 import { HerbBiomeSchema } from './herbs.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -228,6 +228,11 @@ export function anythingAtThisRungSpeaks(ordinal: number): boolean {
  * in the tide schema above, and neither is restated here.
  */
 export const WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS = {
+    knowledge: [
+        'Houses send parties to obtain beast materials and to defend settlements on their ground from beast tides.',
+        'A rich vein attracts beasts as well as supplying qi. Materials cannot be copied as manuals can.',
+        'Beasts that have taken human shape do not arrive in tides.'
+    ],
     toTake:
         'A core is the only high-grade material in this world that is nobody\'s '
         + 'property and cannot be written out again. Everything else at that grade '
@@ -291,6 +296,11 @@ export const WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS = {
  * way every refusal in this engine does.
  */
 export const THREE_ROADS_TO_WHAT_A_PERSON_CARRIES = {
+    knowledge: [
+        'A changed beast can agree to part with material, name terms, or refuse.',
+        'The grade of a beast material follows the source\'s cultivation when it is taken.',
+        'Righteous houses may ask for material. They permit killing a changed beast only when that person\'s conduct is demonic.'
+    ],
     killItYoung: 'Below the change it is an animal, and what comes off it is the earth-grade version. Available to anybody, and it is what everybody does.',
     killItOld: 'The heaven-grade version only comes off a source at or above the change, and anything standing there has a shape and a voice and can decline. So this is killing somebody, and a righteous house may only do it to one behaving as a demonic party behaves. The bar is on the act rather than on the appearance of it: the body goes back to its beast shape as it dies, it hides nothing, and the bar holds whether or not anybody finds out.',
     ask: 'Open to anybody, steep, and refusable. The only road to the heaven-grade version a righteous house has, and the reason the righteous half of the world is not shut out of the top of the economy by arithmetic.',
@@ -603,6 +613,11 @@ export type BeastTide = z.infer<typeof BeastTideSchema>;
  * with everything human taken off it.
  */
 export const THE_BEAST_ROAD = {
+    knowledge: [
+        'Beasts cultivate continuously on the ground they occupy, without manuals, teachers or pills.',
+        `A beast condenses a core at ${rankName(BEAST_CORE_ORDINAL)} and can take human shape and speak at ${rankName(BEAST_CHANGE_ORDINAL)}.`,
+        'Below the change, killing the body ends the life. Above it, soul survival follows the same rules as for other cultivators.'
+    ],
     method:
         'Sit on the best ground you can hold and do not die. There is no manual, no teacher, no medicine and no crossing ceremony. Progress is time multiplied by the density of the air, and nothing else enters the calculation.',
     rate:
@@ -632,6 +647,11 @@ export const THE_BEAST_ROAD = {
  * outcome. `TITLE_TRANSLATIONS` in `regions.ts` is the human version of this.
  */
 export const ESTIMATING_A_BEAST = {
+    knowledge: [
+        'Size alone does not establish a beast\'s cultivation. The qi around it and the absence of ordinary animals also supply evidence.',
+        'A district survey records what was measured at the time; a beast can have advanced since that survey.',
+        `A beast speaking in human shape has reached at least ${rankName(BEAST_CHANGE_ORDINAL)}.`
+    ],
     tells: [
         'What the air does around it. A beast past Foundation moves qi the way a Drawn cultivator does, and it is visible at distance in cold weather.',
         'What else is living nearby. The reliable measure is absence: the ordinal is written in how far out the ordinary animals have gone.',
@@ -764,6 +784,11 @@ export const ESTIMATING_A_BEAST = {
  * that does not come off the ladder.
  */
 export const WHAT_GIVES_A_CHANGED_BEAST_AWAY = {
+    knowledge: [
+        'A changed beast has an ordinary human body. Build and colouring do not identify its species.',
+        'It may know the ground it lived on without knowing human places or customs it has never encountered.',
+        'Familiarity with human life is acquired through exposure, rather than cultivation.'
+    ],
     notTheBody:
         'The shape is correct and looking harder does not help. It cultivated into that body rather than being fitted into one, and nothing about it is a costume that slips.',
     ordinaryVariation:
@@ -774,15 +799,6 @@ export const WHAT_GIVES_A_CHANGED_BEAST_AWAY = {
     // ── THE WHOLE OF THE MECHANISM, AND IT IS ONE FACT ────────────────
     theState:
         'A changed beast begins with no records for ordinary life. That is the entire mechanism and there is nothing else to it: not a behaviour, not a trait, not a disposition - an absence of records, in the layer that already holds what somebody has a reference for.',
-    whereItLives:
-        'KnowingStage in src/engine/social/discovery.ts, held per subject, with unaware at the bottom. A changed beast is an ordinary reader whose records happen to be empty about chopsticks, villages, trades and roads. Nothing about it is special-cased and nothing should be.',
-    andTheNarratorDoesTheRest:
-        'The engine knows this person has no record for this object. What that looks like at the table belongs to the narrator, and it will be different every time - which is exactly what a list of gaffes can never be.',
-
-    // ── WHAT MUST NOT BE BUILT ────────────────────────────────────────
-    neverAList:
-        'Do not enumerate the mistakes. No table of gaffes, no awkward-moments array, nothing that stores asking what the chopsticks are or holding one like a fork or naming a village that does not exist. A list repeats inside three meals, and it is the engine writing prose, which is the one thing this repo exists not to do. If an answer here needs a field, a list, or a branch on species, it has gone wrong.',
-
     // ── AND IT IS NOT A RULE ABOUT BEASTS ─────────────────────────────
     notAboutBeastsAtAll:
         'Anyone with no record for a thing behaves this way. The changed beast is only the most complete case, because it has the fewest records of anybody - not because it is a beast.',
@@ -793,20 +809,7 @@ export const WHAT_GIVES_A_CHANGED_BEAST_AWAY = {
     whoNoticesFirst:
         'Whoever sat next to them, at whatever rung. This is the one reading in the world that gets harder rather than easier as the reader climbs, because a recluse at the top of the ladder has the same hole in their own reference and nothing to compare against.',
     everyOne:
-        'True of all of them, the fox included. Seeming makes a body right; it does not supply twenty years of sitting at a table with people.',
-
-    /**
-     * Instances of the one rule, NOT a list of behaviours. Extending this is
-     * how you record another fiction the same mechanic already covers; it is
-     * never where a new kind of mistake gets written down.
-     */
-    theSameRuleElsewhere: [
-        'the high-realm recluse, who reads a token perfectly and cannot say whose retinue that is',
-        'the sealed ancestor, waking after centuries with a modern object in her hand',
-        'somebody raised inside a sect who has never in their life bought anything',
-        'somebody from four provinces over, who is not lying and still gets it wrong',
-        'the changed beast, which is the same state with the fewest records of all'
-    ]
+        'True of all of them, the fox included. Seeming makes a body right; it does not supply twenty years of sitting at a table with people.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -1111,6 +1111,8 @@ our ancestral hall"* should cost one row.
 
 `heirsOf` produces the array the social layer's `inheritLedgerOnDeath` consumes. Grudges,
 debts and oaths themselves belong to [`../social/README.md`](../social/README.md).
+`traitsFor` supplies the live capability assessment with only the member's expressed
+traits; generation fading is checked on read. Character rows hold no copied modifiers.
 
 ---
 

@@ -12,6 +12,7 @@ including the question of what money cannot buy, which is most of what matters.
 | [`economy.md`](economy.md) | stones, prices, and the two economies |
 | [`items.md`](items.md) | counted and tracked, provenance, and what holding a thing says |
 | [`beast-contracts.md`](beast-contracts.md) | mutual terms and the remaining bonded-cultivation gap |
+| [`changed-beast-reference.md`](changed-beast-reference.md) | missing human reference, exposure and the narrator's role |
 
 ## The design is not all in here
 

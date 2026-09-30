@@ -488,7 +488,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `LOW_FALL_PREFECTURES` | [`regions/low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) | **nothing** | - |
 | `NOT_DERIVABLE_NOTES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | **nothing** | - |
 | `QUIET_MARCHES_PREFECTURES` | [`regions/quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) | **nothing** | - |
-| `SEAT_ORDER` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | - |
 | `THE_DROWNED_REACH` | [`regions/drowned-reach.ts`](../../src/data/cultivation/regions/drowned-reach.ts) | **nothing** | - |
 | `THE_LOW_FALL` | [`regions/low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) | **nothing** | - |
 | `THE_QUIET_MARCHES` | [`regions/quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) | **nothing** | - |

@@ -313,7 +313,7 @@ export function whatTheDoorHereSays(
     return whatTheDoorOfThisRuinSays({
         site,
         day: world.currentDay,
-        party: capabilityActorFor(cultivator),
+        party: capabilityActorFor(cultivator, world),
         crossingDays,
         escort: whoHereCouldFoldYouIn(game, cultivator),
         slip: theTeleportationTalismanTheyCarry(world, cultivator.id),

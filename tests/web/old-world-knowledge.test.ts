@@ -6,6 +6,8 @@
  * remembered topic nor a distant room grants a new fact.
  */
 import { getSect } from '../../src/data/cultivation/sects.js';
+import { HIGH_REALM_PROVENANCE } from '../../src/data/cultivation/faction-character.js';
+import { BEAST_CHANGE_ORDINAL } from '../../src/data/cultivation/beasts.js';
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -15,13 +17,53 @@ import { parseIntent } from '../../src/web/actions.js';
 import { PRESENT_YEAR, THE_CALENDAR_OFFSET, CALENDARS } from '../../src/data/cultivation/history.js';
 import { FALSE_IMMORTAL_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import { purposeOf } from '../../src/engine/world/architecture.js';
-import { makeGame, makeGameInWorld } from './harness.js';
+import { makeGame, makeGameInWorld, ScriptedProvider } from './harness.js';
 
 const philosopher = { realmOrdinal: FALSE_IMMORTAL_ORDINAL, sectId: null };
 const reading = (topic: string, sectId: string | null = null) =>
     whatSomebodyKnowsOfTheOldWorld(topic, { ...philosopher, sectId }, PRESENT_YEAR)!;
 
 describe('facts about the old world', () => {
+    /** Beast guidance was catalog-only; questions now select facts without exposing bodies or hidden minds. */
+    it.each([
+        ['beast cultivation', /cultivate continuously/],
+        ['estimating a beast', /survey records what was measured/],
+        ['changed beast material', /name terms, or refuse/],
+        ['changed beasts', /ordinary human body/],
+        ['house beast missions', /defend settlements/]
+    ])('discloses %s through the record reader', (topic, claim) => {
+        const answer = reading(topic);
+        expect(answer.holdsIt).toBe(true);
+        expect(answer.subject.facts.join(' ')).toMatch(claim);
+        expect(answer.subject.facts.join(' ')).not.toMatch(/\.ts|engine|narrator|ordinal|Know(?:ing)?Stage/);
+        for (const line of answer.subject.facts) expect(line.length).toBeLessThan(500);
+    });
+
+    it('withholds changed-beast knowledge from an uninformed mortal', () => {
+        const answer = whatSomebodyKnowsOfTheOldWorld('changed beasts',
+            { realmOrdinal: 0, sectId: null }, PRESENT_YEAR)!;
+        expect(answer.holdsIt).toBe(false);
+        expect(answer.subject.facts).toEqual([]);
+        expect(whatSomebodyKnowsOfTheOldWorld('changed beasts',
+            { realmOrdinal: BEAST_CHANGE_ORDINAL, sectId: null }, PRESENT_YEAR)!.holdsIt).toBe(true);
+    });
+
+    /** A historical climb is a dated house record, never a current limit on the ladder. */
+    it('dates every high-realm climb and keeps its record with the holding house', () => {
+        for (const [houseId, provenance] of Object.entries(HIGH_REALM_PROVENANCE)) {
+            const topic = `${getSect(houseId)!.name} high-realm climb`;
+            const outsider = reading(topic);
+            expect(outsider.holdsIt).toBe(false);
+            const insider = reading(topic, houseId);
+            expect(insider.holdsIt).toBe(true);
+            expect(insider.subject.facts.join(' ')).toContain(`Peace ${PRESENT_YEAR - provenance.climbedYearsAgo}`);
+            expect(reading(topic, houseId).subject.facts).toEqual(insider.subject.facts);
+            expect(whatSomebodyKnowsOfTheOldWorld(topic, { ...philosopher, sectId: houseId }, PRESENT_YEAR + 100)!
+                .subject.facts).toEqual(insider.subject.facts);
+            expect(oldWorldArchive(houseId, PRESENT_YEAR, provenance.highestOrdinal)
+                .some(row => row.id === insider.subject.id)).toBe(true);
+        }
+    });
     it.each([
         ['nodes and seams', 'house-immovable-mountain', /same work/],
         ['reconciliation', 'house-immovable-mountain', /bodies of law/],
@@ -150,4 +192,37 @@ describe('asking, remembering and reading in play', () => {
             expect(oldWorldYear(world, 0)).toBe(before + 7);
         } finally { db.close(); }
     }, 120_000);
+
+    it('hears and recalls beast facts with their teller without changing cultivation', async () => {
+        const plans: string[] = [];
+        const { game, repos, db } = makeGame({ seed: 'beast-lore-question', provider: new ScriptedProvider({ plans }) });
+        try {
+            const { cultivator } = await game.newRun('Listener');
+            const npc = repos.cultivators.create({ ...cultivator, id: 'npc-beast-record-reader',
+                name: 'Record Reader', kind: 'npc', realmOrdinal: BEAST_CHANGE_ORDINAL, sectId: null });
+            const before = game.currentRun();
+            for (const [topic, claim] of [
+                ['beast cultivation', /cultivate continuously/],
+                ['estimating a beast', /survey records what was measured/],
+                ['changed beast material', /name terms, or refuse/],
+                ['changed beasts', /ordinary human body/],
+                ['house beast missions', /defend settlements/]
+            ] as const) {
+                plans.push(JSON.stringify({ action: 'interact', intent: 'talk', target: npc.name, topic }));
+                const answer = await game.act(`I ask ${npc.name} about ${topic}`);
+                expect(answer.toolCalls.some(call => call.name === 'engine.askedAbout')).toBe(true);
+                expect(answer.narration).toMatch(claim);
+                const held = game.knowledge.awareness(cultivator.id, 'event').find(row => claim.test(row.statement));
+                expect(held?.sourceKind).toBe('told');
+                expect(held?.sourceNote).toContain(npc.name);
+                plans.push(JSON.stringify({ action: 'recall', target: held!.name }));
+                const recall = await game.act(`What do I know about ${held!.name}?`);
+                expect(recall.narration).toMatch(claim);
+                expect(recall.narration).toContain(npc.name);
+            }
+            expect(game.currentRun().cultivator.realmOrdinal).toBe(before.cultivator.realmOrdinal);
+            expect(game.currentRun().cultivator.spiritStones).toBe(before.cultivator.spiritStones);
+            expect(game.currentRun().run.elapsedDays).toBe(before.run.elapsedDays);
+        } finally { db.close(); }
+    });
 });

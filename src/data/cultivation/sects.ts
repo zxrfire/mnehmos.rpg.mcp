@@ -3503,11 +3503,9 @@ export interface WithdrawnPower {
     /**
      * The seats themselves, in order, with the rung each stands on.
      *
-     * Ordered by `SEAT_ORDER`: ordinal descending, then age ascending. Second
-     * and Third stand on the same rung, which is the tiebreak doing visible
-     * work rather than a rounding artefact - equal ordinals, and the younger
-     * holds the higher seat, so Second is younger than Third and takes first
-     * claim on everything the Ward can supply.
+     * The opening roster is ordered by ordinal descending, then age ascending.
+     * Second and Third stand on the same rung; Second is younger. Live ranks
+     * advance through ordinary house promotion rather than age displacement.
      *
      * `count` must equal this length, and the catalog test asserts it.
      */
@@ -3679,18 +3677,6 @@ export const AZURE_INTAKE = {
         'Two holdings it could have kept for itself, on a vein it is not using either half of, and a standing obligation to read a quarterly roll. It reads the roll rarely, which is the one part of the arrangement that would embarrass it.'
 } as const;
 
-export const SEAT_ORDER = {
-    primary: 'Realm ordinal, descending. The highest holds First Seat.',
-    tiebreak:
-        'Age, ascending. Among equal ordinals the younger holds the higher seat, because the seat is first claim on the resources and lifespan is what limits how many attempts at the crossing anybody gets. Same odds per attempt, more attempts remaining, so the supply goes there.',
-    displacement:
-        'A seat is held, not owned. Somebody arriving at an equal ordinal younger takes the seat above them and everybody below shifts down one, which moves them down the queue for everything the Ward can supply. It is not a demotion and the Ward does not treat it as one, which does not make it comfortable.',
-    outsideTheLadder:
-        'Guest of the Ward is honorary, sits outside the four rungs, and is not a seat. It confers nothing and asks nothing.',
-    whenSomebodyRunsOut:
-        'The rule has an edge nobody designed and everybody has now seen. It allocates on attempts remaining, so somebody with none cannot be placed on it at all - not at the bottom, not anywhere. A First Seat who makes the crossing and does not complete it comes back with no ordinal and no attempts, and the ladder that ranked them has no rung that fits. Guest of the Court exists because that happened once and the Court had to put him somewhere.'
-} as const;
-
 /**
  * The powers that have withdrawn from the world, and the seats they hold.
  *
@@ -3700,7 +3686,7 @@ export const SEAT_ORDER = {
  * written design for what the Ward is and who it admits is
  * `docs/world/climbing/past-the-ceiling.md`, "The Empyrean Court is the exception to all
  * of it"; who stands on the mountains is `hollow-court-roster.ts`; the seat
- * ordering is `SEAT_ORDER` immediately above. All four are indexed in
+ * opening order is recorded on the roster. The live roll uses ordinary house promotions. These are indexed in
  * `docs/world/INDEX.md`.
  */
 export const WITHDRAWN_POWERS: Record<string, WithdrawnPower> = {
@@ -3962,4 +3948,3 @@ export function territoryOfSect(sectId: string): {
         discrepancy: prefecture.discrepancy
     };
 }
-

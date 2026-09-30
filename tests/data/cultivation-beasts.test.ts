@@ -774,15 +774,6 @@ describe('what gives a changed beast away', () => {
         }
     });
 
-    it('is the third instance of a rule nobody designed for it', () => {
-        // realm is capability, worldview is reference. The recluse, the sealed
-        // ancestor and the changed beast are one mechanic with three fictions.
-        const cases = WHAT_GIVES_A_CHANGED_BEAST_AWAY.theSameRuleElsewhere;
-        expect(cases.length).toBeGreaterThanOrEqual(3);
-        expect(cases.join(' ')).toMatch(/recluse/i);
-        expect(cases.join(' ')).toMatch(/sealed ancestor/i);
-    });
-
     it('leaves the fox wearing the shape perfectly, because seeming is its gift', () => {
         const fox = requireBeast('beast-nine-tailed-reader');
         expect(anythingAtThisRungSpeaks(fox.ordinal)).toBe(true);
@@ -792,42 +783,6 @@ describe('what gives a changed beast away', () => {
 });
 
 describe('the missing reference is a state, not a list of behaviours', () => {
-    it('names the one fact and the layer that already holds it', () => {
-        const rule = WHAT_GIVES_A_CHANGED_BEAST_AWAY;
-        expect(rule.theState).toMatch(/no records for ordinary life/i);
-        expect(rule.whereItLives).toMatch(/KnowingStage/);
-        expect(rule.whereItLives).toMatch(/unaware/);
-        expect(rule.andTheNarratorDoesTheRest).toMatch(/narrator/i);
-    });
-
-    it('refuses to enumerate the mistakes, in the file that would grow the list', () => {
-        // A list repeats inside three meals and is the engine writing prose.
-        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.neverAList).toMatch(/do not enumerate/i);
-        // Nothing in here may become an array of gaffes. `theSameRuleElsewhere`
-        // is the one array and it lists INSTANCES OF THE RULE - other people
-        // with the same hole - never kinds of mistake.
-        const arrays = Object.entries(WHAT_GIVES_A_CHANGED_BEAST_AWAY)
-            .filter(([, v]) => Array.isArray(v));
-        expect(arrays.map(([k]) => k)).toEqual(['theSameRuleElsewhere']);
-        for (const entry of WHAT_GIVES_A_CHANGED_BEAST_AWAY.theSameRuleElsewhere) {
-            // Each row is a person, not a blunder.
-            expect(entry).toMatch(/who|somebody|the .*(recluse|ancestor|beast)/i);
-        }
-    });
-
-    it('is not a rule about beasts, and fades with living rather than with rung', () => {
-        const rule = WHAT_GIVES_A_CHANGED_BEAST_AWAY;
-        expect(rule.notAboutBeastsAtAll).toMatch(/anyone|anybody/i);
-        expect(rule.notAboutBeastsAtAll).toMatch(/most complete case/i);
-        expect(rule.itFadesWithExposureNotRung).toMatch(/living/i);
-        expect(rule.itFadesWithExposureNotRung).toMatch(/no amount of cultivation|not.*rung/i);
-        // The people who share the hole are on the list, so nobody reads this
-        // as bespoke to the catalog it happens to be written in.
-        const others = rule.theSameRuleElsewhere.join(' ');
-        expect(others).toMatch(/sect/i);
-        expect(others).toMatch(/provinces over/i);
-    });
-
     it('keeps effort as the thing that exposes it', () => {
         // The inversion worth having: a changed beast trying to pass is more
         // catchable, not less, because a convincing lie needs a reference class.

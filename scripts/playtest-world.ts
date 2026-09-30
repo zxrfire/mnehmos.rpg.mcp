@@ -23,7 +23,6 @@ import {
 } from '../src/engine/cultivation/realms.js';
 import {
     SECTS,
-    SEAT_ORDER,
     WITHDRAWN_POWERS,
     getSect
 } from '../src/data/cultivation/sects.js';
@@ -189,7 +188,6 @@ async function theSeats() {
     const withdrawn = WITHDRAWN_POWERS['sect-hollow-court'];
     line(`  ${court.name}: bar ${court.admissionOrdinal} (${rankName(court.admissionOrdinal)}), ranks ${court.ranks.join(' > ')}`);
     line(`  seats, in order: ${withdrawn.seats.map(s => `${s.position} at ${s.ordinal}`).join(', ')}`);
-    line(`  ordering: ${SEAT_ORDER.primary} Then: ${SEAT_ORDER.tiebreak.slice(0, 92)}...`);
 
     sub('the ordering rule, checked against the roster');
     let ok = true;
@@ -200,15 +198,10 @@ async function theSeats() {
         line(`  ${above.position.padEnd(12)} ${above.ordinal}  >=  ${below.position.padEnd(12)} ${below.ordinal}`);
     }
     if (ok) {
-        note('seats', 'works', 'The four seats are ordered by ordinal descending, exactly as SEAT_ORDER states.');
+        note('seats', 'works', 'The opening seat roster is ordered by ordinal descending.');
     } else {
         note('seats', 'broken', 'The seat roster contradicts its own ordering rule.');
     }
-    // The rule's own edge case is the reason Guest of the Court exists.
-    if (/no attempts/i.test(SEAT_ORDER.whenSomebodyRunsOut)) {
-        note('seats', 'works', 'The ordering rule states its own edge: somebody with no attempts left cannot be placed on it at all, which is why Guest of the Court had to be invented.');
-    }
-
     sub('walking up to the gate at each rung');
     for (const ordinal of [20, 28, court.admissionOrdinal, 41]) {
         const { game, repos } = makeGame({ seed: `court-${ordinal}`, worldEnabled: true, adminMode: true });

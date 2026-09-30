@@ -43,6 +43,8 @@ import { locatabilityFrom, theArrivalReadFor } from '../../engine/encounters/ind
 import { npcsStandingIn } from '../../engine/world/where-inside-a-house-somebody-is-standing.js';
 import { regardFor, type RegardAsker } from '../../engine/cultivation/regard.js';
 import { worldForRun } from '../state/cultivation-world.js';
+import { traitsFor } from '../../engine/world/lineage.js';
+import type { WorldState } from '../../engine/world/world-state.js';
 import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
 import {
     discoveryContextFor,
@@ -113,7 +115,7 @@ export const UnderstandingSchema = z.object({
 /**
  * A cultivator as the capability layer sees them.
  */
-export function capabilityActorFor(cultivator: Cultivator): CapabilityActor {
+export function capabilityActorFor(cultivator: Cultivator, world?: WorldState): CapabilityActor {
     const root = getSpiritRoot(cultivator.spiritRoot);
     const knowledgeIds = new Set<string>();
     const specialties = new Set<string>(root.elements);
@@ -129,6 +131,9 @@ export function capabilityActorFor(cultivator: Cultivator): CapabilityActor {
         id: cultivator.id,
         realmOrdinal: cultivator.realmOrdinal,
         attributes: cultivator.attributes,
+        modifiers: world?.lineages
+            .filter(line => line.memberIds.includes(cultivator.id))
+            .flatMap(line => traitsFor(line, cultivator.id).flatMap(trait => trait.modifiers)) ?? [],
         knowledgeIds: [...knowledgeIds],
         profile: { specialties: [...specialties] },
         heldGrants: grantsHeldWith(cultivator.realmOrdinal, brokenStatusesOn(cultivator.injuries)),
@@ -314,7 +319,7 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
         };
     }
 
-    const assessment = assessCapability(capabilityActorFor(cultivator), subject, onDay);
+    const assessment = assessCapability(capabilityActorFor(cultivator, await worldForRun(run)), subject, onDay);
 
     // A place has no rung column, so its gate is what surviving it requires -
     // which IS the rung it is pitched at, measured rather than authored.

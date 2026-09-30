@@ -39,6 +39,8 @@ import {
 } from './cultivation-support.js';
 import { standingOf } from './cultivation-mortal.js';
 import { capabilityActorFor } from './cultivation-perception.js';
+import { worldForRun } from '../state/cultivation-world.js';
+import type { WorldState } from '../../engine/world/world-state.js';
 import {
     assessCapability,
     makeSubject,
@@ -824,7 +826,7 @@ export async function handleWake(args: z.infer<typeof WakeSchema>): Promise<obje
         // The risky action routed through the predicates rather than refused.
         // The seal is a physical fact, so `attempt` genuinely fails and says
         // why - which is the one legitimate reason it may fail at all.
-        ifYouTriedItYourself: describeSealAssessment(cultivator, dormant, onDay),
+        ifYouTriedItYourself: describeSealAssessment(cultivator, dormant, onDay, await worldForRun(run)),
         woken: false,
         whyNot:
             'The condition is a fact about the world, and no action anywhere in this engine lets a ' +
@@ -840,7 +842,8 @@ export async function handleWake(args: z.infer<typeof WakeSchema>): Promise<obje
 function describeSealAssessment(
     cultivator: Cultivator,
     dormant: { name: string; realmOrdinal: number; restingPlace: string },
-    onDay: number
+    onDay: number,
+    world: WorldState
 ): Record<string, unknown> {
     const subject = makeSubject({
         kind: 'formation',
@@ -856,7 +859,7 @@ function describeSealAssessment(
         sealed: true,
         keyId: null
     });
-    const assessment = assessCapability(capabilityActorFor(cultivator), subject, onDay);
+    const assessment = assessCapability(capabilityActorFor(cultivator, world), subject, onDay);
     return {
         sleeperRank: rankName(dormant.realmOrdinal),
         attempt: {

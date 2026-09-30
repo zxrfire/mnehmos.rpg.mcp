@@ -187,7 +187,7 @@ session somebody wrote down design that was already in the catalog.
 **Read:** [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 10 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) 3
   …and 23 more files.
 
-**Constants most about it:** `IMMORTAL_ANCESTORS`, `LID_NON_POSITIONS`, `SEAT_ORDER`, `ARTERIALS`, `AZURE_CLOUD_INTAKE`, `CROSSING_PRACTICE`, and 12 more
+**Constants most about it:** `IMMORTAL_ANCESTORS`, `LID_NON_POSITIONS`, `ARTERIALS`, `AZURE_CLOUD_INTAKE`, `CROSSING_PRACTICE`, and 12 more
 
 ### The Severed
 

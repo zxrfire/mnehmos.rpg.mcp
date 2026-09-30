@@ -17,6 +17,8 @@ action on an existing one.
 at the final mortal rung, including the pill already swallowed. The four
 possible endings are priced by the same mechanics the attempt uses. Technique
 listings identify manuals that reach beyond their starting realm's geometry.
+Capability assessments derive expressed lineage trait modifiers from the current
+world on each read. Generation fading does not copy modifiers onto a character.
 
 Two things that surprise people:
 

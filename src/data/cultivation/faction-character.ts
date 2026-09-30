@@ -959,6 +959,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
 export const HIGH_REALM_THRESHOLD = 32;
 
 export interface HighRealmProvenance {
+    /** Short archive findings; the climb's rung and date come from the numeric fields. */
+    knowledge: readonly string[];
     /** The ordinal in question, matching the faction's powerOrdinal. */
     highestOrdinal: number;
     /** Years since that person made the climb. Always long ago. */
@@ -981,6 +983,7 @@ export interface HighRealmProvenance {
 
 export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
     'sect-earth-vein-tower': {
+        knowledge: ['The climb used the arterial chamber under the datum vault. The house holds one copy of the road and has made no second copy.'],
         highestOrdinal: 43,
         climbedYearsAgo: 400,
         climbedWhere:
@@ -993,6 +996,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
             'The province holds that the arterials are administered by a body with a great many strong people in it. What is actually there is a long roll that tops out at thirty-nine and one woman who has not left a room in four hundred years, and the gap between those two readings is the most valuable thing anybody could learn about this house.'
     },
     'sect-myriad-course-hall': {
+        knowledge: ['The climb used a driven face in the Buddha Precipice. The teacher remains at the Nail; students must come there for instruction.'],
         highestOrdinal: 42,
         climbedYearsAgo: 700,
         climbedWhere:
@@ -1005,6 +1009,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
             'Every driven province holds that the seat is simply very old, which is true and is not the reason. It is a body that has produced competence at a rate nobody matches for eleven hundred years and has produced a crossing in none of them, and it has never once presented the two facts as a puzzle.'
     },
     'sect-azure-mist-court': {
+        knowledge: ['The climb used the runoff below the Pavilion\'s gorge vein. The Pavilion\'s register continues to record the climber as a placement.'],
         highestOrdinal: 37,
         climbedYearsAgo: 340,
         climbedWhere:
@@ -1017,6 +1022,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
             'The Jade Gorge holds that the Mist is a feeder with an unusually old warden. The Pavilion\'s own register still says placement. Pei Hanzhang has been one rung under Grand Ascension for a century and a half and has never once asked for the entry to be corrected, and anybody who works out why understands the Azure family better than the Azure family does.'
     },
     'sect-azure-cloud-pavilion': {
+        knowledge: ['The climb used the gorge vein beneath the Pavilion in the Late Age. The surviving teaching records the divestment without supplying its method.'],
         highestOrdinal: 41,
         climbedYearsAgo: 380,
         climbedWhere:
@@ -1029,6 +1035,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
             'The province holds that the Pavilion knows something. The Pavilion has never said otherwise, has never said what, and has been living off the difference for three centuries.'
     },
     'sect-stone-marrow-hall': {
+        knowledge: ['The climb used the Weiring vein two provinces east. The house published the vein\'s closing assay eighty years before the present age\'s opening year.'],
         highestOrdinal: 33,
         climbedYearsAgo: 210,
         climbedWhere: 'The Weiring vein in a province two borders east, which the Stone Marrow Hall assayed, worked and published the closing figure on eighty years ago.',
@@ -1037,6 +1044,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'Every Rate Elder in the house will tell you the ground for it no longer exists. They are describing their own ledger accurately and treating that as a description of the world, which is the house error in one sentence.'
     },
     'house-still-blade': {
+        knowledge: ['The climb used a province since drawn down. No Last Cut has been recorded in two hundred years.'],
         highestOrdinal: 33,
         climbedYearsAgo: 240,
         climbedWhere: 'A province since drawn down to nothing, worked quietly while the house had no name and no clients worth recording.',
@@ -1045,6 +1053,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'The Trade holds it settled that the road tops out where it now tops out. The Doctrine faction does not, and this is one of the several things the two of them no longer discuss.'
     },
     'house-shrinking-earth': {
+        knowledge: ['The climb used the terminal network. Twenty-two of its thirty-one terminals are closed, and the house has not reopened them.'],
         highestOrdinal: 34,
         climbedYearsAgo: 260,
         climbedWhere: 'The terminal network, across nine more open gates than the house now holds, cultivating in transit the way surveyors do.',
@@ -1053,6 +1062,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'The Freight faction takes it as established that a Keeper is a thing the house used to make. The Long Measure keeps insisting otherwise and is regarded, affectionately, as unserious.'
     },
     'sect-nine-abyss-flame-sect': {
+        knowledge: ['The climb used the vent vein under the caldera. The house has not made another comparable climb since.'],
         highestOrdinal: 34,
         climbedYearsAgo: 110,
         climbedWhere: 'The vent vein under the caldera, when it still ran hot enough that a Flame Hall Master could work it without a grant day.',
@@ -1061,6 +1071,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'Alone among the high factions, this one has not concluded that the road is shut - which reads as either the only clear sight in either province or the contract talking, and nobody outside the caldera can tell which.'
     },
     'sect-orchid-court': {
+        knowledge: ['The climb used the fog on the valley floor and the Court\'s own road. The house gives no figure for another person\'s chances of repeating it.'],
         highestOrdinal: 34,
         climbedYearsAgo: 110,
         climbedWhere: 'The valley floor, in the fog, over a very long time and with nothing above the top of the Court\'s own road to do it on.',
@@ -1069,6 +1080,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'The Court holds, and teaches, that the last rung is neither open nor shut - that one woman did it, that it took her a very long time, and that the house will not put a number on anybody else\'s odds. It is the most careful position any house in the catalog takes about its own ceiling and it is not modesty: nobody here believes there is a second way up, and nobody here will say there is not.'
     },
     'sect-frostmirror-court': {
+        knowledge: ['The climb used the cold vein under the glacier. The glacier has retreated, and the house has stopped teaching the deepest three inscriptions.'],
         highestOrdinal: 36,
         climbedYearsAgo: 400,
         climbedWhere: 'The cold vein under the glacier, forty spans deeper into the ice than the working face now reaches.',
@@ -1077,6 +1089,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'The Court teaches that those inscriptions describe something no longer available. It says "no longer available" rather than anything stronger, which is the most carefully worded position any faction in the catalog holds on the subject, and it is not an accident.'
     },
     'house-immovable-mountain': {
+        knowledge: ['The climb used the eastern perimeter while the scar was active. The containment has gone quiet; the house does not expect the watch to replace its Standing Anchor.'],
         highestOrdinal: 35,
         climbedYearsAgo: 340,
         climbedWhere: 'The eastern perimeter, when the scar behind it was still active enough that standing a watch on it was cultivation rather than administration.',
@@ -1085,6 +1098,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'Taken as settled inside the house that a Standing Anchor was something the live containment produced and that the containment has finished producing. The published wake schedule for Xu Ci is, read closely, an admission that nobody expects to replace her.'
     },
     'sect-storm-tyrant-court': {
+        knowledge: ['The climb used the floating stone while the tether still drew. The tether was failing, and the house has stopped opening its vault at successions.'],
         highestOrdinal: 34,
         climbedYearsAgo: 300,
         climbedWhere: 'The floating stone, while the tether still drew and the vein under it could be reached at the bottom.',
@@ -1093,6 +1107,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'It is taken as settled across both provinces that this height is shut, and the Ward is the loudest voice saying so - which is convenient, since it is also the faction that would otherwise be asked how it still has one.'
     },
     'sect-the-severed': {
+        knowledge: ['The climb passed through six cities without cultivating on ground. Its last witness is dead, and the house has cut the account from its records.'],
         highestOrdinal: 38,
         climbedYearsAgo: 180,
         climbedWhere: 'Six cities and no ground at all, on the fastest road anyone has ever found and at the price the road charges.',
@@ -1295,4 +1310,3 @@ export function inheritanceGap(factionId: string, powerOrdinal: number): number 
     const tier = FACTION_CHARACTER[factionId]?.production;
     return tier ? powerOrdinal - tier.reliableOrdinal : 0;
 }
-

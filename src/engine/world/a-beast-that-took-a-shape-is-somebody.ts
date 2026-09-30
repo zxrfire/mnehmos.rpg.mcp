@@ -76,7 +76,7 @@
  *
  * ── WHAT MUST NOT BE BUILT HERE ────────────────────────────────────────
  *
- * `WHAT_GIVES_A_CHANGED_BEAST_AWAY.neverAList` governs this file. No table of
+ * `docs/world/things/changed-beast-reference.md` governs this file. No table of
  * gaffes, no per-species knowledge profile, no "confused by chopsticks". What
  * is emitted is that there is no record for a named thing, which is a fact;
  * what that looks like at a table is the narrator's and is different every

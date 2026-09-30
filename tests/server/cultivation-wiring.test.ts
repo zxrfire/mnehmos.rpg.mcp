@@ -26,6 +26,8 @@ import { runSeedFor } from '../../src/engine/world/legacy.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
 import { CERTIFICATION_COST_STONES } from '../../src/server/consolidated/sect-politics.js';
 import { SECT_ANCESTRY, getSectAncestry } from '../../src/data/cultivation/sects.js';
+import { addLineageEdge, createLineageRecord } from '../../src/engine/world/lineage.js';
+import { worldForRun } from '../../src/server/state/cultivation-world.js';
 
 const getSectsClaimingLivingAncestor = () =>
     Object.entries(SECT_ANCESTRY).filter(([, r]) => r.claimsLivingAncestor).map(([id]) => id);
@@ -300,6 +302,43 @@ describe('the wiring', () => {
     // ── CAPABILITY ───────────────────────────────────────────────────────
 
     describe('assess answers what happens when you try', () => {
+        /** Trait reads must affect live assessments, expire by generation, and stay off strangers. */
+        it('reads inherited modifiers from the current lineage on every assessment', async () => {
+            await createWorld({ seed: 'lineage-assessment-world' });
+            const created = await newRun();
+            const repos = ensureCultivationDb();
+            const world = await worldForRun(repos.runs.getById(created.run.id)!);
+            const elder = await cultivation({ action: 'create_cultivator', name: 'Assessed Elder',
+                kind: 'npc', runId: created.run.id });
+            repos.cultivators.advanceRealm(elder.cultivator.id, 22);
+            const assess = () => cultivation({ action: 'assess', cultivatorId: created.cultivator.id,
+                against: 'opponent', opponentId: elder.cultivator.id });
+            const before = await assess();
+            let line = createLineageRecord({ id: 'assessment-line', surname: 'Li',
+                founderId: 'assessment-founder', foundedOnDay: 0,
+                traits: [{ id: 'inherited-resistance', name: 'Inherited resistance', note: '',
+                    fadesAfterGenerations: 1, modifiers: [{ id: 'inherited-resistance', source: 'bloodline',
+                        sourceId: 'assessment-line', label: 'Inherited resistance', offsets: { survive: 8 },
+                        hazards: [], subjectIds: [], subjectTags: [], note: '' }] }] });
+            line = addLineageEdge(line, { parentId: line.founderId, childId: created.cultivator.id,
+                relation: 'descendant', onDay: 0 });
+            world.lineages.push(line);
+            const inherited = await assess();
+            expect(inherited.verdicts.survive.requirement).toBe(before.verdicts.survive.requirement - 8);
+            expect(inherited.verdicts.survive.modifiers).toContainEqual({ label: 'Inherited resistance',
+                offset: 8, via: null });
+            line.edges = [];
+            line = addLineageEdge(line, { parentId: line.founderId, childId: 'assessment-parent',
+                relation: 'descendant', onDay: 0 });
+            line = addLineageEdge(line, { parentId: 'assessment-parent', childId: created.cultivator.id,
+                relation: 'descendant', onDay: 0 });
+            world.lineages[world.lineages.findIndex(row => row.id === line.id)] = line;
+            expect((await assess()).verdicts.survive.requirement).toBe(before.verdicts.survive.requirement);
+            line.traits[0].fadesAfterGenerations = null;
+            line.memberIds = [line.founderId, 'assessment-parent'];
+            expect((await assess()).verdicts.survive.requirement).toBe(before.verdicts.survive.requirement);
+        });
+
         it('never refuses an attempt against a person, however far above', async () => {
             const created = await newRun();
             const elder = await cultivation({

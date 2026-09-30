@@ -32,8 +32,15 @@ import { THE_THRESHING_HALL, ATTESTATION_IS_USABILITY } from '../data/cultivatio
 import { TWICE_WORKED } from '../data/cultivation/traditions.js';
 import { FATE_IS_NOT_A_STAT } from '../data/cultivation/inheritance-trials.js';
 import { getPill } from '../data/cultivation/pills.js';
+import {
+    BEAST_CHANGE_ORDINAL, BEAST_CORE_ORDINAL, ESTIMATING_A_BEAST, THE_BEAST_ROAD,
+    THREE_ROADS_TO_WHAT_A_PERSON_CARRIES, WHAT_GIVES_A_CHANGED_BEAST_AWAY,
+    WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS
+} from '../data/cultivation/beasts.js';
+import { HIGH_REALM_PROVENANCE } from '../data/cultivation/faction-character.js';
+import { getSect } from '../data/cultivation/sects.js';
 import { idsForFaction } from '../data/cultivation/governance-and-water-rights.js';
-import { REALM_TIERS } from '../engine/cultivation/realms.js';
+import { REALM_TIERS, rankName } from '../engine/cultivation/realms.js';
 import { INSIDER_ONLY_FLOOR, WORKING_KNOWLEDGE_MARGIN } from './lore.js';
 import type { ResolvedEntity } from './entities.js';
 import type { KnowledgeGate } from './knowledge.js';
@@ -149,6 +156,24 @@ function records(peaceYear: number): RecordFact[] {
         row('twice-worked', 'the Twice-Worked', /\b(?:twice[- ]worked|both traditions?.*(?:body|rite)|drawn.*cut.*rite)\b/i,
             [TWICE_WORKED.howItHappens, TWICE_WORKED.whyItIsRare,
                 TWICE_WORKED.benefit], core),
+        row('beast-road', 'beast cultivation', /\b(?:beast cultivation|beast road|beasts? cultivate|beast cores?)\b/i,
+            THE_BEAST_ROAD.knowledge, BEAST_CORE_ORDINAL),
+        row('beast-estimate', 'estimating a beast', /\b(?:estimating|assessing|estimate|assess|reading|read) (?:a |the )?(?:spirit )?beast\b/i,
+            ESTIMATING_A_BEAST.knowledge, foundation),
+        row('beast-material', 'changed beast material', /\b(?:changed beast.*material|material.*changed beast|ask.*beast.*(?:part|material))\b/i,
+            THREE_ROADS_TO_WHAT_A_PERSON_CARRIES.knowledge, BEAST_CHANGE_ORDINAL),
+        row('changed-beast', 'recognising a changed beast', /\b(?:changed beasts?|beasts? in human shape)\b/i,
+            WHAT_GIVES_A_CHANGED_BEAST_AWAY.knowledge, BEAST_CHANGE_ORDINAL),
+        row('beast-parties', 'house beast missions', /\b(?:beast tides?|houses?.*(?:hunt|beast)|beast.*(?:parties|missions))\b/i,
+            WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS.knowledge, foundation),
+        ...Object.entries(HIGH_REALM_PROVENANCE).map(([houseId, provenance]) => {
+            const house = getSect(houseId)!;
+            const escaped = house.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return row(`high-realm-provenance:${houseId}`, `${house.name}'s high-realm climb`,
+                new RegExp(`(?=.*${escaped})(?=.*(?:climb|high.realm|provenance))`, 'i'),
+                [`The house records a climb to ${rankName(provenance.highestOrdinal)} in Peace ${PRESENT_YEAR - provenance.climbedYearsAgo}.`,
+                    ...provenance.knowledge], provenance.highestOrdinal, [houseId]);
+        }),
         row('fate-gates', 'fate gates', /\b(?:fate gates?|fate condition|fate trial)\b/i,
             [FATE_IS_NOT_A_STAT.rule, FATE_IS_NOT_A_STAT.whatWorldStateMeans,
                 FATE_IS_NOT_A_STAT.andMostPeopleNeverPass], foundation)
