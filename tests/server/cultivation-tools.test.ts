@@ -5,6 +5,8 @@
  * is the engine's own suite. It is the AUTHORITY BOUNDARY: that the caller
  * cannot assert an outcome, that whatever the engine decided is what SQLite
  * ends up holding, and that a closed run stays closed.
+ * Age checks measure the elapsed span from the engine's birth age, which is
+ * now eighteen, rather than retaining the former sixteen-year starting age.
  */
 
 import {
@@ -275,7 +277,8 @@ describe('cultivation MCP tool surface', () => {
             expect(result.simulatedDays).toBe(10 * DAYS_PER_YEAR);
             expect(result.stoppedEarly).toBe(false);
             expect(result.died).toBe(false);
-            expect(result.cultivator.mortality.age).toBeCloseTo(26, 1);
+            // Birth age is supplied by the engine; the clock adds the span.
+            expect(result.cultivator.mortality.age).toBeCloseTo(created.cultivator.mortality.age + 10, 1);
             expect(result.run.elapsedDays).toBe(10 * DAYS_PER_YEAR);
             assertPersistenceMatchesSimulation(result, db);
         });
@@ -1628,11 +1631,11 @@ describe('cultivation MCP tool surface', () => {
             const result = await admin({ action: 'advance_days', years: 5 });
             expect(result.advanced).toBe(true);
             // Idle focus: real ageing, no cultivation gain.
-            expect(result.cultivator.mortality.age).toBeCloseTo(21, 1);
+            expect(result.cultivator.mortality.age).toBeCloseTo(created.cultivator.mortality.age + 5, 1);
             expect(result.deltas.cultivationProgress).toBe(0);
 
             const stored = new CultivatorRepository(db).getById(created.cultivator.id)!;
-            expect(stored.age).toBeCloseTo(21, 1);
+            expect(stored.age).toBeCloseTo(created.cultivator.mortality.age + 5, 1);
         });
 
         // Found by playing: `years=50` moved 1.73 years and `days=200000` moved

@@ -18,6 +18,8 @@
  * The implementation checklist moved to docs/world/things/beast-contracts.md.
  * Live knowledge of the terms is covered by mechanics-lore-reaches-play.test.ts;
  * hearing them must not be mistaken for forming a bond.
+ * Growth ends a contract above the higher signing realm, rather than through
+ * an unpriced claim that one party has outgrown the other.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -635,7 +637,8 @@ describe('a contract is rare, costly and mutual', () => {
         expect(THE_CONTRACT.witnessing).toMatch(/Vermilion Sigil Terrace|witness/i);
         // And it can end, in stated ways, one of which is being outgrown.
         expect(THE_CONTRACT.howItBreaks.length).toBeGreaterThanOrEqual(3);
-        expect(THE_CONTRACT.howItBreaks.join(' ')).toMatch(/outgrow/i);
+        // The live contract prices growth from the higher realm at signing.
+        expect(THE_CONTRACT.howItBreaks.join(' ')).toMatch(/major realm above.*realm at signing/i);
     });
 
 });

@@ -5,6 +5,8 @@
  * rather than reconstructed by scanning, and that the union is honest - every
  * row on a roll is a row that exists in some other catalog, and nothing has
  * been invented at the join.
+ * Recruiting spring houses also need people in the ordinary member catalog;
+ * a seeded head without an authored roll leaves the register empty.
  */
 
 import { describe, it, expect } from 'vitest';

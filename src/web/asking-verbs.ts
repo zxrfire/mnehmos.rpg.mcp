@@ -1374,6 +1374,14 @@ ${unnamed}`;
             ?? (masterName
                 ? resolveCultivator(this.repos, masterName, cultivator.id, scope, cultivator.realmOrdinal)
                 : null);
+        if (!party && masterName) {
+            const say = `${masterName} is a master to you, and is not standing here.`;
+            return this.freeAction(run, 'request', {
+                headline: 'Your master is elsewhere.', lines: [say],
+                structure: [`Master tie ${masterId}; no local party. Nothing was put to anybody.`],
+                prose: say
+            });
+        }
         if (!party) return this.nobodyByThatName(cultivator, query, scope, 'request');
 
         // A HOUSE IS NOT A PERSON

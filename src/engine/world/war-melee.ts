@@ -297,6 +297,17 @@ function fightOneYear(
         [...partyA, ...partyB].map(n => [n.id, n])
     );
 
+    // Death transfers possessions. Read the escape while the slip is in hand.
+    const wouldFall = result.combatants
+        .filter(c => (c.fate === 'finished' || c.fate === 'body_destroyed')
+            && theWorldMayEnd(byId.get(c.id) ?? { tags: [] }))
+        .map(c => c.id);
+    const walkedOut = new Set(whoBurnedATeleportationTalisman({
+        objects: state.objects,
+        aboutToFall: wouldFall,
+        onDay: day
+    }));
+
     // THE BODIES
     const deaths: DeathHandoff[] = [];
     // What anybody is now owed. One list for the whole engagement, because a
@@ -318,12 +329,12 @@ function fightOneYear(
             byName: felledBy?.name ?? theOtherSide(war, c.sideId).name,
             day,
             wounds: c.injuries,
-            outcome: !mayEnd && (c.fate === 'finished' || c.fate === 'body_destroyed')
+            outcome: walkedOut.has(c.id) || (!mayEnd && (c.fate === 'finished' || c.fate === 'body_destroyed'))
                 ? 'withdrawal' : OUTCOME_FOR_FATE[c.fate],
             lost: c.felledBy !== null,
             // The shared applier also serves player combat. Guard the world's
             // endings here, including body destruction, while retaining wounds.
-            finished: c.finished && mayEnd,
+            finished: c.finished && mayEnd && !walkedOut.has(c.id),
             // A war is the absence of an arrangement, not a declaration of
             // hostility. Nobody promised anybody anything, so it is `open` and
             // priced by the same table a brawl in a square is.
@@ -346,19 +357,6 @@ function fightOneYear(
 
     // ── AND WHO WALKED OUT OF IT ─────────────────────────────────────────
     //
-    // A teleportation talisman is one fold somebody else paid for, and this is the
-    // moment it exists for: a cultivator about to be finished, using it once,
-    // and being somewhere else. It is what lets a weak character survive a
-    // strong one without the engine lying about who was stronger.
-    const wouldFall = result.combatants
-        .filter(c => c.fate === 'finished' || c.fate === 'body_destroyed')
-        .map(c => c.id);
-    const walkedOut = new Set(whoBurnedATeleportationTalisman({
-        objects: state.objects,
-        aboutToFall: wouldFall,
-        onDay: day
-    }));
-
     // ── THE RECORD, COMPOSED FROM THE RESULT ─────────────────────────────
     const ended = new Set(deaths.map(death => death.deceasedId));
     const fell = result.combatants

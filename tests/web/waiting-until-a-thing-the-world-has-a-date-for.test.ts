@@ -30,11 +30,16 @@
  * the ruling `whichHouseThePaperMeans` already keeps for the same phrase at
  * the same wall. The answer is the two of them with their days, which the
  * player finishes the sentence from; it is not a day silently spent.
+ * After catalog growth the starting wall need not hold two papers. The
+ * ambiguous arm asks the wall reader for a place that does, then stands there.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions.js';
 import { makeGameInWorld } from './harness.js';
+import { REGIONS } from '../../src/data/cultivation/regions.js';
+import { billsOnTheWall } from '../../src/engine/world/houses-that-have-to-advertise-for-disciples.js';
+import { openDoorsInTheWorld, postingGroundOf, provinceOfPlace } from '../../src/engine/world/the-doors-and-walls-a-house-takes-people-at.js';
 
 /** The played world, pinned: unpinned, the wall is a different wall every run. */
 const WORLD = 'a-xianxia-run';
@@ -58,8 +63,8 @@ interface Playing {
     state(): { run: { elapsedDays: number } };
 }
 
-async function atWindTurn(seed: string): Promise<Playing> {
-    const made = await makeGameInWorld({ seed, worldSeed: WORLD }) as unknown as { game: Playing };
+async function atWindTurn(seed: string) {
+    const made = await makeGameInWorld({ seed, worldSeed: WORLD });
     await made.game.newRun('Shen Wuyou');
     return made.game;
 }
@@ -129,6 +134,14 @@ describe('waiting until a date the engine holds', () => {
 
     it('answers a phrase pointing at two of them with the two of them', async () => {
         const game = await atWindTurn(PLAYED);
+        const { run, cultivator } = game.state();
+        const field = openDoorsInTheWorld();
+        const place = REGIONS.flatMap(region => region.places).find(place => billsOnTheWall({
+            field, placeName: place.name, ground: postingGroundOf(place.name),
+            placeProvinceId: provinceOfPlace(place.name), onDay: run.elapsedDays, seed: PLAYED
+        }).length > 1);
+        expect(place, 'no wall in the catalog has two dated papers').toBeDefined();
+        game.repos.cultivators.update(cultivator.id, { location: place!.name, standingIn: null });
         const posted = await whatIsPosted(game);
         expect(posted.length, 'more than one paper up is what makes the phrase ambiguous')
             .toBeGreaterThan(1);

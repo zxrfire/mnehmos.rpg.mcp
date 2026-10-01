@@ -6,6 +6,8 @@
  * listing; "I enter the azure dew sect" was read by the model as `site`,
  * refused as no site approached, and still wrote a public deed naming the
  * house; "who is a disciple of the azure dew sect?" read out the house's ranks.
+ * A journey naming the house now lands in its separate gate town. Walking to
+ * the gate is part of this fixture, before asking the watch to admit anybody.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -40,6 +42,7 @@ async function atTheGate(provider?: ScriptedProvider) {
     });
     await harness.game.newRun('Probe');
     await harness.game.act(`I travel to the ${HOUSE}`);
+    await harness.game.act('I walk to the gate');
     return harness;
 }
 

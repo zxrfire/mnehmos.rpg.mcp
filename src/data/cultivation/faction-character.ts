@@ -96,38 +96,38 @@ const WHAT_THE_SCHEDULE_TURNS_OUT: ProductionTier = {
 
 export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     'sect-lunargent': {
-        practice: 'Water servants direct visitors to the gate facing the spring. When an elder names a donor, a servant points to the painted name on the rock.',
         knownFor: {
-            outside: 'Keepers of the fixed spring and claimants to an old western-road grant.',
-            actuallyGoodAt: 'Keeping the water approach and the inherited meditation cells in use.',
-            theGap: 'The grant and its succession have not been examined; the warded archive remains shut.'
+            outside: 'Travellers call it the owner of the Sands because its gate stands above the only fixed spring.',
+            actuallyGoodAt: 'Keeping the spring channels clear and teaching circulation in cells cut into the fixed rock.',
+            theGap: 'Its water stays put; the dunes outside its walls do not answer to its elders.'
         },
-        grievance: 'The claimed western-road grant has no surviving issuing office.',
-        fear: 'Examination of the archive without a reader of its western script.',
-        lateness: 'Older donor names have been scraped beneath later paint.',
-        disagreement: 'The granary elders have asked to place a factor in the account room.',
-        wrongAbout: 'The painted donors do not establish an unbroken succession.',
-        unitOfValue: 'A recovered grant and the succession records that support it.',
-        production: { reliableOrdinal: 0, currentCount: 0, peakOrdinal: 0, peakCount: 0,
-            yearsSinceLastPeak: 0, note: 'No cultivation census is stated in the surviving spring records.' },
-        distinctSentence: 'Its elders claim the water and the fixed rock; they do not claim the moving dunes.'
+        practice: 'The water servants count the spring channels each morning, enter blocked channels in the gate book, and point visitors to the donor names painted on the rock.',
+        grievance: 'The western-road office that issued its grant has vanished, leaving nobody to confirm its succession.',
+        fear: 'Another house obtaining recognition of the water grant before its own archive can be opened.',
+        lateness: 'Its inherited archive remains warded, and the elders have no recovered copy to present for examination.',
+        disagreement: 'Some elders want the charter examined first; others want the succession records assembled before opening it.',
+        wrongAbout: 'Its elders treat possession of the spring as proof that the old grant passed to them without a break.',
+        unitOfValue: 'Recognised succession. A witness to a missing generation is worth more than another donor name.',
+        production: { reliableOrdinal: 13, currentCount: 3, peakOrdinal: 21, peakCount: 1, yearsSinceLastPeak: 90,
+            note: 'The rock cells support Core Formation; the surviving circulation teaching does not carry most disciples beyond it.' },
+        distinctSentence: 'Keeps its donors painted above a fixed spring and needs a dead western office to confirm the grant it claims.'
     },
     'sect-amaranth': {
-        practice: 'Granary servants carry grain to the stores. Disciples enter each load in the seasonal accounts before a ledger elder signs the receipt.',
         knownFor: {
-            outside: 'The granaries beside the fixed spring.',
-            actuallyGoodAt: 'Keeping grain accounts and written seasonal supply contracts.',
-            theGap: 'Supplying the spring does not admit their factor to the keepers\' account room.'
+            outside: 'Caravans know it as the house whose granaries stand beside the water they must return to.',
+            actuallyGoodAt: 'Keeping grain dry on the spring rock and writing seasonal supply contracts that name every load.',
+            theGap: 'The stores supply travellers, but their elders seek a place in the spring keepers\' account room.'
         },
-        grievance: 'The proposed grain factor has not been admitted to the spring keepers\' account room.',
-        fear: 'Supplies advanced without an agreed account of repayment.',
-        lateness: 'The account room and three lit formation nodes are inherited.',
-        disagreement: 'The elders offer a season of grain before repayment to obtain the hearing.',
-        wrongAbout: 'The offer remains a proposal, not an accepted seasonal contract.',
-        unitOfValue: 'A signed grain account.',
-        production: { reliableOrdinal: 0, currentCount: 0, peakOrdinal: 0, peakCount: 0,
-            yearsSinceLastPeak: 0, note: 'The seasonal accounts state no cultivation census.' },
-        distinctSentence: 'Its elders claim the granaries and their fixed rock; its gate and roll remain separate.'
+        practice: 'Each load is weighed at the granary door, and both the carrier and the keeper sign the seasonal account.',
+        grievance: 'The spring keepers have not admitted its grain factor to the room where their water accounts are kept.',
+        fear: 'Advancing a season of grain and having no admitted factor to examine what the spring keepers owe.',
+        lateness: 'Three inherited formation nodes still light the stores; the other five remain dark beside unused bins.',
+        disagreement: 'The ledger elders disagree on whether to supply the promised season before the factor has been admitted.',
+        wrongAbout: 'Its elders assume an accurate grain account will secure a hearing from people defending a water grant.',
+        unitOfValue: 'Signed loads. An account bearing both names can be carried into the next season without a fresh bargain.',
+        production: { reliableOrdinal: 13, currentCount: 2, peakOrdinal: 19, peakCount: 1, yearsSinceLastPeak: 60,
+            note: 'Circulation and bodily tempering carry its own disciples into Core Formation; the ledger elders hold the upper rungs.' },
+        distinctSentence: 'Offers a season of grain before repayment to seat its own factor in the account room of the neighbouring spring keepers.'
     },
     // THE TWO UNNAMEABLE APEXES, TWICE EACH, AND THE TWO ROWS ANSWER DIFFERENT
     // QUESTIONS. The apex id carries what the institution is to the world and

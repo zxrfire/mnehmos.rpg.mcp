@@ -61,3 +61,5 @@ The grant covers the working ground; it does not grant a strait or a city above 
   used by place and province journeys through `findGraphPath`, with costs from the roads.
 
 A place may declare a nested `interior` with an inscription, comprehension key and threshold, gate ordinal, and document stock. Seeding resolves its parent into the ordinary location tree and puts its documents in the object store. Truce Spring, Ochre Escarpment and Silica Crypt use this shape; only the spring rock is fixed, while the surrounding shows remain moving and unheld.
+
+Place paths accept fractional walking days and a plain description; a stair need not take a whole day or forty characters to describe.

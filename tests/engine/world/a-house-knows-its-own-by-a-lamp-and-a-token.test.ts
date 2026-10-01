@@ -11,6 +11,8 @@
  * somebody and take their proof - does not exist. An identity has to be taken
  * ALIVE and kept alive, which turns a clean killing into an ongoing crime with a
  * living victim and somebody who can be rescued.
+ * Issuance requires a Foundation hand on the house's roll; a disciple rung
+ * alone cannot give a small house the ability to cut a token or light a lamp.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -90,7 +92,7 @@ function wouldMakeALamp(material: {
 }
 
 describe('what a house issues', () => {
-    it('gives every disciple a token to carry and a lamp burning', async () => {
+    it('gives every disciple a token and lamp where the house can make them', async () => {
         const state = seedWorld({
             seed: 'a-lamp-and-a-token', catalog: await loadCultivationCatalog()
         }).state;
@@ -103,8 +105,11 @@ describe('what a house issues', () => {
         expect(members.length, 'nobody is on a roll at all').toBeGreaterThan(50);
 
         for (const member of members) {
-            expect(byId.has(tokenIdFor(member.id)), `${member.name} carries no token`).toBe(true);
-            expect(byId.has(lampIdFor(member.id)), `${member.name} has no lamp`).toBe(true);
+            const canIssue = thisHouseCanIssue(state.npcs
+                .filter(n => n.status === 'alive' && n.factionId === member.factionId)
+                .map(n => n.cultivation.realmOrdinal));
+            expect(byId.has(tokenIdFor(member.id)), `${member.name}'s token`).toBe(canIssue);
+            expect(byId.has(lampIdFor(member.id)), `${member.name}'s lamp`).toBe(canIssue);
         }
     });
 

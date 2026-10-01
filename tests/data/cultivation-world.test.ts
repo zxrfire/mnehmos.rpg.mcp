@@ -1,5 +1,5 @@
 /**
- * World-layer content validation: the two regions, the two traditions, the
+ * World-layer content validation: the regions, the two traditions, the
  * faction distinctness pass, and the mortal economy.
  *
  * Companion to `cultivation-content.test.ts`, which validates the catalogs
@@ -13,6 +13,8 @@
  * It also enforces the hard constraint that the world has ONE ladder: local
  * vocabularies must tile `REALM_TIERS` exactly, and may not correspond inside
  * a realm.
+ * The permanent spring houses share these character and production contracts
+ * with every other house; their fixed rock does not create a separate system.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -565,10 +567,13 @@ describe('ungoverned ground is not a sixth province', () => {
         expect(row.name).toBe(THE_BLOWN_GROUND.name);
         expect(row.bearing).toBe('interior');
 
-        // Nobody is seated. Being present is not holding, so the nine parties
-        // on the ground arrive as branches - a presence that is not a seat -
-        // and every one of them is seated in some province instead.
-        expect(row.factionIds).toEqual([]);
+        // The permanent houses sit on fixed water and rock. Their seats do
+        // not turn the moving dunes into granted ground.
+        for (const id of row.factionIds) {
+            const house = getSect(id)!;
+            expect(row.places.some(place => place.name === house.seatPlaceName)).toBe(true);
+            expect(house.territory).toMatch(/spring/i);
+        }
         expect(row.branches.length).toBeGreaterThanOrEqual(5);
         for (const b of row.branches) {
             expect(getSect(b.parentSectId), `unknown house ${b.parentSectId}`).toBeDefined();

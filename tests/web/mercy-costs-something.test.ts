@@ -20,6 +20,8 @@
  *
  * Both seeds are pinned - the run seed and the world seed - because a played
  * test that pins one is pinning a coincidence.
+ * The early arm arranges the opponent still ahead after the opening round:
+ * starting whole does not imply they are still winning after a blow lands.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -73,6 +75,12 @@ describe('mercy is a decision with a price on it', () => {
 
         const opened = await game.act('I attack someone of my own rank');
         expect(names(opened)).toContain('combat.round');
+
+        const fight = game.fight!.state;
+        const theirs = fight.defender.input;
+        const mine = fight.aggressor.input;
+        fight.hp[theirs.id] = theirs.maxHp!;
+        fight.hp[mine.id] = mine.maxHp! * 0.9;
 
         const offered = await game.act('I spare him');
 

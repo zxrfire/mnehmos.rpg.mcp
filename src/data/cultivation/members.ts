@@ -4057,7 +4057,34 @@ const COURT_MEMBERS: readonly Member[] = HOLLOW_COURT_ROSTER
 /**
  * Everybody the catalogs name, in one list.
  */
-export const MEMBERS: readonly Member[] = [...AUTHORED_MEMBERS, ...COURT_MEMBERS];
+const SPRING_MEMBERS: readonly Member[] = [
+    { id: 'member-yan-zhaosu', name: 'Yan Zhaosu', factionId: 'sect-lunargent', rankIndex: 5, rank: 'Sect Master',
+        realmOrdinal: 21, role: 'senior', wants: 'the succession records examined', fears: 'a missing generation in the grant',
+        detail: 'Keeps rubbings of the older donor names beside the gate book and checks each new copy against them.',
+        outlier: true, outlierReason: 'inherited', goodCompany: false, rivalry: null, teaching: null },
+    { id: 'member-qiu-yanzhen', name: 'Qiu Yanzhen', factionId: 'sect-lunargent', rankIndex: 1, rank: 'Outer Disciple',
+        realmOrdinal: 5, role: 'peer', wants: 'a week in a rock cell', fears: 'another season clearing channels',
+        detail: 'Has chalk marks on both cuffs from counting the blocked spring channels before reporting at the gate.',
+        outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null },
+    { id: 'member-bao-ning', name: 'Bao Ning', factionId: 'sect-lunargent', rankIndex: 0, rank: 'Water Servant',
+        realmOrdinal: 0, role: 'peer', wants: 'the circulation primer', fears: 'losing the gate book',
+        detail: 'Carries the gate book in a waxed cloth and dries the cloth on the same rock after every water shift.',
+        outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null },
+    { id: 'member-du-rui', name: 'Du Rui', factionId: 'sect-amaranth', rankIndex: 5, rank: 'Sect Master',
+        realmOrdinal: 19, role: 'senior', wants: 'the grain factor admitted', fears: 'a season supplied without an account',
+        detail: 'Signs each seasonal contract with the same worn brush and keeps the carrier\'s copy until they ask for it.',
+        outlier: true, outlierReason: 'inherited', goodCompany: true, rivalry: null, teaching: null },
+    { id: 'member-he-zhengqi', name: 'He Zhengqi', factionId: 'sect-amaranth', rankIndex: 1, rank: 'Outer Disciple',
+        realmOrdinal: 5, role: 'peer', wants: 'to inspect the dark formation nodes', fears: 'a damp load entered as dry',
+        detail: 'Opens the bottom grain sack on every arriving load before allowing the carrier to put a name in the ledger.',
+        outlier: false, outlierReason: null, goodCompany: false, rivalry: null, teaching: null },
+    { id: 'member-fang-suoyin', name: 'Fang Suoyin', factionId: 'sect-amaranth', rankIndex: 0, rank: 'Granary Servant',
+        realmOrdinal: 0, role: 'peer', wants: 'a place at the next lesson', fears: 'miscounting the empty bins',
+        detail: 'Marks each emptied bin with a tied reed and unties it only after the keeper has counted the next load.',
+        outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null }
+];
+
+export const MEMBERS: readonly Member[] = [...AUTHORED_MEMBERS, ...COURT_MEMBERS, ...SPRING_MEMBERS];
 
 // ─────────────────────────────────────────────────────────────────────────
 // HOUSEHOLDS

@@ -246,7 +246,8 @@ describe('a master may say no', () => {
         harness.repos.cultivators.update(me.id, { location: elsewhere!.name });
         const before = harness.game.currentRun().run.elapsedDays;
         const turn = await harness.game.act('I ask my master to guide my cultivation for 10 days') as Turn;
-        expect(everythingSaid(turn)).toMatch(/master to you/);
+        expect(turn.narration).toMatch(/master to you.*not standing here/i);
+        expect(turn.toolCalls.map(call => call.name)).not.toContain('engine.resolveAttempt');
         expect(harness.game.currentRun().run.elapsedDays).toBe(before);
     }, 180_000);
 

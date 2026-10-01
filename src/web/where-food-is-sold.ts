@@ -37,7 +37,10 @@ export function whereFoodComesFromHere(game: GameService, cultivator: Cultivator
     const standing = standingOf(cultivator, game.atHand);
     if (standing.settlementKind !== null) return { sold: true, where: `in ${standing.placeName ?? cultivator.location}` };
     const here = theAreaTheyAreIn(game.atHand, cultivator);
-    if (here?.place.kind === 'settlement') return { sold: true, where: `at the market in ${here.place.name}` };
+    if (here?.place.kind === 'settlement'
+        && !REGIONS.some(region => region.places.some(place => place.name === here.place.name))) {
+        return { sold: true, where: `at the market in ${here.place.name}` };
+    }
     const house = game.atHand && here ? theHouseWhoseGateThisIs(game.atHand, here.place.name) : null;
     if (!house) return { sold: false };
     if (cultivator.sectId === house.factionId

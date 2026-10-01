@@ -250,9 +250,9 @@ export const RegionPlaceConnectionSchema = z.object({
     kind: z.enum(['road', 'path', 'tunnel', 'gate', 'portal', 'seam']),
     /** The `name` of the other place, in the same province. */
     otherPlaceName: z.string().min(1),
-    description: z.string().min(40),
-    /** Walking days. The same unit and the same field as a province road. */
-    travelDays: z.number().int().min(0)
+    description: z.string().min(1),
+    /** Walking days, including paths shorter than a day. */
+    travelDays: z.number().min(0)
 });
 export type RegionPlaceConnection = z.infer<typeof RegionPlaceConnectionSchema>;
 

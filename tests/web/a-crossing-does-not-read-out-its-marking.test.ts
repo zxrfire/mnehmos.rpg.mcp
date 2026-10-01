@@ -42,6 +42,8 @@
  * Scrubbed in one reader rather than split into a second field on each of the
  * eight places that compose a hint, because eight prose-safe twins are eight
  * chances for the two to drift.
+ * Failed crossings also append "at <percentage>" to their hint; that form
+ * belongs in the same scrubber as the success and toll figures.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 

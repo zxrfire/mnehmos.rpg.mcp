@@ -15,8 +15,8 @@
  *      opens, the aperture must hold that grade's whole qi band, or part of the
  *      catalog is unreachable by anybody alive.
  *   5. Damage is a fraction of the defender's own pool, so scaling the pool
- *      changes no fight. That invariant is what makes 1-4 safe, and it is the
- *      thing that breaks if somebody later makes damage absolute.
+ *      changes no fight at the same rung. Tribulation bodies now adapt to harm;
+ *      cross-realm fight lengths no longer isolate the pool's effect.
  *
  * ── THE DEFECT THIS REPLACES ─────────────────────────────────────────────
  *
@@ -245,21 +245,20 @@ function peerFight(ordinal: number, pool: number) {
 }
 
 describe('damage is a share of the pool, and that is why the pool may grow', () => {
-    it('a rung-matched pair settles the same way at the bottom of the ladder and at the top', () => {
+    it('scaling a rung-matched pair\'s pools preserves the fight at every height', () => {
         // The load-bearing relationship. `resolveExchange` charges damage as a
-        // fraction of the DEFENDER'S OWN maximum, so a peer fight is the same
-        // length and the same shape whether the two of them hold fifty points
-        // or twenty-five thousand.
+        // fraction of the DEFENDER'S OWN maximum. Compare within each rung:
+        // adaptation is a capability, not an effect of a larger HP pool.
         //
         // Break this - make damage a flat number that scales with realm, or
         // flatten the pool again - and one arm of this comparison collapses.
         // A rung-matched pair resolving in one blow is as wrong as a pair
         // grinding forever.
         const rungs = [0, 13, 21, 29, 37, MAX_ORDINAL];
-        const measured = rungs.map(o => ({ o, ...peerFight(o, maxHpForOrdinal(3, o)) }));
-
-        const first = measured[0];
-        for (const m of measured) {
+        for (const o of rungs) {
+            const pool = maxHpForOrdinal(3, o);
+            const first = peerFight(o, pool);
+            const m = { o, ...peerFight(o, pool * 20) };
             expect(m.exchanges, `ordinal ${m.o} took ${m.exchanges} exchanges`).toBe(first.exchanges);
             // Within a point of a percent. The residue is integer rounding of
             // a fraction against pools three orders of magnitude apart, not a
@@ -267,11 +266,9 @@ describe('damage is a share of the pool, and that is why the pool may grow', () 
             expect(m.share, `ordinal ${m.o} spent ${(m.share * 100).toFixed(1)}% of the pool`)
                 .toBeCloseTo(first.share, 1);
             expect(m.outcome).toBe(first.outcome);
+            expect(first.exchanges).toBeGreaterThan(2);
+            expect(first.exchanges).toBeLessThan(40);
         }
-
-        // And it is a real fight rather than a rout or a grind at every rung.
-        expect(first.exchanges).toBeGreaterThan(2);
-        expect(first.exchanges).toBeLessThan(40);
     });
 
     it('the pool is not what decides a fight', () => {

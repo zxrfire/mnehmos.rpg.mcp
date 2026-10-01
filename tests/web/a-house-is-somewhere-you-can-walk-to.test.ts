@@ -1,5 +1,7 @@
 /**
  * Saying a house's name and getting a road, a town and a door.
+ * The gate town is now a separate destination. A bare house name arrives in
+ * town; its grounds name or the walk from town reaches the watch at the gate.
  *
  * ── THE DEFECT, MEASURED ─────────────────────────────────────────────────
  *
@@ -33,7 +35,8 @@
  * notice:
  *
  *   turned away  the journey happens, the player ends up at the gate in the
- *                forecourt, and the refusal names the town outside the wall and
+ *                forecourt, the journey names the town outside the wall, and
+ *                the refusal says
  *                what would change the answer rather than hiding the house.
  *                NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS SEEING
  *                NOTHING.
@@ -171,7 +174,12 @@ describe('a house is somewhere you can walk to', () => {
         const { faction, seat } = found!;
 
         const home = cultivator.location;
-        const turn = await game.act(`I travel to the ${faction.name}`);
+        const road = await game.act(`I travel to the ${faction.name}`);
+        const town = world.locations.find(row => row.data.gateOf === faction.id)!;
+        expect(repos.cultivators.getById(cultivator.id)!.location).toBe(town.name);
+        expect(road.narration).toContain(town.name);
+        await game.act('I walk to the gate');
+        const turn = await game.act('may I enter?');
         const after = repos.cultivators.getById(cultivator.id)!.location;
 
         // THE JOURNEY HAPPENED. The defect this replaces refused it outright.
@@ -191,10 +199,6 @@ describe('a house is somewhere you can walk to', () => {
             'the player was refused and not told where that leaves them standing'
         ).toBe(true);
         expect(
-            /outside the wall/i.test(prose),
-            'there was nothing outside the wall to be turned away among'
-        ).toBe(true);
-        expect(
             /roll|applicant/i.test(prose),
             'the refusal said no and did not say what a place on the roll would do'
         ).toBe(true);
@@ -212,7 +216,7 @@ describe('a house is somewhere you can walk to', () => {
         // the gate's answer to somebody on a roll, not how they got on it.
         repos.sects.addMember(faction.id, cultivator.id, 0);
 
-        const turn = await game.act(`I travel to the ${faction.name}`);
+        const turn = await game.act(`I travel to the ${seat.name}`);
         const after = repos.cultivators.getById(cultivator.id)!.location;
         expect(after, 'a member did not reach their own house').toBe(seat.name);
 

@@ -22,14 +22,24 @@
  * one-in-sixteen coin flip per seed, and it came up red on a state change that
  * had nothing to do with paper. Holding stays per world, because the thinnest
  * of the 16 still held 46. Burning is summed across the seeds.
+ * The later catalog sweep found 167 slips per world and none burned across
+ * pyr-a/b/c at 200 years. War deaths transferred the paper before escape was
+ * checked. A paired war below pins survival and prevents an estate handoff.
+ * After that fix the same worlds burned 13, 6 and 14 slips. One burner was
+ * later forgotten by the world's ordinary retention pass, which clears ids
+ * in object data. The date remains; identity is asserted at the act below.
  */
 
 import { describe, expect, it } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
 import { whoBurnedATeleportationTalisman } from '../../../src/engine/world/a-talisman-is-one-act-somebody-already-paid-for';
 import { cutATalisman } from '../../../src/engine/world/a-talisman-is-one-act-somebody-already-paid-for';
-import { transferPossession, type ObjectRecord } from '../../../src/engine/world/possessions';
+import { makeObject, transferPossession, type ObjectRecord } from '../../../src/engine/world/possessions';
 import type { WorldState } from '../../../src/engine/world/world-state';
+import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { fightTheWarsThisYear } from '../../../src/engine/world/war-melee.js';
+import { fixtureCatalog } from './fixtures.js';
 
 // The pyramid's seeds at the same horizon, so the walks are shared: see `tests/support/soaked-world.ts`.
 const SEEDS = ['pyr-a', 'pyr-b', 'pyr-c'];
@@ -75,10 +85,14 @@ describe('a slip reaches a hand', () => {
         }
     });
 
-    it('and a burned one names who burned it and when', async () => {
+    it('keeps the burn date and any burner the world still remembers', async () => {
         for (const state of await worldsLived()) {
             for (const slip of slipsIn(state).filter(o => o.data?.spent === true)) {
-                expect(typeof slip.data?.spentBy).toBe('string');
+                const burner = slip.data?.spentBy;
+                expect(burner === null || typeof burner === 'string').toBe(true);
+                if (typeof burner === 'string') {
+                    expect(state.npcs.some(n => n.id === burner)).toBe(true);
+                }
                 expect(typeof slip.data?.spentOnDay).toBe('number');
                 // Used and gone. Nobody is holding it afterwards.
                 expect(slip.possessorId).toBeNull();
@@ -102,6 +116,47 @@ describe('who the door opens for', () => {
             onDay: 1, toHolderId: who, toHolderName: who, how: 'lent'
         });
     }
+
+    it('escapes a lethal war before death can transfer the slip', () => {
+        const { state } = seedWorld({ seed: 'a-slip-before-an-estate', catalog: fixtureCatalog() });
+        const houses = state.factions.filter(house => state.npcs.some(n =>
+            n.status === 'alive' && n.factionId === house.id)).slice(0, 2);
+        expect(houses).toHaveLength(2);
+        for (const house of houses) house.tags.push('at_war');
+        state.npcs = houses.map((house, i) => {
+            const npc = state.npcs.find(n => n.status === 'alive' && n.factionId === house.id)!;
+            return { ...npc, tags: [], cultivation: { ...npc.cultivation, realmOrdinal: i === 0 ? 0 : 13 } };
+        });
+        const victim = state.npcs[0]!;
+        state.objects = [makeObject({ id: 'test-blade', name: 'a blade', kind: 'artifact',
+            significance: 'significant', power: 13, possessorId: state.npcs[1]!.id,
+            tags: ['weapon'] })];
+        state.schedule = [{
+            id: 'test-war', kind: 'war_resolves', dueOnDay: 999_999, summary: 'a war',
+            actorIds: [], locationId: null, factionId: houses[0]!.id, repeatDays: null,
+            interrupts: false, chance: 1, fired: false, firedOnDay: null,
+            data: { kind: 'war_resolution', sideA: houses[0]!.id, sideB: houses[1]!.id,
+                magnitude: 0.7, openedOnDay: 0, musteredA: 1, musteredB: 1, ledA: 0, ledB: 0 }
+        }];
+        let lethal = false;
+        for (let seed = 0; seed < 64; seed++) {
+            const bare = structuredClone(state);
+            const equipped = structuredClone(state);
+            equipped.objects.push(aSlipInTheHandOf(victim.id, 1));
+            const key = `escape-war-${seed}`;
+            fightTheWarsThisYear(bare, 400, forStream(key, 'war-melee', 1));
+            const did = fightTheWarsThisYear(equipped, 400, forStream(key, 'war-melee', 1));
+            if (bare.npcs.find(n => n.id === victim.id)!.status === 'alive') continue;
+            lethal = true;
+            expect(equipped.npcs.find(n => n.id === victim.id)!.status).toBe('alive');
+            const slip = equipped.objects.find(o => o.tags.includes('talisman'))!;
+            expect(slip.data?.spentBy).toBe(victim.id);
+            expect(slip.possessorId).toBeNull();
+            expect(did.fought.flatMap(year => year.deaths).some(death => death.deceasedId === victim.id)).toBe(false);
+            break;
+        }
+        expect(lethal, 'the control must actually suffer a lethal encounter').toBe(true);
+    });
 
     it('takes the person who was about to be finished, and nobody else', () => {
         const objects = [aSlipInTheHandOf('doomed', 1), aSlipInTheHandOf('fine', 1)];

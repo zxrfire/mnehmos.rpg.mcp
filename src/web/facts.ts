@@ -1078,6 +1078,7 @@ function withoutTheMarkingScheme(hint: string): string {
     return hint
         // "Odds were 30.9%." / "Risk was 13.2%." - the marking, stated twice.
         .replace(/\s*\b(?:Odds were|Risk was|Chance was)\s+[\d.]+%\.?/g, '')
+        .replace(/\s+at\s+[\d.]+%/g, '')
         // "(score 1.65)" - the column the finding beside it was marked in.
         .replace(/\s*\((?:score|rated|marked)\s+[\d.]+\)/gi, '')
         .replace(/\s{2,}/g, ' ')
