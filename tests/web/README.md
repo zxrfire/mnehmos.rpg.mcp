@@ -1,5 +1,11 @@
 # Played tests
 
+`area-cap-walk.test.ts` checks area placement and narrator company through busy
+towns, markets, compound rooms, ship decks and three years of world ticks. The
+engine companion test also covers overflow, private rooms, beasts and bodies.
+`area-arrivals.test.ts` adds visiting run sheets and remote presences, checks
+their scene and offer rosters, and walks to visitors in overflow areas.
+
 `makeGameInWorld` copies a freshly seeded JSON world into a private SQLite
 database built from the cached schema. The key covers the harness, schema,
 seeding and their imports, plus

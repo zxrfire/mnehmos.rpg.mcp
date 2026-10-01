@@ -2676,6 +2676,16 @@ outside it. Measured on `road-world`: the start square of four seeds held 6, 11,
 people before, and the area a run opens in now holds two or three, most of them faces it knows;
 over three seeded worlds, of 1,360 areas anybody stands in, 38% hold one, 28% two and 33% three.
 
+Companions take space in that same read; they are never appended afterwards. The
+optional arrivals include run sheets and separated presences. Existing occupants
+keep their space; companions use vacancies, so approaching somebody cannot send
+them elsewhere. Overflow goes to another area of the place, creating one when
+necessary. Extra companions stay
+outside a full private room. The player is excluded; individually tracked beasts
+and bodies count against three, with bodies held separately from living targets.
+Placement is derived on every read, including after travel, summons and world ticks.
+Whole-row and whole-compound readers remain for population and ground mechanics.
+
 **A world opens with rings on the hands that could have come by one.**
 `who-opens-the-world-wearing-a-ring.ts`: `whatARingCosts` against `netEarningsPerYear`
 over a life, and a hand that can fold one always has one. No draw.

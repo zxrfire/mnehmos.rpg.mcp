@@ -14,7 +14,8 @@ import { PLAYER_ROLL_IDENTITY } from './encounters.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import type { WorldState } from '../engine/world/world-state.js';
-import { npcsWhereTheyStand, whereInThisPlaceTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import type { LocationRecord } from '../engine/world/locations.js';
+import { AT_MOST_IN_AN_AREA, theAreasOf, whereInThisPlaceTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { whereYouCanActFrom } from '../engine/world/something-acting-in-your-place.js';
 import { isActing } from '../engine/world/npc-state.js';
 import { worldLocationFor } from './entities.js';
@@ -193,7 +194,7 @@ function toSpeakable(entry: Mentionable): SpeakableName {
 }
 
 /**
- * People standing in the same place as the cultivator, alive, not themselves.
+ * People standing in the cultivator's area, alive, not themselves.
  */
 export function othersPresent(
     repos: CultivationRepos,
@@ -208,30 +209,45 @@ export function othersPresent(
         row.alive &&
         (row.location ?? '').trim().toLowerCase() === here);
 
-    if (!world) return oneCrowd(stored, []);
+    if (!world) return oneCrowd(stored, []).slice(0, AT_MOST_IN_AN_AREA);
 
     const place = worldLocationFor(world, cultivator.location);
-    if (!place) return oneCrowd(stored, []);
+    if (!place) return oneCrowd(stored, []).slice(0, AT_MOST_IN_AN_AREA);
 
-    // NEVER YOUR OWN ROW. The player has a world row of their own, and while
-    // their house has them standing at a post it carries that post's location -
-    // so the square they are posted in would hand them back to themselves as
-    // another person standing in it. One person is one person whichever store
-    // holds them, which is what `everybodyDrawingHere` already says about the
-    // same two stores a few lines away.
-    // THE AREA OF THE PLACE THEY STAND IN, three at most. See `where-in-a-place-somebody-is-standing.ts`.
-    const inWorld = npcsWhereTheyStand(world, place, cultivator.standingIn, cultivator)
-        .map(npc => worldRosterRow(npc, world.currentDay, world));
-    const area = whereInThisPlaceTheyStand(world, place, cultivator.standingIn, cultivator.sectId).id;
+    const read = peopleInThisPlace(repos, cultivator, world, place);
+    const area = read.areas.find(one => one.id === cultivator.standingIn)?.id
+        ?? whereInThisPlaceTheyStand(world, place, cultivator.standingIn, cultivator.sectId).id;
+    return read.people.filter(row => read.whereIs.get(row.id) === area);
+}
+
+/** One placement for world people, run sheets and separated presences. */
+export function peopleInThisPlace(
+    repos: CultivationRepos,
+    cultivator: Cultivator,
+    world: WorldState,
+    place: LocationRecord
+) {
+    const stored = repos.cultivators.roster().filter(row => row.id !== cultivator.id && row.alive
+        && worldLocationFor(world, row.location)?.id === place.id);
+    const remote: { row: RosterEntry; standingIn: string }[] = [];
     for (const npc of world.npcs) {
-        if (npc.id === cultivator.id || !isActing(npc.status) || inWorld.some(row => row.id === npc.id)) continue;
+        if (npc.id === cultivator.id || !isActing(npc.status)) continue;
         const presence = whereYouCanActFrom(world, npc.id);
-        if (presence?.locationId !== place.id || presence.data.standingIn !== area) continue;
-        inWorld.push(worldRosterRow({ ...npc, locationId: place.id,
+        if (presence?.locationId !== place.id || typeof presence.data.standingIn !== 'string') continue;
+        remote.push({ standingIn: presence.data.standingIn, row: worldRosterRow({ ...npc, locationId: place.id,
             cultivation: { ...npc.cultivation, realmOrdinal: presence.power ?? 0 },
-            tags: [...npc.tags, `present-as:${presence.data.kind}`] }, world.currentDay, world));
+            tags: [...npc.tags, `present-as:${presence.data.kind}`] }, world.currentDay, world) });
     }
-    return oneCrowd(stored, inWorld).slice(0, 3);
+    const read = theAreasOf(world, place, undefined, {
+        id: cultivator.id, sectId: cultivator.sectId, standingIn: cultivator.standingIn,
+        others: [
+            ...stored.map(row => ({ id: row.id, standingIn: repos.cultivators.getById(row.id)?.standingIn })),
+            ...remote.map(one => ({ id: one.row.id, standingIn: one.standingIn }))
+        ]
+    });
+    const inWorld = world.npcs.filter(npc => isActing(npc.status) && read.whereIs.has(npc.id))
+        .map(npc => remote.find(one => one.row.id === npc.id)?.row ?? worldRosterRow(npc, world.currentDay, world));
+    return { ...read, people: oneCrowd(stored, inWorld) };
 }
 
 /**
@@ -484,7 +500,9 @@ function offerGroundSomebodyGoesTo(
     // the player is dealing with when they are dealing with somebody. A name
     // that arrives out of a conversation should have come from the person in
     // the conversation.
+    const present = new Set(othersPresent(input.repos, input.cultivator, world).map(person => person.id));
     const offers = whoCouldPointAtAGround(world, here.id)
+        .filter(offer => present.has(offer.speaker.id))
         .filter(offer => !addressed || offer.speaker.id === addressed.id)
         .filter(offer => !input.gate.isAwareOf(input.cultivator.id, 'place', offer.ground.id));
     if (offers.length === 0) return null;
@@ -581,7 +599,9 @@ function offerTheRoadToAHouse(
     const here = worldLocationFor(world, input.cultivator.location);
     if (!here) return null;
 
+    const present = new Set(othersPresent(input.repos, input.cultivator, world).map(person => person.id));
     const offers = whoCouldPointAtAHouse(world, here.id)
+        .filter(offer => present.has(offer.speaker.id))
         .filter(offer => !addressed || offer.speaker.id === addressed.id)
         .filter(offer => !input.gate.isAwareOf(input.cultivator.id, 'place', offer.house.seatId));
     if (offers.length === 0) return null;

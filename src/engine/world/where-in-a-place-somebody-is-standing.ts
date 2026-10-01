@@ -24,7 +24,8 @@
  * counted. Each person stands in the area a draw of their own points at, or the next with room, so
  * a death pulls nobody across from elsewhere. People in one activity together
  * (`withIds`) are kept in one area. The draw is on its own stream, so nothing else moves. Nothing
- * writes an area: a new activity is a new reading.
+ * writes an area: a new activity is a new reading. Companions take room too;
+ * a read with the player's position puts up to three with them and the rest elsewhere.
  *
  * ── AN AREA IS NOT A LOCATION ROW ────────────────────────────────────────
  *
@@ -65,6 +66,14 @@ export interface AnAreaOfAPlace {
 }
 
 type State = Pick<WorldState, 'seed' | 'currentDay' | 'locations' | 'npcs' | 'factions'>;
+
+interface StandingWith {
+    id: string;
+    standingIn?: string | null;
+    sectId?: string | null;
+    /** People held outside the world roster, with their own area when known. */
+    others?: readonly { id: string; standingIn?: string | null }[];
+}
 
 const MARK = '#';
 
@@ -262,14 +271,12 @@ export interface APlaceReadIntoAreas {
 export function theAreasOf(
     state: State,
     place: LocationRecord,
-    compounds: WhereCompoundsAre = whereCompoundsAre(state)
+    compounds: WhereCompoundsAre = whereCompoundsAre(state),
+    standingWith?: StandingWith
 ): APlaceReadIntoAreas {
     const day = Math.floor(state.currentDay);
-    // WITH THE ONE BEING PLAYED, whose row stands nowhere, is with them wherever they walked, and
-    // takes no room in an area (`npcsWhereTheyStand` adds them).
-    const nowhere = new Set(state.npcs.filter(n => n.tags.includes(PLAYER_ROW_TAG)).map(n => n.id));
     const people = npcsStandingIn(state, place.id, compounds)
-        .filter(n => !(stillAtIt(n, day) && n.activity!.withIds.some(id => nowhere.has(id))));
+        .filter(n => !n.tags.includes(PLAYER_ROW_TAG) && n.id !== standingWith?.id);
     const here = new Map(people.map(n => [n.id, n]));
     const house = theHouseOfTheSeat(place);
     const watch = house === null ? null : theOneOnWatchAtTheGate(state, place, compounds);
@@ -360,6 +367,34 @@ export function theAreasOf(
             for (const npc of fallenIn[i]!) whereBodiesAre.set(npc.id, area.id);
         });
     }
+    if (standingWith) {
+        const count = (id: string) => [...whereIs.values(), ...whereBodiesAre.values()].filter(one => one === id).length;
+        const elsewhere = (from: AnAreaOfAPlace): AnAreaOfAPlace => {
+            const kind = from.for === 'room' ? (house === null ? 'table' : 'forecourt') : from.for;
+            const room = areas.find(area => area.for === kind && count(area.id) < AT_MOST_IN_AN_AREA);
+            if (room) return room;
+            const made = anArea(place, kind, theNameAt(theNamesFor(place, kind), areas.filter(area => area.for === kind).length));
+            areas.push(made);
+            return made;
+        };
+        // Visitors are placed before the observer moves, so walking to them keeps them there.
+        for (const other of standingWith.others ?? []) {
+            if (other.id === standingWith.id) continue;
+            const desired = areaTheyStandIn(place, areas, other.standingIn, null);
+            if (!areas.some(area => area.id === desired.id)) areas.push(desired);
+            whereIs.delete(other.id);
+            whereIs.set(other.id, (count(desired.id) < AT_MOST_IN_AN_AREA ? desired : elsewhere(desired)).id);
+        }
+        const at = areaTheyStandIn(place, areas, standingWith.standingIn, standingWith.sectId ?? null);
+        if (!areas.some(area => area.id === at.id)) areas.push(at);
+        const companions = people.filter(n => stillAtIt(n, day) && n.activity!.withIds.includes(standingWith.id))
+            .sort((a, b) => a.id.localeCompare(b.id));
+        // Companions use free space; they cannot displace the person being approached.
+        for (const companion of companions) {
+            if (whereIs.get(companion.id) === at.id || count(at.id) >= AT_MOST_IN_AN_AREA) continue;
+            whereIs.set(companion.id, at.id);
+        }
+    }
     return { areas, whereIs, whereBodiesAre };
 }
 
@@ -389,6 +424,15 @@ export function whereInThisPlaceTheyStand(
     ofTheHouse: string | null
 ): AnAreaOfAPlace {
     const { areas } = theAreasOf(state, place);
+    return areaTheyStandIn(place, areas, standingIn, ofTheHouse);
+}
+
+function areaTheyStandIn(
+    place: LocationRecord,
+    areas: readonly AnAreaOfAPlace[],
+    standingIn: string | null | undefined,
+    ofTheHouse: string | null
+): AnAreaOfAPlace {
     const exact = areas.find(area => area.id === standingIn);
     if (exact) return exact;
     const aRoom = `${place.id}${MARK}room${MARK}`;
@@ -402,19 +446,17 @@ export function whereInThisPlaceTheyStand(
 }
 
 /**
- * Everybody standing with somebody the play layer holds: the area of the place they are in, and
- * anybody at this place whose activity names them, who is with them wherever they walked.
+ * Everybody in this person's area after companions and arrivals have taken room.
  */
 export function npcsWhereTheyStand(
     state: State,
     place: LocationRecord,
     standingIn: string | null | undefined,
-    person: { id: string; sectId?: string | null }
+    person: { id: string; sectId?: string | null },
+    others?: StandingWith['others']
 ): NpcRecord[] {
-    const area = whereInThisPlaceTheyStand(state, place, standingIn, person.sectId ?? null);
-    const day = Math.floor(state.currentDay);
-    const inRow = new Set(npcsStandingIn(state, place.id).map(n => n.id));
-    const withThem = state.npcs.filter(n => inRow.has(n.id) && stillAtIt(n, day) && n.activity!.withIds.includes(person.id));
-    const byId = new Map([...npcsInTheArea(state, area.id), ...withThem].map(n => [n.id, n]));
-    return [...byId.values()].filter(n => n.id !== person.id).sort((a, b) => (a.id < b.id ? -1 : 1));
+    const { areas, whereIs } = theAreasOf(state, place, undefined, { ...person, standingIn, others });
+    const area = areaTheyStandIn(place, areas, standingIn, person.sectId ?? null);
+    return state.npcs.filter(n => isActing(n.status) && n.id !== person.id && whereIs.get(n.id) === area.id)
+        .sort((a, b) => (a.id < b.id ? -1 : 1));
 }

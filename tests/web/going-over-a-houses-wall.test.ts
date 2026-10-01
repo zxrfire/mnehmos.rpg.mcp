@@ -228,6 +228,8 @@ describe('what a trespass costs, by the house', () => {
 /**
  * Somebody inside a house of this alignment without leave, with one of the house at their rung
  * standing with them. Arranged rather than walked: the road in is played above.
+ * The witness is placed first and the player stands in their area. A companion
+ * marker cannot add a fourth person to a forecourt that is already full.
  */
 async function insideAHouseOf(alignment: 'righteous' | 'neutral' | 'demonic', seed: string) {
     const harness = await makeGameInWorld({ seed, worldSeed: 'road-world' });
@@ -237,20 +239,25 @@ async function insideAHouseOf(alignment: 'righteous' | 'neutral' | 'demonic', se
         .filter(f => getSect(f.id)?.alignment === alignment)
         .map(f => ({ f, house: theHouseThisNameReaches(world, f.name) }))
         .find(({ f, house }) => house !== null
-            && world.npcs.some(npc => npc.status === 'alive' && npc.factionId === f.id && npc.locationId !== house.seat.id));
-    expect(found, `no seated ${alignment} house with anybody away from its seat`).toBeDefined();
+            && world.npcs.filter(npc => npc.status === 'alive' && npc.factionId === f.id).length >= 2);
+    expect(found, `no seated ${alignment} house with a witness and watch`).toBeDefined();
     const house = found!.house!;
     const id = harness.game.currentRun().cultivator.id;
     const rung = 14;
     harness.repos.cultivators.update(id, { realmOrdinal: rung });
-    const forecourt = theAreasOf(world, house.seat).areas.find(area => area.for === 'forecourt')!;
-    const witness = world.npcs.findIndex(npc => npc.status === 'alive' && npc.factionId === house.factionId
-        && npc.locationId !== house.seat.id);
+    const members = world.npcs.filter(npc => npc.status === 'alive' && npc.factionId === house.factionId)
+        .sort((a, b) => a.factionRankIndex - b.factionRankIndex || a.id.localeCompare(b.id));
+    const member = members.at(-1)!;
+    const watch = members[0]!;
+    const witness = world.npcs.findIndex(npc => npc.id === member.id);
 
     const trespass = async () => {
         harness.repos.cultivators.update(id, { location: house.seat.name });
-        harness.repos.cultivators.standIn(id, forecourt.id);
         const day = Math.floor(world.currentDay);
+        // Keep a member on watch so the witness stands inside the gate.
+        const guard = world.npcs.findIndex(npc => npc.id === watch.id);
+        world.npcs[guard] = { ...world.npcs[guard]!, locationId: house.seat.id,
+            activity: { kind: 'idle', note: '', withIds: [], sinceDay: day, untilDay: day + 1 } };
         writeFlag(harness.db, id, FLAG_INSIDE_WITHOUT_LEAVE,
             JSON.stringify({ houseId: house.factionId, seatId: house.seat.id, sinceDay: day }));
         const npc = world.npcs[witness]!;
@@ -261,6 +268,11 @@ async function insideAHouseOf(alignment: 'righteous' | 'neutral' | 'demonic', se
             activity: { kind: 'talking', withIds: [id], sinceDay: day, untilDay: day + 1 }
         } as NpcRecord;
         harness.game.theWorldMoved();
+        const placement = theAreasOf(world, house.seat);
+        const at = placement.whereIs.get(npc.id)!;
+        expect(placement.areas.find(area => area.id === at)?.for).toBe('forecourt');
+        harness.repos.cultivators.standIn(id, at);
+        expect(harness.game.present(harness.repos.cultivators.getById(id)!).map(person => person.id)).toContain(npc.id);
         const turn = await harness.game.act('who is here?') as Played;
         const answered = turn.toolCalls.find(call => call.name === 'social.whatATrespassCosts');
         expect(answered, said(turn)).toBeDefined();

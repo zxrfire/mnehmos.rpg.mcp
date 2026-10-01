@@ -19,7 +19,6 @@ import {
     theOneOnWatchAtTheGate,
     whoCouldBeSentToTheGate,
     whereInThisPlaceTheyStand,
-    npcsInTheArea,
     type AnAreaOfAPlace,
     type WhatAnAreaIsFor
 } from '../engine/world/where-in-a-place-somebody-is-standing.js';
@@ -34,6 +33,7 @@ import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { theHouseWhoseGateThisIs, whatTheGateOfThisHouseSays } from './walking-up-to-a-house.js';
 import { whereTheyAreLodged } from './a-room-at-an-inn.js';
+import { peopleInThisPlace } from './hearsay.js';
 
 /** The words for a kind of area, where a place has no area by that exact name. */
 const A_WORD_FOR: ReadonlyArray<[RegExp, WhatAnAreaIsFor]> = [
@@ -97,11 +97,12 @@ export function theAreaTheyAreIn(
 export function theRestOfThisPlace(game: GameService, cultivator: Cultivator): string[] {
     const here = theAreaTheyAreIn(game.atHand, cultivator);
     if (!game.atHand || !here) return [];
-    const { areas, whereIs } = theAreasOf(game.atHand, here.place);
+    const { areas, whereIs } = peopleInThisPlace(game.repos, cultivator, game.atHand, here.place);
+    const current = areas.find(area => area.id === cultivator.standingIn) ?? here.area;
     const occupied = new Set(whereIs.values());
     const firsts = new Set(areas.filter((area, i) => areas.findIndex(one => one.for === area.for) === i).map(a => a.id));
     return areas
-        .filter(area => area.id !== here.area.id && (occupied.has(area.id) || firsts.has(area.id)))
+        .filter(area => area.id !== current.id && (occupied.has(area.id) || firsts.has(area.id)))
         .map(area => area.name);
 }
 
@@ -113,8 +114,9 @@ export function theRestOfThisPlace(game: GameService, cultivator: Cultivator): s
 export function thePlaceAsTheSceneNamesIt(game: GameService, cultivator: Cultivator, place: string): string {
     const here = theAreaTheyAreIn(game.atHand, cultivator);
     if (!here || !game.atHand) return place;
-    const first = theAreasOf(game.atHand, here.place).areas[0]!;
-    return here.area.id === first.id && here.area.for !== 'gate' ? place : `${place}, ${here.area.name}`;
+    const read = peopleInThisPlace(game.repos, cultivator, game.atHand, here.place);
+    const area = read.areas.find(one => one.id === cultivator.standingIn) ?? here.area;
+    return area.id === read.areas[0]!.id && area.for !== 'gate' ? place : `${place}, ${area.name}`;
 }
 
 /**
@@ -181,6 +183,8 @@ export async function aWalkAcrossThePlace(
     const world = game.atHand;
     const here = theAreaTheyAreIn(world, cultivator);
     if (!world || !here) return null;
+    const read = peopleInThisPlace(game.repos, cultivator, world, here.place);
+    here.area = read.areas.find(area => area.id === cultivator.standingIn) ?? here.area;
 
     // THE ROOM THEY PAID FOR, alone but for whoever is with them. Played: "head up to my room"
     // reached a house's interior room somewhere else and was refused. See `aRoomOfTheirOwn`.
@@ -193,7 +197,7 @@ export async function aWalkAcrossThePlace(
         && theGateBetweenThemAndIt(game, cultivator) === null;
     const theirs = aRoomIsMeant && (whereTheyAreLodged(game, cultivator) !== null || atTheirOwnSeat);
     let destination = theirs ? aRoomOfTheirOwn(here.place, cultivator.id) : null;
-    destination ??= theAreaNamed(theAreasOf(world, here.place).areas, asAnAreaIsNamed(said));
+    destination ??= theAreaNamed(read.areas, asAnAreaIsNamed(said));
     if (destination === null) return null;
 
     if (destination.id === here.area.id) {
@@ -221,7 +225,7 @@ export async function aWalkAcrossThePlace(
     // ── THE WALK ─────────────────────────────────────────────────────────
     game.repos.cultivators.standIn(cultivator.id, destination.id);
     game.repos.runs.incrementTurn(run.id, 1);
-    const people = npcsInTheArea(world, destination.id).filter(npc => npc.id !== cultivator.id);
+    const people = game.present({ ...cultivator, standingIn: destination.id });
     const line = `You walk from ${here.area.name} to ${destination.name}.`;
     const facts = factsForToolResult(line, [
         line,
@@ -231,7 +235,7 @@ export async function aWalkAcrossThePlace(
     ]);
     facts.structure.push(
         `walkAcrossThePlace: ${here.area.id} to ${destination.id}, in ${here.place.id}. No time passed; `
-        + `${people.length} standing there by npcsInTheArea.`
+        + `${people.length} standing in the arrival area.`
     );
     return {
         facts,
@@ -265,9 +269,10 @@ export function crossToWhoeverTheyNamed(
     const wanted = (target ?? '').trim().toLowerCase();
     const here = theAreaTheyAreIn(game.atHand, cultivator);
     if (wanted.length === 0 || !game.atHand || !here) return null;
-    const { areas, whereIs } = theAreasOf(game.atHand, here.place);
+    const { areas, whereIs, people } = peopleInThisPlace(game.repos, cultivator, game.atHand, here.place);
+    here.area = areas.find(area => area.id === cultivator.standingIn) ?? here.area;
     // The name, or the name with the rest of the sentence after it: "Kong Kelin with 200 stones".
-    const named = game.atHand.npcs
+    const named = people
         .filter(npc => whereIs.has(npc.id)
             && (wanted === npc.name.toLowerCase() || wanted.startsWith(`${npc.name.toLowerCase()} `)))
         .sort((a, b) => b.name.length - a.name.length)[0];

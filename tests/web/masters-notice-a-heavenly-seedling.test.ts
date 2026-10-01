@@ -13,6 +13,8 @@
  *   who would take them on, and is told once per master
  *   an ordinary root is told nothing
  *   nothing is written on anybody: the bond is still the discipleship path
+ *   the player stands in the master's actual room and area; sharing a stored
+ *   seat row is no longer enough to receive an offer from another area
  */
 
 import { describe, expect, it } from 'vitest';
@@ -20,6 +22,8 @@ import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness.js';
 import { elderRungOf } from '../../src/engine/cultivation/leadership.js';
 import { FOUNDATION_ORDINAL } from '../../src/engine/cultivation/realms.js';
+import { whereCompoundsAre, whereTheyAreStanding } from '../../src/engine/world/where-inside-a-house-somebody-is-standing.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import {
     mastersNoticeAHeavenlySeedling,
     mastersWhoWouldOfferToTakeThemOn,
@@ -37,8 +41,10 @@ async function standingAmongMasters(seed: string, root: 'mutated_ice' | 'muddled
     const master = world.npcs.find(n => n.status === 'alive' && n.factionId !== null && n.locationId !== null
         && n.cultivation.realmOrdinal >= FOUNDATION_ORDINAL
         && n.factionRankIndex >= elderRungOf(ranks.get(n.factionId!) ?? 0))!;
-    const where = world.locations.find(l => l.id === master.locationId)!;
+    const room = whereTheyAreStanding(world, whereCompoundsAre(world), master, new Set(world.npcs.map(n => n.id)));
+    const where = world.locations.find(l => l.id === room)!;
     harness.repos.cultivators.update(cultivator.id, { location: where.name, spiritRoot: root, realmOrdinal: 3 });
+    harness.repos.cultivators.standIn(cultivator.id, theAreasOf(world, where).whereIs.get(master.id)!);
     return { ...harness, master, where };
 }
 

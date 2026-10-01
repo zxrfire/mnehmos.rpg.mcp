@@ -77,9 +77,9 @@ import type { KnowledgeGate } from './knowledge.js';
 import { rankName } from '../engine/cultivation/realms.js';
 
 /**
- * The most sellers a square puts in front of anybody at once.
+ * Offer rows shown after local sellers each take a turn.
  */
-export const SELLERS_SHOWN = 4;
+export const OFFERS_SHOWN = 4;
 
 /**
  * What one copy of a book is worth in spirit stones, whether or not a stall carries
@@ -209,14 +209,17 @@ export function readWhatIsOnOfferHere(
     /**
      * Whether this cultivator already holds a copy of a thing.
      */
-    alreadyHolds?: (thingId: string) => boolean
+    alreadyHolds?: (thingId: string) => boolean,
+    present?: readonly { id: string }[]
 ): { offers: AnOfferStandingHere[]; read: WhatThisPersonWouldDo[]; peopleHere: number } {
     if (!world) return { offers: [], read: [], peopleHere: 0 };
     const place = worldLocationFor(world, cultivator.location);
     if (!place) return { offers: [], read: [], peopleHere: 0 };
 
     // The area of the place they stand in: a stall in the cloth row is not at the inn.
-    const here = npcsWhereTheyStand(world, place, cultivator.standingIn, cultivator);
+    const here = present
+        ? world.npcs.filter(npc => present.some(person => person.id === npc.id))
+        : npcsWhereTheyStand(world, place, cultivator.standingIn, cultivator);
     const read: WhatThisPersonWouldDo[] = [];
     const regionId = standingOf(cultivator).regionId;
 
@@ -257,19 +260,8 @@ export function readWhatIsOnOfferHere(
             ));
     }
 
-    // ── FOUR SELLERS, WHICH IS WHAT THE CONSTANT SAYS ────────────────────
-    //
-    // This flattened every offer, sorted by price and took four, so the cap
-    // counted OFFERS while its name and its own doc line count SELLERS. One
-    // cheap seller consumed the whole allowance and everybody else standing
-    // there was invisible - measured on a square where a man held four things
-    // and a second man's stock could not be reached at all.
-    //
-    // Cheapest-first still decides who is shown and in what order; what
-    // changed is that a seller's second thing waits until every other seller
-    // has had a first. So the square puts four PEOPLE in front of somebody,
-    // which is what it says it does, and a crowded square stops looking like
-    // one man's stall.
+    // Each local seller gets a slot before any seller gets a second.
+    // The four slots count offers; an area still holds at most three people.
     //
     // AND A SQUARE SHOWS BOTH BOARDS. Sorted on price alone the mortal board
     // wins every slot - millet is one stone, a manual is hundreds, and a
@@ -300,10 +292,10 @@ export function readWhatIsOnOfferHere(
             else bySeller.set(offer.sellerId, [offer]);
         }
         const taken: AnOfferStandingHere[] = [];
-        for (let round = 0; taken.length < SELLERS_SHOWN; round++) {
+        for (let round = 0; taken.length < OFFERS_SHOWN; round++) {
             const before = taken.length;
             for (const theirs of bySeller.values()) {
-                if (taken.length >= SELLERS_SHOWN) break;
+                if (taken.length >= OFFERS_SHOWN) break;
                 const offer = theirs[round];
                 if (offer) taken.push(offer);
             }
@@ -316,8 +308,8 @@ export function readWhatIsOnOfferHere(
     const board = inTurn(wanted.filter(offer => offer.fromTheMortalBoard));
     const offers: AnOfferStandingHere[] = [];
     for (let i = 0; i < Math.max(held.length, board.length); i++) {
-        if (offers.length < SELLERS_SHOWN && i < held.length) offers.push(held[i]);
-        if (offers.length < SELLERS_SHOWN && i < board.length) offers.push(board[i]);
+        if (offers.length < OFFERS_SHOWN && i < held.length) offers.push(held[i]);
+        if (offers.length < OFFERS_SHOWN && i < board.length) offers.push(board[i]);
     }
 
     return { offers, read, peopleHere: here.length };
@@ -332,10 +324,11 @@ export function whatIsBeingOfferedHere(
     cultivator: Cultivator,
     run: Run,
     world: WorldState | null | undefined,
-    alreadyHolds?: (thingId: string) => boolean
+    alreadyHolds?: (thingId: string) => boolean,
+    present?: readonly { id: string }[]
 ): WhatIsBeingOfferedHere {
     const { offers, read, peopleHere } =
-        readWhatIsOnOfferHere(cultivator, world, alreadyHolds);
+        readWhatIsOnOfferHere(cultivator, world, alreadyHolds, present);
     const onDay = Math.floor(run.elapsedDays);
 
     // ── AND ONLY NOW DOES ANYBODY LEARN A NAME ───────────────────────────

@@ -40,7 +40,7 @@ import {
 } from '../../schema/cultivation.js';
 import { getMembersOf } from '../../data/cultivation/members.js';
 import { locatabilityFrom, theArrivalReadFor } from '../../engine/encounters/index.js';
-import { npcsStandingIn } from '../../engine/world/where-inside-a-house-somebody-is-standing.js';
+import { othersPresent } from '../../web/hearsay.js';
 import { regardFor, type RegardAsker } from '../../engine/cultivation/regard.js';
 import { worldForRun } from '../state/cultivation-world.js';
 import { traitsFor } from '../../engine/world/lineage.js';
@@ -294,7 +294,10 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
         // AND THE OTHER HALF OF THE QUESTION
         const membership = repos.sects.getMembership(cultivator.id);
         const locatability = locatabilityFrom(location, membership?.sectId ?? null);
-        const heads = npcsStandingIn(world, location.id).length;
+        const heads = othersPresent(repos, {
+            ...cultivator, location: location.name,
+            standingIn: placeKey(location.name) === placeKey(cultivator.location ?? '') ? cultivator.standingIn : null
+        }, world).length;
         const reach = {
             locatability,
             heads,

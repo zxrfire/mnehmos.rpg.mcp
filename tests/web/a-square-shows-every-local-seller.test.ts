@@ -1,13 +1,11 @@
 /**
- * A crowded square puts four PEOPLE in front of somebody, not four prices.
+ * Every local seller gets an offer shown before anybody gets a second.
  *
  * ── THE DEFECT ───────────────────────────────────────────────────────────
  *
- * `SELLERS_SHOWN` is documented in its own file as *"the most sellers a square
- * puts in front of anybody at once"*, and the read flattened every person's
- * offers, sorted the lot by price, and took four. So the cap counted OFFERS
- * while its name counted SELLERS, and one cheap seller consumed the whole
- * allowance.
+ * The old read sorted every offer by price and took four. One cheap seller
+ * consumed the allowance while another local seller disappeared. The constant
+ * formerly named SELLERS_SHOWN actually counts offers; it is now OFFERS_SHOWN.
  *
  * Found by playing: a square where one man held several cheap things answered
  * *"Nothing here prices..."* for a thing a second man was standing there
@@ -18,13 +16,13 @@
  *
  * Cheapest-first still decides who is shown and in what order. What changed is
  * that a seller's SECOND thing waits until every other seller has had a first.
- * So a square with four sellers shows four sellers, and a square with one
- * seller still fills the board from them.
+ * An area holds at most three sellers. Four offer rows may include a second
+ * item from one of them; a square with one seller fills the board from them.
  */
 
 import { describe, it, expect } from 'vitest';
 
-import { readWhatIsOnOfferHere, SELLERS_SHOWN } from '../../src/web/who-here-is-offering-something.js';
+import { readWhatIsOnOfferHere, OFFERS_SHOWN } from '../../src/web/who-here-is-offering-something.js';
 import { createWorld, type WorldState } from '../../src/engine/world/world-state.js';
 import { createNpc, setRealm, type NpcRecord } from '../../src/engine/world/npc-state.js';
 import { makeLocation } from '../../src/engine/world/locations.js';
@@ -79,7 +77,7 @@ function aSquareHolding(carrying: readonly (readonly string[])[]): WorldState {
 
 const standingThere = makeCultivator({ location: 'square' });
 
-describe('a square shows four sellers, not four things', () => {
+describe('a square shows every local seller before a second offer', () => {
     it('gives every seller a place before any seller gets a second', () => {
         // ONE MAN HOLDING FOUR, AND THREE MEN HOLDING ONE EACH. Sorted purely
         // by price the first man could take the whole board; the rule is that
@@ -94,7 +92,7 @@ describe('a square shows four sellers, not four things', () => {
         const { offers } = readWhatIsOnOfferHere(standingThere, state);
         const sellers = new Set(offers.map(o => o.sellerId));
 
-        expect(offers.length, 'the board is not full').toBe(SELLERS_SHOWN);
+        expect(offers.length, 'the board is not full').toBe(OFFERS_SHOWN);
         // Every seller standing where the player stands, and an area holds three at
         // most (`where-in-a-place-somebody-is-standing.ts`): the fourth is across the square.
         expect(
@@ -110,7 +108,7 @@ describe('a square shows four sellers, not four things', () => {
 
         const { offers } = readWhatIsOnOfferHere(standingThere, state);
 
-        expect(offers.length).toBe(SELLERS_SHOWN);
+        expect(offers.length).toBe(OFFERS_SHOWN);
         expect(new Set(offers.map(o => o.sellerId)).size).toBe(1);
     });
 

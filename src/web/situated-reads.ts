@@ -1133,7 +1133,7 @@ export const situatedReads = {
             // The read half only. `readWhatIsOnOfferHere` writes nothing; the
             // granting variant is reached by a player who actually looked.
             peopleHereWithSomethingToSell: new Set(
-                readWhatIsOnOfferHere(cultivator, this.atHand).offers.map(o => o.sellerId)
+                readWhatIsOnOfferHere(cultivator, this.atHand, undefined, roster).offers.map(o => o.sellerId)
             ).size,
             // The band itself rather than a `thinGround` boolean. A boolean can
             // say the ground is bad and cannot say it is worth four ordinary
@@ -1158,7 +1158,7 @@ export const situatedReads = {
             // is named and the seller is not - `learnTheSeller` is what writes
             // a knowledge row for a person, and it wants somebody to have
             // walked over.
-            goodsOnOfferHere: readWhatIsOnOfferHere(cultivator, this.atHand).offers
+            goodsOnOfferHere: readWhatIsOnOfferHere(cultivator, this.atHand, undefined, roster).offers
                 .map(offer => ({ name: offer.name, askStones: offer.askStones }))
                 .sort((a, b) => a.askStones - b.askStones),
             // WHAT SOMEBODY BUILT ON THIS GROUND, WHERE ANYTHING IS BUILT

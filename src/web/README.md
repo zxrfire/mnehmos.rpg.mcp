@@ -2,6 +2,14 @@
 
 # The Web Front Door
 
+`peopleInThisPlace` combines world people, run sheets and separated presences in
+the engine's capped area placement. Presence, scene cards, named walks and offers
+read it together. Compound entry counts the arrival area; local teachers, gate
+hosts, trespass witnesses and overheard speakers come from the same roster.
+Other rooms and decks remain part of their place, without becoming talk targets.
+The offer list has four item slots (`OFFERS_SHOWN`), drawn from at most three
+local sellers. Its former name, `SELLERS_SHOWN`, described the wrong count.
+
 `witness-reactions-in-the-scene.ts` gives new player deeds and found bodies to
 the same witness resolver the yearly world pass uses. A player can account for
 a deed to a witness in their area, or tell a known local post what they
@@ -548,7 +556,7 @@ Five rules it must keep, and each of them is a way this could go wrong:
   renders on every state read**, and the reads it points at are the things that
   do the granting. `readTheWall` writes a knowledge row for every house on the
   paper; `learnTheSeller` writes one for a person who turned round and addressed
-  you. A panel that named the houses on the wall, or the four people trading in
+  you. A panel that named the houses on the wall, or the people trading in
   the square, would hand over those records every time it drew - to somebody
   standing still, who had walked over to nothing. That is a discovery bypass
   wearing a user interface, and it is worth more care than the row it improves.

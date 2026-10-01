@@ -7412,7 +7412,7 @@ ${noticed}`;
                 ? null
                 : here.find(row => matchScore(stillTalkingTo, row.name) > MATCH_THRESHOLD) ?? null;
         const standing = readWhatIsOnOfferHere(
-            cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
+            cultivator, this.atHand, this.alreadyHasACopyOf(cultivator), this.present(cultivator)
         ).offers;
         // A NAME THE SENTENCE SUPPLIED IS THE WHOLE OF WHO IS ACROSS THE
         // TABLE, and no wider. Falling back to the square when the person
@@ -10539,7 +10539,7 @@ ${noticed}`;
         // here prices it" - and the haggle after it had no figure to argue with.
         if (category === undefined && named.length >= 3 && this.atHand) {
             const offered = readWhatIsOnOfferHere(
-                cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
+                cultivator, this.atHand, this.alreadyHasACopyOf(cultivator), this.present(cultivator)
             ).offers.find(offer => matchScore(named, offer.name) > MATCH_THRESHOLD);
             if (offered) {
                 const asked = factsForToolResult(`${offered.name}, and what ${offered.sellerName} asks.`, [
@@ -14391,8 +14391,9 @@ ${opened.text}` : receipt,
         // AND WHO, STANDING HERE, COULD SAY WHOSE IT WAS
         this.atHand = this.atHand ?? await this.loadWorld();
         const place = this.atHand ? worldLocationFor(this.atHand, cultivator.location) : null;
+        const presentIds = new Set(this.present(cultivator).map(npc => npc.id));
         const here = this.atHand && place
-            ? npcsStandingIn(this.atHand, place.id).filter(npc => npc.id !== cultivator.id)
+            ? this.atHand.npcs.filter(npc => presentIds.has(npc.id))
             : [];
         const { stage: houseStage, sawIt } = whoHereCouldSayWhoseItWas(here, ownerFactionId, art.id);
 
@@ -19040,7 +19041,8 @@ ${fit.line}`;
         const today = Math.floor(world.currentDay);
         let best = nobody;
         let bestWorth = 1;
-        for (const npc of npcsStandingIn(world, place.id)) {
+        const hereIds = new Set(this.present(cultivator).map(npc => npc.id));
+        for (const npc of world.npcs.filter(npc => hereIds.has(npc.id))) {
             const listening = whoTheyAreTeaching(npc, today);
             if (!listening.includes(cultivator.id)) continue;
             // AND ATTENTION DIVIDES, by the rate's own rule: of several teachers
@@ -19921,7 +19923,7 @@ ${fit.line}`;
         );
         const regionId = standingOf(cultivator, this.atHand).regionId;
         const trading = readWhatIsOnOfferHere(
-            cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
+            cultivator, this.atHand, this.alreadyHasACopyOf(cultivator), this.present(cultivator)
         );
         const stall = GameService.GROUND_WITH_A_STALL.has(postingGroundOf(cultivator.location))
             ? manualsAStallCarries().filter(book => book.requiredOrdinal <= cultivator.realmOrdinal)
@@ -20497,6 +20499,7 @@ ${fit.line}`;
                 // mid-conversation hands over both, and walking up to two
                 // strangers talking hands over neither.
                 const alongside = (doing?.withIds ?? [])
+                    .filter(id => here.some(person => person.id === id))
                     .filter(id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id))
                     .map(nameOf);
                 named.push({

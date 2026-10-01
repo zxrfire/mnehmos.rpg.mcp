@@ -32,7 +32,6 @@ import { makeFact } from '../engine/world/history.js';
 import { appendWorldFact } from '../engine/world/who-was-there-when-it-happened.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import {
-    npcsWhereTheyStand,
     theOneOnWatchAtTheGate,
     whoCouldBeSentToTheGate
 } from '../engine/world/where-in-a-place-somebody-is-standing.js';
@@ -239,9 +238,8 @@ export function somebodyInsideSeesThem(
         return null;
     }
 
-    const standing = placeId === seat.id && here
-        ? npcsWhereTheyStand(world, here.place, cultivator.standingIn, { id: cultivator.id, sectId: cultivator.sectId })
-        : npcsStandingIn(world, placeId!, compounds);
+    const present = new Set(game.present(cultivator).map(person => person.id));
+    const standing = world.npcs.filter(npc => present.has(npc.id));
     const witnesses = standing.filter(npc => npc.factionId === inside.houseId && npc.status === 'alive');
     if (witnesses.length === 0) return null;
     const seer = theOneWhoSeesThem(cultivator.realmOrdinal, witnesses);

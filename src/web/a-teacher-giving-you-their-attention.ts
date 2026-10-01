@@ -83,7 +83,6 @@ import { type DatabaseHandle } from './encounters.js';
 import { howTheirPeopleSeeYourFace } from './how-a-houses-people-see-your-face.js';
 import { whetherAFaceIsRemarkable } from '../engine/social/how-a-house-reads-a-face.js';
 import {
-    npcsStandingIn,
     npcsWithin,
     theSeatOfTheCompound,
     whereCompoundsAre
@@ -582,6 +581,7 @@ export const attentionVerbs = {
                 const npc = world.npcs.find(row => row.id === pointed.id);
                 const doing = npc?.activity
                     ? whatThatLooksLike(npc.activity, npc.activity.withIds
+                        .filter(id => hereIds.has(id))
                         .map(id => world.npcs.find(row => row.id === id)?.name)
                         .filter((n): n is string => !!n))
                     : null;
@@ -701,7 +701,8 @@ export const attentionVerbs = {
         // WHO LOOKS: the house's own people sitting in the same set, and the
         // person at the front where none of the house is listening.
         const listening = new Set(whoTheyAreTeaching(teacher, Math.floor(world.currentDay)));
-        const beside = world.npcs.filter(npc => listening.has(npc.id) && npc.status === 'alive');
+        const present = new Set(this.present(cultivator).map(npc => npc.id));
+        const beside = world.npcs.filter(npc => listening.has(npc.id) && present.has(npc.id) && npc.status === 'alive');
         return this.whetherTheySeeYouDoNotBelongAmong(run, cultivator, rawInput, {
             witnesses: beside,
             doing: `sitting in on ${teacher.name}'s teaching`,
@@ -805,9 +806,8 @@ export const attentionVerbs = {
         // WHO IS IN THE ROOM, down to the room: a house's people are read into
         // the room what they are at is done in, so the room is who has hands.
         const compounds = whereCompoundsAre(world);
-        const hereNow = placeId === null
-            ? []
-            : npcsStandingIn(world, placeId, compounds).filter(npc => npc.factionId === house);
+        const hereIds = new Set(this.present(cultivator).map(npc => npc.id));
+        const hereNow = world.npcs.filter(npc => hereIds.has(npc.id) && npc.factionId === house);
         const strongestHere = hereNow.reduce<NpcRecord | null>(
             (top, npc) => top === null || npc.cultivation.realmOrdinal > top.cultivation.realmOrdinal ? npc : top,
             null

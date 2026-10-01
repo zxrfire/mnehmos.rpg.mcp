@@ -29,6 +29,7 @@ import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { physiqueOrNull } from '../engine/cultivation/physiques.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 import { readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
@@ -58,9 +59,8 @@ export function mastersWhoWouldOfferToTakeThemOn(
 ): NpcRecord[] {
     if (person.locationId === null) return [];
     const ranks = new Map(world.factions.map(f => [f.id, f.ranks.length] as const));
-    return world.npcs
+    return npcsStandingIn(world, person.locationId)
         .filter(npc => npc.status === 'alive' && npc.id !== person.id
-            && npc.locationId === person.locationId
             && npc.factionId !== null
             && npc.cultivation.realmOrdinal >= FOUNDATION_ORDINAL
             && npc.cultivation.realmOrdinal > person.ordinal
@@ -90,9 +90,10 @@ export function mastersNoticeAHeavenlySeedling(
     if (already?.relationships.some(r => r.kind === 'master')) return null;
 
     const here = game.worldPlaceOf(cultivator);
+    const present = new Set(game.present(cultivator).map(npc => npc.id));
     const offering = mastersWhoWouldOfferToTakeThemOn(world, {
         id: cultivator.id, locationId: here, ordinal: cultivator.realmOrdinal
-    });
+    }).filter(npc => present.has(npc.id));
     if (offering.length === 0) return null;
 
     const said = new Set((readFlag(game.repos.db, cultivator.id, MASTERS_WHO_HAVE_OFFERED) ?? '')

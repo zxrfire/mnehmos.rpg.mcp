@@ -2,6 +2,9 @@
 
 # The MCP tool surface
 
+Perception's count of people standing with the player uses the same capped area
+roster as web play, including visiting sheets and separated presences.
+
 ADMIN's above-ceiling artifact receipt names the live consequence: the next played turn
 takes the object and holder through the Lid. `summit-play.ts` applies the existing crossing
 verdict to both tracked possessions and artifacts in `cultivator_pouch`.

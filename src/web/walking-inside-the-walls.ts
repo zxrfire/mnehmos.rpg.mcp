@@ -41,7 +41,6 @@ import {
 } from '../engine/world/architecture.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import {
-    npcsStandingIn,
     theSeatOfTheCompound,
     whereCompoundsAre
 } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
@@ -351,7 +350,7 @@ export async function aWalkInsideTheWalls(
     game.repos.cultivators.update(cultivator.id, { location: destination.name });
     game.repos.runs.incrementTurn(run.id, 1);
     const walked: Cultivator = { ...cultivator, location: destination.name };
-    const people = npcsStandingIn(world, destination.id, compounds);
+    const people = game.present(walked);
     const out = destination.id === seat.id;
     // THE ROOM'S OWN NAME, not the row's. `destination.name` is
     // `<house>: the refectory`, which is a database key with a house glued to
@@ -372,7 +371,7 @@ export async function aWalkInsideTheWalls(
     // already in `lines`; the sentence that carries it is the narrator's.
     facts.structure.push(
         `walkInsideTheWalls: ${here.id} to ${destination.id}, inside ${seat.id}. No time passed; `
-        + `${people.length} standing there by npcsStandingIn.`
+        + `${people.length} standing in the arrival area.`
     );
     const execution: Execution = {
         facts,
@@ -391,7 +390,7 @@ export async function aWalkInsideTheWalls(
     // ── AND WHETHER THE HOUSE'S PEOPLE IN THE ROOM SEE THEY DO NOT BELONG ──
     if (!out) {
         const seen = game.whetherTheySeeYouDoNotBelongAmong(run, walked, '', {
-            witnesses: people,
+            witnesses: world.npcs.filter(npc => people.some(person => person.id === npc.id)),
             doing: `walking into ${aRoomsOwnName(destination)}`,
             frontOfTheRoom: null,
             action: 'move'

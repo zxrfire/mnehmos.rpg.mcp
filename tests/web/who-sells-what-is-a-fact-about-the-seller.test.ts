@@ -41,7 +41,7 @@ import { describe, it, expect } from 'vitest';
 import {
     readWhatIsOnOfferHere,
     whatIsOnTheirCounter,
-    SELLERS_SHOWN,
+    OFFERS_SHOWN,
     THINGS_ON_A_BARROW
 } from '../../src/web/who-here-is-offering-something.js';
 import { createWorld, type WorldState } from '../../src/engine/world/world-state.js';
@@ -230,7 +230,7 @@ describe('a square is no longer mute', () => {
             const { offers } = readWhatIsOnOfferHere(makeCultivator({ location: SQUARE }), state);
             const seen = offers.map(offer => `${offer.sellerId}:${offer.thingId}`);
             expect(new Set(seen).size, 'the same offer was shown twice').toBe(seen.length);
-            if (offers.length < SELLERS_SHOWN) thinSquares++;
+            if (offers.length < OFFERS_SHOWN) thinSquares++;
         }
         // Non-vacuity: a square that fills all four slots on the first pass
         // never reaches the round the defect lived in.
