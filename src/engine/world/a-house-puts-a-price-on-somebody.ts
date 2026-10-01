@@ -88,12 +88,17 @@ import { whatItWasWorth } from '../social-leverage/what-a-deed-leaves.js';
 import { A_BILL_STAYS_UP_FOR_DAYS, BILLS_A_WALL_CARRIES, reachesThisGround } from './houses-that-have-to-advertise-for-disciples.js';
 import { aNoticeId, theDaySomebodyElseTurnsItIn } from '../encounters/a-notice-is-turned-in.js';
 import { postingGroundOf, provinceOfPlace } from './the-doors-and-walls-a-house-takes-people-at.js';
-import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
+import { isTheWorldsToMove, setLocation, type NpcRecord } from './npc-state.js';
 import { isBelowTheLid } from './layers.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { npcsInFaction, type FactionRecord, type WorldState } from './world-state.js';
 import { whatAPriceIsWorthTo } from './why-one-cultivator-kills-another.js';
+import { whatTheyAreWorthToTheirPatron } from './why-one-cultivator-kills-another.js';
+import { meritWith, whatServiceIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
+import { whatOneOfTheWorldsOwnPeopleKnows } from './what-one-of-the-worlds-own-people-knows.js';
+import { canPointAt } from '../social/discovery.js';
+import { areAtWarWithEachOther } from './war-melee.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE NUMBERS
@@ -187,6 +192,8 @@ export interface AHouseAccount {
      * the world's row does - the player's membership is on the ledger side.
      */
     subjectHouseId?: string | null;
+    /** The two houses are fighting one another over this loss. */
+    war?: boolean;
 }
 
 const POSTED = 'bounty_posted';
@@ -217,17 +224,23 @@ const A_LIFE_TAKEN: Severity = whatItWasWorth({
  */
 export function accountsHousesHoldForTheirDead(state: WorldState, day: number): AHouseAccount[] {
     const byId = new Map(state.npcs.map(n => [n.id, n] as const));
+    const knows = whatOneOfTheWorldsOwnPeopleKnows(state);
     const out: AHouseAccount[] = [];
     for (const fact of state.history.facts) {
         if (fact.day > day || fact.day < day - A_PRICE_STANDS_FOR_DAYS) continue;
-        if (fact.visibility === 'secret' || fact.nearMiss) continue;
+        if (fact.nearMiss) continue;
         const killed = roleIn(fact, 'victim');
         const killer = roleIn(fact, 'killer');
         if (!killed || !killer) continue;
         const victim = byId.get(killed.id);
         const doer = byId.get(killer.id);
-        if (!victim?.factionId || !doer || !isTheWorldsToMove(doer)) continue;
+        if (!victim?.factionId || !doer) continue;
         if (doer.factionId === victim.factionId) continue;
+        const houseHeard = state.npcs.some(n => n.factionId === victim.factionId && n.status === 'alive'
+            && canPointAt(knows(n.id, 'event', fact.id)))
+            || state.history.facts.some(row => row.data.witnessReport === fact.id
+                && row.factionIds.includes(victim.factionId!));
+        if (!houseHeard) continue;
         out.push({
             key: fact.id,
             houseId: victim.factionId,
@@ -235,10 +248,26 @@ export function accountsHousesHoldForTheirDead(state: WorldState, day: number): 
             subjectName: doer.name,
             severity: severityOf(fact.data.deedWeight) ?? A_LIFE_TAKEN,
             onDay: fact.day,
+            war: doer.factionId !== null && areAtWarWithEachOther(state, doer.factionId, victim.factionId),
+            subjectHouseId: doer.factionId,
             forWhat: `for the death of ${victim.name}, who was theirs`
         });
     }
     return out;
+}
+
+/** A report gives the ground's house an account beyond losses on its own roll. */
+export function accountsHousesHoldFromWitnessReports(state: WorldState, day: number): AHouseAccount[] {
+    const houses = new Set(state.factions.filter(h => h.dissolvedOnDay === null).map(h => h.id));
+    const byId = new Map(state.npcs.map(n => [n.id, n] as const));
+    return state.obligations.flatMap(row => {
+        const actor = row.subjectId ? byId.get(row.subjectId) : null;
+        if (row.kind !== 'grudge' || row.status !== 'open' || !row.tags.includes('reported_by_a_witness')
+            || !houses.has(row.holderId) || !actor || row.incurredOnDay > day) return [];
+        return [{ key: row.id, houseId: row.holderId, subjectId: actor.id,
+            subjectName: actor.name, severity: row.severity, onDay: row.incurredOnDay,
+            forWhat: row.description }];
+    });
 }
 
 /** What a house says a price is for, by the ledger's word for what happened. */
@@ -340,14 +369,14 @@ export function whatAHouseWouldPost(
     if (!isHeavyEnough(account.severity)) return null;
     const house = state.factions.find(f => f.id === account.houseId && f.dissolvedOnDay === null);
     if (!house || !isBelowTheLid(house)) return null;
-    if (demonicStandingOf(house.id) !== undefined) return null;
+    if (!account.war && demonicStandingOf(house.id) !== undefined) return null;
     const theirHouse = account.subjectHouseId !== undefined
         ? account.subjectHouseId
         : subjectsHouse(state, account.subjectId);
     if (theirHouse === house.id) return null;
 
     const rng = forStream(state.seed, 'a-house-puts-a-price-on-somebody', account.key, house.id, account.subjectId);
-    if (!rng.chance(A_HOUSE_PUTS_A_PRICE_ON_IT[account.severity])) return null;
+    if (!account.war && !rng.chance(A_HOUSE_PUTS_A_PRICE_ON_IT[account.severity])) return null;
     const postedOnDay = account.onDay + rng.int(
         A_HOUSE_TAKES_THIS_LONG_TO_PUT_UP_PAPER.min, A_HOUSE_TAKES_THIS_LONG_TO_PUT_UP_PAPER.max);
 
@@ -430,6 +459,56 @@ export function housesPutUpTheirPaper(
         posted.push({ ...paper, id: fact.id });
     }
     return posted;
+}
+
+/** Houses answer a known loss with a price, a demand, or a public notice. */
+export function housesAnswerKnownDeeds(state: WorldState, accounts: readonly AHouseAccount[], day: number): HistoricalFact[] {
+    const written: HistoricalFact[] = [];
+    const houses = new Map(state.factions.map(h => [h.id, h] as const));
+    for (const account of accounts) {
+        if (account.war || account.onDay > day || whatAHouseWouldPost(state, account)) continue;
+        const victimHouse = houses.get(account.houseId);
+        const doerHouse = houses.get(account.subjectHouseId ?? subjectsHouse(state, account.subjectId) ?? '');
+        const doer = state.npcs.find(n => n.id === account.subjectId && n.status === 'alive');
+        if (!victimHouse || !doer || doerHouse?.id === victimHouse.id
+            || state.history.facts.some(f => f.data.handoverAccount === account.key)) continue;
+        if (!doerHouse) {
+            written.push(appendWorldFact(state, makeFact({ day, kind: 'said_in_public',
+                locationId: victimHouse.seatLocationId, factionIds: [victimHouse.id],
+                visibility: 'regional', actors: [{ id: doer.id, name: doer.name, role: 'named' }],
+                summary: `${victimHouse.name} posted a notice naming ${doer.name} ${account.forWhat}.`,
+                data: { handoverAccount: account.key, houseWarning: true } }),
+            { recur: false, bystanders: false }));
+            continue;
+        }
+        const demand = appendWorldFact(state, makeFact({ day, kind: 'said_in_public',
+            locationId: victimHouse.seatLocationId, factionIds: [victimHouse.id, doerHouse.id],
+            visibility: 'regional', actors: [{ id: doer.id, name: doer.name, role: 'named' }],
+            summary: `${victimHouse.name} demanded that ${doerHouse.name} hand over ${doer.name} ${account.forWhat}.`,
+            data: { handoverAccount: account.key, handoverDemand: true, houseWarning: true } }),
+        { recur: false, bystanders: false });
+        written.push(demand);
+        const value = whatTheyAreWorthToTheirPatron(doer, houses)
+            + Math.min(1, meritWith(doer, doerHouse.id) / Math.max(1, whatServiceIsWorth(doer.cultivation.realmOrdinal, 365)));
+        const quarrel = Math.max(0, -(doerHouse.standing[victimHouse.id] ?? 0))
+            + Math.max(0, (Number(victimHouse.resources.spirit_stones ?? 0)
+                - Number(doerHouse.resources.spirit_stones ?? 0))
+                / Math.max(1, Number(victimHouse.resources.spirit_stones ?? 0)));
+        const delivers = isTheWorldsToMove(doer) && victimHouse.seatLocationId !== null && quarrel > value;
+        if (delivers) {
+            const at = state.npcs.findIndex(n => n.id === doer.id);
+            state.npcs[at] = setLocation({ ...doer, factionId: null, factionRankIndex: -1,
+                activity: null }, victimHouse.seatLocationId, day);
+        }
+        written.push(appendWorldFact(state, makeFact({ day, kind: 'said_in_public',
+            locationId: doerHouse.seatLocationId, factionIds: [victimHouse.id, doerHouse.id],
+            visibility: 'regional', actors: [{ id: doer.id, name: doer.name, role: 'named' }],
+            summary: delivers ? `${doerHouse.name} handed ${doer.name} over at ${victimHouse.name}'s gate.`
+                : `${doerHouse.name} refused ${victimHouse.name}'s demand for ${doer.name}.`,
+            data: { handoverAccount: account.key, handoverAnswer: delivers ? 'delivered' : 'refused' } }),
+        { recur: false, bystanders: false }));
+    }
+    return written;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

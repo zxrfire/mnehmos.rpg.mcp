@@ -604,6 +604,8 @@ import { asksWhichHousesTheyKnow } from './which-houses-somebody-could-name.js';
 import { whoOfThemKnowEachOther } from './who-of-them-know-each-other.js';
 import { askingToBeLetIn } from './asking-to-be-let-in-at-a-gate.js';
 import { goingOverTheWall, somebodyInsideSeesThem } from './inside-without-leave.js';
+import { reactToWhatHappenedHere, explainingWhatTheySaw, reportingWhatYouSaw,
+    boastingOfThePrice } from './witness-reactions-in-the-scene.js';
 import { whoOfAHouseIsStandingHere } from './who-of-a-house-is-standing-here.js';
 import { theHouseholdTie, theKinThisWordMeans } from './a-kinship-word-is-your-household.js';
 import {
@@ -796,6 +798,7 @@ import {
     postingGroundOf,
     readTheWall,
     whatEachHouseHasAPriceOn,
+    whatEachHouseWarnsOf,
     whichHouseThePaperMeans,
     whoEachHouseIsLookingFor
 } from './what-is-posted-on-the-wall-here.js';
@@ -3742,7 +3745,8 @@ export class GameService {
         return this.atHand === null
             ? new Map()
             : everythingEachHouseIsAsking(
-                whoEachHouseIsLookingFor(this.atHand), whatEachHouseHasAPriceOn(this.atHand));
+                whoEachHouseIsLookingFor(this.atHand), whatEachHouseHasAPriceOn(this.atHand),
+                whatEachHouseWarnsOf(this.atHand));
     }
 
     /** Strike the barrier now. Refuses loudly when the engine says it is not legal. */
@@ -4277,7 +4281,11 @@ export class GameService {
         }
         const crossed = crossToWhoeverTheyNamed(this, cultivator, action.target);
         const actor = crossed?.cultivator ?? cultivator;
+        const witnessBefore = { factsBefore: this.atHand?.history.facts.length ?? 0,
+            objectsBefore: new Map((this.atHand?.objects ?? []).map(o => [o.id, o.provenance.length])),
+            witnessIds: this.present(actor).map(n => n.id), rawInput };
         const done = await this.carryOut(action, run, actor, ambient, rawInput);
+        reactToWhatHappenedHere(this, this.repos.cultivators.getById(actor.id) ?? actor, done, witnessBefore);
         const current = this.currentRun();
         trackElementalStay(this, current.cultivator, current.run);
         reportRuinClosing(this, worldDayBefore, done);
@@ -5273,6 +5281,12 @@ ${noticedWaiting}`;
                 // The telling is read against the world's own history, so the
                 // world has to be in hand. Loaded the way `roads` loads it.
                 this.atHand = this.atHand ?? await this.loadWorld();
+                const boasted = boastingOfThePrice(this, run, cultivator, action, rawInput);
+                if (boasted) return boasted;
+                const explained = explainingWhatTheySaw(this, run, cultivator, action, rawInput);
+                if (explained) return explained;
+                const reported = reportingWhatYouSaw(this, run, cultivator, action, rawInput);
+                if (reported) return reported;
                 return this.tellSomebody(run, cultivator, action.target, action.topic);
             }
 

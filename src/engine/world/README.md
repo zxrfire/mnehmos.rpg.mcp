@@ -14,6 +14,20 @@ Catalog interiors with a `gateOrdinal` seed an entry threshold. The ordinal
 does not set a permanent `sealed` flag; the ordinary ruin entry check enforces
 the threshold.
 
+`witness-reactions.ts` reads each event's existing `witnessIds`. A witness may let
+the deed pass, remember it, ask for an account, or report it through a person
+stationed on that ground whom they know. An observation records what that
+witness saw; an account records what they said and how the witness answered.
+The original death, object transfer and provenance are never revised by belief.
+Reports enter the ordinary house account and price paths. A house warning is
+a dated fact, read by the same public wall as its other notices.
+`where-in-a-place-somebody-is-standing.ts` places a body in an area without
+adding it to the living roster; sharing a settlement alone is no proof that
+the player or a witness stood beside it.
+
+Catalog interiors with a `gateOrdinal` seed a sealed door. A warded archive is
+not among the closed ruins the seeder opens for a new world.
+
 An elemental death leaves the row written by estate settlement in place; the
 summit pass must not restore its earlier purse or relationships afterwards.
 
@@ -3821,3 +3835,5 @@ Gate towns are ordinary settlements tagged `gate_town`, joined to a house gate a
 Material hunts returning cores mint individual catalog material objects at the house yard. Yard construction retires those rows with provenance; bulk materials remain resource counts. A core count without an object cannot fund construction.
 
 A seeded rogue with reachable unheld ground has a residence there. A rogue drawn in town can be away from that residence; owning a home does not remove them from the town's cast.
+
+Witness reactions read deeds and visible evidence through one trust path. A killing in a war counts as service to the doer's house only when the victim belongs to the opposing house; losses to other houses remain ordinary killings to them. A telling about a witnessed fact carries knowledge of that fact to its hearer through the ordinary knowledge read. Houses act on deaths after their people witness them or news reaches them. A known price moves face for the named person's side and reads differently to friends, weaker people and strong takers.

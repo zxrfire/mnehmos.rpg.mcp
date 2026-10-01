@@ -250,6 +250,7 @@ export function whoCouldBeSentToTheGate(
 export interface APlaceReadIntoAreas {
     areas: AnAreaOfAPlace[];
     whereIs: Map<string, string>;
+    whereBodiesAre: Map<string, string>;
 }
 
 /**
@@ -314,6 +315,7 @@ export function theAreasOf(
 
     const areas: AnAreaOfAPlace[] = [];
     const whereIs = new Map<string, string>();
+    const whereBodiesAre = new Map<string, string>();
     for (const what of theKindsOf(place)) {
         // Anybody bigger than an area is taken three at a time; then in the order of a draw per
         // person on its own stream, the one on watch first so the gate a road reaches has them.
@@ -333,9 +335,9 @@ export function theAreasOf(
         // other draw where it was: kill the three in front of you and the room is empty, not
         // refilled from across the square.
         const fallen = state.npcs.filter(n => !isActing(n.status) && n.locationId === place.id
-            && fallenKind(n) === what).length;
+            && fallenKind(n) === what).sort((a, b) => a.id.localeCompare(b.id));
         const bins: NpcRecord[][] = Array.from(
-            { length: Math.max(1, Math.ceil((total + fallen) / AT_MOST_IN_AN_AREA)) }, () => []);
+            { length: Math.max(1, Math.ceil((total + fallen.length) / AT_MOST_IN_AN_AREA)) }, () => []);
         for (const { piece, first, draw } of pieces) {
             const from = first ? 0 : Math.floor(draw * bins.length);
             const at = Array.from({ length: bins.length }, (_, k) => (from + k) % bins.length)
@@ -343,13 +345,22 @@ export function theAreasOf(
             if (at !== undefined) bins[at]!.push(...piece);
             else bins.push([...piece]);
         }
+        const fallenIn = Array.from({ length: bins.length }, () => [] as NpcRecord[]);
+        for (const npc of fallen) {
+            const from = forStream(state.seed, 'where-a-body-fell', place.id, npc.id).int(0, bins.length - 1);
+            const at = Array.from({ length: bins.length }, (_, k) => (from + k) % bins.length)
+                .find(i => bins[i]!.length + fallenIn[i]!.length < AT_MOST_IN_AN_AREA);
+            if (at !== undefined) fallenIn[at]!.push(npc);
+            else { bins.push([]); fallenIn.push([npc]); }
+        }
         bins.forEach((bin, i) => {
             const area = anArea(place, what, theNameAt(names, i));
             areas.push(area);
             for (const npc of bin) whereIs.set(npc.id, area.id);
+            for (const npc of fallenIn[i]!) whereBodiesAre.set(npc.id, area.id);
         });
     }
-    return { areas, whereIs };
+    return { areas, whereIs, whereBodiesAre };
 }
 
 /** Everybody alive standing in this area, by id. */
@@ -359,7 +370,7 @@ export function npcsInTheArea(state: State, areaId: string): NpcRecord[] {
     if (!place) return [];
     const { whereIs } = theAreasOf(state, place);
     return state.npcs
-        .filter(n => whereIs.get(n.id) === areaId)
+        .filter(n => isActing(n.status) && whereIs.get(n.id) === areaId)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 }
 

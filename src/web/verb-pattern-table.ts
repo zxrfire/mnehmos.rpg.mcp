@@ -96,7 +96,7 @@ import {
     whatWordIsBeingSent
 } from './communication-talisman-phrasings.js';
 // And the third half of it: telling somebody who YOU are.
-import { whatIsBeingGivenAsAnAccount } from './an-account-of-yourself.js';
+import { whatIsBeingGivenAsAnAccount, deedAccountInWords } from './an-account-of-yourself.js';
 import { whoseAccountIsBeingChallenged } from './two-accounts-of-one-person.js';
 // Who a player named as sitting an art with them. The match's own vocabulary,
 // because the words are the match's - see that file's own section header.
@@ -4627,6 +4627,11 @@ export function parseIntent(rawInput: string): PlannedAction {
 
 /** One full pass of the table, mood included. Run twice: as typed, then respelt. */
 function readTheSentence(input: string): PlannedAction {
+    if (/\b(?:boast|brag)\b[^.?!]*\b(?:price|bounty)\b/i.test(input)
+        || /\b(?:tell|say|announce)\b[^.?!]*\b(?:price|bounty)\b[^.?!]*\bon my head\b/i.test(input)) {
+        const named = /\b(?:boast|brag|tell)\s+to\s+(.+?)\s+about\b/i.exec(input)?.[1]?.trim();
+        return { action: 'tell', target: named, topic: input };
+    }
     // THE WAY, PUT TO A CROWD, before any row reads "know" or "where" off it. See
     // `theWayAskedOfACrowd`.
     const wayOfACrowd = cleanPlace(theWayAskedOfACrowd(input) ?? '');
@@ -7432,6 +7437,9 @@ function planIntent(input: string): PlannedAction {
         || /\bwhat(?:'s| is| am)? (?:i|am i) (?:wearing|dressed in|in)\b|\bwhat do i have on\b|\bwhat(?:'s| is) on me\b/.test(text)) {
         return { action: 'status' };
     }
+
+    const deedAccount = deedAccountInWords(input);
+    if (deedAccount) return { action: 'tell', deedAccount, topic: input };
 
     // TELLING SOMEBODY THAT A WRONG WAS DONE
     const told = whatIsBeingTold(input);

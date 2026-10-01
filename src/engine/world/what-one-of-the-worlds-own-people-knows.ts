@@ -135,6 +135,14 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
     const byHouse = factsByHouse(ledger);
     const byPerson = factsNaming(ledger);
     const presentAt = whoWasPresent(ledger);
+    const tellingsOf = new Map<string, HistoricalFact[]>();
+    for (const fact of ledger) {
+        const toldOf = fact.data.toldOfWitnessedFact;
+        if (typeof toldOf !== 'string') continue;
+        const rows = tellingsOf.get(toldOf) ?? [];
+        rows.push(fact);
+        tellingsOf.set(toldOf, rows);
+    }
 
     const saidWhereTheyStand = (holder: NpcRecord, facts: readonly HistoricalFact[]): boolean => {
         if (facts.length === 0) return false;
@@ -154,7 +162,7 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
             case 'cultivator':
                 return ofAPerson(holder, id, rowFor, byPerson, presentAt, saidWhereTheyStand);
             case 'event':
-                return ofAnEvent(holder, id, ledger, presentAt, saidWhereTheyStand);
+                return ofAnEvent(holder, id, ledger, presentAt, tellingsOf, saidWhereTheyStand);
             case 'thing':
                 return ofAThing(state, holder, id);
             default:
@@ -329,11 +337,15 @@ function ofAnEvent(
     factId: string,
     ledger: readonly HistoricalFact[],
     presentAt: Map<string, Set<string>>,
+    tellingsOf: Map<string, HistoricalFact[]>,
     saidWhereTheyStand: (holder: NpcRecord, facts: readonly HistoricalFact[]) => boolean
 ): KnowingStage {
     if (presentAt.get(holder.id)?.has(factId) === true) return BEING_THERE;
     const fact = ledger.find(row => row.id === factId);
     if (!fact) return 'unaware';
+    const tellings = tellingsOf.get(factId) ?? [];
+    if (tellings.some(row => presentAt.get(holder.id)?.has(row.id) === true
+        || saidWhereTheyStand(holder, [row]))) return BEING_TOLD;
     return saidWhereTheyStand(holder, [fact]) ? BEING_TOLD : 'unaware';
 }
 

@@ -113,6 +113,8 @@ export function whatTheWitnessDoesAboutIt(input: {
     witness: TheWitness;
     theyOweYou: number;
     theyHoldAboutYou: number;
+    /** A witnessed service to the witness's house is also worth carrying. */
+    serviceToTheirHouse?: boolean;
     /** From {@link whereAComplaintGoes}. Null means nobody to tell. */
     toId: string | null;
     /** Rungs the offender stands above them. Carried for the LINE, not the branch. */
@@ -142,7 +144,8 @@ export function whatTheWitnessDoesAboutIt(input: {
         (witness.standing !== null && witness.standing < 0)
         || witness.role === 'rival'
         || (witness.grievance ?? '').length > 0
-        || input.theyHoldAboutYou > 0;
+        || input.theyHoldAboutYou > 0
+        || input.serviceToTheirHouse === true;
 
     if (resents) {
         return {

@@ -283,6 +283,22 @@ export function whatEachHouseHasAPriceOn(
     return out;
 }
 
+/** A house's warning is a dated fact, read by the same walls as its other notices. */
+export function whatEachHouseWarnsOf(world: WorldState | null | undefined): Map<string, readonly TheAsk[]> {
+    const out = new Map<string, TheAsk[]>();
+    if (!world) return out;
+    for (const fact of world.history.facts) {
+        if (fact.data.houseWarning !== true || fact.day > world.currentDay
+            || fact.day + A_BILL_STAYS_UP_FOR_DAYS <= world.currentDay) continue;
+        const houseId = fact.factionIds[0];
+        if (!houseId) continue;
+        const asks = out.get(houseId) ?? [];
+        asks.push({ kind: 'warning', what: fact.summary });
+        out.set(houseId, asks);
+    }
+    return out;
+}
+
 /** Two maps of asks as one, each house keeping everything either said. */
 export function everythingEachHouseIsAsking(
     ...maps: readonly ReadonlyMap<string, readonly TheAsk[]>[]

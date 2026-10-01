@@ -327,6 +327,13 @@ than agonising over the label.
 ${LANE_GLOSSARY}
 
 Rules:
+- An explanation of a witnessed deed uses action: tell, target: the witness, topic: the player's words,
+  and deedAccount: found, already_damaged, defence, denial, blame, permission, or admitted.
+  These describe claims, never outcomes. For blame also give blamed: the person's name.
+  "I found him like this" claims found; "he attacked first" claims defence.
+  If only one witness has asked for an explanation, target may be omitted.
+- To report an event the player witnessed, use action: tell, target: the local person
+  they address, and reportWitnessedEvent: true. This marks intent, not truth.
 - If the player is broke, hungry, or asking how to get money or food, "work" and "market"
   are almost always what they meant. Never answer that with "cultivate": sitting still
   burns the food they do not have, and it is the one action that can kill them for asking.

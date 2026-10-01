@@ -45,6 +45,10 @@ export const INTERACT_INTENTS = [
 
 export const PlannedActionSchema = z.object({
     action: z.enum(ACTION_NAMES),
+    /** What the speaker claims happened. Never a belief or an outcome. */
+    deedAccount: z.enum(['found', 'already_damaged', 'defence', 'denial', 'blame', 'permission', 'admitted']).optional(),
+    reportWitnessedEvent: z.boolean().optional(),
+    blamed: z.string().trim().min(1).max(80).optional(),
     proxy: z.enum(['sword', 'clone', 'soul', 'recall', 'prepare']).optional(),
     /**
      * Duration for `cultivate`, in days.
@@ -308,8 +312,12 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // Fields are kept only on the actions that own them. Letting `days` ride
     // along on a `look` would make an examination read, in the log, as though
     // it had consumed a decade.
-    const { action: name, days, target, intent, topic, terms, reason } = parsed.data;
+    const { action: name, days, target, intent, topic, terms, reason,
+        deedAccount, blamed, reportWitnessedEvent } = parsed.data;
     const action: PlannedAction = { action: name };
+    if (name === 'tell' && deedAccount) action.deedAccount = deedAccount;
+    if (name === 'tell' && deedAccount === 'blame' && blamed) action.blamed = blamed;
+    if (name === 'tell' && reportWitnessedEvent) action.reportWitnessedEvent = true;
 
     // Kept only on the verb that owns it, like everything else here. A model
     // that says a fight was agreed has said something the consequence layer

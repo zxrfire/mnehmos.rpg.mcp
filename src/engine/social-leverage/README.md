@@ -12,6 +12,11 @@ resolver with real odds, real costs, and marks that outlive the moment.
 
 Read this before changing anything in `src/engine/social-leverage/`.
 
+`an-account-of-a-deed.ts` asks whether a witnessed loss needs explaining from
+the witness's alignment, ties, trust and stake, then weighs a claim against
+that witness's evidence. A claim is never an outcome. `reporting-what-you-saw.ts`
+decides whether a witness carries the matter to an authority they can reach.
+
 ## A count is state. A group is named.
 
 Two of the strings this directory produces reach the player verbatim -
@@ -944,3 +949,5 @@ spending; `resolveAttempt` is still the only thing that moves a person.
   `what-asking-this-person-for-this-would-cost-them.ts`.
 
 A binding settlement preserves the account's severity and links the oath to the closed account. Its facts state the agreement, without asserting coercion or satisfaction. The live match action invokes it for an explicitly offered settlement after acceptance; leaving can reopen the linked account.
+
+The witness account reader weighs the doer's words against what the witness saw, the ties on both sides, and the visible evidence. Reporting can carry a witnessed service to one's own house as well as a grievance; debts and knowledge of a real recipient still govern whether it travels.

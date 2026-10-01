@@ -2,6 +2,12 @@
 
 # The Web Front Door
 
+`witness-reactions-in-the-scene.ts` gives new player deeds and found bodies to
+the same witness resolver the yearly world pass uses. A player can account for
+a deed to a witness in their area, or tell a known local post what they
+personally saw. Phase one may identify the claim; the engine weighs it. With
+no model, explicit account words reach the same path.
+
 Local walks use the shared arrival reader in `travel-verbs.ts`. A path from a
 gate town to the grounds places the watch and applies the same admission read
 as a longer journey, without spending a day.
@@ -2783,3 +2789,5 @@ Formation construction is a `craft` action: name a known formation art. Its own 
 Local paths shorter than a day are walks and do not enter the whole-day span engine. Gate towns and fixed-rock interiors use these paths. Ranged perception retains numbered, unnamed sighting references for ordinary travel. `establishing-lower-ground.ts` routes living residence and inheritance sentences into ordinary locations and ownership; inscription and grave reads apply `assessCapability` with `understand`. Conveyance delivery retires tracked material rows alongside pouch counts.
 
 Establishing an existing residence reports its ground without moving the holder or creating another road. Leaving an inheritance surrenders the giver's ownership; another owner's claim survives. Its ceiling cannot exceed the giver's rung, and its survival floor is the start of that realm.
+
+The turn's witness hook records new eyes on bodies and on goods whose ownership the onlooker can recognise. A player can account for that evidence to a person in the same area, report a witnessed deed to a known post, or boast of a real price on their own head to somebody present.

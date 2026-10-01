@@ -2,6 +2,13 @@
 
 # Being believed
 
+A witness first decides whether a deed calls for an account. Their alignment,
+house, ties, standing and what they saw all matter. If they hear an account,
+trust is weighed against the observation, visible evidence and competing
+accounts. A witness may believe it, partly believe it, or reject it. Reporting
+requires a known person with authority on that ground; seeing an act does not
+give the witness omniscient knowledge of the local post.
+
 How anybody decides whether you are who you say you are. Read alongside
 [`asking.md`](./asking.md), which covers what happens once they have decided, and
 [`discovery.md`](./discovery.md), which covers how anybody comes to know a thing at all.

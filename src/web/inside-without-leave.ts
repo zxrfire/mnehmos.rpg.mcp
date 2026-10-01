@@ -28,6 +28,8 @@ import {
     shapeOf
 } from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
 import { pathTo, reachThrough } from '../engine/world/architecture.js';
+import { makeFact } from '../engine/world/history.js';
+import { appendWorldFact } from '../engine/world/who-was-there-when-it-happened.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import {
     npcsWhereTheyStand,
@@ -300,6 +302,14 @@ function theHouseCatchesThem(
     const alignment = getSect(house.factionId)?.alignment ?? null;
     const draw = forStream(run.seed, 'a-house-answers-a-trespass', PLAYER_ROLL_IDENTITY, house.factionId, run.turn).next();
     const cost = whatATrespassCosts({ alignment, warnedBefore, yourOrdinal: cultivator.realmOrdinal, draw });
+    const observed = game.atHand ? appendWorldFact(game.atHand, makeFact({
+        day: Math.floor(game.atHand.currentDay), kind: 'grudge_opened',
+        locationId: house.seat.id, witnessIds: [cultivator.id, seer.id], visibility: 'faction',
+        actors: [{ id: cultivator.id, name: cultivator.name, role: 'actor' }],
+        factionIds: [house.factionId],
+        summary: `${seer.name} saw ${cultivator.name} ${where} without leave.`,
+        data: { deedWrong: 'trespassed' }
+    }), { recur: false }) : null;
 
     const row = createObligation({
         kind: 'grudge',
@@ -308,6 +318,7 @@ function theHouseCatchesThem(
         cause: shapeOf('trespassed').cause,
         severity: severityOfTheWrong('trespassed'),
         onDay,
+        triggeringEventId: observed?.id ?? null,
         description: `${cultivator.name} was found ${where} by ${seer.name}, and is not of `
             + `${house.factionName}. ${cost.line}`,
         participants: [house.factionId, seer.id],

@@ -151,10 +151,9 @@ export async function takingTheBones(
     const saw = whoSawIt(after.realmOrdinal, present, outOfSight);
     const holding = whoHoldsItAgainstYou({ saw, theDeadsHouseId: still.factionId });
     const yourHouse = service.repos.sects.getMembership(after.id)?.sectId ?? null;
-
-    const fact = holding.length === 0 ? null : appendWorldFact(world, makeFact({
+    const fact = appendWorldFact(world, makeFact({
         day: worldDay,
-        kind: 'grudge_opened',
+        kind: holding.length === 0 ? 'opportunity' : 'grudge_opened',
         locationId: here,
         summary: `${after.name} took the bones of ${still.name}.`,
         witnessIds: [after.id, ...saw.map(one => one.id)],
@@ -163,6 +162,7 @@ export async function takingTheBones(
             { id: still.id, name: still.name, role: 'subject' }
         ],
         factionIds: holding.map(row => row.houseId),
+        visibility: saw.length === 0 ? 'secret' : 'regional',
         data: { bones: bone.id }
     }));
     for (const row of holding) {
@@ -172,7 +172,7 @@ export async function takingTheBones(
             cause: 'harvested',
             severity: row.severity,
             onDay: runDay,
-            triggeringEventId: fact?.id ?? null,
+            triggeringEventId: fact.id,
             description: `${after.name} took the bones of ${still.name} on day ${runDay}.`,
             terms: null,
             dueOnDay: null,

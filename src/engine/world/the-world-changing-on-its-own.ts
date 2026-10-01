@@ -235,9 +235,11 @@ import {
 } from './what-being-seen-to-do-well-is-worth.js';
 import { TURNED_AWAY_AT_A_GATE, WHAT_A_GATE_REFUSES_FOR_GOOD, wasTurnedAwayAtAGate } from './the-rogues-a-world-opens-with.js';
 import { peopleActOnWhyTheyWouldKill, seatsThePeopleHeldBackWant } from './a-year-of-people-acting-on-why-they-would-kill.js';
-import { accountsHousesHoldForTheirDead, housesPutUpTheirPaper } from './a-house-puts-a-price-on-somebody.js';
+import { accountsHousesHoldForTheirDead, accountsHousesHoldFromWitnessReports,
+    housesPutUpTheirPaper, housesAnswerKnownDeeds } from './a-house-puts-a-price-on-somebody.js';
 import { peopleBringWhatTheyKnowToTheRoom, theRoomWouldDealToThemAgain } from './bringing-what-you-know-about-somebody-to-the-room.js';
 import { whatComesToLightThisYear } from './what-comes-to-light-about-a-killing.js';
+import { witnessReactionsThisYear, peopleReadPricesTheyHaveHeardOf } from './witness-reactions.js';
 import {
     ROGUE_FLED,
     ROGUE_HOUSE_FELL,
@@ -601,6 +603,7 @@ export function applyPressure(
         } });
         tasks.push({ key: 'uncovering', day: year * 365 + 88, run: (onDay: number) => {
             whatComesToLightThisYear(state, year, onDay);
+            witnessReactionsThisYear(state, onDay);
         } });
         tasks.push({ key: 'accusations-and-killings', day: year * 365 + 90, run: (onDay: number) => {
             const seatsWanted = seatsThePeopleHeldBackWant(state);
@@ -620,7 +623,11 @@ export function applyPressure(
         } });
         tasks.push({ key: 'bounties', day: year * 365 + 200, run: (onDay: number) => {
             {
-                housesPutUpTheirPaper(state, accountsHousesHoldForTheirDead(state, onDay), onDay);
+                const accounts = [...accountsHousesHoldForTheirDead(state, onDay),
+                    ...accountsHousesHoldFromWitnessReports(state, onDay)];
+                housesPutUpTheirPaper(state, accounts, onDay);
+                housesAnswerKnownDeeds(state, accounts, onDay);
+                peopleReadPricesTheyHaveHeardOf(state, onDay);
             }
         } });
         tasks.push({ key: 'war-fights', day: year * 365 + 61, run: (onDay: number) => {

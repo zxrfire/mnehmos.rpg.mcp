@@ -171,7 +171,7 @@ const WHERE_THE_CLAIM_STARTS =
 /** The head of a plain telling. `let X know` is a different shape; see below. */
 const A_TELLING = new RegExp(
     String.raw`^\s*(?:i\s+|i'?ll\s+|i\s+will\s+|i\s+want\s+to\s+|i\s+am\s+going\s+to\s+|let\s+me\s+)?`
-    + String.raw`(?:tells?|telling|informs?|informing)\s+(.+)$`,
+    + String.raw`(?:tells?|telling|informs?|informing|reports?\s+to)\s+(.+)$`,
     'i'
 );
 

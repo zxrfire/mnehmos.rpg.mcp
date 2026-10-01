@@ -487,3 +487,14 @@ export function factsForAnAccountGiven(input: {
         ]
     };
 }
+/** The fallback vocabulary for a deed account; phase one supplies the same closed claims. */
+export function deedAccountInWords(words: string): import('../engine/social-leverage/an-account-of-a-deed.js').DeedAccount | null {
+    if (/\b(?:he|she|they) attacked (?:me )?first\b/i.test(words)) return 'defence';
+    if (/\bi found (?:him|her|them|the body) (?:like this|this way|dead)\b/i.test(words)) return 'found';
+    if (/\b(?:it|that) was already (?:broken|damaged)\b/i.test(words)) return 'already_damaged';
+    if (/\b(?:it was not me|it wasn't me)\b.*\bit was\b/i.test(words)) return 'blame';
+    if (/\b(?:it was not me|it wasn't me|i did not do it|i didn't do it)\b/i.test(words)) return 'denial';
+    if (/\b(?:i had permission|they gave me permission|i was allowed)\b/i.test(words)) return 'permission';
+    if (/\bi (?:did it|took it|killed (?:him|her|them))\b/i.test(words)) return 'admitted';
+    return null;
+}
