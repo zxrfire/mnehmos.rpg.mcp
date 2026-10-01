@@ -31,6 +31,8 @@
  * So the fixture puts people above the door's ceiling on every roll. If the walk
  * were drawn off the roster the strongest would go, and the ground is closed
  * over them. Red-checked by unwiring the pass: nobody moves at all.
+ * With the year cursor, later tasks can return or reassign them. Observe the
+ * departure during the year, rather than requiring the party to remain out at its end.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -113,6 +115,15 @@ function atTheDoor(state: WorldState) {
         && n.activity?.kind === 'out_with_a_party');
 }
 
+/** Observe departure before a later world task can bring the party home. */
+function advanceUntilTheySetOut(state: WorldState): void {
+    for (let from = DAY; from < DAY + YEAR; from += 7) {
+        applyPressure(state, from, Math.min(from + 7, DAY + YEAR), { intensity: 0 });
+        if (atTheDoor(state).length > 0) return;
+    }
+    expect(atTheDoor(state).length, 'no conclave party departed during the year').toBeGreaterThan(0);
+}
+
 describe('the people a conclave chose walk through', () => {
     it('deals places at all, which is the precondition and not the claim', () => {
         const state = build();
@@ -126,7 +137,7 @@ describe('the people a conclave chose walk through', () => {
     it('puts somebody at the door, where before nobody ever went', () => {
         const state = build();
         expect(atTheDoor(state)).toHaveLength(0);
-        applyPressure(state, DAY, DAY + YEAR, { intensity: 0 });
+        advanceUntilTheySetOut(state);
         expect(atTheDoor(state).length).toBeGreaterThan(0);
     });
 
@@ -141,7 +152,7 @@ describe('the people a conclave chose walk through', () => {
             .map(n => n.id));
         expect(strongest.size).toBeGreaterThan(0);
 
-        applyPressure(state, DAY, DAY + YEAR, { intensity: 0 });
+        advanceUntilTheySetOut(state);
         const went = atTheDoor(state);
         expect(went.length).toBeGreaterThan(0);
         for (const person of went) {
@@ -152,7 +163,7 @@ describe('the people a conclave chose walk through', () => {
     /** They went together, and the record says with whom. */
     it('records the party each of them went out with', () => {
         const state = build();
-        applyPressure(state, DAY, DAY + YEAR, { intensity: 0 });
+        advanceUntilTheySetOut(state);
         const went = atTheDoor(state);
         const ids = new Set(went.map(n => n.id));
         for (const person of went) {
@@ -168,7 +179,7 @@ describe('the people a conclave chose walk through', () => {
     /** Only the houses the holder actually dealt to. A door is not a public road. */
     it('sends nobody from a house the holder would not have at the door', () => {
         const state = build();
-        applyPressure(state, DAY, DAY + YEAR, { intensity: 0 });
+        advanceUntilTheySetOut(state);
         for (const person of atTheDoor(state)) expect(person.factionId).not.toBe('house-c');
     });
 });

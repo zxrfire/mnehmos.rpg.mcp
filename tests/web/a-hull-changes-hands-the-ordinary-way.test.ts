@@ -38,6 +38,8 @@
  * Played, on a pinned world and a pinned run, end to end: ask a house's price
  * for a hull, be told the bar AND the figure, put something down that reaches
  * it, and come away owning a boat that has not moved an inch.
+ * The barter fixture chooses a mortal-world artifact. Newly catalogued immortal
+ * work requires crossing the Lid and cannot precondition a living local buyer.
  *
  * The social roll IS seeded and the outcome here was stable over three
  * consecutive runs of the same two seeds. If it drifts, the thing that moved is
@@ -57,6 +59,7 @@ import { describe, it, expect } from 'vitest';
 import { makeGameInWorld } from './harness.js';
 import { parseIntent } from '../../src/web/actions.js';
 import { ARTIFACTS } from '../../src/data/cultivation/artifacts.js';
+import { FALSE_IMMORTAL_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import { makeObject } from '../../src/engine/world/possessions.js';
 import { whatACraftWouldFetch } from '../../src/engine/world/a-house-sells-what-it-built.js';
 import {
@@ -163,7 +166,8 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
 
         // ── AND SOMETHING THAT REACHES THE BAR ───────────────────────────
         const heavy = [...ARTIFACTS]
-            .filter(a => (a.power ?? 0) >= 30 && a.significance !== 'mundane')
+            // A work beyond the mortal ceiling forces a Lid crossing on its holder.
+            .filter(a => (a.power ?? 0) >= 30 && (a.power ?? 0) < FALSE_IMMORTAL_ORDINAL && a.significance !== 'mundane')
             .sort((a, b) => (b.power ?? 0) - (a.power ?? 0))[0]!;
         world.objects.push(makeObject({
             id: heavy.id,

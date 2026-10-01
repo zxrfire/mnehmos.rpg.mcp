@@ -20,6 +20,8 @@ and persistent beast progress are governed by `../engine/world/beast-cultivation
 
 `summit-play.ts` joins summit capabilities to `look`, `craft`, cultivation rates and
 time skips. Its stay flag stores an actual arrival, rather than refreshing on reads.
+Only elemental visits by a tribulation body need that clock; entering and leaving
+them writes it in a transaction. An ordinary read creates no stay record.
 The same-area roster supplies nearby presence. The turn boundary checks above-ceiling
 artifacts in both carried stores, including during a fight, before spending another act.
 Medicine prizes transfer singular objects; swallowing a golden pill spends its row

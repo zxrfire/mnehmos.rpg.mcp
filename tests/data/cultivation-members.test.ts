@@ -423,10 +423,8 @@ describe('members catalog', () => {
     });
 
     it('gives each province a rival and a master', () => {
-        // The spine, not the map. The Burial Sands has no members catalog and
-        // must not have one: nobody is seated there, nobody teaches there, and
-        // a rival on ground where nothing can be held is not a rival, it is
-        // whoever is standing over you today.
+        // The five provinces need both roles. The interior's fixed-water
+        // houses have teachers; they do not turn the dunes into a province.
         for (const region of SPINE_REGIONS) {
             const rivals = getRivalsIn(region.id);
             const masters = getMastersIn(region.id);

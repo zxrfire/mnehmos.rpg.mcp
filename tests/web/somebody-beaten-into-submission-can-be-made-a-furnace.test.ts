@@ -234,7 +234,8 @@ describe('a conception from the rite is a child the world delivers', () => {
      * parents on the lineage.
      */
     it.each([
-        ['furnace-rite-birth-11', 'the subject carried'],
+        // Catalog additions moved the subject; re-pinned from furnace-rite-birth-11.
+        ['furnace-rite-birth-14', 'the subject carried'],
         // Re-pinned from furnace-rite-birth-1 when the game began starting at 18.
         ['furnace-rite-birth-5', 'the player carried']
     ])('%s: %s', async (seed) => {

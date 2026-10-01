@@ -78,8 +78,7 @@ import { WORLD_POPULATION } from '../../src/server/state/cultivation-world';
 import type { WorldState } from '../../src/engine/world/world-state';
 import type { NpcRecord } from '../../src/engine/world/npc-state';
 import type { HistoricalFact } from '../../src/engine/world/history';
-import { npcsInTheArea } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
-import { standWhereThePeopleAre, theBusiestAreaOf } from './standing-where-the-people-are';
+import { npcsInTheArea, theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 /** The blood kinds `whoTheyCarryFor` reads. Not the two teaching ones. */
 const BLOOD = new Set(['kin', 'spouse', 'parent', 'child']);
@@ -104,6 +103,9 @@ const BLOOD = new Set(['kin', 'spouse', 'parent', 'child']);
  * So the claim is now tested in the shape it was always making - a FRESH WORLD
  * has somebody to tell, in most worlds - and the played tests take whichever
  * pair the same sweep finds first.
+ * Areas limit a conversation to three people. The sweep now walks the actual
+ * areas of the opening town, rather than requiring the family in its busiest
+ * area. No people or relationships are moved to make the conversation happen.
  *
  * AND THEN THE KILLINGS WALKED ONTO HOUSE GROUND, and the floor caught it. The
  * same sweep, run on exported trees at each commit: 23 of 360, then 15 once a
@@ -132,10 +134,10 @@ interface Sweep {
     pairs: number;
     hits: number;
     worldsWithOne: number;
-    /** Of those, the ones where all three are in the part of the town the run opens in. */
+    /** Of those, the ones where one actual area holds all three for a conversation. */
     inTheRoom: number;
     /** The first pair that opens IN THE ROOM with a priced loss, for the played tests. */
-    first: { worldSeed: string; seed: string } | null;
+    first: { worldSeed: string; seed: string; areaId: string } | null;
 }
 
 /**
@@ -146,13 +148,13 @@ interface Sweep {
  * The same reads `whatIsStandingHere` does, against the seeded world rather
  * than against a service, so the sweep costs no database and no run.
  */
-function opensBesideALoss(state: WorldState, placeName: string, inTheRoom = false): boolean {
+function opensBesideALoss(state: WorldState, placeName: string, areaId?: string): boolean {
     const row = state.locations.find(
         l => l.name.toLowerCase() === placeName.trim().toLowerCase());
     if (!row) return false;
-    // THE TOWN, or with `inTheRoom` the area of it the run opens in: the most people's.
-    const here = inTheRoom
-        ? npcsInTheArea(state, theBusiestAreaOf(state, row).id)
+    // The town for density; one actual area for the played conversation.
+    const here = areaId
+        ? npcsInTheArea(state, areaId)
         : state.npcs.filter(n => n.status === 'alive' && n.locationId === row.id);
     const dead = new Set(state.npcs.filter(n => n.status !== 'alive').map(n => n.id));
     const priced = state.history.facts.filter(f => f.data && 'deedWeight' in f.data);
@@ -195,9 +197,11 @@ async function theSweep(): Promise<Sweep> {
             if (!opensBesideALoss(state, place)) continue;
             hits++;
             here++;
-            if (!opensBesideALoss(state, place, true)) continue;
+            const row = worldLocationFor(state, place)!;
+            const area = theAreasOf(state, row).areas.find(a => opensBesideALoss(state, place, a.id));
+            if (!area) continue;
             inTheRoom++;
-            first ??= { worldSeed, seed };
+            first ??= { worldSeed, seed, areaId: area.id };
         }
         if (here > 0) worldsWithOne++;
     }
@@ -316,12 +320,12 @@ describe('a fresh world has somebody to tell', () => {
      * A world is created from a seed, a run opens in it, and the person standing
      * in the room has lost somebody to a killing the world priced and wrote down.
      */
-    it('opens a run standing next to somebody who lost a relative to a priced wrong', async () => {
-        const { worldSeed, seed } = await aWorldWithSomebodyToTell();
+    it('finds somebody in the opening town who lost a relative to a priced wrong', async () => {
+        const { worldSeed, seed, areaId } = await aWorldWithSomebodyToTell();
         const { game } = await makeGameInWorld({ seed, worldSeed, worldEnabled: true });
         const { cultivator } = await game.newRun('Prober');
-        // The busiest area, which is the one the sweep read the room off.
-        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id);
+        // Walk to the area holding the people the sweep found; no NPC moves.
+        game.repos.cultivators.standIn(cultivator.id, areaId);
         const s = await whatIsStandingHere(game, game.repos.cultivators.getById(cultivator.id));
 
         const priced = s.world.history.facts.filter(f => f.data && 'deedWeight' in f.data);
@@ -360,11 +364,10 @@ describe('a fresh world has somebody to tell', () => {
      * write, and nothing else about the situation is touched.
      */
     it('the telling opens the account, at the weight the world priced it', async () => {
-        const { worldSeed, seed } = await aWorldWithSomebodyToTell();
+        const { worldSeed, seed, areaId } = await aWorldWithSomebodyToTell();
         const { db, game } = await makeGameInWorld({ seed, worldSeed, worldEnabled: true });
         const { cultivator } = await game.newRun('Prober');
-        // The busiest area, which is the one the sweep read the room off.
-        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id);
+        game.repos.cultivators.standIn(cultivator.id, areaId);
         const s = await whatIsStandingHere(game, game.repos.cultivators.getById(cultivator.id));
 
         (game as unknown as { knowledge: { learn(i: unknown): unknown } }).knowledge.learn({
@@ -410,11 +413,10 @@ describe('a fresh world has somebody to tell', () => {
      * anybody in earshot would be the same defect from the opposite side.
      */
     it('reaches nothing when the person told has lost nobody', async () => {
-        const { worldSeed, seed } = await aWorldWithSomebodyToTell();
+        const { worldSeed, seed, areaId } = await aWorldWithSomebodyToTell();
         const { db, game } = await makeGameInWorld({ seed, worldSeed, worldEnabled: true });
         const { cultivator } = await game.newRun('Prober');
-        // The busiest area, which is the one the sweep read the room off.
-        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id);
+        game.repos.cultivators.standIn(cultivator.id, areaId);
         const s = await whatIsStandingHere(game, game.repos.cultivators.getById(cultivator.id));
 
         const dead = new Set(

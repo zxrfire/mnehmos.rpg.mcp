@@ -17,10 +17,13 @@ const STAY = 'elemental_stay';
 interface Stay { placeId: string | null; enteredOnDay: number }
 
 export function trackElementalStay(game: GameService, me: Cultivator, run: Run): void {
-    const placeId = game.worldPlaceOf(me);
+    const here = game.worldPlaceOf(me);
+    const place = game.atHand?.locations.find(l => l.id === here);
+    const placeId = place && elementalTolerance(me.realmOrdinal, me.injuries, place) !== null ? here : null;
     const old = readJsonFlag<Stay>(game.db, me.id, STAY);
-    if (old?.placeId !== placeId) writeFlag(game.db, me.id, STAY,
-        JSON.stringify({ placeId, enteredOnDay: run.elapsedDays }));
+    if (!old && placeId === null) return;
+    if (old?.placeId !== placeId) game.db.transaction(() => writeFlag(game.db, me.id, STAY,
+        JSON.stringify({ placeId, enteredOnDay: run.elapsedDays })))();
 }
 
 export function elementalHostility(game: GameService, me: Cultivator) {

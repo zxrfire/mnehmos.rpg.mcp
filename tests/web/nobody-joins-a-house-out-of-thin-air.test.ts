@@ -26,6 +26,8 @@
  *
  * The two joins that are taken are forced (`ADMIN sect join`), which lands the
  * house's look and nothing else: the road to being looked at is still checked.
+ * The advertised intake is read from a real wall the player clears. Catalog
+ * additions can change which notices the opening town carries.
  *
  * Red-checked by passing no `nobodyIsTakingPeopleOnHere` to `handleJoin`: the
  * refusal test goes red. And by dropping the in-person road in
@@ -40,6 +42,8 @@ import { KnowledgeGate } from '../../src/web/knowledge.js';
 import { theReportsTheyOwe } from '../../src/engine/world/a-house-expects-somebody-it-took-on.js';
 import { SENDING_REASONS } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { getSect } from '../../src/data/cultivation/sects.js';
+import { openDoorsInTheWorld, postingGroundOf, provinceOfPlace } from '../../src/engine/world/the-doors-and-walls-a-house-takes-people-at.js';
+import { billsOnTheWall } from '../../src/engine/world/houses-that-have-to-advertise-for-disciples.js';
 
 /** The played world the wall-and-wait test already pins: a dated intake is up at Wind Turn. */
 const WORLD = 'a-xianxia-run';
@@ -88,6 +92,14 @@ describe('nobody joins a house out of thin air', () => {
     it('takes them on at the intake its paper named, once they have waited for it', async () => {
         const { game, repos } = await makeGameInWorld({ seed: PLAYED, worldSeed: WORLD });
         const { cultivator } = await game.newRun('Shen Wuyou');
+        // Catalog additions moved the opening wall. Find a real advertised intake the body clears.
+        const town = game.atHand!.locations.find(place => billsOnTheWall({
+            field: openDoorsInTheWorld(), placeName: place.name,
+            ground: postingGroundOf(place.name), placeProvinceId: provinceOfPlace(place.name),
+            onDay: 0, seed: PLAYED
+        }).some(bill => bill.admissionOrdinal <= cultivator.realmOrdinal));
+        expect(town, 'no wall advertises an intake this body clears').toBeDefined();
+        repos.cultivators.update(cultivator.id, { location: town!.name });
         const posted = await whatIsPosted(game);
         const house = aHouseTheyClear(repos, cultivator.id, posted.map(p => p.house));
         expect(house, 'no intake on this wall is one the run clears the bar of').toBeTruthy();

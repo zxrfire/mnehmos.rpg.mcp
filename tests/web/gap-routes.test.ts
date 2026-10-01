@@ -10,6 +10,8 @@
  * none - so every entry has to be either mapped to a sentence a player can type
  * or recorded as unreachable, and a tenth option cannot be added without
  * somebody saying which of the two it is.
+ * The played fixture uses an ordinary world person placed with the player.
+ * A legacy encounter row can fall outside the three faces in their area.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -22,6 +24,8 @@ import {
 } from '../../src/web/gap-routes';
 import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
+import { worldLocationFor } from '../../src/web/entities';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 describe('every option is accounted for', () => {
     it('is either carried by a verb or written down as unreachable', () => {
@@ -106,11 +110,19 @@ describe('played, against somebody seven realms up', () => {
             const { game } = await makeGameInWorld({
                 seed: 'hopeless', worldSeed: 'w-hopeless'
             });
-            await game.newRun('Doomed');
+            const { cultivator } = await game.newRun('Doomed');
+            const place = worldLocationFor(game.atHand!, cultivator.location)!;
+            const { areas, whereIs } = theAreasOf(game.atHand!, place);
+            const room = areas.find(area => [...whereIs.values()].filter(id => id === area.id).length < 3);
+            expect(room, 'no room for the arranged opponent in this place').toBeDefined();
+            game.repos.cultivators.standIn(cultivator.id, room!.id);
             await game.act('I look around');
-            await game.act('ADMIN spawn_encounter ordinal=40 disposition=hostile');
+            const before = new Set(game.atHand!.npcs.map(n => n.id));
+            await game.act('ADMIN spawn_encounter ordinal=40 sex=male');
+            const opponent = game.atHand!.npcs.find(n => !before.has(n.id));
+            expect(opponent, 'ADMIN did not put an opponent here').toBeDefined();
 
-            const refused = await game.act('I attack the Grand Ascension cultivator');
+            const refused = await game.act(`I attack ${opponent!.name}`);
 
             // The refusal itself is unchanged and still correct.
             expect(refused.narration).toMatch(/is not a fight/);

@@ -653,6 +653,10 @@ describe('the acceptance test: five hundred years', () => {
         // So: red here on a full parallel run means nothing until it is red
         // ALONE. Re-run this file by itself before believing it, and only then
         // ask what got slower.
+        // Summit wiring computed neighbourhood rates even for people already at
+        // their ground or manual ceiling. The climb now checks that ceiling first,
+        // preserving every computed climb while avoiding those unused area reads.
+        // Neutral neighbours use the same rate reader before constructing areas.
         expect(elapsedMs).toBeLessThan(30_000);
         expect(after.year).toBe(before.year + 500);
     });

@@ -94,7 +94,8 @@ describe('the map has a compass on it', () => {
 
     it('seats every house at a bearing, and the centre does not hold everything', () => {
         const byBearing = factionsByBearing();
-        const seated = COMPASS.flatMap(b => byBearing[b]);
+        // Fixed water seats houses in the interior without making it a province.
+        const seated = BEARINGS.flatMap(b => byBearing[b]);
         expect(seated.length).toBe(SECTS.length);
         for (const s of SECTS) {
             expect(bearingOfFaction(s.id), `${s.id} is nowhere on the compass`).toBeDefined();

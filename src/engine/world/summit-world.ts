@@ -2,6 +2,7 @@
 import { elementalTolerance } from './elemental-tolerance.js';
 import { expireElementalWorks, expressedElement, makeElementalWork, neighbourhoodRate } from './elemental-neighbourhood.js';
 import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
+import { npcsStandingIn } from './where-inside-a-house-somebody-is-standing.js';
 import { evaluateAccess } from './locations.js';
 import { bodyTaken, maxBodyOf, theWorldEnds, PLAYER_ROW_TAG, type NpcRecord } from './npc-state.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
@@ -12,12 +13,17 @@ export interface VisitingPresence { person: NpcRecord; placeId: string; areaId: 
 export function practiceAmongNeighbours(state: WorldState, npc: NpcRecord, day: number, visitor?: VisitingPresence): number {
     const place = state.locations.find(l => l.id === npc.locationId);
     if (!place) return 1;
+    const body = { realmOrdinal: npc.cultivation.realmOrdinal,
+        spiritRoot: npc.cultivation.spiritRoot, injuries: npc.cultivation.injuries };
+    const changesRate = (person: NpcRecord) => neighbourhoodRate(body, [person], npc.id, day) !== 1;
+    // If nobody changes the rate, dividing them into areas cannot change it.
+    if (!npcsStandingIn(state, place.id).some(changesRate)
+        && !(visitor?.placeId === place.id && changesRate(visitor.person))) return 1;
     const { whereIs } = theAreasOf(state, place);
     const area = whereIs.get(npc.id);
     const nearby = state.npcs.filter(n => whereIs.get(n.id) === area && area !== undefined);
     if (visitor?.placeId === place.id && visitor.areaId === area) nearby.push(visitor.person);
-    return neighbourhoodRate({ realmOrdinal: npc.cultivation.realmOrdinal,
-        spiritRoot: npc.cultivation.spiritRoot, injuries: npc.cultivation.injuries }, nearby, npc.id, day);
+    return neighbourhoodRate(body, nearby, npc.id, day);
 }
 
 export function advanceSummitBodies(state: WorldState, fromDay: number, toDay: number): DeathHandoff[] {
@@ -58,7 +64,11 @@ export function advanceSummitBodies(state: WorldState, fromDay: number, toDay: n
                         if (ended) {
                             npc = { ...ended, tags: ended.tags.filter(t => !t.startsWith(prefix)) };
                             state.npcs[at] = npc;
-                            if (npc.status === 'physically_dead') deaths.push(settleNpcDeath(state, npc, endedOn));
+                            if (npc.status === 'physically_dead') {
+                                deaths.push(settleNpcDeath(state, npc, endedOn));
+                                // Settlement rewrites the purse and bonds. Keep that row.
+                                continue;
+                            }
                         }
                     }
                 }

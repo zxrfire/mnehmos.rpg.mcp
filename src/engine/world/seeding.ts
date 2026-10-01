@@ -683,6 +683,7 @@ function seedRegions(
                 thresholds: place.interior?.gateOrdinal === undefined
                     ? makeThresholds(0, 0, 0, Math.max(0, ceiling - 4))
                     : makeThresholds(0, place.interior.gateOrdinal, place.interior.gateOrdinal, place.interior.gateOrdinal),
+                sealed: place.interior?.gateOrdinal !== undefined,
                 hazards: region.hazards.slice(),
                 environment: makeEnvironment({
                     // THE PLACE'S OWN GROUND, not its province's average.

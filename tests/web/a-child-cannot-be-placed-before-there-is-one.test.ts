@@ -99,7 +99,9 @@ describe('placing a child', () => {
         // Arranged: somebody here stands for the Pavilion, whose floor is open
         // to anybody, and the player has heard of a house where a word moves
         // the bar. The refusal itself is the game's.
-        const asked = here.find(row => row.sectId !== null)!;
+        // Raising spends days; ask someone present afterwards.
+        const current = game.repos.cultivators.getById(cultivator.id)!;
+        const asked = g.present(current).find(row => row.sectId !== null)!;
         g.atHand.npcs.find(npc => npc.id === asked.id)!.factionId = 'sect-azure-cloud-pavilion';
         g.knowledge.learn({
             holderId: cultivator.id, kind: 'sect', id: 'sect-azure-mist-court',
@@ -108,6 +110,6 @@ describe('placing a child', () => {
         });
 
         const said = await game.act(`I place my child with ${asked.name}`);
-        expect(JSON.stringify(said)).toContain('A word does move the bar at Azure Mist Court.');
+        expect(heard(said)).toMatch(/A word does move the bar at [^.]*Azure Mist Court/);
     }, 300_000);
 });

@@ -49,6 +49,10 @@
  * with when the term is cut short, which `aTermCutShort` says is common and
  * which nothing here forces. That is a gap in the escort verb rather than in the
  * party, and it is written down in `OPEN-QUESTIONS.md`.
+ * The year cursor now returns due companions within that same turn. The escort
+ * assertion checks their departure line and their current state: still alongside
+ * if interrupted, otherwise off the road after the term, never a historical
+ * query against an activity the world has already cleared.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -284,12 +288,20 @@ describe('the people who came with you', () => {
             expect(said, `${member.name} was never named`).toContain(member.name);
         }
 
-        // The activity is the fact, and it was written on each of them. Read
-        // back through the same function the travel verbs use, on the day they
-        // were put on the road rather than today - the term may already have
-        // been spent by the span, which is the seam this test's header names.
-        const onTheRoad = whoIsOnTheRoadWith(game.atHand.npcs, senior.id, leftOn);
-        expect(onTheRoad.map(npc => npc.id).sort())
-            .toEqual(takingOut.map(member => member.id).sort());
+        // A current activity cannot reconstruct departure after the world brought them home.
+        const today = Math.floor(game.atHand.currentDay);
+        const onTheRoad = whoIsOnTheRoadWith(game.atHand.npcs, senior.id, today);
+        if (today < leftOn + duty.days) {
+            expect(onTheRoad.map(npc => npc.id).sort())
+                .toEqual(takingOut.map(member => member.id).sort());
+        } else {
+            expect(onTheRoad).toHaveLength(0);
+            for (const member of takingOut) {
+                const returned = game.atHand.npcs.find((npc: any) => npc.id === member.id);
+                expect(returned.activity?.withIds ?? []).not.toContain(senior.id);
+            }
+        }
+        expect(said).toContain('encounters.acceptDuty');
+        expect(turn.narration).toContain('and go where you go.');
     }, 300_000);
 });

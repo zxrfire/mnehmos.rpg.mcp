@@ -28,9 +28,9 @@
  * -------------------------
  * The MODULE count asks whether any register module imports the file, with
  * re-exports followed. Constituent rows imported into another catalog array
- * are not followed: spring-houses.ts reaches the sheet through SECTS, so its
- * allow-list entry records that route. The count is also blunt: one line of
- * beasts.ts shown would clear the whole of it.
+ * are followed through their consumer, so spring-houses.ts reaches the sheet
+ * through SECTS. The count is also blunt: one line of beasts.ts shown would
+ * clear the whole of it.
  *
  * The EXPORT count is the finer one and is the reading the owner's complaint
  * actually needed. `beasts.ts` holds the bestiary, the material table and the
@@ -84,10 +84,6 @@ import {
  * anything not written down here is admitted to be work outstanding.
  */
 const NOT_THE_REGISTER_S_BUSINESS: Readonly<Record<string, string>> = {
-    'spring-houses.ts':
-        'the two spring houses are constituent rows of SECTS, which the register '
-        + 'already renders in full. This helper is imported into that array rather '
-        + 'than re-exported; a separate section would print the same houses twice.',
     'place-names.ts':
         'the single source of truth for what places are CALLED. The register '
         + 'prints its output on every tab; printing the pool is printing the dictionary.',

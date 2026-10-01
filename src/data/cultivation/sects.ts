@@ -72,6 +72,7 @@
 
 import type { Sect, SpiritRootKey, TechniqueCategory } from '../../schema/cultivation.js';
 import { SPRING_HOUSES } from './spring-houses.js';
+export { SPRING_HOUSES } from './spring-houses.js';
 import { APEX_INSTITUTIONS } from './governance-and-water-rights.js';
 import {
     delegatedFrom,

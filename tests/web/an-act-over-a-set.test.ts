@@ -34,6 +34,8 @@ import { describe, it, expect } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { npcsInFaction } from '../../src/engine/world/world-state';
+import { whoTheyCarryFor } from '../../src/web/what-a-telling-lands-on';
+import { existenceClaimKey } from '../../src/web/knowledge';
 import {
     theSetAsThisCultivatorKnowsIt,
     theSetThisNames,
@@ -195,7 +197,7 @@ describe('an act aimed at a set, played', () => {
         // that the set was carried out over the reachable subset, which is what
         // the ruling asks for; the exact body count is the resolver's.
         expect(after).toBeLessThan(before - 1);
-        expect(result.toolCalls.some(call => call.name === 'engine.actOverASet')).toBe(true);
+        expect(result.toolCalls.some(call => call.name === 'engine.actOverASet'), result.narration).toBe(true);
     }, 120000);
 
     /**
@@ -339,6 +341,8 @@ describe('an act aimed at a set, played', () => {
      * The same square, the same act, with only the person in front of the
      * player known to them. The turn must not say how many there were, must not
      * say that was all of them, and must not say there are more.
+     * Catalog changes can acquaint the player with kin at birth or on a look.
+     * Choose a living family from the world and explicitly arrange ignorance of its others.
      */
     it('says nothing about a remainder when the player knows of no others', async () => {
         const { db, game } = await makeGameInWorld({ seed: 'p-f', worldSeed: 'w-f' });
@@ -348,9 +352,24 @@ describe('an act aimed at a set, played', () => {
 
         const service = game as any;
         const world = await game.loadWorld();
-        const anchor = world!.npcs.find((npc: any) => npc.id === 'npc-154')!;
+        const anchor = world!.npcs.find(npc => npc.status === 'alive' && npc.locationId
+            && whoTheyCarryFor(npc.id, npc).ids.some(id => id !== npc.id
+                && world!.npcs.some(kin => kin.id === id && kin.status === 'alive')))!;
+        expect(anchor, 'the world has no living family to reach').toBeDefined();
         // The part of the town they are in, which a run no longer opens in.
+        const place = world!.locations.find(place => place.id === anchor.locationId)!;
+        game.repos.cultivators.update(cultivator.id, { location: place.name });
         await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, new Set([anchor.id]));
+        const family = whoTheyCarryFor(anchor.id, anchor).ids
+            .filter(id => id !== anchor.id)
+            .flatMap(id => world!.npcs.filter(npc => npc.id === id && npc.status === 'alive'));
+        expect(family.length).toBeGreaterThan(0);
+        // The birth draw and a look can already acquaint kin. Arrange ignorance explicitly.
+        for (const kin of family) {
+            db.prepare('DELETE FROM knowledge_records WHERE holder_id = ? AND claim_key = ?')
+                .run(cultivator.id, existenceClaimKey('cultivator', kin.id));
+            expect(service.knowledge.isAwareOf(cultivator.id, 'cultivator', kin.id)).toBe(false);
+        }
         service.knowledge.learnIfNew({
             holderId: cultivator.id,
             kind: 'cultivator',
@@ -371,14 +390,13 @@ describe('an act aimed at a set, played', () => {
         const result = await game.act(`I kill ${anchor.name}'s family`);
 
         // Not vacuous: the act ran and the one person they could name is dead.
-        expect(result.toolCalls.some(call => call.name === 'engine.actOverASet')).toBe(true);
+        expect(result.toolCalls.some(call => call.name === 'engine.actOverASet'), result.narration).toBe(true);
         const now = await game.loadWorld();
         expect(now!.npcs.find((npc: any) => npc.id === anchor.id)!.status).toMatch(/dead/);
 
         expect(result.narration).not.toMatch(/you know of/i);
         expect(result.narration).not.toMatch(/were not,? and where they are/i);
         // The parent exists and was never mentioned, which is the whole claim.
-        const parent = world!.npcs.find((npc: any) => npc.id === 'npc-168')!;
-        expect(result.narration).not.toContain(parent.name);
+        for (const kin of family) expect(result.narration).not.toContain(kin.name);
     }, 120000);
 });

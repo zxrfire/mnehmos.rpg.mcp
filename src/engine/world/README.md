@@ -10,6 +10,18 @@ Places, the five capability predicates, opportunity windows, the historical reco
 lineage, possessions, NPC records and the world clock. Read this before changing anything
 in `src/engine/world/`.
 
+Catalog interiors with a `gateOrdinal` seed a sealed door. A warded archive is
+not among the closed ruins the seeder opens for a new world.
+
+An elemental death leaves the row written by estate settlement in place; the
+summit pass must not restore its earlier purse or relationships afterwards.
+
+The yearly climb checks the ground and manual ceiling before computing practice
+rates. Someone already at that ceiling cannot climb; reading their neighbours
+cannot change that answer.
+`practiceAmongNeighbours` also asks the same rate reader whether anyone present
+can change the rate before dividing a neutral neighbourhood into areas.
+
 `primal-essence.ts` owns the once-only personal property consumed by household
 binding and furnace rites. An intact subject doubles the first furnace draw;
 marriage consumes it without a cultivation bonus. `willing-rites-between-world-people.ts`

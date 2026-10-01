@@ -53,6 +53,15 @@
  * inheritance is proportionate to dying, and the SURVIVAL ratio is what would
  * fall if a high-ordinal death path stopped settling - which is the regression
  * this file exists for, and those deaths are exactly the rows the sweep keeps.
+ * After the catalog and world passes expanded, the same two-century sample
+ * passed 3,023 accounts over 3,349 deaths (0.903 per death). A death with no
+ * living heir cannot pass an account. The rate now counts deaths with heirs;
+ * the separate senior estate check still includes deaths with nobody to inherit.
+ * A trapped elemental body also exposed the summit pass restoring the earlier
+ * purse after settling death. Settlement's rewritten row must survive.
+ * The lived estate check also mistook a zero-count communication stack for
+ * intact goods. Death breaks those slips; the empty row remains until the
+ * word pass sweeps it. Count slips through their reader, not the row's presence.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -61,10 +70,15 @@ import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
 import { advanceWorldForPlay } from '../../../src/engine/world/driver';
 import type { WorldState } from '../../../src/engine/world/world-state';
 import { createWorld } from '../../../src/engine/world/world-state';
-import { createNpc } from '../../../src/engine/world/npc-state';
+import { createNpc, carryingWounds, setRealm } from '../../../src/engine/world/npc-state';
+import { createInjury } from '../../../src/engine/cultivation/injuries';
+import { CultivationRNG } from '../../../src/engine/cultivation/rng';
+import { REALM_TIERS } from '../../../src/engine/cultivation/realms';
+import { makeLocation } from '../../../src/engine/world/locations';
 import { createLineageRecord } from '../../../src/engine/world/lineage';
 import { settleNpcDeath } from '../../../src/engine/world/time';
 import { isRuined, makeObject } from '../../../src/engine/world/possessions';
+import { howManyTheyCarry, isAStackOfCommunicationTalismans, markOn } from '../../../src/engine/world/a-communication-talisman-carries-word-home';
 
 /** The senior band checked for estate settlement in the lived sample. */
 const A_DEATH_THAT_SHOULD_LEAVE_SOMETHING = 29;
@@ -77,12 +91,15 @@ interface Lived {
     state: WorldState;
     /** Deaths that reached `settleNpcDeath`. */
     settled: number;
+    /** Deaths with somebody alive who can inherit an account. */
+    withHeirs: number;
     /** Accounts written onto all heirs, counted as each death happened. */
     tiesPassed: number;
     /** Deaths at or above `A_DEATH_THAT_SHOULD_LEAVE_SOMETHING`. */
     tall: number;
     /** Senior deaths whose purse or intact possessions did not settle. */
     tallUnsettled: number;
+    unsettledEstates: string[];
 }
 
 let cached: Lived[] | null = null;
@@ -93,9 +110,11 @@ async function worldsLived(): Promise<Lived[]> {
     cached = SEEDS.map(seed => {
         const { state } = seedWorld({ seed, catalog });
         let settled = 0;
+        let withHeirs = 0;
         let tiesPassed = 0;
         let tall = 0;
         let tallUnsettled = 0;
+        const unsettledEstates: string[] = [];
         advanceWorldForPlay(state, {
             days: YEARS * 365,
             stopOnInterrupt: false,
@@ -105,12 +124,23 @@ async function worldsLived(): Promise<Lived[]> {
             // forgetting, a re-inheritance, the heir's own death - can move it.
             onDeath: handoff => {
                 settled++;
+                if (handoff.heirs.length > 0) withHeirs++;
                 const who = state.npcs.find(npc => npc.id === handoff.deceasedId);
                 if ((who?.cultivation.realmOrdinal ?? 0) >= A_DEATH_THAT_SHOULD_LEAVE_SOMETHING) {
                     tall++;
                     if (who!.spiritStones !== 0 || state.objects.some(object =>
                         object.possessorId === who!.id && !isRuined(object) && object.locationId === null
-                    )) tallUnsettled++;
+                            && (!isAStackOfCommunicationTalismans(object)
+                                || howManyTheyCarry([object], who!.id, markOn(object) ?? '') > 0)
+                    )) {
+                        tallUnsettled++;
+                        unsettledEstates.push(`${who!.id} (${who!.status}), stones=${who!.spiritStones}: `
+                            + state.objects.filter(object => object.possessorId === who!.id
+                                && !isRuined(object) && object.locationId === null
+                                && (!isAStackOfCommunicationTalismans(object)
+                                    || howManyTheyCarry([object], who!.id, markOn(object) ?? '') > 0))
+                                .map(object => `${object.id} (${object.name})`).join(', '));
+                    }
                 }
                 // ── COUNTED ON EVERY HEIR, NOT ON THE FIRST ──────────────
                 //
@@ -133,7 +163,7 @@ async function worldsLived(): Promise<Lived[]> {
                 }
             }
         });
-        return { state, settled, tiesPassed, tall, tallUnsettled };
+        return { state, settled, withHeirs, tiesPassed, tall, tallUnsettled, unsettledEstates };
     });
     return cached;
 }
@@ -225,7 +255,8 @@ describe('what a death leaves behind', () => {
         const unsettled = lived.reduce((n, w) => n + w.tallUnsettled, 0);
 
         expect(tall, 'the sample must contain senior deaths').toBeGreaterThan(0);
-        expect(unsettled, 'a senior death left an unsettled purse or unlocated goods').toBe(0);
+        expect(unsettled, 'a senior death left an unsettled purse or unlocated goods: '
+            + lived.flatMap(world => world.unsettledEstates).join('; ')).toBe(0);
     });
 
     /**
@@ -234,20 +265,22 @@ describe('what a death leaves behind', () => {
      *
      * Pooled over the seeds rather than asserted on each, because the claim is
      * about deaths and not about a world. Measured: 2,666 accounts over 1,058
-     * deaths and 2,576 over 1,075, so 2.52 and 2.40 per death. Floored at 1 -
-     * an account moving on every death is still an order of magnitude above a
-     * trickle, and leaves room for the heir rules to be tightened without this
-     * failing for it.
+     * deaths and 2,576 over 1,075, so 2.52 and 2.40 per death. The expanded world
+     * measured 3,023 over 3,349. Count deaths with living heirs now, retaining
+     * the floor of one account per inheritable death; no heir is a body's fact,
+     * not an inheritance failure.
      */
     it('and inherits at a rate that is a fact about deaths, not a trickle', async () => {
         const lived = await worldsLived();
         const settled = lived.reduce((n, w) => n + w.settled, 0);
+        const withHeirs = lived.reduce((n, w) => n + w.withHeirs, 0);
         const passed = lived.reduce((n, w) => n + w.tiesPassed, 0);
 
         expect(settled, 'two centuries of world had deaths in it').toBeGreaterThan(100);
+        expect(withHeirs, 'the sample has nobody to inherit an account').toBeGreaterThan(0);
         expect(
-            passed / settled,
-            `${passed} accounts passed over ${settled} deaths; measured at 2.52 and 2.40`
+            passed / withHeirs,
+            `${passed} accounts passed over ${withHeirs} deaths with heirs (${settled} deaths overall)`
         ).toBeGreaterThan(1);
     });
 
@@ -281,6 +314,28 @@ describe('what a death leaves behind', () => {
 
 /** A senior's accounts pass through an actual living bond, never their rung alone. */
 describe('a senior death with and without a living disciple', () => {
+    it('settles an elemental death without restoring the earlier purse', () => {
+        const state = createWorld({ seed: 'an-elemental-estate', skipPriorAges: true, regionCount: 0 });
+        const day = state.currentDay;
+        const ground = makeLocation({ id: 'elemental-ground', name: 'Elemental ground', kind: 'wilds',
+            hazards: ['fire'], thresholds: { entry: 0, survival: 45, operational: 45, mastery: 45 } });
+        state.locations.push(ground);
+        const ordinal = REALM_TIERS.find(realm => realm.key === 'tribulation_transcendence')!.ordinalStart;
+        const body = setRealm(createNpc(state.seed, {
+            id: 'imperfect-body', bornOnDay: day - 20 * 365, onDay: day, locationId: ground.id
+        }), ordinal, day);
+        const cracked = carryingWounds(body, [createInjury({ severity: 'crippling',
+            source: 'failed_breakthrough', turn: 0, woundType: 'imperfect-tribulation-body'
+        }, new CultivationRNG('an-elemental-estate'))], day);
+        state.npcs.push({ ...cracked, spiritStones: 100 });
+
+        advanceWorldForPlay(state, { days: 12, stopOnInterrupt: false });
+
+        const dead = state.npcs.find(npc => npc.id === body.id)!;
+        expect(dead.status).toBe('physically_dead');
+        expect(dead.spiritStones).toBe(0);
+    });
+
     it.each([true, false])('settles the estate with a living heir: %s', hasHeir => {
         const state = createWorld({ seed: 'a-senior-estate', regionCount: 1 });
         const day = state.currentDay;

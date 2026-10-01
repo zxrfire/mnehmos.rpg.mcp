@@ -1587,6 +1587,13 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
 
         const rooms = npc.factionId ? roomsByFaction.get(npc.factionId) ?? [] : [];
 
+        const age = Math.floor((day - npc.identity.bornOnDay) / 365);
+
+        // THE BOOK IS THE HARDER OF THE TWO CEILINGS.
+        const manualCeiling = reachableCeilingFor(state, npc) || BOOKLESS_CEILING;
+        const ceiling = Math.min(regionCeiling, manualCeiling);
+        if (ceiling <= npc.cultivation.realmOrdinal) continue;
+
         const rateMultiplier = rateOverTheYear(
 
             groundShare.get(npc.id) ?? 0,
@@ -1597,12 +1604,6 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
 
         ) * whatTeachingLeavesOfAMastersRate(npc, byId, day)
             * practiceAmongNeighbours(state, npc, day, visitor);
-        const age = Math.floor((day - npc.identity.bornOnDay) / 365);
-
-        // THE BOOK IS THE HARDER OF THE TWO CEILINGS.
-        const manualCeiling = reachableCeilingFor(state, npc) || BOOKLESS_CEILING;
-        const ceiling = Math.min(regionCeiling, manualCeiling);
-        if (ceiling <= npc.cultivation.realmOrdinal) continue;
 
         // THE SHELF THEY CAN ACTUALLY REACH, not a default one.
         const membership: OriginTierKey = !npc.factionId

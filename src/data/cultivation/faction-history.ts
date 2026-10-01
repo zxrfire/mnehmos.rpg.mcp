@@ -460,6 +460,22 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 export const FACTION_HISTORY: Record<string, FactionHistory> = {
+    'sect-lunargent': {
+        factionId: 'sect-lunargent',
+        origin: 'The spring keepers inherited meditation cells cut into fixed rock above Truce Spring. The painted donors belong to several generations, with older names beneath later paint. Their elders claim a western-road grant, but its issuer has no surviving office and the succession has not been confirmed by a living reader.',
+        whyTheGapIs: 'The house still teaches circulation in its working cells. The deeper evidence it claims remains behind an unopened archive ward, so the inherited rooms and the road its elders say they held cannot all be put to use by the present roll.',
+        whatTheUnlitNodesWere: 'The dark nodes served the meditation cells above the water. Their fittings remain in the rock, but the working instructions are among the records behind the archive ward.',
+        whereTheWrongBeliefComesFrom: 'The elders treat successive copies of the western-road grant as evidence of continuous authority. The copies preserve a seal nobody living has read, so whether they attest to the same succession remains unresolved.',
+        sharedEvents: []
+    },
+    'sect-amaranth': {
+        factionId: 'sect-amaranth',
+        origin: 'The granary house inherited dry stores and an account room on the rock beside Truce Spring. Its roll kept seasonal grain contracts while the spring keepers held a separate gate. The stores and their accounts stayed together as the routes through the dunes moved around the fixed water.',
+        whyTheGapIs: 'Circulation and bodily tempering remain teachable with the stores and rooms the house can use. Its elders seek access to the spring account room for a grain factor; the proposed supply contract has not yet given them that access.',
+        whatTheUnlitNodesWere: 'The dark nodes belong to the inherited granary diagram. The account room records seasonal supplies, but holds no complete instructions for relighting that diagram.',
+        whereTheWrongBeliefComesFrom: 'The proposed grain contract offers supplies before repayment. The granary elders read that offer as sufficient grounds for a hearing, while the spring keepers have not agreed to admit their factor to the account room.',
+        sharedEvents: []
+    },
     // ── the two unnameable apexes ─────────────────────────────────────
     // `sharedEvents` is empty on both, and that is not a gap: every shared
     // event these two are party to is authored against their APEX ids, and

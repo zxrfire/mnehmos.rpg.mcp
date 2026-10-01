@@ -43,6 +43,8 @@
  * The join fixture stands beside them after that change; a place alone is not a meeting.
  * Acceptance is forced for the issuing test. Eligibility permits an application;
  * it does not promise admission, and the house's refusal is tested separately.
+ * Travel names the seat explicitly: a house name now leads to its gate town,
+ * and token issuance is a claim about entering the seat itself.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -140,7 +142,7 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(tokenOf(world, cultivator.id), 'a token before arriving').toBeNull();
 
         // NOBODY'S WORD: stopped, and not entered.
-        const turn = await game.act(`I travel to the ${faction.name}`);
+        const turn = await game.act(`I travel to ${seat.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         const prose = turn.narration ?? '';
         expect(prose, 'the gate did not ask for a token').toMatch(/no token to read/);
@@ -196,7 +198,8 @@ describe('your house issues you its robes and token at its seat', () => {
 
         repos.sects.addMember(faction!.id, cultivator.id, 0);
         theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction!);
-        await game.act(`I travel to the ${faction!.name}`);
+        const seat = game.atHand!.locations.find(l => l.id === faction!.seatLocationId)!;
+        await game.act(`I travel to ${seat.name}`);
         const rings = () => game.atHand!.objects.filter(o => o.possessorId === cultivator.id && o.tags.includes('storage-ring'));
         expect(rings(), 'a ring with no service behind it').toHaveLength(0);
 
@@ -214,7 +217,7 @@ describe('your house issues you its robes and token at its seat', () => {
 
         repos.sects.addMember(faction.id, cultivator.id, 0);
         theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction);
-        await game.act(`I travel to the ${faction.name}`);
+        await game.act(`I travel to ${seat.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         let world = game.atHand!;
         expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id), 'robes at the seat').toBe(true);
@@ -255,7 +258,7 @@ describe('your house issues you its robes and token at its seat', () => {
         const { faction, seat } = large!;
 
         // Walked there first, so the arrangement is made in the world the read sees.
-        await game.act(`I travel to the ${faction.name}`);
+        await game.act(`I travel to ${seat.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         repos.sects.addMember(faction.id, cultivator.id, 0);
         theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction);
@@ -309,7 +312,7 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(house, 'this world has no house that would take them with anybody at its gate').toBeTruthy();
         const { faction, seat } = house!;
 
-        await game.act(`I travel to the ${faction.name}`);
+        await game.act(`I travel to ${seat.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         let world = game.atHand!;
         expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id), 'robed off the roll').toBe(false);

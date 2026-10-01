@@ -183,6 +183,54 @@ export function rankRealmBand(factionId: string, rankIndex: number): RealmBand |
 // THE CATALOG
 
 const AUTHORED_MEMBERS: readonly Member[] = [
+    {
+        id: 'member-zuo-qintai', name: 'Zuo Qintai', factionId: 'sect-lunargent',
+        rankIndex: 1, rank: 'Outer Disciple', realmOrdinal: 3, role: 'peer',
+        wants: 'to learn the older donor names beneath the paint', fears: 'scraping away the only surviving copy',
+        detail: 'Copies a single painted name each morning and asks travellers how they would pronounce it.',
+        outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null
+    },
+    {
+        id: 'member-pei-ningshu', name: 'Pei Ningshu', factionId: 'sect-lunargent',
+        rankIndex: 3, rank: 'Spring Elder', realmOrdinal: 6, role: 'master',
+        wants: 'a disciple who can keep circulation steady through a night watch', fears: 'losing another inherited cell',
+        detail: 'Keeps the circulation diagrams on loose tiles so a beginner can put them in order before sitting.',
+        outlier: false, outlierReason: null, goodCompany: false, rivalry: null,
+        teaching: { knows: 'The circulation forms taught in the spring meditation cells.',
+            mayNotSay: 'The archive ward has not been opened and she cannot read its contents.',
+            costsThem: 'Every lesson takes time away from tending the working formation nodes.' }
+    },
+    {
+        id: 'member-duan-xuelin', name: 'Duan Xuelin', factionId: 'sect-lunargent',
+        rankIndex: 5, rank: 'Sect Master', realmOrdinal: 21, role: 'senior',
+        wants: 'a reader for the sealed western-road grant', fears: 'an archive that disproves the succession',
+        detail: 'Carries the succession copies in separate sleeves, with the unread western seal copied onto each cover.',
+        outlier: true, outlierReason: 'inherited', goodCompany: false, rivalry: null, teaching: null
+    },
+    {
+        id: 'member-luo-yanshao', name: 'Luo Yanshao', factionId: 'sect-amaranth',
+        rankIndex: 1, rank: 'Outer Disciple', realmOrdinal: 3, role: 'peer',
+        wants: 'to settle the grain measure dispute before the next delivery', fears: 'being charged for another short sack',
+        detail: 'Brings two measuring cups to every meal and invites anyone nearby to find the difference.',
+        outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null
+    },
+    {
+        id: 'member-tan-huizhen', name: 'Tan Huizhen', factionId: 'sect-amaranth',
+        rankIndex: 3, rank: 'Ledger Elder', realmOrdinal: 6, role: 'master',
+        wants: 'a store watch that practises its tempering forms', fears: 'teaching the posture without its circulation',
+        detail: 'Sets an empty sack on a beginner\'s shoulders and checks their stance before adding any grain.',
+        outlier: false, outlierReason: null, goodCompany: false, rivalry: null,
+        teaching: { knows: 'The house circulation scripture and the bodily tempering forms.',
+            mayNotSay: 'The grain contracts are the account room\'s records and require its holder\'s leave.',
+            costsThem: 'Teaching takes her off the store watch and another disciple must cover it.' }
+    },
+    {
+        id: 'member-fan-mengqi', name: 'Fan Mengqi', factionId: 'sect-amaranth',
+        rankIndex: 5, rank: 'Sect Master', realmOrdinal: 19, role: 'senior',
+        wants: 'the spring keepers to hear the grain factor', fears: 'supplies leaving before the contract is read',
+        detail: 'Keeps a sample of each season\'s grain beside its contract and opens both when a factor calls.',
+        outlier: true, outlierReason: 'last_of_age', goodCompany: false, rivalry: null, teaching: null
+    },
     // ═══════════════════════════════════════════════════════════════════
     // LOW FALL - RIGHTEOUS
     // ═══════════════════════════════════════════════════════════════════
@@ -4396,4 +4444,3 @@ export function getMember(id: string): Member | undefined {
 export function getMembersOf(factionId: string): readonly Member[] {
     return MEMBERS_BY_FACTION.get(factionId) ?? [];
 }
-

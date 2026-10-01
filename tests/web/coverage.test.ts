@@ -882,6 +882,12 @@ describe('every intent DECLARED is a door somebody can find', () => {
      * a second place for them to drift.
      */
     const INTENT_PHRASINGS: Record<string, readonly string[]> = {
+        'oath/beast_contract': ['I make a beast cultivation contract with the fox'],
+        'oath/end_beast_contract': ['I end my beast cultivation contract with the fox'],
+        'cultivate/offered_self': ['I offer myself as a cultivation furnace to Qiu Fen'],
+        'cultivate/offered': ['I ask Qiu Fen to willingly be my furnace'],
+        'sect/take_disciple': ['I accept Qiu Fen as my disciple'],
+        'sect/compete': ['I enter the public competition'],
         'coerce/soul_search': ['I search his soul'],
         'sect/hire_duty': ['I hire Elder Fang to serve my post'],
         'sect/report_missing': ['I report Elder Fang seen at Clear River Ferry'],
