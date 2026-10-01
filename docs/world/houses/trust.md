@@ -21,6 +21,7 @@ How anybody decides whether you are who you say you are. Read alongside
 | [Tokens shatter, so somebody has to be taken alive](#tokens-shatter-so-somebody-has-to-be-taken-alive) | somebody is holding a house's token that is not theirs |
 | [Checking costs time](#checking-costs-time-and-time-is-what-nobody-has) | somebody doubts a claim and has to decide whether to go and find out |
 | [The art is the strongest check](#the-art-is-the-strongest-check) | deciding whether a house is still the house, or a person still of it |
+| [What a witness does with what they saw](#what-a-witness-does-with-what-they-saw) | somebody saw a deed, or saw somebody with a body or with goods that are not theirs |
 | [The woken ancestor](#the-woken-ancestor) | checking whether any of this is bespoke |
 | [What of this the engine actually holds](#what-of-this-the-engine-actually-holds) | before building any of it |
 
@@ -582,6 +583,50 @@ keeping its name and its door. Nothing else about it is checkable, which is also
 counter rather than a patron.
 
 ---
+
+## What a witness does with what they saw
+
+Being seen is not a mechanism of its own. A witness reads what they saw through the two
+things about the reader and the ground, and acts the way that person would. Praise and
+pursuit, suspicion and gratitude, all come out of that one reading. "Getting caught" is
+one case of it, not a system beside it.
+
+**What counts as seeing.** The deed itself, or what says it was done: standing over a
+body, holding goods whose provenance names somebody else, being inside walls without
+leave. Being seen *with* the evidence is a witnessed event in its own right.
+
+**Whether it needs explaining.** The witness first asks whether this is wrong *to them*,
+by who they are: their alignment, their house's ways, their ties to the doer and to the
+one it was done to. A demonic senior sister who finds a demonic junior over a body has
+nothing to ask. A righteous elder does.
+
+**The account.** If it needs explaining, the doer may account for it ("I found him like
+this", "he struck first", "it was somebody else"). The account is weighed against what this
+witness actually saw (the blow, or only the aftermath), the evidence on the body and in the
+doer's hands, and the trust and standing between them. It lands as belief, half-belief
+(suspicion, a rumour, wariness) or disbelief. Naming somebody else is a telling about them.
+
+**What travels.** What a witness believes moves through the ordinary knowledge paths, at
+the range and speed people carry news. A witness who wants a deed answered reports it to
+whoever keeps order on that ground, but only if they know who that is, so a stranger in a
+strange town may have nobody to tell. The house that hears of it, and the house of the
+people it was done to, answer by their own ways: notices, a price on the doer, or a demand
+to the doer's own house to hand them over, which that house weighs against what the doer is
+worth to it and what the quarrel would cost.
+
+**Either direction.** The same reading produces credit. In a war, one's own side seeing a
+disciple cut down the enemy is a deed reported *for* them: face, merit, praise. That holds
+for a righteous house as for any other. At the same time the enemy puts a price on that
+disciple's head, which is how war goes in this world, and the size of that price is itself
+a measure of the disciple: standing to their own side, danger to the cautious, a payday to
+somebody strong and greedy enough to want it, a reason for a friend to send warning. None of
+that is uniform. Each person reads the price against their own strength, appetites and ties.
+
+**The litmus test: a war is not a licence to kill.** Killing people from a house that is not
+party to the war is an ordinary killing to that house, and it answers it as one. If a
+bystander house stays quiet because "there is a war on", the reactions are coming from a war
+switch rather than from each witness reading the deed against their own ties, and that is
+the defect.
 
 ## The woken ancestor
 
