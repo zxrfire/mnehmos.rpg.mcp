@@ -20,12 +20,13 @@
  * Run against a seeded world and against one that has been advanced, because
  * seeding and advancement write these fields through completely different code
  * and only one of them was ever wrong at a time.
+ * The unchanged canonical 80-year walk is cached; every test gets its own copy.
  */
 
 import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../support/advance-world-years.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { markDead, setExistence } from '../../../src/engine/world/npc-state.js';
 import { isBelowTheLid } from '../../../src/engine/world/layers.js';
 import { isExpelledFromBelow } from '../../../src/engine/cultivation/realms.js';
@@ -52,10 +53,8 @@ function seeded(seed = 'invariant-a', population = 250): WorldState {
     return seedWorld({ seed, catalog: fixtureCatalog(), presentYear: 1000, population }).state;
 }
 
-function advanced(seed = 'invariant-a', years = 80): WorldState {
-    // `PressureOptions` takes `intensity` and `maxEvents` and has never taken
-    // an `eventsPerYear`. This asked for one and got the world's own rate.
-    return advanceWorldYears(seeded(seed), years).state;
+async function advanced(seed = 'invariant-a', years = 80): Promise<WorldState> {
+    return soakedWorld(seed, { years }, { catalog: fixtureCatalog(), presentYear: 1000, population: 250 });
 }
 
 describe('how much of a person is left', () => {
@@ -93,8 +92,8 @@ describe('how much of a person is left', () => {
 });
 
 describe('reading a tie against the roster', () => {
-    it('tells the living, the dead and the unaccounted apart', () => {
-        const state = advanced();
+    it('tells the living, the dead and the unaccounted apart', async () => {
+        const state = await advanced();
         const seen = new Set<string>();
         for (const npc of state.npcs) {
             for (const read of readTies(state, npc)) seen.add(read.standing);
@@ -106,8 +105,8 @@ describe('reading a tie against the roster', () => {
         expect(seen.has('unrecorded')).toBe(false);
     });
 
-    it('dates a death rather than saying the person is gone', () => {
-        const state = advanced();
+    it('dates a death rather than saying the person is gone', async () => {
+        const state = await advanced();
         const toDead = state.npcs
             .flatMap(n => readTies(state, n))
             .find(r => r.standing === 'dead' && r.year !== null);
@@ -115,9 +114,9 @@ describe('reading a tie against the roster', () => {
         expect(toDead!.description).toMatch(/dead since year -?\d+$/);
     });
 
-    it('does not drop a tie because the other end died', () => {
+    it('does not drop a tie because the other end died', async () => {
         // The tie is the world's memory. Resolving it must not prune it.
-        const state = advanced();
+        const state = await advanced();
         const npc = state.npcs.reduce((best, n) =>
             n.relationships.length > best.relationships.length ? n : best);
         expect(readTies(state, npc)).toHaveLength(npc.relationships.length);
@@ -142,8 +141,8 @@ describe('a world must never contain', () => {
         expect(soulAndSelfDisagree(after)).toBe(false);
     });
 
-    it('a soul and a self that disagree, anywhere in an advanced world', () => {
-        const state = advanced();
+    it('a soul and a self that disagree, anywhere in an advanced world', async () => {
+        const state = await advanced();
         const disagreeing = state.npcs.filter(soulAndSelfDisagree);
         expect(
             disagreeing.map(n => `${n.name} ${n.soulState}/${n.identityContinuity}`)
@@ -162,24 +161,24 @@ describe('a world must never contain', () => {
         }
     });
 
-    it('anybody standing on a layer that expels their ordinal', () => {
+    it('anybody standing on a layer that expels their ordinal', async () => {
         // Not the same claim as "layer agrees with ordinal". A layer is a PLACE:
         // Tribulation Transcendence is below the Lid and belongs there, so
         // `layer: mortal` on an ordinal 44 is correct and is not what this
         // checks. What is incoherent is standing somewhere that cannot hold you.
-        const state = advanced();
+        const state = await advanced();
         const wrong = state.npcs.filter(n => isBelowTheLid(n) && isExpelledFromBelow(n.cultivation.realmOrdinal));
         expect(wrong.map(n => `${n.name} ${n.layer} ${n.cultivation.realmOrdinal}`)).toEqual([]);
     });
 
-    it('a fact about somebody that cannot be reached from them', () => {
+    it('a fact about somebody that cannot be reached from them', async () => {
         // Granting a manual read must retain the backlink written with the grant.
         // ACTORS, not witnesses. `historyFactIds` is the trajectory - what
         // happened to this person - and `witnessIds` is who was standing there.
         // Linking both put every bystander's record on every fact they were
         // near and turned the most-documented life in the world into a police
         // blotter for a postcode. Presence is still stored, in full, on the fact.
-        const state = advanced();
+        const state = await advanced();
         const unreachable: string[] = [];
         for (const fact of state.history.facts) {
             for (const actor of fact.actors) {
@@ -192,10 +191,10 @@ describe('a world must never contain', () => {
         expect(unreachable.slice(0, 5)).toEqual([]);
     });
 
-    it('a killing known only from the victim\'s end note', () => {
+    it('a killing known only from the victim\'s end note', async () => {
         // The defect this was reported as: the killer had no record of having
         // done it, and the only trace was a string on the corpse.
-        const state = advanced();
+        const state = await advanced();
         const orphaned: string[] = [];
         for (const victim of state.npcs.filter(n => /^Killed by /.test(n.endNote))) {
             const fact = state.history.facts.find(f =>
@@ -211,13 +210,13 @@ describe('a world must never contain', () => {
         expect(orphaned).toEqual([]);
     });
 
-    it('a wound nobody can name', () => {
+    it('a wound nobody can name', async () => {
         // Two thirds of everything anybody was carrying used to be a row with
         // `woundType: null` and a description composed out of two enums. Every
         // one of those was a real minted injury from a real event - not a
         // fabrication from a count - which the engine knew everything about
         // except what to call it.
-        const state = advanced();
+        const state = await advanced();
         const untyped: string[] = [];
         for (const npc of state.npcs) {
             for (const injury of npc.cultivation.injuries) {
@@ -247,8 +246,8 @@ describe('a world must never contain', () => {
         }
     });
 
-    it('a tie pointing at somebody the world does not hold', () => {
-        const state = advanced();
+    it('a tie pointing at somebody the world does not hold', async () => {
+        const state = await advanced();
         const ids = new Set(state.npcs.map(n => n.id));
         const dangling: string[] = [];
         for (const npc of state.npcs) {

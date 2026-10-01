@@ -5,12 +5,12 @@
  * things that would make this change dangerous are tested first and hardest:
  * a fold must not drop a witness, and nothing anywhere may end up pointing at a
  * row that stopped existing.
+ * Canonical 300/500-year walks are cached with their original fixture settings.
  */
 
 import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
-import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../support/advance-world-years.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { makeFact, type PendingFact } from '../../../src/engine/world/history.js';
 import { createWorld } from '../../../src/engine/world/world-state.js';
 import { appendWorldFact } from '../../../src/engine/world/who-was-there-when-it-happened.js';
@@ -43,11 +43,8 @@ const renewal = (day: number, over: Partial<PendingFact> = {}): PendingFact => m
     ...over
 });
 
-function advanced(years = 300, seed = 'recur-world'): WorldState {
-    const seeded = seedWorld({ seed, catalog: fixtureCatalog(), presentYear: 1000, population: 250 });
-    // `PressureOptions` takes `intensity` and `maxEvents` and has never taken
-    // an `eventsPerYear`. This asked for one and got the world's own rate.
-    return advanceWorldYears(seeded.state, years).state;
+async function advanced(years = 300, seed = 'recur-world'): Promise<WorldState> {
+    return soakedWorld(seed, { years }, { catalog: fixtureCatalog(), presentYear: 1000, population: 250 });
 }
 
 describe('what counts as the same fact', () => {
@@ -129,8 +126,8 @@ describe('folding an occurrence', () => {
 });
 
 describe('the ledger stays walkable', () => {
-    it('leaves no back-link pointing at a row that is not there', () => {
-        const state = advanced();
+    it('leaves no back-link pointing at a row that is not there', async () => {
+        const state = await advanced();
         const ids = new Set(state.history.facts.map(f => f.id));
         const dangling: string[] = [];
         for (const npc of state.npcs) {
@@ -141,8 +138,8 @@ describe('the ledger stays walkable', () => {
         expect(dangling.slice(0, 5)).toEqual([]);
     });
 
-    it('never writes the same fact id onto one person twice', () => {
-        const state = advanced();
+    it('never writes the same fact id onto one person twice', async () => {
+        const state = await advanced();
         const doubled: string[] = [];
         for (const npc of state.npcs) {
             if (new Set(npc.historyFactIds).size !== npc.historyFactIds.length) {
@@ -208,10 +205,10 @@ describe('the ledger stays walkable', () => {
      * Two worlds, because one is a coin flip - `recur-world` never produced the
      * coincidence at any horizon, which is how this stayed hidden.
      */
-    it('still holds a row for every distinct thing that happened', () => {
+    it('still holds a row for every distinct thing that happened', async () => {
         // The saving must come from repetition and from nothing else. Distinct
         // statements are the count that must NOT fall.
-        for (const state of [advanced(), advanced(500, 'recur-world-e')]) {
+        for (const state of [await advanced(), await advanced(500, 'recur-world-e')]) {
             const foldable = state.history.facts.filter(f => !keptItsOwnRow(f));
             const seen = new Map<string, string>();
             const said: string[] = [];
@@ -235,8 +232,8 @@ describe('the ledger stays walkable', () => {
         expect(recurrenceKeyOf(second)).toBe(recurrenceKeyOf(renewal(500_000)));
     });
 
-    it('accounts for every occurrence it folded away', () => {
-        const state = advanced();
+    it('accounts for every occurrence it folded away', async () => {
+        const state = await advanced();
         const occurrences = state.history.facts.reduce((sum, f) => sum + occurrencesOf(f), 0);
         expect(occurrences).toBeGreaterThan(state.history.facts.length);
     });

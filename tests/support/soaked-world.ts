@@ -33,6 +33,8 @@ import { loadCultivationCatalog } from '../../src/engine/world/catalog.js';
 import { advanceWorldForPlay } from '../../src/engine/world/driver.js';
 import { seedWorld } from '../../src/engine/world/seeding.js';
 import type { WorldState } from '../../src/engine/world/world-state.js';
+import type { SeedWorldOptions } from '../../src/engine/world/seeding.js';
+import { serializedFixture } from './serialized-fixture.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 /** What `walkIt` calls; everything the walk can run is imported from these. */
@@ -43,14 +45,7 @@ const DAYS_PER_YEAR = 365;
 
 let sourceHash: string | null = null;
 
-/**
- * A hash over every file the simulation imports, followed from its entry
- * points. Once a process.
- *
- * The import graph and not the directories: two sessions share this tree, and
- * an edit to a file the world never loads was sending every kept world to be
- * walked again.
- */
+/** Preserve the existing live-catalog keys instead of rebuilding every kept walk. */
 function theSimulationsSource(): string {
     if (sourceHash !== null) return sourceHash;
     const IMPORTED = /(?:from\s+|import\s*\(\s*)['"](\.{1,2}\/[^'"]+)['"]/g;
@@ -129,8 +124,24 @@ const inThisProcess = new Map<string, string>();
  *
  * `days` wins over `years` where a test counted in days.
  */
-export async function soakedWorld(seed: string, walk: { years?: number; days?: number }): Promise<WorldState> {
+export async function soakedWorld(
+    seed: string,
+    walk: { years?: number; days?: number },
+    setup?: Pick<SeedWorldOptions, 'catalog' | 'population' | 'presentYear'>
+): Promise<WorldState> {
     const days = walk.days ?? Math.round((walk.years ?? 0) * DAYS_PER_YEAR);
+    // Canonical fixture catalogs keep their original population and starting age.
+    // No observer, callback or altered pressure pass belongs in this cache.
+    if (setup) {
+        const bytes = await serializedFixture('fixture-walks', [
+            ...WHERE_THE_SIMULATION_STARTS, 'tests/support/soaked-world.ts'
+        ], { seed, days, setup }, async () => {
+            const state = seedWorld({ seed, ...setup }).state;
+            advanceWorldForPlay(state, { days });
+            return Buffer.from(JSON.stringify(state));
+        });
+        return JSON.parse(bytes.toString('utf8')) as WorldState;
+    }
     const key = `${seed}@${days}`;
     const held = inThisProcess.get(key);
     if (held !== undefined) return JSON.parse(held) as WorldState;

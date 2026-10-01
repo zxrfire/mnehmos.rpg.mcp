@@ -1,0 +1,151 @@
+{
+    "date":  "2026-10-01",
+    "metric":  "sum of Vitest test-file execution times",
+    "files":  [
+                  {
+                      "file":  "tests/web/a-crossing-costs-the-body.test.ts",
+                      "tests":  13,
+                      "beforeMs":  26008,
+                      "firstPassMs":  25503,
+                      "reuseMs":  24947
+                  },
+                  {
+                      "file":  "tests/web/what-somebody-knows-of-the-land.test.ts",
+                      "tests":  10,
+                      "beforeMs":  26797,
+                      "firstPassMs":  26062,
+                      "reuseMs":  25169
+                  },
+                  {
+                      "file":  "tests/web/a-bigger-house-is-bigger-to-stand-in.test.ts",
+                      "tests":  6,
+                      "beforeMs":  9871,
+                      "firstPassMs":  10215,
+                      "reuseMs":  10562
+                  },
+                  {
+                      "file":  "tests/web/a-player-deed-enters-the-world.test.ts",
+                      "tests":  6,
+                      "beforeMs":  115141,
+                      "firstPassMs":  90553,
+                      "reuseMs":  14778
+                  },
+                  {
+                      "file":  "tests/web/asking-a-person-for-something.test.ts",
+                      "tests":  37,
+                      "beforeMs":  111432,
+                      "firstPassMs":  112946,
+                      "reuseMs":  113830
+                  },
+                  {
+                      "file":  "tests/web/telling-somebody-opens-the-account.test.ts",
+                      "tests":  13,
+                      "beforeMs":  24298,
+                      "firstPassMs":  25663,
+                      "reuseMs":  24085
+                  },
+                  {
+                      "file":  "tests/web/a-turn-says-what-it-spent-and-what-it-cost.test.ts",
+                      "tests":  12,
+                      "beforeMs":  22243,
+                      "firstPassMs":  21477,
+                      "reuseMs":  22564
+                  },
+                  {
+                      "file":  "tests/web/standing-guard.test.ts",
+                      "tests":  6,
+                      "beforeMs":  16453,
+                      "firstPassMs":  18090,
+                      "reuseMs":  15610
+                  },
+                  {
+                      "file":  "tests/web/a-night-outdoors-costs-the-body.test.ts",
+                      "tests":  12,
+                      "beforeMs":  23491,
+                      "firstPassMs":  23818,
+                      "reuseMs":  23298
+                  },
+                  {
+                      "file":  "tests/web/the-strip-names-what-is-standing-here.test.ts",
+                      "tests":  10,
+                      "beforeMs":  64012,
+                      "firstPassMs":  63154,
+                      "reuseMs":  63978
+                  },
+                  {
+                      "file":  "tests/web/a-room-at-the-inn-is-yours-alone.test.ts",
+                      "tests":  14,
+                      "beforeMs":  17231,
+                      "firstPassMs":  16297,
+                      "reuseMs":  16693
+                  },
+                  {
+                      "file":  "tests/web/a-fight-you-can-answer.test.ts",
+                      "tests":  8,
+                      "beforeMs":  30617,
+                      "firstPassMs":  33524,
+                      "reuseMs":  30128
+                  },
+                  {
+                      "file":  "tests/web/being-told-opens-the-account.test.ts",
+                      "tests":  7,
+                      "beforeMs":  15860,
+                      "firstPassMs":  15277,
+                      "reuseMs":  14594
+                  },
+                  {
+                      "file":  "tests/web/more-and-why-are-about-the-answer-before-them.test.ts",
+                      "tests":  10,
+                      "beforeMs":  10497,
+                      "firstPassMs":  9777,
+                      "reuseMs":  9839
+                  },
+                  {
+                      "file":  "tests/web/a-seat-on-a-ship-or-a-carriage.test.ts",
+                      "tests":  9,
+                      "beforeMs":  17066,
+                      "firstPassMs":  16629,
+                      "reuseMs":  16078
+                  },
+                  {
+                      "file":  "tests/web/looking-at-somebody-who-is-not-here.test.ts",
+                      "tests":  7,
+                      "beforeMs":  17534,
+                      "firstPassMs":  17453,
+                      "reuseMs":  18170
+                  },
+                  {
+                      "file":  "tests/web/a-body-you-were-born-as-is-something-you-can-read.test.ts",
+                      "tests":  6,
+                      "beforeMs":  8315,
+                      "firstPassMs":  8057,
+                      "reuseMs":  8103
+                  },
+                  {
+                      "file":  "tests/web/the-two-clocks-are-one-clock.test.ts",
+                      "tests":  6,
+                      "beforeMs":  9736,
+                      "firstPassMs":  11141,
+                      "reuseMs":  9146
+                  },
+                  {
+                      "file":  "tests/web/what-a-seclusion-will-cost-to-eat.test.ts",
+                      "tests":  10,
+                      "beforeMs":  7848,
+                      "firstPassMs":  8781,
+                      "reuseMs":  7892
+                  },
+                  {
+                      "file":  "tests/web/a-life-knows-people-and-where-to-find-them.test.ts",
+                      "tests":  6,
+                      "beforeMs":  7565,
+                      "firstPassMs":  8321,
+                      "reuseMs":  6848
+                  }
+              ],
+    "totals":  {
+                   "beforeMs":  582015,
+                   "firstPassMs":  562738,
+                   "reuseMs":  476312
+               }
+}

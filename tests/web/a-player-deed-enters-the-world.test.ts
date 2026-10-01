@@ -34,23 +34,14 @@
  * measuring a configuration nobody plays.
  */
 
-import { aRecruiterOfTheHouseIsHere, makeGameInWorld, cultivatorRow } from './harness';
+import { aRecruiterOfTheHouseIsHere, makeGameInWorld } from './harness';
+import { aTeller, playedDeed, type LedgerRow } from '../support/played-deed.js';
 import { SITES } from '../../src/data/cultivation/inheritance-trials';
 import { circulating, whatTheySay } from '../../src/engine/world/what-people-are-saying';
 import { buildPlayerDigest, simpleAccess } from '../../src/engine/world/digest';
 import type { WorldState } from '../../src/engine/world/world-state';
 import type { HistoricalFact } from '../../src/engine/world/history';
 
-interface LedgerRow {
-    kind: string;
-    cause: string;
-    severity: string;
-    holder_id: string;
-    subject_id: string;
-    triggering_event_id: string | null;
-    /** JSON array, as it sits in the column. Read with `JSON.parse` below. */
-    tags: string;
-}
 
 function ledger(db: Awaited<ReturnType<typeof makeGameInWorld>>['db']): LedgerRow[] {
     return db.prepare(
@@ -64,19 +55,6 @@ function factsNaming(world: WorldState, id: string): HistoricalFact[] {
     return world.history.facts.filter(f => f.actors.some(a => a.id === id));
 }
 
-/** Somebody alive who is not the player, preferring one standing where it happened. */
-function aTeller(world: WorldState, playerId: string, fact: HistoricalFact) {
-    const them = world.npcs.find(n =>
-        n.id !== playerId && n.status === 'alive' && n.locationId === fact.locationId)
-        ?? world.npcs.find(n => n.id !== playerId && n.status === 'alive')!;
-    return {
-        id: them.id,
-        name: them.name,
-        realmOrdinal: them.cultivation.realmOrdinal,
-        regionId: null,
-        factionId: them.factionId ?? null
-    };
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // A GIFT
@@ -245,48 +223,18 @@ describe('emptying ground a house claims is a thing the world contains', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The sweep is the same instrument `a-bout-two-people-agreed-to.test.ts` uses
+ * The cold-cache sweep is the same instrument `a-bout-two-people-agreed-to.test.ts` uses
  * and for the same reason: what is asserted is that the event, once it happens,
  * is in the world - and reaching the event at all takes a bout that goes past
  * what was agreed, which is a RATE rather than a certainty. The setup keeps the
  * player standing and gives them the one edge the engine already prices;
  * nothing about the opponent, the rolls or the wounds is touched.
+ * Completed scenarios are cached against the played sources; assertions and
+ * hearsay readers still run on independent copies.
  */
 describe('a bout that went past what was agreed', () => {
     it('is in the world, on both their records, in front of witnesses', async () => {
-        let found: {
-            fact: HistoricalFact;
-            world: WorldState;
-            playerId: string;
-            rows: LedgerRow[];
-        } | null = null;
-
-        for (let n = 0; n < 30 && !found; n++) {
-            const { db, game, repos } = await makeGameInWorld({
-                seed: `deed-bout-${n}`, worldSeed: `deed-bout-${n}`, worldEnabled: true
-            });
-            const { cultivator } = await game.newRun('Duellist');
-            repos.sects.addMember('sect-azure-cloud-pavilion', cultivator.id, 1);
-            await game.act('I look around');
-
-            for (let bouts = 0; bouts < 20 && !found; bouts++) {
-                if (!cultivatorRow(db, cultivator.id).alive) break;
-                // HEALED, NOT INFLATED. A fight is held open across turns now,
-                // and damage is a fraction of the MAXIMUM - so a 5000 pool takes
-                // 1000-point blows and the fixture that used to keep somebody
-                // alive through one call kills them in five rounds instead.
-                db.prepare(
-                    'UPDATE cultivators SET hp = max_hp, battles_survived = 400 WHERE id = ?'
-                ).run(cultivator.id);
-                db.prepare('DELETE FROM cultivator_injuries WHERE cultivator_id = ?')
-                    .run(cultivator.id);
-                await game.act('I spar with someone of my own rank');
-
-                const world = (await game.loadWorld())!;
-                const fact = factsNaming(world, cultivator.id).find(f => f.kind === 'betrayal');
-                if (fact) found = { fact, world, playerId: cultivator.id, rows: ledger(db) };
-            }
-        }
+        const { candidate: found } = await playedDeed(false);
 
         expect(found, 'no agreed bout across thirty seeds went past its terms').not.toBeNull();
         const { fact, world, playerId, rows } = found!;
@@ -342,44 +290,17 @@ describe('a bout that went past what was agreed', () => {
      */
     it('can be repeated by somebody who was not there', async () => {
         let said: { text: string; teller: string } | null = null;
-        let everInThePool = false;
-
-        for (let n = 0; n < 30 && !said; n++) {
-            const { db, game, repos } = await makeGameInWorld({
-                seed: `deed-heard-${n}`, worldSeed: `deed-heard-${n}`, worldEnabled: true
-            });
-            const { cultivator } = await game.newRun('Duellist');
-            repos.sects.addMember('sect-azure-cloud-pavilion', cultivator.id, 1);
-            await game.act('I look around');
-
-            for (let bouts = 0; bouts < 20 && !said; bouts++) {
-                if (!cultivatorRow(db, cultivator.id).alive) break;
-                // HEALED, NOT INFLATED. A fight is held open across turns now,
-                // and damage is a fraction of the MAXIMUM - so a 5000 pool takes
-                // 1000-point blows and the fixture that used to keep somebody
-                // alive through one call kills them in five rounds instead.
-                db.prepare(
-                    'UPDATE cultivators SET hp = max_hp, battles_survived = 400 WHERE id = ?'
-                ).run(cultivator.id);
-                db.prepare('DELETE FROM cultivator_injuries WHERE cultivator_id = ?')
-                    .run(cultivator.id);
-                await game.act('I spar with someone of my own rank');
-
-                const world = (await game.loadWorld())!;
-                const fact = factsNaming(world, cultivator.id).find(f => f.kind === 'betrayal');
-                if (!fact) continue;
-
-                const teller = aTeller(world, cultivator.id, fact);
-                // In the pool at all is the weaker claim and the one that holds
-                // for every band: the world can repeat it.
-                if (circulating(world, teller, world.currentDay, 5000)
-                    .some(f => f.id === fact.id)) {
-                    everInThePool = true;
-                }
-                const repeated = whatTheySay(world, teller, world.currentDay, 40)
-                    .find(r => r.factId === fact.id);
-                if (repeated) said = { text: repeated.text, teller: teller.name };
+        const scenario = await playedDeed(true);
+        let everInThePool = scenario.candidate ? false : scenario.everInThePool;
+        if (scenario.candidate) {
+            const { world, fact, playerId } = scenario.candidate;
+            const teller = aTeller(world, playerId, fact);
+            if (circulating(world, teller, world.currentDay, 5000).some(f => f.id === fact.id)) {
+                everInThePool = true;
             }
+            const repeated = whatTheySay(world, teller, world.currentDay, 40)
+                .find(r => r.factId === fact.id);
+            if (repeated) said = { text: repeated.text, teller: teller.name };
         }
 
         expect(everInThePool, 'a played deed never even entered what could be repeated')

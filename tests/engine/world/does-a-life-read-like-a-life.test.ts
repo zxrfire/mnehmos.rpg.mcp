@@ -11,12 +11,13 @@
  * "rather than four murders and an inheritance." So what is asserted here is
  * that a life read out of `historyFactIds` alone is ABOUT THAT PERSON, contains
  * the events that make a climb legible, and does not contain the weather.
+ * The canonical 400-year walk is cached, with an independent copy per test.
  */
 
 import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { advanceWorldYears } from '../../support/advance-world-years.js';
+import { soakedWorld } from '../../support/soaked-world.js';
 import { trajectoryOf } from '../../../src/engine/world/who-was-there-when-it-happened.js';
 import { worthRecordingRank } from '../../../src/engine/world/recording-where-somebody-stands-in-a-house.js';
 import { describeCrossing } from '../../../src/engine/world/recording-what-a-crossing-did.js';
@@ -29,22 +30,16 @@ function seeded(): WorldState {
     return seedWorld({ seed: 'a-life', catalog: fixtureCatalog(), presentYear: 1000, population: 300 }).state;
 }
 
-let cached: WorldState | null = null;
-function advanced(): WorldState {
-    if (cached) return cached;
-    const seeded = seedWorld({ seed: 'a-life', catalog: fixtureCatalog(), presentYear: 1000, population: 300 });
-    // `PressureOptions` takes `intensity` and `maxEvents` and has never taken
-    // an `eventsPerYear`. This asked for one and got the world's own rate.
-    cached = advanceWorldYears(seeded.state, 400).state;
-    return cached;
+async function advanced(): Promise<WorldState> {
+    return soakedWorld('a-life', { years: 400 }, { catalog: fixtureCatalog(), presentYear: 1000, population: 300 });
 }
 
 describe('a life is about the person whose life it is', () => {
-    it('does not put every bystander on every fact they stood near', () => {
+    it('does not put every bystander on every fact they stood near', async () => {
         // Linking witnesses into `historyFactIds` gave the most-documented
         // person 131 rows of which a dozen were about them. Presence is a fact
         // about the world; the trajectory is a fact about the person.
-        const state = advanced();
+        const state = await advanced();
         let checked = 0;
         for (const npc of state.npcs) {
             for (const fact of trajectoryOf(state, npc)) {
@@ -59,17 +54,17 @@ describe('a life is about the person whose life it is', () => {
         expect(checked).toBeGreaterThan(0);
     });
 
-    it('still records who was standing there, separately', () => {
+    it('still records who was standing there, separately', async () => {
         // The witness list must survive not being linked - `visibilityOf` reads
         // it, and dropping it would have traded one defect for another.
-        const state = advanced();
+        const state = await advanced();
         expect(state.history.facts.some(f => f.witnessIds.length > 0)).toBe(true);
     });
 });
 
 describe('the events a climb is made of', () => {
-    it('writes a crossing, succeeded or failed, and a wound with a day', () => {
-        const state = advanced();
+    it('writes a crossing, succeeded or failed, and a wound with a day', async () => {
+        const state = await advanced();
         const kinds = new Set(state.history.facts.map(f => f.kind));
         // These three were entirely absent from the ledger before: the world
         // rolled real crossings and recorded none of them.
@@ -78,10 +73,10 @@ describe('the events a climb is made of', () => {
         expect(kinds.has('gathering')).toBe(true);
     });
 
-    it('names a person in every promotion row, not a vein', () => {
+    it('names a person in every promotion row, not a vein', async () => {
         // `promotion` was the third-heaviest kind and not one row was about
         // anybody - every one of them was a grant renewal on a vein.
-        const state = advanced();
+        const state = await advanced();
         const promotions = state.history.facts.filter(f => f.kind === 'promotion');
         expect(promotions.length).toBeGreaterThan(0);
         const nameless = promotions.filter(f => f.actors.length === 0);
@@ -101,8 +96,8 @@ describe('the events a climb is made of', () => {
         expect(worthRecordingRank(2, 3)).toBe(true);
     });
 
-    it('says what a failed crossing actually did', () => {
-        const npc = advanced().npcs[0];
+    it('says what a failed crossing actually did', async () => {
+        const npc = (await advanced()).npcs[0];
         const failed = {
             outcome: 'failure_injured', fromOrdinal: 22, toOrdinal: 22,
             finalChance: 0.3, modifiers: [], roll: 0.9,
@@ -125,8 +120,8 @@ describe('the events a climb is made of', () => {
         expect(said).toContain(' at 71 ');
     });
 
-    it('does not say "the the" in the middle of a biography', () => {
-        const state = advanced();
+    it('does not say "the the" in the middle of a biography', async () => {
+        const state = await advanced();
         const doubled = state.history.facts.filter(f => /\bthe [Tt]he\b/.test(f.summary));
         expect(doubled.map(f => f.summary).slice(0, 3)).toEqual([]);
     });
@@ -152,8 +147,8 @@ describe('the generators keep generating', () => {
         expect(circlesOf(state).length).toBeGreaterThan(1);
     });
 
-    it('will not put two houses at war in the same room', () => {
-        const state = advanced();
+    it('will not put two houses at war in the same room', async () => {
+        const state = await advanced();
         for (const faction of state.factions.filter(f => f.dissolvedOnDay === null).slice(0, 12)) {
             for (const other of neighboursOf(state, faction)) {
                 const forward = faction.standing[other.id] ?? 0;
@@ -163,12 +158,12 @@ describe('the generators keep generating', () => {
         }
     });
 
-    it('keeps somewhere left to break into', () => {
+    it('keeps somewhere left to break into', async () => {
         // Sealed ruins are a fixed endowment too: the prior ages seed them and
         // the template empties one per firing, so it fired thirteen times in two
         // thousand years and then had nothing left. A fallen house leaves a
         // compound, and that is a ruin by every reading but the old filter's.
-        const state = advanced();
+        const state = await advanced();
         const openable = state.locations.filter(l =>
             !l.tags.includes('emptied') && ((l.kind === 'ruin' && l.sealed) || l.tags.includes('ruined')));
         expect(openable.length).toBeGreaterThan(0);

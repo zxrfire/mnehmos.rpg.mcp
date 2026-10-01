@@ -17,9 +17,12 @@ import { A_RECORD_IS_KEPT } from '../../src/web/what-the-narrator-remembers';
 import { createApp, type ProviderStatus } from '../../src/web/server';
 import { announceMode } from '../../src/web/which-mode-this-session-is-playing-in';
 import { ensureCultivationDb, type CultivationRepos } from '../../src/server/consolidated/cultivation-support';
-import { createWorld, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
+import { activeWorld, createWorld, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
+import { WorldStateRepository } from '../../src/storage/repos/world-state.repo.js';
+import type { WorldState } from '../../src/engine/world/world-state.js';
 import { SENDING_REASONS } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { serializedFixture } from '../support/serialized-fixture.js';
 
 /**
  * The four files the schema is built from. The template is keyed on all of
@@ -267,9 +270,8 @@ export function makeGame(options: HarnessOptions = {}): Harness {
  * A game whose WORLD is pinned as well as its run.
  *
  * `makeGame` is synchronous and 200-odd call sites depend on that, and
- * creating a world is not - it loads the catalog and seeds several hundred
- * people - so the pinned form is its own async function rather than a flag
- * that sometimes returns a promise.
+ * a cold snapshot loads the catalog and seeds the world asynchronously.
+ * Repeated seeds copy the completed world into their own schema database.
  *
  * What it does is the whole of the fix: create the world from `worldSeed`
  * BEFORE the run opens. `activeWorld()` only mints a world when the
@@ -284,7 +286,19 @@ export async function makeGameInWorld(options: HarnessOptions = {}): Promise<Har
     const { worldSeed, ...rest } = options;
     if (worldSeed === undefined) throw new Error('makeGameInWorld needs a worldSeed.');
 
+    const snapshot = await serializedFixture('fresh-worlds', ['tests/web/harness.ts'],
+        { worldSeed }, async () => {
+            const built = makeGame({ worldEnabled: true });
+            try {
+                await createWorld({ seed: worldSeed });
+                return Buffer.from(JSON.stringify((await activeWorld()).state));
+            } finally {
+                resetCultivationWorlds();
+                built.db.close();
+            }
+        });
     const harness = makeGame({ ...rest, worldEnabled: rest.worldEnabled ?? true });
+    new WorldStateRepository(harness.db).saveWorld(JSON.parse(snapshot.toString('utf8')) as WorldState);
 
     // The world layer's process caches are keyed by world id, and a world id
     // is `world-${seed}` - so two harnesses pinning the same seed produce the
@@ -292,10 +306,8 @@ export async function makeGameInWorld(options: HarnessOptions = {}): Promise<Har
     // otherwise be the one found. The worlds are in SQLite; dropping the
     // caches costs a reload and nothing else.
     resetCultivationWorlds();
-    // `makeGame` has already pointed the ambient handle at this harness's
-    // database - the `GameService` constructor does it - so this world is
-    // created in the right place.
-    await createWorld({ seed: worldSeed });
+    // The constructor installed this harness's own database. Its seeded world
+    // is already stored there; the next touch reloads it through the real reader.
 
     return harness;
 }
