@@ -961,13 +961,17 @@ export const travelVerbs = {
         // once already, so an unpriced journey still costs the flat day.
         const onTheRoad = this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
         if (onTheRoad < 1 && worldRow) {
-            this.repos.cultivators.update(cultivator.id, { location: arrivedAt });
-            const walked = { ...cultivator, location: arrivedAt };
+            const walked = this.repos.cultivators.update(cultivator.id, { location: arrivedAt })!;
             this.noteEncounter(walked, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
                 'witnessed', 'Reached by a local walk.');
             noteWhoseGroundThisIs(this, walked, run, arrivedAt);
-            return this.freeAction(run, 'move', factsForToolResult(`You are at ${arrivedAt}.`,
-                [`The local path from ${cultivator.location} reaches ${arrivedAt}.`]));
+            const introduced = whatArrivingIntroduces(this, walked);
+            const facts = factsForToolResult(`You are at ${arrivedAt}.`,
+                [`The local path from ${cultivator.location} reaches ${arrivedAt}.`, ...introduced.lines]);
+            facts.structure.push(...introduced.structure);
+            const walkedIn = this.freeAction(run, 'move', facts);
+            walkedIn.perceived = introduced.perceived;
+            return walkedIn;
         }
 
         // ── A STOPPED ROAD GOES ON FROM WHERE IT STOPPED ─────────────────

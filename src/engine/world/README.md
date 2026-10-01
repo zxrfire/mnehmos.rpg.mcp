@@ -1416,6 +1416,11 @@ War casualties read each participant's fate through `OUTCOME_FOR_FATE` in the
 combat resolver. Both finishing and body destruction consult the ending seam;
 the war record names only the deaths actually applied to the roster.
 
+Elemental exhaustion passes body destruction through `theWorldEnds`, preserving
+the existence resolver's soul outcomes. `something-acting-in-your-place.ts` shares
+possession and fight application with player actions; its autonomous callers
+consult `theWorldMayEnd` before taking a vessel or applying a fatal fight.
+
 Two rows it refuses, and they are one rule from two directions. **The player**, whose death
 belongs to the survival layer and to the sheet holding their years. **Somebody a catalog
 STATES is standing** - `theCatalogStatesTheyAreStanding`, declared as a field on the catalog

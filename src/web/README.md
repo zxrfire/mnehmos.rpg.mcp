@@ -2,6 +2,10 @@
 
 # The Web Front Door
 
+Local walks use the shared arrival reader in `travel-verbs.ts`. A path from a
+gate town to the grounds places the watch and applies the same admission read
+as a longer journey, without spending a day.
+
 Willing furnace requests use `a-willing-furnace-rite.ts`: both adult arts and
 NPC consent are required, in either direction. Forced marriage after submission
 writes the household through the same world binding as an accepted match.

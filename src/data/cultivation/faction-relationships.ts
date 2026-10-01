@@ -114,6 +114,27 @@ export type FactionRelationship = z.infer<typeof FactionRelationshipSchema>;
 // THE AUTHORED PAIRS
 
 export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
+    {
+        id: 'rel-the-spring-and-its-granaries',
+        aId: 'sect-lunargent',
+        bId: 'sect-amaranth',
+        aStandsTo: 'alongside',
+        kind: 'service_and_dependent',
+        what: 'The spring keepers and the granary elders share the water approach and keep separate gates and rolls. The granary elders have requested a hearing to place a grain factor in the keepers\' account room.',
+        since: 'The current grain proposal: a season of supplies offered before repayment, with the accounts submitted for examination.',
+        a: {
+            warmth: 'wary',
+            howTheyPutIt: 'The spring elders have received the request for a grain factor. Their account room remains their own, and the offered accounts have not been accepted.',
+            andSoTheyDo: 'Keep their own gate and roll while the granary elders seek a hearing on the proposed supplies.',
+            grievance: null
+        },
+        b: {
+            warmth: 'civil',
+            howTheyPutIt: 'The granary elders offer a season of grain before repayment and ask that their factor be admitted to the spring keepers\' account room.',
+            andSoTheyDo: 'Have asked for a hearing, named their grain factor and presented the supply terms they want examined.',
+            grievance: null
+        }
+    },
     // THE TWO BODIES NOBODY JOINS
     {
         id: 'rel-the-deeproot-and-the-kiln',

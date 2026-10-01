@@ -36,11 +36,17 @@
  * both bodies, the rounds left, what breaking off comes to. That is the
  * question, answered, in the engine's own figures. Free, as every read of a
  * live fight is: see `aFightChargesNothingFor`.
+ *
+ * The encounter is arranged in an area with room for its opponent. Seeding
+ * changed the opening crowd; three lower-rung residents otherwise fill the
+ * scene before the spawned opponent can be addressed.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions.js';
 import { makeGameInWorld } from './harness.js';
+import { worldLocationFor } from '../../src/web/entities.js';
+import { npcsInTheArea, theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 const WORLD = 'fight-world';
 
@@ -59,14 +65,19 @@ interface Playing {
 const THEM = 'Yun Shizhen';
 
 async function swingingAtSomebody(seed: string): Promise<Playing> {
-    const made = await makeGameInWorld({ seed, worldSeed: WORLD }) as unknown as { game: Playing };
-    const { game } = made;
-    await game.newRun('Lin Yue');
+    const { game, repos } = await makeGameInWorld({ seed, worldSeed: WORLD });
+    const { cultivator } = await game.newRun('Lin Yue');
+    const world = (await game.loadWorld())!;
+    const place = worldLocationFor(world, cultivator.location)!;
+    // Arrange room for the opponent among the town's existing areas.
+    const area = theAreasOf(world, place).areas.find(a => npcsInTheArea(world, a.id).length < 3);
+    expect(area, 'no area with space in which to arrange the encounter').toBeDefined();
+    repos.cultivators.standIn(cultivator.id, area!.id);
     await game.act('ADMIN set_realm ordinal=14');
     await game.act(`ADMIN spawn_encounter ordinal=12 name=${THEM}`);
     const opened = await game.act(`i attack ${THEM}`);
     expect(opened.narration ?? '', 'the fight opened').toMatch(/You are on \d+ of \d+/);
-    return game;
+    return game as unknown as Playing;
 }
 
 describe('asking how a fight is going', () => {

@@ -3,7 +3,7 @@ import { elementalTolerance } from './elemental-tolerance.js';
 import { expireElementalWorks, expressedElement, makeElementalWork, neighbourhoodRate } from './elemental-neighbourhood.js';
 import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 import { evaluateAccess } from './locations.js';
-import { bodyTaken, maxBodyOf, markDead, PLAYER_ROW_TAG, type NpcRecord } from './npc-state.js';
+import { bodyTaken, maxBodyOf, theWorldEnds, PLAYER_ROW_TAG, type NpcRecord } from './npc-state.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import type { WorldState } from './world-state.js';
 
@@ -54,10 +54,12 @@ export function advanceSummitBodies(state: WorldState, fromDay: number, toDay: n
                     }
                     if (npc.cultivation.hp <= 0) {
                         const endedOn = npc.cultivation.bodyOnDay;
-                        npc = markDead(npc, endedOn, 'The elemental ground exhausted the imperfect tribulation body.', true);
-                        npc.tags = npc.tags.filter(t => !t.startsWith(prefix));
-                        state.npcs[at] = npc;
-                        if (npc.status === 'physically_dead') deaths.push(settleNpcDeath(state, npc, endedOn));
+                        const ended = theWorldEnds(npc, endedOn, 'The elemental ground exhausted the imperfect tribulation body.', true);
+                        if (ended) {
+                            npc = { ...ended, tags: ended.tags.filter(t => !t.startsWith(prefix)) };
+                            state.npcs[at] = npc;
+                            if (npc.status === 'physically_dead') deaths.push(settleNpcDeath(state, npc, endedOn));
+                        }
                     }
                 }
             }

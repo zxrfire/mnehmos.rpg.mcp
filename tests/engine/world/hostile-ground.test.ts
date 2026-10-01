@@ -9,6 +9,8 @@
  *
  * These are the design guards for the three ways that must now fail, and for
  * the ground scale that prices them.
+ * A seeded seat's open approach now passes through its gate town; the road
+ * assertion follows both links instead of requiring a direct province link.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -129,10 +131,14 @@ describe('a sect is a place', () => {
         for (const ground of state.locations.filter(l => l.kind === 'sect_seat')) {
             expect(ground.discovered).toBe(false);
             expect(ground.parentId).not.toBeNull();
-            // Linked both ways, by an ordinary road, so ordinary travel reaches it.
+            // The road now passes through the town outside the gate.
             const region = state.locations.find(l => l.id === ground.parentId)!;
-            expect(ground.links.some(l => l.toLocationId === region.id)).toBe(true);
-            expect(region.links.some(l => l.toLocationId === ground.id)).toBe(true);
+            const town = state.locations.find(l => l.tags.includes('gate_town') && l.data.gateId === ground.id)!;
+            expect(town, ground.name).toBeDefined();
+            expect(ground.links.some(l => l.toLocationId === town.id && l.open)).toBe(true);
+            expect(town.links.some(l => l.toLocationId === ground.id && l.open)).toBe(true);
+            expect(town.links.some(l => l.toLocationId === region.id && l.open)).toBe(true);
+            expect(region.links.some(l => l.toLocationId === town.id && l.open)).toBe(true);
         }
     });
 

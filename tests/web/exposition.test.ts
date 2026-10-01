@@ -27,11 +27,13 @@ import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-s
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { makeGame, engineCalls, ScriptedProvider } from './harness';
 
-const LOCAL_SECT = SECTS
-    .filter(sect => sect.recruits)
-    .reduce((best, sect) =>
-        sect.admissionOrdinal < best.admissionOrdinal ||
-        (sect.admissionOrdinal === best.admissionOrdinal && sect.id < best.id) ? sect : best);
+// A new life knows its county's houses, not the first id in the catalog.
+function localSect(gate: KnowledgeGate, holderId: string) {
+    const known = gate.awareness(holderId, 'sect');
+    const sect = SECTS.find(row => known.some(name => name.id === row.id));
+    expect(sect, 'the opening named no house').toBeDefined();
+    return sect!;
+}
 
 /**
  * Vocabulary that only ever appears when a rule is being taught.
@@ -97,6 +99,8 @@ describe('resolved entities describe behaviour, not schema', () => {
         const repos = ensureCultivationDb();
         const scope = { gate: new KnowledgeGate(db), holderId: cultivator.id, here: 'Burnt Earth' };
 
+        const LOCAL_SECT = localSect(scope.gate, cultivator.id);
+
         const sect = resolveSect(repos, LOCAL_SECT.name, scope, null)!;
         expect(sect).not.toBeNull();
 
@@ -130,6 +134,8 @@ describe('resolved entities describe behaviour, not schema', () => {
         const { cultivator } = await game.newRun('Disciple');
         const repos = ensureCultivationDb();
         const scope = { gate: new KnowledgeGate(db), holderId: cultivator.id, here: 'Burnt Earth' };
+
+        const LOCAL_SECT = localSect(scope.gate, cultivator.id);
 
         const outsider = resolveSect(repos, LOCAL_SECT.name, scope, null)!;
         const insider = resolveSect(repos, LOCAL_SECT.name, scope, LOCAL_SECT.id)!;
@@ -239,8 +245,9 @@ describe('nothing structural reaches the model', () => {
     });
 
     it('still hands the operator the structure it withheld from the model', async () => {
-        const { game } = makeGame();
-        await game.newRun('Villager');
+        const { db, game } = makeGame();
+        const { cultivator } = await game.newRun('Villager');
+        const LOCAL_SECT = localSect(new KnowledgeGate(db), cultivator.id);
 
         const result = await game.act(`I examine ${LOCAL_SECT.name}.`);
         const structural = engineCalls(result).filter(c => c.name === 'engine.structure');

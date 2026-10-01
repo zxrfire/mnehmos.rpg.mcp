@@ -27,11 +27,14 @@
  *
  * AGENTS.md's most-repeated defect is a value computed and never printed, and
  * the second-most is a module nothing calls. This asserts against both.
+ * The conversation is arranged with a member in the current area; membership
+ * somewhere else in the compound does not put somebody in speaking distance.
  */
 
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { makeGameInWorld } from './harness';
 import { npcsStandingIn } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 /**
  * Everybody the world has standing at a place, down to the room, the way the
@@ -65,7 +68,7 @@ function aPlaceWithAHousedPerson(world: {
 describe('asking a house what a match would take', () => {
     it('names the person in it the answer turned on, and what moved them', async () => {
         resetCultivationWorlds();
-        const { game } = await makeGameInWorld({
+        const { game, repos } = await makeGameInWorld({
             seed: 'the-room', worldSeed: 'world-the-room'
         });
         await game.newRun('Ke Yan');
@@ -84,7 +87,10 @@ describe('asking a house what a match would take', () => {
         const arrived = (await game.loadWorld())!;
         const standing = npcsAt(arrived, spot!.location.id).filter(n => n.factionId);
         expect(standing.length, 'nobody of a house is standing there when the player arrives').toBeGreaterThan(0);
-        const somebody = standing[0]!;
+        await standWhereThePeopleAre({ game, repos }, game.currentRun().cultivator.id,
+            new Set(standing.map(n => n.id)));
+        const somebody = game.present(game.currentRun().cultivator).find(n => n.sectId)!;
+        expect(somebody, 'no housed person in the current area').toBeDefined();
 
         const result = await game.act(`I propose a match to ${somebody.name}`);
         const said = JSON.stringify(result);

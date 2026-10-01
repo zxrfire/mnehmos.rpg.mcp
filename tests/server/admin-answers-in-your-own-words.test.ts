@@ -15,6 +15,8 @@
  * prose - it is that the sentence reaches an EXISTING action with the arguments
  * it names, and that nothing here can reach an outcome. `docs/admin.md` holds
  * the mapping these assert.
+ * Above-ceiling possessions now reach the Lid on the next played turn; their
+ * receipt must describe that live consequence rather than the former unwired gap.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -183,15 +185,13 @@ describe('ADMIN answers in the words it was addressed in', () => {
             expect(listPouch(ensureCultivationDb().db, created.cultivator.id)).toHaveLength(0);
         });
 
-        it('reports that the world says an object above the ceiling cannot stay - and that nothing enforces it', async () => {
+        it('reports the next played turn carrying an above-ceiling object and its holder through the Lid', async () => {
             await newRun();
             const result = await admin({ action: 'grant_item', ordinal: 46, kind: 'artifact' });
             expect(result.item.ordinal).toBeGreaterThan(OBJECT_CEILING_BELOW_THE_LID);
-            // ADMIN must never simulate a law to make a demonstration work. It
-            // arranges the situation and says plainly that the departure rule
-            // has no caller for a player-held object.
+            // ADMIN arranges the holding; the next played turn enforces departure.
             expect(result.aboveTheCeiling).not.toBeNull();
-            expect(result.aboveTheCeiling.whatActuallyHappens).toContain('evaluateLayerCrossing');
+            expect(result.aboveTheCeiling.whatActuallyHappens).toMatch(/next played turn.*object.*holder.*Lid/i);
         });
     });
 

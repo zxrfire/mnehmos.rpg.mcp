@@ -95,6 +95,40 @@ const WHAT_THE_SCHEDULE_TURNS_OUT: ProductionTier = {
 };
 
 export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
+    'sect-lunargent': {
+        practice: 'Water servants direct visitors to the gate facing the spring. When an elder names a donor, a servant points to the painted name on the rock.',
+        knownFor: {
+            outside: 'Keepers of the fixed spring and claimants to an old western-road grant.',
+            actuallyGoodAt: 'Keeping the water approach and the inherited meditation cells in use.',
+            theGap: 'The grant and its succession have not been examined; the warded archive remains shut.'
+        },
+        grievance: 'The claimed western-road grant has no surviving issuing office.',
+        fear: 'Examination of the archive without a reader of its western script.',
+        lateness: 'Older donor names have been scraped beneath later paint.',
+        disagreement: 'The granary elders have asked to place a factor in the account room.',
+        wrongAbout: 'The painted donors do not establish an unbroken succession.',
+        unitOfValue: 'A recovered grant and the succession records that support it.',
+        production: { reliableOrdinal: 0, currentCount: 0, peakOrdinal: 0, peakCount: 0,
+            yearsSinceLastPeak: 0, note: 'No cultivation census is stated in the surviving spring records.' },
+        distinctSentence: 'Its elders claim the water and the fixed rock; they do not claim the moving dunes.'
+    },
+    'sect-amaranth': {
+        practice: 'Granary servants carry grain to the stores. Disciples enter each load in the seasonal accounts before a ledger elder signs the receipt.',
+        knownFor: {
+            outside: 'The granaries beside the fixed spring.',
+            actuallyGoodAt: 'Keeping grain accounts and written seasonal supply contracts.',
+            theGap: 'Supplying the spring does not admit their factor to the keepers\' account room.'
+        },
+        grievance: 'The proposed grain factor has not been admitted to the spring keepers\' account room.',
+        fear: 'Supplies advanced without an agreed account of repayment.',
+        lateness: 'The account room and three lit formation nodes are inherited.',
+        disagreement: 'The elders offer a season of grain before repayment to obtain the hearing.',
+        wrongAbout: 'The offer remains a proposal, not an accepted seasonal contract.',
+        unitOfValue: 'A signed grain account.',
+        production: { reliableOrdinal: 0, currentCount: 0, peakOrdinal: 0, peakCount: 0,
+            yearsSinceLastPeak: 0, note: 'The seasonal accounts state no cultivation census.' },
+        distinctSentence: 'Its elders claim the granaries and their fixed rock; its gate and roll remain separate.'
+    },
     // THE TWO UNNAMEABLE APEXES, TWICE EACH, AND THE TWO ROWS ANSWER DIFFERENT
     // QUESTIONS. The apex id carries what the institution is to the world and
     // what it can be paid in; the sect id carries what it is like to stand on

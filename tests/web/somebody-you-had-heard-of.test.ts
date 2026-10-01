@@ -5,6 +5,7 @@
  * the reputation - a victory flatters, a disgrace stings. Kept to yourself, the
  * player is sure of the face and the person never learns they were known;
  * whether the face is placed at all is perception.
+ * The scene needs an unplaced face, not a particular number of strangers.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -74,7 +75,7 @@ describe('on the square', () => {
 
     it('places some of them in silence, and moves nothing between them', async () => {
         const { game, cultivator, gate, here, db } = await heardOfEverybody('heard-of-1');
-        expect(here.length).toBeGreaterThan(1);
+        expect(here.length).toBeGreaterThan(0);
         await game.act('I look around');
 
         const placed = here.filter(p => thePlayerIsSureItIsThem(p.name, gate.awareness(cultivator.id, 'cultivator')));

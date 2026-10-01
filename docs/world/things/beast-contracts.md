@@ -28,7 +28,8 @@ it during the yearly pass. Leaving before the terms expire closes the oath and
 opens a serious `broken_oath` account held by the other party. NPCs can form
 witnessed agreements with their local allies through the same engine function.
 
-Live questions about the arrangement use `THE_CONTRACT`. Hearing its terms
+Live questions about the arrangement use `THE_CONTRACT` in
+[`beasts.ts`](../../../src/data/cultivation/beasts.ts). Hearing its terms
 does not create a bond or change anybody's cultivation rate.
 
 Implementation: `src/engine/world/beast-cultivation-contracts.ts`; played checks:

@@ -28,6 +28,8 @@
  *
  * RED-CHECKED. Dropping the fallback leaves the third turn accounting for the
  * same book against nobody.
+ * The fixture places both possible sellers in one area. A second seller
+ * elsewhere in the square is not a second person this conversation can reach.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -37,6 +39,7 @@ import { makeGameInWorld, type Harness } from './harness';
 import { npcsAt } from '../../src/engine/world/world-state';
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { manualsAStallCarries } from '../../src/engine/world/what-a-copy-of-a-manual-costs-at-a-stall';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 async function inASquareWithAStall(seed: string): Promise<{
     db: Database.Database;
@@ -44,19 +47,24 @@ async function inASquareWithAStall(seed: string): Promise<{
     people: string[];
 }> {
     resetCultivationWorlds();
-    const { db, game } = await makeGameInWorld({ seed, worldSeed: `world-${seed}` });
+    const { db, game, repos } = await makeGameInWorld({ seed, worldSeed: `world-${seed}` });
     const { cultivator } = await game.newRun('Wei Anshu');
 
     const world = (await game.loadWorld())!;
     const square = world.locations
-        .map(place => ({ place, people: npcsAt(world, place.id) }))
-        .filter(row => row.people.length >= 8)
-        .sort((a, b) => b.people.length - a.people.length)[0];
+        .filter(place => place.kind === 'settlement')
+        .flatMap(place => {
+            const { areas, whereIs } = theAreasOf(world, place);
+            return areas.map(area => ({ place, area, people: npcsAt(world, place.id)
+                .filter(person => whereIs.get(person.id) === area.id) }));
+        })
+        .find(row => row.people.length >= 2);
     expect(square, 'the pinned world has no square with people in it').toBeDefined();
 
     db.prepare('UPDATE cultivators SET location = ?, spirit_stones = 500 WHERE id = ?')
-        .run(square.place.name, cultivator.id);
-    return { db, game, people: square.people.map(person => person.name) };
+        .run(square!.place.name, cultivator.id);
+    repos.cultivators.standIn(cultivator.id, square!.area.id);
+    return { db, game, people: square!.people.map(person => person.name) };
 }
 
 /** A title the stall actually carries, read out of the catalog rather than typed. */

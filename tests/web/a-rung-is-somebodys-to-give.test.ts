@@ -55,6 +55,7 @@ import { positionIn } from '../../src/web/standing';
 import { portfoliosIn } from '../../src/engine/social-leverage/authority-for-an-order';
 import type { LocationRecord } from '../../src/engine/world/locations';
 import { rosterFor } from '../../src/web/encounters';
+import { getMembersOf } from '../../src/data/cultivation/members';
 import { whoCouldRaiseYou } from '../../src/engine/social-leverage/a-rung-nobody-earned';
 import { createFavor } from '../../src/engine/social/grudges';
 import {
@@ -72,8 +73,9 @@ import { parseIntent } from '../../src/web/actions';
  *
  * Everything mechanical is read out of the engine rather than named here: which
  * house this seed let them hear of, who holds the room, and where that person
- * stands. Nothing is hard-coded, so a reshuffle of the catalog moves this test
- * with it instead of breaking it.
+ * stands. Choose a heard-of house with a catalog officer roster: the new
+ * spring houses have no such roster, and a house with no holder cannot arrange
+ * this test's premise. No particular house or holder is named here.
  */
 async function inFrontOfTheHouse(
     seed: string,
@@ -85,7 +87,7 @@ async function inFrontOfTheHouse(
     db.prepare('UPDATE cultivators SET spirit_stones = 8000 WHERE id = ?').run(cultivator.id);
 
     const known = new KnowledgeGate(db).awareness(cultivator.id, 'sect')
-        .filter(row => row.sourceKind === 'told');
+        .filter(row => row.sourceKind === 'told' && getMembersOf(row.id).length > 1);
     expect(known.length, `seed ${seed} left them knowing no house`).toBeGreaterThan(0);
     const recruiter = await aRecruiterOfTheHouseIsHere(game, known[0]!.id);
     await game.act(`I join the ${known[0]!.name}`);

@@ -1533,8 +1533,9 @@ export function theWorldMayEnd(npc: Pick<NpcRecord, 'tags'>): boolean {
  * that announces a death it did not perform is worse than the contradiction this
  * exists to prevent.
  */
-export function theWorldEnds(npc: NpcRecord, onDay: number, endNote: string): NpcRecord | null {
-    return theWorldMayEnd(npc) ? markDead(npc, onDay, endNote) : null;
+export function theWorldEnds(npc: NpcRecord, onDay: number, endNote: string,
+    bodyDestroyed = false, requirements: ExistenceRequirements = {}): NpcRecord | null {
+    return theWorldMayEnd(npc) ? markDead(npc, onDay, endNote, bodyDestroyed, requirements) : null;
 }
 
 /** The world losing somebody in one of its own passes. Null when it may not. */

@@ -590,6 +590,34 @@ export const SEALED_FIGURE_NAMES: readonly NamedFigure[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 export const FOUNDERS: readonly NamedFigure[] = [
+    {
+        id: 'figure-lunargent-first-keeper',
+        name: 'The first Lunargent keeper',
+        alsoCalled: null,
+        kind: 'founder',
+        factionId: 'sect-lunargent',
+        whatTheyWere: 'The keeper named by the spring elders as the recipient of their western-road grant.',
+        yearsAgo: null,
+        attestation: 'unreadable',
+        attestationNote: 'The elders locate the grant in the warded archive. Its western script and the succession remain unexamined.',
+        answers: null,
+        juniority: null,
+        note: 'The painted donors record later keepers; they do not establish who received the grant.'
+    },
+    {
+        id: 'figure-amaranth-first-account-keeper',
+        name: 'The first Amaranth account keeper',
+        alsoCalled: null,
+        kind: 'founder',
+        factionId: 'sect-amaranth',
+        whatTheyWere: 'The account keeper credited with gathering the granaries into one house roll.',
+        yearsAgo: null,
+        attestation: 'disputed',
+        attestationNote: 'The house preserves seasonal grain accounts in its inherited room; the founding attribution has no dated first entry.',
+        answers: null,
+        juniority: null,
+        note: 'A house attribution, not a confirmed grant of authority over the spring.'
+    },
     // ── the two unbacked bodies, ninety years each ────────────────────
     //
     // Both founders are within living memory, both are securely attested,

@@ -22,6 +22,8 @@
  * The world is off. Nothing here asserts anything about the several hundred
  * people seeding one would cost, and the house being reached for is a catalog
  * house that exists in every configuration.
+ * Name matching must precede the knowledge probe. Probing unrelated houses
+ * filled the capped ADMIN receipt before the requested house reached it.
  */
 
 import { describe, it, expect } from 'vitest';

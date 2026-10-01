@@ -7,7 +7,7 @@ import { combatantOf } from './gatherings.js';
 import { resolveConfrontation, type CombatantInput } from '../cultivation/combat.js';
 import { AN_ORDINARY_SWING } from '../cultivation/how-a-blow-was-thrown.js';
 import { makeObject, ruin, type ObjectRecord } from './possessions.js';
-import { setExistence, markDead, isActing, isTheWorldsToMove, PLAYER_ROW_TAG, type NpcRecord } from './npc-state.js';
+import { setExistence, markDead, isActing, isTheWorldsToMove, theWorldMayEnd, PLAYER_ROW_TAG, type NpcRecord } from './npc-state.js';
 import { getNpc, type WorldState } from './world-state.js';
 import { whereInThisPlaceTheyStand, npcsInTheArea, theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
@@ -234,7 +234,8 @@ export function advanceSeparatedPresences(world: WorldState, fromDay: number): v
             const material = helper && world.objects.find(o => o.possessorId === helper.id && o.kind === 'material' && o.data.grade === 'heaven' && !o.tags.includes('ruined'));
             if (helper && material) recoverABody(world, npc, 'reconstructed', material, helper);
             else {
-                const vessel = world.npcs.find(n => n.id !== npc.id && n.locationId === npc.locationId && isActing(n.status) && hasBody(n.status));
+                const vessel = world.npcs.find(n => n.id !== npc.id && n.locationId === npc.locationId && isActing(n.status) && hasBody(n.status)
+                    && (n.tags.includes(PLAYER_ROW_TAG) || theWorldMayEnd(n)));
                 if (vessel && forStream(world.seed, 'seek-a-body', npc.id, world.currentDay).chance(0.15)) recoverABody(world, npc, 'possessing', vessel);
             }
             continue;
@@ -255,6 +256,8 @@ export function advanceSeparatedPresences(world: WorldState, fromDay: number): v
             rng: forStream(world.seed, 'proxy-fight', proxy.id, target.id, world.currentDay),
             intent: { thrown: AN_ORDINARY_SWING }
         });
+        if (fight.loserId === target.id && (fight.finished || fight.outcome === 'body_destroyed')
+            && !theWorldMayEnd(target)) continue;
         proxy.data.hp = fight.hp[proxy.id] ?? attacker.hp;
         whatTheConfrontationDidToThem(world, { npcId: target.id, byId: npc.id, byName: npc.name,
             day: world.currentDay, wounds: fight.injuries[target.id] ?? [], outcome: fight.outcome,

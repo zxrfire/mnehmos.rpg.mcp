@@ -86,6 +86,7 @@ async function atTheGate(seed: string) {
     const harness = await makeGameInWorld({ seed, worldSeed: 'road-world' });
     await harness.game.newRun('Probe');
     await harness.game.act(`I travel to the ${HOUSE}`);
+    await harness.game.act('I go to the gate');
     const world = (await harness.game.loadWorld())!;
     const house = theHouseThisNameReaches(world, HOUSE)!;
     expect(house, `no ${HOUSE} in this world`).not.toBeNull();

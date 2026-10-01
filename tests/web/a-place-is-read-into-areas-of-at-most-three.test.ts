@@ -17,6 +17,10 @@
  *                  and the arrival says who that is; somebody of the house the gate lets in
  *                  stands in the forecourt
  *
+ * Gate towns now stand between the province and the house. Walk to the gate
+ * after reaching the town. This caught a local path skipping the shared arrival
+ * reader, leaving its watch and admission facts unread.
+ *
  * Red-checked: with `othersPresent` reading the whole row again, the first assertion fails on
  * the whole of Cloud Gate standing where the run opened.
  */
@@ -31,6 +35,8 @@ import { THE_INTERNAL_AFFAIRS_ELDER } from '../../src/engine/world/a-house-knows
 import { theHouseExpects, theyOweTheHouseAReport } from '../../src/engine/world/a-house-expects-somebody-it-took-on';
 import { isTheWorldsToMove } from '../../src/engine/world/npc-state';
 import { thePeopleHere } from '../../src/web/the-narrator-plays-the-world';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
+import { theAreaTheyAreIn } from '../../src/web/walking-across-a-place';
 
 const ids = (rows: readonly { id: string }[]) => rows.map(row => row.id).sort();
 const GATE_WORLD = 'a-house-you-can-walk-to';
@@ -87,18 +93,22 @@ describe('a place is read into areas of at most three', () => {
      * faces the player cannot place" in front of them and not one card, so there was nobody to ask
      * the way. Arriving now is arriving in one area of it, and every face there is a card.
      */
-    it('arrives in a city among three at most, each of them somebody to walk up to', async () => {
+    it('reads at most three city residents in an occupied area after arrival', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'wander-1', worldSeed: 'wander-world', adminMode: true });
         const { cultivator } = await game.newRun('Lu Ming');
         // The owner typed "ok then im heading to green water citty", which a model parses; the verb table
         // is given the plain sentence.
         await game.act('I travel to Emerald Water City');
+        expect(repos.cultivators.getById(cultivator.id)!.location).toBe('Emerald Water City');
+        expect(game.company(repos.cultivators.getById(cultivator.id)!).total)
+            .toBeLessThanOrEqual(AT_MOST_IN_AN_AREA);
+        // Arrival may be on an empty street; the people occupy their own areas.
+        await standWhereThePeopleAre({ game, repos }, cultivator.id);
         const me = repos.cultivators.getById(cultivator.id)!;
-        expect(me.location).toBe('Emerald Water City');
         const world = (await game.loadWorld())!;
         const city = worldLocationFor(world, me.location)!;
         const company = game.company(me);
-        console.log(`[areas] ${city.name}: ${npcsAt(world, city.id).length} in the city, ${company.total} where they arrived`);
+        console.log(`[areas] ${city.name}: ${npcsAt(world, city.id).length} in the city, ${company.total} in this area`);
         expect(company.total).toBeGreaterThan(0);
         expect(company.total).toBeLessThanOrEqual(AT_MOST_IN_AN_AREA);
         const said = thePeopleHere(company, me.realmOrdinal, [], null).join('\n');
@@ -124,10 +134,12 @@ describe('a place is read into areas of at most three', () => {
         const { cultivator } = await game.newRun('Stranger');
         const { faction, seat } = aSeatedHouse((await game.loadWorld())!)!;
 
-        const turn = await game.act(`I travel to the ${faction.name}`);
+        await game.act(`I travel to the ${faction.name}`);
+        const turn = await game.act('I go to the gate');
         const me = repos.cultivators.getById(cultivator.id)!;
         expect(me.location).toBe(seat.name);
-        expect(me.standingIn, 'the gate turned them away and put them inside').toContain('#gate#');
+        expect(theAreaTheyAreIn((await game.loadWorld())!, me)?.area.for,
+            'the gate turned them away and put them inside').toBe('gate');
 
         const said = [turn.narration ?? '', ...turn.toolCalls.map(call => call.summary)].join('\n');
         const here = game.present(me);
@@ -162,8 +174,10 @@ describe('a place is read into areas of at most three', () => {
         game.theWorldMoved();
 
         await game.act(`I travel to the ${faction.name}`);
+        await game.act('I go to the gate');
         const me = repos.cultivators.getById(cultivator.id)!;
         expect(me.location).toBe(seat.name);
-        expect(me.standingIn, 'the gate let them in and left them outside').toContain('#forecourt#');
+        expect(theAreaTheyAreIn((await game.loadWorld())!, me)?.area.for,
+            'the gate let them in and left them outside').toBe('forecourt');
     }, 300_000);
 });

@@ -58,6 +58,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
     CATALOG_STATES_STANDING_TAG,
+    addGoal,
     createNpc,
     isTheWorldsToMove,
     markDead,
@@ -72,7 +73,9 @@ import {
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../../support/advance-world-years.js';
-import type { WorldState } from '../../../src/engine/world/world-state.js';
+import { createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
+import { makeLocation } from '../../../src/engine/world/locations.js';
+import { advanceSeparatedPresences } from '../../../src/engine/world/something-acting-in-your-place.js';
 import { THE_LINE_AT_OLD_RIVER } from '../../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { MEMBERS } from '../../../src/data/cultivation/members.js';
 import { WANDERERS } from '../../../src/data/cultivation/wanderers.js';
@@ -121,6 +124,69 @@ describe('the world may not end somebody a catalog states is standing', () => {
         // all. A guard that answered false here would take them out of the
         // climb, the roster and the scene as well as out of the grave.
         expect(isTheWorldsToMove(stated)).toBe(true);
+    });
+});
+
+/**
+ * Shared possession and combat appliers remain available to player actions.
+ * Autonomous callers must consult the ending seam before reaching those doors.
+ * Possession's paired arms exercise the shared module exempted by the source
+ * ratchet. The control must take a body; the claim must prevent that. Ordinary
+ * remote blows still wound a stated row, since the claim only withholds endings.
+ */
+describe('a separated presence observes the same ending seam', () => {
+    function worldWithTarget() {
+        const world = createWorld({ seed: 'a-stated-presence', regionCount: 0, skipPriorAges: true });
+        world.currentDay = 1000;
+        world.locations = [
+            makeLocation({ id: 'home', name: 'Home', kind: 'cave' }),
+            makeLocation({ id: 'away', name: 'Away', kind: 'cave' })
+        ];
+        const target = createNpc(world.seed, {
+            id: 'target', bornOnDay: 0, onDay: world.currentDay, locationId: 'away',
+            cultivation: { realmOrdinal: 0 }
+        });
+        world.npcs = [target];
+        return { world, target };
+    }
+
+    it('still lets a remote ordinary blow wound a stated target', () => {
+        const { world, target } = worldWithTarget();
+        world.npcs.push(addGoal(createNpc(world.seed, {
+            id: 'attacker', bornOnDay: 0, onDay: world.currentDay, locationId: 'home',
+            cultivation: { realmOrdinal: 46 }
+        }), { kind: 'revenge', text: 'Seeking the target.', targetId: target.id }, world.currentDay));
+        const claimed = structuredClone(world);
+        claimed.npcs[0].tags.push(CATALOG_STATES_STANDING_TAG);
+        advanceSeparatedPresences(world, world.currentDay - 1);
+        advanceSeparatedPresences(claimed, claimed.currentDay - 1);
+        expect(world.npcs.find(n => n.id === target.id)?.cultivation.injuries.length).toBeGreaterThan(0);
+        expect(claimed.npcs.find(n => n.id === target.id)?.status).toBe('alive');
+        expect(claimed.npcs.find(n => n.id === target.id)?.cultivation.injuries)
+            .toEqual(world.npcs.find(n => n.id === target.id)?.cultivation.injuries);
+        expect(claimed.objects.some(o => o.tags.includes('acting-proxy'))).toBe(true);
+    });
+
+    it('does not choose a stated vessel, while possession can take an ordinary body', () => {
+        const { world, target } = worldWithTarget();
+        const seeker = createNpc(world.seed, {
+            id: 'seeker', bornOnDay: 0, onDay: world.currentDay, locationId: target.locationId,
+            cultivation: { realmOrdinal: 33 }
+        });
+        seeker.status = 'soul_preserved';
+        world.npcs.push(seeker);
+        let taken = 0;
+        for (let day = 1001; day <= 1100; day++) {
+            const bare = structuredClone(world);
+            const claimed = structuredClone(world);
+            bare.currentDay = claimed.currentDay = day;
+            claimed.npcs[0].tags.push(CATALOG_STATES_STANDING_TAG);
+            advanceSeparatedPresences(bare, day - 1);
+            advanceSeparatedPresences(claimed, day - 1);
+            if (bare.npcs[0].status !== 'alive') taken++;
+            expect(claimed.npcs[0].status).toBe('alive');
+        }
+        expect(taken, 'the control arm never took a body').toBeGreaterThan(0);
     });
 });
 
@@ -288,6 +354,7 @@ describe('the world ends people in one place', () => {
     const NOT_A_PASS_OF_THE_WORLDS_OWN = new Map<string, string>([
         ['npc-state.ts', 'where the primitives and the seam both live'],
         ['legacy.ts', 'applies a death somebody else already decided, from either side of the line'],
+        ['something-acting-in-your-place.ts', 'shared player and NPC possession; its autonomous caller consults the ending seam'],
         [
             'what-a-confrontation-does-to-somebody-the-world-holds.ts',
             'the player standing in front of them, which is the carve-out'
@@ -303,12 +370,7 @@ describe('the world ends people in one place', () => {
             // The call, not the word: a header naming the primitive is prose and
             // an import is how the seam itself reaches it.
             //
-            // `setExistence` is on the list because it is the third door and it
-            // has no callers anywhere in `src/` today. An unwired capability is
-            // exactly the kind of thing somebody wires next year, and it can put
-            // a row into `physically_dead` or `missing` without either primitive
-            // being involved - so it is fenced before it has a caller rather
-            // than after.
+            // Existence transitions can end a person without calling markDead.
             for (const name of ['markDead', 'markMissing', 'setExistence']) {
                 if (new RegExp(`(?<![\\w.])${name}\\s*\\(`).test(src)) {
                     offenders.push(`${file} calls ${name}`);

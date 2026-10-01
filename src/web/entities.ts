@@ -688,8 +688,8 @@ export function resolveSect(
         !scope || scope.gate.isAwareOf(scope.holderId, 'sect', id);
 
     // Stable catalog keys remain usable after a house is renamed, including their word form.
-    const keyed = SECTS.find(sect => heard(sect.id) && (sect.id === query.trim().toLowerCase()
-        || sect.id.replace(/^(?:sect|house|apex)-/, '').replace(/-/g, ' ') === query.trim().toLowerCase()));
+    const keyed = SECTS.find(sect => (sect.id === query.trim().toLowerCase()
+        || sect.id.replace(/^(?:sect|house|apex)-/, '').replace(/-/g, ' ') === query.trim().toLowerCase()) && heard(sect.id));
     if (keyed) query = keyed.name;
 
     // "my sect"
@@ -710,7 +710,7 @@ export function resolveSect(
         }
     }
 
-    const stored = best(query, repos.sects.list().filter(sect => heard(sect.id)), sect => sect.name);
+    const stored = best(query, repos.sects.list().filter(sect => matchScore(query, sect.name) >= MATCH_THRESHOLD && heard(sect.id)), sect => sect.name);
     if (stored) {
         return {
             kind: 'sect',
@@ -727,7 +727,8 @@ export function resolveSect(
         };
     }
 
-    const catalogued = best(query, SECTS.filter(sect => heard(sect.id)), sect => sect.name);
+    const catalogued = best(query, SECTS.filter(sect =>
+        matchScore(query, sect.name) >= MATCH_THRESHOLD && heard(sect.id)), sect => sect.name);
     if (!catalogued) return null;
 
     const seat = placeOrShape(scope, catalogued.territory);

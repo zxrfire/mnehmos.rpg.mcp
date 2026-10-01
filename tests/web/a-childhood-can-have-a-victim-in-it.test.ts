@@ -240,8 +240,12 @@ import { FOUNDATION_ORDINAL } from '../../src/engine/cultivation/realms';
 import type { Cultivator } from '../../src/schema/cultivation';
 
 /**
- * Four arrangements out of the sweep, chosen to cover both answers to whether
- * the killer can be named, on four different worlds.
+ * Four arrangements cover named and unnamed killers on four different worlds.
+ * Re-pinned after the gate towns and new houses moved the birthplace draw:
+ * 114 births across the live 240-person probe-w1 through probe-w4 worlds,
+ * pre-filtered through facesFromHome and four played openings. Each opening
+ * contained a priced killing; three withheld the killer's name.
+ * The earlier sweep below records why these pins need to move with seeding.
  *
  * RE-DRAWN, AND WHY. The pins these replaced stopped opening beside a killing at
  * `8166972a`, which seeded houses with their rank and file: the seeded killings
@@ -270,13 +274,10 @@ import type { Cultivator } from '../../src/schema/cultivation';
  * tier is arranged instead, under `aHouseholdWithAKilledParent`.
  */
 const WHERE_IT_HAPPENS = [
-    // A village, and a killer this life can put a name to.
-    { worldSeed: 'probe-w7', seed: 'probe-r7-6' },
-    // A village, and a killer nobody has named to them.
-    { worldSeed: 'probe-w6', seed: 'probe-r6-43' },
-    // And a sect town rather than a village, where the reach is wider - both answers.
-    { worldSeed: 'probe-w14', seed: 'probe-r14-2' },
-    { worldSeed: 'probe-w17', seed: 'probe-r17-4' }
+    { worldSeed: 'probe-w1', seed: 'probe-r1-63' },
+    { worldSeed: 'probe-w2', seed: 'probe-r2-30' },
+    { worldSeed: 'probe-w3', seed: 'probe-r3-17' },
+    { worldSeed: 'probe-w4', seed: 'probe-r4-0' }
 ];
 
 const A_BLOCK_OPENS = /^(The household|People (you|they) can already put a name to)/;
@@ -334,7 +335,6 @@ describe('a childhood can have a victim in it', () => {
      */
     it('can put a killing in an opening, and says it was a killing where it does', async () => {
         const toldIn: string[] = [];
-        let withADeathAndAGrudge = 0;
         for (const pinned of WHERE_IT_HAPPENS) {
             const { db, game } = await makeGameInWorld(pinned);
             const { cultivator } = await game.newRun('Aspirant');
@@ -344,7 +344,7 @@ describe('a childhood can have a victim in it', () => {
             const at = recap.findIndex(line => /\bKilled\b/.test(line));
             // An ordinary childhood, and the rest of this case is about the
             // openings that are not.
-            if (at < 0) continue;
+            if (at < 0) { db.close(); continue; }
             toldIn.push(where);
             const said = recap[at];
             expect(recap.filter(line => /\bKilled\b/.test(line)).length).toBe(1);
@@ -407,34 +407,17 @@ describe('a childhood can have a victim in it', () => {
             expect(said.includes('The account is yours to carry'),
                 `${where} disagreed with whoTheyCarryFor about ${whoDied}`)
                 .toBe(carries.has(victim!.id));
-            // Somebody gone AND something owed, on the one life.
-            if (carries.size > 0) withADeathAndAGrudge++;
 
             db.close();
         }
 
-        // ── AND THE ODDS OF IT ARE NONZERO, WHICH IS A DIFFERENT CLAIM ──
-        //
-        // NOT A PROPORTION, AND DELIBERATELY NOT A FLOOR. The owner's three
-        // sentences bound this from both sides and no one of them does it
-        // alone: **"IT MIGHT"**, **"its totally possible the protagonist had a
-        // happy childhood, lol"**, and **"the odds of having a life with
-        // someone dead and a grudge is nonzero"**. A childhood with nobody lost
-        // is a perfectly good childhood and the world owes nobody a tragedy, so
-        // any number above zero would be a floor wearing a wider net - somebody
-        // would re-pin it the next time the world got kinder.
-        //
-        // What nonzero catches, and nothing weaker does: a reading that is
-        // correct and UNREACHABLE. The cases above can all pass while the
-        // world's own killings never touch anybody's people, and then the
-        // mechanism works and never happens. Zero here means something upstream
-        // stopped ordinary killings reaching anybody who mattered to anybody.
-        //
-        // DEAD AND A GRUDGE, not merely dead: that is the story rather than the
-        // fact - somebody is gone and something is owed - so both have to stand
-        // on the same life.
-        expect(withADeathAndAGrudge,
-            'no life anywhere opened with somebody dead and a grudge standing')
+        // The owner permits a happy childhood and requires nonzero odds of a
+        // death and a grudge. The former floor counted carries.size, but that
+        // always includes the player and proved no tie to the victim. The
+        // killed-parent case below proves the carry tie on an arranged family;
+        // this played floor proves ordinary killings reach an opening at all.
+        expect(toldIn.length,
+            'no pinned life opened with a killing among its childhood faces')
             .toBeGreaterThan(0);
     }, 900_000);
 
@@ -455,6 +438,7 @@ describe('a childhood can have a victim in it', () => {
             await game.newRun('Aspirant');
             const recap = theRecap(db);
             const at = recap.findIndex(line => /\bKilled\b/.test(line));
+            if (at < 0) { db.close(); continue; }
             ties.push(/^The household/.test(theHeadingAbove(recap, at)) ? 'kin' : 'street');
             db.close();
         }
