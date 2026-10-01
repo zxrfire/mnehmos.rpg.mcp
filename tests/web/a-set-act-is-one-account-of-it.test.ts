@@ -6,6 +6,8 @@
  * when a player is most likely to aim at a set. Measured at Void Refinement
  * against a market square of ten, `I attack everyone here` answered with ten
  * paragraphs of sixty words, in which four facts were stated ten times each.
+ * Mixed outcomes exposed another gap: a fact shared by a subset was repeated
+ * for each member. It is stated once, with the affected group identified.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -83,6 +85,28 @@ describe('what was the same for all of them, said once', () => {
     it('leaves a single member alone', () => {
         expect(saidOnceForEverybodyItHappenedTo([{ who: 'A', lines: ['A was driven off.'] }]))
             .toEqual(['A was driven off.']);
+    });
+
+    it('names the subset that shared an outcome without repeating its facts', () => {
+        const account = theAccountOfASetAct([
+            { who: 'A', lines: ['Driven off. A is hurt.'] },
+            { who: 'B', lines: ['Driven off. B is hurt.'] },
+            { who: 'C', lines: ['C stayed.'] }
+        ]);
+        expect(account.forAll).toEqual([]);
+        expect(account.theirOwn).toEqual([
+            'For A and B: Driven off.', 'For A and B: each of them is hurt.', 'C stayed.'
+        ]);
+    });
+
+    it('uses the observable label when a subgroup contains an unnamed person', () => {
+        const account = theAccountOfASetAct([
+            { who: 'A', lines: ['Driven off.'] },
+            { who: 'Hidden Name', label: 'somebody here', lines: ['Driven off.'] },
+            { who: 'C', lines: ['C stayed.'] }
+        ]);
+        expect(account.theirOwn).toContain('For A and somebody here: Driven off.');
+        expect(account.theirOwn.join(' ')).not.toContain('Hidden Name');
     });
 });
 

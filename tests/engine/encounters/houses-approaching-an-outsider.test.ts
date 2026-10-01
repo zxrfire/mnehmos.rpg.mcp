@@ -6,6 +6,9 @@
  * decision because it costs something. The exact counts at each rung are
  * catalog facts and are deliberately asserted as inequalities rather than as
  * numbers, so adding a house does not break the suite.
+ * Foundation still has recruiting houses; it need not have more recruiters
+ * than small houses already deferring to it. New spring houses exposed that
+ * catalog-count assumption (eight of each).
  */
 
 import { describe, expect, it } from 'vitest';
@@ -21,11 +24,11 @@ import {
     seatOfferedBy
 } from '../../../src/engine/encounters/what-a-house-asks-of-somebody-it-cannot-order.js';
 import { SECTS, getSect } from '../../../src/data/cultivation/sects.js';
-import { MAX_ORDINAL, FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
+import { MAX_ORDINAL, FOUNDATION_ORDINAL, REALM_TIERS } from '../../../src/engine/cultivation/realms.js';
 import { elderRungOf } from '../../../src/engine/cultivation/leadership.js';
 
 /** First ordinal of Core Formation. Derived, never retyped. */
-const CORE_FORMATION_ORDINAL = 17;
+const CORE_FORMATION_ORDINAL = REALM_TIERS.find(t => t.key === 'core_formation')!.ordinalStart;
 
 describe('the seat a house would offer', () => {
     it('is null beneath the door and a rung above it', () => {
@@ -81,10 +84,11 @@ describe('the crossover the setting claims', () => {
         );
     });
 
-    it('has more houses negotiating than recruiting from Core Formation, and not before', () => {
+    it('still recruits at Foundation and has more houses negotiating by Core Formation', () => {
         const before = recruitmentShapeAt(FOUNDATION_ORDINAL);
         const at = recruitmentShapeAt(CORE_FORMATION_ORDINAL);
-        expect(before.recruited).toBeGreaterThan(before.deferredTo);
+        expect(before.recruited).toBeGreaterThan(0);
+        expect(before.recruited).toBeGreaterThan(at.recruited);
         expect(at.courted + at.deferredTo).toBeGreaterThan(at.recruited);
     });
 

@@ -148,6 +148,22 @@ export interface AncestralRecords {
  * content-side, stripped by `SectSchema.parse`, read at request time.
  */
 export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
+    'sect-lunargent': {
+        ancestors: [{ name: 'The first spring keeper', fate: 'dead', realmOrdinal: null,
+            yearsAgo: 600, afterCrossing: null,
+            rememberedFor: 'Established the water-service roll and the meditation cells above the fixed spring.' }],
+        claimsLivingAncestor: false, claimIsTrue: false, recency: 'none',
+        dormant: null, partingGift: null, lastOffering: null, discoverableTraces: [],
+        standingNote: 'The painted donor records survive at the spring; the claimed western-road grant has no living issuer to confirm its succession.'
+    },
+    'sect-amaranth': {
+        ancestors: [{ name: 'The first granary keeper', fate: 'dead', realmOrdinal: null,
+            yearsAgo: 400, afterCrossing: null,
+            rememberedFor: 'Established the granaries and the seasonal grain accounts beside the fixed spring.' }],
+        claimsLivingAncestor: false, claimIsTrue: false, recency: 'none',
+        dormant: null, partingGift: null, lastOffering: null, discoverableTraces: [],
+        standingNote: 'The granary accounts record successive keepers. The house claims its stores and their rock, with no claim on the moving dunes.'
+    },
     // THE TWO UNNAMEABLE APEXES. Both have a founder who went through the Lid
     // and a line that still answers, and neither CLAIMS anything, because a
     // claim is something you make in public and neither of them says anything

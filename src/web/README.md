@@ -83,6 +83,8 @@ carefully before widening anything a model is allowed to return.
 Ship ticket fares read `quotePassage` at the local daily rate. Oath execution
 validates the intent against `OATH_INTENTS`. The court register derives its
 senior-office label through `leaderTitleOfCourt`; it is an operator read.
+The oath intent list includes forming and ending a beast cultivation contract,
+which the played dispatcher resolves through the existing contract path.
 
 The rule this package enforces is in [`../../context.md`](../../context.md): the AI
 narrates, the engine decides.
@@ -1080,6 +1082,9 @@ speak: being in the room is permission to see somebody, never to know who they a
 It writes `lines` and `prose` and deliberately not `required`. Both front doors say the same
 thing, and somebody's bearing is not a fact a player cannot play without.
 
+Scene readings gather the people's identities and standings, then use the set-account
+fold for their individual facts. Shared sentences appear once even when their reactions differ.
+
 ---
 
 ### A run does not open with nobody in it
@@ -1551,8 +1556,12 @@ came back *"5 major realms is not a fight"* and fourteen reachable people were n
 considered. **A set collapsing to the member most certain to refuse is worse than
 truncation**, because it reads as a ruling.
 
-[`acts-over-a-set.ts`](acts-over-a-set.ts) is the whole mechanism and has no verb in it. Two
-things about its shape are load-bearing:
+[`acts-over-a-set.ts`](acts-over-a-set.ts) is the whole mechanism and has no verb in it.
+Its account states each shared outcome once. An outcome shared by a subset names that
+group before its facts; it is neither repeated per person nor attributed to the whole set.
+Subgroups use observable labels, so an internal identity cannot disclose an unknown name.
+
+Two things about its shape are load-bearing:
 
 - **One expansion behind four ways of saying a set** - the square, somebody's own people, a
   house, a rank. What differs per shape is which candidates the caller hands in; the gates and

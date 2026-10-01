@@ -13,6 +13,9 @@
  * `whatYourOwnHouseOpensAboutYou` for the row - and nothing joined them. And
  * nothing anywhere READ an `AGAINST_THEIR_OWN` row, so holding the punishment
  * hall was standing with no jurisdiction attached.
+ * The fixture needs a house with witnesses on its service rung. New spring
+ * houses have no authored roster; minimum admission alone no longer selects
+ * that arrangement. The punishment portfolio is read instead of pinning a rank.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -20,6 +23,7 @@ import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
 import { SECTS } from '../../src/data/cultivation/index';
 import { getMembersOf } from '../../src/data/cultivation/members';
+import { positionIn } from '../../src/web/standing';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import {
     whatTheWitnessDoesAboutIt,
@@ -35,7 +39,7 @@ import {
 import { isYourOwnHouseHoldingIt } from '../../src/engine/social-leverage/what-a-house-does-when-it-catches-you';
 
 const LOCAL_SECT = SECTS
-    .filter(sect => sect.recruits)
+    .filter(sect => sect.recruits && getMembersOf(sect.id).some(m => m.rankIndex === 0))
     .reduce((best, sect) =>
         sect.admissionOrdinal < best.admissionOrdinal ||
         (sect.admissionOrdinal === best.admissionOrdinal && sect.id < best.id) ? sect : best);
@@ -88,6 +92,17 @@ async function forgerAt(rankIndex: number, seed: string) {
         .run(cultivator.id);
     harness.repos.sects.addMember(LOCAL_SECT.id, cultivator.id, rankIndex);
     return { harness, id: cultivator.id };
+}
+
+async function holdsThePunishmentRoom(harness: any, id: string) {
+    for (let rank = 0; rank < LOCAL_SECT.ranks.length; rank++) {
+        harness.repos.sects.setRank(LOCAL_SECT.id, id, rank);
+        const { portfolios } = await harness.game.theHouseAround(
+            harness.repos.cultivators.getById(id), positionIn(harness.repos, id));
+        if (portfolios.some((p: { purpose: string; holderId: string | null }) =>
+            p.purpose === 'punishment_hall' && p.holderId === id)) return;
+    }
+    throw new Error('the player could not hold the punishment room');
 }
 
 /**
@@ -304,7 +319,7 @@ describe('played, as the room it goes to', () => {
             what: 'Wen Shu gave an order in the house\'s name.'
         });
         expect(complaintsBroughtTo(harness.repos, LOCAL_SECT.id)).toHaveLength(1);
-        harness.repos.sects.setRank(LOCAL_SECT.id, id, LOCAL_SECT.ranks.length - 2);
+        await holdsThePunishmentRoom(harness, id);
 
         // Not decidable, because holding the room is not a way of closing your
         // own record. The same rule `whereAComplaintGoes` applies at the
@@ -360,7 +375,7 @@ describe('played, as the room it goes to', () => {
             onDay: 0,
             what: 'Wen Shu gave an order in the house\'s name.'
         });
-        harness.repos.sects.setRank(LOCAL_SECT.id, id, LOCAL_SECT.ranks.length - 2);
+        await holdsThePunishmentRoom(harness, id);
 
         // Shown, because a player must be able to see what the house holds
         // about them - and marked as not theirs to settle on the same line, so
@@ -371,7 +386,8 @@ describe('played, as the room it goes to', () => {
     }, 300_000);
 
     it('decides one that is about somebody else', async () => {
-        const { harness, id } = await forgerAt(LOCAL_SECT.ranks.length - 2, 'report-judge');
+        const { harness, id } = await forgerAt(1, 'report-judge');
+        await holdsThePunishmentRoom(harness, id);
         const roster = getMembersOf(LOCAL_SECT.id);
         const other = roster.find(m => m.rankIndex === 0)!;
         const witness = roster.find(m => m.id !== other.id) ?? other;
@@ -408,7 +424,8 @@ describe('played, as the room it goes to', () => {
     }, 300_000);
 
     it('settles through the ledger\'s own resolutions rather than new words', async () => {
-        const { harness, id } = await forgerAt(LOCAL_SECT.ranks.length - 2, 'report-verdicts');
+        const { harness, id } = await forgerAt(1, 'report-verdicts');
+        await holdsThePunishmentRoom(harness, id);
         const other = getMembersOf(LOCAL_SECT.id).find(m => m.rankIndex === 0)!;
         const made = reportWhatTheySaw({
             repos: harness.repos,

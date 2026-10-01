@@ -396,10 +396,10 @@ export const DEFAULT_PASSAGE_INTENT: PassageIntent = 'board';
  * because a sentence about going and doing a thing for somebody carries no oath
  * vocabulary.
  */
-export type OathIntent = 'break' | 'swear' | 'read' | 'release' | 'serve';
+export type OathIntent = 'break' | 'swear' | 'read' | 'release' | 'serve' | 'beast_contract' | 'end_beast_contract';
 
 export const OATH_INTENTS: readonly OathIntent[] =
-    ['break', 'swear', 'read', 'release', 'serve'] as const;
+    ['break', 'swear', 'read', 'release', 'serve', 'beast_contract', 'end_beast_contract'] as const;
 
 /**
  * What a sentence about an oath means when it names no step.

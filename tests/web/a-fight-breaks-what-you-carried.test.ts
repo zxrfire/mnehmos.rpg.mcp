@@ -17,6 +17,10 @@
  * provenance, plus one more saying where it broke. A `mundane` pouch thing has
  * no row, so one comes off the stack and is written as a row, broken, in the
  * player's hands.
+ * An open fight is read from its standing state, not from words in its
+ * narration: a round can remain open without saying "round".
+ * The fight starts in an empty yard so the opponent is in the player's area,
+ * rather than outside a full three-person scene.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -25,6 +29,7 @@ import { activeWorld } from '../../src/server/state/cultivation-world.js';
 import { getArtifact } from '../../src/data/cultivation/artifacts.js';
 import { isRuined } from '../../src/engine/world/possessions.js';
 import { isBroken } from '../../src/engine/world/object-damage.js';
+import { makeLocation } from '../../src/engine/world/locations.js';
 
 /**
  * A rung at which an ordinary house artifact is several realms outclassed.
@@ -59,9 +64,13 @@ async function aFightCarrying(seed: string, itemId: string): Promise<Harness> {
         seed, worldSeed: 'broke-what-you-carried', adminMode: true
     });
     await harness.game.newRun('Shen Yue');
+    const yard = makeLocation({ id: 'breakage-yard', name: 'The breakage yard', kind: 'settlement' });
+    harness.game.atHand!.locations.push(yard);
+    harness.repos.cultivators.update(harness.game.state().cultivator.id, { location: yard.name });
     await harness.game.act(`ADMIN set_realm ordinal=${BOTH_STAND_AT}`);
     await harness.game.act(`ADMIN grant_item itemId=${itemId}`);
     await harness.game.act(`ADMIN spawn_encounter ordinal=${BOTH_STAND_AT} name=Yun Shizhen`);
+    expect(harness.game.present(harness.game.state().cultivator).map(n => n.name)).toEqual(['Yun Shizhen']);
     return harness;
 }
 
@@ -75,7 +84,7 @@ async function fightItOut(harness: Harness): Promise<string> {
         const answer = await harness.game.act('I attack Yun Shizhen');
         said.push(answer.narration);
         if (!harness.game.state().cultivator.alive) break;
-        if (!/still standing|round/i.test(answer.narration)) break;
+        if (harness.game.fight === null) break;
     }
     return said.join('\n');
 }
@@ -96,12 +105,12 @@ describe('a fight breaks what the player was carrying, and they keep it', () => 
             expect(isBroken(before)).toBe(false);
             const linksBefore = before.provenance.length;
 
-            await fightItOut(harness);
+            const said = await fightItOut(harness);
 
             expect(pouchCount(harness, id)).toBe(1);
 
             const after = (await activeWorld()).state.objects.find(o => o.id === id)!;
-            expect(isBroken(after)).toBe(true);
+            expect(isBroken(after), said).toBe(true);
             expect(isRuined(after)).toBe(false);
             expect(after.power).toBe(16);
             expect(after.possessorId).toBe(before.possessorId);
@@ -133,9 +142,9 @@ describe('a fight breaks what the player was carrying, and they keep it', () => 
             const harness = await aFightCarrying('broke-sabre', id);
             expect(pouchCount(harness, id)).toBe(1);
 
-            await fightItOut(harness);
+            const said = await fightItOut(harness);
 
-            expect(pouchCount(harness, id)).toBe(0);
+            expect(pouchCount(harness, id), said).toBe(0);
             const playerId = harness.game.state().cultivator.id;
             const kept = (await activeWorld()).state.objects.find(o =>
                 o.data.fromThePouch === id && o.possessorId === playerId);

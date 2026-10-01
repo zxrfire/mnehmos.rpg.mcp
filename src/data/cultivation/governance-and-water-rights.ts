@@ -1852,6 +1852,26 @@ export const COURTS: readonly Court[] = [
 const NO_TERMS = null;
 
 export const FACTION_PARENTAGE: Record<string, Parentage> = {
+    'sect-lunargent': {
+        factionId: 'sect-lunargent', governance: 'unbacked', relation: 'unaffiliated', parentFactionId: null,
+        holds: 'The fixed spring and its painted rock, under a western-road grant whose issuer has no surviving office.',
+        veinWorth: null, levy: null,
+        trade: { makes: 'Water service and maintained meditation cells on the fixed spring rock.', grade: 'mortal', devotion: 'the house' },
+        terms: NO_TERMS, standing: 'not_applicable', awarenessOfApex: 'unaware',
+        costOfIndependence: 'The elders must defend their water and prove the succession of a grant no living office confirms.',
+        unbackedReason: 'too_remote', independenceStance: 'would_take_a_backer',
+        note: 'The claimed grant remains unconfirmed. The keepers hold the fixed water and rock, without authority over the moving dunes.'
+    },
+    'sect-amaranth': {
+        factionId: 'sect-amaranth', governance: 'unbacked', relation: 'unaffiliated', parentFactionId: null,
+        holds: 'The granaries and their account room on the fixed rock beside the spring, with no grant over the moving dunes.',
+        veinWorth: null, levy: null,
+        trade: { makes: 'Stored grain supplied under written seasonal contracts.', grade: 'mortal', devotion: 'the house' },
+        terms: NO_TERMS, standing: 'not_applicable', awarenessOfApex: 'unaware',
+        costOfIndependence: 'The elders supply grain before repayment and must negotiate access to the spring keepers\' account room.',
+        unbackedReason: 'too_remote', independenceStance: 'would_take_a_backer',
+        note: 'The granary keepers share the water approach with the spring keepers, but maintain their own gate, accounts and membership roll.'
+    },
     // ── the two ancient apexes, as houses ───────────────────────────────
     // They stand at the top of the stack the same way the Pavilion does, and
     // they are here because the pyramid has to place every faction in the sect

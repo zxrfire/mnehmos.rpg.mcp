@@ -35,12 +35,16 @@
  * agreed in the large majority of runs - and one pinned seed would only ever
  * report that one bout did. So these ask for the event across a handful of
  * seeds and assert what the ledger holds once it happens.
+ * The ordinary-fight arm starts with a real peer in the same area and lets
+ * the fight continue across rounds; birthplace and one-shot resolution were
+ * stale premises for that comparison.
  */
 
 import { readFileSync } from 'node:fs';
 
 import { parseIntent, validatePlan } from '../../src/web/actions';
 import { makeGameInWorld, cultivatorRow } from './harness';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 interface OpenAccount {
     kind: string;
@@ -337,9 +341,16 @@ describe('and the world answers', () => {
             });
             const { cultivator } = await game.newRun('Brawler');
             repos.sects.addMember('house-immovable-mountain', cultivator.id, 1);
+            // A real peer in the same area, independent of the birth province.
+            const world = game.atHand!;
+            const peer = world.npcs.find(n => n.status === 'alive' && n.id !== cultivator.id
+                && n.locationId !== null && n.cultivation.realmOrdinal === cultivator.realmOrdinal)!;
+            const place = world.locations.find(l => l.id === peer.locationId)!;
+            repos.cultivators.update(cultivator.id, { location: place.name });
+            repos.cultivators.standIn(cultivator.id, theAreasOf(world, place).whereIs.get(peer.id) ?? null);
             await game.act('I look around');
 
-            for (let fights = 0; fights < 8 && rows.length === 0; fights++) {
+            for (let fights = 0; fights < 40 && rows.length === 0; fights++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
                 await game.act('I attack someone of my own rank');
                 // The terms row, selected by the tag that is its content. A

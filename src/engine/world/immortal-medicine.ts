@@ -8,6 +8,7 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeFact } from './history.js';
 import { makeObject, ruin, transferPossession, type ObjectRecord } from './possessions.js';
 import type { WorldState } from './world-state.js';
+import { idsForFaction } from '../../data/cultivation/governance-and-water-rights.js';
 
 function dose(id: string, itemId: string, grade: ImmortalGrade, holderId: string | null, holderName: string, locationId: string | null): ObjectRecord {
     const item = IMMORTAL_ITEMS.find(i => i.id === itemId)!;
@@ -25,7 +26,8 @@ export function seedImmortalMedicine(state: WorldState): ObjectRecord[] {
     const opening = [...IMMORTAL_HOLDINGS, ...RECEIPT_HISTORIES.filter(h => !h.countedByTheRegisters)
         .map(h => ({ factionId: h.factionId, itemId: h.itemId, byGrade: h.stillHeld }))];
     for (const h of opening) {
-        const house = state.factions.find(f => f.id === h.factionId);
+        const ids = idsForFaction(h.factionId);
+        const house = state.factions.find(f => ids.includes(f.id));
         for (const grade of ['higher', 'middle', 'lower'] as const) for (let n = 0; n < h.byGrade[grade]; n++) {
             rows.push(dose(`immortal-dose:${h.factionId}:${h.itemId}:${grade}:${n}`, h.itemId, grade,
                 h.factionId, house?.name ?? h.factionId, house?.seatLocationId ?? null));
@@ -45,12 +47,14 @@ export function seedImmortalMedicine(state: WorldState): ObjectRecord[] {
 
 export function immortalHoldings(state: WorldState, factionId: string): Holding[] {
     const held = immortalInventory(state, factionId);
-    return getHoldingsOf(factionId).map(h => ({ ...h, ...held.find(row => row.itemId === h.itemId)! }));
+    return idsForFaction(factionId).flatMap(getHoldingsOf)
+        .map(h => ({ ...h, ...held.find(row => row.itemId === h.itemId)! }));
 }
 
 export function immortalInventory(state: WorldState, holderId: string): Pick<Holding, 'itemId' | 'count' | 'byGrade'>[] {
+    const ids = idsForFaction(holderId);
     return IMMORTAL_ITEMS.map(item => {
-        const rows = state.objects.filter(o => o.possessorId === holderId && o.data.medicineId === item.id
+        const rows = state.objects.filter(o => o.possessorId !== null && ids.includes(o.possessorId) && o.data.medicineId === item.id
             && o.tags.includes('immortal-medicine') && o.data.spent !== true && !o.tags.includes('ruined'));
         const byGrade = { higher: 0, middle: 0, lower: 0 };
         for (const row of rows) byGrade[row.data.grade as ImmortalGrade]++;

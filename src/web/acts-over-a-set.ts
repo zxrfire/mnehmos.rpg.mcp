@@ -364,7 +364,7 @@ export function howTheSetWasCounted(
  * takes a set: all it knows is that two sentences said the same thing.
  */
 export function saidOnceForEverybodyItHappenedTo(
-    outcomes: readonly { who: string; lines: readonly string[] }[]
+    outcomes: readonly { who: string; label?: string; lines: readonly string[] }[]
 ): string[] {
     const account = theAccountOfASetAct(outcomes);
     return [...account.forAll, ...account.theirOwn];
@@ -379,7 +379,7 @@ export function saidOnceForEverybodyItHappenedTo(
  * What was true of all of them is a paragraph; what is true of each is a line.
  */
 export function theAccountOfASetAct(
-    outcomes: readonly { who: string; lines: readonly string[] }[]
+    outcomes: readonly { who: string; label?: string; lines: readonly string[] }[]
 ): { forAll: string[]; theirOwn: string[] } {
     if (outcomes.length < 2) {
         return { forAll: [], theirOwn: outcomes.flatMap(one => [...one.lines]) };
@@ -392,16 +392,16 @@ export function theAccountOfASetAct(
     // First-appearance order, so what the turn says still reads in the order
     // it happened in.
     const order: string[] = [];
-    const byTemplate = new Map<string, { who: string; said: string }[]>();
+    const byTemplate = new Map<string, { who: string; label: string; said: string }[]>();
     for (const outcome of outcomes) {
         for (const line of outcome.lines) {
             for (const said of intoSentences(line)) {
                 const key = templateOf(said, outcome.who);
                 const held = byTemplate.get(key);
-                if (held) held.push({ who: outcome.who, said });
+                if (held) held.push({ who: outcome.who, label: outcome.label ?? outcome.who, said });
                 else {
                     order.push(key);
-                    byTemplate.set(key, [{ who: outcome.who, said }]);
+                    byTemplate.set(key, [{ who: outcome.who, label: outcome.label ?? outcome.who, said }]);
                 }
             }
         }
@@ -417,10 +417,18 @@ export function theAccountOfASetAct(
     for (const key of order) {
         const group = byTemplate.get(key)!;
         const said = new Set(group.map(one => one.who));
-        // Every member produced it, and none produced it twice: a fact about
-        // the act. Anything else is theirs and keeps their name on it.
-        if (said.size !== everybody.size || group.length !== outcomes.length) {
-            theirOwn.push(...group.map(one => one.said));
+        // A shared outcome belongs to its actual group, including a subset.
+        if (said.size !== everybody.size) {
+            if (said.size > 1) {
+                const names = [...new Set(group.map(one => one.label))];
+                const who = names.length === 1 ? names[0]
+                    : names.length <= 3
+                    ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+                    : `${names[0]} and the others with them`;
+                theirOwn.push(`For ${who}: ${key.split(WHOEVER).join('each of them')}`);
+            } else {
+                theirOwn.push(...new Set(group.map(one => one.said)));
+            }
             continue;
         }
         forAll.push(atTheHeadOfASentence(
@@ -450,10 +458,8 @@ function atTheHeadOfASentence(sentence: string, filled: boolean): string {
  * Every template here was written about ONE person and carries a singular verb
  * somewhere in it - "{} is here, and reads as well beneath you". A list of
  * names is plural and produces "Cao Nuochen and Wei Rongya is here", so the
- * fill is `each of them` for any group above one. It is the same reason a
- * group short of the whole set does not fold at all: there is no honest
- * singular phrase for four out of six, and a plural one would disagree with
- * the verb it was dropped in front of.
+ * fill is `each of them` for any group above one. A subset is named before
+ * its shared statements so this phrase still refers to the actual group.
  *
  * `each of them` rather than a list is the right reading anyway: a sentence
  * that has to name ten people in the middle of itself has stopped being a

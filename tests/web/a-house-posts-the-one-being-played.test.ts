@@ -30,6 +30,8 @@
  * tour's end day inside the year until the house's own draw says yes. The
  * cadences are arranged by writing the day on the word, which is where they are
  * read from.
+ * The setup advances the world's annual pass before the player takes a post.
+ * An interrupted or fatal wait is not a fixture for an annual posting.
  *
  * Red-checked, each break on its own: with the posting branch in
  * `goWhereTheHouseSentYou` taken out, saying yes runs the term as an ordinary
@@ -64,9 +66,9 @@ const WORLD = 'a-posting-for-the-player';
 async function aMemberTheHouseWouldPost(seed: string) {
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD });
     const { cultivator } = await harness.game.newRun('Posted');
-    // Nobody is stationed at world open: the world's own pass posts people once
-    // a year, so the year is played rather than the posts written in.
-    await harness.game.act('I wait for 400 days');
+    // Posts are made by the annual pass, rather than written into the fixture.
+    await harness.game.advanceWorld(400, cultivator, harness.game.currentRun().run);
+    harness.game.atHand = await harness.game.loadWorld();
     const world = harness.game.atHand!;
     const today = Math.floor(world.currentDay);
     const houses = world.factions

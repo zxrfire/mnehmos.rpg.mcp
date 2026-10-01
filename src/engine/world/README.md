@@ -22,6 +22,10 @@ cannot change that answer.
 `practiceAmongNeighbours` also asks the same rate reader whether anyone present
 can change the rate before dividing a neutral neighbourhood into areas.
 
+Immortal medicine reads a house through `idsForFaction`: its apex and membership
+ids identify the same holdings. Counts come from live dose objects; the catalogue
+supplies the release procedure, and opening doses stand at the house's actual seat.
+
 `primal-essence.ts` owns the once-only personal property consumed by household
 binding and furnace rites. An intact subject doubles the first furnace draw;
 marriage consumes it without a cultivation bonus. `willing-rites-between-world-people.ts`

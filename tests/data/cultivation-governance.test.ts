@@ -4,6 +4,8 @@
  *
  * Governance validation: the pyramid, the four models, the feeder, arrival at
  * the bottom, and the guest-elder relationship.
+ * The scout pass now runs yearly. Its quota is a ceiling, and candidates
+ * enter probation without membership; the former unwired handoff is retired.
  *
  * The load-bearing assertions here are the ones a tool could otherwise get
  * wrong quietly:
@@ -1112,15 +1114,15 @@ describe('the Azure Cloud intake', () => {
         expect(sc.theRoute).toMatch(/fourteen months|circuit/i);
         expect(sc.theMethod).toMatch(/without the subject knowing/i);
         expect(sc.theQuota).toMatch(/two put forward/i);
-        // The quota has a consequence, which is the point of writing one.
-        expect(sc.theQuota).toMatch(/last two months of the year/i);
+        expect(sc.theQuota).toMatch(/ceiling, not a guarantee/i);
+        expect(sc.theQuota).toMatch(/never manufactures a successful candidate/i);
         expect(sc.whatItIsLikeToMeetOne).toMatch(/never learn what happened/i);
     });
 
-    it('hands the engine work off without doing any of it', () => {
-        expect(AZURE_CLOUD_INTAKE.engineHandoff).toMatch(/origin\.ts/);
-        expect(AZURE_CLOUD_INTAKE.engineHandoff).toMatch(/placement\.reach/);
-        expect(AZURE_CLOUD_INTAKE.engineHandoff).toMatch(/No engine file is edited here/i);
+    it('describes the live scout pass and the remaining intake gaps', () => {
+        expect(AZURE_CLOUD_INTAKE.engineHandoff).toMatch(/yearly scout pass/i);
+        expect(AZURE_CLOUD_INTAKE.engineHandoff).toMatch(/probationer has no faction membership/i);
+        expect(AZURE_CLOUD_INTAKE.engineHandoff).toMatch(/returns the candidate home/i);
         expect(AZURE_CLOUD_INTAKE.engineGaps.length).toBeGreaterThanOrEqual(3);
         const gaps = AZURE_CLOUD_INTAKE.engineGaps.join(' ');
         expect(gaps).toMatch(/sectId/);

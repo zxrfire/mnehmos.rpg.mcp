@@ -4,6 +4,8 @@
  * These run against a real in-memory SQLite database and the real cultivation
  * engine. Nothing is mocked except the narrator, because everything the tests
  * are about is on the other side of the narrator.
+ * A low admission rung does not make a house local. Entity tests explicitly
+ * give the player knowledge of the chosen house before asking about it.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -20,11 +22,7 @@ import { effectiveLifespanYears, lifespanForOrdinal } from '../../src/engine/cul
 import { TECHNIQUES, RECIPES, HERBS, SECTS } from '../../src/data/cultivation/index';
 
 /**
- * The one sect a new cultivator has heard of.
- *
- * discovery.md gates entity resolution on knowledge, so a test that wants a
- * faction the player can actually name has to use the seeded local one. Naming
- * any other sect is a discovery test, and lives in discovery.test.ts.
+ * A catalogue house used by tests that arrange knowledge explicitly.
  */
 const LOCAL_SECT = SECTS
     .filter(sect => sect.recruits)
@@ -36,6 +34,7 @@ import { derivedView } from '../../src/web/view';
 import { STARTING_AGE, PROVISION_COST_STONES } from '../../src/web/game';
 import { makeGame, injuryCount, planned, engineCalls, refusedCall } from './harness';
 import { drawBirth } from '../../src/engine/birth/birth';
+import { KnowledgeGate } from '../../src/web/knowledge';
 import { ACTIONS_PER_FULL_SATIETY } from '../../src/engine/cultivation/survival';
 import {
     lifespanPressure,
@@ -52,6 +51,11 @@ import {
  * that is the bargain, and it is the stronger guard of the two.
  */
 const ENCOUNTER_STONE_SLACK = 5000;
+
+function knowsTheHouse(db: ReturnType<typeof makeGame>['db'], holderId: string) {
+    new KnowledgeGate(db).learnIfNew({ holderId, kind: 'sect', id: LOCAL_SECT.id,
+        name: LOCAL_SECT.name, onDay: 0, sourceKind: 'told', stance: 'knows' });
+}
 
 /** Recompute the roll the service should have made, straight from the engine. */
 function expectedTalent(seed: string) {
@@ -415,10 +419,11 @@ describe('interact', () => {
     });
 
     it('reports real facts about a real party, and refuses to resolve the outcome', async () => {
-        const { game } = makeGame();
-        await game.newRun('Talker');
+        const { game, db } = makeGame();
+        const { cultivator } = await game.newRun('Talker');
+        knowsTheHouse(db, cultivator.id);
 
-        // The seeded local sect: a real faction this cultivator can name.
+        // A real faction this cultivator can name.
         const result = await game.act(`I negotiate with ${LOCAL_SECT.name}.`);
         expect(planned(result).action).toBe('interact');
 
@@ -437,6 +442,7 @@ describe('interact', () => {
     it('is an attempt, never an accomplishment: no state moves', async () => {
         const { db, game } = makeGame();
         const { cultivator } = await game.newRun('Talker');
+        knowsTheHouse(db, cultivator.id);
         const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
 
         await game.act(`I threaten ${LOCAL_SECT.name} into taking me as an elder.`);
@@ -448,8 +454,9 @@ describe('interact', () => {
 
 describe('investigate', () => {
     it('reports engine facts about something the world actually holds', async () => {
-        const { game } = makeGame();
-        await game.newRun('Reader');
+        const { game, db } = makeGame();
+        const { cultivator } = await game.newRun('Reader');
+        knowsTheHouse(db, cultivator.id);
 
         const result = await game.act(`I examine ${LOCAL_SECT.name}.`);
         expect(planned(result).action).toBe('investigate');
@@ -474,6 +481,7 @@ describe('investigate', () => {
     it('costs a turn and nothing else', async () => {
         const { db, game } = makeGame();
         const { cultivator } = await game.newRun('Reader');
+        knowsTheHouse(db, cultivator.id);
         const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
 
         const result = await game.act(`I examine ${LOCAL_SECT.name}.`);

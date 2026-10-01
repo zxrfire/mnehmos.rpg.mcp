@@ -35,6 +35,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseIntent } from '../../src/web/actions';
 import { aRecruiterOfTheHouseIsHere, engineCalls, makeGameInWorld } from './harness';
 import type { ActResult } from '../../src/web/turn-wire-shapes';
+import { makeLocation } from '../../src/engine/world/locations';
 
 /** The resolver's own one-line account, which names what was on the table. */
 function whatTheAttemptCarried(result: ActResult): string {
@@ -47,9 +48,8 @@ function whatTheAttemptCarried(result: ActResult): string {
  * A run in a known world with a known person standing in front of it.
  *
  * `ordinal` is the asker's rung and `theirRung` is the other party's. The
- * spawned person is the strongest body present, and `present` orders by rung,
- * so an unaddressed sentence reaches them - every arm below asserts the name it
- * got back rather than trusting that.
+ * spawned person is alone with the asker. An unaddressed demand chooses the
+ * nearest familiar face now, rather than the strongest body in the whole place.
  */
 async function anAskerAt(options: {
     worldSeed: string;
@@ -73,6 +73,16 @@ async function anAskerAt(options: {
         await aRecruiterOfTheHouseIsHere(game, options.joins);
         await game.act(`ADMIN sect join ${options.joins}`);
     }
+    const player = game.state().cultivator;
+    const target = game.repos.db.prepare('SELECT id FROM cultivators WHERE name = ?')
+        .get(options.theirName) as { id: string };
+    const yard = makeLocation({ id: 'asking-yard', name: 'The question yard', kind: 'settlement' });
+    game.atHand!.locations.push(yard);
+    game.repos.cultivators.update(player.id, { location: yard.name });
+    game.repos.cultivators.update(target.id, { location: yard.name });
+    game.repos.cultivators.standIn(player.id, null);
+    expect(game.present(game.repos.cultivators.getById(player.id)!).map(row => row.name))
+        .toEqual([options.theirName]);
     return game;
 }
 

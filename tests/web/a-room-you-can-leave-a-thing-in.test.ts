@@ -31,6 +31,8 @@
  * the compound's and the catalog's and they move.
  *
  * WORLD PINNED, because every one of these reads a compound out of it.
+ * The member starts at the chosen house's actual seat; a newly added house
+ * with the lowest admission rung need not live near Emerald Water City.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -73,7 +75,9 @@ async function aDiscipleWithAPillAndARoom(seed: string, rankIndex = 1) {
     // IN THE HOUSE'S OWN PROVINCE. A road across a border is its real length now
     // (`provinceRoadDays`), and a walk of days can be stopped by whoever it meets; the room, not
     // the road, is what these pin.
-    harness.repos.cultivators.update(cultivator.id, { location: 'Emerald Water City' });
+    const house = harness.game.atHand!.factions.find(f => f.id === LOCAL_SECT.id)!;
+    const seat = harness.game.atHand!.locations.find(l => l.id === house.seatLocationId)!;
+    harness.repos.cultivators.update(cultivator.id, { location: seat.name });
     return { harness, cultivatorId: cultivator.id };
 }
 

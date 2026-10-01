@@ -405,7 +405,7 @@ it describes.
 | [`faction-roll.ts`](../../src/data/cultivation/faction-roll.ts) | Who is on each faction's roll, from every catalog that holds people, in one place. | 297 | - |
 | [`fallen.ts`](../../src/data/cultivation/fallen.ts) | Moved to `cultivators-the-road-finished.ts`. | 11 | - |
 | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | False Immortals: what they do with the time, the office that used to exist, and the two ways they leave the world. | 1189 | - |
-| [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | Governance: who holds the water, and on what terms. | 3636 | [`discovery.md`](houses/discovery.md) |
+| [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | Governance: who holds the water, and on what terms. | 3656 | [`discovery.md`](houses/discovery.md) |
 | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | Spirit herbs - the ingredient layer under alchemy. | 903 | [`the-late-age.md`](history/the-late-age.md) |
 | [`hierarchy.ts`](../../src/data/cultivation/hierarchy.ts) | Moved to `governance-and-water-rights.ts`. | 11 | - |
 | [`history.ts`](../../src/data/cultivation/history.ts) | The deep past: four ages, two civilisations that are gone, and the four or five questions about all of it that nobody can answer. | 1614 | - |
@@ -443,12 +443,12 @@ it describes.
 | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | Rogue cultivators: the unaffiliated, who are most of the player's peers and who barely existed in this catalog until now. | 967 | - |
 | [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) | What ordinary people say about the powers above them, and where it is wrong. | 1028 | [`discovery.md`](houses/discovery.md) |
 | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | Sealed ancestors: sealed and dormant high-realm beings, held and unheld. | 643 | - |
-| [`sects.ts`](../../src/data/cultivation/sects.ts) | Sects - the social layer, and the only reliable source of manuals, stipends, pills and enemies. | 3955 | [`manuals.md`](climbing/manuals.md) [`past-the-ceiling.md`](climbing/past-the-ceiling.md) |
+| [`sects.ts`](../../src/data/cultivation/sects.ts) | Sects - the social layer, and the only reliable source of manuals, stipends, pills and enemies. | 3965 | [`manuals.md`](climbing/manuals.md) [`past-the-ceiling.md`](climbing/past-the-ceiling.md) |
 | [`spring-houses.ts`](../../src/data/cultivation/spring-houses.ts) | The two permanent houses at the Sands' fixed water; their authority ends at that water. | 34 | - |
 | [`standoff.ts`](../../src/data/cultivation/standoff.ts) | Moved to `the-top-of-the-world.ts`. Its own first line already said it: the top of the world, and whether it can be moved. | 11 | - |
 | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | The medicine that mends a cracked cultivator, and the fixed set of it that exists. | 442 | - |
 | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | Technique (art) library. | 3856 | [`ancient.md`](history/ancient.md) |
-| [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) | The ancestors a house still names, and what is actually left of them. | 1241 | - |
+| [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) | The ancestors a house still names, and what is actually left of them. | 1257 | - |
 | [`the-three-floors-a-house-admits-at.ts`](../../src/data/cultivation/the-three-floors-a-house-admits-at.ts) | The three floors a house admits at - guest, servant, disciple. | 166 | - |
 | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | The top of the world, and whether it can be moved. | 345 | - |
 | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | Two traditions, one ladder. The world holds two genuinely different ways of cultivating, and the difference between them is the oldest quarrel in it. Both climb the SAME rungs: a fourth-realm practitioner of either is Core Formation, ordinal 17 to 20, and `realmOrdinal` means exactly what it means everywhere else. There is no second scale in this file and there must never be one. | 295 | - |

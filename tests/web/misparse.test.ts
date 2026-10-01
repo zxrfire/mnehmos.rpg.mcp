@@ -44,7 +44,7 @@ import {
     siteNamed,
     type ActionName
 } from '../../src/web/actions';
-import { makeGame, planned, engineCalls, refusedCall, cultivatorRow, injuryCount } from './harness';
+import { makeGame, makeGameInWorld, planned, engineCalls, refusedCall, cultivatorRow, injuryCount } from './harness';
 import { withoutTheOverride } from '../../src/web/game';
 import { SECTS, sectThreat } from '../../src/data/cultivation/sects';
 import { abodeLocationId } from '../../src/engine/world/immortal-world';
@@ -864,6 +864,9 @@ describe('the seat\'s powers reach the tool that implements them', () => {
  * world has not surrendered, and the answer for one of those must be
  * indistinguishable from the answer for a place whose cause was never written
  * down at all.
+ * A place can hold several changes with different knowledge. The known-cause
+ * arm reads the latest change, which is what the live history answer describes,
+ * and both arms pin their world rather than inheriting another file's world.
  */
 describe('asking what was done to a place', () => {
     it('reads the question the ways people ask it', () => {
@@ -900,7 +903,7 @@ describe('asking what was done to a place', () => {
     });
 
     it('answers out of the record, and withholds a cause the world has not surrendered', async () => {
-        const { db, game, repos } = makeGame({ seed: 'scarred', worldEnabled: true });
+        const { db, game, repos } = await makeGameInWorld({ seed: 'scarred', worldSeed: 'demography' });
         const { cultivator } = await game.newRun('Ke Yan');
         const world = await game.loadWorld();
 
@@ -910,7 +913,7 @@ describe('asking what was done to a place', () => {
         // has nothing to read.
         expect(scarred.length, 'the seeded world carries no location change history').toBeGreaterThan(0);
 
-        const withheld = scarred.find(place => place.changes.some(change => !change.causeKnown));
+        const withheld = scarred.find(place => !place.changes.at(-1)?.causeKnown);
         expect(withheld, 'no seeded place holds a cause the world has not surrendered').toBeDefined();
         repos.cultivators.update(cultivator.id, { location: withheld!.name } as never);
 
@@ -924,7 +927,7 @@ describe('asking what was done to a place', () => {
 
         // The gate. The cause fact exists; the answer must not betray that it
         // does, in the prose or in the inspector.
-        const hidden = withheld!.changes.find(change => !change.causeKnown)!;
+        const hidden = withheld!.changes.at(-1)!;
         expect(hidden.causeFactId, 'the fixture needs a cause that exists and is not known').not.toBeNull();
         const everything = result.narration + JSON.stringify(result.toolCalls);
         expect(everything).not.toContain(hidden.causeFactId!);
@@ -935,12 +938,13 @@ describe('asking what was done to a place', () => {
     });
 
     it('names the cause where the world does hold it', async () => {
-        const { game, repos } = makeGame({ seed: 'scarred-known', worldEnabled: true });
+        const { game, repos } = await makeGameInWorld({ seed: 'scarred-known', worldSeed: 'demography' });
         const { cultivator } = await game.newRun('Ke Yan');
         const world = await game.loadWorld();
 
         const known = (world?.locations ?? []).find(place =>
-            place.changes.length > 0 && place.changes.every(change => change.causeKnown));
+            place.changes.at(-1)?.causeKnown && world?.history.facts.some(fact =>
+                fact.id === place.changes.at(-1)?.causeFactId));
         expect(known, 'no seeded place holds a cause the world has surrendered').toBeDefined();
         repos.cultivators.update(cultivator.id, { location: known!.name } as never);
 
@@ -950,11 +954,10 @@ describe('asking what was done to a place', () => {
 
         // And the cause itself comes out of the history ledger rather than
         // being restated on the location, so the two cannot disagree.
-        const factId = known!.changes.find(change => change.causeKnown)?.causeFactId ?? null;
+        const factId = known!.changes.at(-1)?.causeFactId ?? null;
         const summary = world?.history.facts.find(fact => fact.id === factId)?.summary ?? '';
-        if (summary) {
-            expect(result.narration.replace(/\s+/g, ' ')).toContain(summary.slice(0, 40));
-        }
+        expect(summary.length, 'the known cause has a ledger fact').toBeGreaterThan(0);
+        expect(result.narration.replace(/\s+/g, ' ')).toContain(summary.slice(0, 40));
     });
 
     it('refuses ground that has no record, without saying which kind of nothing it is', async () => {
@@ -2001,10 +2004,12 @@ describe('institutions acting on each other', () => {
 
     async function standing(
         rank: number | null,
-        options: { house?: string; seed?: string; knows?: string[]; worldEnabled?: boolean } = {}
+        options: { house?: string; seed?: string; knows?: string[]; worldEnabled?: boolean; worldSeed?: string } = {}
     ) {
         const houseId = options.house ?? HOUSE;
-        const harness = makeGame({
+        const harness = options.worldSeed ? await makeGameInWorld({
+            seed: options.seed ?? 'institution', worldSeed: options.worldSeed
+        }) : makeGame({
             seed: options.seed ?? `standing-${houseId}-${rank}`,
             ...(options.worldEnabled ? { worldEnabled: true } : {})
         });
@@ -2302,8 +2307,9 @@ describe('institutions acting on each other', () => {
     // ── the form ─────────────────────────────────────────────────────────
 
     it('answers a Requisition in the terms the form itself uses, and refuses', async () => {
+        // Stock is held by world objects. Its apex id and membership id name one house.
         const { game } = await standing(theSeatOf(), {
-            knows: ['apex-earth-vein-tower'], seed: 'requisition'
+            knows: ['apex-earth-vein-tower'], seed: 'requisition', worldSeed: 'requisition-world'
         });
         const result = await game.act(
             'I file a Requisition Against Standing Stock with the Earth Vein Tower'

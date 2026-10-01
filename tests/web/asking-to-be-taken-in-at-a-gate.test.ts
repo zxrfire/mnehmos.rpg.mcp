@@ -10,6 +10,8 @@
  * `family` and the auxiliary `have` - so the join was declined as a model
  * inventing an act, and the notice quoted the whole sentence back as the part
  * that "did not happen". Said with no name, the ask got the province's listing.
+ * The gate fixture stands at the actual seat after its travel turn; a moved
+ * birth province or an interrupted road must not turn this into a listing test.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -78,6 +80,11 @@ describe('at the gate', () => {
         });
         await harness.game.newRun('Shen Ruo');
         await harness.game.act('I travel to the Tranquil Oasis Sect');
+        const world = harness.game.atHand!;
+        const house = world.factions.find(f => f.name === 'Tranquil Oasis Sect')!;
+        const seat = world.locations.find(l => l.id === house.seatLocationId)!;
+        const player = harness.game.state().cultivator;
+        harness.repos.cultivators.update(player.id, { location: seat.name });
         return harness;
     }
 

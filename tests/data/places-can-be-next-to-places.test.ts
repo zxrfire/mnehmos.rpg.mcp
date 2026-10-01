@@ -18,6 +18,8 @@
  * why `daysOnTheRoadTo` can consult both without a precedence rule that could
  * one day pick the wrong one - and AGENTS.md is explicit that a decision
  * living only as a shape in the data needs a test saying so.
+ * Fixed-rock passages now quote fractions of a walking day; the distance
+ * unit is unchanged and these walks do not enter the whole-day span engine.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -132,7 +134,7 @@ describe('a place road is not a second distance', () => {
         // about how far apart two places are, and `priceFold` compares its
         // reach against whatever this yields.
         for (const road of declaredRoads()) {
-            expect(Number.isInteger(road.travelDays)).toBe(true);
+            expect(Number.isFinite(road.travelDays)).toBe(true);
             expect(road.travelDays).toBeGreaterThanOrEqual(0);
         }
     });

@@ -3180,6 +3180,16 @@ export const DAO_HOUSE_DISPUTES: readonly DaoHouseDispute[] = [
 
 /** Admission terms, kept beside the sects rather than inside them. */
 export const SECT_ADMISSION: Record<string, SectAdmission> = {
+    'sect-lunargent': {
+        minOrdinal: 0,
+        preferredRoots: [],
+        requirement: 'Enter on the water-service roll at the spring gate. Instruction begins at the bottom rung.'
+    },
+    'sect-amaranth': {
+        minOrdinal: 0,
+        preferredRoots: [],
+        requirement: 'Enter on the granary-service roll at the spring gate. Instruction begins at the bottom rung.'
+    },
     'sect-azure-cloud-pavilion': {
         minOrdinal: 3,
         guestFromOrdinal: 0,

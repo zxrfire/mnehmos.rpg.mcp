@@ -290,6 +290,19 @@ describe('the person the turn actually happened to', () => {
 });
 
 describe('the discovery gate holds', () => {
+    it('keeps an unnamed face unnamed when its facts are folded with a known person', () => {
+        // A fold has internal identities for both people; only one may be spoken.
+        const square = [person({ id: 'a', name: 'Yan Shuling', spiritStones: 100 }),
+            person({ id: 'b', name: 'Lin Mei', spiritStones: 100 })];
+        const lines = whatThePeopleHereAreAnswering({
+            before: square,
+            now: square.map(row => ({ ...row, spiritStones: 4 })),
+            playerBefore: player(), playerNow: player(), gate: gateOver(['b'])
+        });
+        expect(lines.join(' ')).not.toContain('Yan Shuling');
+        expect(lines.join(' ')).toContain('Lin Mei');
+    });
+
     it('gives somebody the player cannot name a standing instead of a name', () => {
         const lines = whatThePeopleHereAreAnswering({
             before: [person({ id: 'a', name: 'Yan Shuling', spiritStones: 100 })],

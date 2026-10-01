@@ -26,6 +26,9 @@
  * 45% and 46% of the rung under the elders. Heavenly seedlings: every one of the
  * 30 and 25, with 53 and 42 other masters wanting one somebody else took. Nobody
  * was added.
+ * On the expanded catalog, afford-a has 27 seedlings and 26 masters' pupils.
+ * Talent cannot create a suitable master. The opening guarantee is checked
+ * below with a stronger master present and absent.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -44,6 +47,7 @@ import {
     isAHeavenlySeedling,
     LOWEST_SHARE,
     searchingMastersTakeADisciple,
+    seedTheDisciplesAWorldOpensWith,
     theShareTakenAt,
     theirSearchForADisciple,
     whatTheyLookFor
@@ -92,7 +96,7 @@ describe('a seeded world opens with disciples', () => {
         expect(looking.length / masters.length).toBeLessThan(0.4);
         expect(theirSearchForADisciple(looking[0]!)!.text).toMatch(/^Looking for a disciple/);
 
-        // Most of the first disciple rung has no master; every heavenly seedling does.
+        // Most ordinary juniors have no master; seedlings draw masters where available.
         const onRung = (pred: (n: NpcRecord) => boolean) => state.npcs.filter(n => n.status === 'alive' && n.factionId !== null
             && n.factionRankIndex >= 1 && n.factionRankIndex < elderRungOf(ranks.get(n.factionId) ?? 0) && pred(n));
         const hasMaster = (n: NpcRecord) => n.relationships.some(r => r.kind === 'master');
@@ -100,7 +104,7 @@ describe('a seeded world opens with disciples', () => {
         expect(firstRung.filter(hasMaster).length / firstRung.length).toBeLessThan(0.1);
         const seedlings = onRung(isAHeavenlySeedling);
         expect(seedlings.length).toBeGreaterThan(0);
-        expect(seedlings.filter(hasMaster).length).toBe(seedlings.length);
+        expect(seedlings.filter(hasMaster).length).toBeGreaterThan(0);
         expect(state.npcs.some(n => n.goals.some(g => g.note === A_MASTER_WANTS_A_SEEDLING)),
             'masters who did not get a seedling want them').toBe(true);
     }, 120_000);
@@ -177,6 +181,20 @@ describe('a master looking for a disciple', () => {
         state.npcs.push(master, { ...junior, cultivation: { ...junior.cultivation, spiritRoot: 'single_metal' } });
         return state;
     }
+
+    it('opens a seedling bond only when the house has somebody stronger who can teach', () => {
+        for (const canTeach of [false, true]) {
+            const state = aYard(false);
+            state.npcs = state.npcs.map(n => n.id === 'master'
+                ? setRealm(n, canTeach ? 20 : 8, state.currentDay)
+                : { ...n, cultivation: { ...n.cultivation, spiritRoot: 'mutated_ice' } });
+            seedTheDisciplesAWorldOpensWith(state);
+            const junior = state.npcs.find(n => n.id === 'junior')!;
+            expect(junior.relationships.some(r => r.kind === 'master')).toBe(canTeach);
+            const master = state.npcs.find(n => n.id === 'master')!;
+            expect(master.relationships.some(r => r.kind === 'disciple')).toBe(canTeach);
+        }
+    });
 
     it('takes a promising junior standing in front of them, in their own time, and stops looking', () => {
         // The design owner: *"a master doesn't necessarily take the best one they

@@ -494,3 +494,7 @@ past the change, which is the whole reason beasts are hunted rather than avoided
 The scale table is read by house claims and discovery news, not merely by lore tests. Counted conveyance descriptions report the yard's carriages and mounts; their absence says nothing about tracked hulls. House strength supplies the living roll to `whoCountsTowardThisHouse`, rather than reviving the opening catalog roll.
 
 `spring-houses.ts` adds Lunargent Sect and Amaranth Sect at the fixed Truce Spring. `seatPlaceName` identifies an exact gate-road approach without reading territory prose. Heaven communication reach is a catalog property; its objects are tracked by the world.
+
+Both spring houses have bottom-rung admission, a wall of deceased keepers and
+unbacked governance records. Their fixed holdings carry no surveyed vein or
+confirmed living grantor; the claimed western-road succession remains unconfirmed.

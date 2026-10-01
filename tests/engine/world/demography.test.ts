@@ -1,5 +1,5 @@
 /**
- * People are born in places, and the places stay populated.
+ * People are born on habitable ground, rather than on map containers.
  *
  * THE BUG THIS PINS
  * -----------------
@@ -18,6 +18,14 @@
  * "The Buddha Precipice (region)" went from 39 to 170. The encounter system draws
  * its cast from who is present, so the end state is person-free events forever.
  *
+ * With the yearly passes live, settlement census floors no longer measure
+ * birth placement: on demography, 492 settlers became 274 at 80 years, while
+ * house seats gained people; at 150 years 601 of 1083 lives stood at seats.
+ * Recruitment and travel may do that, and a town may empty. The former 85%
+ * census floor and 42% seat ceiling are replaced by births read before any
+ * movement, including paired population-weight arms. Container drainage,
+ * lineage, recruitment and the five-century ceiling remain integration checks.
+ *
  * Three separate filters had the same defect: a newborn's home, a parent's
  * whereabouts, and a faction's seat all compared something to `region.id` when
  * every one of them meant "under this region".
@@ -27,8 +35,10 @@ import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { soakedWorld } from '../../support/soaked-world.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { npcsAt, type WorldState } from '../../../src/engine/world/world-state.js';
+import { createWorld, npcsAt, type WorldState } from '../../../src/engine/world/world-state.js';
 import { worldShape } from '../../support/the-shape-of-a-world.js';
+import { makeLocation } from '../../../src/engine/world/locations.js';
+import { applyPressure } from '../../../src/engine/world/the-world-changing-on-its-own.js';
 
 
 function headcount(state: WorldState, kind: string): number {
@@ -41,22 +51,7 @@ function livingCount(state: WorldState): number {
     return state.npcs.filter(n => n.status === 'alive').length;
 }
 
-/**
- * The worlds, shared by every assertion that asks for the same horizon.
- *
- * Running one soak twice measures the same world twice. Seeding and advancing
- * are a pure function of the seed - `forStream` derives every roll from
- * (seed, stream, year, id), and nothing under `src/engine/world` calls
- * `Math.random`, `randomUUID` or the clock - so two calls at eighty years
- * produce the same world, at the price of simulating it again. Five of the
- * assertions below ask for eighty years and three ask for five hundred, which
- * was two thousand and seventy simulated years spent re-deriving worlds this
- * file already had.
- *
- * Nothing is shortened and no assertion is weakened: every horizon below is the
- * horizon it always was. See `the-world-produces-its-own.test.ts:280`, which
- * shares its soaks for the same reason and says so.
- */
+/** Worlds shared by assertions of the same horizon; each soak is read once. */
 const theWorldAt = new Map<number, Promise<AdvancedWorld>>();
 
 function advancedWorld(years: number): Promise<AdvancedWorld> {
@@ -92,6 +87,25 @@ async function buildTheWorld(years: number) {
     };
 }
 
+/** Read the birth appointment before any later recruitment or travel. */
+function aBirthCohort(seed: string, townWeight: number) {
+    const state = createWorld({ seed, skipPriorAges: true, regionCount: 0 });
+    state.populationTarget = 1000;
+    state.locations.push(makeLocation({ id: 'region', name: 'Province', kind: 'region' }));
+    state.locations.push(makeLocation({ id: 'town', name: 'Town', kind: 'settlement',
+        parentId: 'region', data: { populationWeight: townWeight } }));
+    for (let seat = 0; seat < 20; seat++) {
+        state.locations.push(makeLocation({ id: `seat-${seat}`, name: `Household ${seat}`,
+            kind: 'sect_seat', parentId: 'region', data: { populationWeight: 1 } }));
+    }
+    state.locations.push(makeLocation({ id: 'empty', name: 'Abandoned Ground', kind: 'settlement',
+        parentId: 'region', data: { populationWeight: 0 } }));
+    state.locations.push(makeLocation({ id: 'sealed', name: 'Sealed Ground', kind: 'settlement',
+        parentId: 'region', sealed: true, data: { populationWeight: 1000 } }));
+    const { born } = applyPressure(state, 179, 180, { intensity: 0 });
+    return { state, born };
+}
+
 describe('a newborn is born somewhere somebody can stand', () => {
     it('drains the region containers instead of filling them', async () => {
         const { before, after } = await advancedWorld(80);
@@ -101,77 +115,17 @@ describe('a newborn is born somewhere somebody can stand', () => {
         expect(after.region).toBeLessThan(before.region / 2);
     }, 180_000);
 
-    it('keeps settlements populated across a long span', async () => {
-        const { before, after } = await advancedWorld(80);
-        // ── RE-PINNED ON A RULING, 23 SEPTEMBER, NOT TUNED TO A RUN ──────
-        //
-        // This demanded that settlements hold at least as many people at eighty
-        // years as at seeding. Measured after the doors work: 363 at seeding and
-        // 350 at eighty years. The whole distribution, because the number only
-        // makes sense beside the others - 52 fewer alive, 58 drained out of the
-        // region containers, 71 fewer standing on a seat, and about 90 alive in
-        // none of those buckets at all, BECAUSE INSIDE A COMPOUND YOU STAND IN A
-        // ROOM.
-        //
-        // The cause, named rather than listed: houses now take in people they
-        // used to refuse, and a recruit entered at a seat moves into the
-        // compound. So people who stood in a village stand inside a sect, and
-        // the village count falls by exactly that much.
-        //
-        // The design owner, asked whether that is the world working or the world
-        // thinning: *"i don't really care about 13 people"* - *"that's fine."*
-        //
-        // THE FLOOR SITS BELOW THE MEASUREMENT AND NOT AT IT. What this guards
-        // is the defect it was written for - settlements draining until nobody
-        // is in them - and a bound at today's figure would go red on any honest
-        // movement. 85% of the seeded count is 309 against a measured 350, which
-        // still fails long before a village empties. Expressed as a share rather
-        // than a literal so it survives a change in world population.
-        expect(after.settlements).toBeGreaterThanOrEqual(Math.floor(before.settlements * 0.85));
-        // And the world is not simply growing: the headcount is held to target
-        // by the same demography, so this is redistribution, not inflation.
-        expect(after.alive).toBeLessThanOrEqual(before.alive * 1.1);
-    }, 180_000);
-
-    /**
-     * WHAT THIS GUARDED, AND WHAT OF IT IS STILL TRUE.
-     *
-     * It asserted that no settlement at all stood empty at 80 years, because an
-     * empty settlement produces person-free events forever. The design owner has
-     * since ruled that a recruit entered at their house's seat MOVES INTO THE
-     * COMPOUND (`a-recruit-is-given-their-lamp-at-the-house.ts`), and the
-     * settlements lose the people houses recruit. That was measured before the
-     * ruling, on this seed at 80 years: people in settlements 548 with recruits
-     * going home and 338 with them moving in. Measured after it, on this tree:
-     *
-     *     seed          80y: in settlements   empty                  150y: empty
-     *     demography    344 (open 199)        Plum Village,          Pine Spring,
-     *                                         Pine Spring            The Far Shore
-     *     afford-a      334 (open 222)        4 small places         none
-     *     afford-b      327 (open 210)        Two Streams, Pine Spr. Pine Spring
-     *     afford-c      330 (open 214)        3 small places         4 small places
-     *
-     * Every empty one is a village, a hamlet or a waystation, and followed year by
-     * year on this seed their people left for the seat of the house they were on
-     * the roll of - Plum Village lost 7 that way in 80 years and had 4 born - so
-     * it is the ruling, with births too slow to refill a small place, and not a
-     * defect in either. Three of those names were already empty on the afford
-     * seeds before any recruit went anywhere. Refilling a village is a separate
-     * question and it is not this guard's.
-     *
-     * WHAT STAYS PINNED is what never happened on any seed at either horizon: a
-     * TOWN or a CITY with nobody in it. Those are where encounters, markets and
-     * walls are, and a house recruiting out of one does not empty it.
-     */
-    it('leaves no town or city without a soul in it, whatever the houses recruit', async () => {
-        const { state } = await advancedWorld(80);
-        const aTownOrACity = (tags: readonly string[]) =>
-            tags.includes('market_town') || tags.includes('sect_town') || tags.includes('city');
-        const towns = state.locations.filter(l => l.kind === 'settlement' && aTownOrACity(l.tags));
-        expect(towns.length, 'the world holds no towns to ask about').toBeGreaterThan(0);
-        const empty = towns.filter(l => npcsAt(state, l.id).length === 0).map(l => l.name);
-        expect(empty, `towns and cities with nobody in them: ${empty.join(', ')}`).toHaveLength(0);
-    }, 180_000);
+    it('places a new cohort on habitable ground, excluding containers, sealed ground and zero weight', () => {
+        const { state, born } = aBirthCohort('birth-ground', 60);
+        expect(born).toBeGreaterThan(0);
+        expect(state.npcs).toHaveLength(born);
+        for (const person of state.npcs) {
+            const home = state.locations.find(l => l.id === person.locationId)!;
+            expect(home.kind).not.toBe('region');
+            expect(home.sealed).toBe(false);
+            expect(Number(home.data.populationWeight)).toBeGreaterThan(0);
+        }
+    });
 
     it('puts nobody on a region node after the original cohort is gone', async () => {
         // Anyone still standing on a container is a survivor of the ORIGINAL
@@ -247,35 +201,25 @@ describe('who lives where is decided by a weight, not by a coin flip', () => {
         }
     });
 
-    it('does not put most of the world inside a sect compound', async () => {
-        // There are far more houses in the catalog than there are towns, so an
-        // unweighted draw over habitable ground put 61% of the living world
-        // inside a compound within 150 years. A sect is a thing you join.
-        //
-        // AND A RECRUIT MOVES IN, on the design owner's ruling "move into the
-        // compound", so the share on sect ground is higher than it was and the
-        // bound below was 35%. Measured on four seeds at 150 years, share of
-        // the living standing on a seat, with the move-in and with a temporary
-        // arm (since removed) that sent a recruit there and back instead:
-        //
-        //                  move-in    there and back
-        //   demography      36.9%        27.0%
-        //   afford-a        33.1%        32.9%
-        //   afford-b        31.1%        19.9%
-        //   roster-d        37.6%        29.0%
-        //
-        // It does not climb: at 300 years the same four read 29.2, 31.2, 25.3
-        // and 34.6%, and the world opens at 52% before the seeded cohort
-        // spreads out. The claim is that most of the world is not inside a
-        // compound, so the bound sits under half with room over the highest
-        // reading rather than at it.
-        const { after } = await advancedWorld(150);
-        const share = after.sectGround / Math.max(1, after.alive);
-        expect(share, `${Math.round(share * 100)}% of the world lives on sect ground`)
-            .toBeLessThan(0.42);
-        // But not zero: sect grounds are inhabited places, not scenery.
-        expect(after.sectGround).toBeGreaterThan(0);
-    }, 240_000);
+    it('weights birthplaces by population rather than by how many compounds exist', () => {
+        let weightedTown = 0;
+        let equalTown = 0;
+        let total = 0;
+        for (let sample = 0; sample < 24; sample++) {
+            const seed = `birth-weight-${sample}`;
+            const weighted = aBirthCohort(seed, 60);
+            const equal = aBirthCohort(seed, 1);
+            expect(weighted.born).toBeGreaterThan(0);
+            expect(equal.born).toBe(weighted.born);
+            weightedTown += weighted.state.npcs.filter(n => n.locationId === 'town').length;
+            equalTown += equal.state.npcs.filter(n => n.locationId === 'town').length;
+            total += weighted.born;
+        }
+        // One town outweighs twenty household grounds; equal weights reverse it.
+        expect(weightedTown).toBeGreaterThan(total / 2);
+        expect(equalTown).toBeLessThan(total / 2);
+        expect(weightedTown).toBeGreaterThan(equalTown * 2);
+    });
 });
 
 describe('the other two filters that meant "under this region"', () => {

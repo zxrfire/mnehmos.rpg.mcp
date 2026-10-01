@@ -31,6 +31,8 @@
  * Arranged, not played to: a body, and who is standing over it, are written
  * into the world directly, the way `aRecruiterOfTheHouseIsHere` stands a person
  * in the square.
+ * Crossing fixtures include the recorded modifiers, and the room fixture
+ * starts at its house's actual seat rather than assuming the house is local.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -208,6 +210,7 @@ describe('a body from the Immortal realm up', () => {
         if (tribulation) {
             recordCrossing(world, body, {
                 outcome: 'death', fromOrdinal: ordinal, toOrdinal: ordinal, finalChance: 0.1,
+                modifiers: [], toll: null,
                 tribulation: { strikes: 9, survived: false }, crossing: null, injuriesSustained: [],
                 arrivedBroken: null, brokenStatusCleared: null, immortalStatusGained: null
             } as any, body.diedOnDay!);
@@ -284,7 +287,9 @@ describe('whose body it came off goes with the bone', () => {
         const { cultivator } = await game.newRun('Bai Suyin');
         db.prepare('UPDATE cultivators SET realm_ordinal = 12 WHERE id = ?').run(cultivator.id);
         harness.repos.sects.addMember(house.id, cultivator.id, 1);
-        harness.repos.cultivators.update(cultivator.id, { location: 'Emerald Water City' });
+        const liveHouse = game.atHand!.factions.find(f => f.id === house.id)!;
+        const seat = game.atHand!.locations.find(l => l.id === liveHouse.seatLocationId)!;
+        harness.repos.cultivators.update(cultivator.id, { location: seat.name });
         const bone = getBone(boneItemId('mortal'))!;
         addToPouch(db, cultivator.id, bone.id, 'herb', 1);
         const world = (await activeWorld()).state;

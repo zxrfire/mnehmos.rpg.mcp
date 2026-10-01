@@ -1,4 +1,6 @@
 /**
+ * A one-stone shortfall uses the singular unit; the amount, not its pluralisation,
+ * is what the refusal must carry.
  * Haggling is a moment, and it had no resolver at all.
  *
  * ═══════════════════════════════════════════════════════════════════════════
@@ -200,7 +202,7 @@ describe('a haggle is not a day', () => {
         const offered = await game.act('I offer one stone');
 
         expect(read(offered), 'a short offer was not told what would close it')
-            .toContain(`${standing.askStones - 1} spirit stones more closes it`);
+            .toMatch(new RegExp(`${standing.askStones - 1} spirit stones? more closes it`));
     }, 300_000);
 
     /**

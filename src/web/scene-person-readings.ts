@@ -6,6 +6,7 @@ import type { Cultivator } from '../schema/cultivation.js';
 import { CRIPPLING_UNTREATED_INJURIES } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { KnowledgeGate } from './knowledge.js';
+import { saidOnceForEverybodyItHappenedTo } from './acts-over-a-set.js';
 import { describeStanding } from './facts.js';
 import { HELPLESS_REALM_GAP } from '../engine/cultivation/combat.js';
 import { realmIndexOf } from '../engine/cultivation/realms.js';
@@ -643,29 +644,18 @@ function whoseHouseWasInIt(
  *   Gu Nuohe, far beneath you. They lost a serious piece of what they
  *   had... They say nothing, where the others can see it.
  *
- * Grouping on the whole sentence folds the first two and leaves the third
- * repeating every word of them, because one standing differs. So the body is
- * the key and the heads are gathered into it: `7 of them well beneath you, and
- * 3 far beneath you.`
- *
- * Past three names in one head, a count. A sentence that has to name seven
- * people before it says anything is a roster wearing a reading.
+ * Grouping whole bodies fixed differing standings, but repeated a shared
+ * sentence whenever another part of the body differed. The set-account fold
+ * now handles the sentences; the heads retain their identities and standings.
  */
 function theOnesWhoReadTheSame(read: readonly { who: string; said: string }[]): string[] {
-    const order: string[] = [];
-    const byBody = new Map<string, { who: string; standing: string; said: string }[]>();
-    for (const one of read) {
-        const split = headAndBody(one.said, one.who);
-        const held = byBody.get(split.body);
-        const row = { who: one.who, standing: split.standing, said: one.said };
-        if (held) held.push(row);
-        else { order.push(split.body); byBody.set(split.body, [row]); }
-    }
-    return order.map(body => {
-        const group = byBody.get(body)!;
-        if (group.length === 1) return group[0]!.said;
-        return `${theHeadsTogether(group)} ${body}`.trim();
-    });
+    if (read.length < 2) return read.map(one => one.said);
+    const people = read.map(one => ({ ...one, ...headAndBody(one.said, one.who) }));
+    const named = people.filter(one => one.body !== one.said);
+    const shared = saidOnceForEverybodyItHappenedTo(
+        people.map(one => ({ who: one.who, label: one.body === one.said ? 'somebody here' : one.who,
+            lines: [one.body] })));
+    return [`${named.length > 0 ? theHeadsTogether(named) : ''} ${shared.join(' ')}`.trim()];
 }
 
 /** The head a reading opens with, and everything after it. */
