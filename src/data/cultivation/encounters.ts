@@ -360,8 +360,8 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['hostile', 'beast', 'spirit-vein', 'materials']
     },
     {
-        id: 'enc-abyssal-leviathan',
-        name: 'Abyssal Leviathan',
+        id: 'enc-abyssal-kun',
+        name: 'Abyssal Kun',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
         weight: 4,
@@ -370,7 +370,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: 38,
         summaryTemplate:
-            'A leviathan at {threatRank} has surfaced from the rift at {place}. Realm gap to the observer: {gap} ranks. {count} settlements are inside its recorded range.',
+            'A kun at {threatRank} has surfaced from the rift at {place}. Realm gap to the observer: {gap} ranks. {count} settlements are inside its recorded range.',
         tokens: ['threatRank', 'place', 'gap', 'count'],
         tags: ['hostile', 'beast', 'catastrophe']
     },

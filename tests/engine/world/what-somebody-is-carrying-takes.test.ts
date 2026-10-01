@@ -29,7 +29,7 @@ import {
 
 const sword = makeObject({ id: 'sword', name: 'a plain iron sword', kind: 'artifact', possessorId: 'you', volume: 3, weight: 2 });
 const clothes = theClothesTheyStandUpIn({ personId: 'you', personName: 'Shen Wuyou', onDay: 1 });
-const robes = { ...aUniformFor({ memberId: 'you', houseId: 'h', houseName: 'Bountiful Sheaf Sect', onDay: 2 }) };
+const robes = { ...aUniformFor({ memberId: 'you', houseId: 'h', houseName: 'Golden Sheaf Sect', onDay: 2 }) };
 
 describe('worn, held and inventory', () => {
     it('are three states of one thing, and a thing issued to be worn is worn', () => {

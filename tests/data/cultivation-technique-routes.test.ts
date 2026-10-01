@@ -106,8 +106,8 @@ function routesTo(techniqueId: string): Route[] {
 
 /** The fifteen the audit found, with the route each one was actually given. */
 const THE_FIFTEEN: Readonly<Record<string, RouteKind>> = {
-    'bramble-crown-spear': 'taught',
-    'bloodwarm-battle-chant': 'taught',
+    'hundred-thorn-piercing-art': 'taught',
+    'blazing-blood-art': 'taught',
     'abyssal-gate-torrent': 'trial',
     'dragonbone-severing-decree': 'trial',
     'open-sky-calamity-word': 'trial',

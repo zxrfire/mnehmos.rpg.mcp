@@ -118,7 +118,7 @@ export const THE_LOW_FALL: Region = {
             parentSectId: 'sect-fallen-grain-caravan',
             localName: 'The Willow Village Factor at Clear River Ferry',
             doesHere:
-                'Sells Buddha Precipice salvage into the Jade Gorge market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Buddha Precipice has no teacher for. Buys nothing and is watched by the Wraith Dirge Cult, which considers the trade its own.'
+                'Sells Buddha Precipice salvage into the Jade Gorge market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Buddha Precipice has no teacher for. Buys nothing and is watched by the Corpse Refining Sect, which considers the trade its own.'
         },
         {
             parentSectId: 'sect-stone-marrow-hall',
@@ -416,7 +416,7 @@ export const THE_LOW_FALL: Region = {
             kind: 'shared_institution',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The Stone Marrow Hall and Burnt Earth Temple both hold Buddha Precipice outposts, and the Bountiful Sheaf Sect keeps a factor at Clear River Ferry. Those three offices are the whole formal relationship between the regions.',
+                'The Stone Marrow Hall and Burnt Earth Temple both hold Buddha Precipice outposts, and the Golden Sheaf Sect keeps a factor at Clear River Ferry. Those three offices are the whole formal relationship between the regions.',
             travelDays: 11
         },
         {
@@ -634,7 +634,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'Run by the Clear River Alliance, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
         discrepancy: 'no_holder_of_record',
         note:
-            'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Bountiful Sheaf Sect and the Still Blade Pavilion both use, for opposite reasons.'
+            'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Golden Sheaf Sect and the Still Blade Pavilion both use, for opposite reasons.'
     },
     {
         id: 'prefecture-sweptground',

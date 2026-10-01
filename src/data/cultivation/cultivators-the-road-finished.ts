@@ -455,7 +455,7 @@ export const FALLEN: readonly Fallen[] = [
         foundationQuality: null,
         work: {
             occupationId: null,
-            doing: 'It is used. Crews treat the greeting as a gauge: if it speaks the shaft is as they left it, and if it is silent the edge has moved and nobody goes in. Four generations of Bountiful Sheaf Sect have worked off that reading.',
+            doing: 'It is used. Crews treat the greeting as a gauge: if it speaks the shaft is as they left it, and if it is silent the edge has moved and nobody goes in. Four generations of Golden Sheaf Sect have worked off that reading.',
             quotesPriceId: null
         },
         place: {

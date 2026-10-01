@@ -73,8 +73,8 @@ export const AN_INSTITUTION_IS_BEING_ASKED = new RegExp(
     // Measured: `I ask the Azure Dew Sect for a manual` filed a petition and
     // `I ask the Clear River Alliance for a manual` went looking for a PERSON
     // called Clear River Alliance - the inversion this gate exists to stop,
-    // running the other way. Same for the Burnt Earth Temple, the Wraith Dirge
-    // Cult and the Ancient Bough Grove.
+    // running the other way. Same for the Burnt Earth Temple, the Corpse Refining
+    // Sect and the Ancient Bough Grove.
     String.raw`\b(?:${A_HOUSE_BY_NAME_OR_KIND}|councils?|elders?`
     + String.raw`|the (?:seat|body|institution|administration|registry)|my house|our house`
     + String.raw`|the family|patriarch|matriarch|hall master|sect master|head of the)\b`

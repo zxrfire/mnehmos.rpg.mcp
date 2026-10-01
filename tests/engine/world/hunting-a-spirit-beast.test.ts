@@ -196,7 +196,7 @@ describe('what comes off the body', () => {
         // WAS ONE ROW, IS NOW FOUR. Speech used to be an authored column and
         // the Sleeper in the Cut Face was the only priced speaker; the design
         // owner made speech the rung, so the Millennial Tortoise, the Abyssal
-        // Leviathan and the Thing Under Nine Peaks joined it with the material
+        // Kun and the Thing Under Nine Peaks joined it with the material
         // rows they already had. The count is not the point and never was -
         // what keeps these from being farmable is pinned instead, and that is
         // a property each one has to carry on its own.

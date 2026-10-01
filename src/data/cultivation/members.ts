@@ -184,14 +184,14 @@ export function rankRealmBand(factionId: string, rankIndex: number): RealmBand |
 
 const AUTHORED_MEMBERS: readonly Member[] = [
     {
-        id: 'member-zuo-qintai', name: 'Zuo Qintai', factionId: 'sect-lunargent',
+        id: 'member-zuo-qintai', name: 'Zuo Qintai', factionId: 'sect-moonwater',
         rankIndex: 1, rank: 'Outer Disciple', realmOrdinal: 3, role: 'peer',
         wants: 'to learn the older donor names beneath the paint', fears: 'scraping away the only surviving copy',
         detail: 'Copies a single painted name each morning and asks travellers how they would pronounce it.',
         outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null
     },
     {
-        id: 'member-pei-ningshu', name: 'Pei Ningshu', factionId: 'sect-lunargent',
+        id: 'member-pei-ningshu', name: 'Pei Ningshu', factionId: 'sect-moonwater',
         rankIndex: 3, rank: 'Spring Elder', realmOrdinal: 6, role: 'master',
         wants: 'a disciple who can keep circulation steady through a night watch', fears: 'losing another inherited cell',
         detail: 'Keeps the circulation diagrams on loose tiles so a beginner can put them in order before sitting.',
@@ -201,21 +201,21 @@ const AUTHORED_MEMBERS: readonly Member[] = [
             costsThem: 'Every lesson takes time away from tending the working formation nodes.' }
     },
     {
-        id: 'member-duan-xuelin', name: 'Duan Xuelin', factionId: 'sect-lunargent',
+        id: 'member-duan-xuelin', name: 'Duan Xuelin', factionId: 'sect-moonwater',
         rankIndex: 5, rank: 'Sect Master', realmOrdinal: 21, role: 'senior',
         wants: 'a reader for the sealed western-road grant', fears: 'an archive that disproves the succession',
         detail: 'Carries the succession copies in separate sleeves, with the unread western seal copied onto each cover.',
         outlier: true, outlierReason: 'inherited', goodCompany: false, rivalry: null, teaching: null
     },
     {
-        id: 'member-luo-yanshao', name: 'Luo Yanshao', factionId: 'sect-amaranth',
+        id: 'member-luo-yanshao', name: 'Luo Yanshao', factionId: 'sect-five-grains',
         rankIndex: 1, rank: 'Outer Disciple', realmOrdinal: 3, role: 'peer',
         wants: 'to settle the grain measure dispute before the next delivery', fears: 'being charged for another short sack',
         detail: 'Brings two measuring cups to every meal and invites anyone nearby to find the difference.',
         outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null
     },
     {
-        id: 'member-tan-huizhen', name: 'Tan Huizhen', factionId: 'sect-amaranth',
+        id: 'member-tan-huizhen', name: 'Tan Huizhen', factionId: 'sect-five-grains',
         rankIndex: 3, rank: 'Ledger Elder', realmOrdinal: 6, role: 'master',
         wants: 'a store watch that practises its tempering forms', fears: 'teaching the posture without its circulation',
         detail: 'Sets an empty sack on a beginner\'s shoulders and checks their stance before adding any grain.',
@@ -225,7 +225,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
             costsThem: 'Teaching takes her off the store watch and another disciple must cover it.' }
     },
     {
-        id: 'member-fan-mengqi', name: 'Fan Mengqi', factionId: 'sect-amaranth',
+        id: 'member-fan-mengqi', name: 'Fan Mengqi', factionId: 'sect-five-grains',
         rankIndex: 5, rank: 'Sect Master', realmOrdinal: 19, role: 'senior',
         wants: 'the spring keepers to hear the grain factor', fears: 'supplies leaving before the contract is read',
         detail: 'Keeps a sample of each season\'s grain beside its contract and opens both when a factor calls.',
@@ -1164,7 +1164,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: {
             knows: 'Provenance: what came out of a hole rather than a workshop, roughly which hole, and roughly when it was opened.',
             mayNotSay: 'Who consigned anything, ever, which is not a rule so much as the Pavilion\'s entire business model.',
-            costsThem: 'Naming a grave names the digger. Diggers have friends, several of them are in the Wraith Dirge Cult, and he has to keep buying from them next season.'
+            costsThem: 'Naming a grave names the digger. Diggers have friends, several of them are in the Corpse Refining Sect, and he has to keep buying from them next season.'
         }
     },
     {
@@ -1877,7 +1877,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Hall Master',
         realmOrdinal: 17,
         role: 'master',
-        wants: 'the supply quarrel with the Wraith Dirge Cult settled by purchase rather than by killing',
+        wants: 'the supply quarrel with the Corpse Refining Sect settled by purchase rather than by killing',
         fears: 'the town above deciding that it does know',
         detail: 'Pays the town\'s night-soil contractor four times the going rate, personally, in cash, and has done for twenty years.',
         outlier: false,
@@ -1908,17 +1908,17 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Wraith Dirge Cult -------------------------------------------------
+    // --- Corpse Refining Sect -------------------------------------------------
     {
         id: 'member-shao-kongzhi',
         name: 'Shao Kongzhi',
-        factionId: 'sect-wraith-dirge-cult',
+        factionId: 'sect-corpse-refining-sect',
         rankIndex: 0,
         rank: 'Grave Digger',
         realmOrdinal: 3,
         role: 'peer',
         wants: 'to be moved off the sorting wall and onto the carts',
-        fears: 'the third year after an engagement, which is when the Cult goes in',
+        fears: 'the third year after an engagement, which is when the Sect goes in',
         detail: 'Sorts fragments by weight as instructed, and has begun secretly sorting one corner of the field wall by what the pieces used to be.',
         outlier: false,
         outlierReason: null,
@@ -1929,13 +1929,13 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-wu-liuyi',
         name: 'Wu Liuyi',
-        factionId: 'sect-wraith-dirge-cult',
+        factionId: 'sect-corpse-refining-sect',
         rankIndex: 1,
         rank: 'Lantern Bearer',
         realmOrdinal: 8,
         role: 'peer',
         wants: 'out',
-        fears: 'the Verdant Spring Valley, which hunts the Cult on principle and does not check rank first',
+        fears: 'the Verdant Spring Valley, which hunts the Sect on principle and does not check rank first',
         detail: 'Has a Verdant Spring medicine boy\'s token she took off a body four years ago and has never dared sell.',
         outlier: false,
         outlierReason: null,
@@ -1946,33 +1946,33 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-yu-ziyan',
         name: 'Yu Ziyan',
-        factionId: 'sect-wraith-dirge-cult',
+        factionId: 'sect-corpse-refining-sect',
         rankIndex: 2,
-        rank: 'Bone Disciple',
+        rank: 'Corpse Disciple',
         realmOrdinal: 12,
         role: 'rival',
-        wants: 'the Bountiful Sheaf Sect driven off the border sites entirely',
+        wants: 'the Golden Sheaf Sect driven off the border sites entirely',
         fears: 'the Caravan\'s factor at Clear River Ferry, personally and by name',
-        detail: 'Has killed two Bountiful Sheaf Sect in six years, can name them both, and does, at length, when drinking.',
+        detail: 'Has killed two Golden Sheaf Sect in six years, can name them both, and does, at length, when drinking.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
         rivalry: {
             grievance: 'Sixty years of two outfits robbing each other across a border, narrowed down to whichever face he saw last.',
-            beatableBecause: 'His method is ambush on ground he has already scouted, and he has no second plan for a fight that starts somewhere else. The Cult will not avenge him either: it follows wars at a respectful distance and files a dead disciple as a supply problem.'
+            beatableBecause: 'His method is ambush on ground he has already scouted, and he has no second plan for a fight that starts somewhere else. The Sect will not avenge him either: it follows wars at a respectful distance and files a dead disciple as a supply problem.'
         },
         teaching: null
     },
     {
         id: 'member-ye-puxian',
         name: 'Ye Puxian',
-        factionId: 'sect-wraith-dirge-cult',
+        factionId: 'sect-corpse-refining-sect',
         rankIndex: 3,
         rank: 'Corpse Warden',
         realmOrdinal: 15,
         role: 'master',
         wants: 'an apprentice who does not flinch in the first week',
-        fears: 'the Pale Ancestor\'s tomb being opened by anybody, the Cult included',
+        fears: 'the Corpse Refining Patriarch\'s tomb being opened by anybody, the Sect included',
         detail: 'The best grave-reader in the region, will say so, is right, and holds a farmer\'s hardcore contract to prove she is also a legitimate supplier.',
         outlier: false,
         outlierReason: null,
@@ -1980,8 +1980,8 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rivalry: null,
         teaching: {
             knows: 'How to read a battlefield, a barrow and a sealed chamber, better than anybody in either region.',
-            mayNotSay: 'The Pale Elders\' rotation, which is how the Cult stays unfound and is the only secret it actually keeps.',
-            costsThem: 'An outsider who learns to read graves becomes competition, and the Cult\'s entire margin is that nobody else is willing to do the work.'
+            mayNotSay: 'The Corpse Elders\' rotation, which is how the Sect stays unfound and is the only secret it actually keeps.',
+            costsThem: 'An outsider who learns to read graves becomes competition, and the Sect\'s entire margin is that nobody else is willing to do the work.'
         }
     },
 
@@ -2958,7 +2958,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Bountiful Sheaf Sect ------------------------------------------------
+    // --- Golden Sheaf Sect ------------------------------------------------
     {
         id: 'member-barrow-nine',
         name: 'Yao Lanyi',
@@ -3022,9 +3022,9 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         // the top of its rung and still is.
         realmOrdinal: 10,
         role: 'rival',
-        wants: 'the Wraith Dirge Cult off the border sites for a single season',
+        wants: 'the Corpse Refining Sect off the border sites for a single season',
         fears: 'Yu Ziyan, by name, and says the name',
-        detail: 'Has been robbed twice by the Cult, and has begun going armed and going first.',
+        detail: 'Has been robbed twice by the Sect, and has begun going armed and going first.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -3214,7 +3214,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         outlierReason: null,
         goodCompany: false,
         rivalry: {
-            grievance: 'The Cult worked the ground behind her string two seasons running, and the second time they were standing over a man she had counted out of the shed door herself.',
+            grievance: 'The Sect worked the ground behind her string two seasons running, and the second time they were standing over a man she had counted out of the shed door herself.',
             beatableBecause: 'She cannot leave the sand - nine eastern gates hold a standing rate on her and she knows the figure - so every fight she picks has to be finished inside the water she is carrying, and she carries four days of it. Anybody who declines to be finished can walk her back toward the well and let the arithmetic do it for them.'
         },
         teaching: null
@@ -3532,16 +3532,16 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-the-cult-ancestor',
-        name: 'The Cult Ancestor',
-        factionId: 'sect-wraith-dirge-cult',
+        id: 'member-the-corpse-ancestor',
+        name: 'The Corpse Ancestor',
+        factionId: 'sect-corpse-refining-sect',
         rankIndex: 6,
-        rank: 'Cult Ancestor',
+        rank: 'Corpse Ancestor',
         realmOrdinal: 26,
         role: 'senior',
         wants: 'to be left to work',
         fears: 'the Crimson Abyss Fortress, which hunts them over supply rather than principle and is much better at it',
-        detail: 'Works battlefields in silence and talks continuously on the road back, and has never given a name to anybody outside the cult.',
+        detail: 'Works battlefields in silence and talks continuously on the road back, and has never given a name to anybody outside the sect.',
         outlier: true,
         outlierReason: 'last_of_age',
         goodCompany: false,
@@ -4058,27 +4058,27 @@ const COURT_MEMBERS: readonly Member[] = HOLLOW_COURT_ROSTER
  * Everybody the catalogs name, in one list.
  */
 const SPRING_MEMBERS: readonly Member[] = [
-    { id: 'member-yan-zhaosu', name: 'Yan Zhaosu', factionId: 'sect-lunargent', rankIndex: 5, rank: 'Sect Master',
+    { id: 'member-yan-zhaosu', name: 'Yan Zhaosu', factionId: 'sect-moonwater', rankIndex: 5, rank: 'Sect Master',
         realmOrdinal: 21, role: 'senior', wants: 'the succession records examined', fears: 'a missing generation in the grant',
         detail: 'Keeps rubbings of the older donor names beside the gate book and checks each new copy against them.',
         outlier: true, outlierReason: 'inherited', goodCompany: false, rivalry: null, teaching: null },
-    { id: 'member-qiu-yanzhen', name: 'Qiu Yanzhen', factionId: 'sect-lunargent', rankIndex: 1, rank: 'Outer Disciple',
+    { id: 'member-qiu-yanzhen', name: 'Qiu Yanzhen', factionId: 'sect-moonwater', rankIndex: 1, rank: 'Outer Disciple',
         realmOrdinal: 5, role: 'peer', wants: 'a week in a rock cell', fears: 'another season clearing channels',
         detail: 'Has chalk marks on both cuffs from counting the blocked spring channels before reporting at the gate.',
         outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null },
-    { id: 'member-bao-ning', name: 'Bao Ning', factionId: 'sect-lunargent', rankIndex: 0, rank: 'Water Servant',
+    { id: 'member-bao-ning', name: 'Bao Ning', factionId: 'sect-moonwater', rankIndex: 0, rank: 'Water Servant',
         realmOrdinal: 0, role: 'peer', wants: 'the circulation primer', fears: 'losing the gate book',
         detail: 'Carries the gate book in a waxed cloth and dries the cloth on the same rock after every water shift.',
         outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null },
-    { id: 'member-du-rui', name: 'Du Rui', factionId: 'sect-amaranth', rankIndex: 5, rank: 'Sect Master',
+    { id: 'member-du-rui', name: 'Du Rui', factionId: 'sect-five-grains', rankIndex: 5, rank: 'Sect Master',
         realmOrdinal: 19, role: 'senior', wants: 'the grain factor admitted', fears: 'a season supplied without an account',
         detail: 'Signs each seasonal contract with the same worn brush and keeps the carrier\'s copy until they ask for it.',
         outlier: true, outlierReason: 'inherited', goodCompany: true, rivalry: null, teaching: null },
-    { id: 'member-he-zhengqi', name: 'He Zhengqi', factionId: 'sect-amaranth', rankIndex: 1, rank: 'Outer Disciple',
+    { id: 'member-he-zhengqi', name: 'He Zhengqi', factionId: 'sect-five-grains', rankIndex: 1, rank: 'Outer Disciple',
         realmOrdinal: 5, role: 'peer', wants: 'to inspect the dark formation nodes', fears: 'a damp load entered as dry',
         detail: 'Opens the bottom grain sack on every arriving load before allowing the carrier to put a name in the ledger.',
         outlier: false, outlierReason: null, goodCompany: false, rivalry: null, teaching: null },
-    { id: 'member-fang-suoyin', name: 'Fang Suoyin', factionId: 'sect-amaranth', rankIndex: 0, rank: 'Granary Servant',
+    { id: 'member-fang-suoyin', name: 'Fang Suoyin', factionId: 'sect-five-grains', rankIndex: 0, rank: 'Granary Servant',
         realmOrdinal: 0, role: 'peer', wants: 'a place at the next lesson', fears: 'miscounting the empty bins',
         detail: 'Marks each emptied bin with a tied reed and unties it only after the keeper has counted the next load.',
         outlier: false, outlierReason: null, goodCompany: true, rivalry: null, teaching: null }

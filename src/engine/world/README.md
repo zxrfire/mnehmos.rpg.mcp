@@ -10,8 +10,9 @@ Places, the five capability predicates, opportunity windows, the historical reco
 lineage, possessions, NPC records and the world clock. Read this before changing anything
 in `src/engine/world/`.
 
-Catalog interiors with a `gateOrdinal` seed a sealed door. A warded archive is
-not among the closed ruins the seeder opens for a new world.
+Catalog interiors with a `gateOrdinal` seed an entry threshold. The ordinal
+does not set a permanent `sealed` flag; the ordinary ruin entry check enforces
+the threshold.
 
 An elemental death leaves the row written by estate settlement in place; the
 summit pass must not restore its earlier purse or relationships afterwards.

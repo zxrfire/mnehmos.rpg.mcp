@@ -360,10 +360,10 @@ describe('the change, and why a talking beast is never the easy option', () => {
         expect(silentAndHigh).toEqual([]);
         // Three rows changed meaning under it and are named, because their
         // prose was written for a thing that said nothing: the Millennial
-        // Tortoise at 31, the Abyssal Leviathan at 38 and the Thing Under Nine
+        // Tortoise at 31, the Abyssal Kun at 38 and the Thing Under Nine
         // Peaks at 33 all answer now.
         for (const id of [
-            'beast-millennial-tortoise', 'beast-abyss-leviathan', 'beast-thing-under-nine-peaks'
+            'beast-millennial-tortoise', 'beast-abyss-kun', 'beast-thing-under-nine-peaks'
         ]) {
             expect(anythingAtThisRungSpeaks(requireBeast(id).ordinal), id).toBe(true);
         }

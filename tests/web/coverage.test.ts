@@ -33,6 +33,11 @@ import {
 } from '../../src/web/actions.js';
 import { WHAT_EACH_VERB_IS_FOR } from '../../src/web/what-each-verb-is-for-in-the-players-words.js';
 
+const BEAST_OATH_PHRASINGS = {
+    beast_contract: ['I make a beast cultivation contract with the fox'],
+    end_beast_contract: ['I end my beast cultivation contract with the fox']
+} as const;
+
 /**
  * How a player asks for each action, in their own words.
  *
@@ -253,7 +258,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I look for a sect that will take me',
         'I want to join a sect',
         'what sects are near here',
-        'I ask about joining the Bountiful Sheaf Sect'
+        'I ask about joining the Golden Sheaf Sect'
     ],
     look: [
         'I look around',
@@ -815,7 +820,8 @@ describe('every intent behind a door is reachable from plain English too', () =>
         // offer ladder above a favour. It carries no oath noun, so it reaches
         // the verb through its own branch above the gate rather than through
         // `AN_OATH`.
-        serve: ['I do him a service', 'I do a service for the old man', 'I serve out my term']
+        serve: ['I do him a service', 'I do a service for the old man', 'I serve out my term'],
+        ...BEAST_OATH_PHRASINGS
     };
 
     for (const [intent, phrasings] of Object.entries(OATH_PHRASINGS)) {
@@ -882,8 +888,8 @@ describe('every intent DECLARED is a door somebody can find', () => {
      * a second place for them to drift.
      */
     const INTENT_PHRASINGS: Record<string, readonly string[]> = {
-        'oath/beast_contract': ['I make a beast cultivation contract with the fox'],
-        'oath/end_beast_contract': ['I end my beast cultivation contract with the fox'],
+        'oath/beast_contract': BEAST_OATH_PHRASINGS.beast_contract,
+        'oath/end_beast_contract': BEAST_OATH_PHRASINGS.end_beast_contract,
         'cultivate/offered_self': ['I offer myself as a cultivation furnace to Qiu Fen'],
         'cultivate/offered': ['I ask Qiu Fen to willingly be my furnace'],
         'sect/take_disciple': ['I accept Qiu Fen as my disciple'],
@@ -1627,7 +1633,7 @@ describe('asking somebody is not consulting a register', () => {
     it('leaves an application to the sect surface, where the act actually is', () => {
         // "ask about joining" names no person. It is not a question, it is an
         // application, and routing it to a conversation would lose the join.
-        expect(parseIntent('I ask about joining the Bountiful Sheaf Sect').action).toBe('sect');
+        expect(parseIntent('I ask about joining the Golden Sheaf Sect').action).toBe('sect');
     });
 
     it('leaves asking around for work to the verb that feeds them', () => {

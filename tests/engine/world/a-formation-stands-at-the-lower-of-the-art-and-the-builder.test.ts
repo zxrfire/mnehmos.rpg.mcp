@@ -83,7 +83,7 @@ describe('which arts raise a formation at all', () => {
 
     it('the other three sword arts were passed over and stay passed over', () => {
         for (const id of [
-            'hundred-cut-flying-blade', 'nine-rivers-sword-chant', 'gale-riding-sword-flight'
+            'hundred-cut-flying-blade', 'nine-rivers-sword-form', 'gale-riding-sword-flight'
         ]) {
             const art = TECHNIQUES.find(t => t.id === id)!;
             expect(art.subjects).toEqual(['sword']);

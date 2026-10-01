@@ -1896,9 +1896,9 @@ function theHouseBeingAskedAbout(input: string): string | undefined {
  *
  * Fifteen house words were written out here, and the catalog has twenty-seven.
  * Measured over every row of `SECTS`: NINE houses could not be asked this
- * question at all - Clearwater Ward, Six Li Patrol, Bountiful Sheaf Sect, Tranquil
+ * question at all - Clearwater Ward, Six Li Patrol, Golden Sheaf Sect, Tranquil
  * Oasis Sect, Wayside Chime Wanderers, Still Blade Pavilion, Flowing Star Tower,
- * Earth Vein Tower, Wraith Dirge Cult - because their type noun was not on the
+ * Earth Vein Tower, Corpse Refining Sect - because their type noun was not on the
  * line, and a tenth, The Severed, because its name is one word. A birth that
  * opened knowing exactly two houses drew two of them.
  *

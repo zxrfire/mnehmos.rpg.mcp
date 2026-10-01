@@ -313,7 +313,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         whoPays: 'The Pavilion buys dug goods from anybody and asks nothing about the hole. A dealer buys the same goods for less and asks even less.',
         unbackedCost: 'Sects keep records of where their people fell, families remember, and a few of the richest sites are baited. A rogue caught reading a sect\'s grave has no institution to be handed back to.',
         deathRate: 'Nobody counts. Grave-readers who are counted are the ones somebody came looking for.',
-        factionIds: ['sect-thousand-treasure-pavilion', 'sect-wraith-dirge-cult']
+        factionIds: ['sect-thousand-treasure-pavilion', 'sect-corpse-refining-sect']
     },
     {
         id: 'rogue-bounty-taker',
@@ -566,9 +566,9 @@ export const BOUNTIES: readonly Bounty[] = [
         catch: 'Legal, small, reliable, and despised by everybody the taker is going to want to drink with afterwards. Most rogues will not take it twice.'
     },
     {
-        id: 'bounty-wraith-dirge-cult',
+        id: 'bounty-corpse-refining-sect',
         what: 'Bodies, or the location of a fresh one, no questions in either direction',
-        posterFactionId: 'sect-wraith-dirge-cult',
+        posterFactionId: 'sect-corpse-refining-sect',
         posterNote: 'Not posted anywhere. Mentioned to corpse carriers, and to diggers who look like they are having a bad season.',
         purseCash: 10_000,
         evidence: 'Delivery, at a place they name on the day.',

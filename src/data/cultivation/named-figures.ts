@@ -591,11 +591,11 @@ export const SEALED_FIGURE_NAMES: readonly NamedFigure[] = [
 
 export const FOUNDERS: readonly NamedFigure[] = [
     {
-        id: 'figure-lunargent-first-keeper',
-        name: 'The first Lunargent keeper',
+        id: 'figure-moonwater-first-keeper',
+        name: 'The first Moonwater keeper',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'sect-lunargent',
+        factionId: 'sect-moonwater',
         whatTheyWere: 'The keeper named by the spring elders as the recipient of their western-road grant.',
         yearsAgo: null,
         attestation: 'unreadable',
@@ -605,11 +605,11 @@ export const FOUNDERS: readonly NamedFigure[] = [
         note: 'The painted donors record later keepers; they do not establish who received the grant.'
     },
     {
-        id: 'figure-amaranth-first-account-keeper',
-        name: 'The first Amaranth account keeper',
+        id: 'figure-five-grains-first-account-keeper',
+        name: 'The first Five Grains account keeper',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'sect-amaranth',
+        factionId: 'sect-five-grains',
         whatTheyWere: 'The account keeper credited with gathering the granaries into one house roll.',
         yearsAgo: null,
         attestation: 'disputed',
@@ -900,16 +900,16 @@ export const FOUNDERS: readonly NamedFigure[] = [
         note: 'A demonic sect with better payroll records than most righteous sects have ancestral ones.'
     },
     {
-        id: 'figure-the-pale-ancestor',
-        name: 'The Pale Ancestor',
+        id: 'figure-corpse-refining-patriarch',
+        name: 'The Corpse Refining Patriarch',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'sect-wraith-dirge-cult',
-        whatTheyWere: 'The one Deity Transformation the cult has managed in its history, seven hundred years ago, and the whole of its prestige.',
+        factionId: 'sect-corpse-refining-sect',
+        whatTheyWere: 'The one Deity Transformation the sect has managed in its history, seven hundred years ago, and the whole of its prestige.',
         yearsAgo: 700,
         attestation: 'garbled',
         attestationNote:
-            'Three sites, three names, and the cult uses the epithet because using any of the three would be choosing between three digging crews who each hold that theirs is right. The rotation has come round to all three sites twice since.',
+            'Three sites, three names, and the sect uses the epithet because using any of the three would be choosing between three digging crews who each hold that theirs is right. The rotation has come round to all three sites twice since.',
         answers: null,
         juniority: null,
         note: 'A prestige claim that cannot be stated precisely, held by an institution whose seniority system is a queue.'

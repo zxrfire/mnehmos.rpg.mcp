@@ -20,7 +20,7 @@ import type { WorldState } from '../../../src/engine/world/world-state.js';
 import { whatIsWithinReachOf } from '../../../src/web/object-theft.js';
 
 const clothes = theClothesTheyStandUpIn({ personId: 'you', personName: 'Shen Wuyou', onDay: 3 });
-const robes = aUniformFor({ memberId: 'wei', houseId: 'house-1', houseName: 'Bountiful Sheaf Sect', onDay: 1 });
+const robes = aUniformFor({ memberId: 'wei', houseId: 'house-1', houseName: 'Golden Sheaf Sect', onDay: 1 });
 const aBowl = makeObject({ id: 'bowl', name: 'a clay bowl', kind: 'other', significance: 'mundane', possessorId: 'wei' });
 
 describe('what somebody has on', () => {
@@ -40,7 +40,7 @@ describe('what somebody has on', () => {
     it('lists the robes first, then the clothes under them', () => {
         const robesOnYou = { ...robes, possessorId: 'you' };
         expect(whatTheyHaveOn([clothes, aBowl, robesOnYou], 'you').map(o => o.name))
-            .toEqual(['Bountiful Sheaf Sect robes', 'plain clothes']);
+            .toEqual(['Golden Sheaf Sect robes', 'plain clothes']);
         expect(theLineForWhatTheyHaveOn(whatTheyHaveOn([clothes], 'you'))).toBe('Wearing: plain clothes.');
         expect(theLineForWhatTheyHaveOn([])).toBe('You have nothing on.');
     });

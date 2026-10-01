@@ -1343,12 +1343,12 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         startingAwareness: 'unaware',
         awarenessSources: [
             'the Clearwater Ward grant book, whose renewals are countersigned by an office it never names',
-            'a Bountiful Sheaf Sect salvage crew that opened something and found the schedule already written on the wall in a hand nobody uses',
+            'a Golden Sheaf Sect salvage crew that opened something and found the schedule already written on the wall in a hand nobody uses',
             'a Myriad Course Hall inspection, which happens roughly twice a century and is mistaken locally for a rich merchant party'
         ],
         actsWithoutAttribution: [
             'the Clearwater Ward abruptly stops issuing grants for a season and gives no reason, having been given none',
-            'a burn zone the Bountiful Sheaf Sect have worked for forty years is suddenly staked and posted, and the stakes are not Six Li work',
+            'a burn zone the Golden Sheaf Sect have worked for forty years is suddenly staked and posted, and the stakes are not Six Li work',
             'a face nobody could work is found open, worked out and abandoned, with the spoil stacked in courses too neat for a local crew'
         ],
         description:
@@ -1852,8 +1852,8 @@ export const COURTS: readonly Court[] = [
 const NO_TERMS = null;
 
 export const FACTION_PARENTAGE: Record<string, Parentage> = {
-    'sect-lunargent': {
-        factionId: 'sect-lunargent', governance: 'unbacked', relation: 'unaffiliated', parentFactionId: null,
+    'sect-moonwater': {
+        factionId: 'sect-moonwater', governance: 'unbacked', relation: 'unaffiliated', parentFactionId: null,
         holds: 'The fixed spring and its painted rock, under a western-road grant whose issuer has no surviving office.',
         veinWorth: null, levy: null,
         trade: { makes: 'Water service and maintained meditation cells on the fixed spring rock.', grade: 'mortal', devotion: 'the house' },
@@ -1862,8 +1862,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         unbackedReason: 'too_remote', independenceStance: 'would_take_a_backer',
         note: 'The claimed grant remains unconfirmed. The keepers hold the fixed water and rock, without authority over the moving dunes.'
     },
-    'sect-amaranth': {
-        factionId: 'sect-amaranth', governance: 'unbacked', relation: 'unaffiliated', parentFactionId: null,
+    'sect-five-grains': {
+        factionId: 'sect-five-grains', governance: 'unbacked', relation: 'unaffiliated', parentFactionId: null,
         holds: 'The granaries and their account room on the fixed rock beside the spring, with no grant over the moving dunes.',
         veinWorth: null, levy: null,
         trade: { makes: 'Stored grain supplied under written seasonal contracts.', grade: 'mortal', devotion: 'the house' },
@@ -2733,8 +2733,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         independenceStance: 'proud',
         note: 'Nobody has offered and nobody has refused. There is no vein under the shelf, so a grant over it would convey nothing, and the only thing in the yard worth having is sixty people who would have to be got through to reach it. The Third Sluice Court has carried the shelf as unheld for two centuries and has never opened a file on it.'
     },
-    'sect-wraith-dirge-cult': {
-        factionId: 'sect-wraith-dirge-cult',
+    'sect-corpse-refining-sect': {
+        factionId: 'sect-corpse-refining-sect',
         governance: 'unbacked',
         relation: 'unaffiliated',
         parentFactionId: null,
@@ -2750,7 +2750,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         standing: 'not_applicable',
         awarenessOfApex: 'unaware',
         costOfIndependence:
-            'No vein and no protection: the Verdant Spring Valley hunts them on principle and the Crimson Abyss Fortress hunts them over supply, and neither can be arbitrated because the Cult is not a party to anything.',
+            'No vein and no protection: the Verdant Spring Valley hunts them on principle and the Crimson Abyss Fortress hunts them over supply, and neither can be arbitrated because the Sect is not a party to anything.',
         unbackedReason: 'too_remote',
         independenceStance: 'indifferent',
         note: 'Tolerated in the specific sense that nobody has been granted the ground it works, so nobody with standing has been wronged by it.'

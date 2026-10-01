@@ -16,7 +16,7 @@ import {
     whatTheCardSaysOfALoss
 } from '../../src/web/somebody-robbed-of-something-they-need.js';
 
-const HOUSE = { id: 'house-1', name: 'Bountiful Sheaf Sect', seatLocationId: 'seat' };
+const HOUSE = { id: 'house-1', name: 'Golden Sheaf Sect', seatLocationId: 'seat' };
 const PLACES = [
     { id: 'seat', kind: 'sect_seat', parentId: null },
     { id: 'hall', kind: 'room', parentId: 'seat' },
@@ -46,7 +46,7 @@ describe('somebody robbed of a thing they need', () => {
         const { world, person } = robbed('wei', 'hall', robes);
         expect(theyDoSomethingAboutWhatTheyLost({ world, person, takenByOrdinal: 3, today: 5 })).toBe(false);
         expect(whatTheCardSaysOfALoss(world.objects, 'wei', 5)).toEqual([
-            'Has nothing on: their Bountiful Sheaf Sect robes were taken off them.'
+            'Has nothing on: their Golden Sheaf Sect robes were taken off them.'
         ]);
     });
 

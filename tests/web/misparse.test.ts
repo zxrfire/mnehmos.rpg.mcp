@@ -1688,7 +1688,7 @@ describe('asking what I know', () => {
             'what do I know of Lu Sheng',
             'what do I know of the Empyrean Court',
             'what have I heard of the Ninth Stone',
-            'what do I know about the Bountiful Sheaf Sect',
+            'what do I know about the Golden Sheaf Sect',
             'have I ever heard of the Clearwater Ward',
             'remind me what I know about Elder Fang',
             'what do I have on the Moving Hoard',
@@ -2337,14 +2337,14 @@ describe('institutions acting on each other', () => {
     it('answers an unheard house and an invented one identically', async () => {
         const { game } = await standing(theSeatOf(), { seed: 'gate-a' });
         // A real house this cultivator has never been told about.
-        const unheard = await game.act('I declare war on the Wraith Dirge Cult');
+        const unheard = await game.act('I declare war on the Corpse Refining Sect');
         // A house that does not exist at all.
         const invented = await game.act('I declare war on the Emerald Nothing Sect');
 
         expect(unheard.narration).toMatch(/against nobody|not said who/i);
         expect(invented.narration).toMatch(/against nobody|not said who/i);
         // Neither may confirm anything about the name that was typed.
-        expect(unheard.narration).not.toMatch(/wraith dirge/i);
+        expect(unheard.narration).not.toMatch(/corpse lantern/i);
     });
 
     /**

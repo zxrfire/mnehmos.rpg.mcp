@@ -127,7 +127,7 @@ describe('getting in front of somebody worth asking', () => {
         // happens to match. A fresh life now knows several local houses rather
         // than one global one, and taking whichever `locations` listed first
         // picked the Six Li Patrol (six people, deepest at 14) while the
-        // Bountiful Sheaf Sect' gate next door held somebody at exactly the rung this test
+        // Golden Sheaf Sect' gate next door held somebody at exactly the rung this test
         // is about. The claim is that SOME house they can name is worth walking
         // to; asserting it of an arbitrary one is a different, weaker claim
         // that fails on the ordering of a list.

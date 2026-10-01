@@ -661,7 +661,7 @@ export const ESTIMATING_A_BEAST = {
     standardError:
         'Reading it a rank low, from size or from an old district survey. Culling notices are written from surveys and surveys are not redrawn when a beast has a good century, so the price on the notice is the price for what used to be there.',
     whoGetsItRight:
-        'Bountiful Sheaf Sect, herb gatherers on guarded ground, and anybody who has been paid per head for long enough to have stopped guessing. Sect disciples are the worst at it, because they have never had to be right about it alone.'
+        'Golden Sheaf Sect, herb gatherers on guarded ground, and anybody who has been paid per head for long enough to have stopped guessing. Sect disciples are the worst at it, because they have never had to be right about it alone.'
 } as const;
 
 /**
@@ -2109,8 +2109,8 @@ export const BEASTS: readonly Beast[] = [
         changedManner: 'Blunt. Says the thing in the fewest words it will go in, does not soften it, does not repeat it, and does not appear to know that it has been rude.'
     },
     {
-        id: 'beast-abyss-leviathan',
-        name: 'Abyssal Leviathan',
+        id: 'beast-abyss-kun',
+        name: 'Abyssal Kun',
         nature: 'territorial',
         disposition: 'neutral',
         ordinal: 38,
@@ -2127,7 +2127,7 @@ export const BEASTS: readonly Beast[] = [
                 'Carries the weight of the water it lives under wherever it goes, and everything near it is under that weight too.'
         },
         hard: 'It is four realms above anything a province can field, and the realm gap is not a hard fight but an evacuation order. What can be done about it is logistics, not combat.',
-        materialIds: ['mat-leviathan-core'],
+        materialIds: ['mat-kun-core'],
         note: 'Surfaces from the rift about twice a century, is recorded, and goes back down. The recording is the entire response.',
         changedManner: 'Speaks at the pace of something that has never had a reason to hurry, finishes every sentence it starts, and does not register having been interrupted.'
     },
@@ -3581,10 +3581,10 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         description: 'A thousand years of not dying, in a form that can be spent in an afternoon. The three recorded sales were all to houses with an heir who was running out of time, and none of the three were to the highest bidder.'
     },
     {
-        id: 'mat-leviathan-core',
-        name: 'Leviathan Core',
+        id: 'mat-kun-core',
+        name: 'Kun Core',
         grade: 'immortal',
-        sourceBeastId: 'beast-abyss-leviathan',
+        sourceBeastId: 'beast-abyss-kun',
         taking: 'kill',
         core: true,
         value: 46_000,

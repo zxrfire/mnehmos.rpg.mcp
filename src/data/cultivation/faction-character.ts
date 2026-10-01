@@ -95,7 +95,7 @@ const WHAT_THE_SCHEDULE_TURNS_OUT: ProductionTier = {
 };
 
 export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
-    'sect-lunargent': {
+    'sect-moonwater': {
         knownFor: {
             outside: 'Travellers call it the owner of the Sands because its gate stands above the only fixed spring.',
             actuallyGoodAt: 'Keeping the spring channels clear and teaching circulation in cells cut into the fixed rock.',
@@ -112,7 +112,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             note: 'The rock cells support Core Formation; the surviving circulation teaching does not carry most disciples beyond it.' },
         distinctSentence: 'Keeps its donors painted above a fixed spring and needs a dead western office to confirm the grant it claims.'
     },
-    'sect-amaranth': {
+    'sect-five-grains': {
         knownFor: {
             outside: 'Caravans know it as the house whose granaries stand beside the water they must return to.',
             actuallyGoodAt: 'Keeping grain dry on the spring rock and writing seasonal supply contracts that name every load.',
@@ -256,7 +256,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         practice: 'Physicians keep their fingernails cut to the quick and their sleeves pinned back at all times, and will treat an enemy on the floor of a fight before asking who started it.',
         grievance: 'That it was a hermitage of nine people once, holding its valley by respect and nothing else, and chose to grow - and that the Ancient Bough Grove, which refused the same choice, is spoken of the way the Hall used to be.',
-        fear: 'That the Wraith Dirge Cult is right that the dead are a resource, and that the Hall\'s objection is sentiment rather than medicine.',
+        fear: 'That the Corpse Refining Sect is right that the dead are a resource, and that the Hall\'s objection is sentiment rather than medicine.',
         lateness: 'Fourteen of twenty-two nodes lit; the stone irrigation channels are original and get patched with clay; and the rank of Life Elder retains a ceremonial duty at the springs that nobody can explain.',
         disagreement: 'The billing faction wants enemies treated and charged at triple. The physicians want them treated and charged the same, on the argument that a price is a diagnosis of who you think somebody is.',
         wrongAbout: 'The Hall teaches that Lu Wan wrote the restoration method. The valley ruin it came out of predates Lu Wan by six hundred years and the Hall\'s own founding record says "recovered".',
@@ -676,7 +676,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         distinctSentence: 'Sets up a table with a cash box outside other sects\' admission days and pays the first month in advance to everyone they turned away.'
     },
-    'sect-wraith-dirge-cult': {
+    'sect-corpse-refining-sect': {
         knownFor: {
             outside: 'Graves. The worst company in the region, hunted on principle by one sect and over supply by another.',
             actuallyGoodAt: 'Ground-reading. They are the best diggers alive and can date a battlefield to the season by what is flowering on it, which is a real science practised by people nobody will sit next to.',
@@ -686,12 +686,12 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         grievance: 'That the Verdant Spring Valley hunts them for handling the dead while buying its crimson marrow fungus from a supply chain with exactly one source.',
         fear: 'The Crimson Abyss Fortress, which hunts them over supply rather than principle and is much better funded.',
         lateness: 'Two of nine nodes lit; a field wall built of fragments sorted by weight rather than by what they were; and a rotation established a hundred and forty years ago that nobody now can justify from first principles.',
-        disagreement: 'The Pale Elders want to work only battlefields older than the rotation. The Lantern Bearers want to follow live wars, which pays four times and is how the Cult loses people.',
-        wrongAbout: 'It holds that its rotation exists to let sites recover. The founding note says it exists to let survivors die off, and the Cult has forgotten the difference.',
+        disagreement: 'The Corpse Elders want to work only battlefields older than the rotation. The Lantern Bearers want to follow live wars, which pays four times and is how the Sect loses people.',
+        wrongAbout: 'It holds that its rotation exists to let sites recover. The founding note says it exists to let survivors die off, and the Sect has forgotten the difference.',
         unitOfValue: 'Sites worked, in rotation order. Seniority is a place in the queue and cannot be bought, only waited for.',
         production: {
             reliableOrdinal: 13, currentCount: 6, peakOrdinal: 26, peakCount: 1, yearsSinceLastPeak: 700,
-            note: 'Produces at Foundation Establishment and has managed Deity Transformation exactly once, seven hundred years ago, which is the Pale Ancestor and the whole of its prestige.'
+            note: 'Produces at Foundation Establishment and has managed Deity Transformation exactly once, seven hundred years ago, which is the Corpse Refining Patriarch and the whole of its prestige.'
         },
         distinctSentence: 'Follows wars at a respectful distance on a hundred-and-forty-year rotation, and can date a battlefield to the season by which flowers are on it.'
     },
@@ -922,7 +922,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'The pay is the thing everybody repeats, so the promise underneath it is treated as a detail of the pay.'
         },
         practice: 'Gleaners rinse their mouths with vinegar on a fixed schedule and spit before speaking, and they will not enter a sealed door in the first hour of a shift on the grounds that nobody is careful yet.',
-        grievance: 'That the Wraith Dirge Cult undercuts them across a border neither region polices, using finds the Caravan located.',
+        grievance: 'That the Corpse Refining Sect undercuts them across a border neither region polices, using finds the Caravan located.',
         fear: 'The sealed part of their own sorting yard. Xun went in on a wager thirty years ago and the Caravan sealed it again and raised the wager, and nobody has taken it.',
         lateness: 'Three of fourteen nodes lit, all at the front of a ruin they have never fully entered; the yard is laid out inside somebody else\'s building; and the rotation they follow was justified by a note whose reasoning they have lost.',
         disagreement: 'The Sheaf Elders want to work live burn edges, which pays triple. The Sheaf Master holds the nine-year rotation, and the argument reopens every time a face runs out.',
@@ -966,7 +966,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'Being taken in is free and is what everybody talks about. Staying is priced by the cup at four days\' distance from the only well, and nobody outside the shed has ever done that arithmetic before arriving.'
         },
         practice: 'A string is counted out of the shed by name and counted back in by name, aloud, at the door, and a name that does not come back stays on the board rather than being wiped. There are nine boards and the shed was rebuilt around them.',
-        grievance: 'That the Wraith Dirge Cult works the ground behind its strings, waiting on the ones who did not make the return leg, and has twice been found doing it before the year was out.',
+        grievance: 'That the Corpse Refining Sect works the ground behind its strings, waiting on the ones who did not make the return leg, and has twice been found doing it before the year was out.',
         fear: 'A season where the cover moves early and closes three shows at once. The Caravan can walk a string to a show that has shut; what they cannot do is walk three strings back on the water they left with.',
         lateness: 'It has nothing to be late about: no inheritance, no compound, no diagram, no hall. What it has instead is a shed that has been rebuilt four times around a stack of boards, which is the only continuity anybody there claims.',
         disagreement: 'Whether to sound for a second well. Two Oasis Elders are paying a Buddha Precipice carver out of their own shares without telling the Oasis Master, who holds that a fixed point on that ground is a thing the cover reaches in a decade and a debt that outlives it.',

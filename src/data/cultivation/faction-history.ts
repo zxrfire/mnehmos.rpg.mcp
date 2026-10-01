@@ -286,11 +286,11 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-undercut-border',
         yearsAgo: 40,
         provinceId: null,
-        what: 'The Wraith Dirge Cult began working burn-zone finds the Bountiful Sheaf Sect had located, across a border neither region polices, and selling them cheaper.',
-        parties: ['sect-wraith-dirge-cult', 'sect-fallen-grain-caravan'],
+        what: 'The Corpse Refining Sect began working burn-zone finds the Golden Sheaf Sect had located, across a border neither region polices, and selling them cheaper.',
+        parties: ['sect-corpse-refining-sect', 'sect-fallen-grain-caravan'],
         accounts: {
-            'sect-wraith-dirge-cult':
-                'The Cult works sites nobody has been granted, which is its entire operating rule and the reason nobody with standing has ever been wronged by it. Whether a company on the other side of a line nobody patrols had walked over the same ground first is not a distinction that exists in the rotation, and the Cult has never been asked to recognise one.',
+            'sect-corpse-refining-sect':
+                'The Sect works sites nobody has been granted, which is its entire operating rule and the reason nobody with standing has ever been wronged by it. Whether a company on the other side of a line nobody patrols had walked over the same ground first is not a distinction that exists in the rotation, and the Sect has never been asked to recognise one.',
             'sect-fallen-grain-caravan':
                 'The Caravan locates. That is the skill, it is expensive, it costs about one in nine a season, and it is being sold at a discount by a body that does not pay for it. There is no forum in which a contractor can raise this, because raising it means addressing the clerk who decided, and the Caravan has never once disputed anything with the Clearwater Ward for that reason.'
         },
@@ -460,16 +460,16 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 export const FACTION_HISTORY: Record<string, FactionHistory> = {
-    'sect-lunargent': {
-        factionId: 'sect-lunargent',
+    'sect-moonwater': {
+        factionId: 'sect-moonwater',
         origin: 'The spring keepers inherited meditation cells cut into fixed rock above Truce Spring. The painted donors belong to several generations, with older names beneath later paint. Their elders claim a western-road grant, but its issuer has no surviving office and the succession has not been confirmed by a living reader.',
         whyTheGapIs: 'The house still teaches circulation in its working cells. The deeper evidence it claims remains behind an unopened archive ward, so the inherited rooms and the road its elders say they held cannot all be put to use by the present roll.',
         whatTheUnlitNodesWere: 'The dark nodes served the meditation cells above the water. Their fittings remain in the rock, but the working instructions are among the records behind the archive ward.',
         whereTheWrongBeliefComesFrom: 'The elders treat successive copies of the western-road grant as evidence of continuous authority. The copies preserve a seal nobody living has read, so whether they attest to the same succession remains unresolved.',
         sharedEvents: []
     },
-    'sect-amaranth': {
-        factionId: 'sect-amaranth',
+    'sect-five-grains': {
+        factionId: 'sect-five-grains',
         origin: 'The granary house inherited dry stores and an account room on the rock beside Truce Spring. Its roll kept seasonal grain contracts while the spring keepers held a separate gate. The stores and their accounts stayed together as the routes through the dunes moved around the fixed water.',
         whyTheGapIs: 'Circulation and bodily tempering remain teachable with the stores and rooms the house can use. Its elders seek access to the spring account room for a grain factor; the proposed supply contract has not yet given them that access.',
         whatTheUnlitNodesWere: 'The dark nodes belong to the inherited granary diagram. The account room records seasonal supplies, but holds no complete instructions for relighting that diagram.',
@@ -758,16 +758,16 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'It believes the tithe rate is generous because it has never been raised, and no Abyss Lord in five hundred years has raised it, which by every internal measure the Hall has is exactly what generosity looks like. Measured against five centuries of Stone Marrow Hall rates, holding it flat has more than tripled it in real terms. The Hall has never held a rate against the exchange because the Hall does not read the exchange - it is paid in stones, weekly, in advance, which is the entire pitch and the reason it works.',
         sharedEvents: ['event-one-letter-for-both']
     },
-    'sect-wraith-dirge-cult': {
-        factionId: 'sect-wraith-dirge-cult',
+    'sect-corpse-refining-sect': {
+        factionId: 'sect-corpse-refining-sect',
         origin:
             'Old battlefields worked in rotation in the third year after any large engagement, and a field wall built of fragments sorted by weight rather than by what they were. It holds no ground because nobody has ever granted the ground it works, which is the precise sense in which it is tolerated: not permitted, not protected, simply never the subject of a complaint anybody with standing is entitled to make.',
         whyTheGapIs:
-            'It has managed Deity Transformation exactly once in seven hundred years - the Pale Ancestor, and the whole of its prestige - and produces at Foundation Establishment otherwise. What it lost was not a supply. It never had a curriculum above the level of the four arts it teaches, two of which are corpse work, and no house has ever taught it one, because no house will sit next to it.',
+            'It has managed Deity Transformation exactly once in seven hundred years - the Corpse Refining Patriarch, and the whole of its prestige - and produces at Foundation Establishment otherwise. What it lost was not a supply. It never had a curriculum above the level of the four arts it teaches, two of which are corpse work, and no house has ever taught it one, because no house will sit next to it.',
         whatTheUnlitNodesWere:
-            'The Cult does not hold a seat, so its nine nodes are portable and were made by somebody else - salvaged from sites, in fragments, sorted by weight like everything else it owns. Seven do not work, and the Cult has never established whether that is damage or whether the seven were never a set. It is the best ground-reading body alive and it cannot read its own equipment.',
+            'The Sect does not hold a seat, so its nine nodes are portable and were made by somebody else - salvaged from sites, in fragments, sorted by weight like everything else it owns. Seven do not work, and the Sect has never established whether that is damage or whether the seven were never a set. It is the best ground-reading body alive and it cannot read its own equipment.',
         whereTheWrongBeliefComesFrom:
-            'The founding note says the hundred-and-forty-year rotation exists so that survivors die off first. The Cult holds it exists to let sites recover, which is a better sentence, is what a hundred and forty years plausibly does to a battlefield, and is what every member has been told by the member before them. The note is not lost and is not hidden. The Cult has read it and has genuinely forgotten the difference, which is the more disturbing of the two possibilities and is the one the record supports.',
+            'The founding note says the hundred-and-forty-year rotation exists so that survivors die off first. The Sect holds it exists to let sites recover, which is a better sentence, is what a hundred and forty years plausibly does to a battlefield, and is what every member has been told by the member before them. The note is not lost and is not hidden. The Sect has read it and has genuinely forgotten the difference, which is the more disturbing of the two possibilities and is the one the record supports.',
         sharedEvents: ['event-the-undercut-border']
     },
     'sect-nine-abyss-flame-sect': {
@@ -832,7 +832,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
         whatTheUnlitNodesWere:
             'All fourteen are at the front of a ruin the Caravan has never fully entered, and the three that are lit are the three within reach of the entrance. The yard is laid out inside somebody else\'s building for the same reason: the Caravan works the edges of things it does not own and has never had a season spare to go further in, which is a fact about salvage economics and not about courage.',
         whereTheWrongBeliefComesFrom:
-            'Bo Ai\'s founding note says the nine-year rotation exists to let the previous crew\'s survivors die off before the next pass. The Caravan reads it as metaphor and holds that the rotation lets a site recover - and reading it as metaphor is not stupidity, it is what you do with a sentence that would otherwise mean your founder scheduled around your own losses. The same substitution has happened independently to the Wraith Dirge Cult, which neither body knows.',
+            'Bo Ai\'s founding note says the nine-year rotation exists to let the previous crew\'s survivors die off before the next pass. The Caravan reads it as metaphor and holds that the rotation lets a site recover - and reading it as metaphor is not stupidity, it is what you do with a sentence that would otherwise mean your founder scheduled around your own losses. The same substitution has happened independently to the Corpse Refining Sect, which neither body knows.',
         sharedEvents: ['event-the-undercut-border']
     },
 

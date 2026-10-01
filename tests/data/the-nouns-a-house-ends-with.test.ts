@@ -89,9 +89,9 @@ describe('what a house is called', () => {
  *
  *   TEN reached no intent at all, because `WHAT_A_HOUSE_HAS` carried fifteen
  *   house words of its own and the catalog has twenty-seven - Clearwater Ward,
- *   Six Li Patrol, Bountiful Sheaf Sect, Tranquil Oasis Sect, Wayside Chime
- *   Wanderers, Still Blade Pavilion, Flowing Star Tower, Earth Vein Tower, Wraith
- *   Dirge Cult - and The Severed, whose whole name is one word, went to the
+ *   Six Li Patrol, Golden Sheaf Sect, Tranquil Oasis Sect, Wayside Chime
+ *   Wanderers, Still Blade Pavilion, Flowing Star Tower, Earth Vein Tower,
+ *   Corpse Refining Sect - and The Severed, whose whole name is one word, went to the
  *   market board on `what does the \w+ have`.
  *
  *   SIX went to the deposit counter, because `legacyStep` read a custody

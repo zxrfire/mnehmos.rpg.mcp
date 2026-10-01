@@ -17,7 +17,7 @@ docs and a handful of design constants - none of which name each other.
 Counts are mentions, so they rank rather than measure. The first file listed is almost
 always the one to read first.
 
-**The median house is written about in 18 files**, and the most-written-about,
+**The median house is written about in 19 files**, and the most-written-about,
 the Azure Cloud Pavilion, in 41. That is the number this file exists for:
 nobody was going to find all of that by grepping, and nobody did - six times in one
 session somebody wrote down design that was already in the catalog.
@@ -50,6 +50,15 @@ session somebody wrote down design that was already in the catalog.
   …and 12 more files.
 
 **Constants most about it:** `LOW_FALL_PREFECTURES`, `ARCHIVE_AS_CLAIM`, `ARCHIVE_COPIES`, `INHERITANCE_TRIALS`, `ORIGIN_ACCOUNTS`, `WHY_THE_RECONCILIATION_IS_NOT_MADE`
+
+### Clear River Alliance
+
+`sect-clear-river-alliance` · its entry: [`sects.ts:680`](../../src/data/cultivation/sects.ts)
+
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 10 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 5 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 2 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 2
+  …and 12 more files.
+
+**Constants most about it:** `SEA_CARGO`, `ARCHIVE_AS_CLAIM`, `BEAST_TIDES`, `DEALERS`, `MORTAL_ECONOMY_REGARD`, `ORIGIN_ACCOUNTS`, and 5 more
 
 ### Burnt Earth Temple
 
@@ -205,9 +214,9 @@ session somebody wrote down design that was already in the catalog.
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2
   …and 8 more files.
 
-### Wraith Dirge Cult
+### Corpse Refining Sect
 
-`sect-wraith-dirge-cult` · its entry: [`sects.ts:1753`](../../src/data/cultivation/sects.ts)
+`sect-corpse-refining-sect` · its entry: [`sects.ts:1753`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 2
   …and 9 more files.
@@ -232,6 +241,15 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `RECEIPT_HISTORIES`, `ARTERIALS`, `COURTS`, `MEDICINE_HOLDINGS`, `ORIGIN_ACCOUNTS`, `REGISTERS_COUNT_WHAT_THEY_CAN_SEE`, and 2 more
 
+### Ancient Bough Grove
+
+`sect-ancient-bough-grove` · its entry: [`sects.ts:1926`](../../src/data/cultivation/sects.ts)
+
+**Read:** [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`patronage.md`](../../docs/world/houses/patronage.md) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
+  …and 6 more files.
+
+**Constants most about it:** `DEFERENCE_HOLDINGS`, `THE_SENDING_PYRAMID`
+
 ### Clearwater Ward
 
 `sect-clearwater-ward` · its entry: [`sects.ts:1980`](../../src/data/cultivation/sects.ts)
@@ -250,7 +268,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `CALENDARS`, `DRIVEN_PROVINCE_SCHEDULE_ORDER`, `THE_SENDING_PYRAMID`
 
-### Bountiful Sheaf Sect
+### Golden Sheaf Sect
 
 `sect-fallen-grain-caravan` · its entry: [`sects.ts:2057`](../../src/data/cultivation/sects.ts)
 
@@ -274,6 +292,24 @@ session somebody wrote down design that was already in the catalog.
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`place-names.md`](../../docs/world/writing/place-names.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
   …and 3 more files.
+
+### Moonwater Sect
+
+`sect-moonwater` · its entry: [`spring-houses.ts:7`](../../src/data/cultivation/spring-houses.ts)
+
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 4 · [`the-spring-that-does-not-move.md`](../../docs/world/places/the-spring-that-does-not-move.md) 3 · [`spring-houses.ts`](../../src/data/cultivation/spring-houses.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1
+  …and 4 more files.
+
+**Constants most about it:** `FACTION_HISTORY`, `FACTION_PARENTAGE`, `SPRING_HOUSES`, `FACTION_CHARACTER`, `FACTION_RELATIONSHIPS`, `FOUNDERS`, and 2 more
+
+### Five Grains Sect
+
+`sect-five-grains` · its entry: [`spring-houses.ts:21`](../../src/data/cultivation/spring-houses.ts)
+
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`the-spring-that-does-not-move.md`](../../docs/world/places/the-spring-that-does-not-move.md) 3 · [`spring-houses.ts`](../../src/data/cultivation/spring-houses.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1
+  …and 4 more files.
+
+**Constants most about it:** `FACTION_HISTORY`, `FACTION_PARENTAGE`, `SPRING_HOUSES`, `FACTION_CHARACTER`, `FACTION_RELATIONSHIPS`, `FOUNDERS`, and 2 more
 
 ### Ninefold Karma Palace
 
@@ -337,30 +373,5 @@ session somebody wrote down design that was already in the catalog.
   …and 16 more files.
 
 **Constants most about it:** `DESTROYED_DAO_HOUSES`, `DRIVEN_GROUND_AND_THE_NODE`, `LID_THEORIES`, `THE_CALENDAR_OFFSET`, `ARCHIVE_COPIES`, `SECTS`, and 19 more
-
-### Iron Tally Court
-
-`house-iron-tally-court` · its entry: [`sects.ts:3052`](../../src/data/cultivation/sects.ts)
-
-**Read:** [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 15 · [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 3 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 3
-  …and 4 more files.
-
-**Constants most about it:** `FRAGMENT_TECHNIQUE_ORIGINS`, `DESTROYED_DAO_HOUSES`, `DORMANT_ARTS`, `SECTS`, `GRADE_BASELINE_OPACITY`, `WHY_ACCOUNTS_DISAGREE`
-
-### Nine Stone Array
-
-`house-nine-stone-array` · its entry: [`sects.ts:3074`](../../src/data/cultivation/sects.ts)
-
-**Read:** [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 4 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 2 · [`closed-ground.md`](../../docs/world/places/closed-ground.md) 1
-
-**Constants most about it:** `DESTROYED_DAO_HOUSES`, `FALSE_IMMORTALS`, `FRAGMENT_TECHNIQUE_ORIGINS`, `SECTS`, `WHAT_THE_OFFSET_HIDES`, `WHY_ACCOUNTS_DISAGREE`
-
-### Nine Nether Hall
-
-`house-nine-nether` · its entry: [`sects.ts:3095`](../../src/data/cultivation/sects.ts)
-
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 3 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 3 · [`closed-ground.md`](../../docs/world/places/closed-ground.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`history.ts`](../../src/data/cultivation/history.ts) 1 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 1 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 1
-
-**Constants most about it:** `FRAGMENT_TECHNIQUE_ORIGINS`, `WHY_ACCOUNTS_DISAGREE`
 
 <!-- END GENERATED: houses -->

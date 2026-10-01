@@ -148,7 +148,7 @@ export interface AncestralRecords {
  * content-side, stripped by `SectSchema.parse`, read at request time.
  */
 export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
-    'sect-lunargent': {
+    'sect-moonwater': {
         ancestors: [{ name: 'The first spring keeper', fate: 'dead', realmOrdinal: null,
             yearsAgo: 600, afterCrossing: null,
             rememberedFor: 'Established the water-service roll and the meditation cells above the fixed spring.' }],
@@ -156,7 +156,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         dormant: null, partingGift: null, lastOffering: null, discoverableTraces: [],
         standingNote: 'The painted donor records survive at the spring; the claimed western-road grant has no living issuer to confirm its succession.'
     },
-    'sect-amaranth': {
+    'sect-five-grains': {
         ancestors: [{ name: 'The first granary keeper', fate: 'dead', realmOrdinal: null,
             yearsAgo: 400, afterCrossing: null,
             rememberedFor: 'Established the granaries and the seasonal grain accounts beside the fixed spring.' }],
@@ -1054,9 +1054,9 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         discoverableTraces: [],
         standingNote: 'The Hall pays well, dies young, and keeps short records. Nobody in it expects to be remembered and the arrangement is understood.'
     },
-    'sect-wraith-dirge-cult': {
+    'sect-corpse-refining-sect': {
         ancestors: [
-            { name: 'The Pale Ancestor', fate: 'dead', realmOrdinal: null, yearsAgo: 700, afterCrossing: null, rememberedFor: 'Worked the third year after a war and established the rotation the Cult still follows.' }
+            { name: 'The Corpse Refining Patriarch', fate: 'dead', realmOrdinal: null, yearsAgo: 700, afterCrossing: null, rememberedFor: 'Worked the third year after a war and established the rotation the Sect still follows.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -1065,7 +1065,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         partingGift: null,
         lastOffering: null,
         discoverableTraces: [],
-        standingNote: 'The Cult keeps unusually good records of other people\'s dead and almost none of its own.'
+        standingNote: 'The Sect keeps unusually good records of other people\'s dead and almost none of its own.'
     },
     'sect-ancient-bough-grove': {
         ancestors: [

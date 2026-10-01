@@ -3,8 +3,8 @@
 # The spring that does not move
 
 **Built in the catalog and world seeding.** Truce Spring is the fixed water;
-Ochre Escarpment is its painted cliff; Silica Crypt is the warded archive above
-it. Lunargent Sect holds the spring and Amaranth Sect holds grain beside it. The
+Ochre Cliff is its painted cliff; Painted Scroll Grotto is the warded archive above
+it. Moonwater Sect holds the spring and Five Grains Sect holds grain beside it. The
 moving shows remain unheld. See
 [`regions/the-blown-ground.ts`](../../../src/data/cultivation/regions/the-blown-ground.ts)
 and [`spring-houses.ts`](../../../src/data/cultivation/spring-houses.ts).
@@ -30,12 +30,12 @@ What the design takes from it:
 | Then | Here |
 |---|---|
 | A court that loses the road and never gets it back | An authority that once held the western road through the sands, cut off by whatever cut it |
-| A local house ruling in that court's name | The **Lunargent Sect**, holding the spring under a grant nobody left alive can confirm |
+| A local house ruling in that court's name | The **Moonwater Sect**, holding the spring under a grant nobody left alive can confirm |
 | The crescent spring the dunes never bury | **The one fixed ground in the province** - a spring and a cliff, where everything else walks |
 | The humming dunes around it | The sand sings when the wind crosses it; it is the sound the province is known by |
 | A cliff cut with cave shrines over centuries, the rulers painted on the walls as donors | A cliff above the spring cut with meditation caves, each painted with whoever paid for it - a roll of who held the water, read by walking along it |
 | A cave walled up against a threat and forgotten for nine hundred years | **A sealed cave** somewhere in that cliff, holding what was put away when the road was cut |
-| Monasteries that held the grain and lent it at interest, on written contract | The **Amaranth Sect**, which lends grain against the season and keeps the paper |
+| Monasteries that held the grain and lent it at interest, on written contract | The **Five Grains Sect**, which lends grain against the season and keeps the paper |
 | A crossroads of every people on the road | The refused, already designed, and everybody else who came up the road before it closed |
 
 ## Why it fits what is already built
@@ -46,7 +46,7 @@ the exception is the whole design.** It does not walk. Rock does not walk. So th
 exactly one piece of ground in the province that outlives a grant, and whoever holds it
 holds the only order there is.
 
-That order stops where the water does. The Lunargent Sect cannot hold a show any more
+That order stops where the water does. The Moonwater Sect cannot hold a show any more
 than anybody else can, and does not try. What it holds is that **every finder who goes
 out after a show has to drink**, and the only water that is always there is theirs. A
 sect whose trade is carrying water is a sect that owns the one thing nobody in the
@@ -68,7 +68,7 @@ Burial Sands exactly as the catalog describes it.
 - **The sealed cave.** The largest find in the province, and a political one: what was
   put away when the road was cut includes a copy of a grant to earlier keepers.
   The copy leaves the question of continuing succession unresolved.
-- **Grain on paper.** The Amaranth Sect's contracts are the one kind of
+- **Grain on paper.** The Five Grains Sect's contracts are the one kind of
   obligation the sands keep, because they are kept at the spring and not on the ground.
 
 ## The built routes
@@ -79,23 +79,23 @@ Burial Sands exactly as the catalog describes it.
    archive is inside the cliff. Both are reached by named local paths. Wind Turn
    keeps its existing road to the spring; it is not moved into it.
 3. **Two seated houses.** Each gate road begins at Truce Spring. The old grant is
-   a claim made by Lunargent's elders, not a verdict on their right to rule.
+   a claim made by Moonwater's elders, not a verdict on their right to rule.
 4. **A warded archive.** The ordinary ruin gate is set at Core Formation. Entering
-   and working its chambers retrieves the Velum Charter from the object store.
+   and working its chambers retrieves the Western Road Edict from the object store.
    Reading it uses `understand` with western-road-script knowledge. The copy names
    earlier spring keepers and an extinct issuer; it proves neither continuing
    succession nor jurisdiction over moving dunes. The outside lintel reveals
    only the archive's designation and closure.
 5. **Visible singing sand.** The spring's scene records wind crossing the dunes;
    its water and food services use the ordinary market. Water remains untracked,
-   following the owner ruling; provisions remain counted rations. Amaranth's grain
+   following the owner ruling; provisions remain counted rations. Five Grains's grain
    lending is catalog character material, not an automatic loan mechanic.
 
 ## Reading the paint
 
-`I investigate the inscription` at Ochre Escarpment applies
+`I investigate the inscription` at Ochre Cliff applies
 `assessCapability`'s `understand` predicate. A failed reading names the missing
 western-road-script knowledge or a translator. Studying here supplies that
 subject to the ordinary comprehension engine. The same script gates the paper
-recovered inside Silica Crypt; possessing a document does not mean knowing its
+recovered inside Painted Scroll Grotto; possessing a document does not mean knowing its
 language.

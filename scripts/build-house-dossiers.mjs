@@ -10,7 +10,7 @@
  * none of which name each other.
  *
  * POINTERS, NEVER CONTENT. This file copies nothing. Copying would create
- * thirty-five new places for a fact to drift out of agreement with itself,
+ * another place for a fact to drift out of agreement with itself,
  * which is the defect the whole discoverability effort exists to close - and
  * `docs/world/INDEX.md` says so in as many words: an index shows where a thing
  * is, it does not restate it.
@@ -29,14 +29,25 @@ const OUT = path.join(DOCS, 'BY-HOUSE.md');
 
 /** id and display name, read off the catalog rather than listed here. */
 function houses() {
-    const src = fs.readFileSync(path.join(CATALOG, 'sects.ts'), 'utf8');
-    const lines = src.split('\n');
-    const re = /id: '((?:sect|house)-[a-z0-9-]+)',[\s\S]{0,400}?name: '([^']+)'/g;
+    const re = /id: '((?:sect|house)-[a-z0-9-]+)',[\s\S]{0,1600}?name: '([^']+)'/g;
     const found = [];
-    let m;
-    while ((m = re.exec(src))) {
-        const line = src.slice(0, m.index).split('\n').length;
-        found.push({ id: m[1], name: m[2], line });
+    const arrays = [
+        { file: 'sects.ts', from: 'const REGIONAL_SECTS:', to: 'export const DAO_HOUSES:' },
+        { file: 'spring-houses.ts', from: 'export const SPRING_HOUSES:', to: null },
+        { file: 'sects.ts', from: 'export const DAO_HOUSES:', to: 'export const SECTS:' }
+    ];
+    for (const { file, from, to } of arrays) {
+        const src = fs.readFileSync(path.join(CATALOG, file), 'utf8');
+        const start = src.indexOf(from);
+        const end = to === null ? src.length : src.indexOf(to, start);
+        if (start < 0 || end < 0) throw new Error(`house array not found in ${file}: ${from}`);
+        const entries = src.slice(start, end);
+        re.lastIndex = 0;
+        let m;
+        while ((m = re.exec(entries))) {
+            const line = src.slice(0, start + m.index).split('\n').length;
+            found.push({ id: m[1], name: m[2], line, file });
+        }
     }
     // A house can be declared twice (an entry and a relationship row); the
     // first is the entry, which is the one somebody wants to read.
@@ -145,7 +156,7 @@ export function build() {
             .join(' · ');
         lines.push(`### ${h.name}`);
         lines.push('');
-        lines.push(`\`${h.id}\` · its entry: [\`sects.ts:${h.line}\`](../../src/data/cultivation/sects.ts)`);
+        lines.push(`\`${h.id}\` · its entry: [\`${h.file}:${h.line}\`](../../src/data/cultivation/${h.file})`);
         lines.push('');
         lines.push(`**Read:** ${top || '_nothing outside its own entry_'}`);
         if (h.mentions.length > 8) lines.push(`  …and ${h.mentions.length - 8} more files.`);

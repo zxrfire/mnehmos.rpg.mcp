@@ -224,16 +224,16 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'It is the largest concentration of refused cultivators in the world and the only one with no gate, no register and no competing recruiter standing next to them.'
         },
         {
-            who: 'The Wraith Dirge Cult',
-            factionId: 'sect-wraith-dirge-cult',
+            who: 'The Corpse Refining Sect',
+            factionId: 'sect-corpse-refining-sect',
             holds: 'nothing',
             doesHere:
                 'Buys what the sand gives back. The cover keeps a body and returns it a decade later with its possessions on it, so the ground is the richest supply of intact dead in the world and the only one nobody has a claim on.',
             whyHere:
-                'Everywhere else the dead belong to a family, a sect hall, a temple or an ice-form. Here they belong to whoever is standing over them, which is the whole of the Cult\'s procurement problem solved in one province.'
+                'Everywhere else the dead belong to a family, a sect hall, a temple or an ice-form. Here they belong to whoever is standing over them, which is the whole of the Sect\'s procurement problem solved in one province.'
         },
         {
-            who: 'Bountiful Sheaf Sect',
+            who: 'Golden Sheaf Sect',
             factionId: 'sect-fallen-grain-caravan',
             holds: 'nothing',
             doesHere:
@@ -333,8 +333,8 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         },
         {
             name: PLACE.SAND_WELL,
-            kind: 'village', ambient: 'thin', heldByFactionId: 'sect-lunargent',
-            note: 'A fixed spring at the foot of exposed rock. Lunargent Sect keeps its water; Amaranth Sect keeps the granaries beside it. The sand sings in the wind outside the rock.',
+            kind: 'village', ambient: 'thin', heldByFactionId: 'sect-moonwater',
+            note: 'A fixed spring at the foot of exposed rock. Moonwater Sect keeps its water; Five Grains Sect keeps the granaries beside it. The sand sings in the wind outside the rock.',
             connections: [
                 {
                     kind: 'path',
@@ -362,7 +362,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             interior: { parentPlaceName: PLACE.PAINTED_ESCARPMENT, gateOrdinal: 17,
                 comprehensionOrdinal: 21, comprehensionKey: 'western-road-script',
                 inscription: 'The lintel names an archive of the former western-road authority. The door was closed when that road was cut.',
-                contents: [{ name: 'Velum Charter', text: 'This copy names the predecessors of Lunargent Sect as keepers of Truce Spring and its rock. It grants no moving dune. The issuing western-road authority is extinct; this copy alone cannot establish an unbroken succession.' }] },
+                contents: [{ name: 'Western Road Edict', text: 'This copy names the predecessors of Moonwater Sect as keepers of Truce Spring and its rock. It grants no moving dune. The issuing western-road authority is extinct; this copy alone cannot establish an unbroken succession.' }] },
             connections: [{ kind: 'path', otherPlaceName: PLACE.PAINTED_ESCARPMENT, description: 'A passage along the painted cliff.', travelDays: 0.1 }] },
         { name: PLACE.STUBBORN_PIT, kind: 'site', ambient: 'spirit_tide', note: 'A show that has been open nineteen years, which is longer than a grant runs, and is consequently the only ground here anybody has killed over more than once.' },
         { name: PLACE.THE_SHORT_ROAD, kind: 'site', ambient: 'thin', note: 'The direct line, named for the saving it promises against the gorge road. It saves eight days when it works and nobody has published how often it works.' },
@@ -520,7 +520,7 @@ function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
         // `whatItMakesTrue` gives.
         politics: 'no_authority',
         politicsNote: ground.whyItCannotBeHeld,
-        factionIds: ['sect-lunargent', 'sect-amaranth'],
+        factionIds: ['sect-moonwater', 'sect-five-grains'],
         branches: ground.whoIsOnIt
             .filter((p): p is typeof p & { factionId: string } => p.factionId !== null)
             .map(p => ({

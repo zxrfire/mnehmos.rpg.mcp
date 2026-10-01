@@ -600,7 +600,7 @@ export const WHAT_THE_LIGHTNING_TOOK = {
     whyProvenIsWorthMore:
         'Because there is no other way to get the claim. A forge states what it intended, an assay house states what it measured, and both are opinions about behaviour under conditions nobody applied. An object that was on a body through a tribulation and is still an object has been through the only test that is not an opinion, and the people who understand this will pay a multiple for it that looks insane to anybody reading the inventory count.',
     whoKnowsThis:
-        'Grave-readers, first and universally: it is the whole of their trade and the reason they can tell a grave from an inheritance on sight. Bountiful Sheaf Sect know it as a working rule without having a theory about it. Ninefold Karma Palace prices it correctly because it prices everything correctly. Raiding parties do not know it, sect expeditions know it and go to the rich crypt anyway because a scar field cannot be split nine ways, and the Thousand Relic Pavilion catalogues by count because count is what buyers ask for.',
+        'Grave-readers, first and universally: it is the whole of their trade and the reason they can tell a grave from an inheritance on sight. Golden Sheaf Sect know it as a working rule without having a theory about it. Ninefold Karma Palace prices it correctly because it prices everything correctly. Raiding parties do not know it, sect expeditions know it and go to the rich crypt anyway because a scar field cannot be split nine ways, and the Thousand Relic Pavilion catalogues by count because count is what buyers ask for.',
     theExceptionIsNotAnException:
         'A tribulation grave with a long inventory has been salted, and the salting is always the same trick: ordinary goods laid on a real scar so the provenance rubs off on them. Two of the three frauds the Karma Palace has established in four centuries were exactly this.',
     andAFailedCrossingLeavesNoBody:
@@ -630,7 +630,7 @@ export const A_RESTING_PLACE_IS_NOT_A_GRAVE = {
         'resting place: occupied. Not this file. Opening it wakes somebody, and what happens next is a conversation rather than a recovery.'
     ],
     theOverlapThatIsRealAnyway:
-        'One entry here is a grave that shares a wall with a resting place, which happens because the world is not tidy: a man went in on a wager, died on the far side of the Bountiful Sheaf Sect\' sealed part, and the Caravan sealed it again with him inside. He is a grave. What is deeper in that building is not, and the entry says so rather than letting a reader blur them.',
+        'One entry here is a grave that shares a wall with a resting place, which happens because the world is not tidy: a man went in on a wager, died on the far side of the Golden Sheaf Sect\' sealed part, and the Caravan sealed it again with him inside. He is a grave. What is deeper in that building is not, and the entry says so rather than letting a reader blur them.',
     howToTell:
         'The marker. A resting place has maintenance on it - a swept floor, a repaired channel, a schedule somebody keeps - because somebody is keeping something alive. A grave has weather on it.'
 } as const;
@@ -1271,19 +1271,19 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whyItRefusesPower: 'Past Nascent Soul there is too much of the claimant\'s own settled self for the transfer to get purchase on, so it does not engage and nothing happens. This is why the circle is four generations old, sits beside a walked track, and has never once taken one of the strong people who have stood in it out of curiosity.',
             soWhoGoesInstead: 'Nobody sends anybody, and the two houses that understand the circle have both decided independently not to. The single recorded attempt was a party who sent a junior in without telling him what the ground was for, which is the whole of why the burn crews will not step over the line.'
         },
-        factionIds: ['sect-wraith-dirge-cult', 'sect-lantern-hall'],
+        factionIds: ['sect-corpse-refining-sect', 'sect-lantern-hall'],
         outside: {
             marker: 'A cleared circle in the burn zone, forty paces across. The burnt floor inside it has not been disturbed since the catastrophe and the burnt floor outside it is walked flat. Nothing grows in either. Crews have used the edge as a landmark for four generations and none of them steps in, for reasons nobody in the Buddha Precipice has ever been able to state.',
-            rumour: 'Bountiful Sheaf Sect say the circle takes people and that it is one of the honest hazards, meaning one that does not pretend. The Wraith Dirge Cult has sent parties and describes it, in its own vocabulary, as ground that is still owed something.',
+            rumour: 'Golden Sheaf Sect say the circle takes people and that it is one of the honest hazards, meaning one that does not pretend. The Corpse Refining Sect has sent parties and describes it, in its own vocabulary, as ground that is still owed something.',
             attributedTo: null,
             lastPartySaid: 'Six people have walked into the circle in recorded memory. Five of them walked out, unhurt, within a minute, and reported that there was nothing there. The sixth did not come out and there is no body.',
-            whatAKnowledgeablePartyReads: 'Five out of six is not a hazard and it is not a trial either. It is a filter with a very narrow acceptance, and the one who did not come out was the one it accepted. Everything the Bountiful Sheaf Sect avoid it for is wrong, and the reason it is not more dangerous is that it is almost never interested.',
-            whatAnIgnorantPartyConcludes: 'That the five who walked out prove it is empty and the sixth had bad luck, which is the reading five of the six themselves gave and is why the Cult has stopped sending parties.',
+            whatAKnowledgeablePartyReads: 'Five out of six is not a hazard and it is not a trial either. It is a filter with a very narrow acceptance, and the one who did not come out was the one it accepted. Everything the Golden Sheaf Sect avoid it for is wrong, and the reason it is not more dangerous is that it is almost never interested.',
+            whatAnIgnorantPartyConcludes: 'That the five who walked out prove it is empty and the sixth had bad luck, which is the reading five of the six themselves gave and is why the Sect has stopped sending parties.',
             startingAwareness: 'whisper',
             advertisedOrdinal: null
         },
         interior: {
-            chamber: 'Standing in the middle of the circle with the condition satisfied, the burnt floor is gone and the circle is a floor, and the floor is the top of something the catastrophe drove into the stone with a person still working in it. The working is unfinished. It is a preparation for a transfer of a kind the Lantern Hall would recognise and the Wraith Dirge Cult would pay a great deal for, and the party it was prepared for did not arrive.',
+            chamber: 'Standing in the middle of the circle with the condition satisfied, the burnt floor is gone and the circle is a floor, and the floor is the top of something the catastrophe drove into the stone with a person still working in it. The working is unfinished. It is a preparation for a transfer of a kind the Lantern Hall would recognise and the Corpse Refining Sect would pay a great deal for, and the party it was prepared for did not arrive.',
             setBy: 'Somebody in the catastrophe who had four thousand years less warning than they needed and set up a transfer with the vessel condition left open, on the reasoning that a specified vessel is a vessel who has to survive the same event and an unspecified one is anybody. It has been open ever since and has been offered exactly once.',
             gates: [
                 {
@@ -1291,7 +1291,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     coincidence: 'wrong_person',
                     worldStateCheck: 'Is the claimant somebody the transfer would ordinarily reject - damaged identity continuity, a soul that has already been moved once, a body that is not the one they were born in - and are they standing in the circle? The condition is a disqualification everywhere else in the world, and here it is the qualification, because a vessel that has already been transferred once is the only kind this working can take without a specified counterpart.',
                     characterStat: null,
-                    whyItCannotBeFarmed: 'Because the qualifying state is the outcome of a catastrophe that happened to the claimant, not a preparation they made. Everybody in the world who satisfies it acquired it by going into a sealed site and not entirely coming out, or by having a vessel arranged for them in an emergency by somebody who is usually dead now. Nobody has ever done that on purpose to open a door, and the Cult, which has thought about it, has established that a deliberately damaged continuity reads as deliberate and is refused - which is a rule it obtained the expensive way.',
+                    whyItCannotBeFarmed: 'Because the qualifying state is the outcome of a catastrophe that happened to the claimant, not a preparation they made. Everybody in the world who satisfies it acquired it by going into a sealed site and not entirely coming out, or by having a vessel arranged for them in an emergency by somebody who is usually dead now. Nobody has ever done that on purpose to open a door, and the Sect, which has thought about it, has established that a deliberately damaged continuity reads as deliberate and is refused - which is a rule it obtained the expensive way.',
                     whoHasEverPassed: 'The sixth, who was a Gleaner with three days she could not account for and had been carrying it for eleven years when she stepped in on a dare.',
                     below: 'Nothing. The claimant stands on burnt ground for a minute and walks out, and every one of the five said afterwards that they had felt something look at them and lose interest, and every one of them was told they had imagined it.'
                 }
@@ -1307,7 +1307,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     'severed-fate-mending-art'
                 ],
                 other: [
-                    'The working, complete, which is a method for a transfer with an open vessel condition and is the thing the Wraith Dirge Cult has been trying to reconstruct for four hundred years.',
+                    'The working, complete, which is a method for a transfer with an open vessel condition and is the thing the Corpse Refining Sect has been trying to reconstruct for four hundred years.',
                     'Whatever the person in the stone was, at whatever fraction of themselves survived four thousand years of an unfinished preparation, and no guarantee whatever about which party the result answers to.'
                 ],
                 immortalItemId: null
@@ -1893,7 +1893,7 @@ export const GRAVES: readonly Grave[] = [
             marker: 'Eleven li of high ground that has not held qi in ninety years and will not again. There is no stone, no name and no mound, because there is nothing to put one over. The boundary of it is exact and visible from a distance in the way the vegetation stops.',
             rumour: 'The Buddha Precipice knows what it is. It is the most recent attempt anybody in either province can date and everybody local can point at it, and what they will tell you is that a person went up there alone one spring and the sky came down on her.',
             attributedTo: 'Yun Baiheng',
-            lastPartySaid: 'Nobody has organised an entry, because there is no entry. Bountiful Sheaf Sect walk the scar every few years on the way to somewhere else and pick things up off the surface, which is exactly the correct method and none of them thinks of it as a dig.',
+            lastPartySaid: 'Nobody has organised an entry, because there is no entry. Golden Sheaf Sect walk the scar every few years on the way to somewhere else and pick things up off the surface, which is exactly the correct method and none of them thinks of it as a dig.',
             whatAKnowledgeablePartyReads: 'A failed crossing leaves no body and almost no goods, and everything still lying on that ground went through the heaviest event that occurs anywhere in the world and is still an object. There are perhaps three things on eleven li of ground. Each of them is warranted by the only test that is not somebody\'s opinion, and no forge, no assay house and no auction in either province can issue the equivalent claim about anything.',
             whatAnIgnorantPartyConcludes: 'That eleven li of dead ground with three things on it is a poor site, which by count and by weight it is, and that the interment forty days south with a maintained stone front is where the money is. Every party that has had to choose between the two has chosen the interment.',
             startingAwareness: 'named',
@@ -2091,7 +2091,7 @@ export const GRAVES: readonly Grave[] = [
                     what: 'A heaven-grade art the clan has never known it holds, on a slip in a case with his personal things rather than with the work.',
                     proven: false,
                     survived: null,
-                    techniqueId: 'worldroot-strangling-vine',
+                    techniqueId: 'heaven-entangling-vine-art',
                     immortalItemId: null
                 },
                 {
@@ -2243,7 +2243,7 @@ export const GRAVES: readonly Grave[] = [
             floorOrdinal: 8,
             ceilingOrdinal: 24,
             whatReadsThePerson: 'The gap the Caravan left when it put the wall back by hand, which is a crawl about the width of a sorting hatch and was never meant to be a door at all.',
-            whyItRefusesPower: 'A cultivator past Nascent Soul does not fit a crawl in the sense that matters: the field a body at that height carries is larger than the body, and a hole cut for a body reads it as the wall and closes on it. Two Bountiful Sheaf Sect have died going in the correct way round and one very strong outsider has died going in sideways.',
+            whyItRefusesPower: 'A cultivator past Nascent Soul does not fit a crawl in the sense that matters: the field a body at that height carries is larger than the body, and a hole cut for a body reads it as the wall and closes on it. Two Golden Sheaf Sect have died going in the correct way round and one very strong outsider has died going in sideways.',
             soWhoGoesInstead: 'The Caravan sends its own small people, which is a sentence the Caravan would object to and is exactly what the wager board records: everybody whose name is on it went in at Foundation or under, and the amount is still written next to his.'
         },
         factionIds: ['sect-fallen-grain-caravan', 'sect-clearwater-ward'],
@@ -2343,7 +2343,7 @@ export const GRAVES: readonly Grave[] = [
             whatIsDownThere: 'A dry overhang with a person under it who sat down against the rock and did not get up. There is no cutting, no cairn and no arrangement of any kind, and weather has done everything that has been done to the site.',
             whatItDoesToSomebodyShortOfIt: 'Nothing, which is precisely the problem: what closes this site is four days off the nearest track in either direction, and distance charges the same to a villager and to a Grand Ascension cultivator who does not know it is there.'
         },
-        factionIds: ['house-ninefold-karma', 'sect-wraith-dirge-cult'],
+        factionIds: ['house-ninefold-karma', 'sect-corpse-refining-sect'],
         occupantOrdinal: 33,
         yearsDead: 600,
         mannerOfDeath: 'died_of_injuries',
@@ -2367,7 +2367,7 @@ export const GRAVES: readonly Grave[] = [
                     coincidence: 'arrived_without_looking',
                     worldStateCheck: 'Did the claimant reach this site while doing something else? The condition is on the arrival rather than on the claimant: the site is four days off any route and has no rumour attached, so a party that got here was going somewhere else, was lost, or was following something. A party that came looking for it did not come looking for this one, because this one has never been described to anybody.',
                     characterStat: null,
-                    whyItCannotBeFarmed: 'Because searching for it is what makes it not be found. There is no rumour to follow and no record to consult; the two claims in four hundred years were both forgeries and forgeries are planted where searchers go, so the entire effect of deciding to look for one of these is to arrive at the places somebody has arranged for searchers to arrive at. The Wraith Dirge Cult works more graves than anybody, states plainly that it has never seen one, and does not expect to, and it is not saying that out of modesty.',
+                    whyItCannotBeFarmed: 'Because searching for it is what makes it not be found. There is no rumour to follow and no record to consult; the two claims in four hundred years were both forgeries and forgeries are planted where searchers go, so the entire effect of deciding to look for one of these is to arrive at the places somebody has arranged for searchers to arrive at. The Corpse Refining Sect works more graves than anybody, states plainly that it has never seen one, and does not expect to, and it is not saying that out of modesty.',
                     whoHasEverPassed: 'Twice in recorded history, on the Karma Palace\'s own count, and both times by somebody who was not in the business of finding one.',
                     below: 'Not applicable in the ordinary way. There is no door and nothing refuses anybody: the gate is whether the claimant is ever standing here at all, and for almost every run in the world the answer is no and there is nothing to be told.'
                 }
@@ -2624,7 +2624,7 @@ export const GRAVES: readonly Grave[] = [
             marker: 'A dry watercourse four days off the eastern road with a body in it that has not gone the way a body goes. The cloth is gone and the bones are in order, and there is a brand across the front of the skull which is cut rather than burned and is the same mark that is on a stone at the head of the watercourse.',
             rumour: 'The eastern towns know the mark and will not say the name attached to it. What they will tell you is that people from a house that no longer exists used to come out this way to collect, that one of them did not go back, and that the families who owe whatever it is they owe still cannot say what it is.',
             attributedTo: 'A collector of the Iron Tally Court',
-            lastPartySaid: 'A Wraith Dirge rotation crew logged the site ninety years ago, dated it correctly to within a century, and did not work it. Their note gives the reason as bad flowering, which is not what the flowering says and is the only entry in that rotation book with a reason in it at all.',
+            lastPartySaid: 'A Corpse Refining rotation crew logged the site ninety years ago, dated it correctly to within a century, and did not work it. Their note gives the reason as bad flowering, which is not what the flowering says and is the only entry in that rotation book with a reason in it at all.',
             whatAKnowledgeablePartyReads: 'A body that has not decayed in twenty-three centuries was at Body Integration when it stopped, and a cultivator at Body Integration does not end up in a watercourse four days from anywhere unless somebody made a point of it. The brand is on the skull and on the stone, which means it was cut twice, once into him and once into the place, and cutting a mark into the ground is what you do when you want the ground to hold the record after you have gone.',
             whatAnIgnorantPartyConcludes: 'That an undecayed body in a ditch is a haunting and that the mark is a warding, and that the correct response to both is to leave. It is a reasonable reading of everything visible and it is why the site is still intact after two thousand three hundred years, in a province where nothing at that rank stays intact for eleven.',
             startingAwareness: 'whisper',
@@ -2704,11 +2704,11 @@ export const GRAVES: readonly Grave[] = [
         access: {
             admits: 'elders_and_above',
             floorOrdinal: 34,
-            whyNobodyBelowComesBack: 'Four hundred paces of fen fused to green glass with the reeds still standing in it, and the depression is at the centre. The sheet does not repair and does not drain; what it does is charge for the crossing, both ways, at a rate the Wraith Dirge Cult has priced every cycle for two centuries and declined every cycle.',
-            whoTheyGoFor: 'Whoever the crosser has already decided to leave things to, because the Cult\'s arithmetic is right and nobody makes this crossing for their own benefit.',
+            whyNobodyBelowComesBack: 'Four hundred paces of fen fused to green glass with the reeds still standing in it, and the depression is at the centre. The sheet does not repair and does not drain; what it does is charge for the crossing, both ways, at a rate the Corpse Refining Sect has priced every cycle for two centuries and declined every cycle.',
+            whoTheyGoFor: 'Whoever the crosser has already decided to leave things to, because the Sect\'s arithmetic is right and nobody makes this crossing for their own benefit.',
             whatComesBackForThatPerson: 'Three objects, two of them warranted copies of arts nobody in the world holds a warranted copy of and nobody ever will again, because the only way to issue that warranty is to carry the thing to a boundary and lose.'
         },
-        factionIds: ['sect-wraith-dirge-cult', 'house-ninefold-karma'],
+        factionIds: ['sect-corpse-refining-sect', 'house-ninefold-karma'],
         occupantOrdinal: 42,
         yearsDead: 340,
         mannerOfDeath: 'heavenly_tribulation',
@@ -2760,7 +2760,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'It took him and left the arithmetic. Everything he owned went except the two manuals and the rod, which is the short list the profile predicts and which happens here to be the two things he had spent a life buying and the object he had used to keep score with. Nobody in the world holds a warranted copy of either art and nobody ever will again, because the only way to issue that warranty is to carry the thing to a boundary and lose.',
-            afterwards: 'The sheet does not repair and does not drain, and the glass will still be there when everybody currently arguing about who he was is dead. What comes off it comes off it once. The Wraith Dirge Cult has had the site in its rotation for two centuries and has passed on it every cycle, on the stated ground that the crossing costs more than three objects are worth, which is the first time in four hundred years the Cult has been wrong about a piece of ground.'
+            afterwards: 'The sheet does not repair and does not drain, and the glass will still be there when everybody currently arguing about who he was is dead. What comes off it comes off it once. The Corpse Refining Sect has had the site in its rotation for two centuries and has passed on it every cycle, on the stated ground that the crossing costs more than three objects are worth, which is the first time in four hundred years the Sect has been wrong about a piece of ground.'
         }
     },
 

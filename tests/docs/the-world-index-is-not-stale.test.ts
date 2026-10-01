@@ -13,6 +13,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SECTS } from '../../src/data/cultivation/sects.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const INDEX = path.join(ROOT, 'docs', 'world', 'INDEX.md');
@@ -59,11 +60,19 @@ describe('the world index', () => {
  * this rule written down" but "what do we know about the house in front of
  * us" - and it is generated for the same reason: a hand-maintained map of a
  * corpus this size is a map that is wrong within a week.
+ * The two spring houses entered the live catalog through `spring-houses.ts`,
+ * while the builder scanned `sects.ts` alone and omitted both reading lists.
  */
 describe('the house reading lists', () => {
     it('are current with the catalog and the docs they point at', async () => {
         const { build } = await import('../../scripts/build-house-dossiers.mjs');
         const onDisk = fs.readFileSync(path.join(ROOT, 'docs', 'world', 'BY-HOUSE.md'), 'utf8');
         expect(build(), 'BY-HOUSE.md is stale. Run: npm run docs:houses').toBe(onDisk);
+    });
+
+    it('has a reading list for every live house', () => {
+        const onDisk = fs.readFileSync(path.join(ROOT, 'docs', 'world', 'BY-HOUSE.md'), 'utf8');
+        const indexed = [...onDisk.matchAll(/^`((?:sect|house)-[a-z0-9-]+)`/gm)].map(match => match[1]).sort();
+        expect(indexed).toEqual(SECTS.map(house => house.id).sort());
     });
 });

@@ -64,8 +64,8 @@ export const PLACE = {
     // settlements" and its `places` was empty, so the one house in the province
     // that administers settlements DIRECTLY - no levy, no charter, no
     // intermediate tier - collected nothing from any of them: 175 stones a
-    // year on a seeded world, last of thirty-eight houses, below the Wraith
-    // Dirge Cult.
+    // year on a seeded world, last of thirty-eight houses, below the Corpse
+    // Lantern Sect.
     //
     // They are ordinary-tier names because that is what the house is. It has
     // never registered anything, so no document anywhere ever fixed a name
@@ -168,8 +168,8 @@ export const PLACE = {
     // season that convenes it - which is the register `Insects Awaken` is in.
     WIND_MARKET: 'Wind Turn',
     SAND_WELL: 'Truce Spring',
-    PAINTED_ESCARPMENT: 'Ochre Escarpment',
-    SPRING_ARCHIVE: 'Silica Crypt',
+    PAINTED_ESCARPMENT: 'Ochre Cliff',
+    SPRING_ARCHIVE: 'Painted Scroll Grotto',
     STUBBORN_PIT: 'Stubborn Pit',
     THE_SHORT_ROAD: 'The Short Road',
     TUOS_WALL: 'Tuo\'s Rampart',
@@ -202,6 +202,8 @@ const THE_SLUG_A_RENAMED_PLACE_KEEPS: ReadonlyMap<string, string> = new Map([
     [PLACE.FOUR_GRAVES, 'four-names'],
     [PLACE.BRONZE_BELL_CAPE, 'bronze-bell-cliff'],
     [PLACE.SAND_WELL, 'sand-well'],
+    [PLACE.PAINTED_ESCARPMENT, 'ochre-escarpment'],
+    [PLACE.SPRING_ARCHIVE, 'silica-crypt'],
     [PLACE.TUOS_WALL, 'tuo-s-wall']
 ]);
 
@@ -225,6 +227,8 @@ const THE_KEY_A_RENAMED_PLACE_DRAWS_UNDER: ReadonlyMap<string, string> = new Map
     [PLACE.FOUR_GRAVES, 'Four Names'],
     [PLACE.BRONZE_BELL_CAPE, 'Bronze Bell Cliff'],
     [PLACE.SAND_WELL, 'Sand Well'],
+    [PLACE.PAINTED_ESCARPMENT, 'Ochre Escarpment'],
+    [PLACE.SPRING_ARCHIVE, 'Silica Crypt'],
     [PLACE.TUOS_WALL, 'Tuo\'s Wall']
 ]);
 

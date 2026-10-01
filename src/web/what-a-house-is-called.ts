@@ -1,5 +1,5 @@
 /**
- * The type nouns a house in this world ends its name with.
+ * The type nouns and generic house words a player can use.
  *
  * ONE LIST, BECAUSE THERE WERE TEN. Every place that had to recognise "the
  * Azure Dew Sect" as a house carried its own alternation of house words, hand
@@ -47,6 +47,7 @@ export const HOUSE_TYPE_NOUNS: readonly string[] = Object.freeze([
     'pavilion', 'wanderers', 'alliance', 'caravan', 'register',
     'stronghold', 'fortress', 'temple', 'patrol', 'palace', 'terrace',
     'tower', 'valley', 'manor', 'court', 'grove', 'array', 'ward',
+    // A demonic house can still be called a cult in a player's sentence.
     'sect', 'hall', 'cult', 'clan', 'school', 'house'
 ]);
 

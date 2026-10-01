@@ -16,7 +16,7 @@ import {
  * Five words were written out by hand in four rows of this file, so `what does
  * my sect teach` reached the shelf and `what does my hall teach`, `my court`,
  * `my cult` and `my pavilion` all reached nothing - for members of Lantern
- * Hall, Orchid Court, the Wraith Dirge Cult and Azure Cloud Pavilion. Worse on
+ * Hall, Orchid Court, the Corpse Refining Sect and Azure Cloud Pavilion. Worse on
  * the summons row, which answered `what does the hall want of me` by going to
  * look for a person called `hall`.
  */

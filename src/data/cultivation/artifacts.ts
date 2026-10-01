@@ -476,7 +476,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         // many of the set are held. It is worth nothing in a room.
         power: null,
         ownerId: 'sect-fallen-grain-caravan',
-        ownerName: "Bountiful Sheaf Sect",
+        ownerName: "Golden Sheaf Sect",
         possessorId: 'sect-fallen-grain-caravan',
         knownOwnershipBy: [],
         description:

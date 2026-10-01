@@ -99,7 +99,7 @@ const WHAT_EACH_CORE_TAKES: Readonly<Record<string, readonly [volume: number, we
     'mat-sleeper-seam-core': [6, 14],
     'mat-tortoise-core': [9, 20],
     'mat-ancient-core': [14, 30],
-    'mat-leviathan-core': [40, 90]
+    'mat-kun-core': [40, 90]
 };
 
 const A_CORE: readonly [number, number] = [0.3, 0.5];

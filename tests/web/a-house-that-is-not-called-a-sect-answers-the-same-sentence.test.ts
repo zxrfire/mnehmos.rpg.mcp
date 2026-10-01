@@ -13,7 +13,7 @@
  *   what does the sect want of me sect/summons
  *   what does the hall want of me request/wants, target "hall"
  *   I ask the Azure Dew Sect …    petition/grant
- *   I ask the Wraith Dirge Cult … request/a_thing, at a PERSON of that name
+ *   I ask the Corpse Refining Sect … request/a_thing, at a PERSON of that name
  *   I kill all the demonic sects  the six demonic houses
  *   I kill all the demonic cults  one house called "demonic cults", refused
  *
@@ -92,7 +92,7 @@ describe('a house that is not called a Sect', () => {
         'I ask the Azure Dew Sect for a manual',
         'I ask the Clear River Alliance for a manual',
         'I ask the Burnt Earth Temple for a manual',
-        'I ask the Wraith Dirge Cult for a manual',
+        'I ask the Corpse Refining Sect for a manual',
         'I ask the Ancient Bough Grove for a manual'
     ])('files a petition for %s', sentence => {
         expect(parseIntent(sentence).action).toBe('petition');
@@ -100,7 +100,7 @@ describe('a house that is not called a Sect', () => {
 
     /** And ending one is an ending, not a conversation with it. */
     it.each([
-        'I end the Wraith Dirge Cult',
+        'I end the Corpse Refining Sect',
         'I disband the Burnt Earth Temple',
         'I destroy the Clear River Alliance'
     ])('reads %s as an act against the house', sentence => {
@@ -109,7 +109,7 @@ describe('a house that is not called a Sect', () => {
 
     /**
      * A leaning said with any house word is a leaning. `demonic cults` was read
-     * as ONE house of that name, and the Wraith Dirge Cult, the Burnt Earth
+     * as ONE house of that name, and the Corpse Refining Sect, the Burnt Earth
      * Temple and the Crimson Abyss Fortress were standing in the set it asked
      * for.
      */
@@ -120,8 +120,8 @@ describe('a house that is not called a Sect', () => {
 
     /** And the type noun comes off the end whatever it is, so one house resolves. */
     it('asks the catalog about the name and not the type noun', () => {
-        expect(theSetThisNames('all of the Wraith Dirge Cult'))
-            .toMatchObject({ kind: 'members_of', house: 'Wraith Dirge' });
+        expect(theSetThisNames('all of the Corpse Refining Sect'))
+            .toMatchObject({ kind: 'members_of', house: 'Corpse Refining' });
         expect(theSetThisNames('all of the Azure Dew Sect'))
             .toMatchObject({ kind: 'members_of', house: 'Azure Dew' });
     });

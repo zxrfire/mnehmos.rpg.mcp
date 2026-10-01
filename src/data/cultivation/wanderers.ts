@@ -467,7 +467,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 lastMovedYearsAgo: 7,
                 contradictoryAccounts: [
                     'A Wayside Chime wanderer found it in a dry cistern under a ruined granary in the Jade Gorge, ninety years ago, and could take anybody to the spot',
-                    'A Bountiful Sheaf Sect crew found what is plainly the same cache in a burn-zone chamber in the Buddha Precipice forty years ago, and can also take anybody to the spot',
+                    'A Golden Sheaf Sect crew found what is plainly the same cache in a burn-zone chamber in the Buddha Precipice forty years ago, and can also take anybody to the spot',
                     'A Clear River ferryman describes finding it in a boat locker that was not his boat, twelve years ago, and has never been believed by anybody'
                 ]
             }
@@ -772,7 +772,7 @@ export const WANDERERS: readonly Wanderer[] = [
             },
             {
                 calledBy: 'The Moving Hoard',
-                toldAmong: 'Grave-readers, Bountiful Sheaf Sect crews and anybody who trades in salvage on the border road',
+                toldAmong: 'Grave-readers, Golden Sheaf Sect crews and anybody who trades in salvage on the border road',
                 version: 'That there is a cache somewhere that refills itself, that three separate parties have found it in three different provinces, and that at least two of them must therefore be lying.',
                 accurate: false,
                 whatIsWrong: 'None of them is lying. It refills because he restocks it and it moves because he carries it, and the accounts contradict each other for the most ordinary reason imaginable. The version omits the man entirely, which is why it has stayed in circulation without ever leading anybody to him.'

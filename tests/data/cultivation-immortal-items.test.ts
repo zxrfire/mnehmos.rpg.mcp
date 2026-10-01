@@ -518,9 +518,9 @@ describe('what service actually buys', () => {
     });
 
     it('runs the same principle down to the poorest institution in the world', () => {
-        expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/Bountiful Sheaf Sect/);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/Golden Sheaf Sect/);
         expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/not being kind/i);
-        // And the claim matches what the Bountiful Sheaf Sect entry actually says.
+        // And the claim matches what the Golden Sheaf Sect entry actually says.
         const gleaners = FACTION_CHARACTER['sect-fallen-grain-caravan']!;
         expect(gleaners.unitOfValue).toMatch(/share goes to their family/i);
         expect(gleaners.unitOfValue).toMatch(/never once defaulted/i);
@@ -629,7 +629,7 @@ describe('the sending pyramid', () => {
         expect(THE_SENDING_PYRAMID.whoNeverReceivedAnything).toMatch(/A receipt requires a line/i);
         for (const id of [
             'sect-ancient-bough-grove', 'sect-six-li-patrol', 'sect-hollow-bell-wanderers',
-            'sect-wraith-dirge-cult', 'sect-the-severed', 'sect-clear-river-alliance'
+            'sect-corpse-refining-sect', 'sect-the-severed', 'sect-clear-river-alliance'
         ]) {
             expect(getSect(id), `${id} is unknown`).toBeDefined();
             expect(receiptsFor(id), `${id} should have no receipts`).toBeUndefined();

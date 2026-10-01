@@ -116,8 +116,8 @@ export type FactionRelationship = z.infer<typeof FactionRelationshipSchema>;
 export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     {
         id: 'rel-the-spring-and-its-granaries',
-        aId: 'sect-lunargent',
-        bId: 'sect-amaranth',
+        aId: 'sect-moonwater',
+        bId: 'sect-five-grains',
         aStandsTo: 'alongside',
         kind: 'service_and_dependent',
         what: 'The spring keepers and the granary elders share the water approach and keep separate gates and rolls. The granary elders have requested a hearing to place a grain factor in the keepers\' account room.',

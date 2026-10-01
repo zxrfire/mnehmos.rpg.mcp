@@ -801,7 +801,7 @@ describe('the acceptance test: five hundred years', () => {
         for (const id of permitted.factions) expect(id).toBe('sect-azure-cloud');
         for (const line of digest.lines) {
             if (line.form === 'named') continue;
-            expect(line.text).not.toMatch(/Crimson Abyss|Third Sluice|Ancient Bough Grove|Clearwater Ward|Bountiful Sheaf Sect/);
+            expect(line.text).not.toMatch(/Crimson Abyss|Third Sluice|Ancient Bough Grove|Clearwater Ward|Golden Sheaf Sect/);
         }
     });
 

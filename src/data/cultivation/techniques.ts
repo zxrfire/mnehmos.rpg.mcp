@@ -157,7 +157,7 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'earth-anchoring-nail-art',
     'gate-that-was-closed',
     // heaven - the sects held these once and cannot read their own copies now
-    'worldroot-strangling-vine',
+    'heaven-entangling-vine-art',
     // immortal - a handful of sects still transmit theirs; these are not among them
     'star-quenching-blade-domain',
     'abyssal-gate-torrent',
@@ -813,11 +813,11 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     // spends is somebody else - which is the other book's quality, not this
     // one's.
     'lotus-plucking-rite': 'sound',
-    'nine-rivers-sword-chant': 'sound',
+    'nine-rivers-sword-form': 'sound',
     'white-tiger-rend': 'sound',
     'cinder-lotus-blossom': 'sound',
     'tectonic-seal-palm': 'sound',
-    'bramble-crown-spear': 'sound',
+    'hundred-thorn-piercing-art': 'sound',
     'formless-severing-intent': 'sound',
     'arcstep-thunder-lance': 'sound',
     'cold-set-petal-cut': 'sound',
@@ -830,7 +830,7 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     'gale-riding-sword-flight': 'sound',
     'emberstep-mirage': 'sound',
     'hundred-herb-restoration-art': 'sound',
-    'bloodwarm-battle-chant': 'sound',
+    'blazing-blood-art': 'sound',
     'thread-reading-stance': 'sound',
     'heavenly-mechanism-sight': 'sound',
 
@@ -856,7 +856,7 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     // The sects held this one and cannot read their own copies now. That is the
     // reader falling short of the demand, which `readManual` already prices;
     // the copy itself is intact.
-    'worldroot-strangling-vine': 'sound',
+    'heaven-entangling-vine-art': 'sound',
     'star-quenching-blade-domain': 'sound',
     'abyssal-gate-torrent': 'sound',
     'nine-heaven-scourging-bolt': 'sound',
@@ -1196,11 +1196,11 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ATTACK - EARTH (Foundation Establishment / Core Formation)
     // ═══════════════════════════════════════════════════════════════════
     art({
-        id: 'nine-rivers-sword-chant',
+        id: 'nine-rivers-sword-form',
         // Nine consecutive cuts, and the art is the interval between them.
         // About timing rather than about ground. Sword road only.
         subjects: ['sword'],
-        name: 'Nine Rivers Sword Cadence',
+        name: 'Nine Rivers Sword Form',
         category: 'attack',
         grade: 'earth',
         element: 'water',
@@ -1251,8 +1251,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The palm is pressed to the ground and the ground is asked to answer. It answers under the target, which is a distinction the target rarely appreciates in time.'
     }),
     art({
-        id: 'bramble-crown-spear',
-        name: 'Bramble Crown Javelin',
+        id: 'hundred-thorn-piercing-art',
+        name: 'Hundred Thorn Piercing Art',
         category: 'attack',
         grade: 'earth',
         element: 'wood',
@@ -1352,8 +1352,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Fire qi shed as a fan of burning plumes, each one continuing to burn after the strike lands. The manual warns, twice, against using it indoors, and the second warning is more emphatic.'
     }),
     art({
-        id: 'worldroot-strangling-vine',
-        name: 'Worldroot Strangling Vine',
+        id: 'heaven-entangling-vine-art',
+        name: 'Heaven-Entangling Vine Art',
         category: 'attack',
         grade: 'heaven',
         element: 'wood',
@@ -1914,8 +1914,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Fine threads of elementless qi are stitched along a torn meridian and left to dissolve as the channel closes. One of the few arts that treats an injury rather than covering it, which is why healers eat.'
     }),
     art({
-        id: 'bloodwarm-battle-chant',
-        name: 'Bloodwarm Battle Hymn',
+        id: 'blazing-blood-art',
+        name: 'Blazing Blood Art',
         category: 'support',
         grade: 'earth',
         element: 'fire',

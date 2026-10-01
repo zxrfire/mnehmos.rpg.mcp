@@ -601,12 +601,12 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // injury, which is knowledge nobody else in the province has and
             // which the Hall also charges to undo. Taught quietly, to the
             // people who go out and collect.
-            'bramble-crown-spear',
+            'hundred-thorn-piercing-art',
             'spring-returning-life-art'
         ],
         signatureTechniqueId: 'spring-returning-life-art',
         specialities: ['support', 'cultivation', 'defense'],
-        rivals: ['sect-wraith-dirge-cult'],
+        rivals: ['sect-corpse-refining-sect'],
         territory: 'A terraced herb valley fed by nine warm springs, on ordinary ground with no vein worth the name - which is why the Hall lives on its physicians.',
         recruits: true,
         compound: {
@@ -729,11 +729,11 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // continuous elemental career below Core Formation in the catalog.
             'slack-water-foundation-canon',
             'drowned-core-scripture',
-            'nine-rivers-sword-chant',
+            'nine-rivers-sword-form',
             'still-water-mirror-guard',
             'samsara-tide-crush'
         ],
-        signatureTechniqueId: 'nine-rivers-sword-chant',
+        signatureTechniqueId: 'nine-rivers-sword-form',
         specialities: ['attack', 'movement', 'support'],
         rivals: ['sect-thousand-treasure-pavilion'],
         territory: 'Eleven river towns and every ford between them, none of it over a vein, all of it over traffic.',
@@ -1163,7 +1163,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'An auction floor with tiered seating for four hundred, of which the Pavilion fills the first two rows and rents the rest for storage.'
         },
         description:
-            'Auction floors in every city of consequence, a vault nobody has located, and a commission everybody grumbles about and nobody refuses. Its curriculum is a merchant\'s - gathering, two escapes and an elementless cut - and its actual expertise has no name it could say aloud: its appraisers can tell you which age a dug object came out of, which kind of hole, and frequently which province, and there is no better body of that skill anywhere that is not doing it illegally. It buys dug goods from anyone and asks nothing about the hole, which is why the region is armed and furnished out of its own graves and why the Verdant Spring Valley and the Wraith Dirge Cult are both, in different directions, its suppliers. It bought its own ancestors at an estate sale the Ninefold Karma Palace brokered, its staff genuinely believe the lineage because the fraud is three generations old, and the one thing the best grave-readers in the region have never been asked to appraise is the provenance of the lot the house itself bought.',
+            'Auction floors in every city of consequence, a vault nobody has located, and a commission everybody grumbles about and nobody refuses. Its curriculum is a merchant\'s - gathering, two escapes and an elementless cut - and its actual expertise has no name it could say aloud: its appraisers can tell you which age a dug object came out of, which kind of hole, and frequently which province, and there is no better body of that skill anywhere that is not doing it illegally. It buys dug goods from anyone and asks nothing about the hole, which is why the region is armed and furnished out of its own graves and why the Verdant Spring Valley and the Corpse Refining Sect are both, in different directions, its suppliers. It bought its own ancestors at an estate sale the Ninefold Karma Palace brokered, its staff genuinely believe the lineage because the fraud is three generations old, and the one thing the best grave-readers in the region have never been asked to appraise is the provenance of the lot the house itself bought.',
         ambition: {
             wants:
                 'The Stone Marrow Hall\'s rate-setting broken, by publishing its own floor prices for assayed stone and honouring them.',
@@ -1727,7 +1727,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'meridian-devouring-art',
         specialities: ['forbidden', 'attack', 'dual_cultivation'],
-        rivals: ['sect-azure-cloud-pavilion', 'sect-hollow-bell-wanderers', 'sect-wraith-dirge-cult'],
+        rivals: ['sect-azure-cloud-pavilion', 'sect-hollow-bell-wanderers', 'sect-corpse-refining-sect'],
         territory: 'A sinkhole hall under a town that officially does not know it is there.',
         recruits: true,
         compound: {
@@ -1750,15 +1750,15 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         }
     },
     {
-        id: 'sect-wraith-dirge-cult',
-        name: 'Wraith Dirge Cult',
+        id: 'sect-corpse-refining-sect',
+        name: 'Corpse Refining Sect',
         alignment: 'demonic',
         powerOrdinal: 26,
-        ranks: ['Grave Digger', 'Lantern Bearer', 'Bone Disciple', 'Corpse Warden', 'Pale Elder', 'Grand Pale Elder', 'Cult Ancestor'],
+        ranks: ['Grave Digger', 'Lantern Bearer', 'Corpse Disciple', 'Corpse Warden', 'Corpse Elder', 'Grand Corpse Elder', 'Corpse Ancestor'],
         admissionOrdinal: 2,
         stipend: [7, 22, 75, 260, 800, 1_400, 2_400],
         teaches: [
-            // The house's cultivation manual. NOT its ceiling - the cult delivers short of what this book can carry, which makes it resource-limited rather than manual-limited, and the corpse work is what it does with people afterwards.
+            // The house's cultivation manual. NOT its ceiling - the sect delivers short of what this book can carry, which makes it resource-limited rather than manual-limited, and the corpse work is what it does with people afterwards.
             'lesser-qi-gathering-manual',
             'foundation-tempering-scripture',
             'cross-meridian-strike',
@@ -1771,7 +1771,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // Tranquil Oasis Sect are the third, and it is a quarrel about the same
         // bodies from two directions: the sand keeps a corpse and gives it
         // back a decade later with its possessions on it, so a carrier who
-        // does not make the return leg is Cult stock, and the Caravan count
+        // does not make the return leg is Sect stock, and the Caravan count
         // that person on their board as a name rather than as a supply.
         rivals: ['sect-verdant-spring-valley', 'sect-crimson-abyss-fortress', 'sect-sand-well-caravan'],
         territory: 'Old battlefields, worked in rotation, in the third year after any large engagement.',
@@ -1783,16 +1783,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A field wall of stacked fragments, sorted by weight rather than by what any of them used to be.'
         },
         description:
-            'Old battlefields, worked in rotation, in the third year after any large engagement, and a field wall built of fragments sorted by weight rather than by what they were. It teaches four arts and two of them are corpse work - the cross-meridian jolt, bark armour, the tithe palm and corpse-lantern soul forging - which makes its people durable, patient and carrying something that righteous sects execute for possessing. What it is actually best at is ground-reading: they are the best diggers alive and can date a battlefield to the season by what is flowering on it, which is a real science practised by people nobody will sit next to. They hold that the hundred-and-forty-year rotation exists to let sites recover; the founding note says it exists to let the survivors die off first, and the Cult has forgotten the difference.',
+            'Old battlefields, worked in rotation, in the third year after any large engagement, and a field wall built of fragments sorted by weight rather than by what they were. It teaches four arts and two of them are corpse work - the cross-meridian jolt, bark armour, the tithe palm and corpse-lantern soul forging - which makes its people durable, patient and carrying something that righteous sects execute for possessing. What it is actually best at is ground-reading: they are the best diggers alive and can date a battlefield to the season by what is flowering on it, which is a real science practised by people nobody will sit next to. They hold that the hundred-and-forty-year rotation exists to let sites recover; the founding note says it exists to let the survivors die off first, and the Sect has forgotten the difference.',
         ambition: {
             wants:
                 'A rotation slot in the Buddha Precipice burn zones, which are the only unworked ground left within reach.',
             blockedBy: ['sect-fallen-grain-caravan', 'sect-clearwater-ward'],
             wouldCost:
-                'Crossing a border neither region polices into ground the Bountiful Sheaf Sect have worked for forty years, against a company that has never defaulted on a dead digger\'s share and would be defending its people\'s living. The Cult already undercuts them there using finds the Caravan located, which is the grievance from the other side.',
+                'Crossing a border neither region polices into ground the Golden Sheaf Sect have worked for forty years, against a company that has never defaulted on a dead digger\'s share and would be defending its people\'s living. The Sect already undercuts them there using finds the Caravan located, which is the grievance from the other side.',
             contestedWith: ['sect-fallen-grain-caravan', 'sect-sand-well-caravan'],
             movedOn:
-                'Two Lantern Bearers have been working the Buddha Precipice edge for three seasons without a rotation entry, which the Pale Elders have not sanctioned and have not stopped.'
+                'Two Lantern Bearers have been working the Buddha Precipice edge for three seasons without a rotation entry, which the Corpse Elders have not sanctioned and have not stopped.'
         }
     },
     {
@@ -1834,7 +1834,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // the term out loud beforehand, and collects the exhaustion
             // afterwards with interest. The only art here that is not for the
             // person using it.
-            'bloodwarm-battle-chant',
+            'blazing-blood-art',
             'sunfeather-conflagration',
             'burning-heart-cinder-ward',
             'nine-abyss-demon-transformation'
@@ -2055,7 +2055,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     },
     {
         id: 'sect-fallen-grain-caravan',
-        name: 'Bountiful Sheaf Sect',
+        name: 'Golden Sheaf Sect',
         alignment: 'neutral',
         powerOrdinal: 17,
         ranks: ['Chaff Hand', 'Sheaf Binder', 'Winnower', 'Sheaf Elder', 'Grand Sheaf Elder', 'Sheaf Master'],
@@ -2084,10 +2084,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ambition: {
             wants:
                 'Permission to work live burn edges, which pay triple, instead of holding to a nine-year rotation whose stated purpose the Caravan has misremembered.',
-            blockedBy: ['sect-clearwater-ward', 'sect-wraith-dirge-cult'],
+            blockedBy: ['sect-clearwater-ward', 'sect-corpse-refining-sect'],
             wouldCost:
                 'The Sheaf Master holds the rotation and the argument reopens every time a face runs out. Working live edges would raise losses from one in nine to something nobody has costed, and the share promise is the only thing the Caravan has, so a season of unpaid families would end it.',
-            contestedWith: ['sect-wraith-dirge-cult'],
+            contestedWith: ['sect-corpse-refining-sect'],
             movedOn:
                 'The Factors have worked two live edges without an entry and paid the shares out of the general fund, which is the first time the fund has been used for anything.'
         }
@@ -2212,7 +2212,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'five-breath-circulation-scripture',
         specialities: ['defense', 'support', 'cultivation'],
-        rivals: ['sect-wraith-dirge-cult'],
+        rivals: ['sect-corpse-refining-sect'],
         territory: 'A shed and a stockyard a day past the last painted stake in the Buddha Precipice, and a route across the sand that has to be rewalked every season.',
         recruits: true,
         compound: {
@@ -2226,10 +2226,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ambition: {
             wants:
                 'A second well. One dug, anywhere on the sand, of its own, so that the four-day figure stops being the thing that kills its people.',
-            blockedBy: ['sect-thousand-treasure-pavilion', 'sect-wraith-dirge-cult'],
+            blockedBy: ['sect-thousand-treasure-pavilion', 'sect-corpse-refining-sect'],
             wouldCost:
                 'Everything the shed has and probably the shed. A well is a fixed point and a fixed point on the Burial Sands is a thing the cover reaches in a decade, so the Caravan would be spending the whole of what they have on something with a shorter life than the debt - which is the province\'s own argument for why nobody holds anything here, made against the only body that has ever wanted to.',
-            contestedWith: ['sect-wraith-dirge-cult'],
+            contestedWith: ['sect-corpse-refining-sect'],
             movedOn:
                 'Two Oasis Elders have been paying a Buddha Precipice carver out of their own shares to sound for water at a point nine days out, without telling the Oasis Master, and have four soundings and no water.'
         }
@@ -3180,12 +3180,12 @@ export const DAO_HOUSE_DISPUTES: readonly DaoHouseDispute[] = [
 
 /** Admission terms, kept beside the sects rather than inside them. */
 export const SECT_ADMISSION: Record<string, SectAdmission> = {
-    'sect-lunargent': {
+    'sect-moonwater': {
         minOrdinal: 0,
         preferredRoots: [],
         requirement: 'Enter on the water-service roll at the spring gate. Instruction begins at the bottom rung.'
     },
-    'sect-amaranth': {
+    'sect-five-grains': {
         minOrdinal: 0,
         preferredRoots: [],
         requirement: 'Enter on the granary-service roll at the spring gate. Instruction begins at the bottom rung.'
@@ -3333,7 +3333,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: [],
         requirement: 'One killing, witnessed by a Chosen. The Hall is not particular about whom.'
     },
-    'sect-wraith-dirge-cult': {
+    'sect-corpse-refining-sect': {
         minOrdinal: 2,
         preferredRoots: ['single_earth', 'muddled_five_element'],
         requirement: 'A season spent working a battlefield without being seen by anyone who left it.'

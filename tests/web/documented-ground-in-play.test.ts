@@ -5,6 +5,8 @@
  * cultivator can leave something behind a gate. Both seeds are pinned.
  * Disabling the town route, house catalog, graded slips, core retirement,
  * comprehension reads, sighting target or ground establishment makes these red.
+ * The authored archive's ordinal gate was also seeded as a permanent seal, so
+ * entering it could never reach the charter. The gate is tested through entry.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness.js';
@@ -84,10 +86,10 @@ describe('documented ground reached in play', () => {
         expect(lintel.narration).not.toContain('predecessors');
         await game.act('I enter the ruins');
         const recovered = await game.act('I take the contents');
-        expect(recovered.narration).toContain('Velum Charter');
-        const charter = await game.act('I investigate Velum Charter');
+        expect(recovered.narration).toContain('Western Road Edict');
+        const charter = await game.act('I investigate Western Road Edict');
         expect(charter.narration).toContain('cannot establish an unbroken succession');
-        for (const id of ['sect-lunargent', 'sect-amaranth']) {
+        for (const id of ['sect-moonwater', 'sect-five-grains']) {
             expect(world.factions.find(house => house.id === id)?.seatLocationId).toBeTruthy();
             expect(getSect(id)).toBeDefined();
         }

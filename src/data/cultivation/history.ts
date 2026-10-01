@@ -494,7 +494,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         howItIsDiscoverable: [
             'counting nodes in two compounds held by unrelated sects and finding the same spacing and the same node families',
             'the Burnt Earth Temple, whose six self-cut nodes are the only complete modern formation in the province and are all weak',
-            'a Bountiful Sheaf Sect salvage crew, who work the front of a compound they did not build and can describe exactly where the work stops being theirs',
+            'a Golden Sheaf Sect salvage crew, who work the front of a compound they did not build and can describe exactly where the work stops being theirs',
             'the Immovable Mountain Temple\'s own numerals, which any careful person can learn to read in a season, at which point every one of their documents becomes a readable table of quantities inside an unreadable sentence'
         ],
         note:
@@ -568,7 +568,7 @@ export const DRIVEN_GROUND_AND_THE_NODE: Claim & { knowledge: readonly string[] 
         'the Clearwater Ward\'s flood works have nodes cut into stone rather than laid on ground, which is the only place in either province where an inherited node and a carved seam are the same operation on the same site',
         'the Cut Road was reconstructed from nothing in nine hundred years by people with no manuals, which is a plausible span for rediscovering a technique and a very short one for inventing a road',
         'driven ground is not confined to the Buddha Precipice and predates it by ages, so the weir inversion made a province of a thing that already existed rather than making the thing',
-        'a carver can work an inherited node out of a wall and does not find it different in kind from a face, which several Bountiful Sheaf Sect crews will confirm and no Immovable Mountain Temple Warden will discuss'
+        'a carver can work an inherited node out of a wall and does not find it different in kind from a face, which several Golden Sheaf Sect crews will confirm and no Immovable Mountain Temple Warden will discuss'
     ],
     claimedOutcomes: [],
     fidelity: 'partial'

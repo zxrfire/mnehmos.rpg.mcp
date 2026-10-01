@@ -249,7 +249,7 @@ export const THE_QUIET_MARCHES: Region = {
             // leased". A contractor paid by the administration does not govern
             // the village it works out of.
             heldByFactionId: 'sect-myriad-course-hall',
-            kind: 'village', ambient: 'thin', note: 'Bountiful Sheaf Sect\' sorting yard, where salvage is priced before it goes to Iron Crest.',
+            kind: 'village', ambient: 'thin', note: 'Golden Sheaf Sect\' sorting yard, where salvage is priced before it goes to Iron Crest.',
             connections: [
                 {
                     kind: 'path',
@@ -322,14 +322,14 @@ export const THE_QUIET_MARCHES: Region = {
             kind: 'shared_feud',
             otherRegionId: HOME_REGION_ID,
             description:
-                'Bountiful Sheaf Sect and the Wraith Dirge Cult both work sealed sites and have been undercutting, robbing and occasionally killing each other across the border for sixty years. Neither region\'s authorities regard it as their problem.',
+                'Golden Sheaf Sect and the Corpse Refining Sect both work sealed sites and have been undercutting, robbing and occasionally killing each other across the border for sixty years. Neither region\'s authorities regard it as their problem.',
             travelDays: 11
         },
         {
             kind: 'unsettled_border',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The last forty li before Iron Crest are on no survey the Immovable Mountain Temple will certify, so nothing sworn there binds and nothing owned there can be proved. Bountiful Sheaf Sect and the Still Blade Pavilion both use it, for opposite reasons.',
+                'The last forty li before Iron Crest are on no survey the Immovable Mountain Temple will certify, so nothing sworn there binds and nothing owned there can be proved. Golden Sheaf Sect and the Still Blade Pavilion both use it, for opposite reasons.',
             travelDays: 11
         }
     ],
@@ -408,7 +408,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         onPaper:
             'Worked out, struck off the course, and carried on the Clearwater Ward register only as the annual salvage contract over the burn zones inside it.',
         onTheGround:
-            'A sorting yard, a price list, and several hundred finished faces with the carvers who worked them walled into the stone. Bountiful Sheaf Sect will not cut a face that holds somebody without asking the family.',
+            'A sorting yard, a price list, and several hundred finished faces with the carvers who worked them walled into the stone. Golden Sheaf Sect will not cut a face that holds somebody without asking the family.',
         discrepancy: 'none',
         note:
             'The plainest statement of what a face district is: the boundary is the work, the work is finished, and what is left is a cemetery with a contract over it.'
