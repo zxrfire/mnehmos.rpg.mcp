@@ -478,6 +478,14 @@ chair, as `rosterByRung` has always said. In `seatsAtRank`.
 The odds of somebody rising into a chair from the count, described below, do not
 read it yet.
 
+Background intake shares the slice's catalog budget, `aRollWorthModelling`.
+External recruitment, sampled family births and the house's own people coming
+forward count everyone alive on the roll, including people away, and fill only
+its vacancies. Otherwise the house's own replacement stops at its budget while
+external intake keeps growing the same slice. This budget is not the house's
+real headcount or a rule cancelling a known person's child: actual conceptions,
+player admissions and existing family arrangements keep their ordinary rules.
+
 ### Track the house's real size, and let the odds fall out
 
 **A house should carry its FULL size as a number that moves over time**, and the
@@ -656,4 +664,3 @@ Rulings from the same night, which the talisman is one link of:
   top three rungs and must not be re-derived from a fraction
 - `src/engine/world/a-talisman-is-one-act-somebody-already-paid-for.ts` - what a
   slip holds, including word sent home
-

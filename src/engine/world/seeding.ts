@@ -179,11 +179,9 @@ export interface SeedStats {
      * gone and whose names a house still keeps - and they are rows like anybody
      * else. Three of them in a three-hundred-person world.
      *
-     * Both figures are reported because conflating them is a mistake somebody
-     * has already made. A caller reading this as "people alive here" is off by
-     * the ancestors, and `populationTarget` deliberately counts them: a world
-     * that replaced its dead back to a figure excluding them would quietly
-     * delete them.
+     * Both figures are reported because reading rows as people alive counts
+     * ancestors. The opening population baseline includes their records;
+     * yearly replacement reads local vacancies rather than that global total.
      */
     npcs: number;
     /** Of those rows, the ones actually alive. See {@link SeedStats.npcs}. */
@@ -277,12 +275,12 @@ const OLDEST_A_DRAWN_LIFE_REACHES =
  * `the-kin-a-world-opens-holding` pins. A cap that was not monotonic inverted
  * a catalogued pair the first time this was tried.
  */
-function anAgeTheRungCanCarry(ordinal: number, spread: number): number {
+function anAgeTheRungCanCarry(ordinal: number, spread: number, offset: number): number {
     return Math.max(
         MIN_AGE + 1,
         Math.min(
             MAX_NAMED_AGE,
-            Math.floor(lifespanForOrdinal(ordinal) * YEARS_A_RUNG_LEAVES_YOU),
+            Math.floor(lifespanForOrdinal(ordinal) * YEARS_A_RUNG_LEAVES_YOU) - offset,
             MIN_AGE + Math.round(ordinal * NAMED_YEARS_PER_ORDINAL) + spread
         )
     );
@@ -356,8 +354,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // AFTER the population, so every procedural person draws exactly what they
     // drew before this existed, and BEFORE the lineages, so the family the
     // dilution ladder is read off is on a roll like anybody else's. They are
-    // counted in the target because they are people: a world that replaces its
-    // dead back to a figure that excluded them would quietly delete them.
+    // counted in the opening baseline alongside the other seeded records.
     const line = seedTheLineThatCameDown(state, opts.catalog, presentDay);
     const everybody = [...npcs, ...line];
     state.populationTarget = everybody.length;
@@ -1907,7 +1904,8 @@ function seedNamedFigures(
         const rng = forStream(state.seed, 'seed-named', id);
         // Old enough to have got where the catalog says they are, without
         // being implausibly ancient for it.
-        const age = anAgeTheRungCanCarry(member.realmOrdinal, rng.int(0, 40));
+        const age = anAgeTheRungCanCarry(member.realmOrdinal, rng.int(0, 40),
+            forStream(state.seed, 'seed-named-age', id).int(0, 4));
 
         // Their birth follows from the seat they are already sitting in, not from a
         // lottery that knows nothing about it. See
@@ -2187,7 +2185,8 @@ function seedThePeopleAHouseRaised(
                 // use; the second is the ladder's own span for the rung they
                 // stand at, which that expression outruns at the bottom of the
                 // ladder where a rung costs more years than a life is long.
-                const age = anAgeTheRungCanCarry(ordinal, rng.int(0, 30));
+                const age = anAgeTheRungCanCarry(ordinal, rng.int(0, 30),
+                    forStream(state.seed, 'seed-raised-age', id).int(0, 4));
 
                 let npc = createNpc(state.seed, {
                     id,

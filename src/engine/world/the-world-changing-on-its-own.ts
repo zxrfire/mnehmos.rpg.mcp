@@ -173,7 +173,7 @@ import {
     whatTeachingLeavesOfAMastersRate
 } from './an-npc-striking-at-the-next-wall.js';
 import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
-import { stillHasPeopleNobodyModels, theHousesTakeInTheirOwn } from './a-house-takes-in-one-of-its-own.js';
+import { stillHasPeopleNobodyModels, theHousesTakeInTheirOwn, vacanciesOnTheRolls } from './a-house-takes-in-one-of-its-own.js';
 import { theHousesAreCounted } from './how-many-people-a-house-has.js';
 import { theHousesTakeInEldersFromOutside } from './a-house-takes-in-an-elder-from-outside.js';
 import { coverTheEmptyChairs } from './somebody-covers-a-house-with-no-head.js';
@@ -968,12 +968,12 @@ function locationIdsUnder(state: WorldState, regionId: string): Set<string> {
 /**
  * Somewhere in this region a person can actually be born.
  */
-function birthplacesIn(state: WorldState, region: LocationRecord): LocationRecord[] {
+function birthplacesIn(state: WorldState, region: LocationRecord, household = false): LocationRecord[] {
     const under = locationIdsUnder(state, region.id);
     return state.locations.filter(l =>
         l.id !== region.id &&
         under.has(l.id) &&
-        (l.kind === 'settlement' || l.kind === 'sect_seat') &&
+        (l.kind === 'settlement' || household && l.kind === 'sect_seat') &&
         !l.sealed &&
         l.thresholds.entry <= 0 &&
         l.thresholds.survival <= 0 &&
@@ -984,14 +984,15 @@ function birthplacesIn(state: WorldState, region: LocationRecord): LocationRecor
 /** Weighted draw over birthplaces. Seeded, so a world replays identically. */
 function drawBirthplace(
     places: readonly LocationRecord[],
-    rng: CultivationRNG
+    rng: CultivationRNG,
+    weight: (place: LocationRecord) => number = populationWeightOf
 ): LocationRecord | null {
     if (places.length === 0) return null;
-    const total = places.reduce((sum, l) => sum + populationWeightOf(l), 0);
+    const total = places.reduce((sum, l) => sum + weight(l), 0);
     if (total <= 0) return places[rng.int(0, places.length - 1)];
     let cursor = rng.next() * total;
     for (const place of places) {
-        cursor -= populationWeightOf(place);
+        cursor -= weight(place);
         if (cursor < 0) return place;
     }
     return places[places.length - 1];
@@ -1013,18 +1014,30 @@ function applyDemography(
     const target = state.populationTarget;
     if (target <= 0 && owed.length === 0) return [];
 
-    let living = 0;
-    for (const npc of state.npcs) if (npc.status === 'alive' && isBelowTheLid(npc)) living++;
-    const deficit = target - living;
-    if (deficit <= 0 && owed.length === 0) return [];
+    // Houses have their own unmodelled people. Their rolls cannot replace a
+    // settlement's missing residents; its size is read from its own weight.
+    const residents = new Map<string, number>();
+    for (const npc of state.npcs) {
+        if (npc.status === 'alive' && npc.locationId !== null) {
+            residents.set(npc.locationId, (residents.get(npc.locationId) ?? 0) + 1);
+        }
+    }
+    const settlements = state.locations.filter(l => isBelowTheLid(l) && l.kind === 'settlement'
+        && !l.sealed && l.thresholds.entry <= 0 && l.thresholds.survival <= 0 && populationWeightOf(l) > 0);
+    const vacancy = (place: LocationRecord): number => Math.max(0,
+        populationWeightOf(place) - (residents.get(place.id) ?? 0));
+    const localDeficit = settlements.reduce((sum, place) => sum + vacancy(place), 0);
+    const gap = target > 0 ? localDeficit : 0;
+    if (gap <= 0 && owed.length === 0) return [];
 
     // A fraction of the gap each year, so a plague is felt for a generation
     // rather than papered over the following spring.
-    const count = deficit <= 0 ? 0 : Math.min(24, Math.max(1, Math.round(deficit * 0.08)));
+    const count = gap <= 0 ? 0 : Math.min(Math.ceil(gap), 24, Math.max(1, Math.round(gap * 0.08)));
     const regions = state.locations.filter(l => l.kind === 'region' && isBelowTheLid(l));
     if (regions.length === 0) return [];
     // Who took each of the year's children on, where anybody did.
     const roads = theRoadsOntoARollThisYear(state, year);
+    const rollVacancies = vacanciesOnTheRolls(state, day);
     const tookOn = new Map<string, string>();
 
     // One walk of the roster for the whole cohort. Without it every birth in
@@ -1046,23 +1059,30 @@ function applyDemography(
 
         const id = `npc-${state.nextNpcSeq++}`;
         const own = forStream(state.seed, 'birth', id);
-        const region = raisedIn ?? regions[own.int(0, regions.length - 1)];
+        const drawnRegion = regions[own.int(0, regions.length - 1)];
+        const replacement = handed ? null : drawBirthplace(settlements.filter(p => vacancy(p) > 0),
+            forStream(state.seed, 'birth-home', id), vacancy);
+        if (!handed && !replacement) continue;
+        const region = raisedIn ?? (replacement
+            ? regions.find(r => r.id === regionOf(state, replacement.id)) ?? drawnRegion
+            : drawnRegion);
         const age = handed ? Math.floor((day - handed.bornOnDay) / 365) : own.int(16, 22);
 
         // A place, not the container - and never the container.
-        const habitable = birthplacesIn(state, region);
+        const habitable = birthplacesIn(state, region, handed !== null);
         const somewhere = habitable.length > 0
             ? { region, places: habitable }
             : (() => {
                 for (const alt of regions) {
-                    const places = birthplacesIn(state, alt);
+                    const places = birthplacesIn(state, alt, handed !== null);
                     if (places.length > 0) return { region: alt, places };
                 }
                 return null;
             })();
         if (!somewhere) break;
         const home = (raisedAt && somewhere.places.find(p => p.id === raisedAt.id))
-            || (drawBirthplace(somewhere.places, own) ?? somewhere.places[0]);
+            || replacement || (drawBirthplace(somewhere.places, own) ?? somewhere.places[0]);
+        residents.set(home.id, (residents.get(home.id) ?? 0) + 1);
         const under = locationIdsUnder(state, somewhere.region.id);
         // Read off the province they are actually born in, not the one first
         // drawn - a child born in the next province over grows up under its
@@ -1113,11 +1133,6 @@ function applyDemography(
                 ? candidates[own.int(0, candidates.length - 1)]
                 : null;
         }
-        if (parent) {
-            // WHAT THE LINE COMES TO IN THIS CHILD. See `a-child-takes-their-parents-line.ts`.
-            npc = aChildTakesTheirParentsLine(state, npc, parent, roster);
-        }
-
         // A faction that takes applicants takes applicants. Without this the rolls
         // only ever shrink: every founding member dies inside two centuries and
         // nobody replaces them, and the institutions fold for a reason that is
@@ -1143,12 +1158,19 @@ function applyDemography(
                 && isBelowTheLid(f) && FACTION_PARENTAGE[f.id]?.governance === 'bloodline'
                 && (whoAHouseWillTake(f.id) ?? npc.identity.sex) === npc.identity.sex) ?? null
             : null;
+        // Do not write a lineage edge for an unsampled background child.
+        if (!handed && parentsFamily && (rollVacancies.get(parentsFamily.id) ?? 0) <= 0) {
+            residents.set(home.id, residents.get(home.id)! - 1);
+            continue;
+        }
+        if (parent) npc = aChildTakesTheirParentsLine(state, npc, parent, roster);
         if (parentsFamily !== null && parent) {
             npc = { ...npc, factionId: parentsFamily.id, factionRankIndex: 0 };
             tookOn.set(npc.id, parent.id);
         } else {
             const admitting = state.factions.filter(
                 f => f.dissolvedOnDay === null && isBelowTheLid(f) &&
+                    (rollVacancies.get(f.id) ?? 0) > 0 &&
                     f.tags.includes('recruits') &&
                     f.seatLocationId !== null && under.has(f.seatLocationId) &&
                     ordinal >= Number(f.resources.admission_ordinal ?? 0) &&
@@ -1173,7 +1195,8 @@ function applyDemography(
         // parent's ties rather than by any list.
         const fostered = parent
             ? placeAChildTheirHouseWillNotKeep(
-                state, npc, parent, ordinal, day, forStream(state.seed, 'fostering', id), roster)
+                state, npc, parent, ordinal, day, forStream(state.seed, 'fostering', id), roster,
+                handed ? undefined : rollVacancies)
             : null;
         if (fostered) {
             npc = fostered;
@@ -1195,6 +1218,8 @@ function applyDemography(
         roster.at.set(npc.id, state.npcs.length);
         roster.living.push(npc);
         state.npcs.push(npc);
+        if (npc.factionId !== null) rollVacancies.set(npc.factionId,
+            Math.max(0, (rollVacancies.get(npc.factionId) ?? 0) - 1));
         born.push(npc);
     }
     // Taken on by a house, or placed in one, and whoever of it took them on owes
@@ -1257,7 +1282,8 @@ function placeAChildTheirHouseWillNotKeep(
     ordinal: number,
     day: number,
     rng: CultivationRNG,
-    roster: Roster
+    roster: Roster,
+    vacancies?: ReadonlyMap<string, number>
 ): NpcRecord | null {
     // Never the player's own mirror row. Placing your child is a decision a
     // person makes, and a world pass that made it for them would be the engine
@@ -1283,6 +1309,7 @@ function placeAChildTheirHouseWillNotKeep(
         // world's own question and is answered here.
         const house = state.factions.find(f => f.id === person.factionId);
         if (!house || house.dissolvedOnDay !== null || !isBelowTheLid(house)) continue;
+        if (vacancies && (vacancies.get(house.id) ?? 0) <= 0) continue;
         candidates.push({
             personId: person.id,
             personName: person.name,
@@ -2526,6 +2553,7 @@ function applyBookAcquisition(state: WorldState, year: number, day: number): num
 }
 
 function applyRecruitment(state: WorldState, year: number, day: number): number {
+    const vacancies = vacanciesOnTheRolls(state, day);
     const admitting = state.factions.filter(
         f => f.dissolvedOnDay === null && isBelowTheLid(f) && f.tags.includes('recruits')
     );
@@ -2591,6 +2619,7 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
         // SIBLING of the npc's village, and such a filter matches nobody.
         const home = regionOf(state, npc.locationId);
         const options = admitting.filter(f =>
+            (vacancies.get(f.id) ?? 0) > 0 &&
             npc.cultivation.realmOrdinal >= Number(f.resources.admission_ordinal ?? 0) &&
             // The one floor that is not a rung. A house that takes one sex and
             // not the other refuses at the door, and the world's own intake has
@@ -2638,6 +2667,7 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
         // AND WHAT THIS HOUSE MAKES OF WHAT IT HAS HEARD ABOUT THEM.
         if (!aHouseWouldTakeThemAnyway(state, npc, chosen.house, rng)) continue;
         state.npcs[at] = { ...npc, factionId: chosen.house.id, factionRankIndex: 0, updatedOnDay: day };
+        vacancies.set(chosen.house.id, vacancies.get(chosen.house.id)! - 1);
         whatTakingInSomebodysCastOffStirs(state, npc, chosen.house, day);
         // Whoever of the house took them on owes it a report, which is what
         // lets them in at the gate. See `a-house-expects-somebody-it-took-on.ts`.

@@ -7,6 +7,7 @@ import {
     forbidZone,
     isOpenOn,
     linkLocations,
+    walkingDaysFrom,
     locationHistory,
     locationsFromPriorAges,
     makeAffinity,
@@ -24,6 +25,33 @@ import {
     type ThresholdModifier
 } from '../../../src/engine/world/locations.js';
 import { seedPriorAges } from '../../../src/engine/world/history.js';
+
+/** Free containment formerly bypassed every road inside a province. */
+describe('walking distances retain the roads and approaches', () => {
+    it('walks a capital-to-town road at its stated price', () => {
+        const province = makeLocation({ id: 'province', name: 'Province', kind: 'region' });
+        const city = makeLocation({ id: 'city', name: 'Capital', kind: 'settlement', parentId: province.id, tags: ['city'] });
+        const town = makeLocation({ id: 'town', name: 'Far Town', kind: 'settlement', parentId: province.id });
+        const room = makeLocation({ id: 'room', name: 'Room', kind: 'chamber', parentId: town.id });
+        linkLocations(city, town, 'road', 8);
+        const reach = walkingDaysFrom([province, city, town, room], city.id);
+        expect(reach.get(town.id)).toBe(8);
+        expect(reach.get(room.id)).toBe(9);
+        expect(reach.get(city.id)).toBe(0);
+        expect(walkingDaysFrom([province, city, town, room], town.id).get(city.id)).toBe(8);
+    });
+
+    it('retains short priced gate roads and approaches to unlinked sites', () => {
+        const province = makeLocation({ id: 'province', name: 'Province', kind: 'region' });
+        const town = makeLocation({ id: 'town', name: 'Town', kind: 'settlement', parentId: province.id });
+        const gate = makeLocation({ id: 'gate', name: 'Gate', kind: 'sect_seat', parentId: province.id });
+        const site = makeLocation({ id: 'site', name: 'Site', kind: 'wilds', parentId: province.id });
+        linkLocations(town, gate, 'road', 0.1);
+        const reach = walkingDaysFrom([province, town, gate, site], town.id);
+        expect(reach.get(gate.id)).toBe(0.1);
+        expect(reach.get(site.id)).toBe(2);
+    });
+});
 
 /**
  * A secret realm: a sealed pocket on this planet that opens on a cycle.

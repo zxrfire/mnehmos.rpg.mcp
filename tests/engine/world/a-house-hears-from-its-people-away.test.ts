@@ -297,11 +297,12 @@ describe('a slip is a count and a distance', () => {
         keepTheTwins(state.objects, { houseId: HOUSE, houseName: HOUSE_NAME, senderId: 'posted', count: 2, hallLocationId: SEAT });
 
         const far = send(state, FAR);
-        expect(far).toMatchObject({ sent: false, why: 'out_of_reach', walkingDays: 20 });
+        // The province road plus a one-day approach at each end.
+        expect(far).toMatchObject({ sent: false, why: 'out_of_reach', walkingDays: 22 });
         expect(howManyTheyCarry(state.objects, 'posted', HOUSE), 'nothing burnt').toBe(2);
 
         const near = send(state, NEAR);
-        expect(near).toMatchObject({ sent: true, walkingDays: 8 });
+        expect(near).toMatchObject({ sent: true, walkingDays: 10 });
         expect(howManyTheyCarry(state.objects, 'posted', HOUSE)).toBe(1);
     });
 
@@ -558,7 +559,7 @@ describe('a sitting between other work', () => {
 });
 
 describe('how far a slip has to carry', () => {
-    it('is the full walk, read over the provinces', async () => {
+    it('is the full walk, including the roads inside a province', async () => {
         const catalog = await loadCultivationCatalog();
         const { state } = seedWorld({ seed: 'afford-a', catalog });
         const howFar = howFarFromTheSeat(state.locations);

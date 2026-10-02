@@ -48,6 +48,28 @@ import { getLocation, type FactionRecord, type WorldState } from './world-state.
 
 const DAYS_PER_YEAR = 365;
 
+/** Background intake shares the catalog roll budget, including people away. */
+export function vacanciesOnTheRolls(state: WorldState, day: number): Map<string, number> {
+    const counts = new Map<string, number>();
+    for (const npc of state.npcs) {
+        if (npc.status === 'alive' && npc.factionId !== null) {
+            counts.set(npc.factionId, (counts.get(npc.factionId) ?? 0) + 1);
+        }
+    }
+    return new Map(state.factions.map(house => {
+        const cf = getSect(house.id);
+        const worth = aRollWorthModelling({
+            rankCount: house.ranks.length,
+            powerOrdinal: cf?.powerOrdinal ?? Number(house.resources.power_ordinal ?? 0),
+            admissionOrdinal: cf?.admissionOrdinal ?? Number(house.resources.admission_ordinal ?? 0),
+            recruits: house.dissolvedOnDay === null && house.tags.includes('recruits'),
+            yearsStanding: house.foundedOnDay === null ? Number.POSITIVE_INFINITY
+                : (day - house.foundedOnDay) / DAYS_PER_YEAR
+        });
+        return [house.id, Math.max(0, worth - (counts.get(house.id) ?? 0))];
+    }));
+}
+
 /**
  * Whether a house has people the world does not model: its compound stands, it is
  * still the house's, and somebody of it is still counted (`howManyNobodyModels`). A seat a
@@ -68,6 +90,7 @@ export function stillHasPeopleNobodyModels(state: WorldState, house: FactionReco
 
 /** Each house short of its roll takes one of its own in. Returns how many came forward. */
 export function theHousesTakeInTheirOwn(state: WorldState, year: number, day: number): number {
+    const vacancies = vacanciesOnTheRolls(state, day);
     const roll = new Map<string, { count: number; strongest: number }>();
     for (const n of state.npcs) {
         if (n.status !== 'alive' || n.factionId === null) continue;
@@ -85,16 +108,7 @@ export function theHousesTakeInTheirOwn(state: WorldState, year: number, day: nu
         const cf = getSect(house.id);
         if (!cf || !cf.recruits) continue;
         const here = roll.get(house.id) ?? { count: 0, strongest: -1 };
-        const worth = aRollWorthModelling({
-            rankCount: house.ranks.length,
-            powerOrdinal: cf.powerOrdinal,
-            admissionOrdinal: cf.admissionOrdinal,
-            recruits: cf.recruits,
-            yearsStanding: house.foundedOnDay === null
-                ? Number.POSITIVE_INFINITY
-                : (day - house.foundedOnDay) / DAYS_PER_YEAR
-        });
-        if (here.count >= worth) continue;
+        if ((vacancies.get(house.id) ?? 0) <= 0) continue;
         if (!stillHasPeopleNobodyModels(state, house)) continue;
 
         const band = theBandARaisedMemberStandsIn(

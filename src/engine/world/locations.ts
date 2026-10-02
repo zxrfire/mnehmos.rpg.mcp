@@ -1261,9 +1261,9 @@ export function openingsBetween(
  *
  * ONE ANSWER TO HOW FAR, because there were two: the reachability probe walked
  * this graph itself and anything else that wanted a distance would have had to
- * write a third. Dijkstra over the open links, and containment costs nothing - a
- * ruin hangs off its province rather than off a road, and treating that as
- * impassable reports half the world unreachable.
+ * write a third. Dijkstra prices open links at their stated walking days.
+ * Containment is a one-day approach. A province joins each local road network
+ * at one gateway, so climbing its parent chain cannot bypass a priced road.
  *
  * The graph is small and the answer is every destination at once, so a caller
  * with many places to price asks once from the one place they all share.
@@ -1278,6 +1278,28 @@ export function walkingDaysFrom(
         if (l.parentId === null) continue;
         const kin = childrenOf.get(l.parentId);
         if (kin) kin.push(l.id); else childrenOf.set(l.parentId, [l.id]);
+    }
+
+    const approaches = new Set<string>();
+    for (const [parentId, children] of childrenOf) {
+        if (byId.get(parentId)?.kind !== 'region') {
+            for (const id of children) approaches.add(id);
+            continue;
+        }
+        const remaining = new Set(children);
+        while (remaining.size > 0) {
+            const component: string[] = [];
+            const pending = [remaining.values().next().value!];
+            while (pending.length > 0) {
+                const id = pending.pop()!;
+                if (!remaining.delete(id)) continue;
+                component.push(id);
+                for (const link of byId.get(id)?.links ?? []) {
+                    if (link.open && byId.get(link.toLocationId)?.parentId === parentId) pending.push(link.toLocationId);
+                }
+            }
+            approaches.add(component.find(id => byId.get(id)?.tags.includes('city')) ?? component[0]!);
+        }
     }
 
     const best = new Map<string, number>([[startId, 0]]);
@@ -1302,10 +1324,12 @@ export function walkingDaysFrom(
         };
         for (const link of node.links) {
             if (!link.open) continue;
-            step(link.toLocationId, here.days + Math.max(1, link.travelDays));
+            step(link.toLocationId, here.days + Math.max(0.1, link.travelDays));
         }
-        if (node.parentId !== null) step(node.parentId, here.days);
-        for (const child of childrenOf.get(node.id) ?? []) step(child, here.days);
+        if (node.parentId !== null && approaches.has(node.id)) step(node.parentId, here.days + 1);
+        for (const child of childrenOf.get(node.id) ?? []) {
+            if (approaches.has(child)) step(child, here.days + 1);
+        }
     }
     return best;
 }

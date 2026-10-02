@@ -24,12 +24,17 @@
  * Red-checked: with `theRoadOntoARoll` ignored in `applyRecruitment` the
  * no-road test goes red; with the in-person road dropped the recruiter test
  * goes red.
+ * The settlement repair later reached 49.3 people per house ground at 500
+ * years: external admission bypassed the catalog roll budget. Full-roll and
+ * last-vacancy checks now cover that budget, including people away. Restoring
+ * uncapped intake fails both; a full family sampler also fails its lineage check.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
 import { applyPressure } from '../../../src/engine/world/the-world-changing-on-its-own.js';
+import { vacanciesOnTheRolls } from '../../../src/engine/world/a-house-takes-in-one-of-its-own.js';
 import { whoTheySayTookThemOn } from '../../../src/engine/world/a-house-expects-somebody-it-took-on.js';
 import {
     theRoadOntoARoll,
@@ -115,6 +120,34 @@ describe('the rule itself', () => {
 });
 
 describe('the world\'s own intake', () => {
+    // The 500-year settlement repair grew sect grounds from 15.5 to 49.3
+    // people per place: external intake bypassed the house's catalog roll.
+    it('counts people away against a full roll without permanently rejecting applicants', () => {
+        const year = aYear(true);
+        const state = build(year);
+        const vacancies = vacanciesOnTheRolls(state, year * DAYS_PER_YEAR).get(HOUSE)!;
+        expect(vacancies).toBeGreaterThan(0);
+        for (let i = 1; i <= vacancies; i++) state.npcs[i] = {
+            ...state.npcs[i]!, factionId: HOUSE, factionRankIndex: 0
+        };
+        const waiting = state.npcs.slice(vacancies + 1).map(n => n.id);
+        applyPressure(state, year * DAYS_PER_YEAR + 149, year * DAYS_PER_YEAR + 150, { intensity: 0 });
+        expect(state.npcs.filter(n => waiting.includes(n.id) && n.factionId === HOUSE)).toEqual([]);
+        expect(state.npcs.filter(n => waiting.includes(n.id)).some(n => n.tags.includes('turned-away-at-a-gate'))).toBe(false);
+    });
+
+    it('admits at most the remaining vacancy when several applicants reach a selection', () => {
+        const year = aYear(true);
+        const state = build(year);
+        const vacancies = vacanciesOnTheRolls(state, year * DAYS_PER_YEAR).get(HOUSE)!;
+        for (let i = 1; i < vacancies; i++) state.npcs[i] = {
+            ...state.npcs[i]!, factionId: HOUSE, factionRankIndex: 0
+        };
+        const waiting = state.npcs.slice(vacancies).map(n => n.id);
+        applyPressure(state, year * DAYS_PER_YEAR + 149, year * DAYS_PER_YEAR + 150, { intensity: 0 });
+        expect(state.npcs.filter(n => waiting.includes(n.id) && n.factionId === HOUSE)).toHaveLength(1);
+    });
+
     it('takes nobody in a year the house has no road to them', () => {
         const year = aYear(false);
         const state = build(year);
@@ -164,6 +197,23 @@ describe('the world\'s own intake', () => {
  * Red-checked by dropping the kinship branch in `applyDemography`: this goes red.
  */
 describe('a child of a family house', () => {
+    it('writes no lineage for a background child beyond a full family roll', () => {
+        const year = aYear(true);
+        const state = build(year);
+        const family = Object.entries(FACTION_PARENTAGE).find(([, rule]) => rule.governance === 'bloodline')![0];
+        state.factions[0] = { ...state.factions[0]!, id: family };
+        state.populationTarget = 1000;
+        state.locations.find(l => l.id === VILLAGE)!.data.populationWeight = 100;
+        state.npcs = state.npcs.map(n => ({ ...n, factionId: family, locationId: VILLAGE,
+            identity: { ...n.identity, bornOnDay: (year - 80) * DAYS_PER_YEAR } }));
+        const count = state.npcs.length;
+        expect(vacanciesOnTheRolls(state, year * DAYS_PER_YEAR).get(family)).toBe(0);
+        const out = applyPressure(state, year * DAYS_PER_YEAR + 179, year * DAYS_PER_YEAR + 180, { intensity: 0 });
+        expect(out.born).toBe(0);
+        expect(state.npcs).toHaveLength(count);
+        expect(state.lineages).toEqual([]);
+    });
+
     it('is of the family by kinship, unless fostered out', async () => {
         const { state } = seedWorld({ seed: 'demography', catalog: await loadCultivationCatalog() });
         const bloodline = new Set(state.factions

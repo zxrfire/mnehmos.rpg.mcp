@@ -10,6 +10,36 @@ Places, the five capability predicates, opportunity windows, the historical reco
 lineage, possessions, NPC records and the world clock. Read this before changing anything
 in `src/engine/world/`.
 
+Seeded named and raised adults keep the rung-based age and legal lifespan cap.
+The lifespan cap leaves its existing 10% plus a separately drawn 0–4 years,
+spreading the early old-age cohort over a few years. Ordinary advancement reviews
+may extend that span; no extra attempts or improved odds are granted. Age
+offsets have their own streams, preserving unrelated seeding draws.
+
+Ordinary demographic entrants grow up in settlements. A settlement's existing
+population weight also sizes its representative resident pool; vacancies in
+that pool are replaced at the existing 8%-of-gap annual rate, independently
+of people brought forward from a house's unmodelled roll. Birthplace draws
+weight those vacancies and stop when they are filled, even if the world total
+is below its opening target. Houses recruit through the existing intake doors.
+Background recruitment, birth placement and the house's own replacement share
+`aRollWorthModelling`, derived from its catalog standing, ladder and age.
+The whole living roll counts, including people away; successive admissions
+consume the same pass's vacancies. A full roll does not permanently refuse an
+applicant for their root. Actual conceptions and existing people's family
+arrangements retain their ordinary rules rather than cancelling a known child.
+Children conceived by an act retain the household where they are raised.
+`population-census.test.ts` measures volumes and annual census inflows/outflows
+every fifty years through 500, century births and losses, year-400 world cost,
+and the first thirty years of old-age deaths.
+
+`walkingDaysFrom` prices explicit links at their stated days, including short
+gate approaches. Containment takes a day. Each connected road network in a
+province has one approach to its province node, preferring its capital; the
+parent chain therefore cannot replace a priced road with a free shortcut.
+Unlinked sites remain reachable by an approach. Journeys, house entry trips
+and parties racing to an opening all read this distance.
+
 Catalog interiors with a `gateOrdinal` seed an entry threshold. The ordinal
 does not set a permanent `sealed` flag; the ordinary ruin entry check enforces
 the threshold.

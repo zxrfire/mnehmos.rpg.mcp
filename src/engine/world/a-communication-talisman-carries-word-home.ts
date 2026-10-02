@@ -63,7 +63,7 @@ import { THE_LONG_RANGE_COMMUNICATION_TALISMAN } from '../../data/cultivation/co
 import { ruin, isRuined } from './possessions.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeFact, type HistoricalActor, type HistoricalFact } from './history.js';
-import type { LocationRecord } from './locations.js';
+import { walkingDaysFrom, type LocationRecord } from './locations.js';
 import { WHAT_A_SLIP_TAKES, WHAT_A_SLIP_WEIGHS } from './a-talisman-is-one-act-somebody-already-paid-for.js';
 import { howMuchAGradeIsWorthTracking, makeObject, type ObjectRecord } from './possessions.js';
 import { SENT_WORD_HOME } from './who-goes-out-for-a-house-and-what-comes-back.js';
@@ -647,95 +647,20 @@ export function whoReadsTheHall(
 // HOW FAR
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * Walking days from a house's seat to a place, or null where no road reaches.
- *
- * `walkingDaysFrom` is the one answer to how far, and this is that answer read
- * over a smaller graph with the same result. That walk steps up to a parent and
- * down to a child for nothing, so everywhere under one top-level place is nought
- * days from everywhere else under it; the only steps that cost are links. So the
- * distance between two places is the distance between their top-level places
- * over the links that join those: every path in the full walk is a path here
- * with the same links in it, and every link here can be reached at nought.
- * `a-house-hears-from-its-people-away.test.ts` holds the two equal over every
- * place of a seeded world.
- *
- * Measured with `--cpu-prof` over a hundred years on one seed before this: a
- * full walk per seat per year was a third of the yearly word pass. What it does
- * not answer as the full walk would: a place no location record holds, which
- * the full walk can still price if some link names it. This says null.
- */
+/** Walking distances, computed once per seat during this word pass. */
 export function howFarFromTheSeat(
     locations: readonly LocationRecord[]
 ): (seatId: string, placeId: string | null) => number | null {
-    const byId = new Map(locations.map(l => [l.id, l] as const));
-    const roots = new Map<string, string>();
-    const rootOf = (id: string): string | null => {
-        const had = roots.get(id);
-        if (had !== undefined) return had;
-        let cursor = byId.get(id);
-        if (!cursor) return null;
-        const seen = new Set<string>();
-        while (cursor.parentId !== null && !seen.has(cursor.id)) {
-            seen.add(cursor.id);
-            const up = byId.get(cursor.parentId);
-            if (!up) break;
-            cursor = up;
-        }
-        roots.set(id, cursor.id);
-        return cursor.id;
-    };
-    // The links between top-level places, the cheapest of each pair, built the
-    // first time anybody is further off than their own province.
-    let edges: Map<string, Map<string, number>> | null = null;
-    const edgesOf = (): Map<string, Map<string, number>> => {
-        if (edges) return edges;
-        const built = new Map<string, Map<string, number>>();
-        for (const l of locations) {
-            if (l.links.length === 0) continue;
-            const from = rootOf(l.id)!;
-            for (const link of l.links) {
-                if (!link.open) continue;
-                const to = rootOf(link.toLocationId);
-                if (to === null || to === from) continue;
-                const cost = Math.max(1, link.travelDays);
-                const out = built.get(from) ?? new Map<string, number>();
-                if (cost < (out.get(to) ?? Infinity)) out.set(to, cost);
-                built.set(from, out);
-            }
-        }
-        edges = built;
-        return built;
-    };
-    const fromRoot = new Map<string, Map<string, number>>();
-    const distancesFrom = (root: string): Map<string, number> => {
-        const had = fromRoot.get(root);
-        if (had) return had;
-        const graph = edgesOf();
-        const best = new Map<string, number>([[root, 0]]);
-        const done = new Set<string>();
-        for (;;) {
-            let next: string | null = null;
-            let nextDays = Infinity;
-            for (const [id, days] of best) {
-                if (!done.has(id) && days < nextDays) { next = id; nextDays = days; }
-            }
-            if (next === null) break;
-            done.add(next);
-            for (const [to, cost] of graph.get(next) ?? []) {
-                if (nextDays + cost < (best.get(to) ?? Infinity)) best.set(to, nextDays + cost);
-            }
-        }
-        fromRoot.set(root, best);
-        return best;
-    };
+    const ids = new Set(locations.map(l => l.id));
+    const fromSeat = new Map<string, Map<string, number>>();
     return (seatId, placeId) => {
-        if (placeId === null) return null;
-        const a = rootOf(seatId);
-        const b = rootOf(placeId);
-        if (a === null || b === null) return null;
-        if (a === b) return 0;
-        return distancesFrom(a).get(b) ?? null;
+        if (placeId === null || !ids.has(seatId) || !ids.has(placeId)) return null;
+        let reach = fromSeat.get(seatId);
+        if (!reach) {
+            reach = walkingDaysFrom(locations, seatId);
+            fromSeat.set(seatId, reach);
+        }
+        return reach.get(placeId) ?? null;
     };
 }
 

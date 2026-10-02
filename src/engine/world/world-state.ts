@@ -299,12 +299,10 @@ export interface WorldState {
     memories: MemoryStore;
 
     /**
-     * Living NPCs the world drifts back toward.
-     *
-     * A population that only dies is not a world: run five centuries without
-     * this and the roster empties, the factions fold for want of members, and
-     * the simulation reports a collapse that is an artefact of the model rather
-     * than anything that happened. Demography closes the gap each year.
+     * Opening population baseline. Zero disables background demographic births.
+     * Replacement now follows settlement vacancies and catalog roll budgets;
+     * this global figure cannot authorize overfilling either. Actual conceptions
+     * remain due even when background births are disabled.
      */
     populationTarget: number;
 

@@ -21,7 +21,15 @@
  * With the yearly passes live, settlement census floors no longer measure
  * birth placement: on demography, 492 settlers became 274 at 80 years, while
  * house seats gained people; at 150 years 601 of 1083 lives stood at seats.
- * Recruitment and travel may do that, and a town may empty. The former 85%
+ * Recruitment and travel may do that. A later 500-year census found villages
+ * draining to 1.9 people per place: house roll replacement suppressed births.
+ * Settlement vacancies now drive births independently, and ordinary entrants
+ * start in settlements; conceived children retain their parent's household.
+ * That repair grew house grounds to 49.3 people per place at 500 years.
+ * Births now fill only local vacancies and background intake shares the
+ * catalog roll limit. Restoring the global-gap fallback overfills the unit
+ * fixture's two-place town to 43, against at most two with local replacement.
+ * The former 85%
  * census floor and 42% seat ceiling are replaced by births read before any
  * movement, including paired population-weight arms. Container drainage,
  * lineage, recruitment and the five-century ceiling remain integration checks.
@@ -95,9 +103,11 @@ function aBirthCohort(seed: string, townWeight: number) {
     state.locations.push(makeLocation({ id: 'town', name: 'Town', kind: 'settlement',
         parentId: 'region', data: { populationWeight: townWeight } }));
     for (let seat = 0; seat < 20; seat++) {
-        state.locations.push(makeLocation({ id: `seat-${seat}`, name: `Household ${seat}`,
-            kind: 'sect_seat', parentId: 'region', data: { populationWeight: 1 } }));
+        state.locations.push(makeLocation({ id: `seat-${seat}`, name: `Neighbourhood ${seat}`,
+            kind: 'settlement', parentId: 'region', data: { populationWeight: 1 } }));
     }
+    state.locations.push(makeLocation({ id: 'compound', name: 'House Grounds', kind: 'sect_seat',
+        parentId: 'region', data: { populationWeight: 1000 } }));
     state.locations.push(makeLocation({ id: 'empty', name: 'Abandoned Ground', kind: 'settlement',
         parentId: 'region', data: { populationWeight: 0 } }));
     state.locations.push(makeLocation({ id: 'sealed', name: 'Sealed Ground', kind: 'settlement',
@@ -122,9 +132,29 @@ describe('a newborn is born somewhere somebody can stand', () => {
         for (const person of state.npcs) {
             const home = state.locations.find(l => l.id === person.locationId)!;
             expect(home.kind).not.toBe('region');
+            expect(home.kind).toBe('settlement');
             expect(home.sealed).toBe(false);
             expect(Number(home.data.populationWeight)).toBeGreaterThan(0);
         }
+    });
+
+    it('replenishes settlement vacancies when the world total is already full', () => {
+        const { state } = aBirthCohort('local-vacancies', 60);
+        state.populationTarget = livingCount(state);
+        const { born } = applyPressure(state, 180, 545, { intensity: 0 });
+        expect(born).toBeGreaterThan(0);
+    });
+
+    it('stops replacement at each settlement capacity despite a global shortfall', () => {
+        const { state } = aBirthCohort('full-settlements', 2);
+        for (let year = 1; year <= 45; year++) {
+            applyPressure(state, year * 365 + 179, year * 365 + 180, { intensity: 0 });
+        }
+        for (const place of state.locations.filter(l => l.kind === 'settlement' && !l.sealed)) {
+            expect(npcsAt(state, place.id).length, place.name).toBeLessThanOrEqual(Number(place.data.populationWeight));
+        }
+        expect(livingCount(state)).toBeLessThan(state.populationTarget);
+        expect(applyPressure(state, 46 * 365 + 179, 46 * 365 + 180, { intensity: 0 }).born).toBe(0);
     });
 
     it('puts nobody on a region node after the original cohort is gone', async () => {
@@ -205,20 +235,22 @@ describe('who lives where is decided by a weight, not by a coin flip', () => {
         let weightedTown = 0;
         let equalTown = 0;
         let total = 0;
+        let equalTotal = 0;
         for (let sample = 0; sample < 24; sample++) {
             const seed = `birth-weight-${sample}`;
             const weighted = aBirthCohort(seed, 60);
             const equal = aBirthCohort(seed, 1);
             expect(weighted.born).toBeGreaterThan(0);
-            expect(equal.born).toBe(weighted.born);
+            expect(equal.born).toBeGreaterThan(0);
             weightedTown += weighted.state.npcs.filter(n => n.locationId === 'town').length;
             equalTown += equal.state.npcs.filter(n => n.locationId === 'town').length;
             total += weighted.born;
+            equalTotal += equal.born;
         }
-        // One town outweighs twenty household grounds; equal weights reverse it.
+        // One town outweighs twenty small settlements; equal weights reverse it.
         expect(weightedTown).toBeGreaterThan(total / 2);
-        expect(equalTown).toBeLessThan(total / 2);
-        expect(weightedTown).toBeGreaterThan(equalTown * 2);
+        expect(equalTown).toBeLessThan(equalTotal / 2);
+        expect(weightedTown / total).toBeGreaterThan(equalTown / equalTotal * 2);
     });
 });
 

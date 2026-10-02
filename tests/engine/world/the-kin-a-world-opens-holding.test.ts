@@ -206,9 +206,8 @@ describe('the kin the catalog states', () => {
         // drawn one does - `couldHaveBeenAParentTo`, the alive-when-the-child-
         // was-born check that reached a player last time it was missing.
         //
-        // The age band is closed-form rather than sampled: `seedNamedFigures`
-        // gives a catalog person 16 + 9 x ordinal + [0,40] years, so the elder
-        // end of every stated tie sits at a higher ordinal and cannot overlap.
+        // The rung-based age is capped within the lifespan, with a 0–4 year
+        // offset. Stated kin must still retain their age order and parent gap.
         for (const seed of SEEDS) {
             const state = await world(seed);
             for (const kin of inTheRoster) {

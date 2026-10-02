@@ -22,8 +22,8 @@
  * kept the kind and were given a destination somewhere people live, nearest by
  * `walkingDaysFrom` and drawn by `populationWeightOf` among the nearest, and the
  * walk as a term. Every seeded traveller on all six seeds found one. The terms
- * came out at a day, because a hop between a province and a place inside it
- * costs nothing on the map.
+ * originally came out at a day because containment was free. Approaches and
+ * roads now have walking costs, which the journey's term retains.
  *
  * Red-checked by removing the call in `setWhatEverybodyIsAt`: both claims go red.
  */
