@@ -41,6 +41,22 @@ export function fixtureSourceHash(entries: string[]): string {
 
 const held = new Map<string, Promise<Buffer>>();
 
+export function lockOwnerHasExited(lock: string): boolean {
+    let owner: number;
+    try { owner = Number(fs.readFileSync(lock, 'utf8')); }
+    catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return true;
+        throw error;
+    }
+    if (!Number.isSafeInteger(owner) || owner <= 0) return false;
+    try {
+        process.kill(owner, 0);
+        return false;
+    } catch (error) {
+        return (error as NodeJS.ErrnoException).code === 'ESRCH';
+    }
+}
+
 export async function serializedFixture(
     namespace: string,
     entries: string[],
@@ -74,7 +90,7 @@ async function readOrBuild(file: string, build: () => Promise<Buffer>): Promise<
             if (fs.existsSync(file)) return fs.readFileSync(file);
             const stat = fs.statSync(lock, { throwIfNoEntry: false });
             if (!stat) continue;
-            if (Date.now() - stat.mtimeMs > 30 * 60_000) {
+            if (Date.now() - stat.mtimeMs > 30 * 60_000 || lockOwnerHasExited(lock)) {
                 fs.rmSync(lock, { force: true });
                 continue;
             }

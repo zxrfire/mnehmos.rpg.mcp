@@ -27,4 +27,12 @@ describe('canonical fixture walks', () => {
         expect(a).toEqual(seedWorld({ seed, catalog, presentYear: 1000, population: 40 }).state);
         expect(b).toEqual(seedWorld({ seed, catalog, presentYear: 2000, population: 80 }).state);
     });
+
+    it('keeps a long walk identical across the ten-year boundary', async () => {
+        const setup = { catalog: fixtureCatalog(), presentYear: 1000, population: 40 };
+        const fresh = seedWorld({ seed: 'cached-fixture-chunks', ...setup }).state;
+        advanceWorldForPlay(fresh, { days: 365 * 12 });
+        expect(await soakedWorld('cached-fixture-chunks', { years: 12 }, setup)).toEqual(fresh);
+    });
+
 });

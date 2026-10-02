@@ -51,6 +51,7 @@ import {
     type HistoryLedger
 } from './history.js';
 import { forStream } from '../cultivation/rng.js';
+import { witnessHistoryWasPruned } from './witness-reaction-index.js';
 import {
     locationsFromPriorAges,
     makeLocation,
@@ -794,6 +795,7 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
             fact.consequences.beneficiaries.some(a => gone.has(a.id))
             || fact.consequences.losers.some(a => gone.has(a.id))
             || fact.consequences.relationshipChanges.some(change => gone.has(change.aId) || gone.has(change.bId))));
+    const previousFacts = state.history.facts;
     state.history.facts = state.history.facts
         .filter(fact => stillOnRecord(fact.id))
         .map(fact => !touches(fact) ? fact : ({
@@ -810,6 +812,7 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
                     .filter(change => kept(change.aId) && kept(change.bId))
             }
         }));
+    witnessHistoryWasPruned(state, previousFacts, dropped);
 
     const forgottenMemories = new Set(
         state.memories.records.filter(m => gone.has(m.ownerId)).map(m => m.id));

@@ -240,7 +240,8 @@ describe('a report reaches only a known post', () => {
             actors: [{ id: post.id, name: post.name, role: 'finished' },
                 { id: s.victim.id, name: s.victim.name, role: 'body_destroyed' }],
             summary: 'Four combatants fell in the fighting here.', data: { fell: 4 } }), { recur: false });
-        witnessReactionsThisYear(s.world, s.world.currentDay);
+        witnessReactionsThisYear(s.world, s.world.currentDay,
+            { id: s.me.id, placeId: here });
         expect(s.world.history.facts.some(row => row.data.witnessReport === fact.id
             && row.data.houseWarning === true)).toBe(true);
         expect(s.world.obligations.some(row => row.triggeringEventId === fact.id
@@ -293,7 +294,8 @@ describe('world people see the same facts', () => {
             actors: [{ id: helper.id, name: helper.name, role: 'attacker' },
                 { id: s.victim.id, name: s.victim.name, role: 'victim' }],
             summary: `${helper.name} wounded ${s.victim.name}.` }), { recur: false });
-        witnessReactionsThisYear(s.world, s.world.currentDay);
+        witnessReactionsThisYear(s.world, s.world.currentDay,
+            { id: s.me.id, placeId: s.game.worldPlaceOf(s.me)! });
         expect(witnessReactions(s.world, helper.id).find(row => row.fact.id === kindness.id)?.observation.state).toBe('remembered');
         expect(witnessReactions(s.world, helper.id).find(row => row.fact.id === kindness.id)?.observation.regard).toBe('credit');
         expect(witnessReactions(s.world, helper.id).some(row => row.fact.id === wrong.id)).toBe(true);

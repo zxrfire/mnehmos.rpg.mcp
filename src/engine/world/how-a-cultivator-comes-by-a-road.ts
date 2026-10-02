@@ -380,15 +380,18 @@ export function standingOfNpc(state: WorldState, npc: NpcRecord): SomebodyStandi
 /**
  * Every dao ground this person can actually get at.
  */
-export function daoGroundsInReachOf(state: WorldState, npc: NpcRecord, onDay = state.currentDay): RoadInReach[] {
+export function daoGroundsInReachOf(state: WorldState, npc: NpcRecord, onDay = state.currentDay,
+    admissions?: ReadonlySet<string>): RoadInReach[] {
     return daoGroundsAround(state, standingOfNpc(state, npc))
         .filter(row => {
             const paidGate = row.ground.access === 'held' && row.ground.heldByFactionId !== npc.factionId
                 && ['a fee', 'a copy', 'good relations'].includes(row.ground.admits);
             if (!paidGate) return row.standing.inReach;
-            const admitted = state.history.facts.some(f => f.data.daoAdmission === true
-                && f.data.visitorId === npc.id && f.data.groundId === row.sourceId
-                && f.day <= onDay && Number(f.data.untilDay) > onDay);
+            const admitted = admissions
+                ? admissions.has(`${npc.id}\u001f${row.sourceId}`)
+                : state.history.facts.some(f => f.data.daoAdmission === true
+                    && f.data.visitorId === npc.id && f.data.groundId === row.sourceId
+                    && f.day <= onDay && Number(f.data.untilDay) > onDay);
             return admitted && npc.cultivation.realmOrdinal >= row.ground.fromOrdinal && (row.standing.inReach
                 || ['the_fee', 'nothing_to_write_out', 'a_stranger_to_them'].includes(row.standing.shortBy ?? ''));
         })
@@ -560,14 +563,16 @@ export function roadsCarriedByObjectsInReachOf(
  * Every road WITHIN REACH of this cultivator: the arts in their hands, the ground
  * they can get at, and the objects that were spent on them.
  */
-export function roadsInReachOf(state: WorldState, npc: NpcRecord, onDay = state.currentDay): RoadInReach[] {
+export function roadsInReachOf(state: WorldState, npc: NpcRecord, onDay = state.currentDay,
+    admissions?: ReadonlySet<string>): RoadInReach[] {
     const out: RoadInReach[] = [];
     const seen = new Set<InsightDomain>();
+    const bought = roadsBoughtWithMaterialsBy(state, npc.id);
+    const carried = roadsCarriedByObjectsInReachOf(state, npc);
+    const grounds = daoGroundsInReachOf(state, npc, onDay, admissions);
 
     for (const road of [
-        ...roadsBoughtWithMaterialsBy(state, npc.id),
-        ...roadsCarriedByObjectsInReachOf(state, npc),
-        ...daoGroundsInReachOf(state, npc, onDay)
+        ...bought, ...carried, ...grounds
     ]) {
         if (seen.has(road.domain)) continue;
         seen.add(road.domain);
@@ -760,6 +765,14 @@ export function spendMaterialsOnTheBlocked(state: WorldState, day: number): numb
         .map((npc, index) => ({ npc, index }))
         .filter(({ npc }) => npc.status === 'alive' && npc.factionId !== null)
         .sort((a, b) => b.npc.cultivation.realmOrdinal - a.npc.cultivation.realmOrdinal);
+    const admissions = new Set<string>();
+    for (const fact of state.history.facts) {
+        if (fact.data.daoAdmission === true && typeof fact.data.visitorId === 'string'
+            && typeof fact.data.groundId === 'string' && fact.day <= state.currentDay
+            && Number(fact.data.untilDay) > state.currentDay) {
+            admissions.add(`${fact.data.visitorId}\u001f${fact.data.groundId}`);
+        }
+    }
 
     for (const { npc } of candidates) {
         const houseId = npc.factionId;
@@ -780,7 +793,7 @@ export function spendMaterialsOnTheBlocked(state: WorldState, day: number): numb
         const held = new Set<InsightDomain>(
             roadsWalkedBy({
                 knownTechniques: npc.cultivation.techniqueIds,
-                roadsWithinReach: roadsInReachOf(state, npc),
+                roadsWithinReach: roadsInReachOf(state, npc, state.currentDay, admissions),
                 age: ageOf(npc, day)
             }).map(i => i.domain).filter(d => d !== 'element')
         );

@@ -18,6 +18,9 @@ the threshold.
 the deed pass, remember it, ask for an account, or report it through a person
 stationed on that ground whom they know. An observation records what that
 witness saw; an account records what they said and how the witness answered.
+The yearly pass draws a capped number of background incidents from evidence;
+player involved facts and the player's place retain exact resolution.
+Fact, pending-observation and house/person knowledge reads use a live index.
 The original death, object transfer and provenance are never revised by belief.
 Reports enter the ordinary house account and price paths. A house warning is
 a dated fact, read by the same public wall as its other notices.

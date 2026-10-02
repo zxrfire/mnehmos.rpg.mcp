@@ -1,5 +1,5 @@
-/** Concurrent fixture requests build once and never hand out shared buffers. */
-import { randomUUID } from 'node:crypto';
+/** Concurrent fixture requests build once; dead builders do not hold later tests. */
+import { createHash, randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -8,9 +8,27 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { transpileModule, ModuleKind, ScriptTarget } from 'typescript';
 import { describe, expect, it } from 'vitest';
-import { serializedFixture } from './serialized-fixture.js';
+import { fixtureSourceHash, serializedFixture } from './serialized-fixture.js';
 
 describe('serialized fixtures', () => {
+    it('takes a lock left by an exited builder', async () => {
+        const key = randomUUID();
+        const entries = ['tests/support/serialized-fixture.ts'];
+        const hash = createHash('sha256').update(fixtureSourceHash(entries))
+            .update(JSON.stringify(key)).digest('hex');
+        const lock = path.join(os.tmpdir(), 'mnehmos-fixtures', 'cache-test', `${hash}.snapshot.lock`);
+        fs.mkdirSync(path.dirname(lock), { recursive: true });
+        fs.writeFileSync(lock, '999999');
+        try {
+            const bytes = await serializedFixture('cache-test', entries, key,
+                async () => Buffer.from('recovered'));
+            expect(bytes.toString()).toBe('recovered');
+            expect(fs.existsSync(lock)).toBe(false);
+        } finally {
+            fs.rmSync(lock, { force: true });
+        }
+    });
+
     it('lets only one fork build a snapshot', async () => {
         const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'mnehmos-fixture-lock-'));
         const source = fileURLToPath(new URL('./serialized-fixture.ts', import.meta.url));

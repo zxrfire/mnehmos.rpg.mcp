@@ -393,7 +393,6 @@ describe('the top of the world survives its own clock', () => {
     }, 600_000);
 });
 
-
 // ─────────────────────────────────────────────────────────────────────────
 // MISSING IS NOT GONE
 //

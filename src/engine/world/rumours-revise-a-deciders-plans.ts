@@ -1,17 +1,18 @@
 /** Deciders can act on a report while its claim remains unverified. */
 import { addGoal, isTheWorldsToMove } from './npc-state.js';
-import { circulating, whereThisPersonIsStanding } from './what-people-are-saying.js';
+import { circulating, circulationLookup, whereThisPersonIsStanding } from './what-people-are-saying.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { WorldState } from './world-state.js';
 
 export function rumoursRevisePlans(state: WorldState, day: number): void {
+    const lookup = circulationLookup(state, day);
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null) continue;
         const decider = state.npcs.filter(n => isTheWorldsToMove(n) && n.status === 'alive' && n.factionId === house.id)
             .sort((a, b) => b.factionRankIndex - a.factionRankIndex)[0];
         if (!decider) continue;
-        const heard = circulating(state, whereThisPersonIsStanding(state, decider), day)
+        const heard = circulating(state, whereThisPersonIsStanding(state, decider), day, 24, lookup)
             .find(f => (f.consequences?.rumours.length ?? 0) > 0 && f.locationId !== null
                 && !decider.goals.some(g => g.note === `rumour-plan:${f.id}`)
                 && state.locations.some(l => l.id === f.locationId && ['ruin', 'secret_realm', 'cave', 'wilds'].includes(l.kind)));

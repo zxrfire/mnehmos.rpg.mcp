@@ -603,7 +603,9 @@ export function applyPressure(
         } });
         tasks.push({ key: 'uncovering', day: year * 365 + 88, run: (onDay: number) => {
             whatComesToLightThisYear(state, year, onDay);
-            witnessReactionsThisYear(state, onDay);
+            witnessReactionsThisYear(state, onDay, opts.visitingPresence
+                ? { id: opts.visitingPresence.person.id, placeId: opts.visitingPresence.placeId }
+                : undefined);
         } });
         tasks.push({ key: 'accusations-and-killings', day: year * 365 + 90, run: (onDay: number) => {
             const seatsWanted = seatsThePeopleHeldBackWant(state);

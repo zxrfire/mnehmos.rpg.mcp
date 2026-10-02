@@ -197,8 +197,42 @@ export function circulating(
     state: WorldState,
     teller: TellerStanding,
     onDay: number,
-    limit = 24
+    limit = 24,
+    lookup?: CirculationLookup
 ): HistoricalFact[] {
+    if (lookup) {
+        const top: { fact: HistoricalFact; weight: number }[] = [];
+        const worse = (a: typeof top[number], b: typeof top[number]): boolean =>
+            a.weight < b.weight || a.weight === b.weight && a.fact.id > b.fact.id;
+        for (const fact of state.history.facts) {
+            if (fact.visibility === 'secret' || fact.day > onDay) continue;
+            const weight = lookup.weight(fact, teller);
+            if (weight <= 0) continue;
+            const row = { fact, weight };
+            if (top.length < limit) {
+                top.push(row);
+                for (let at = top.length - 1; at > 0;) {
+                    const parent = Math.floor((at - 1) / 2);
+                    if (!worse(top[at]!, top[parent]!)) break;
+                    [top[at], top[parent]] = [top[parent]!, top[at]!];
+                    at = parent;
+                }
+            } else if (top.length > 0 && worse(top[0]!, row)) {
+                top[0] = row;
+                for (let at = 0; ;) {
+                    const left = at * 2 + 1;
+                    if (left >= top.length) break;
+                    const right = left + 1;
+                    const child = right < top.length && worse(top[right]!, top[left]!) ? right : left;
+                    if (!worse(top[child]!, top[at]!)) break;
+                    [top[at], top[child]] = [top[child]!, top[at]!];
+                    at = child;
+                }
+            }
+        }
+        return top.sort((a, b) => b.weight - a.weight || (a.fact.id < b.fact.id ? -1 : 1))
+            .map(row => row.fact);
+    }
     const scored: { fact: HistoricalFact; weight: number }[] = [];
     for (const fact of state.history.facts) {
         if (fact.visibility === 'secret') continue;
@@ -209,6 +243,63 @@ export function circulating(
     }
     scored.sort((a, b) => b.weight - a.weight || (a.fact.id < b.fact.id ? -1 : 1));
     return scored.slice(0, limit).map(s => s.fact);
+}
+
+/** Per-pass readings of current people and ground for many tellers. */
+export interface CirculationLookup {
+    weight: (fact: HistoricalFact, teller: TellerStanding) => number;
+}
+
+export function circulationLookup(state: WorldState, onDay: number): CirculationLookup {
+    const people = new Map(state.npcs.map(n => [n.id, n.cultivation.realmOrdinal]));
+    const houses = new Map(state.factions.map(h => [h.id, Number(h.resources.power_ordinal ?? 0)]));
+    const places = new Map(state.locations.map(l => [l.id, l]));
+    const heights = new Map<HistoricalFact, number>();
+    const regions = new Map<string, string | null>();
+    const bases = new Map<HistoricalFact, number>();
+    const highest = (fact: HistoricalFact): number => {
+            const held = heights.get(fact);
+            if (held !== undefined) return held;
+            let best = 0;
+            for (const actor of fact.actors) best = Math.max(best, people.get(actor.id) ?? 0);
+            for (const id of fact.factionIds) best = Math.max(best, houses.get(id) ?? 0);
+            heights.set(fact, best);
+            return best;
+        };
+    const region = (id: string): string | null => {
+            if (regions.has(id)) return regions.get(id)!;
+            let at = places.get(id);
+            const seen = new Set<string>();
+            while (at && at.parentId && !seen.has(at.id)) {
+                seen.add(at.id);
+                const up = places.get(at.parentId);
+                if (!up) break;
+                at = up;
+            }
+            const region = at?.id ?? null;
+            regions.set(id, region);
+            return region;
+        };
+    return {
+        weight: (fact, teller) => {
+            let far: HowFarOff;
+            if (fact.witnessIds.includes(teller.id) || fact.actors.some(a => a.id === teller.id)
+                || fact.locationId !== null && teller.locationId === fact.locationId) far = 'here';
+            else if (fact.locationId === null || teller.regionId === null) far = 'unplaceable';
+            else far = region(fact.locationId) === teller.regionId ? 'in the region' : 'a region away';
+            if (onDay - fact.day < DAYS_NEWS_TAKES[far]) return 0;
+            let base = bases.get(fact);
+            if (base === undefined) {
+                const years = Math.max(0, (onDay - fact.day) / DAYS_PER_YEAR);
+                base = 0.4 + fact.magnitude + SCALE_REACH[fact.scale] * 0.5
+                    + (fact.nearMiss ? 0.6 : 0) - Math.min(1.5, years / 400);
+                bases.set(fact, base);
+            }
+            const gap = highest(fact) - teller.realmOrdinal;
+            const height = gap >= OUT_OF_REACH_GAP ? 2.2 : gap >= 6 ? 1.1 : gap >= 0 ? 0.3 : 0;
+            return base + height - WHAT_THE_DISTANCE_COSTS[far];
+        }
+    };
 }
 
 /**

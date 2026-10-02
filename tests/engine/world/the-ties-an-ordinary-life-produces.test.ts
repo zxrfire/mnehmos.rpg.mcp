@@ -14,11 +14,15 @@
  * The bar was deliberately not lowered to make the number move. These tests
  * guard the supply instead, and the last one guards the thing that would make
  * all of it worthless: the cost of producing it has to stay flat.
+ * The historical census above used the full catalog. The 120- and 500-year
+ * guards now use the canonical 40-person fixture, with isolated lives checked
+ * at 500 years; the cold file completed in 41 seconds.
  */
 
 import { describe, it, expect } from 'vitest';
 import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { soakedWorld } from '../../support/soaked-world.js';
+import { fixtureCatalog } from './fixtures.js';
 import { createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import { createNpc, isActing, upsertRelationship } from '../../../src/engine/world/npc-state.js';
 import { FRIENDSHIP_STANDING } from '../../../src/engine/world/gatherings.js';
@@ -38,6 +42,7 @@ import {
 import { tieSupply } from '../../support/what-the-world-has-to-lose.js';
 
 const YEAR = 365;
+const SMALL_WORLD = { catalog: fixtureCatalog(), population: 40, presentYear: 1000 };
 
 /** Kinds an absence treats as carrying an expectation of return. */
 const WAITING_KINDS = ['spouse', 'kin', 'parent', 'child', 'master', 'disciple', 'ally'];
@@ -51,7 +56,7 @@ async function worldAt120(): Promise<WorldState> {
         // can make them somebody whose waiting ties all outlast a century, which
         // is not the absence layer's fault. On absence-audit-f after the vein
         // grant and forbidden-ground rulings, the hundred-year pass settled zero.
-        cached = soakedWorld('absence-audit-g', { years: 120 });
+        cached = soakedWorld('absence-audit-g', { years: 120 }, SMALL_WORLD);
     }
     return cached;
 }
@@ -67,7 +72,7 @@ async function absenceWorldsAt120(): Promise<WorldState[]> {
         // `soakedWorld` shares both the disk walk and the process copy; the
         // first seed is already warm from the ordinary supply assertions.
         cachedAbsenceWorlds = Promise.all(ABSENCE_AUDIT_SEEDS.map(
-            seed => soakedWorld(seed, { years: 120 })
+            seed => soakedWorld(seed, { years: 120 }, SMALL_WORLD)
         ));
     }
     return cachedAbsenceWorlds;
@@ -106,7 +111,7 @@ describe('the world produces people who matter to each other', () => {
     it('still leaves somebody with nobody', async () => {
         // Not a failure of supply. Somebody whose household has died and whose
         // house has moved on has nobody, and that state has to remain reachable.
-        const state = await worldAt120();
+        const state = await soakedWorld('tie-drift', { years: 500 }, SMALL_WORLD);
         const supply = tieSupply(state, FRIENDSHIP_STANDING);
         expect(supply.withNobody).toBeGreaterThan(0);
     }, 180_000);
@@ -116,9 +121,9 @@ describe('the world produces people who matter to each other', () => {
         // with households in it can run away: measured before `settleNpcDeath`
         // skipped targets the heir already knew, the per-head figure climbed
         // every generation. It has to be FLAT.
-        const early = await soakedWorld('tie-drift', { years: 120 });
+        const early = await soakedWorld('tie-drift', { years: 120 }, SMALL_WORLD);
         const perHeadEarly = tieSupply(early, FRIENDSHIP_STANDING).perHead;
-        const late = await soakedWorld('tie-drift', { years: 500 });
+        const late = await soakedWorld('tie-drift', { years: 500 }, SMALL_WORLD);
         const perHeadLate = tieSupply(late, FRIENDSHIP_STANDING).perHead;
         expect(
             perHeadLate,

@@ -36,8 +36,10 @@
 import { describe, it, expect } from 'vitest';
 
 import {
-    whatOneOfTheWorldsOwnPeopleKnows
+    whatOneOfTheWorldsOwnPeopleKnows,
+    whatOneOfTheWorldsOwnPeopleKnowsFromWitnessIndex
 } from '../../../src/engine/world/what-one-of-the-worlds-own-people-knows.js';
+import { witnessIndexFor } from '../../../src/engine/world/witness-reaction-index.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { makeFact } from '../../../src/engine/world/history.js';
 import { stageCeilingFor } from '../../../src/engine/social/discovery.js';
@@ -100,6 +102,31 @@ function world(init: Record<string, unknown> = {}): WorldState {
 
 const BEING_THERE = stageCeilingFor('witnessed');
 const BEING_TOLD = stageCeilingFor('told');
+
+/** Witness decisions read the same house and person knowledge as other world conversations. */
+it('keeps indexed witness knowledge equal as new facts arrive', () => {
+    const state = world();
+    const indexed = whatOneOfTheWorldsOwnPeopleKnowsFromWitnessIndex(state, witnessIndexFor(state));
+    const compare = () => {
+        const ordinary = whatOneOfTheWorldsOwnPeopleKnows(state);
+        for (const holder of ['npc-villager', 'npc-disciple', 'npc-stranger']) {
+            for (const house of ['house', 'stranger']) {
+                expect(indexed(holder, 'sect', house)).toBe(ordinary(holder, 'sect', house));
+            }
+            for (const personId of ['npc-villager', 'npc-neighbour', 'npc-stranger']) {
+                expect(indexed(holder, 'cultivator', personId))
+                    .toBe(ordinary(holder, 'cultivator', personId));
+            }
+        }
+    };
+    compare();
+    state.history.facts.push({ ...makeFact({ day: TODAY - 400, kind: 'war',
+        summary: 'They fought over the pass.', locationId: 'far-town', factionIds: ['stranger'],
+        actors: [{ id: 'npc-stranger', name: 'npc-stranger', role: 'actor' }],
+        witnessIds: ['npc-villager'] }), id: 'f1', year: 0, eraId: 'e' });
+    witnessIndexFor(state);
+    compare();
+});
 
 describe('a world person is asked about a house', () => {
     it('knows their own, because they have dealt with it and it with them', () => {

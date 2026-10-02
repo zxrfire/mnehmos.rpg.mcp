@@ -19,6 +19,8 @@
  * ── AND A LONGER WALK STARTS WHERE A SHORTER ONE STOPPED ─────────────────
  *
  * Asking for 1500 years of a seed already kept at 500 walks the other 1000.
+ * A long walk also keeps century checkpoints so an interrupted
+ * test can resume without repeating centuries.
  *
  * Every caller gets its own copy: tests change the worlds they are handed.
  */
@@ -34,7 +36,7 @@ import { advanceWorldForPlay } from '../../src/engine/world/driver.js';
 import { seedWorld } from '../../src/engine/world/seeding.js';
 import type { WorldState } from '../../src/engine/world/world-state.js';
 import type { SeedWorldOptions } from '../../src/engine/world/seeding.js';
-import { serializedFixture } from './serialized-fixture.js';
+import { lockOwnerHasExited, serializedFixture } from './serialized-fixture.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 /** What `walkIt` calls; everything the walk can run is imported from these. */
@@ -42,6 +44,23 @@ const WHERE_THE_SIMULATION_STARTS = [
     'src/engine/world/catalog.ts', 'src/engine/world/driver.ts', 'src/engine/world/seeding.ts'
 ];
 const DAYS_PER_YEAR = 365;
+const WALK_CHUNK_DAYS = 10 * DAYS_PER_YEAR;
+const CHECKPOINT_DAYS = 100 * DAYS_PER_YEAR;
+
+function walkWithoutKeepingResults(state: WorldState, days: number, stopOnInterrupt?: boolean,
+    afterChunk?: (daysAdvanced: number) => void): void {
+    let remaining = days;
+    let advanced = 0;
+    while (remaining > 0) {
+        const result = advanceWorldForPlay(state, {
+            days: Math.min(remaining, WALK_CHUNK_DAYS), stopOnInterrupt
+        });
+        remaining -= result.daysAdvanced;
+        advanced += result.daysAdvanced;
+        if (result.daysAdvanced > 0) afterChunk?.(advanced);
+        if (result.interrupted || result.daysAdvanced <= 0) break;
+    }
+}
 
 let sourceHash: string | null = null;
 
@@ -118,6 +137,7 @@ function keep(file: string, text: string): void {
 }
 
 const inThisProcess = new Map<string, string>();
+const MAX_IN_PROCESS_BYTES = 8 * 1024 * 1024;
 
 /**
  * `seed` walked `years`, as a fresh copy.
@@ -137,7 +157,7 @@ export async function soakedWorld(
             ...WHERE_THE_SIMULATION_STARTS, 'tests/support/soaked-world.ts'
         ], { seed, days, setup }, async () => {
             const state = seedWorld({ seed, ...setup }).state;
-            advanceWorldForPlay(state, { days });
+            walkWithoutKeepingResults(state, days);
             return Buffer.from(JSON.stringify(state));
         });
         return JSON.parse(bytes.toString('utf8')) as WorldState;
@@ -148,7 +168,7 @@ export async function soakedWorld(
 
     const file = fileFor(seed, days);
     const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : await walkIt(seed, days, file);
-    inThisProcess.set(key, text);
+    if (Buffer.byteLength(text) <= MAX_IN_PROCESS_BYTES) inThisProcess.set(key, text);
     return JSON.parse(text) as WorldState;
 }
 
@@ -161,10 +181,14 @@ async function walkIt(seed: string, days: number, file: string): Promise<string>
         try {
             fs.writeFileSync(lock, String(process.pid), { flag: 'wx' });
             break;
-        } catch {
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
             if (fs.existsSync(file)) return fs.readFileSync(file, 'utf8');
             const age = Date.now() - (fs.statSync(lock, { throwIfNoEntry: false })?.mtimeMs ?? 0);
-            if (age > 30 * 60_000) { fs.rmSync(lock, { force: true }); continue; }
+            if (age > 30 * 60_000 || lockOwnerHasExited(lock)) {
+                fs.rmSync(lock, { force: true });
+                continue;
+            }
             await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
@@ -175,7 +199,12 @@ async function walkIt(seed: string, days: number, file: string): Promise<string>
             ? JSON.parse(fs.readFileSync(from.file, 'utf8')) as WorldState
             : seedWorld({ seed, catalog: await loadCultivationCatalog() }).state;
         const walked = from?.days ?? 0;
-        if (days > walked) advanceWorldForPlay(state, { days: days - walked, stopOnInterrupt: false });
+        if (days > walked) walkWithoutKeepingResults(state, days - walked, false, advanced => {
+            const total = walked + advanced;
+            if (total < days && total % CHECKPOINT_DAYS === 0) {
+                keep(fileFor(seed, total), JSON.stringify(state));
+            }
+        });
         const text = JSON.stringify(state);
         keep(file, text);
         return text;

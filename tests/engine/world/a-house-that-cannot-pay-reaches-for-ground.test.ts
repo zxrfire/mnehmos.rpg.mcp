@@ -57,11 +57,16 @@
  * say is that houses in the world do run out of money, so it reads the houses
  * named by the empty-purse facts across the run, pooled over the three seeds -
  * and still fails if no house anywhere ever runs dry, or if every house does.
+ *
+ * The historical counts above came from the full catalog. This integration
+ * guard now uses the six-house fixture for both 250-year arms and the same
+ * three seeds. The 20 assertions passed in 34 seconds of test time instead of
+ * exceeding the five-minute sweep limit on the full catalog.
  */
 
 import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
+import { fixtureCatalog } from './fixtures.js';
 import { advanceWorldYears } from '../../support/advance-world-years.js';
 import {
     A_YEAR_OF_WAGES,
@@ -268,8 +273,7 @@ interface Arm {
 }
 
 async function arm(actOnAnEmptyPurse: boolean, seed: string = SEED): Promise<Arm> {
-    const catalog = await loadCultivationCatalog();
-    const { state } = seedWorld({ seed, catalog });
+    const { state } = seedWorld({ seed, catalog: fixtureCatalog(), population: 40 });
     advanceWorldYears(state, HORIZON_YEARS, {
         stopOnInterrupt: false,
         pressure: { housesActOnAnEmptyPurse: actOnAnEmptyPurse }

@@ -24,6 +24,7 @@ import { appendWorldFact } from '../../../src/engine/world/who-was-there-when-it
 import {
     HAND_DECAY,
     circulating,
+    circulationLookup,
     fidelityAfter,
     handsItPassedThrough,
     retell,
@@ -113,6 +114,25 @@ const insider: TellerStanding = {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('what gets repeated', () => {
+    /** Several deciders read one day's news; their shared reading must preserve the market order. */
+    it('gives every teller the same top stories through the yearly shared reading', () => {
+        const { state } = build();
+        for (let i = 0; i < 90; i++) theDuel(state, {
+            day: DAY - i * 20,
+            magnitude: (i % 10) / 10,
+            locationId: i % 2 === 0 ? 'hall-near' : 'hall-far',
+            summary: `The ${i}th account was repeated.`
+        });
+        const shared = circulationLookup(state, DAY);
+        for (const teller of [villager, insider, { ...villager, id: 'apex-a', locationId: 'hall-far' }]) {
+            expect(circulating(state, teller, DAY, 24, shared).map(f => f.id))
+                .toEqual(circulating(state, teller, DAY).map(f => f.id));
+        }
+        theDuel(state, { day: DAY, magnitude: 1 });
+        expect(circulating(state, villager, DAY, 24, shared).map(f => f.id))
+            .toEqual(circulating(state, villager, DAY).map(f => f.id));
+    });
+
     it('ranks a thing far above the teller over a thing next door', () => {
         const { state } = build();
         theDuel(state);

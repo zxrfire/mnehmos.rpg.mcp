@@ -21,6 +21,9 @@
  *                     the wiring is live - the closed form cannot predict this
  *                     one, because how many people go missing and how long
  *                     their families outlive them are the world's business.
+ * Ten small fixture worlds replace two full-catalog walks for the rate tier.
+ * The bars stay above 40 absences and 80 give-ups, with one nameless account
+ * per give-up; the cold file completed in 105 seconds.
  */
 import { describe, it, expect } from 'vitest';
 import { isLostTrackOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
@@ -39,6 +42,7 @@ import {
     openAbsencesForTheUnaccountedFor
 } from '../../../src/engine/world/when-somebody-does-not-come-back.js';
 import { advanceWorldYears } from '../../support/advance-world-years.js';
+import { fixtureCatalog } from './fixtures.js';
 import { NO_NAME_TAG, hasANameOnIt } from '../../../src/engine/social/accounts-with-no-name.js';
 
 const YEAR = 365;
@@ -300,14 +304,14 @@ describe('the rate people give up at, and the accounts it leaves', () => {
      */
     it('is live on a seeded world, where it used to be structurally zero', async () => {
         const { seedWorld } = await import('../../../src/engine/world/seeding.js');
-        const { loadCultivationCatalog } = await import('../../../src/engine/world/catalog.js');
-        const catalog = await loadCultivationCatalog();
+        const catalog = fixtureCatalog();
 
         let absences = 0;
         let nameless = 0;
         let gaveUp = 0;
-        for (const seed of ['soak-a', 'soak-b']) {
-            const state = seedWorld({ seed, catalog }).state;
+        for (const seed of ['soak-a', 'soak-b', 'soak-c', 'soak-d', 'soak-e', 'soak-f',
+            'soak-g', 'soak-h', 'soak-i', 'soak-j']) {
+            const state = seedWorld({ seed, catalog, population: 40 }).state;
             const out = advanceWorldYears(state, 300);
             absences += state.absences.length;
             nameless += out.accounts.filter(row => !hasANameOnIt({ subjectId: row.subjectId })).length;

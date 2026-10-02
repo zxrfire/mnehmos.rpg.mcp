@@ -8,14 +8,26 @@ import type { WorldState } from './world-state.js';
 
 export function extinguishedLampsOpenInquiries(state: WorldState, day: number): void {
     const people = new Map(state.npcs.map(n => [n.id, n]));
+    const places = new Map(state.locations.map(l => [l.id, l]));
+    const inquired = new Set<string>();
+    const firstDeath = new Map<string, (typeof state.history.facts)[number]>();
+    for (const fact of state.history.facts) {
+        if (typeof fact.data.lampInquiry === 'string') {
+            for (const houseId of fact.factionIds) inquired.add(`${houseId}\u001f${fact.data.lampInquiry}`);
+        }
+        if (fact.kind === 'death') for (const actor of fact.actors) {
+            if (['victim', 'deceased', 'died'].includes(actor.role) && !firstDeath.has(actor.id)) {
+                firstDeath.set(actor.id, fact);
+            }
+        }
+    }
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null) continue;
         for (const id of whoHasALampBurningIn(state.objects, house.id)) {
             const member = people.get(id);
             if (!member || member.status === 'alive' || member.diedOnDay === null || member.diedOnDay > day) continue;
-            if (state.history.facts.some(f => f.data.lampInquiry === id && f.factionIds.includes(house.id))) continue;
-            const death = state.history.facts.find(f => f.kind === 'death'
-                && f.actors.some(a => a.id === id && ['victim', 'deceased', 'died'].includes(a.role)));
+            if (inquired.has(`${house.id}\u001f${id}`)) continue;
+            const death = firstDeath.get(id);
             const known = death && (death.locationId === house.seatLocationId
                 || death.witnessIds.some(w => people.get(w)?.factionId === house.id));
             if (known) continue;
@@ -24,7 +36,7 @@ export function extinguishedLampsOpenInquiries(state: WorldState, day: number): 
             let atHome = false;
             for (let hops = 0; where && hops < 8; hops++) {
                 if (where === house.seatLocationId) { atHome = true; break; }
-                where = state.locations.find(l => l.id === where)?.parentId ?? null;
+                where = places.get(where)?.parentId ?? null;
             }
             if (atHome) continue;
             const inquiry = appendWorldFact(state, makeFact({ day, kind: 'said_in_public', visibility: 'faction',
@@ -32,6 +44,7 @@ export function extinguishedLampsOpenInquiries(state: WorldState, day: number): 
                 factionIds: [house.id], locationId: house.seatLocationId,
                 actors: [{ id: member.id, name: member.name, role: 'unaccounted for' }],
                 data: { lampInquiry: member.id, causeUnknownToHouse: true } }), { bystanders: false });
+            inquired.add(`${house.id}\u001f${id}`);
             const purse = Math.floor((house.resources.spirit_stones ?? 0) * WHAT_A_HOUSE_PUTS_UP_OF_ITS_PURSE.grave);
             if (purse < A_PURSE_NOBODY_CROSSES_A_ROAD_FOR) continue;
             appendWorldFact(state, makeFact({ day, kind: 'bounty_posted', scale: 'local', visibility: 'regional',

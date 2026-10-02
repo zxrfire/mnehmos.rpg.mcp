@@ -14,23 +14,51 @@
 import { describe, expect, it } from 'vitest';
 
 import { soakedWorld } from '../../support/soaked-world.js';
+import { fixtureCatalog } from './fixtures.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import {
     countedHolding,
+    adjustCountedHolding,
     describeCountedHoldings
 } from '../../../src/data/cultivation/what-a-house-moves-its-people-on.js';
 import { conveyanceKeptAs } from '../../../src/engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.js';
+import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { advanceWorldForPlay } from '../../../src/engine/world/driver.js';
+import { setRealm } from '../../../src/engine/world/npc-state.js';
+import { makeObject } from '../../../src/engine/world/possessions.js';
+import { refiningOrdinalFor } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
+
+function aHouseWithAHeavenBill(seed: string): WorldState {
+    // Put a capable hand and the returned materials in a yard; the yearly pass
+    // must still deliver the bill, finish the work and resolve the launch.
+    const state = seedWorld({ seed, catalog: fixtureCatalog(), population: 40 }).state;
+    const house = state.factions.find(f => f.dissolvedOnDay === null && f.seatLocationId !== null
+        && state.npcs.some(n => n.factionId === f.id && n.status === 'alive'))!;
+    const hand = state.npcs.findIndex(n => n.factionId === house.id && n.status === 'alive');
+    state.npcs[hand] = setRealm(state.npcs[hand]!, refiningOrdinalFor('heaven'), state.currentDay);
+    house.resources = adjustCountedHolding(house.resources, 'conv-carriage-mortal', 2);
+    house.resources = adjustCountedHolding(house.resources, 'conv-carriage-earth', 2);
+    house.resources['yard.material.heaven'] = 44;
+    for (let i = 0; i < 2; i++) {
+        state.objects.push(makeObject({
+            id: `yard-core-${seed}-${i}`, name: 'a beast core', kind: 'material',
+            ownerId: house.id, ownerName: house.name, locationId: house.seatLocationId,
+            tags: ['yard-stock'], data: { core: true, grade: 'heaven' }
+        }));
+    }
+    advanceWorldForPlay(state, { days: 365 * 3, stopOnInterrupt: false });
+    return state;
+}
 
 describe('a house builds something out of what came back', () => {
     /**
      * Three seeds, advanced once and shared.
      *
-     * POOLED, because a tracked craft is rare BY DESIGN - a heaven-grade bill
-     * is forty-six pieces including two cores and seven hundred days of work
-     * by a hand at Void Tribulation, and the module's own line is that almost
-     * nothing at heaven grade is ever built. One seed produced three and the
-     * next produced none, which is what that sentence looks like from close
-     * up rather than a defect. AGENTS.md: pool the sample, never widen the bar.
+     * Three fixture worlds still walk five centuries and keep the observed
+     * launch and failure bars. A full live-catalog seed took over five minutes
+     * without finishing. The tracked craft assertion now arranges its rare
+     * materials and capable hand, then runs the ordinary yearly pass. Before
+     * this, it could pass on seeded craft without any house building one.
      *
      * LAZY, AND THAT IS LOAD-BEARING. This was `const worlds = (async () =>
      * ...)()` in this describe body, and the file then could not run at all:
@@ -67,7 +95,10 @@ describe('a house builds something out of what came back', () => {
         // Kept and shared: see `tests/support/soaked-world.ts`.
         built ??= (async () => {
             const out: WorldState[] = [];
-            for (const seed of ['yard-a', 'yard-b', 'yard-c']) out.push(await soakedWorld(seed, { years: 500 }));
+            const setup = { catalog: fixtureCatalog(), population: 40, presentYear: 1000 };
+            for (const seed of ['yard-a', 'yard-b', 'yard-c']) {
+                out.push(await soakedWorld(seed, { years: 500 }, setup));
+            }
             return out;
         })();
         return built;
@@ -100,8 +131,9 @@ describe('a house builds something out of what came back', () => {
         // day and a witness - which is the opposite of everything else tracked
         // in this world, where the interesting objects are the ones nobody can
         // find a giver for.
-        const craft = (await worlds()).flatMap(
-            state => state.objects.filter(o => o.tags.includes('conveyance'))
+        const built = Array.from({ length: 8 }, (_, i) => aHouseWithAHeavenBill(`yard-heaven-${i}`));
+        const craft = built.flatMap(
+            state => state.objects.filter(o => o.tags.includes('own-build'))
         );
         expect(craft.length).toBeGreaterThan(0);
 
@@ -113,12 +145,12 @@ describe('a house builds something out of what came back', () => {
         // to answer for it, and that is a find rather than a gap. What must
         // never happen is the third state this used to allow: a row still
         // naming an institution that stopped existing centuries ago.
-        const standing = new Set((await worlds()).flatMap(
+        const standing = new Set(built.flatMap(
             state => state.factions.filter(f => f.dissolvedOnDay === null).map(f => f.id)
         ));
         for (const row of craft) {
             expect(conveyanceKeptAs('heaven')).toBe('tracked');
-            if (row.ownerId !== null) expect(standing.has(row.ownerId)).toBe(true);
+            if (row.ownerId !== null) expect(standing.has(row.ownerId), `${row.id} owned by ${row.ownerId}`).toBe(true);
             // Moored, never carried. A craft with a possessor is one
             // `bestObjectHeldBy` would arm somebody with.
             expect(row.possessorId).toBeNull();

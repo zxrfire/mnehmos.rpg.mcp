@@ -66,6 +66,7 @@ import {
     whoWouldHaveHeardOfIt
 } from '../cultivation/who-has-heard-of-a-thing-past-the-counter.js';
 import { theHeightAHouseWorksAt } from './where-the-pills-actually-are.js';
+import type { WitnessIndex } from './witness-reaction-index.js';
 
 /**
  * What a named holder stands at on one named thing.
@@ -97,6 +98,13 @@ const IN_A_ROOM_WITH: KnowingStage = 'encountered';
  * their local house, read for a world person instead of written as a row.
  */
 const THE_HOUSE_DOWN_THE_PROVINCE: KnowingStage = 'named';
+
+function saidWhereTheyStand(state: WorldState, holder: NpcRecord,
+    facts: readonly HistoricalFact[]): boolean {
+    if (facts.length === 0) return false;
+    const teller = whereThisPersonIsStanding(state, holder);
+    return facts.some(fact => isInTheAirFor(state, fact, teller, state.currentDay));
+}
 
 /**
  * Every reading, bound to one world.
@@ -134,6 +142,7 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
 
     const byHouse = factsByHouse(ledger);
     const byPerson = factsNaming(ledger);
+    const byFactId = new Map(ledger.map(fact => [fact.id, fact]));
     const presentAt = whoWasPresent(ledger);
     const tellingsOf = new Map<string, HistoricalFact[]>();
     for (const fact of ledger) {
@@ -144,11 +153,8 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
         tellingsOf.set(toldOf, rows);
     }
 
-    const saidWhereTheyStand = (holder: NpcRecord, facts: readonly HistoricalFact[]): boolean => {
-        if (facts.length === 0) return false;
-        const teller = whereThisPersonIsStanding(state, holder);
-        return facts.some(fact => isInTheAirFor(state, fact, teller, state.currentDay));
-    };
+    const saidHere = (holder: NpcRecord, facts: readonly HistoricalFact[]): boolean =>
+        saidWhereTheyStand(state, holder, facts);
 
     return (holderId, kind, id) => {
         const holder = rowFor(holderId);
@@ -158,16 +164,37 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
             case 'place':
                 return ofThePlace(state, holder, id, ofTheGround, errands);
             case 'sect':
-                return ofTheHouse(state, holder, id, byHouse, presentAt, saidWhereTheyStand);
+                return ofTheHouse(state, holder, id, byHouse, presentAt, saidHere);
             case 'cultivator':
-                return ofAPerson(holder, id, rowFor, byPerson, presentAt, saidWhereTheyStand);
+                return ofAPerson(holder, id, rowFor, byPerson, presentAt, saidHere);
             case 'event':
-                return ofAnEvent(holder, id, ledger, presentAt, tellingsOf, saidWhereTheyStand);
+                return ofAnEvent(holder, id, byFactId, presentAt, tellingsOf, saidHere);
             case 'thing':
                 return ofAThing(state, holder, id);
             default:
                 return 'unaware';
         }
+    };
+}
+
+/** Witness reports ask only who knows a house or person, off the live fact index. */
+export function whatOneOfTheWorldsOwnPeopleKnowsFromWitnessIndex(
+    state: WorldState, index: WitnessIndex): WhatSomebodyKnowsOfIt {
+    const npcAt = new Map(state.npcs.map((npc, at) => [npc.id, at]));
+    const rowFor = (id: string): NpcRecord | null => {
+        const at = npcAt.get(id) ?? npcAt.get(worldIdForCatalogPerson(id));
+        return at === undefined ? null : state.npcs[at] ?? null;
+    };
+    const saidHere = (holder: NpcRecord, facts: readonly HistoricalFact[]): boolean =>
+        saidWhereTheyStand(state, holder, facts);
+    return (holderId, kind, id) => {
+        const holder = rowFor(holderId);
+        if (!holder) return 'unaware';
+        if (kind === 'sect') return ofTheHouse(state, holder, id,
+            index.factsByHouse, index.presentAt, saidHere);
+        if (kind === 'cultivator') return ofAPerson(holder, id, rowFor,
+            index.factsByPerson, index.presentAt, saidHere);
+        return 'unaware';
     };
 }
 
@@ -335,13 +362,13 @@ function ofAThing(state: WorldState, holder: NpcRecord, thingId: string): Knowin
 function ofAnEvent(
     holder: NpcRecord,
     factId: string,
-    ledger: readonly HistoricalFact[],
+    byFactId: ReadonlyMap<string, HistoricalFact>,
     presentAt: Map<string, Set<string>>,
     tellingsOf: Map<string, HistoricalFact[]>,
     saidWhereTheyStand: (holder: NpcRecord, facts: readonly HistoricalFact[]) => boolean
 ): KnowingStage {
     if (presentAt.get(holder.id)?.has(factId) === true) return BEING_THERE;
-    const fact = ledger.find(row => row.id === factId);
+    const fact = byFactId.get(factId);
     if (!fact) return 'unaware';
     const tellings = tellingsOf.get(factId) ?? [];
     if (tellings.some(row => presentAt.get(holder.id)?.has(row.id) === true

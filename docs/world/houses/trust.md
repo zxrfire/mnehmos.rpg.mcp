@@ -602,6 +602,11 @@ one case of it, not a system beside it.
 body, holding goods whose provenance names somebody else, being inside walls without
 leave. Being seen *with* the evidence is a witnessed event in its own right.
 
+Away from the player, the world draws a capped number of witnessed incidents each year at
+a rate set by bodies, held goods and battles with many fallen. Each drawn incident still
+passes through the ordinary witness, account and report rules. The player's deeds and
+witnesses in the player's place are resolved individually from what they saw.
+
 **Whether it needs explaining.** The witness first asks whether this is wrong *to them*,
 by who they are: their alignment, their house's ways, their ties to the doer and to the
 one it was done to. A demonic senior sister who finds a demonic junior over a body has
