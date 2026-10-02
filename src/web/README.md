@@ -19,6 +19,8 @@ no model, explicit account words reach the same path.
 Local walks use the shared arrival reader in `travel-verbs.ts`. A path from a
 gate town to the grounds places the watch and applies the same admission read
 as a longer journey, without spending a day.
+House destinations resolve the spoken house before a place match can expand
+it to its gate town. Members returning home reach their own grounds.
 
 Willing furnace requests use `a-willing-furnace-rite.ts`: both adult arts and
 NPC consent are required, in either direction. Forced marriage after submission

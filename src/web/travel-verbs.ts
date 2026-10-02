@@ -707,11 +707,12 @@ export const travelVerbs = {
         // there, because who is standing at a gate is a fact about the gate and
         // not about where the walk started.
         const namedTown = this.atHand && named && worldLocationFor(this.atHand, named.name)?.tags.includes('gate_town');
-        const house = this.atHand && named && !namedTown
-            ? theHouseThisNameReaches(this.atHand, named.name)
+        const house = this.atHand
+            ? theHouseThisNameReaches(this.atHand, destinationNamed(said))
+                ?? (named && !namedTown ? theHouseThisNameReaches(this.atHand, named.name) : null)
             : null;
         const town = house && cultivator.sectId !== house.factionId
-            && loosePlaceKey(named!.name) === loosePlaceKey(house.factionName)
+            && loosePlaceKey(destinationNamed(said) ?? named!.name) === loosePlaceKey(house.factionName)
             ? this.atHand?.locations.find(row => row.data.gateOf === house.factionId) : null;
         const place = house ? resolvePlace(town?.name ?? house.seat.name) ?? named : named;
         // AND NOT FROM ANYWHERE ELSE. A room's name reached the world's loose

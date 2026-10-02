@@ -22,6 +22,8 @@
  * this belongs to is a system that binds the simulation and never reaches the
  * played game. The world is pinned: a played test that pins a seed to an
  * outcome without pinning the world is pinning a coincidence.
+ * Catalog interiors also use ruin rows. Count the generated grounds with a
+ * sealing scar, rather than treating an open archive as another broken seal.
  */
 
 import { makeGameInWorld } from './harness';
@@ -52,11 +54,10 @@ describe('a fresh world has one piece of closed ground already open', () => {
         expect(ruins.length).toBeGreaterThan(1);
         const open = ruins.filter(r => !r.sealed && r.discovered);
         expect(open.length, 'nothing is open at world creation').toBeGreaterThan(0);
-        // A legacy carries its own scar - `left for whoever could take it`
-        // against `sealed from the inside` - which is the row saying it was
-        // never closed rather than that somebody opened it.
+        // The sealing scar identifies closed ground among ruin rows, which
+        // also include never-shut legacies and catalog interiors.
         const wasOpened = open.filter(r =>
-            !r.environment.historicalScars.includes('left for whoever could take it'));
+            r.environment.historicalScars.includes('sealed from the inside'));
         expect(wasOpened, 'the seeder opened more than one piece of closed ground')
             .toHaveLength(1);
     });

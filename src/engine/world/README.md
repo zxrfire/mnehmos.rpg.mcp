@@ -3850,3 +3850,6 @@ Material hunts returning cores mint individual catalog material objects at the h
 A seeded rogue with reachable unheld ground has a residence there. A rogue drawn in town can be away from that residence; owning a home does not remove them from the town's cast.
 
 Witness reactions read deeds and visible evidence through one trust path. A killing in a war counts as service to the doer's house only when the victim belongs to the opposing house; losses to other houses remain ordinary killings to them. A telling about a witnessed fact carries knowledge of that fact to its hearer through the ordinary knowledge read. Houses act on deaths after their people witness them or news reaches them. A known price moves face for the named person's side and reads differently to friends, weaker people and strong takers.
+
+The annual account phase uses the pass's existing world-knowledge reader.
+Authority queries do not rebuild the historical ledger's indexes.

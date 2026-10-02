@@ -26,6 +26,8 @@
  * a world seed pins a coincidence. What is NOT pinned is which house or which
  * person: those are found by reading the world, so a catalog or seeder change
  * moves the names and the test still measures the claim.
+ * Offers follow the speaker's current location and area. A shared settlement
+ * alone does not put the asker in front of them, and an offer lets them move.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -33,6 +35,7 @@ import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { TECHNIQUES } from '../../src/data/cultivation/techniques';
 import { heldByTheirHouse } from '../../src/web/what-a-holder-would-take-for-it';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 const WORLD = 'a-cure-that-is-not-for-sale';
 const THE_CURE = 'pill-meridian-rebirth';
@@ -42,6 +45,20 @@ interface Said { narration?: string; error?: string }
 /** The whole of what the player reads, however the layer wrapped it. */
 function heard(said: Said): string {
     return said.error ?? said.narration ?? JSON.stringify(said);
+}
+
+async function standWithSpeaker(
+    game: Awaited<ReturnType<typeof makeGameInWorld>>['game'], playerId: string, speakerId: string
+): Promise<boolean> {
+    const world = (await game.loadWorld())!;
+    const speaker = world.npcs.find(n => n.id === speakerId && n.status === 'alive');
+    const place = world.locations.find(l => l.id === speaker?.locationId);
+    if (!speaker || !place) return false;
+    game.repos.cultivators.update(playerId, { location: place.name });
+    const area = theAreasOf(world, place).whereIs.get(speaker.id);
+    if (area) game.repos.cultivators.standIn(playerId, area);
+    expect(game.present(game.repos.cultivators.getById(playerId)!).map(n => n.id)).toContain(speakerId);
+    return true;
 }
 
 /**
@@ -66,22 +83,23 @@ function heard(said: Said): string {
  */
 async function somebodyWhoWouldTradeAtAll(
     db: { prepare(sql: string): { run(...args: unknown[]): unknown } },
-    game: { act(input: string): Promise<unknown> },
+    game: Awaited<ReturnType<typeof makeGameInWorld>>['game'],
     cultivatorId: string,
-    speakers: readonly { name: string; locationId: string | null }[],
+    speakers: readonly { id: string; name: string }[],
     knownTechniqueIds: string
-): Promise<{ name: string; locationId: string | null; answer: string } | null> {
+): Promise<{ id: string; name: string; answer: string } | null> {
     for (const speaker of speakers) {
         db.prepare(
-            'update cultivators set location = ?, realm_ordinal = ?, spirit_stones = ?, '
+            'update cultivators set realm_ordinal = ?, spirit_stones = ?, '
             + 'known_techniques = ? where id = ?'
-        ).run(speaker.locationId, 20, 50_000, knownTechniqueIds, cultivatorId);
+        ).run(20, 50_000, knownTechniqueIds, cultivatorId);
+        if (!await standWithSpeaker(game, cultivatorId, speaker.id)) continue;
 
         const answer = heard(await game.act(
             `ask ${speaker.name} what they would take for a Meridian Rebirth Pill`
         ) as Said);
         if (answer.includes('not for money')) {
-            return { name: speaker.name, locationId: speaker.locationId, answer };
+            return { id: speaker.id, name: speaker.name, answer };
         }
     }
     return null;
@@ -147,9 +165,7 @@ describe('reaching a cure that is not for sale', () => {
         // walks on; standing where they were before the first one left the
         // player talking to an empty square from the second offer on.
         const standWithThem = async (): Promise<void> => {
-            const now = (await game.loadWorld())?.npcs.find(n => n.name === willing!.name);
-            db.prepare('update cultivators set location = ? where id = ?')
-                .run(now?.locationId ?? willing!.locationId, cultivator.id);
+            expect(await standWithSpeaker(game, cultivator.id, willing!.id)).toBe(true);
         };
 
         // The refusal carries the figure, which is the whole point of the verb.
@@ -301,6 +317,7 @@ describe('reaching a cure that is not for sale', () => {
         );
         expect(willing).not.toBeNull();
 
+        expect(await standWithSpeaker(game, cultivator.id, willing!.id)).toBe(true);
         const said = heard(await game.act(
             `I offer ${willing!.name} 400000 spirit stones for a Meridian Rebirth Pill`
         ));
@@ -322,38 +339,43 @@ describe('reaching a cure that is not for sale', () => {
      * The asker is stood LOW on purpose, so the standing term keeps most
      * attempts from landing and the failure mode under test is the one that
      * comes back.
+     * A successful first trade empties the shelf. Sample fresh runs rather
+     * than asking an empty shelf thirteen more times and calling it unreachable.
      */
     it('answers a met price that did not land with terms rather than a no', async () => {
-        const { db, game } = await makeGameInWorld({
-            seed: 'a-cure-counter', worldSeed: WORLD, adminMode: true
-        });
-        const { cultivator } = await game.newRun('Probe');
-        const world = await game.loadWorld();
-        const holders = world!.objects.filter(o =>
-            o.kind === 'pill' && o.data?.pillId === THE_CURE && o.data?.spent !== true);
-        const speakers = world!.npcs.filter(n =>
-            n.locationId !== null && holders.some(h => h.ownerId === n.factionId));
         const road = TECHNIQUES.find(t => t.grade === 'heaven')!;
-
-        const willing = await somebodyWhoWouldTradeAtAll(
-            db, game, cultivator.id, speakers.slice(0, 12), JSON.stringify([road.id])
-        );
-        expect(willing).not.toBeNull();
-
         let countered = false;
-        for (let attempt = 0; attempt < 14 && !countered; attempt++) {
-            db.prepare(
-                'update cultivators set location = ?, realm_ordinal = ? where id = ?'
-            ).run(willing!.locationId, 6, cultivator.id);
-            const text = heard(await game.act(
-                `I offer ${willing!.name} the ${road.name} for a Meridian Rebirth Pill`
-            ));
-            countered = /does not close the door/.test(text);
-            if (countered) {
-                // A counter-offer is an opening. It must not read as a rebuff.
-                expect(text).toContain('They want something, they have said so');
+        const answers: string[] = [];
+        for (let attempt = 0; attempt < 8 && !countered; attempt++) {
+            const { db, game } = await makeGameInWorld({
+                seed: `a-cure-counter-${attempt}`, worldSeed: WORLD, adminMode: true
+            });
+            try {
+                const { cultivator } = await game.newRun('Probe');
+                const world = (await game.loadWorld())!;
+                const holders = world.objects.filter(o =>
+                    o.kind === 'pill' && o.data?.pillId === THE_CURE && o.data?.spent !== true);
+                const speakers = world.npcs.filter(n =>
+                    n.locationId !== null && holders.some(h => h.ownerId === n.factionId));
+                const willing = await somebodyWhoWouldTradeAtAll(
+                    db, game, cultivator.id, speakers.slice(0, 12), JSON.stringify([road.id])
+                );
+                expect(willing).not.toBeNull();
+                expect(await standWithSpeaker(game, cultivator.id, willing!.id)).toBe(true);
+                db.prepare('update cultivators set realm_ordinal = ? where id = ?').run(6, cultivator.id);
+                const text = heard(await game.act(
+                    `I offer ${willing!.name} the ${road.name} for a Meridian Rebirth Pill`
+                ));
+                expect(text).toContain('serves them at least as well as keeping it does');
+                answers.push(text);
+                countered = /does not close the door/.test(text);
+                if (countered) {
+                    expect(text).toContain('They want something, they have said so');
+                }
+            } finally {
+                db.close();
             }
         }
-        expect(countered, 'the fifth outcome never fired in play').toBe(true);
+        expect(countered, `the fifth outcome never fired in play: ${answers.join('\n')}`).toBe(true);
     }, 300_000);
 });

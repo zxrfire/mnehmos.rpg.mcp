@@ -1,4 +1,9 @@
-/** Cached canonical walks must preserve their catalog, population and clock. */
+/**
+ * Cached canonical walks must preserve their catalog, population and clock.
+ * A cold 200-year worker ended without publishing a world. Checkpoints now
+ * preserve completed spans; crossing one and reloading JSON must leave the
+ * exact direct-walk state.
+ */
 import { describe, expect, it } from 'vitest';
 import { soakedWorld } from './soaked-world.js';
 import { fixtureCatalog } from '../engine/world/fixtures.js';
@@ -6,6 +11,20 @@ import { seedWorld } from '../../src/engine/world/seeding.js';
 import { advanceWorldForPlay } from '../../src/engine/world/driver.js';
 
 describe('canonical fixture walks', () => {
+    it('matches a direct walk across an intermediate checkpoint', async () => {
+        const setup = { catalog: fixtureCatalog(), presentYear: 1000, population: 40 };
+        const seed = 'cached-fixture-checkpoint-equivalence';
+        const direct = seedWorld({ seed, ...setup }).state;
+        advanceWorldForPlay(direct, { days: 365 * 26 });
+        const beforeCheckpoint = seedWorld({ seed, ...setup }).state;
+        advanceWorldForPlay(beforeCheckpoint, { days: 365 * 25 });
+        const resumed = JSON.parse(JSON.stringify(beforeCheckpoint)) as typeof direct;
+        advanceWorldForPlay(resumed, { days: 365 });
+        expect(resumed).toEqual(direct);
+        const checkpointed = await soakedWorld(seed, { years: 26 }, setup);
+        expect(checkpointed).toEqual(direct);
+    });
+
     it('matches a direct walk and returns isolated copies', async () => {
         const setup = { catalog: fixtureCatalog(), presentYear: 1000, population: 40 };
         const seed = 'cached-fixture-equivalence';

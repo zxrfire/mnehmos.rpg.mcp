@@ -5,9 +5,12 @@ gets a JSON copy. Its optional setup preserves a canonical fixture catalog,
 population and starting age in the key. Observers, callbacks, pressure options
 and worlds changed before advancing must keep their own walks.
 The existing live-catalog cache retains its source keys and kept walks.
-Long soaks advance in ten-year spans and discard each span's returned event arrays.
-They keep a snapshot every 100 years so an interrupted walk resumes at the last mark.
-Large snapshots remain on disk; the process retains only small serialized worlds.
+Long soaks advance at most ten years per span and discard returned event arrays.
+Spans shorten at checkpoint boundaries.
+Cold walks publish intermediate snapshots every 25 years. A later worker resumes
+from the nearest completed snapshot with the same source key.
+An exited builder's lock can be reclaimed immediately; a live builder keeps it.
+Completed JSON stays on disk instead of retaining another copy in each process.
 
 `serializedFixture` caches bytes under a hash of the fixture's import graph,
 dependency lockfile, runtime and inputs. A lock across forks permits one builder;

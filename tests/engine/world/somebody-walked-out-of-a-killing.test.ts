@@ -28,6 +28,11 @@
  * After that fix the same worlds burned 13, 6 and 14 slips. One burner was
  * later forgotten by the world's ordinary retention pass, which clears ids
  * in object data. The date remains; identity is asserted at the act below.
+ * A 10-second CPU profile of a cold pyr-a walk spent 92% in yearly witness
+ * reactions. The account phase rebuilt world knowledge for each authority
+ * query; it now receives the reader already used by that year's observations.
+ * Rate checks retain the slips and remembered ids from each private world copy;
+ * the rest of three complete worlds is not needed for these assertions.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -44,13 +49,18 @@ import { fixtureCatalog } from './fixtures.js';
 // The pyramid's seeds at the same horizon, so the walks are shared: see `tests/support/soaked-world.ts`.
 const SEEDS = ['pyr-a', 'pyr-b', 'pyr-c'];
 const YEARS = 200;
-let cached: WorldState[] | null = null;
+interface LivedSlips { slips: ObjectRecord[]; remembered: Set<string> }
+let cached: LivedSlips[] | null = null;
 
-async function worldsLived(): Promise<WorldState[]> {
+async function worldsLived(): Promise<LivedSlips[]> {
     if (cached) return cached;
     // Kept and shared: see `tests/support/soaked-world.ts`.
-    const lived: WorldState[] = [];
-    for (const seed of SEEDS) lived.push(await soakedWorld(seed, { years: YEARS }));
+    const lived: LivedSlips[] = [];
+    for (const seed of SEEDS) {
+        lived.push(await soakedWorld(seed, { years: YEARS }).then(state => ({
+            slips: slipsIn(state), remembered: new Set(state.npcs.map(n => n.id))
+        })));
+    }
     cached = lived;
     return cached;
 }
@@ -60,7 +70,7 @@ const slipsIn = (s: WorldState) => s.objects.filter(o => o.tags.includes('talism
 describe('a slip reaches a hand', () => {
     it('is held by somebody, which it never was', async () => {
         for (const state of await worldsLived()) {
-            const held = slipsIn(state).filter(o => o.possessorId !== null);
+            const held = state.slips.filter(o => o.possessorId !== null);
             expect(held.length).toBeGreaterThan(0);
         }
     });
@@ -69,7 +79,7 @@ describe('a slip reaches a hand', () => {
         let burned = 0;
         const said: string[] = [];
         for (const state of await worldsLived()) {
-            const here = slipsIn(state).filter(o => o.data?.spent === true).length;
+            const here = state.slips.filter(o => o.data?.spent === true).length;
             burned += here;
             said.push(String(here));
         }
@@ -79,7 +89,7 @@ describe('a slip reaches a hand', () => {
 
     it('but not most of them, because most people do not die in a war', async () => {
         for (const state of await worldsLived()) {
-            const slips = slipsIn(state);
+            const slips = state.slips;
             const burned = slips.filter(o => o.data?.spent === true);
             expect(burned.length).toBeLessThan(slips.length / 2);
         }
@@ -87,11 +97,11 @@ describe('a slip reaches a hand', () => {
 
     it('keeps the burn date and any burner the world still remembers', async () => {
         for (const state of await worldsLived()) {
-            for (const slip of slipsIn(state).filter(o => o.data?.spent === true)) {
+            for (const slip of state.slips.filter(o => o.data?.spent === true)) {
                 const burner = slip.data?.spentBy;
                 expect(burner === null || typeof burner === 'string').toBe(true);
                 if (typeof burner === 'string') {
-                    expect(state.npcs.some(n => n.id === burner)).toBe(true);
+                    expect(state.remembered.has(burner)).toBe(true);
                 }
                 expect(typeof slip.data?.spentOnDay).toBe('number');
                 // Used and gone. Nobody is holding it afterwards.

@@ -32,6 +32,8 @@
  * `worldEnabled: true` throughout. With the world off there is no world state
  * to write a fact into and every assertion here would pass vacuously by
  * measuring a configuration nobody plays.
+ * Witness observations can also name the giver. These assertions count the
+ * gift itself and any account opened by that gift, rather than all later facts.
  */
 
 import { aRecruiterOfTheHouseIsHere, makeGameInWorld } from './harness';
@@ -81,7 +83,7 @@ describe('a gift to a house is a thing the world contains', () => {
         await game.act('I donate 300 spirit stones to the sect');
 
         const world = (await game.loadWorld())!;
-        const mine = factsNaming(world, cultivator.id);
+        const mine = factsNaming(world, cultivator.id).filter(f => f.kind === 'debt_incurred');
         expect(mine, 'the world contains the gift').toHaveLength(1);
         expect(mine[0].kind).toBe('debt_incurred');
         expect(mine[0].actors.map(a => a.id)).toContain(cultivator.id);
@@ -92,7 +94,7 @@ describe('a gift to a house is a thing the world contains', () => {
         // And no account was opened. A gift is not a grudge, and this file
         // opens neither: `whatADeedLeaves` says what the record WOULD be and
         // the obligation ledger is not the fact writer's to touch.
-        expect(ledger(db)).toHaveLength(0);
+        expect(ledger(db).filter(row => row.triggering_event_id === mine[0].id)).toHaveLength(0);
     });
 
     /**
@@ -113,7 +115,9 @@ describe('a gift to a house is a thing the world contains', () => {
             await game.act('I join the Azure Dew Sect');
             await game.act('I donate 300 spirit stones to the sect');
             const world = (await game.loadWorld())!;
-            weights.push(factsNaming(world, cultivator.id)[0].magnitude);
+            const gifts = factsNaming(world, cultivator.id).filter(f => f.kind === 'debt_incurred');
+            expect(gifts).toHaveLength(1);
+            weights.push(gifts[0].magnitude);
         }
         expect(weights[0]).toBeGreaterThan(weights[1]);
     });

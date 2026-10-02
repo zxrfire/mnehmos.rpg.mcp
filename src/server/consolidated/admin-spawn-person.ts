@@ -10,6 +10,7 @@ import { DAYS_PER_YEAR } from '../../engine/cultivation/cultivation.js';
 import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
 import { forStream } from '../../engine/cultivation/rng.js';
 import { createNpc } from '../../engine/world/npc-state.js';
+import { theAreasOf } from '../../engine/world/where-in-a-place-somebody-is-standing.js';
 import { theSpeciesTheyMeant } from '../../engine/world/a-beast-that-took-a-shape-is-somebody.js';
 import { BEAST_TAG_PREFIX } from '../../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { whatThisOneHasAlwaysWanted } from '../../engine/world/what-a-beast-has-always-wanted.js';
@@ -106,7 +107,7 @@ export async function spawnPersonFromSpec(
         return guidingError('age_past_lifespan', `Age ${age} reaches the end of this body's ${span}-year lifespan. Nothing spawned.`);
     }
     if (species) npc = addGoal(npc, whatThisOneHasAlwaysWanted({ beast: species, locationId: place.id }), day);
-    // The existing scene relation places them with the player in any area, for this encounter.
+    // The encounter shares an area with the player, subject to its three-person capacity.
     npc.activity = { kind: 'talking', note: 'Standing with the person they just encountered.',
         withIds: [player.id], sinceDay: day, untilDay: day + 1 };
     const issued = house ? whatTheHouseGivesThem({
@@ -120,6 +121,10 @@ export async function spawnPersonFromSpec(
     }) : null;
     repos.db.transaction(() => {
         world.npcs.push(npc);
+        if (worldLocationFor(world, player.location)?.id === place.id) {
+            const area = theAreasOf(world, place, undefined, player).whereIs.get(id);
+            if (area) repos.cultivators.standIn(player.id, area);
+        }
         if (issued) for (const thing of [issued.robes, issued.token, issued.lamp]) if (thing) world.objects.push(thing);
         writeAdminAudit(repos, 'spawn_encounter', run.id, { opponentNpcId: id, ordinal,
             sex: npc.identity.sex, age, house: house?.id ?? null, rankIndex,

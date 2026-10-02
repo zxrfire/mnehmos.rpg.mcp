@@ -4,6 +4,8 @@
  * Trait requests now create ordinary world NPCs. Bare ordinal requests keep the
  * existing encounter; both readers are checked through ADMIN and persisted state.
  * Unknown houses, impossible bodies and absent rungs must leave the world alone.
+ * A full area must not hide a local spawn. The operator stands with the new
+ * person in the engine's assigned area, with at most three people present.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider, type Harness } from './harness.js';
@@ -44,6 +46,8 @@ async function spawned(h: Harness, line: string) {
     const player = h.game.state().cultivator;
     const place = worldLocationFor(world, player.location)!;
     expect(npcsWhereTheyStand(world, place, player.standingIn, player).map(n => n.id)).toContain(npc.id);
+    expect(h.game.present(player).map(n => n.id)).toContain(npc.id);
+    expect(h.game.present(player).length).toBeLessThanOrEqual(3);
     // A reload reads the same row; a transient scene card is insufficient.
     forgetWorld(world.id);
     expect((await worldForRun(h.repos.runs.getActiveRun()!)).npcs.find(n => n.id === npc.id)).toEqual(npc);

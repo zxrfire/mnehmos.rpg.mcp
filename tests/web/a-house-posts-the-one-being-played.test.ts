@@ -32,6 +32,8 @@
  * read from.
  * The setup advances the world's annual pass before the player takes a post.
  * An interrupted or fatal wait is not a fixture for an annual posting.
+ * Replacement also needs a spare member. The relieved holder's errand ends
+ * before the next posting pass; a house with everybody occupied cannot refill it.
  *
  * Red-checked, each break on its own: with the posting branch in
  * `goWhereTheHouseSentYou` taken out, saying yes runs the term as an ordinary
@@ -239,6 +241,13 @@ describe('holding the post', () => {
         expect(h.game.atHand!.npcs.find(n => n.id === h.cultivator.id)?.activity, 'still stamped').toBeNull();
         expect(theirOpenPosting(h.game, h.cultivator.id)).toBeNull();
 
+        const returning = h.game.atHand!.npcs.find(n => n.id === h.post.relievedId)!;
+        expect(returning.status).toBe('alive');
+        returning.activity = {
+            kind: 'out_with_a_party', note: 'Returning from an errand.', withIds: [],
+            sinceDay: left - 1, untilDay: left, returnTo: h.house.seatLocationId
+        };
+        h.game.theWorldMoved();
         await aYearOfIt();
         expect(sentSince(left).length, 'the post stayed empty after they left it').toBeGreaterThan(0);
     }, 300_000);

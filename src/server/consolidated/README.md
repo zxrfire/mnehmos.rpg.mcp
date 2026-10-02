@@ -15,6 +15,8 @@ existing roll fields, changed-beast tags and bloodline, and `whatTheHouseGivesTh
 The world row is the only person record; no parallel cultivator membership is written.
 Unknown houses and rungs, impossible human forms and ages, and invalid ordinals refuse
 before a spawn is written. The receipt reports applied traits and unused words.
+Local trait spawns place the operator in the new person's area when their
+current area is full, preserving the three-person limit.
 
 Every tool the runtime agent can call, one file per tool. This is the boundary the
 [authority rule](../../../context.md) is enforced at: **a model reaches the engine only

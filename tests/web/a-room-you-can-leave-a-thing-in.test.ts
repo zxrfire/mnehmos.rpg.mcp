@@ -33,6 +33,8 @@
  * WORLD PINNED, because every one of these reads a compound out of it.
  * The member starts at the chosen house's actual seat; a newly added house
  * with the lowest admission rung need not live near Emerald Water City.
+ * A house name must reach its member's grounds: a gate-town place match must
+ * not send somebody going home back outside the walls.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -122,10 +124,10 @@ describe('a thing left in the room stays there', () => {
         const { harness, cultivatorId } = await aDiscipleWithAPillAndARoom('quarters-play');
         const room = whereAHouseLetsYouKeepThings(LOCAL_SECT.id, cultivatorId);
 
-        await harness.game.act('I go home');
-        await harness.game.act(`I put the ${WHAT_IT_IS_CALLED} in my room`);
+        const home = await harness.game.act('I go home');
+        const stored = await harness.game.act(`I put the ${WHAT_IT_IS_CALLED} in my room`);
 
-        expect(pouchQuantity(harness.db, cultivatorId, A_PILL)).toBe(2);
+        expect(pouchQuantity(harness.db, cultivatorId, A_PILL), `${home.narration}\n${stored.narration}`).toBe(2);
         expect(pouchQuantity(harness.db, room, A_PILL)).toBe(1);
 
         // ELEVEN DAYS AWAY AND IT IS STILL THERE. A store that empties when the
@@ -179,7 +181,10 @@ describe('a thing left in the room stays there', () => {
         const { harness, cultivatorId } = await aDiscipleWithAPillAndARoom('quarters-reach');
         const room = whereAHouseLetsYouKeepThings(LOCAL_SECT.id, cultivatorId);
 
-        await harness.game.act('I travel to Iron Crest');
+        for (let leg = 0; leg < 6 && harness.repos.cultivators.getById(cultivatorId)!.location !== 'Iron Crest'; leg++) {
+            await harness.game.act('I travel to Iron Crest');
+        }
+        expect(harness.repos.cultivators.getById(cultivatorId)!.location).toBe('Iron Crest');
         const answer = await harness.game.act(`I put the ${WHAT_IT_IS_CALLED} in my room`);
 
         expect(pouchQuantity(harness.db, room, A_PILL)).toBe(0);
