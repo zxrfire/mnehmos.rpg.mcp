@@ -92,8 +92,11 @@ not filled by emptying them. It is filled by giving people a reason to come:
 - **The exchange**, where cultivators of every house sell their wares.
 
 Each reason is a stint with an end, after which the person goes home. **A standing post is
-relieved, not abandoned:** when the person posted to a capital goes home, the house sends a
-replacement, because it needs eyes there. A capital stays busy because the reasons keep
+relieved, never abandoned, and the relief arrives first.** The house needs eyes there, so the
+replacement comes, takes a handover from the one on post (what is going on, who is who, what
+is owed), and only then does the outgoing one go home. For the stretch they overlap there are
+two of the house's people at the post, and that handover is something the player can walk
+into. A capital stays busy because the reasons keep
 recurring and the posts are never left empty.
 
 ## At the top, rank stops tracking realm
