@@ -609,7 +609,8 @@ function bend(
             where: place ?? (locationId ? getLocation(state, locationId)?.name ?? null : null),
             years,
             size,
-            what: typeof fact.data.brokeWhat === 'string' ? fact.data.brokeWhat : null
+            what: typeof fact.data.comprehendedDao === 'string' ? fact.data.comprehendedDao
+                : typeof fact.data.brokeWhat === 'string' ? fact.data.brokeWhat : null
         }),
         named
     };
@@ -776,6 +777,8 @@ function sentenceFor(s: Saying): string {
             return `${who} went up${at}, ${when}, ${size}.`;
         case 'realm_crossing':
             return `${who} came through a wall${at}, ${when}, ${size}.`;
+        case 'dao_comprehension':
+            return `${who} comprehended ${s.what ?? 'a dao'}${at}, ${when}, ${size}.`;
         case 'death':
             return `${who} is dead${at}, ${when}, ${size}.`;
         case 'gathering':

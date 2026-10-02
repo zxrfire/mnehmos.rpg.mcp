@@ -134,6 +134,11 @@ const MAGNITUDE_AT: Readonly<Record<Severity, number>> = Object.freeze({
     unforgivable: 0.85
 });
 
+/** The reporting weight carried by an already-priced event. */
+export function reportingMagnitudeFor(weight: Severity): number {
+    return MAGNITUDE_AT[weight];
+}
+
 /** The band at which a deed is a regional event rather than a local one. */
 const CARRIES_PAST_THE_TOWN: Severity = 'grave';
 
@@ -297,7 +302,7 @@ export function aDeedEntersTheWorld(
         ? leaves.reached !== 'nobody has worked it out'
         : input.workedOut !== false;
 
-    const heavy = MAGNITUDE_AT[weight] >= MAGNITUDE_AT[CARRIES_PAST_THE_TOWN];
+    const heavy = reportingMagnitudeFor(weight) >= reportingMagnitudeFor(CARRIES_PAST_THE_TOWN);
 
     const fact = appendWorldFact(state, makeFact({
         day: input.day,
@@ -311,7 +316,7 @@ export function aDeedEntersTheWorld(
         // The one read of the weight that changes anything downstream, and it
         // changes reporting rather than mechanics: `magnitude` is what the
         // digest filters on and the first term in `airtimeOf`.
-        magnitude: MAGNITUDE_AT[weight],
+        magnitude: reportingMagnitudeFor(weight),
         visibility: workedOut ? (heavy ? 'public' : 'regional') : 'secret',
         causeKnown: workedOut,
         data: {

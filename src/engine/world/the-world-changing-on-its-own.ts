@@ -227,6 +227,7 @@ import { howLoudALeavingIs, whatTheirLeavingStirs } from './what-somebody-senior
 import { theOathOnTheWayOut } from './the-word-an-npc-gave.js';
 import { theWanderersGoAbout } from './the-wanderer-the-catalog-names-is-somebody.js';
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
+import { applyDaoGroundStints, startNpcJourney } from './dao-ground-stints.js';
 import { woundsCloseThisYear } from './what-a-house-does-about-its-people-being-hurt.js';
 import {
     A_ROOM_SAW_IT,
@@ -756,6 +757,9 @@ export function applyPressure(
         } });
         tasks.push({ key: 'advancement', day: year * 365 + 120, run: (onDay: number) => {
             applyAdvancement(state, year, onDay);
+        } });
+        tasks.push({ key: 'dao-ground-stints', day: year * 365 + 121, run: (onDay: number) => {
+            applyDaoGroundStints(state, onDay);
         } });
         tasks.push({ key: 'fosterage-returns', day: year * 365 + 130, run: (onDay: number) => {
             applyFosterageReturns(state, onDay);
@@ -4104,14 +4108,16 @@ function applyPeopleWalkingOut(
             if (at < 0) continue;
             const npc = state.npcs[at]!;
             const companions = party.map(other => other.npc.id).filter(id => id !== npc.id);
+            const journey = startNpcJourney(state, npc, member.to.locationId, day,
+                `Travelling. ${member.to.why}`);
             state.npcs[at] = addGoal({
-                ...setLocation(npc, member.to.locationId, day),
+                ...journey,
                 factionId: null,
                 factionRankIndex: -1,
                 tags: [...npc.tags, `${WALKED_OUT}${member.reasons[0]}`, `${CAME_OFF_A_ROLL_AT}${npc.cultivation.realmOrdinal}`],
                 activity: {
-                    kind: 'their_own_business', note: `Left the compound. ${member.to.why}`,
-                    withIds: companions, sinceDay: day, untilDay: null, returnTo: null
+                    ...journey.activity!,
+                    withIds: companions
                 }
             }, { kind: 'cultivation', text: member.to.why, priority: 0.7, obstacles: [...member.reasons] }, day);
             appendWorldFact(state, makeFact({

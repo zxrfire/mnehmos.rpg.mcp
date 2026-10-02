@@ -42,7 +42,8 @@ import {
 import { isBelowTheLid } from './layers.js';
 import type { LocationRecord } from './locations.js';
 import { populationWeightOf } from './locations.js';
-import { isAwayOnSomething, isTheWorldsToMove, setLocation, type NpcRecord } from './npc-state.js';
+import { isAwayOnSomething, isTheWorldsToMove, type NpcRecord } from './npc-state.js';
+import { startNpcJourney } from './dao-ground-stints.js';
 import { regionOf } from './what-people-are-saying.js';
 import { whereTheyWouldGo, type SomewhereWorthGoing } from './why-somebody-walks-out-of-a-compound.js';
 import type { WorldState } from './world-state.js';
@@ -120,8 +121,8 @@ export function peopleWithNoHouseMoveOn(state: WorldState, year: number, day: nu
         if (!forStream(state.seed, 'moves-on', npc.id, year).chance(1 / HOW_OFTEN_SOMEBODY_ON_NO_ROLL_WEIGHS_IT)) continue;
 
         const ordinal = npc.cultivation.realmOrdinal;
-        // Somebody standing on a road they can take stays on it: the road is in
-        // reach only while they are there.
+        // A dao-ground visit is ended by dao-ground-stints. This pass sends a
+        // rogue there; it does not make the ground their residence.
         const standingOnARoad = grounds.find(g => g.place.id === npc.locationId);
         if (standingOnARoad && ordinal >= standingOnARoad.ground.fromOrdinal) continue;
         const keeps = theProvincesTheyKeepTo(npc);
@@ -156,17 +157,7 @@ export function peopleWithNoHouseMoveOn(state: WorldState, year: number, day: nu
         }
         if (to === null) continue;
 
-        state.npcs[i] = {
-            ...setLocation(npc, to.locationId, day),
-            activity: {
-                kind: 'their_own_business',
-                note: `On the road. ${to.why}`,
-                withIds: [],
-                sinceDay: day,
-                untilDay: null,
-                returnTo: null
-            }
-        };
+        state.npcs[i] = startNpcJourney(state, npc, to.locationId, day, `Travelling. ${to.why}`);
         moved++;
     }
     return moved;

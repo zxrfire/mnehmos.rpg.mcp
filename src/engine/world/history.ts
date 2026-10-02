@@ -19,6 +19,8 @@ export type HistoricalEventKind =
     | 'birth'
     | 'death'
     | 'breakthrough'
+    /** Somebody completed a dao comprehension at a place that teaches it. */
+    | 'dao_comprehension'
     | 'realm_crossing'
     /**
      * A wound nothing in the world closes, on the day it was taken.

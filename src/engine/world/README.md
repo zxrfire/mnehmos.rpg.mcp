@@ -2450,6 +2450,19 @@ prior age. **A ground is in a province: no province, no ground.** Seeding a plac
 region the catalog does not have planted twenty orphans in the test fixture world and moved
 events that had nothing to do with comprehension.
 
+### A dao-ground visit has an end
+
+`dao-ground-stints.ts` makes a person at ground `comprehending` until the ground's existing
+`YEARS_A_ROAD_COSTS` price is paid, their fixed seeded patience runs out, or the ordinary
+world has already called them into a sending or an advancement. Patience is a closed-form
+read of the person's disposition, latent affinity for that subject and rung; it is drawn once
+per person and ground, never ticked by day. Leaving starts the same timed `travelling`
+activity every other absence uses, back to a house seat or onward to a settlement. A dao
+ground is somewhere somebody goes, not where their row remains. Completion writes one
+ordinary `dao_comprehension` history fact before that journey starts: it names the person,
+dao, ground and day, takes its reporting scale from the comprehender's rung, and is then read
+by the ordinary witnesses, knowledge and rumour paths.
+
 **Measured with it live**, `scripts/probe-can-the-world-feed-the-dao-gate.ts`, four seeds
 at 800 years:
 
