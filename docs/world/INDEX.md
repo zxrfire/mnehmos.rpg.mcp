@@ -98,7 +98,7 @@ Generated from the `trigger` attributes in this directory. Do not edit by hand -
 
 <!-- BEGIN GENERATED: triggers -->
 
-**258 situations, from 33 files.**
+**259 situations, from 33 files.**
 Sorted by the situation, not by the file, because the file is the thing you do not know.
 
 | When this is true | Read | Section |
@@ -284,6 +284,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | territory, sect conflict, a massacre, or competition over a region is in play | [`climbing/qi.md`](climbing/qi.md#and-qi-is-contested) | And qi is contested (tier 2) |
 | the Azure Cloud Pavilion's doors come up, or somebody offers to get a person in there | [`houses/origin.md`](houses/origin.md#the-one-house-where-the-word-buys-nothing) | The one house where the word buys nothing (tier 2) |
 | the cultivator is at Tribulation Transcendence or above, or the player is investigating ascension, the Lid, or an immortal ancestor | [`climbing/immortals.md`](climbing/immortals.md#top-of-file) | (top of file) (tier 2) |
+| the hour changes who is present, or somebody comes with the player | [`houses/people.md`](houses/people.md#daily-routines-and-invitations) | Daily routines and invitations (tier 2) |
 | the Immortal Realm is described, or somebody asks what is actually on the other side of the Lid | [`climbing/immortals.md`](climbing/immortals.md#it-is-a-place-not-only-a-rank) | It is a place, not only a rank (tier 2) |
 | the living False Immortal is met, named, or sought out | [`climbing/immortals.md`](climbing/immortals.md#and-the-one-man-who-is-doing-it-now) | And the one man who is doing it now (tier 2) |
 | the narrator is about to name a place, house, or person | [`houses/discovery.md`](houses/discovery.md#the-hard-rule-for-the-narrator) | The hard rule for the narrator (tier 2) |
@@ -721,7 +722,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `HOUSE_MISSIONS` | [`what-a-house-posts-for-its-own.ts`](../../src/data/cultivation/what-a-house-posts-for-its-own.ts) | 12 | 18 |
 | `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 12 | 20 |
 | `CUSTODY_TAKERS` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 13 | 5 |
-| `SEA_LANES` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 13 | 7 |
+| `SEA_LANES` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 13 | 9 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 13 | 10 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 13 | 17 |
 | `THE_PAIRED_COMMUNICATION_JADE` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 15 | 2 |
