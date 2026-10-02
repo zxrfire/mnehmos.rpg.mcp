@@ -524,6 +524,11 @@ describe('driver: the world moves with the cultivator', () => {
      * Measured at eighty years with the sweep running per year: 332 facts named
      * somebody whose record did not carry them, across 20 kinds. Keyed on the
      * arrays, 0.
+     * Witness accounts exposed another stale write: a half-belief telling
+     * appended a fact, then the old witness row overwrote its link. The account
+     * writer now rereads that row before changing its relationship.
+     * A handover had the same shape: moving the named person from the row
+     * captured before the demand discarded that demand's freshly written link.
      *
      * `what-a-world-must-never-contain` holds the same claim over one advance.
      * This one holds it over many, which is the case that broke.

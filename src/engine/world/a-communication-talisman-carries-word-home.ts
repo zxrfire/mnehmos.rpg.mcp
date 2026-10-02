@@ -515,10 +515,12 @@ export function theirSlipsBreak(
     objects: ObjectRecord[],
     personId: string,
     onlyOfHouse: string | null = null,
-    onDay = 0
+    onDay = 0,
+    indices?: readonly number[]
 ): number {
     let broke = 0;
-    for (let i = 0; i < objects.length; i++) {
+    for (let cursor = 0; cursor < (indices?.length ?? objects.length); cursor++) {
+        const i = indices?.[cursor] ?? cursor;
         const o = objects[i]!;
         if ((o.tags.includes('long-range-communication') || o.tags.includes('long-range-communication-twin'))
             && o.data.keyedTo === personId && (onlyOfHouse === null || markOn(o) === onlyOfHouse) && !isRuined(o)) {

@@ -56,6 +56,7 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { noteFactReferences } from './witness-reaction-index.js';
 import {
     appendFact,
     type EventScale,
@@ -114,7 +115,8 @@ export interface PresenceInput {
  * and day, so a world replays with the same people standing in the same street.
  * Sorted, so the stored list does not depend on roster order.
  */
-export function whoWasThere(state: WorldState, input: PresenceInput): string[] {
+export function whoWasThere(state: WorldState, input: PresenceInput,
+    people?: readonly NpcRecord[]): string[] {
     const present = new Set<string>();
 
     // The parties. An id that resolves to nobody is dropped rather than stored,
@@ -138,7 +140,7 @@ export function whoWasThere(state: WorldState, input: PresenceInput): string[] {
         scale: input.scale ?? 'personal',
         locationId: input.locationId,
         day: input.day
-    }).filter(n =>
+    }, people).filter(n =>
         !present.has(n.id) &&
         (input.visibility !== 'faction' || !houses || houses.has(n.factionId ?? ''))
     );
@@ -206,6 +208,7 @@ export function appendWorldFact(
         // Linked against the day it happened, not the day the row opened: the
         // people standing there today were confirmed alive today.
         linkFactToWhoItNames(state, existing, occurrence.day);
+        noteFactReferences(state, existing);
         return existing;
     }
 

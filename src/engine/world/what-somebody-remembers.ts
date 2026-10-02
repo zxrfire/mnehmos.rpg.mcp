@@ -55,6 +55,7 @@ import { WHEN_A_DEATH_IS_MORE_THAN_A_HOUSES_OWN } from './what-a-death-at-this-h
 import { trajectoryOf } from './who-was-there-when-it-happened.js';
 import { aDeathLeavesThemHoldingIt } from './who-is-left-when-somebody-dies.js';
 import type { FactionRecord, WorldState } from './world-state.js';
+import { witnessReactions } from './witness-reactions.js';
 
 /** How they came to know it. */
 export type HowTheyKnowIt =
@@ -308,6 +309,25 @@ export function whatSomebodyRemembers(
                 carried: WHEN_A_DEATH_IS_MORE_THAN_A_HOUSES_OWN.includes(fact.scale)
             });
         }
+    }
+
+    const remembered = new Set(found.map(row => row.thing.what));
+    for (const { fact, observation } of witnessReactions(state, undefined, person.id)) {
+        if (observation.witnessId !== person.id
+            || observation.actorId === person.id || fact.day > today
+            || !(observation.sawAct || fact.data.seenWithBody === true || fact.data.seenWithEvidence !== undefined)) continue;
+        const what = callingThePlayerThat(fact.summary, player);
+        if (remembered.has(what)) continue;
+        remembered.add(what);
+        found.push({ thing: { what, how: 'lived', toldBy: null, beforeTheyJoined: false,
+            yearsAgo: yearsSince(fact.day, today),
+            itWasTheir: observation.victimId === null ? null : whatTheyWereToThem(person, observation.victimId, byId),
+            withThePlayer: player !== null && fact.actors.some(actor => actor.id === player.id),
+            keptToThemselves: fact.visibility === 'secret',
+            named: fact.actors.filter(actor => actor.id !== player?.id).map(actor => ({
+                id: actor.id, name: actor.name,
+                otherwise: byId.has(actor.id) ? howTheyWouldSayWho(person, byId.get(actor.id)!, house, state) : 'somebody'
+            })) }, day: fact.day, carried: false });
     }
 
     found.sort((a, b) =>

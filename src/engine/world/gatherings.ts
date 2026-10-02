@@ -1211,9 +1211,17 @@ export function rankAField(
     placings: GatheringPlacing[]
 ): { npc: NpcRecord; score: number }[] {
     const scored: { npc: NpcRecord; score: number }[] = [];
+    const held = new Map<string, typeof state.objects>();
+    for (const object of state.objects) {
+        if (object.possessorId === null) continue;
+        const objects = held.get(object.possessorId) ?? [];
+        objects.push(object);
+        held.set(object.possessorId, objects);
+    }
     for (const [, board] of boardsFor(entrants)) {
         const ranked = board.map(npc => {
-            const power = assessPower(combatantOf(npc, state), { ambient: 'normal' }).total;
+            const power = assessPower(combatantOf(npc, { ...state, objects: held.get(npc.id) ?? [] }),
+                { ambient: 'normal' }).total;
             const showing = 1 + (rng.next() - 0.5) * 2 * SHOWING_SPREAD;
             return { npc, score: power * showing };
         }).sort((a, b) => b.score - a.score || (a.npc.id < b.npc.id ? -1 : 1));

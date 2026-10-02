@@ -7,6 +7,8 @@
  * (a grudge, a passing-over, an inherited account, the people at the top of a
  * house), a crossing that severed a bond on one side only, and a departure that
  * wrote a stale copy of the leaver back over the other half of a tie.
+ * The background witness pass also exposed account and gratitude writers
+ * with missing reciprocal links. They now use the same other-end writer.
  *
  *   THE WORLD    a seeded world run forward holds no tie without its other end.
  *                This is the test that fails when any writer is one-sided,

@@ -1,3 +1,4 @@
+import { factsWithDataValue, factsInSpan, witnessIndexFor } from './witness-reaction-index.js';
 /**
  * A house puts a price on somebody: a paper on its walls naming the person, the
  * purse, and the proof it pays on.
@@ -92,7 +93,7 @@ import { isTheWorldsToMove, setLocation, type NpcRecord } from './npc-state.js';
 import { isBelowTheLid } from './layers.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
-import { npcsInFaction, type FactionRecord, type WorldState } from './world-state.js';
+import { getNpc, indexById, npcsInFaction, type FactionRecord, type WorldState } from './world-state.js';
 import { whatAPriceIsWorthTo } from './why-one-cultivator-kills-another.js';
 import { whatTheyAreWorthToTheirPatron } from './why-one-cultivator-kills-another.js';
 import { meritWith, whatServiceIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
@@ -226,8 +227,7 @@ export function accountsHousesHoldForTheirDead(state: WorldState, day: number): 
     const byId = new Map(state.npcs.map(n => [n.id, n] as const));
     const knows = whatOneOfTheWorldsOwnPeopleKnows(state);
     const out: AHouseAccount[] = [];
-    for (const fact of state.history.facts) {
-        if (fact.day > day || fact.day < day - A_PRICE_STANDS_FOR_DAYS) continue;
+    for (const fact of factsInSpan(state, day - A_PRICE_STANDS_FOR_DAYS, day)) {
         if (fact.nearMiss) continue;
         const killed = roleIn(fact, 'victim');
         const killer = roleIn(fact, 'killer');
@@ -238,7 +238,7 @@ export function accountsHousesHoldForTheirDead(state: WorldState, day: number): 
         if (doer.factionId === victim.factionId) continue;
         const houseHeard = state.npcs.some(n => n.factionId === victim.factionId && n.status === 'alive'
             && canPointAt(knows(n.id, 'event', fact.id)))
-            || state.history.facts.some(row => row.data.witnessReport === fact.id
+            || factsWithDataValue(state, 'witnessReport', fact.id).some(row => row.data.witnessReport === fact.id
                 && row.factionIds.includes(victim.factionId!));
         if (!houseHeard) continue;
         out.push({
@@ -354,7 +354,7 @@ const THE_CATCH: Readonly<Record<Honoured, string>> = {
 };
 
 function subjectsHouse(state: WorldState, subjectId: string): string | null {
-    return state.npcs.find(n => n.id === subjectId)?.factionId ?? null;
+    return getNpc(state, subjectId)?.factionId ?? null;
 }
 
 /**
@@ -415,16 +415,13 @@ export function housesPutUpTheirPaper(
     accounts: readonly AHouseAccount[],
     day: number
 ): PersonBounty[] {
-    const already = new Set(state.history.facts
-        .filter(f => f.kind === POSTED)
-        .map(f => String(f.data.accountKey ?? '')));
     // ONE PAPER A HOUSE, A HEAD. A second death at the same hands is a second
     // account and not a second sheet beside the first: measured on `price-probe`
     // before this, one house had three papers up on one man at once.
     const standing = new Set(thePricesStanding(state, day).map(p => `${p.posterFactionId}|${p.targetId}`));
     const posted: PersonBounty[] = [];
     for (const account of accounts) {
-        if (already.has(account.key)) continue;
+        if (factsWithDataValue(state, 'accountKey', account.key).some(fact => fact.kind === POSTED)) continue;
         if (standing.has(`${account.houseId}|${account.subjectId}`)) continue;
         const paper = whatAHouseWouldPost(state, account);
         if (!paper || paper.postedOnDay > day || paper.lapsesOnDay <= day) continue;
@@ -454,7 +451,6 @@ export function housesPutUpTheirPaper(
                 unattributed: 'A house has put a price on somebody, and the paper is on the walls.'
             }
         }), { recur: false, bystanders: false });
-        already.add(account.key);
         standing.add(`${account.houseId}|${account.subjectId}`);
         posted.push({ ...paper, id: fact.id });
     }
@@ -469,9 +465,9 @@ export function housesAnswerKnownDeeds(state: WorldState, accounts: readonly AHo
         if (account.war || account.onDay > day || whatAHouseWouldPost(state, account)) continue;
         const victimHouse = houses.get(account.houseId);
         const doerHouse = houses.get(account.subjectHouseId ?? subjectsHouse(state, account.subjectId) ?? '');
-        const doer = state.npcs.find(n => n.id === account.subjectId && n.status === 'alive');
-        if (!victimHouse || !doer || doerHouse?.id === victimHouse.id
-            || state.history.facts.some(f => f.data.handoverAccount === account.key)) continue;
+        const doer = getNpc(state, account.subjectId);
+        if (!victimHouse || !doer || doer.status !== 'alive' || doerHouse?.id === victimHouse.id
+            || factsWithDataValue(state, 'handoverAccount', account.key).length > 0) continue;
         if (!doerHouse) {
             written.push(appendWorldFact(state, makeFact({ day, kind: 'said_in_public',
                 locationId: victimHouse.seatLocationId, factionIds: [victimHouse.id],
@@ -496,8 +492,8 @@ export function housesAnswerKnownDeeds(state: WorldState, accounts: readonly AHo
                 / Math.max(1, Number(victimHouse.resources.spirit_stones ?? 0)));
         const delivers = isTheWorldsToMove(doer) && victimHouse.seatLocationId !== null && quarrel > value;
         if (delivers) {
-            const at = state.npcs.findIndex(n => n.id === doer.id);
-            state.npcs[at] = setLocation({ ...doer, factionId: null, factionRankIndex: -1,
+            const at = indexById(state.npcs, doer.id);
+            state.npcs[at] = setLocation({ ...state.npcs[at]!, factionId: null, factionRankIndex: -1,
                 activity: null }, victimHouse.seatLocationId, day);
         }
         written.push(appendWorldFact(state, makeFact({ day, kind: 'said_in_public',
@@ -516,7 +512,7 @@ export function housesAnswerKnownDeeds(state: WorldState, accounts: readonly AHo
 // ─────────────────────────────────────────────────────────────────────────
 
 function theyAreStillAlive(state: WorldState, personId: string): boolean {
-    const npc = state.npcs.find(n => n.id === personId);
+    const npc = getNpc(state, personId);
     if (npc) return npc.status === 'alive';
     return state.runs.some(r => r.cultivatorId === personId && r.endedOnDay === null);
 }
@@ -548,21 +544,18 @@ function paperFrom(state: WorldState, fact: HistoricalFact): PersonBounty | null
     };
 }
 
-/** The papers somebody has already been paid on. */
-function paidOn(state: WorldState): Set<string> {
-    return new Set(state.history.facts
-        .filter(f => f.kind === 'grudge_settled' && typeof f.data.priceFactId === 'string')
-        .map(f => String(f.data.priceFactId)));
-}
-
 /** Papers posted by `day`, not run out, and not brought in through {@link aPriceIsBroughtIn}. */
 function thePapersNobodyHasBroughtIn(state: WorldState, day: number): PersonBounty[] {
-    const paid = paidOn(state);
+    const index = witnessIndexFor(state);
+    const paid = index.paidPrices;
     const out: PersonBounty[] = [];
-    for (const fact of state.history.facts) {
+    const firstYear = Math.floor((day - index.longestPriceSpan) / DAYS_PER_YEAR);
+    for (let year = firstYear; year <= Math.floor(day / DAYS_PER_YEAR); year++) {
+    for (const fact of index.pricesByYear.get(year) ?? []) {
         if (fact.kind !== POSTED || fact.day > day || paid.has(fact.id)) continue;
         const paper = paperFrom(state, fact);
         if (paper && paper.lapsesOnDay > day) out.push(paper);
+    }
     }
     return out;
 }
@@ -600,7 +593,7 @@ function theDayTheKillerBringsItIn(
     const death = theKillingOf(state, paper.targetId);
     if (!death || death.visibility === 'secret') return null;
     if (death.day < paper.postedOnDay || death.day >= paper.lapsesOnDay) return null;
-    const killer = state.npcs.find(n => n.id === roleIn(death, 'killer')!.id);
+    const killer = getNpc(state, roleIn(death, 'killer')!.id);
     if (!killer || !isTheWorldsToMove(killer)) return null;
     const onDay = theDaySomebodyElseTurnsItIn(
         state.seed,
@@ -621,7 +614,7 @@ export function whenThePaperCameDown(
     paper: PersonBounty,
     day: number
 ): { onDay: number; byId: string } | null {
-    const brought = state.history.facts.find(f =>
+    const brought = factsWithDataValue(state, 'priceFactId', paper.id).find(f =>
         f.kind === 'grudge_settled' && f.data.priceFactId === paper.id && f.day <= day);
     if (brought) return { onDay: brought.day, byId: roleIn(brought, 'claimant')?.id ?? '' };
     return theyAreStillAlive(state, paper.targetId) ? null : theDayTheKillerBringsItIn(state, paper, day);
@@ -629,13 +622,13 @@ export function whenThePaperCameDown(
 
 /** Every paper ever posted, up or down. */
 export function everyPaperPosted(state: WorldState): PersonBounty[] {
-    return state.history.facts.filter(f => f.kind === POSTED).flatMap(f => paperFrom(state, f) ?? []);
+    return (witnessIndexFor(state).byKind.get(POSTED) ?? []).flatMap(f => paperFrom(state, f) ?? []);
 }
 
 /** A price ever posted, standing or not, by the fact it was posted as. */
 export function thePaperPostedAs(state: WorldState, factId: string): PersonBounty | null {
-    const fact = state.history.facts.find(f => f.id === factId && f.kind === POSTED);
-    return fact ? paperFrom(state, fact) : null;
+    const fact = witnessIndexFor(state).byId.get(factId);
+    return fact?.kind === POSTED ? paperFrom(state, fact) : null;
 }
 
 /**
@@ -697,9 +690,9 @@ export function whoTakesUpThePrice(
  * too, so the day is what tells them apart.
  */
 export function theKillingOf(state: WorldState, personId: string): HistoricalFact | null {
-    const diedOn = state.npcs.find(n => n.id === personId)?.diedOnDay ?? null;
+    const diedOn = getNpc(state, personId)?.diedOnDay ?? null;
     if (diedOn === null) return null;
-    return state.history.facts.find(f => f.kind === 'death' && roleIn(f, 'victim')?.id === personId
+    return (witnessIndexFor(state).factsByPerson.get(personId) ?? []).find(f => f.kind === 'death' && roleIn(f, 'victim')?.id === personId
         && roleIn(f, 'killer') !== null && Math.floor(f.day) === Math.floor(diedOn)) ?? null;
 }
 
@@ -709,7 +702,7 @@ export function theDeathTheyAreHeldFor(
     killerId: string,
     victimId: string
 ): HistoricalFact | null {
-    return state.history.facts.find(f =>
+    return (witnessIndexFor(state).factsByPerson.get(killerId) ?? []).find(f =>
         roleIn(f, 'killer')?.id === killerId && roleIn(f, 'victim')?.id === victimId) ?? null;
 }
 

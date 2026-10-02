@@ -40,6 +40,8 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { factsWithData } from './witness-reaction-index.js';
+import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 import { MAX_ORDINAL } from '../cultivation/realms.js';
 import type { Severity } from '../social/grudges.js';
 import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
@@ -76,16 +78,17 @@ export const HOW_LONG_A_THING_CAN_COME_OUT = 300;
 export const CAME_TO_LIGHT = 'cameToLight';
 
 /** Somebody who would be asking: the dead's own people, and their house. */
-export function whoIsAskingAbout(state: WorldState, victim: NpcRecord): NpcRecord[] {
+export function whoIsAskingAbout(state: WorldState, victim: NpcRecord,
+    people?: ReadonlyMap<string, NpcRecord>, seniors?: ReadonlyMap<string, readonly NpcRecord[]>): NpcRecord[] {
     const asking = new Map<string, NpcRecord>();
-    const byId = new Map(state.npcs.map(n => [n.id, n] as const));
+    const byId = people ?? new Map(state.npcs.map(n => [n.id, n] as const));
     for (const tie of victim.relationships) {
         if (tie.standing < 0.2) continue;
         const who = byId.get(tie.targetId);
         if (who && who.status === 'alive') asking.set(who.id, who);
     }
     if (victim.factionId !== null) {
-        for (const n of state.npcs) {
+        for (const n of seniors?.get(victim.factionId) ?? state.npcs) {
             if (n.status !== 'alive' || n.factionId !== victim.factionId || n.id === victim.id) continue;
             // The house asks through whoever is senior enough to be told.
             if (n.factionRankIndex >= 2) asking.set(n.id, n);
@@ -116,29 +119,42 @@ export interface WhatCameToLight {
 }
 
 /**
- * One year of things coming out. Walks back from the newest fact only as far as
- * anybody is still asking, so the cost does not grow with the chronicle.
+ * One year of things coming out, drawn from indexed hidden deeds within their
+ * inquiry span. Deeds involving the player retain their individual draws.
  */
 export function whatComesToLightThisYear(state: WorldState, year: number, day: number): WhatCameToLight {
     const out: WhatCameToLight = { found: [], stillHidden: 0 };
     const oldest = day - HOW_LONG_A_THING_CAN_COME_OUT * DAYS_PER_YEAR;
-    for (let i = state.history.facts.length - 1; i >= 0; i--) {
-        const fact = state.history.facts[i]!;
-        if (fact.day < oldest) break;
+    const people = new Map(state.npcs.map(n => [n.id, n]));
+    const places = new Map(state.locations.map(l => [l.id, l]));
+    const seniors = new Map<string, NpcRecord[]>();
+    for (const person of people.values()) if (person.status === 'alive' && person.factionId !== null
+        && person.factionRankIndex >= 2) {
+        const roll = seniors.get(person.factionId) ?? [];
+        roll.push(person); seniors.set(person.factionId, roll);
+    }
+    type Candidate = { fact: HistoricalFact; killer: NpcRecord; victim: NpcRecord; asking: NpcRecord[] };
+    const background: { value: Candidate; rate: number }[] = [];
+    const resolve = (row: Candidate): void => {
+        out.stillHidden--;
+        out.found.push(itComesOut(state, row.fact, row.killer, row.victim, row.asking, day));
+    };
+    for (const fact of [...factsWithData(state, 'hidden')].reverse()) {
+        if (fact.day < oldest || fact.day > day) continue;
         if (fact.data?.hidden !== true || fact.data?.[CAME_TO_LIGHT] !== undefined) continue;
         const killerId = fact.actors.find(a => a.role === 'killer')?.id;
         const victimId = fact.actors.find(a => a.role === 'victim')?.id;
         if (killerId === undefined || victimId === undefined) continue;
-        const killer = state.npcs[indexById(state.npcs, killerId)];
-        const victim = state.npcs[indexById(state.npcs, victimId)];
+        const killer = people.get(killerId);
+        const victim = people.get(victimId);
         if (!killer || !victim) continue;
         out.stillHidden++;
         // Never the killer, who can be one of the dead's own people or a senior
         // of their house. Asking, they counted toward it coming out, and when
         // it did they were handed an enemy tie to themselves. Seen as npc-494
         // on `pass-a` at year 110 once every world stood on the written ages.
-        const asking = whoIsAskingAbout(state, victim).filter(n => n.id !== killer.id);
-        const place = state.locations.find(l => l.id === fact.locationId) ?? null;
+        const asking = whoIsAskingAbout(state, victim, people, seniors).filter(n => n.id !== killer.id);
+        const place = places.get(fact.locationId ?? '') ?? null;
         const chance = whetherItComesOut({
             yearsSince: (day - fact.day) / DAYS_PER_YEAR,
             onOpenGround: isGroundAwayFromEverybody(place),
@@ -146,10 +162,13 @@ export function whatComesToLightThisYear(state: WorldState, year: number, day: n
             victimOrdinal: victim.cultivation.realmOrdinal
         });
         if (chance <= 0) continue;
-        if (!forStream(state.seed, 'what-comes-to-light', fact.id, year).chance(chance)) continue;
-        out.stillHidden--;
-        out.found.push(itComesOut(state, fact, killer, victim, asking, day));
+        const value = { fact, killer, victim, asking };
+        if (isPlayerInvolved(state, killer) || isPlayerInvolved(state, victim)
+            || asking.some(person => isPlayerInvolved(state, person))) {
+            if (forStream(state.seed, 'what-comes-to-light', fact.id, year).chance(chance)) resolve(value);
+        } else background.push({ value, rate: chance });
     }
+    for (const row of drawBackgroundIncidents(background, forStream(state.seed, 'background-uncovering', year), 6)) resolve(row);
     return out;
 }
 

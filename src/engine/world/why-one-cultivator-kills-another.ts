@@ -134,6 +134,42 @@ function mastersOf(npc: NpcRecord): string[] {
     return [...new Set(npc.relationships.filter(r => r.kind === 'master').map(r => r.targetId))];
 }
 
+interface RelationReadings {
+    between: (person: NpcRecord, targetId: string) => ReturnType<typeof whatStandsBetween>;
+    masters: (person: NpcRecord) => string[];
+    atWar: (a: string, b: string) => boolean;
+}
+
+/** Motive probabilities read one fixed roster before any incident is resolved. */
+function relationReadings(state: WorldState): RelationReadings {
+    const ties = new Map<NpcRecord, Map<string, ReturnType<typeof whatStandsBetween>>>();
+    const masters = new Map<NpcRecord, string[]>();
+    const wars = new Map<string, boolean>();
+    return {
+        between(person, targetId) {
+            let held = ties.get(person);
+            if (!held) {
+                held = new Map();
+                for (const tie of person.relationships) {
+                    const rows = held.get(tie.targetId) ?? [];
+                    rows.push(tie); held.set(tie.targetId, rows);
+                }
+                ties.set(person, held);
+            }
+            return held.get(targetId) ?? [];
+        },
+        masters(person) {
+            if (!masters.has(person)) masters.set(person, mastersOf(person));
+            return masters.get(person)!;
+        },
+        atWar(a, b) {
+            const key = `${a}|${b}`;
+            if (!wars.has(key)) wars.set(key, areAtWarWithEachOther(state, a, b));
+            return wars.get(key)!;
+        }
+    };
+}
+
 /**
  * How these two stand to each other, 0..1. The larger of what is personal and
  * what is between their houses: a grievance between two people in allied houses
@@ -144,13 +180,14 @@ export function howTheyStandToEachOther(
     killer: NpcRecord,
     victim: NpcRecord,
     houses: ReadonlyMap<string, FactionRecord>,
-    byId?: ReadonlyMap<string, NpcRecord>
+    byId?: ReadonlyMap<string, NpcRecord>,
+    readings?: RelationReadings
 ): TheRelation {
     // EVERYTHING STANDING BETWEEN THEM, not one row of it. Two people can hold
     // several kinds at once - an uncle who is also a rival - so the warm read
     // takes the warmest and the grievance read the coldest, and a single `find`
     // deciding which one answered would have made this turn on row order.
-    const between2 = whatStandsBetween(killer, victim.id);
+    const between2 = readings?.between(killer, victim.id) ?? whatStandsBetween(killer, victim.id);
     const warmest = between2.reduce<number | null>(
         (top, row) => top === null || row.standing > top ? row.standing : top, null);
     const coldest = between2.reduce<number | null>(
@@ -173,14 +210,14 @@ export function howTheyStandToEachOther(
     if (kh === null || vh === null) {
         between = { value: NOBODY_STANDS_BEHIND_THEM, why: 'nobody behind them' };
     } else if (kh.id === vh.id) {
-        const km = mastersOf(killer), vm = mastersOf(victim);
+        const km = readings?.masters(killer) ?? mastersOf(killer), vm = readings?.masters(victim) ?? mastersOf(victim);
         // Any master of one at odds with any master of the other. With several
         // masters ordinary, the question is whether the lineages are at odds and
         // not whether two particular people are.
         const mastersAtOdds = km.some(one => vm.some(other => one !== other && (() => {
             const a = byId?.get(one) ?? state.npcs.find(n => n.id === one);
             if (!a) return false;
-            return whatStandsBetween(a, other).some(t =>
+            return (readings?.between(a, other) ?? whatStandsBetween(a, other)).some(t =>
                 t.kind === 'rival' || t.kind === 'enemy' || t.standing <= HOSTILE_STANDING);
         })()));
         between = mastersAtOdds
@@ -189,7 +226,7 @@ export function howTheyStandToEachOther(
     } else {
         // Their houses' quarrel, carried as far as their rung carries it.
         const carried = howMuchOfTheirHousesQuarrelTheyCarry(killer, houses);
-        if (areAtWarWithEachOther(state, kh.id, vh.id)) {
+        if (readings?.atWar(kh.id, vh.id) ?? areAtWarWithEachOther(state, kh.id, vh.id)) {
             between = { value: carried, why: 'at war' };
         } else {
             const standing = standingBetweenRows(kh, vh);
@@ -336,6 +373,7 @@ export function whatTheyWouldFightOver(input: {
     standsInTheirSeat: boolean;
     /** The facts the killer carries, for whether they know what the victim has. */
     killerKnows?: ReadonlySet<string>;
+    between?: ReturnType<typeof whatStandsBetween>;
     /**
      * A price a house has put on the victim, on a wall the killer is standing
      * by. See `a-house-puts-a-price-on-somebody.ts`.
@@ -346,7 +384,7 @@ export function whatTheyWouldFightOver(input: {
     const options: TheStakes[] = [];
 
     // The coldest thing standing between them, of however many kinds do.
-    const worst = whatStandsBetween(killer, victim.id)
+    const worst = (input.between ?? whatStandsBetween(killer, victim.id))
         .reduce<number | null>((low, row) => low === null || row.standing < low ? row.standing : low, null);
     if (worst !== null && worst <= A_GRIEVANCE) {
         options.push({ motive: 'a grudge', weight: Math.min(1, -worst), evil: false, objectIds: [] });
@@ -639,7 +677,8 @@ export interface AReasonThisYear {
 
 /**
  * Every pair with a reason this year: people standing on the same ground, where
- * both factors are above nothing. No draw over the population picks anybody.
+ * both factors are above nothing. These motives supply the yearly incident rates;
+ * the caller draws incidents after their probability has been read.
  */
 export function everybodyWithAReasonThisYear(
     state: WorldState,
@@ -665,6 +704,7 @@ export function everybodyWithAReasonThisYear(
     }
 
     const byId = new Map(state.npcs.map(n => [n.id, n] as const));
+    const readings = relationReadings(state);
     const knows = new Map<string, Set<string>>();
     const out: AReasonThisYear[] = [];
     const already = new Set<string>();
@@ -704,7 +744,7 @@ export function everybodyWithAReasonThisYear(
         if (already.has(pair)) return;
         already.add(pair);
         const place = places.get(victim.locationId) ?? null;
-        const relation = howTheyStandToEachOther(state, killer, victim, houses, byId);
+        const relation = howTheyStandToEachOther(state, killer, victim, houses, byId, readings);
         if (relation.value <= 0) return;
         if (!knows.has(killer.id)) knows.set(killer.id, new Set(killer.historyFactIds));
         const paper = priced.get(victim.id);
@@ -713,6 +753,7 @@ export function everybodyWithAReasonThisYear(
             carried: carriedBy.get(victim.id) ?? [],
             standsInTheirSeat: seatsTheyWant.get(killer.id)?.has(victim.id) ?? false,
             killerKnows: knows.get(killer.id)!,
+            between: readings.between(killer, victim.id),
             priceOnThem: paper && killer.factionId !== paper.posterFactionId
                 && paper.hangsAt(places.get(killer.locationId)?.name ?? null)
                 ? { factId: paper.factId, purseStones: paper.purseStones }

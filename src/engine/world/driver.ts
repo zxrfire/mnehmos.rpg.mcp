@@ -43,6 +43,8 @@
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { factsAddedSince, witnessIndexFor } from './witness-reaction-index.js';
+import { resolveWithPlayerPresent } from './background-incident-draw.js';
 import { advanceSummitBodies } from './summit-world.js';
 import type { HistoricalFact, Observer } from './history.js';
 import { buildPlayerDigest, type DigestOptions, type PlayerAccess, type PlayerDigest } from './digest.js';
@@ -174,7 +176,7 @@ export function advanceWorldForPlay(
     opts: AdvanceForPlayOptions
 ): PlayAdvanceResult {
     const fromDay = state.currentDay;
-    // BY ID, BECAUSE THE LEDGER CAN NOW GET SHORTER.
+    // A stable append cursor survives pruning and reserved-row insertion.
     //
     // This was a length, and the year's events were whatever sat past that
     // index at the end. `theWorldForgetsTheMortalDead` removes facts as well as
@@ -182,7 +184,7 @@ export function advanceWorldForPlay(
     // world cannot speak of - so a positional window silently returns the wrong
     // slice and the digest under-reports the year it just simulated. Nothing
     // would have thrown.
-    const factsBefore = new Set(state.history.facts.map(f => f.id));
+    const factsBefore = witnessIndexFor(state).nextOrder;
     const requested = Math.max(0, Math.floor(opts.days));
 
     // ── Why this is a loop and not two calls ─────────────────────────────
@@ -214,13 +216,13 @@ export function advanceWorldForPlay(
     while (remaining > 0) {
         const slice = Math.min(STEP, remaining);
         const before = state.currentDay;
-        const time = advanceTime(state, slice, {
+        const time = resolveWithPlayerPresent(state, opts.pressure?.visitingPresence, () => advanceTime(state, slice, {
             inPlace: true,
             observer: opts.observer,
             interruptPolicy: opts.interruptPolicy,
             stopOnInterrupt: opts.stopOnInterrupt,
             onDeath: opts.onDeath
-        });
+        }));
         timeSlices.push(time);
         const summitDeaths = advanceSummitBodies(state, before, time.toDay);
         time.deathHandoffs.push(...summitDeaths);
@@ -294,7 +296,7 @@ export function advanceWorldForPlay(
 
     const last = timeSlices[timeSlices.length - 1];
     const time: TimeAdvanceResult = last ?? advanceTime(state, 0, { inPlace: true });
-    const events = state.history.facts.filter(f => !factsBefore.has(f.id));
+    const events = factsAddedSince(state, factsBefore);
     const deaths = timeSlices.flatMap(t => t.deathHandoffs)
         .concat(pressureEvents.flatMap(e => e.deaths));
     // The war dead, and now the people who stopped waiting. Both are rows the

@@ -1,3 +1,4 @@
+import { witnessIndexFor } from './witness-reaction-index.js';
 /**
  * What is learned when somebody is carried home, and what it is worth.
  *
@@ -38,7 +39,7 @@ export function whatTheBodySaysAbout(state: WorldState, deadId: string): WhatThe
     let killerId: string | null = null;
     let killerName: string | null = null;
     let found = false;
-    for (const fact of state.history.facts) {
+    for (const fact of witnessIndexFor(state).factsByPerson.get(deadId) ?? []) {
         if (!fact.actors.some(a => a.id === deadId && a.role === 'victim')) continue;
         found = true;
         const killer = fact.actors.find(a => a.role === 'killer');

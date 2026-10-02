@@ -51,7 +51,8 @@ import {
     type HistoryLedger
 } from './history.js';
 import { forStream } from '../cultivation/rng.js';
-import { witnessHistoryWasPruned } from './witness-reaction-index.js';
+import { factsWithData, witnessIndexFor, witnessHistoryWasPruned } from './witness-reaction-index.js';
+import { noteLedgerPruned } from './a-fact-that-keeps-happening-is-one-row.js';
 import {
     locationsFromPriorAges,
     makeLocation,
@@ -713,7 +714,8 @@ function withoutTheForgotten(
     gone: ReadonlySet<string>
 ): Record<string, string | number | boolean | null> {
     let out = data;
-    for (const [key, value] of Object.entries(data)) {
+    for (const key of Object.keys(data)) {
+        const value = data[key];
         if (typeof value !== 'string' || !gone.has(value)) continue;
         if (out === data) out = { ...data };
         out[key] = null;
@@ -756,7 +758,8 @@ function withoutTheForgotten(
  * index cache in {@link indexById} rebuilds instead of going stale.
  */
 export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldForgot {
-    const remembered = whoIsStillCarriedFor(state.history.facts);
+    const index = witnessIndexFor(state);
+    const remembered = whoIsStillCarriedFor(factsWithData(state, 'deedWeight'));
     // A notice still asks for this person's proof; a bone still names its origin.
     for (const paper of thePapersStillUp(state, state.currentDay)) remembered.add(paper.targetId);
     for (const object of state.objects) {
@@ -777,13 +780,16 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
     // The facts first: the ids of the ones that go have to be struck off
     // everything that cites them, and every later table does that strike.
     const dropped = new Set<string>();
-    for (const fact of state.history.facts) {
+    const affected = new Set<HistoricalFact>();
+    for (const id of gone) for (const fact of index.references.get(id) ?? []) affected.add(fact);
+    for (const fact of affected) {
         if (fact.actors.length > 0 && fact.actors.every(a => gone.has(a.id))) {
             dropped.add(fact.id);
         }
     }
     const isDropped = (id: string): boolean => dropped.has(id);
     const stillOnRecord = (id: string): boolean => !dropped.has(id);
+    for (const id of dropped) for (const fact of index.references.get(id) ?? []) affected.add(fact);
 
     // A row that names nobody forgotten is handed back as itself, not rebuilt:
     // the recurrence index keys rows by identity, and rebuilding every row every
@@ -798,9 +804,12 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
             || fact.consequences.losers.some(a => gone.has(a.id))
             || fact.consequences.relationshipChanges.some(change => gone.has(change.aId) || gone.has(change.bId))));
     const previousFacts = state.history.facts;
+    const replaced = new Map<string, HistoricalFact>();
     state.history.facts = state.history.facts
         .filter(fact => stillOnRecord(fact.id))
-        .map(fact => !touches(fact) ? fact : ({
+        .map(fact => {
+            if (!affected.has(fact) || !touches(fact)) return fact;
+            const row: HistoricalFact = {
             ...fact,
             actors: fact.actors.filter(actor => kept(actor.id)),
             witnessIds: fact.witnessIds.filter(kept),
@@ -813,14 +822,18 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
                 relationshipChanges: fact.consequences.relationshipChanges
                     .filter(change => kept(change.aId) && kept(change.bId))
             }
-        }));
-    witnessHistoryWasPruned(state, previousFacts, dropped);
+            };
+            replaced.set(row.id, row);
+            return row;
+        });
+    noteLedgerPruned(state.history, previousFacts, dropped, replaced, index.order);
+    witnessHistoryWasPruned(state, previousFacts, dropped, replaced);
 
     const forgottenMemories = new Set(
         state.memories.records.filter(m => gone.has(m.ownerId)).map(m => m.id));
     state.memories.records = state.memories.records
         .filter(m => !forgottenMemories.has(m.id))
-        .map(m => ({
+        .map(m => m.actorIds.every(kept) && m.sourceFactIds.every(stillOnRecord) ? m : ({
             ...m,
             actorIds: m.actorIds.filter(kept),
             sourceFactIds: m.sourceFactIds.filter(stillOnRecord)
@@ -828,7 +841,17 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
 
     state.npcs = state.npcs
         .filter(npc => kept(npc.id))
-        .map(npc => ({
+        .map(npc => {
+            if (nulled(npc.bodyId) === npc.bodyId
+                && npc.relationships.every(tie => kept(tie.targetId)
+                    && nulled(tie.inheritedFromId) === tie.inheritedFromId && tie.factIds.every(stillOnRecord))
+                && npc.goals.every(goal => kept(goal.originHolderId)
+                    && (goal.inheritedFromId === null || kept(goal.inheritedFromId))
+                    && (goal.targetId === null || kept(goal.targetId)))
+                && (npc.activity === null || npc.activity.withIds.every(kept))
+                && npc.historyFactIds.every(stillOnRecord)
+                && npc.memoryIds.every(id => !forgottenMemories.has(id))) return npc;
+            return {
             ...npc,
             bodyId: nulled(npc.bodyId),
             relationships: npc.relationships
@@ -850,7 +873,8 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
                 : { ...npc.activity, withIds: npc.activity.withIds.filter(kept) },
             historyFactIds: npc.historyFactIds.filter(stillOnRecord),
             memoryIds: npc.memoryIds.filter(id => !forgottenMemories.has(id))
-        }));
+        };
+        });
 
     // ── AND THE ACCOUNTS, WHICH THIS SWEEP HAD NEVER HEARD OF ───────────
     //
@@ -870,11 +894,15 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
     // collectible by anyone, and a priced deed still keeps both of them
     // through the exception that was already there.
     state.obligations = (state.obligations ?? []).filter(row =>
-        kept(row.holderId) && (row.subjectId === null || kept(row.subjectId)));
+        kept(row.holderId) && (row.subjectId === null || kept(row.subjectId)))
+        .map(row => row.participants.every(kept) ? row : { ...row, participants: row.participants.filter(kept) });
 
     const lineagesBefore = state.lineages.length;
     state.lineages = state.lineages
         .map(line => {
+            if (line.memberIds.every(kept) && kept(line.founderId)
+                && line.edges.every(e => kept(e.parentId) && kept(e.childId))
+                && line.inheritedEnemyIds.every(kept)) return line;
             const memberIds = line.memberIds.filter(kept);
             return {
                 ...line,
@@ -889,7 +917,20 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
         })
         .filter(line => line.memberIds.length > 0);
 
-    state.objects = state.objects.map(object => ({
+    state.objects = state.objects.map(object => {
+        const data = withoutTheForgotten(object.data, gone);
+        if ((object.possessorId === null || kept(object.possessorId))
+            && (object.ownerId === null || kept(object.ownerId))
+            && object.claims.every(claim => kept(claim.claimantId)
+                && claim.acknowledgedByIds.every(kept) && claim.evidenceFactIds.every(stillOnRecord))
+            && object.provenance.every(link =>
+                (link.holderId === null || kept(link.holderId))
+                && (link.previousHolderId === null || kept(link.previousHolderId))
+                && kept(link.holderName)
+                && (link.previousHolderName === null || kept(link.previousHolderName))
+                && (link.factId === null || stillOnRecord(link.factId)))
+            && object.knownOwnershipBy.every(kept) && data === object.data) return object;
+        return {
         ...object,
         possessorId: nulled(object.possessorId),
         ownerId: nulled(object.ownerId),
@@ -916,8 +957,9 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
                 factId: link.factId !== null && isDropped(link.factId) ? null : link.factId
             })),
         knownOwnershipBy: object.knownOwnershipBy.filter(kept),
-        data: withoutTheForgotten(object.data, gone)
-    }));
+        data
+    };
+    });
 
     const absencesBefore = (state.absences ?? []).length;
     state.absences = (state.absences ?? [])
@@ -936,16 +978,15 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
         data: withoutTheForgotten(window.data, gone)
     }));
 
-    state.locations = state.locations.map(location => ({
-        ...location,
-        data: withoutTheForgotten(location.data, gone),
-        changes: location.changes.map(change => ({
-            ...change,
-            causeFactId: change.causeFactId !== null && isDropped(change.causeFactId)
-                ? null
-                : change.causeFactId
-        }))
-    }));
+    const locations = state.locations.map(location => {
+        const data = withoutTheForgotten(location.data, gone);
+        if (data === location.data && !location.changes.some(change =>
+            change.causeFactId !== null && isDropped(change.causeFactId))) return location;
+        return { ...location, data, changes: location.changes.map(change =>
+            change.causeFactId !== null && isDropped(change.causeFactId)
+                ? { ...change, causeFactId: null } : change) };
+    });
+    if (locations.some((location, at) => location !== state.locations[at])) state.locations = locations;
 
     // An effect that was about somebody and is now about nobody would fire on
     // an empty cast. One that never named anybody is about a place and stays.

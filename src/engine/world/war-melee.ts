@@ -51,7 +51,10 @@ export const HANDS_IN_THE_FIELD = 4;
  */
 export function whatAHouseCanPutOut(state: WorldState, factionId: string): SideStrength {
     const roster = livingRoster(state, factionId);
-    return sideStrength(roster.map(npc => assessPower(combatantOf(npc, state), { ambient: 'normal' })));
+    const hands = new Set(roster.map(npc => npc.id));
+    const objects = state.objects.filter(object => object.possessorId !== null && hands.has(object.possessorId));
+    const held = { ...state, objects };
+    return sideStrength(roster.map(npc => assessPower(combatantOf(npc, held), { ambient: 'normal' })));
 }
 
 /** The highest rank anybody alive under this banner holds, or -1 for nobody. */

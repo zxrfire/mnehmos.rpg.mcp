@@ -1,3 +1,5 @@
+import { factsWithData, factsWithDataValue } from './witness-reaction-index.js';
+import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 /**
  * How a cultivator comes by a road besides their own.
  */
@@ -338,13 +340,14 @@ export function groundFromCatalogRow(row: PlaceThatTeachesADao): GroundAsTheRule
 /** Every dao ground the world holds, with how this person stands to each. */
 export function daoGroundsAround(
     state: WorldState,
-    who: SomebodyStanding
+    who: SomebodyStanding,
+    places: readonly LocationRecord[] = state.locations
 ): (RoadInReach & { ground: GroundAsTheRuleReadsIt; standing: HowSomebodyStandsToAGround })[] {
     const out: (RoadInReach & {
         ground: GroundAsTheRuleReadsIt;
         standing: HowSomebodyStandsToAGround;
     })[] = [];
-    for (const location of state.locations) {
+    for (const location of places) {
         if (!location.tags.includes(DAO_GROUND_TAG)) continue;
         const ground = groundAtLocation(location);
         if (!ground) continue;
@@ -389,7 +392,7 @@ export function daoGroundsInReachOf(state: WorldState, npc: NpcRecord, onDay = s
             if (!paidGate) return row.standing.inReach;
             const admitted = admissions
                 ? admissions.has(`${npc.id}\u001f${row.sourceId}`)
-                : state.history.facts.some(f => f.data.daoAdmission === true
+                : factsWithDataValue(state, 'visitorId', npc.id).some(f => f.data.daoAdmission === true
                     && f.data.visitorId === npc.id && f.data.groundId === row.sourceId
                     && f.day <= onDay && Number(f.data.untilDay) > onDay);
             return admitted && npc.cultivation.realmOrdinal >= row.ground.fromOrdinal && (row.standing.inReach
@@ -407,17 +410,29 @@ function outsidersPayForDaoGround(state: WorldState, day: number): void {
             && !(n.activity && isAwayOnSomething(n.activity.kind)));
         return keeper ? [[house.id, keeper] as const] : [];
     }));
-    for (let at = 0; at < state.npcs.length; at++) {
+    const grounds = state.locations.filter(location => {
+        if (!location.tags.includes(DAO_GROUND_TAG)) return false;
+        const ground = groundAtLocation(location);
+        return ground?.access === 'held' && receivers.has(ground.heldByFactionId ?? '')
+            && ['a fee', 'a copy', 'good relations'].includes(ground.admits);
+    });
+    if (grounds.length === 0) return;
+    const opportunities = state.npcs.map((npc, at) => ({ npc, at })).filter(({ npc }) =>
+        isTheWorldsToMove(npc) && npc.status === 'alive' && !npc.activity);
+    const exact = opportunities.filter(({ npc }) => isPlayerInvolved(state, npc));
+    const drawn = drawBackgroundIncidents(opportunities.filter(({ npc }) => !isPlayerInvolved(state, npc))
+        .map(value => ({ value, rate: 0.5 })), forStream(state.seed, 'background-dao-visitors', Math.floor(day / 365)), 16);
+    for (const { at } of [...exact, ...drawn]) {
         const npc = state.npcs[at]!;
         if (!isTheWorldsToMove(npc) || npc.status !== 'alive' || npc.activity) continue;
         const walked = new Set(roadsWalkedBy({ knownTechniques: npc.cultivation.techniqueIds,
             age: ageOf(npc, day) }).map(road => road.domain));
-        const ground = daoGroundsAround(state, standingOfNpc(state, npc)).find(row => row.standing.inReach
+        const ground = daoGroundsAround(state, standingOfNpc(state, npc), grounds).find(row => row.standing.inReach
             && row.ground.access === 'held' && row.ground.heldByFactionId !== npc.factionId
             && receivers.has(row.ground.heldByFactionId ?? '')
             && ['a fee', 'a copy', 'good relations'].includes(row.ground.admits) && !walked.has(row.domain));
         if (!ground) continue;
-        if (state.history.facts.some(f => f.data.daoAdmission === true && f.data.visitorId === npc.id
+        if (factsWithDataValue(state, 'visitorId', npc.id).some(f => f.data.daoAdmission === true && f.data.visitorId === npc.id
             && f.data.groundId === ground.sourceId && Number(f.data.untilDay) > day)) continue;
         const house = state.factions.find(f => f.id === ground.ground.heldByFactionId && f.dissolvedOnDay === null);
         if (!house) continue;
@@ -559,16 +574,35 @@ export function roadsCarriedByObjectsInReachOf(
             ({ domain, subject, sourceId, sourceName, how }));
 }
 
+/** Object positions for one pass, grouped by whose hand or spent material they concern. */
+export function roadObjectsFor(state: WorldState): (npc: NpcRecord) => ObjectRecord[] {
+    const held = new Map<string, number[]>();
+    const spent = new Map<string, number[]>();
+    const add = (index: Map<string, number[]>, id: string, at: number) => {
+        const rows = index.get(id) ?? [];
+        rows.push(at); index.set(id, rows);
+    };
+    for (let at = 0; at < state.objects.length; at++) {
+        const object = state.objects[at]!;
+        if (typeof object.data.daoDomain === 'string' && object.possessorId !== null) add(held, object.possessorId, at);
+        if (object.kind === 'material' && typeof object.data.spentBy === 'string') add(spent, object.data.spentBy, at);
+    }
+    return npc => [...new Set([...(held.get(npc.id) ?? []), ...(spent.get(npc.id) ?? []),
+        ...(npc.factionId === null ? [] : held.get(npc.factionId) ?? [])])]
+        .sort((a, b) => a - b).map(at => state.objects[at]!);
+}
+
 /**
  * Every road WITHIN REACH of this cultivator: the arts in their hands, the ground
  * they can get at, and the objects that were spent on them.
  */
 export function roadsInReachOf(state: WorldState, npc: NpcRecord, onDay = state.currentDay,
-    admissions?: ReadonlySet<string>): RoadInReach[] {
+    admissions?: ReadonlySet<string>, objectsInReach?: ObjectRecord[]): RoadInReach[] {
     const out: RoadInReach[] = [];
     const seen = new Set<InsightDomain>();
-    const bought = roadsBoughtWithMaterialsBy(state, npc.id);
-    const carried = roadsCarriedByObjectsInReachOf(state, npc);
+    const reading = objectsInReach === undefined ? state : { ...state, objects: objectsInReach };
+    const bought = roadsBoughtWithMaterialsBy(reading, npc.id);
+    const carried = roadsCarriedByObjectsInReachOf(reading, npc);
     const grounds = daoGroundsInReachOf(state, npc, onDay, admissions);
 
     for (const road of [
@@ -758,6 +792,7 @@ export function applyRoadsComprehended(
 export function spendMaterialsOnTheBlocked(state: WorldState, day: number): number {
     const spentThisYear = new Set<string>();
     let spent = 0;
+    const roadObjects = roadObjectsFor(state);
 
     // Blocked members, deepest rung first, so a house's one spend goes to the
     // person nearest the top of the ladder.
@@ -766,7 +801,13 @@ export function spendMaterialsOnTheBlocked(state: WorldState, day: number): numb
         .filter(({ npc }) => npc.status === 'alive' && npc.factionId !== null)
         .sort((a, b) => b.npc.cultivation.realmOrdinal - a.npc.cultivation.realmOrdinal);
     const admissions = new Set<string>();
-    for (const fact of state.history.facts) {
+    const materials = new Map<string, ObjectRecord[]>();
+    for (const object of state.objects) if (object.kind === 'material' && object.ownerId !== null
+        && isUnspent(object) && typeof object.data.domain === 'string') {
+        const rows = materials.get(object.ownerId) ?? [];
+        rows.push(object); materials.set(object.ownerId, rows);
+    }
+    for (const fact of factsWithData(state, 'daoAdmission')) {
         if (fact.data.daoAdmission === true && typeof fact.data.visitorId === 'string'
             && typeof fact.data.groundId === 'string' && fact.day <= state.currentDay
             && Number(fact.data.untilDay) > state.currentDay) {
@@ -779,6 +820,8 @@ export function spendMaterialsOnTheBlocked(state: WorldState, day: number): numb
         if (!houseId || spentThisYear.has(houseId)) continue;
 
         const ordinal = npc.cultivation.realmOrdinal;
+        if (!(materials.get(houseId) ?? []).some(object => isUnspent(object)
+            && Math.abs(Number(object.data.forOrdinal ?? 0) - ordinal) <= 4)) continue;
         // What the wall will ask when they get to it, from the one function
         // that decides it. No second copy of the curve lives in this layer.
         const required = daoRequirementFor(ordinal);
@@ -793,7 +836,7 @@ export function spendMaterialsOnTheBlocked(state: WorldState, day: number): numb
         const held = new Set<InsightDomain>(
             roadsWalkedBy({
                 knownTechniques: npc.cultivation.techniqueIds,
-                roadsWithinReach: roadsInReachOf(state, npc, state.currentDay, admissions),
+                roadsWithinReach: roadsInReachOf(state, npc, state.currentDay, admissions, roadObjects(npc)),
                 age: ageOf(npc, day)
             }).map(i => i.domain).filter(d => d !== 'element')
         );

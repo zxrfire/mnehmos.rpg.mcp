@@ -61,6 +61,8 @@
  * ═════════════════════════════════════════════════════════════════════════
  *
  * Rates and invariants, not counts. No seed is pinned to a number.
+ * The 60-year `forgets-dangling` walk found seven obligation participants
+ * naming forgotten people. Participant lists now lose those references too.
  *
  * NOTE ON WHERE THE SWEEP IS CALLED FROM. `seedWorld` calls it; the yearly line
  * in `driver.ts` does not yet, because that file belongs to somebody else. The

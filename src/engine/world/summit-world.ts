@@ -2,24 +2,34 @@
 import { elementalTolerance } from './elemental-tolerance.js';
 import { expireElementalWorks, expressedElement, makeElementalWork, neighbourhoodRate } from './elemental-neighbourhood.js';
 import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
-import { npcsStandingIn } from './where-inside-a-house-somebody-is-standing.js';
+import { npcsStandingIn, whereCompoundsAre, type WhereCompoundsAre } from './where-inside-a-house-somebody-is-standing.js';
 import { evaluateAccess } from './locations.js';
-import { bodyTaken, maxBodyOf, theWorldEnds, PLAYER_ROW_TAG, type NpcRecord } from './npc-state.js';
+import { bodyTaken, isActing, maxBodyOf, theWorldEnds, PLAYER_ROW_TAG, type NpcRecord } from './npc-state.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
-import type { WorldState } from './world-state.js';
+import { getLocation, getNpc, type WorldState } from './world-state.js';
 
 export interface VisitingPresence { person: NpcRecord; placeId: string; areaId: string }
 
-export function practiceAmongNeighbours(state: WorldState, npc: NpcRecord, day: number, visitor?: VisitingPresence): number {
-    const place = state.locations.find(l => l.id === npc.locationId);
+export function practiceAmongNeighbours(state: WorldState, npc: NpcRecord, day: number, visitor?: VisitingPresence,
+    readings?: Map<string, { ids: string[]; areas?: Map<string, string> }>,
+    compounds: WhereCompoundsAre = whereCompoundsAre(state)): number {
+    const place = npc.locationId === null ? null : getLocation(state, npc.locationId);
     if (!place) return 1;
     const body = { realmOrdinal: npc.cultivation.realmOrdinal,
         spiritRoot: npc.cultivation.spiritRoot, injuries: npc.cultivation.injuries };
     const changesRate = (person: NpcRecord) => neighbourhoodRate(body, [person], npc.id, day) !== 1;
     // If nobody changes the rate, dividing them into areas cannot change it.
-    if (!npcsStandingIn(state, place.id).some(changesRate)
+    let read = readings?.get(place.id);
+    if (!read) {
+        read = { ids: npcsStandingIn(state, place.id, compounds).map(person => person.id) };
+        readings?.set(place.id, read);
+    }
+    const standing = read.ids.map(id => getNpc(state, id)).filter((person): person is NpcRecord =>
+        person !== null && isActing(person.status));
+    if (!standing.some(changesRate)
         && !(visitor?.placeId === place.id && changesRate(visitor.person))) return 1;
-    const { whereIs } = theAreasOf(state, place);
+    const whereIs = read.areas ?? theAreasOf(state, place, compounds).whereIs;
+    read.areas = whereIs;
     const area = whereIs.get(npc.id);
     const nearby = state.npcs.filter(n => whereIs.get(n.id) === area && area !== undefined);
     if (visitor?.placeId === place.id && visitor.areaId === area) nearby.push(visitor.person);

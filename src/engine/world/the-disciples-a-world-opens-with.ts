@@ -558,6 +558,14 @@ export function searchingMastersTakeADisciple(state: WorldState, day: number): n
     mastersShortOfADiscipleStartLooking(state, day);
     // And the bonds one of the two put down this year.
     aBondSomebodyEnds(state, day);
+    const together = new Map<string, number[]>();
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i]!;
+        const key = `${npc.factionId}|${npc.locationId}`;
+        const people = together.get(key) ?? [];
+        people.push(i);
+        together.set(key, people);
+    }
     for (const looking of [...state.npcs]) {
         if (looking.status !== 'alive' || looking.factionId === null) continue;
         const search = theirSearchForADisciple(looking);
@@ -565,7 +573,8 @@ export function searchingMastersTakeADisciple(state: WorldState, day: number): n
         // A master who is not looking still notices a seedling in front of them.
         if (!search) {
             if (house && house.dissolvedOnDay === null && takesDisciples(looking, house.ranks.length)) {
-                const seedling = state.npcs.find(n => n.status === 'alive' && n.factionId === house.id
+                const seedling = (together.get(`${house.id}|${looking.locationId}`) ?? []).map(i => state.npcs[i]!)
+                    .find(n => n.status === 'alive' && n.factionId === house.id
                     && !takenThisYear.has(n.id) && n.locationId === looking.locationId && isAHeavenlySeedling(n)
                     && theShareTakenAt(n.factionRankIndex, house.ranks.length) > 0
                     && n.factionRankIndex < looking.factionRankIndex
@@ -583,7 +592,7 @@ export function searchingMastersTakeADisciple(state: WorldState, day: number): n
         const rankCount = house.ranks.length;
         const master = state.npcs[at.get(looking.id)!]!;
         const readily = howReadilyTheyTake(state.seed, master.id);
-        const crossedTheirPath = state.npcs
+        const crossedTheirPath = (together.get(`${house.id}|${master.locationId}`) ?? []).map(i => state.npcs[i]!)
             .filter(n => n.status === 'alive' && n.factionId === house.id && n.id !== master.id
                 && !takenThisYear.has(n.id)
                 && n.locationId === master.locationId

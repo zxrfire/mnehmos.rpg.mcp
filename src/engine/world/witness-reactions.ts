@@ -11,6 +11,7 @@ import { createObligation, type ObligationInput, type ObligationRecord } from '.
 import { whoHoldsTheGround } from './ground-holder.js';
 import type { HistoricalFact } from './history.js';
 import { relationshipWith, upsertRelationship, type NpcRecord } from './npc-state.js';
+import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import type { WorldState } from './world-state.js';
 import { AGAINST_THEIR_OWN } from '../social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whatOneOfTheWorldsOwnPeopleKnows,
@@ -26,7 +27,7 @@ import { A_PURSE_WORTH_TAKING, whatAPriceIsWorthTo } from './why-one-cultivator-
 import { openHandednessOf } from '../social-leverage/how-freely-somebody-parts-with-what-they-have.js';
 import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 import { reticenceOf } from '../social-leverage/emotional-reticence.js';
-import { evidenceKey, recentWitnessFacts, recordWitnessObservations,
+import { evidenceKey, factsWithData, recentWitnessFacts, recordWitnessObservations,
     witnessIndexFor } from './witness-reaction-index.js';
 
 export interface WitnessReaction extends SeenDeed {
@@ -85,6 +86,7 @@ function worldKnowledgeGate(world: WorldState): (holderId: string, kind: 'cultiv
 
 function aWitnessTellsSomeoneHere(world: WorldState, fact: HistoricalFact,
     seen: WitnessReaction, lookup?: WitnessLookup): void {
+    if (fact.data.toldOfWitnessedFact !== undefined) return;
     const witness = npcById(world, seen.witnessId, lookup);
     const place = world.locations.find(l => l.id === fact.locationId);
     if (!witness || !place || witness.locationId !== place.id) return;
@@ -213,10 +215,12 @@ export function reactToWitnessedFact(world: WorldState, fact: HistoricalFact, in
         if (gratitude || credit) {
             const at = npcIndex(world, witness.id, input.lookup);
             const tie = relationshipWith(witness, actor.id);
-            world.npcs[at] = upsertRelationship(witness, { targetId: actor.id, targetName: actor.name,
-                kind: tie?.kind ?? 'acquaintance', standing: Math.min(1, (tie?.standing ?? 0)
+            const changedTie = { targetId: actor.id, targetName: actor.name,
+                kind: tie?.kind ?? 'acquaintance' as const, standing: Math.min(1, (tie?.standing ?? 0)
                     + (gratitude ? 0.15 : 0.05)), note: `${witness.name} saw ${fact.summary}`,
-                factIds: [fact.id], inheritedFromId: null }, world.currentDay);
+                factIds: [fact.id], inheritedFromId: null };
+            world.npcs[at] = upsertRelationship(witness, changedTie, world.currentDay);
+            andTheOtherEnd(world.npcs, world.npcs[at]!, changedTie, world.currentDay);
         }
         if (!fact.witnessIds.includes(witness.id)) fact.witnessIds.push(witness.id);
     }
@@ -306,12 +310,16 @@ export function houseHearsWitnessReport(world: WorldState, fact: HistoricalFact,
 }
 
 /** Stored observations, newest first; resolved accounts remain available to challenge. */
-export function witnessReactions(world: WorldState, actorId?: string): { fact: HistoricalFact; observation: WitnessReaction }[] {
+export function witnessReactions(world: WorldState, actorId?: string, witnessId?: string): { fact: HistoricalFact; observation: WitnessReaction }[] {
     const index = witnessIndexFor(world);
-    const facts = actorId === undefined ? [...index.observed] : (index.byActor.get(actorId) ?? []);
+    const facts = witnessId === undefined
+        ? actorId === undefined ? [...index.observed] : (index.byActor.get(actorId) ?? [])
+        : [...index.presentAt.get(witnessId) ?? []].map(id => index.byId.get(id)!)
+            .filter(fact => index.observed.has(fact));
     return facts.sort((a, b) => (index.order.get(a.id) ?? 0) - (index.order.get(b.id) ?? 0))
         .flatMap(fact => observations(fact)
-        .filter(row => actorId === undefined || row.actorId === actorId)
+        .filter(row => (actorId === undefined || row.actorId === actorId)
+            && (witnessId === undefined || row.witnessId === witnessId))
         .map(observation => ({ fact, observation }))).reverse();
 }
 
@@ -341,7 +349,7 @@ export function faceFromAPrice(purseStones: number): number {
 /** News reaches each person on the ordinary distance and standing clock. */
 export function peopleReadPricesTheyHaveHeardOf(world: WorldState, day: number): void {
     const knows = whatOneOfTheWorldsOwnPeopleKnows(world);
-    for (const fact of world.history.facts.filter(row => row.kind === 'bounty_posted'
+    for (const fact of recentWitnessFacts(witnessIndexFor(world), day).filter(row => row.kind === 'bounty_posted'
         && row.day <= day && row.day >= day - 365)) {
         const targetId = typeof fact.data.priceOn === 'string' ? fact.data.priceOn : null;
         const purse = Number(fact.data.purseStones ?? 0);
@@ -358,7 +366,7 @@ export function peopleReadPricesTheyHaveHeardOf(world: WorldState, day: number):
                 fact.data.priceFaceCredited = true;
             }
             if (reading === 'warning' && observer.locationId === target.locationId
-                && !world.history.facts.some(row => row.data.priceWarning === fact.id && row.data.warnedBy === observer.id)) {
+                && !factsWithData(world, 'priceWarning').some(row => row.data.priceWarning === fact.id && row.data.warnedBy === observer.id)) {
                 appendWorldFact(world, makeFact({ day, kind: 'said_in_public', locationId: observer.locationId,
                     witnessIds: [observer.id, target.id], visibility: 'secret',
                     actors: [{ id: observer.id, name: observer.name, role: 'warned' },
@@ -417,13 +425,17 @@ export function accountForWitnessedDeed(world: WorldState, fact: HistoricalFact,
     save(world, fact, rows);
     if (weighed.belief === 'half-belief') aWitnessTellsSomeoneHere(world, fact, seen, input.lookup);
     const at = npcIndex(world, witness.id, input.lookup);
-    const standing = relationshipWith(witness, actor.id)?.standing ?? 0;
+    // A telling may have appended a fact onto the witness since the account began.
+    const current = npcById(world, witness.id, input.lookup)!;
+    const standing = relationshipWith(current, actor.id)?.standing ?? 0;
     if (weighed.belief !== 'belief') {
-        world.npcs[at] = upsertRelationship(witness, { targetId: actor.id, targetName: actor.name,
-            kind: weighed.belief === 'disbelief' ? 'enemy' : 'acquaintance',
+        const changedTie = { targetId: actor.id, targetName: actor.name,
+            kind: weighed.belief === 'disbelief' ? 'enemy' as const : 'acquaintance' as const,
             standing: Math.max(-1, standing - (weighed.belief === 'disbelief' ? 0.3 : 0.1)),
             note: `${actor.name}'s account of ${fact.id}: ${weighed.belief}.`,
-            factIds: [fact.id], inheritedFromId: null }, input.onDay ?? world.currentDay);
+            factIds: [fact.id], inheritedFromId: null };
+        world.npcs[at] = upsertRelationship(current, changedTie, input.onDay ?? world.currentDay);
+        andTheOtherEnd(world.npcs, world.npcs[at]!, changedTie, input.onDay ?? world.currentDay);
     }
     const opens: ObligationInput[] = [];
     let reportsTo: string | null = null;
@@ -591,7 +603,7 @@ export function witnessReactionsThisYear(world: WorldState, day: number,
     const exact: HistoricalFact[] = [];
     const incidents: Incident[] = [];
     for (const fact of recent) {
-        if (fact.data.witnessReactions !== undefined) continue;
+        if (fact.data.witnessReactions !== undefined && !touchesPlayer(fact)) continue;
         if (touchesPlayer(fact)) exact.push(fact);
         else if (fact.kind === 'war' && Number(fact.data.fell ?? 0) >= 3) {
             incidents.push({ kind: 'fact', fact, war: true });
@@ -664,44 +676,8 @@ export function witnessReactionsThisYear(world: WorldState, day: number,
 
     index = witnessIndexFor(world);
     const selected = new Set([...exact, ...chosen, ...emitted]);
-    const resolve = (fact: HistoricalFact): void => {
-        if (fact.data.witnessReactions !== undefined) return;
-        if (fact.kind === 'war' && Number(fact.data.fell ?? 0) >= 3) {
-            for (const id of fact.witnessIds) {
-                const witness = npcById(world, id, lookup);
-                if (witness?.status !== 'alive') continue;
-                const authority = authorityKnownTo(world, fact, witness, '', knows, undefined, lookup);
-                if (!authority) continue;
-                const report = whatTheWitnessDoesAboutIt({ witness: { id: witness.id,
-                    name: witness.name, standing: null, role: 'peer' }, theyOweYou: 0,
-                    theyHoldAboutYou: 1, toId: authority.toId, rungsAbove: 0 });
-                if (report.does === 'reports') houseHearsWitnessReport(world, fact, {
-                    witnessId: witness.id, reportHouseId: authority.houseId,
-                    reportedTo: authority.toId, manyHarmed: true }, null, day, lookup);
-            }
-        }
-        const parties = actorAndVictimOf(fact);
-        if (!parties || fact.witnessIds.length === 0 || !npcById(world, parties.actorId, lookup)) return;
-        const seen = observationOf(fact);
-        const added = reactToWitnessedFact(world, fact, { actorId: parties.actorId,
-            victimId: parties.victimId, knows, lookup,
-            witnesses: fact.witnessIds.filter(id => id !== parties.victimId).map(id => ({ id, seen })) });
-        const actor = npcById(world, parties.actorId, lookup)!;
-        for (const row of added) {
-            if (row.state === 'reported_for') {
-                houseHearsWitnessReport(world, fact, row, actor.factionId, day, lookup);
-                continue;
-            }
-            const account = reportFromObservation(fact, row, actor.factionId, day);
-            if (account && !world.obligations.some(o => o.holderId === account.holderId
-                && o.subjectId === account.subjectId && o.triggeringEventId === fact.id)) {
-                world.obligations.push(createObligation(account));
-                houseHearsWitnessReport(world, fact, row, actor.factionId, day, lookup);
-            }
-        }
-    };
     for (const fact of [...selected].sort((a, b) =>
-        (index.order.get(a.id) ?? 0) - (index.order.get(b.id) ?? 0))) resolve(fact);
+        (index.order.get(a.id) ?? 0) - (index.order.get(b.id) ?? 0))) resolveWitnessFact(world, fact, day, knows, lookup);
 
     index = witnessIndexFor(world);
     const pendingCandidates = new Set([...selected].filter(fact => index.pending.has(fact)));
@@ -711,10 +687,62 @@ export function witnessReactionsThisYear(world: WorldState, day: number,
     for (const personId of playerIds) for (const fact of index.pendingByPerson.get(personId) ?? []) {
         pendingCandidates.add(fact);
     }
-    const pending = [...pendingCandidates]
+    settleWitnessAccounts(world, pendingCandidates, day, knows, lookup);
+}
+
+function resolveWitnessFact(world: WorldState, fact: HistoricalFact, day: number,
+    knows: ReturnType<typeof worldKnowledgeGate>, lookup?: WitnessLookup,
+    onlyWitnesses?: ReadonlySet<string>): number {
+    let changed = 0;
+    if (fact.kind === 'war' && Number(fact.data.fell ?? 0) >= 3) {
+        for (const id of fact.witnessIds.filter(id => !onlyWitnesses || onlyWitnesses.has(id))) {
+            const witness = npcById(world, id, lookup);
+            if (witness?.status !== 'alive') continue;
+            const authority = authorityKnownTo(world, fact, witness, '', knows, undefined, lookup);
+            if (!authority) continue;
+            const report = whatTheWitnessDoesAboutIt({ witness: { id: witness.id,
+                name: witness.name, standing: null, role: 'peer' }, theyOweYou: 0,
+                theyHoldAboutYou: 1, toId: authority.toId, rungsAbove: 0 });
+            if (report.does === 'reports' && !witnessIndexFor(world).reports.get(fact.id)?.has(witness.id)) {
+                const written = houseHearsWitnessReport(world, fact, {
+                    witnessId: witness.id, reportHouseId: authority.houseId,
+                    reportedTo: authority.toId, manyHarmed: true }, null, day, lookup);
+                if (written) changed++;
+            }
+        }
+    }
+    const parties = actorAndVictimOf(fact);
+    if (!parties || fact.witnessIds.length === 0 || !npcById(world, parties.actorId, lookup)) return changed;
+    const seen = observationOf(fact);
+    const added = reactToWitnessedFact(world, fact, { actorId: parties.actorId,
+        victimId: parties.victimId, knows, lookup,
+        witnesses: fact.witnessIds.filter(id => id !== parties.victimId && (!onlyWitnesses || onlyWitnesses.has(id))).map(id => ({ id, seen })) });
+    changed += added.length;
+    const actor = npcById(world, parties.actorId, lookup)!;
+    for (const row of added) {
+        if (row.state === 'reported_for') {
+            houseHearsWitnessReport(world, fact, row, actor.factionId, day, lookup);
+            continue;
+        }
+        const account = reportFromObservation(fact, row, actor.factionId, day);
+        if (account && !world.obligations.some(o => o.holderId === account.holderId
+            && o.subjectId === account.subjectId && o.triggeringEventId === fact.id)) {
+            world.obligations.push(createObligation(account));
+            houseHearsWitnessReport(world, fact, row, actor.factionId, day, lookup);
+        }
+    }
+    return changed;
+}
+
+function settleWitnessAccounts(world: WorldState, candidates: Iterable<HistoricalFact>, day: number,
+    knows: ReturnType<typeof worldKnowledgeGate>, lookup?: WitnessLookup,
+    onlyWitnesses?: ReadonlySet<string>): number {
+    const index = witnessIndexFor(world);
+    let changed = 0;
+    const pending = [...candidates]
         .sort((a, b) => (index.order.get(b.id) ?? 0) - (index.order.get(a.id) ?? 0));
     for (const fact of pending) for (const observation of observations(fact).reverse()) {
-        if (observation.state !== 'pending') continue;
+        if (observation.state !== 'pending' || onlyWitnesses && !onlyWitnesses.has(observation.witnessId)) continue;
         const actor = npcById(world, observation.actorId, lookup);
         const witness = npcById(world, observation.witnessId, lookup);
         if (actor?.status !== 'alive' || witness?.status !== 'alive'
@@ -730,10 +758,29 @@ export function witnessReactionsThisYear(world: WorldState, day: number,
                 : account === 'found' ? 'I found them this way.'
                     : account === 'admitted' ? 'I did it.' : 'It was not me.' });
         if (answer) {
+            changed++;
             world.obligations.push(...answer.opens.map(createObligation));
             if (answer.reportsTo) houseHearsWitnessReport(world, fact,
                 observations(fact).find(row => row.actorId === actor.id && row.witnessId === witness.id)!,
                 actor.factionId, day, lookup);
         }
     }
+    return changed;
+}
+
+/** Settle the carded people's outstanding reactions through the yearly resolver. */
+export function settleWitnessesOnContact(world: WorldState, personIds: ReadonlySet<string>): boolean {
+    const index = witnessIndexFor(world);
+    const facts = new Set<HistoricalFact>();
+    for (const id of personIds) for (const factId of index.presentAt.get(id) ?? []) {
+        const fact = index.byId.get(factId);
+        if (fact && fact.day <= world.currentDay && fact.witnessIds.some(witness => personIds.has(witness))) facts.add(fact);
+    }
+    const knows = worldKnowledgeGate(world);
+    let changed = 0;
+    for (const fact of [...facts].sort((a, b) => index.order.get(a.id)! - index.order.get(b.id)!)) {
+        changed += resolveWitnessFact(world, fact, Math.floor(world.currentDay), knows, undefined, personIds);
+    }
+    changed += settleWitnessAccounts(world, facts, Math.floor(world.currentDay), knows, undefined, personIds);
+    return changed > 0;
 }

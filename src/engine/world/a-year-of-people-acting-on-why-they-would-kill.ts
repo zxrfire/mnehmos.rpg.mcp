@@ -3,8 +3,9 @@
  * world through the paths that already exist.
  *
  * The factors are `why-one-cultivator-kills-another.ts`. This is the draw and the
- * write: for every pair with a reason this year, once whether it comes to blows,
- * once what the fight comes to, and then the rows.
+ * write: background motives contribute their computed chance to a capped draw;
+ * player involvement retains the individual draw. Selected incidents use the
+ * ordinary outcome mix and write paths.
  *
  *   killed       the victim ends (`theWorldEnds`), their death is settled, and
  *                the killing is an open fact with the deed priced off whoever
@@ -43,6 +44,7 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
 import { aDeedEntersTheWorld, aPricedDeed } from './a-deed-enters-the-world-as-a-fact.js';
 import type { LocationRecord } from './locations.js';
@@ -219,17 +221,28 @@ export function peopleActOnWhyTheyWouldKill(
     };
     const reasons = everybodyWithAReasonThisYear(
         state, seatsTheyWant ?? seatsThePeopleHeldBackWant(state), thePricesOnPeople(state));
+    const exact = new Set(reasons.filter(r => isPlayerInvolved(state, r.victim)
+        || r.attackers.some(person => isPlayerInvolved(state, person))));
+    const background = reasons.filter(r => !exact.has(r));
+    const fights = new Set(drawBackgroundIncidents(background.map(value => ({ value, rate: value.chance })),
+        forStream(state.seed, 'background-quarrels', year), 6));
+    const meetings = new Set(drawBackgroundIncidents(background.filter(r => r.stakes.motive === 'a place')
+        .map(value => ({ value, rate: (1 - value.chance) * A_YEAR_LEAVES_A_MARK })),
+        forStream(state.seed, 'background-road-encounters', year), 8));
     const spent = new Set<string>();
     const count = (k: string) => { out.outcomes[k] = (out.outcomes[k] ?? 0) + 1; WHAT_IT_HAS_COME_TO[k] = (WHAT_IT_HAS_COME_TO[k] ?? 0) + 1; };
 
     for (const r of reasons) {
         if (spent.has(r.killer.id) || spent.has(r.victim.id)) continue;
+        if (!exact.has(r) && !fights.has(r) && !meetings.has(r)) continue;
         const rng = forStream(state.seed, 'a-reason-to-kill', year, r.killer.id, r.victim.id);
-        const comesToBlows = rng.chance(r.chance);
+        const individual = rng.chance(r.chance);
+        const comesToBlows = exact.has(r) ? individual : fights.has(r);
         if (!comesToBlows) {
             // TOLD TO GET OUT, AND GOES. First there on ground worth being on,
             // and the other is weaker or outnumbered.
-            if (!rng.chance(A_YEAR_LEAVES_A_MARK)) continue;
+            const leavesAMark = rng.chance(A_YEAR_LEAVES_A_MARK);
+            if (exact.has(r) && !leavesAMark) continue;
             if (r.stakes.motive === 'a place' && rng.chance(r.relation.value)
                 && theirHeight(r.attackers) > r.victim.cultivation.realmOrdinal) {
                 hold(state, r.victim.id, r.killer, BEING_TOLD_TO_LEAVE, `Told to get out of ${placeName(r.place)}, and went.`, day, null);

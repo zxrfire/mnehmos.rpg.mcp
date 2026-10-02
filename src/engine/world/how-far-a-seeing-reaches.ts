@@ -98,14 +98,16 @@ export interface ASeeing {
  * seen by nobody, which is the same ruling `howFarOff` makes when it calls such
  * a fact unplaceable.
  */
-export function whoCouldHaveSeenIt(state: WorldState, seeing: ASeeing): boolean {
+export function whoCouldHaveSeenIt(state: WorldState, seeing: ASeeing,
+    regionFor?: (placeId: string) => string | null): boolean {
     if (seeing.locationId === null || seeing.whoWasStandingAt === null) return false;
     switch (howFarASeeingReaches(seeing.scale)) {
         case 'where it happened':
             return seeing.whoWasStandingAt === seeing.locationId;
         case 'the region it happened in': {
-            const where = regionOf(state, seeing.locationId);
-            return where !== null && regionOf(state, seeing.whoWasStandingAt) === where;
+            const where = regionFor ? regionFor(seeing.locationId) : regionOf(state, seeing.locationId);
+            return where !== null && (regionFor ? regionFor(seeing.whoWasStandingAt)
+                : regionOf(state, seeing.whoWasStandingAt)) === where;
         }
         case 'anywhere':
             return true;
@@ -120,13 +122,21 @@ export function whoCouldHaveSeenIt(state: WorldState, seeing: ASeeing): boolean 
  */
 export function everybodyInTheArea(
     state: WorldState,
-    seeing: { scale: EventScale; locationId: string | null; day: number }
+    seeing: { scale: EventScale; locationId: string | null; day: number },
+    people: readonly NpcRecord[] = state.npcs
 ): NpcRecord[] {
     if (seeing.locationId === null) return [];
-    const here = state.npcs.filter(n => {
+    const regions = new Map<string, string | null>();
+    const regionFor = (place: string) => {
+        if (!regions.has(place)) regions.set(place, regionOf(state, place));
+        return regions.get(place)!;
+    };
+    const sight: ASeeing = { scale: seeing.scale, locationId: seeing.locationId, whoWasStandingAt: null };
+    const here = people.filter(n => {
         if (n.status !== 'alive') return false;
         if (n.identity.bornOnDay > seeing.day) return false;
-        return whoCouldHaveSeenIt(state, { ...seeing, whoWasStandingAt: n.locationId });
+        sight.whoWasStandingAt = n.locationId;
+        return whoCouldHaveSeenIt(state, sight, regionFor);
     });
     here.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return here;

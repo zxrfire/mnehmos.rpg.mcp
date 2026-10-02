@@ -1,8 +1,13 @@
+import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js';
+import { drawBackgroundIncidents, isPlayerInvolved, resolveWithPlayerPresent } from './background-incident-draw.js';
 import { offeredRitesThisYear } from './willing-rites-between-world-people.js';
 import { advanceBeastContracts } from './beast-cultivation-contracts.js';
 import { WHAT_SCALE_DECIDES } from '../../data/cultivation/inheritance-trials.js';
 import { findMedicineOnAnotherErrand } from './immortal-medicine.js';
 import { practiceAmongNeighbours, type VisitingPresence } from './summit-world.js';
+import { roadObjectsFor } from './how-a-cultivator-comes-by-a-road.js';
+import { theDayTheWorldOpened } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { whereCompoundsAre } from './where-inside-a-house-somebody-is-standing.js';
 /**
  * Pressure: the world changing on its own.
  */
@@ -546,6 +551,11 @@ export function applyPressure(
     toDay: number,
     opts: PressureOptions = {}
 ): PressureResult {
+    return resolveWithPlayerPresent(state, opts.visitingPresence,
+        () => pressureDuringThisSpan(state, fromDay, toDay, opts));
+}
+
+function pressureDuringThisSpan(state: WorldState, fromDay: number, toDay: number, opts: PressureOptions): PressureResult {
     const events: PressureEvent[] = [];
     const intensity = opts.intensity ?? 1;
     const actOnAnEmptyPurse = opts.housesActOnAnEmptyPurse ?? true;
@@ -756,7 +766,7 @@ export function applyPressure(
             advanceBeastContracts(state, onDay);
         } });
         tasks.push({ key: 'advancement', day: year * 365 + 120, run: (onDay: number) => {
-            applyAdvancement(state, year, onDay);
+            applyAdvancement(state, year, onDay, opts.visitingPresence);
         } });
         tasks.push({ key: 'dao-ground-stints', day: year * 365 + 121, run: (onDay: number) => {
             applyDaoGroundStints(state, onDay);
@@ -798,7 +808,7 @@ export function applyPressure(
             const competitionDay = theDayItFallsIn(state.seed, host, year);
             if (competitionDay === null) continue;
             tasks.push({ key: `open-competition:${host.id}:${competitionDay}`, day: competitionDay,
-                run: (onDay: number) => { settleOpenCompetitions(state, onDay, onDay); } });
+                run: (onDay: number) => { settleOpenCompetitions(state, onDay, onDay, undefined, host.id); } });
         }
         tasks.push({ key: 'doors', day: year * 365 + 165, run: (onDay: number) => {
             const doorsDay = onDay;
@@ -850,7 +860,7 @@ export function applyPressure(
                 year * 365, onDay, actOnAnEmptyPurse);
         } });
         tasks.push({ key: 'word-from-away', day: year * 365 + 176, run: (onDay: number) => {
-            wordFromThePeopleAway(state, { day: onDay });
+            wordFromThePeopleAway(state, { day: onDay, background: true });
         } });
         tasks.push({ key: 'conveyance-building', day: year * 365 + 178, run: (onDay: number) => {
             applyConveyanceBuilding(state, year, onDay);
@@ -902,7 +912,7 @@ export function applyPressure(
         for (const task of tasks) {
             if (completed.has(task.key) || task.day < fromDay || task.day > toDay) continue;
             finishStructuralRecoveries(state, task.day);
-            task.run(task.day);
+            resolveWithPlayerPresent(state, opts.visitingPresence, () => task.run(task.day), task.day);
             cursor.completed.push(task.key);
             completed.add(task.key);
         }
@@ -1513,7 +1523,27 @@ function reviewSlot(id: string, period: number): number {
     return (h >>> 0) % period;
 }
 
-function applyAdvancement(state: WorldState, year: number, day: number, visitor?: VisitingPresence): NpcRecord[] {
+/** Practice skipped by the background draw is reviewed once before a person's card. */
+export function settlePracticeOnContact(state: WorldState, personIds: ReadonlySet<string>): boolean {
+    const year = Math.floor(state.currentDay / 365);
+    if (year <= Math.floor(theDayTheWorldOpened(state) / 365)) return false;
+    const due = new Set([...personIds].filter(id => !factsWithDataValue(state, 'contactReviewFor', id)
+        .some(fact => fact.data.reviewYear === year)));
+    if (due.size === 0) return false;
+    applyAdvancement(state, year, Math.floor(state.currentDay), undefined, due);
+    for (const id of due) {
+        const person = state.npcs.find(npc => npc.id === id);
+        if (!person || !isTheWorldsToMove(person) || person.status !== 'alive') continue;
+        appendWorldFact(state, makeFact({ day: Math.floor(state.currentDay), kind: 'opportunity',
+            actors: [{ id, name: person.name, role: 'practised' }], visibility: 'secret',
+            summary: `${person.name}'s cultivation reflects their accumulated practice.`,
+            data: { contactReviewFor: id, reviewYear: year } }), { recur: false, bystanders: false });
+    }
+    return true;
+}
+
+function applyAdvancement(state: WorldState, year: number, day: number, visitor?: VisitingPresence,
+    contactIds?: ReadonlySet<string>): NpcRecord[] {
     const slot = ((year % ADVANCEMENT_REVIEW_YEARS) + ADVANCEMENT_REVIEW_YEARS)
         % ADVANCEMENT_REVIEW_YEARS;
     const due: number[] = [];
@@ -1525,14 +1555,25 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
         // - worse, because a refresh cannot undo it - write a breakthrough into
         // the world's chronicle that the character never made.
         if (!isTheWorldsToMove(npc)) continue;
-        if (reviewSlot(npc.id, ADVANCEMENT_REVIEW_YEARS) !== slot) continue;
+        if (contactIds ? !contactIds.has(npc.id)
+            : !isPlayerInvolved(state, npc) && reviewSlot(npc.id, ADVANCEMENT_REVIEW_YEARS) !== slot) continue;
         if (npc.activity?.kind === 'mending' && npc.activity.thingId?.startsWith('repair-')
             && (npc.activity.untilDay ?? day) > day) continue;
         due.push(i);
     }
     if (due.length === 0) return [];
+    const reviews = new Set(drawBackgroundIncidents(due
+        .filter(at => !isPlayerInvolved(state, state.npcs[at]!))
+        .map(value => ({ value, rate: 1 })), forStream(state.seed, 'background-climb-reviews', year), 64));
 
     const advanced: NpcRecord[] = [];
+    const neighbourhoods: NonNullable<Parameters<typeof practiceAmongNeighbours>[4]> = new Map();
+    const compounds = whereCompoundsAre(state);
+    let roadObjects = roadObjectsFor(state);
+    const resetNeighbourhoods = () => {
+        neighbourhoods.clear();
+        for (const compound of compounds.bySeat.values()) { compound.offices = null; compound.lessons = null; }
+    };
     // ONE index for the whole pass, not one lookup per person. The strike pass
     // needs the rung of whoever is teaching them, and a scan of the roster per
     // reviewed NPC would turn a linear pass quadratic over five hundred people
@@ -1562,6 +1603,7 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
 
     for (const at of due) {
         const npc = state.npcs[at];
+        if (!contactIds?.has(npc.id) && !reviews.has(at) && !isPlayerInvolved(state, npc)) continue;
 
         // â”€â”€ A BEAST CLIMBS BY SITTING, AND THAT IS CHEAPER THAN THIS PASS â”€â”€
         //
@@ -1616,7 +1658,7 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
             houseFallbackRate(rooms, provinceRate)
 
         ) * whatTeachingLeavesOfAMastersRate(npc, byId, day)
-            * practiceAmongNeighbours(state, npc, day, visitor);
+            * practiceAmongNeighbours(state, npc, day, visitor, neighbourhoods, compounds);
 
         // THE SHELF THEY CAN ACTUALLY REACH, not a default one.
         const membership: OriginTierKey = !npc.factionId
@@ -1660,6 +1702,7 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
         );
         if (derived > npc.cultivation.realmOrdinal) {
             state.npcs[at] = setRealm(npc, derived, day);
+            resetNeighbourhoods();
             advanced.push(state.npcs[at]);
             continue;
         }
@@ -1690,7 +1733,7 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
             // past three domains; the ground their house lets them onto, the
             // ground their province leaves standing open, the ruin somebody dug
             // out and the material that was spent on them are the rest of it.
-            roadsInReachOf(state, npc, day),
+            roadsInReachOf(state, npc, day, undefined, roadObjects(npc)),
             undefined,
             undefined,
             state.obligations
@@ -1740,10 +1783,13 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
             // heirs and accounts worth inheriting. A grudge that took a
             // century to earn ended with the person holding it.
             settleNpcDeath(state, state.npcs[at], day);
+            roadObjects = roadObjectsFor(state);
+            resetNeighbourhoods();
             recordCrossing(state, npc, strike.result, day);
             continue;
         }
         state.npcs[at] = strike.npc;
+        resetNeighbourhoods();
         andLetGoAtTheOtherEnd(state.npcs, npc, strike.npc);
         recordCrossing(state, state.npcs[at], strike.result, day);
         if (strike.result.outcome === 'success') {
@@ -2470,10 +2516,11 @@ function applyBookAcquisition(state: WorldState, year: number, day: number): num
     }
 
     let handed = 0;
+    const teachers = state.npcs.filter(npc => npc.activity?.kind === 'teaching');
     const looks = Math.max(1, Math.round(living.length / 8));
     for (let s = 0; s < looks; s++) {
         const at = living[rng.int(0, living.length - 1)];
-        if (handOnWhatTheyAreEntitledTo(state, at, day)) handed++;
+        if (handOnWhatTheyAreEntitledTo(state, at, day, teachers)) handed++;
     }
     return handed;
 }
@@ -3092,14 +3139,15 @@ function applySendings(
     // Both built once for the whole pass. The reading below is per house per
     // ruin, and each half of it walks something long: the ledger of a
     // two-hundred-year world, and every location in it.
-    const standingOnIt = whatStandingOnItGives(state.history.facts);
+    const factIndex = witnessIndexFor(state);
+    const standingOnIt = whatStandingOnItGives(state.history.facts, factIndex.byPlace, factIndex.stoodOn);
     // The other half of what a house knows of the ground near it: not who stood
     // there, but which of its own parties came back and said so.
-    const cameBack = whatAHousesOwnErrandsBringBack(state.history.facts);
+    const cameBack = whatAHousesOwnErrandsBringBack(state.history.facts, factIndex.byPlace, factIndex.reportedGround);
     const knowsTheGround = whatAnybodyCouldHaveOfTheGround(
         standingOnIt,
         whatTheAirCarriesOfTheGround({
-            facts: state.history.facts,
+            facts: state.history.facts, indexed: factIndex.byPlace,
             inTheAirFor: (fact, holderId) => {
                 const teller = tellerAt(holderId);
                 return teller !== null && isInTheAirFor(state, fact, teller, day);
@@ -4007,6 +4055,11 @@ function applyPeopleWalkingOut(
         return ground === null ? [] : [{ place, ground }];
     });
     const alive = new Set(state.npcs.filter(npc => npc.status === 'alive').map(npc => npc.id));
+    const housesByPerson = new Map(state.npcs.map(npc => [npc.id, npc.factionId]));
+    const livingRolls = new Map<string, number>();
+    for (const npc of state.npcs) if (npc.status === 'alive' && npc.factionId !== null) {
+        livingRolls.set(npc.factionId, (livingRolls.get(npc.factionId) ?? 0) + 1);
+    }
     const leaving: {
         npc: NpcRecord;
         house: FactionRecord;
@@ -4053,8 +4106,7 @@ function applyPeopleWalkingOut(
             houseTeachingCeiling: houseTeachingCeiling(house.id),
             theHousePaidThem: howThePurseIsRunning(
                 Number(house.resources.spirit_stones ?? 0),
-                state.npcs.filter(other => other.status === 'alive' && other.factionId === house.id
-                    && !walkedOut.has(other.id)).length
+                (livingRolls.get(house.id) ?? 0)
                     * A_STIPEND_PER_MEMBER_PER_YEAR
             ) !== 'cannot_pay',
             peopleTheyKnewWhoDidNotComeBack: npc.relationships.filter(tie => !alive.has(tie.targetId)).length,
@@ -4072,13 +4124,14 @@ function applyPeopleWalkingOut(
             whatLeavingTheirHouseCosts({
                 npc, house, lifespanYears: lifespanForOrdinal(npc.cultivation.realmOrdinal), day,
                 onTheRoll: id => alive.has(id) && !walkedOut.has(id)
-                    && state.npcs.some(other => other.id === id && other.factionId === house.id)
+                    && housesByPerson.get(id) === house.id
             })
         )) continue;
         leaving.push({ npc, house, reasons, to });
         // Later people weigh what is left after the earlier departure, as they
         // did when this pass wrote each departure immediately.
         walkedOut.add(npc.id);
+        livingRolls.set(house.id, (livingRolls.get(house.id) ?? 0) - 1);
     }
 
     let out = 0;
@@ -4625,7 +4678,7 @@ function creditWhatCameBack(state: WorldState, faction: FactionRecord, partyOrdi
 }
 
 /** The yard, in the three fields a bill reads. Nothing else is looked at. */
-function lotsInTheYard(state: WorldState, faction: FactionRecord): MaterialLot[] {
+function lotsInTheYard(state: WorldState, faction: FactionRecord, objects = state.objects): MaterialLot[] {
     const lots: MaterialLot[] = [];
     for (const grade of STOCK_GRADES) {
         for (const core of [false, true]) {
@@ -4634,7 +4687,7 @@ function lotsInTheYard(state: WorldState, faction: FactionRecord): MaterialLot[]
             if (count > 0) lots.push({ id: yardKey(grade, core), grade, core, count });
         }
     }
-    for (const object of state.objects) {
+    for (const object of objects) {
         if (object.ownerId !== faction.id || object.possessorId !== null || object.locationId !== faction.seatLocationId
             || !object.tags.includes('yard-stock') || !object.data.core || isRuined(object)) continue;
         lots.push({ id: object.id, grade: object.data.grade as TechniqueGrade, core: true, count: 1 });
@@ -4647,15 +4700,22 @@ function lotsInTheYard(state: WorldState, faction: FactionRecord): MaterialLot[]
  */
 function applyConveyanceBuilding(state: WorldState, year: number, day: number): number {
     let launched = 0;
+    const handsByHouse = new Map<string, number[]>();
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || npc.factionId === null) continue;
+        const hands = handsByHouse.get(npc.factionId) ?? [];
+        hands.push(npc.cultivation.realmOrdinal); handsByHouse.set(npc.factionId, hands);
+    }
+    const owned = new Map<string | null, typeof state.objects>();
+    for (const object of state.objects) {
+        const rows = owned.get(object.ownerId) ?? [];
+        rows.push(object); owned.set(object.ownerId, rows);
+    }
     for (const faction of state.factions) {
         if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
 
-        const hands: number[] = [];
-        for (const npc of state.npcs) {
-            if (npc.status === 'alive' && npc.factionId === faction.id) {
-                hands.push(npc.cultivation.realmOrdinal);
-            }
-        }
+        const hands = handsByHouse.get(faction.id) ?? [];
+        const objects = owned.get(faction.id) ?? [];
         if (hands.length === 0) continue;
         const best = hands.reduce((n, o) => Math.max(n, o), 0);
 
@@ -4666,7 +4726,7 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
         const recipe = [...CONVEYANCE_RECIPES]
             .filter(r => canRefineGrade(r.grade, best))
             .filter(r => conveyanceKeptAs(r.grade) === 'tracked'
-                ? !state.objects.some(o =>
+                ? !objects.some(o =>
                     o.ownerId === faction.id
                     && o.data.conveyanceId === r.producesConveyanceId)
                 : countedHolding(faction.resources, r.producesConveyanceId) < ENOUGH_IN_THE_YARD)
@@ -4690,10 +4750,10 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
             workDaysDone: faction.resources[berthKey(recipe.id, 'work')] ?? 0
         };
 
-        berth = deliver(berth, recipe, lotsInTheYard(state, faction));
+        berth = deliver(berth, recipe, lotsInTheYard(state, faction, objects));
         // Delivery spends ledger stock by key and tracked cores by object id.
         for (const [key, taken] of Object.entries(berth.spent)) {
-            const at = state.objects.findIndex(object => object.id === key);
+            const at = indexById(state.objects, key);
             if (at >= 0) {
                 state.objects[at] = ruin(state.objects[at]!, { onDay: day, source: `worked into ${recipe.name}` });
                 continue;
@@ -7632,6 +7692,6 @@ const LEVERAGE_RETURNED_FLOOR = 0.3;
 
 /** Whether a fact id in a tie's causal chain is one of these manoeuvres. */
 function isLeverageFact(state: WorldState, factId: string): boolean {
-    const fact = state.history.facts.find(f => f.id === factId);
+    const fact = witnessIndexFor(state).byId.get(factId);
     return fact?.data?.pressure === 'leverage_applied';
 }

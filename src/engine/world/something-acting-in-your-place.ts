@@ -3,6 +3,7 @@ import { getTechnique } from '../../data/cultivation/techniques.js';
 import { NASCENT_SOUL_ORDINAL, hasBody, canEnterExistenceState, isTheSamePerson } from '../cultivation/existence.js';
 import { REALM_TIERS, maxHpForOrdinal, rankName } from '../cultivation/realms.js';
 import { forStream } from '../cultivation/rng.js';
+import { drawBackgroundIncidents, isPlayerInvolved, resolveWithPlayerPresent } from './background-incident-draw.js';
 import { combatantOf } from './gatherings.js';
 import { resolveConfrontation, type CombatantInput } from '../cultivation/combat.js';
 import { AN_ORDINARY_SWING } from '../cultivation/how-a-blow-was-thrown.js';
@@ -222,7 +223,16 @@ export function advanceSeparatedPresences(world: WorldState, fromDay: number): v
         if (Number(proxy.data.lapsesOnDay) <= world.currentDay) endAProxy(world, proxy, false);
     }
     if (Math.floor(fromDay) >= Math.floor(world.currentDay)) return;
-    for (const original of world.npcs.slice()) {
+    const candidates = world.npcs.filter(n => (isTheWorldsToMove(n) || n.status === 'remnant')
+        && (isActing(n.status) || ['remnant', 'soul_preserved'].includes(n.status))
+        && (['remnant', 'soul_preserved'].includes(n.status) || n.goals.some(goal => goal.status === 'active'
+            && ['survival', 'revenge', 'reunion'].includes(goal.kind))));
+    const selected = resolveWithPlayerPresent(world, undefined, () => {
+        const exact = candidates.filter(n => isPlayerInvolved(world, n));
+        return [...exact, ...drawBackgroundIncidents(candidates.filter(n => !isPlayerInvolved(world, n))
+            .map(value => ({ value, rate: 0.25 })), forStream(world.seed, 'background-presences', world.currentDay), 8)];
+    });
+    for (const original of selected) {
         if (!isTheWorldsToMove(original) && original.status !== 'remnant') continue;
         const npc = getNpc(world, original.id)!;
         if (isActing(npc.status) && npc.cultivation.realmOrdinal >= NASCENT_SOUL_ORDINAL

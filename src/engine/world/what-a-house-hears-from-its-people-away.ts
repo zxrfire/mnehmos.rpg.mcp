@@ -71,6 +71,9 @@ import {
 } from '../../data/cultivation/communication-talismans.js';
 import { getSendingReason, type SendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { longRangeSlipHeld } from './a-long-range-communication-slip.js';
+import { factsInSpan, factsWithDataValue } from './witness-reaction-index.js';
+import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
+import { forStream } from '../cultivation/rng.js';
 import { theReasonBehind, whatAHouseHasOnItsBoard } from '../encounters/what-a-house-has-on-its-board.js';
 import {
     addToTheStack,
@@ -210,9 +213,10 @@ export function whoCutsPairsAtTheSeat(
 export function itsCommunicationTalismansRunLow(
     state: Pick<WorldState, 'objects'>,
     houseId: string,
-    onTheRoll: number
+    onTheRoll: number,
+    inStock = howManyTheHouseHas(state.objects, houseId)
 ): boolean {
-    return howManyTheHouseHas(state.objects, houseId) < whatAHouseKeepsInStock(onTheRoll);
+    return inStock < whatAHouseKeepsInStock(onTheRoll);
 }
 
 const DAYS_PER_YEAR = 365;
@@ -263,6 +267,8 @@ export function wordFromThePeopleAway(
     input: {
         /** The day the pass is reporting on. It reads the 365 days up to it. */
         day: number;
+        /** The yearly pass draws background incidents; a direct report resolves exactly. */
+        background?: boolean;
     }
 ): WhatWordCameHome {
     const day = Math.floor(input.day);
@@ -440,7 +446,7 @@ export function wordFromThePeopleAway(
         }
     }
 
-    out.reports.push(...whatThePeopleAwaySendWordOf(state, { day, from, toppedUpOn, howFar, rolls, stacks, readerOf }));
+    out.reports.push(...whatThePeopleAwaySendWordOf(state, { day, from, toppedUpOn, howFar, rolls, stacks, readerOf, background: input.background }));
 
     // ── RECRUITS ─────────────────────────────────────────────────────────
     for (const npc of [...state.npcs]) {
@@ -617,6 +623,7 @@ export function aSittingAtHomeIsTaken(
         day: number;
         /** How many have already taken this notice this year. */
         alreadyTaken: (entryId: string) => number;
+        inStock?: number;
     }
 ): number {
     if (!reasonsOpenTo(input.house).some(isShortWorkAtHome)) return 0;
@@ -632,6 +639,7 @@ export function aSittingAtHomeIsTaken(
                 || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0);
         });
     const takenNow = new Map<string, number>();
+    let inStock = input.inStock;
     let sat = 0;
     for (const at of sitters) {
         const npc = state.npcs[at]!;
@@ -646,7 +654,8 @@ export function aSittingAtHomeIsTaken(
             takenNow.set(entry.id, (takenNow.get(entry.id) ?? 0) + 1);
             const landed = reason.makes === null ? 0 : whatCuttingForTheHouseLands(state, theMakerThisIs(npc), {
                 thingId: reason.makes, sinceDay: input.day, untilDay: input.day + reason.days
-            });
+            }, inStock);
+            if (inStock !== undefined) inStock += landed;
             const credited = creditMerit(npc, whatServiceIsWorth(ordinal, reason.days));
             state.npcs[at] = {
                 ...credited,
@@ -701,7 +710,8 @@ export function whatCuttingPays(count: number, cutterOrdinal: number): number {
 export function whatCuttingForTheHouseLands(
     state: WorldState,
     maker: AMaker,
-    doing: { thingId?: string | null; sinceDay: number; untilDay?: number | null }
+    doing: { thingId?: string | null; sinceDay: number; untilDay?: number | null },
+    inStock?: number
 ): number {
     if (doing.thingId !== THE_COMMUNICATION_TALISMAN.id) return 0;
     if (!maker.alive || maker.houseId === null) return 0;
@@ -711,7 +721,7 @@ export function whatCuttingForTheHouseLands(
     const days = Math.max(DAYS_A_SITTING_TAKES, (doing.untilDay ?? doing.sinceDay) - doing.sinceDay);
     const couldCut = Math.floor(days / DAYS_A_SITTING_TAKES) * CUT_IN_A_SITTING;
     const onTheRoll = state.npcs.filter(n => n.status === 'alive' && n.factionId === house.id).length;
-    const short = whatAHouseKeepsInStock(onTheRoll) - howManyTheHouseHas(state.objects, house.id);
+    const short = whatAHouseKeepsInStock(onTheRoll) - (inStock ?? howManyTheHouseHas(state.objects, house.id));
     const count = Math.max(0, Math.min(couldCut, short));
     if (count === 0) return 0;
     addToTheStack(state.objects, {
@@ -764,6 +774,7 @@ function whatThePeopleAwaySendWordOf(
     input: {
         day: number;
         from: number;
+        background?: boolean;
         toppedUpOn: ReadonlyMap<string, number>;
         howFar: (seatId: string, placeId: string | null) => number | null;
         rolls: ReadonlyMap<string, readonly number[]>;
@@ -778,18 +789,22 @@ function whatThePeopleAwaySendWordOf(
 
     // What has already been sent home, so nothing is said twice.
     const alreadyTold = new Set<string>();
+    const wasTold = (houseId: string, factId: string) => alreadyTold.has(`${houseId}|${factId}`)
+        || factsWithDataValue(state, 'wordOf', factId).some(fact => isWordSentHome(fact) && fact.factionIds.includes(houseId));
     const candidates: HistoricalFact[] = [];
-    for (const fact of state.history.facts) {
-        if (isWordSentHome(fact)) {
-            const about = fact.data.wordOf;
-            if (typeof about === 'string') for (const h of fact.factionIds) alreadyTold.add(`${h}|${about}`);
-            continue;
-        }
-        if (fact.day < oldest || fact.day > day) continue;
+    for (const fact of factsInSpan(state, oldest, day)) {
+        if (isWordSentHome(fact)) continue;
         if (fact.visibility === 'secret' || fact.locationId === null) continue;
         candidates.push(fact);
     }
     if (candidates.length === 0) return [];
+
+    const people = new Map(state.npcs.map(npc => [npc.id, npc]));
+    const exact = (fact: HistoricalFact) => [...fact.actors.map(actor => actor.id), ...fact.witnessIds]
+        .some(id => { const person = people.get(id); return person !== undefined && isPlayerInvolved(state, person); });
+    const news = new Set(drawBackgroundIncidents(candidates.filter(fact => !exact(fact))
+        .map(value => ({ value, rate: value.magnitude })),
+        forStream(state.seed, 'background-word-home', Math.floor(day / DAYS_PER_YEAR)), 24));
 
     const region = new Map<string | null, string | null>();
     const regionFor = (id: string | null): string | null => {
@@ -801,6 +816,7 @@ function whatThePeopleAwaySendWordOf(
     };
     const byRegion = new Map<string | null, HistoricalFact[]>();
     for (const fact of candidates) {
+        if (input.background && !news.has(fact) && !exact(fact)) continue;
         const r = regionFor(fact.locationId);
         const bucket = byRegion.get(r);
         if (bucket) bucket.push(fact); else byRegion.set(r, [fact]);
@@ -848,7 +864,7 @@ function whatThePeopleAwaySendWordOf(
             for (const fact of byRegion.get(teller.regionId) ?? []) {
                 if (fact.day < since) continue;
                 if (fact.factionIds.includes(house.id)) continue;
-                if (alreadyTold.has(`${house.id}|${fact.id}`)) continue;
+                if (wasTold(house.id, fact.id)) continue;
                 if (!isThisHousesBusiness(fact, house, ours)) continue;
                 const far = howFarOff(state, fact, teller);
                 const sawOn = fact.day + DAYS_NEWS_TAKES[far];
@@ -864,7 +880,7 @@ function whatThePeopleAwaySendWordOf(
                 || (a.fact.id < b.fact.id ? -1 : 1));
 
             for (const one of saw) {
-                if (alreadyTold.has(`${house.id}|${one.fact.id}`)) continue;
+                if (wasTold(house.id, one.fact.id)) continue;
                 const place = state.locations.find(l => l.id === one.fact.locationId)?.name ?? 'where they are';
                 const burnt = burnACommunicationTalisman(state, {
                     senderId: npc.id,

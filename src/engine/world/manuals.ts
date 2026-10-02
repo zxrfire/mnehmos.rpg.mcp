@@ -315,7 +315,8 @@ export interface ALesson {
 export function newlyEntitled(
     state: WorldState,
     npc: NpcRecord,
-    day: number = state.currentDay
+    day: number = state.currentDay,
+    teachers: readonly NpcRecord[] = state.npcs
 ): ALesson[] {
     const held = new Set(npc.cultivation.techniqueIds);
     const ordinal = npc.cultivation.realmOrdinal;
@@ -337,7 +338,7 @@ export function newlyEntitled(
 
         // A SHELF IS NOT A STAIRCASE, AND SOMEBODY HAS TO CARRY YOU OVER THE GAP.
         const freeMaster = new Map<string, string>();
-        for (const other of state.npcs) {
+        for (const other of teachers) {
             if (other.id === npc.id || !isTeachingSomebody(other, day)) continue;
             if (!other.activity!.withIds.includes(npc.id)) continue;
             if (other.locationId === null || other.locationId !== npc.locationId) continue;
@@ -384,7 +385,7 @@ export function newlyEntitled(
     // them, and having taken the art to its end - and the same lesson odds, so a
     // wanderer's inheritor comes by an art the way a disciple does and not
     // faster. Only an art that carries them past what they hold.
-    for (const other of state.npcs) {
+    for (const other of teachers) {
         if (other.id === npc.id || !isTeachingSomebody(other, day)) continue;
         if (!other.activity!.withIds.includes(npc.id)) continue;
         if (other.locationId === null || other.locationId !== npc.locationId) continue;
@@ -409,10 +410,11 @@ export function newlyEntitled(
  * cost: the master's time, or a use off the house's copy. False when there was
  * nothing to hand them.
  */
-export function handOnWhatTheyAreEntitledTo(state: WorldState, at: number, day: number): boolean {
+export function handOnWhatTheyAreEntitledTo(state: WorldState, at: number, day: number,
+    teachers?: readonly NpcRecord[]): boolean {
     const npc = state.npcs[at];
     if (npc === undefined || npc.status !== 'alive') return false;
-    const [lesson] = newlyEntitled(state, npc, day);
+    const [lesson] = newlyEntitled(state, npc, day, teachers);
     if (lesson === undefined) return false;
 
     if (lesson.book !== null) {

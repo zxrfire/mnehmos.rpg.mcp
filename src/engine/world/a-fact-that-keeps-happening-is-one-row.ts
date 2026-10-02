@@ -145,12 +145,14 @@ export function recurrenceKeyOf(fact: PendingFact): string {
 // the ledger, the index survived that with every entry pointing at a row that
 // is no longer in the ledger, and the length check only noticed while the array
 // was still shorter - a shrink and a year of appends cancel out, and then it
-// never noticed at all. Keyed on the array, a replacement is a new key and the
-// index is rebuilt by construction.
+// never noticed at all. A replacement is a new key; the mortal sweep transfers
+// the index with its known removals and replacements. Other replacements rebuild.
 // ─────────────────────────────────────────────────────────────────────────
 
 interface LedgerIndex {
     byKey: Map<string, HistoricalFact>;
+    duplicates: Map<string, HistoricalFact[]>;
+    keysById: Map<string, string>;
     /** How many rows have been folded in. Anything past this is indexed lazily. */
     indexedUpTo: number;
 }
@@ -170,7 +172,7 @@ const KEY_OF_ROW = new WeakMap<HistoricalFact, string>();
 function indexFor(ledger: HistoryLedger): LedgerIndex {
     let index = INDEXES.get(ledger.facts);
     if (!index || index.indexedUpTo > ledger.facts.length) {
-        index = { byKey: new Map(), indexedUpTo: 0 };
+        index = { byKey: new Map(), duplicates: new Map(), keysById: new Map(), indexedUpTo: 0 };
         INDEXES.set(ledger.facts, index);
     }
     for (let at = index.indexedUpTo; at < ledger.facts.length; at++) {
@@ -183,10 +185,55 @@ function indexFor(ledger: HistoryLedger): LedgerIndex {
         }
         // First row wins. A later duplicate that predates this module keeps its
         // own row rather than being retro-merged; history is not rewritten.
-        if (!index.byKey.has(key)) index.byKey.set(key, fact);
+        remember(index, key, fact);
     }
     index.indexedUpTo = ledger.facts.length;
     return index;
+}
+
+function remember(index: LedgerIndex, key: string, fact: HistoricalFact): void {
+    index.keysById.set(fact.id, key);
+    const first = index.byKey.get(key);
+    if (!first) index.byKey.set(key, fact);
+    else if (first !== fact) {
+        const rows = index.duplicates.get(key) ?? [first];
+        if (!rows.includes(fact)) rows.push(fact);
+        index.duplicates.set(key, rows);
+    }
+}
+
+/** Carry the recurrence reading across a sweep without rereading the surviving ledger. */
+export function noteLedgerPruned(ledger: HistoryLedger, previous: HistoricalFact[],
+    dropped: ReadonlySet<string>, replaced: ReadonlyMap<string, HistoricalFact>,
+    positions: ReadonlyMap<string, number>): void {
+    if (!INDEXES.has(previous)) return;
+    const index = indexFor({ ...ledger, facts: previous });
+    const keys = new Set<string>();
+    for (const id of [...dropped, ...replaced.keys()]) {
+        const key = index.keysById.get(id);
+        if (key !== undefined) keys.add(key);
+        index.keysById.delete(id);
+    }
+    const replacements = new Map<string, HistoricalFact[]>();
+    for (const row of replaced.values()) {
+        const key = recurrenceKeyOf(row);
+        KEY_OF_ROW.set(row, key);
+        index.keysById.set(row.id, key);
+        keys.add(key);
+        const rows = replacements.get(key) ?? [];
+        rows.push(row); replacements.set(key, rows);
+    }
+    for (const key of keys) {
+        const first = index.byKey.get(key);
+        const rows = (index.duplicates.get(key) ?? (first ? [first] : []))
+            .filter(row => !dropped.has(row.id) && !replaced.has(row.id));
+        rows.push(...replacements.get(key) ?? []);
+        rows.sort((a, b) => positions.get(a.id)! - positions.get(b.id)!);
+        if (rows.length > 0) index.byKey.set(key, rows[0]!); else index.byKey.delete(key);
+        if (rows.length > 1) index.duplicates.set(key, rows); else index.duplicates.delete(key);
+    }
+    index.indexedUpTo = ledger.facts.length;
+    INDEXES.set(ledger.facts, index);
 }
 
 /** The row this occurrence belongs to, if the ledger already holds one. */
@@ -211,7 +258,7 @@ export function noteRowInsertedAt(ledger: HistoryLedger, row: HistoricalFact, at
     // count describes is the same prefix it was.
     if (!index || at > index.indexedUpTo) return;
     const key = recurrenceKeyOf(row);
-    if (!index.byKey.has(key)) index.byKey.set(key, row);
+    remember(index, key, row);
     index.indexedUpTo++;
 }
 

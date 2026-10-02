@@ -87,6 +87,13 @@ The player's world mirror reads existence, soul and continuity from that sheet.
 Unknown projection makers remain unnamed, and a projection's scene card does
 not show its maker's distant activity or bodily wounds.
 
+Before company cards are composed, `settlePracticeOnContact` reviews accumulated
+practice once that year and `settleWitnessesOnContact` resolves their outstanding
+witness reactions through the yearly resolver. Reactions, accounts and reports
+remain on the original facts and obligation ledger. Witnessed deeds reach the
+existing memory lines. Annual exact resolution derives nearby people from the
+player's area and party; there is no persistent foreground flag.
+
 Company cards read open accounts through `whatIsSaidAbout` and place only the known
 facts in the addressed person's private mind. Sharing a square alone grants no private
 account. `readTie` excludes unaccounted-for people from available backing. Hearsay

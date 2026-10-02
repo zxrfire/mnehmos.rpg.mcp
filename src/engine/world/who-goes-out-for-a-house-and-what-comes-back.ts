@@ -325,10 +325,14 @@ export interface AFindThisHouseHas {
  * nearly all of it adding actors and witnesses to sets nobody queried.
  */
 export function whatStandingOnItGives(
-    facts: readonly Pick<HistoricalFact, 'locationId' | 'actors' | 'witnessIds'>[]
+    facts: readonly Pick<HistoricalFact, 'locationId' | 'actors' | 'witnessIds'>[],
+    indexed?: Map<string, HistoricalFact[]>,
+    presence?: ReadonlyMap<string, ReadonlyMap<string, ReadonlySet<string>>>
 ): (holderId: string, locationId: string) => KnowingStage {
-    const sited = new Map<string, Pick<HistoricalFact, 'actors' | 'witnessIds'>[]>();
-    for (const fact of facts) {
+    if (presence) return (holderId, locationId) => presence.get(locationId)?.has(holderId)
+        ? stageCeilingFor('witnessed') : 'unaware';
+    const sited = indexed ?? new Map<string, Pick<HistoricalFact, 'actors' | 'witnessIds'>[]>();
+    if (!indexed) for (const fact of facts) {
         if (fact.locationId === null) continue;
         const here = sited.get(fact.locationId);
         if (here) here.push(fact); else sited.set(fact.locationId, [fact]);
@@ -420,10 +424,14 @@ export const WORTH_REPEATING = 0.35;
  * this reads them. Nothing is kept, so nothing can disagree with the ledger.
  */
 export function whatAHousesOwnErrandsBringBack(
-    facts: readonly Pick<HistoricalFact, 'locationId' | 'actors' | 'factionIds'>[]
+    facts: readonly Pick<HistoricalFact, 'locationId' | 'actors' | 'factionIds'>[],
+    indexed?: Map<string, HistoricalFact[]>,
+    reports?: ReadonlyMap<string, ReadonlyMap<string, ReadonlySet<string>>>
 ): (factionId: string, locationId: string) => KnowingStage {
-    const sited = new Map<string, Pick<HistoricalFact, 'actors' | 'factionIds'>[]>();
-    for (const fact of facts) {
+    if (reports) return (factionId, locationId) => reports.get(locationId)?.has(factionId)
+        ? stageCeilingFor('told') : 'unaware';
+    const sited = indexed ?? new Map<string, Pick<HistoricalFact, 'actors' | 'factionIds'>[]>();
+    if (!indexed) for (const fact of facts) {
         if (fact.locationId === null || fact.factionIds.length === 0) continue;
         const here = sited.get(fact.locationId);
         if (here) here.push(fact); else sited.set(fact.locationId, [fact]);
@@ -481,6 +489,7 @@ export function whatAHousesOwnErrandsBringBack(
 export function whatTheAirCarriesOfTheGround(input: {
     /** Every fact the ledger holds. Indexed here by where it happened. */
     facts: readonly HistoricalFact[];
+    indexed?: Map<string, HistoricalFact[]>;
     /**
      * Whether this fact is being said out loud where this person stands.
      * `isInTheAirFor` in `what-people-are-saying.ts`, bound to the world and
@@ -489,8 +498,8 @@ export function whatTheAirCarriesOfTheGround(input: {
      */
     inTheAirFor: (fact: HistoricalFact, holderId: string) => boolean;
 }): (holderId: string, locationId: string) => KnowingStage {
-    const here = new Map<string, HistoricalFact[]>();
-    for (const fact of input.facts) {
+    const here = input.indexed ?? new Map<string, HistoricalFact[]>();
+    if (!input.indexed) for (const fact of input.facts) {
         if (fact.locationId === null) continue;
         const bucket = here.get(fact.locationId);
         if (bucket) bucket.push(fact); else here.set(fact.locationId, [fact]);

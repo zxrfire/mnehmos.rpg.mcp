@@ -204,7 +204,7 @@ export function circulating(
         const top: { fact: HistoricalFact; weight: number }[] = [];
         const worse = (a: typeof top[number], b: typeof top[number]): boolean =>
             a.weight < b.weight || a.weight === b.weight && a.fact.id > b.fact.id;
-        for (const fact of state.history.facts) {
+        for (const fact of lookup.candidates ?? state.history.facts) {
             if (fact.visibility === 'secret' || fact.day > onDay) continue;
             const weight = lookup.weight(fact, teller);
             if (weight <= 0) continue;
@@ -248,6 +248,7 @@ export function circulating(
 /** Per-pass readings of current people and ground for many tellers. */
 export interface CirculationLookup {
     weight: (fact: HistoricalFact, teller: TellerStanding) => number;
+    candidates?: readonly HistoricalFact[];
 }
 
 export function circulationLookup(state: WorldState, onDay: number): CirculationLookup {

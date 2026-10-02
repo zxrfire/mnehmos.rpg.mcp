@@ -519,6 +519,11 @@ describe('evidence and houses outside a war', () => {
         const response = housesAnswerKnownDeeds(s.world, accounts, s.world.currentDay);
         expect(response.some(f => f.data.handoverAccount === accounts[0]!.key
             && f.data.handoverAnswer === 'delivered')).toBe(true);
+        // Moving the junior must retain the demand's freshly written life fact.
+        const delivered = s.world.npcs.find(n => n.id === people[0]!.id)!;
+        for (const fact of response.filter(row => row.actors.some(actor => actor.id === delivered.id))) {
+            expect(delivered.historyFactIds).toContain(fact.id);
+        }
         expect(s.world.npcs.find(n => n.id === people[0]!.id)?.locationId).toBe(demanding.seatLocationId);
         expect(response.some(f => f.data.handoverAccount === accounts[1]!.key
             && f.data.handoverAnswer === 'refused')).toBe(true);

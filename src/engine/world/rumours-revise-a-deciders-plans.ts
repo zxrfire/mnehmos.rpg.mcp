@@ -4,10 +4,22 @@ import { circulating, circulationLookup, whereThisPersonIsStanding } from './wha
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { WorldState } from './world-state.js';
+import { witnessIndexFor } from './witness-reaction-index.js';
+import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
+import { forStream } from '../cultivation/rng.js';
 
 export function rumoursRevisePlans(state: WorldState, day: number): void {
-    const lookup = circulationLookup(state, day);
-    for (const house of state.factions) {
+    const places = new Map(state.locations.map(place => [place.id, place]));
+    const candidates = [...witnessIndexFor(state).rumoured].filter(f => f.day <= day
+        && f.locationId !== null && ['ruin', 'secret_realm', 'cave', 'wilds'].includes(places.get(f.locationId)?.kind ?? ''));
+    if (candidates.length === 0) return;
+    const lookup = { ...circulationLookup(state, day), candidates };
+    const houses = drawBackgroundIncidents(state.factions.filter(h => h.dissolvedOnDay === null)
+        .map(value => ({ value, rate: 0.25 })), forStream(state.seed, 'background-rumour-plans', Math.floor(day / 365)), 8);
+    const exactHouses = state.factions.filter(h => h.dissolvedOnDay === null
+        && state.npcs.some(n => n.factionId === h.id && isPlayerInvolved(state, n)));
+    const selected = new Map([...exactHouses, ...houses].map(h => [h.id, h]));
+    for (const house of selected.values()) {
         if (house.dissolvedOnDay !== null) continue;
         const decider = state.npcs.filter(n => isTheWorldsToMove(n) && n.status === 'alive' && n.factionId === house.id)
             .sort((a, b) => b.factionRankIndex - a.factionRankIndex)[0];

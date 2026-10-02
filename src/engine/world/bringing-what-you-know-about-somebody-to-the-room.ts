@@ -1,3 +1,4 @@
+import { witnessIndexFor } from './witness-reaction-index.js';
 /**
  * Bringing what you know about somebody to the room, to get their place.
  *
@@ -321,7 +322,7 @@ export function whatTheyHaveOnThem(
     let best: { fact: HistoricalFact; severity: Severity } | null = null;
     for (const id of holder.historyFactIds) {
         if (!carried.has(id)) continue;
-        const fact = byId?.get(id) ?? state.history.facts.find(f => f.id === id);
+        const fact = (byId ?? witnessIndexFor(state).byId).get(id);
         const weight = fact?.data?.deedWeight;
         if (!fact || typeof weight !== 'string') continue;
         if (!fact.actors.some(a => a.id === holder.id && (a.role === 'killer' || a.role === 'attacker'))) continue;
@@ -352,7 +353,7 @@ export function peopleBringWhatTheyKnowToTheRoom(
     const touched = new Set<string>();
     // The ledger by id, once: a `find` per shared row is a walk of every fact in
     // the world for every seeker in it.
-    const factsById = new Map(state.history.facts.map(f => [f.id, f] as const));
+    const factsById = witnessIndexFor(state).byId;
     for (const [seekerId, holderIds] of seatsTheyWant) {
         const seeker = state.npcs[indexById(state.npcs, seekerId)];
         if (!seeker || seeker.status !== 'alive' || seeker.factionId === null || touched.has(seekerId)) continue;
@@ -362,12 +363,11 @@ export function peopleBringWhatTheyKnowToTheRoom(
             const holder = state.npcs[indexById(state.npcs, holderId)];
             if (!holder || holder.status !== 'alive' || holder.factionId !== house.id || touched.has(holderId)) continue;
             const rng = forStream(state.seed, 'an-expose', year, seekerId, holderId);
-            const real = whatTheyHaveOnThem(state, seeker, holder, factsById);
             const stomach = WHAT_A_HOUSE_WILL_STOMACH[house.alignment] ?? WHAT_A_HOUSE_WILL_STOMACH.none!;
-            const brings = real !== null
-                ? rng.chance(BRINGING_IT_A_YEAR)
-                : rng.chance(MAKING_ONE_UP_A_YEAR * stomach.evil);
-            if (!brings) continue;
+            const draw = rng.next();
+            if (draw >= Math.max(BRINGING_IT_A_YEAR, MAKING_ONE_UP_A_YEAR * stomach.evil)) continue;
+            const real = whatTheyHaveOnThem(state, seeker, holder, factsById);
+            if (draw >= (real !== null ? BRINGING_IT_A_YEAR : MAKING_ONE_UP_A_YEAR * stomach.evil)) continue;
             const exposed = aRoomHearsIt(state, house, seeker, holder, real, day);
             if (exposed === null) continue;
             touched.add(seekerId);

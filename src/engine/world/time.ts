@@ -8,6 +8,7 @@ import { forStream } from '../cultivation/rng.js';
 import { rankName } from '../cultivation/realms.js';
 import { hasBody } from '../cultivation/existence.js';
 import { settleEstate, whereTheyFell } from './estate-at-death.js';
+import { readDeathsTogether } from './reading-the-estates-settled-together.js';
 import {
     concurrentEventsFor,
     makeFact,
@@ -54,6 +55,8 @@ import {
 } from './opportunities.js';
 import {
     indexById,
+    getNpc,
+    getLocation,
     cloneWorld,
     lineageOf,
     pendingEffects,
@@ -360,6 +363,7 @@ export function advanceTime(
     // ── 3. Lifespans. A death date is a stored number, so this is one pass
     //       over the roster rather than anything that has to be simulated. ──
     const deaths: LifespanDeath[] = [];
+    let deathRead: ReturnType<typeof readDeathsTogether> | undefined;
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i];
         // Only the living run out of lifespan. A missing cultivator is not
@@ -423,7 +427,8 @@ export function advanceTime(
             entity: 'npc', entityId: npc.id, field: 'status',
             from: 'alive', to: 'physically_dead'
         });
-        deathHandoffs.push(settleNpcDeath(state, npc, onDay));
+        deathRead ??= readDeathsTogether(state);
+        deathHandoffs.push(settleNpcDeath(state, npc, onDay, deathRead));
     }
 
     // Deaths the caller caused elsewhere in the span still need settling, so the
@@ -772,10 +777,11 @@ function* whenThisFallsDue(
 /**
  * Settle one death: heirs, and the goals that outlive their holder.
  */
-export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: number): DeathHandoff {
+export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: number,
+    read?: ReturnType<typeof readDeathsTogether>): DeathHandoff {
     const lineage = lineageOf(state, deceased.id);
     const alive = (id: string) => {
-        const npc = state.npcs.find(n => n.id === id);
+        const npc = getNpc(state, id);
         return npc != null && (npc.status === 'alive' || npc.status === 'soul_preserved');
     };
     const heirs = lineage ? heirsOf(lineage, deceased.id, alive) : [];
@@ -882,7 +888,9 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // Drawn on its own named stream keyed to the deceased, so it is reproducible
     // for a given world and cannot shift anything else's draws.
     const reachedFirst = forStream(state.seed, 'who-reached-the-body', deceased.id, onDay);
-    const overTheBody = state.npcs
+    const nearby = read ? (read.here.get(deceased.locationId) ?? [])
+        .map(id => getNpc(state, id)).filter((npc): npc is NpcRecord => npc !== null) : state.npcs;
+    const overTheBody = nearby
         .filter(n => n.id !== deceased.id
             && n.locationId === deceased.locationId
             && (n.status === 'alive' || n.status === 'soul_preserved'))
@@ -895,12 +903,12 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // the person it is keyed to, so both halves of their pairs go when they do,
     // here and before anybody goes through the body: there is nothing for a
     // looter to take. See `theirSlipsBreak`.
-    theirSlipsBreak(state.objects, deceased.id, null, onDay);
+    theirSlipsBreak(state.objects, deceased.id, null, onDay, read?.keyed(deceased.id));
     // And any pair of communication jade they were half of, both halves, which
     // answer to nothing once one end of them is gone and are collected rather
     // than left in the world's things. Before the estate, so nobody inherits
     // half of a pair that cannot be spoken into.
-    theirJadeBreaks(state.objects, deceased.id, onDay);
+    theirJadeBreaks(state.objects, deceased.id, onDay, read?.keyed(deceased.id).map(at => state.objects[at]!));
 
     const estate = settleEstate({
         dead: { id: deceased.id, name: deceased.name },
@@ -910,14 +918,14 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
         // has no grave row of its own, so this is the same place - and it is
         // still read as the SITE rather than assumed, because the player path
         // settles onto a grave whose danger is a different fact.
-        fell: whereTheyFell(state.locations.find(l => l.id === deceased.locationId)),
+        fell: whereTheyFell(deceased.locationId === null ? undefined : getLocation(state, deceased.locationId) ?? undefined),
         seed: state.seed,
         // NPCs carry stones and no counted stock. An empty stack list is not a
         // placeholder for one that should exist: `NpcRecord` has no pack, and
         // inventing stacks here would be this file asserting an inventory
         // nothing else in the world reads or writes.
         counted: { spiritStones: deceased.spiritStones, stock: [] },
-        tracked: state.objects
+        tracked: (read?.carrying(deceased.id) ?? state.objects)
             .filter(o => o.possessorId === deceased.id && !isAStackOfCommunicationTalismans(o))
             .map(o => ({
                 itemId: o.id,
@@ -936,7 +944,8 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // id: `settleEstate` is pure and returns what SHOULD be true, and putting
     // it back is the caller's - which is this.
     for (const moved of estate.objects) {
-        const at = state.objects.findIndex(o => o.id === moved.id);
+        const at = indexById(state.objects, moved.id);
+        read?.moved(at >= 0 ? state.objects[at] : undefined, moved);
         if (at >= 0) state.objects[at] = moved;
         else state.objects.push(moved);
     }
@@ -972,7 +981,9 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     const ENDED_BY_DEATH: Readonly<Partial<Record<string, 'former_master' | 'former_disciple'>>> = {
         master: 'former_master', disciple: 'former_disciple'
     };
-    for (let i = 0; i < state.npcs.length; i++) {
+    const bondHolders = read ? (read.bonds.get(deceased.id) ?? []).map(id => indexById(state.npcs, id)).filter(at => at >= 0)
+        : Array.from({ length: state.npcs.length }, (_, at) => at);
+    for (const i of bondHolders) {
         const other = state.npcs[i]!;
         if (other.id === deceased.id) continue;
         for (const held of other.relationships.filter(r => r.targetId === deceased.id)) {
@@ -985,7 +996,7 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // A teaching line that ended today.
     for (const tie of deceased.relationships) {
         if (tie.kind !== 'disciple') continue;
-        const student = state.npcs.find(n => n.id === tie.targetId);
+        const student = getNpc(state, tie.targetId);
         if (!student || student.status !== 'alive') continue;
         recordMasterLost(state, student, deceased, 'died', onDay);
     }
@@ -993,7 +1004,7 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // An estate that went somewhere is a fact about the world, and it is the
     // one a descendant three centuries later is standing on.
     if (primary && (inherited.length > 0 || heirs.length > 0)) {
-        const heir = state.npcs.find(n => n.id === primary.id);
+        const heir = getNpc(state, primary.id);
         appendWorldFact(state, makeFact({
             day: onDay,
             kind: 'inheritance',

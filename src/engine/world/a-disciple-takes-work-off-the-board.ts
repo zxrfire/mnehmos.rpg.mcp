@@ -56,6 +56,9 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { theStacksInHand } from './a-communication-talisman-carries-word-home.js';
+import { witnessIndexFor } from './witness-reaction-index.js';
+import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 import { dutyTermsFor, takeableOffAWall, type DutyTerms } from '../encounters/duties.js';
 import { howAnAskReaches } from '../encounters/how-an-ask-reaches-somebody.js';
 import {
@@ -204,6 +207,7 @@ interface HowTheGroundIsKnown {
 }
 
 function howTheGroundIsKnown(state: WorldState, day: number): HowTheGroundIsKnown {
+    const index = witnessIndexFor(state);
     const region = new Map<string | null, string | null>();
     const regionFor = (locationId: string | null): string | null => {
         const had = region.get(locationId);
@@ -225,16 +229,16 @@ function howTheGroundIsKnown(state: WorldState, day: number): HowTheGroundIsKnow
     return {
         openGround: whereTheOpenGroundIs(state.locations, day),
         knowsTheGround: whatAnybodyCouldHaveOfTheGround(
-            whatStandingOnItGives(state.history.facts),
+            whatStandingOnItGives(state.history.facts, index.byPlace, index.stoodOn),
             whatTheAirCarriesOfTheGround({
-                facts: state.history.facts,
+                facts: state.history.facts, indexed: index.byPlace,
                 inTheAirFor: (fact, holderId) => {
                     const teller = tellerAt(holderId);
                     return teller !== null && isInTheAirFor(state, fact, teller, day);
                 }
             })
         ),
-        cameBack: whatAHousesOwnErrandsBringBack(state.history.facts)
+        cameBack: whatAHousesOwnErrandsBringBack(state.history.facts, index.byPlace, index.reportedGround)
     };
 }
 
@@ -246,7 +250,8 @@ function theHouseAsItStandsInTheWorld(
     state: WorldState,
     faction: FactionRecord,
     roll: readonly NpcRecord[],
-    ground: HowTheGroundIsKnown
+    ground: HowTheGroundIsKnown,
+    inStock: number
 ): { house: HouseAsItStands; findLocationId: string | null } {
     const find = aFindThisHouseCouldSendFor({
         ground: ground.openGround,
@@ -267,7 +272,7 @@ function theHouseAsItStandsInTheWorld(
             sitsDownWith: circleCandidatesFor(state, faction).map(f => f.id),
             standsNearForbiddenGround:
                 forbiddenGroundInTheProvinceOf(state.locations, faction.seatLocationId),
-            itsCommunicationTalismansRunLow: itsCommunicationTalismansRunLow(state, faction.id, roll.length),
+            itsCommunicationTalismansRunLow: itsCommunicationTalismansRunLow(state, faction.id, roll.length, inStock),
             ...howAHouseStandsForMoney(state, faction)
         },
         findLocationId: find?.locationId ?? null
@@ -285,7 +290,8 @@ function whereTheNoticeSendsThem(
     seatLocationId: string | null,
     findLocationId: string | null,
     elsewhere: readonly string[],
-    reason: SendingReason
+    reason: SendingReason,
+    ground = groundWorkCanTakeYouTo(state.locations)
 ): string | null {
     const about = whichHousesAReasonIsAbout(reason.needs, house);
     return whereASendingGoes({
@@ -295,7 +301,7 @@ function whereTheNoticeSendsThem(
         seatsInPlay: about
             .map(id => state.factions.find(f => f.id === id && f.dissolvedOnDay === null)?.seatLocationId ?? null)
             .filter((id): id is string => id !== null),
-        groundNearThem: groundTheseHousesHold(groundWorkCanTakeYouTo(state.locations), about),
+        groundNearThem: groundTheseHousesHold(ground, about),
         elsewhere,
         pick: count => forStream(house.id, 'posting_destination', reason.id)
             .int(0, Math.max(0, count - 1))
@@ -353,9 +359,15 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
         if (roll) roll.push(i); else rolls.set(npc.factionId, [i]);
     }
 
-    const elsewhere = groundAPartyCanBeSentTo(groundWorkCanTakeYouTo(state.locations));
+    const groundForWork = groundWorkCanTakeYouTo(state.locations);
+    const elsewhere = groundAPartyCanBeSentTo(groundForWork);
     let ground: HowTheGroundIsKnown | null = null;
     let took = 0;
+    const stocks = theStacksInHand(state.objects);
+    const housesToRead = new Set(drawBackgroundIncidents(state.factions
+        .filter(house => house.dissolvedOnDay === null && isBelowTheLid(house))
+        .map(house => ({ value: house.id, rate: (rolls.get(house.id)?.length ?? 0) / 8 })),
+        forStream(state.seed, 'background-work-boards', year), 16));
 
     for (const faction of state.factions) {
         if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
@@ -363,6 +375,7 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
         const roll = rolls.get(faction.id);
         if (rankCount === 0 || !roll) continue;
         const people = roll.map(i => state.npcs[i]!);
+        if (!housesToRead.has(faction.id) && !people.some(npc => isPlayerInvolved(state, npc))) continue;
 
         let reach = 0;
         for (const n of people) reach = Math.max(reach, n.cultivation.realmOrdinal);
@@ -396,11 +409,14 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
         }).free.map(c => c.id));
 
         ground ??= howTheGroundIsKnown(state, day);
-        const { house, findLocationId } = theHouseAsItStandsInTheWorld(state, faction, people, ground);
+        const inStock = stocks.theHouseHas(faction.id);
+        const { house, findLocationId } = theHouseAsItStandsInTheWorld(state, faction, people, ground, inStock);
 
         // The lowest rungs first: they live on this work, and a notice's hands
         // run out on whoever comes to it last.
-        const order = readers
+        const chosenReaders = new Set(drawBackgroundIncidents(readers.filter(at => !isPlayerInvolved(state, state.npcs[at]!))
+            .map(value => ({ value, rate: 0.5 })), forStream(state.seed, 'background-board-readers', faction.id, year), 4));
+        const order = readers.filter(at => chosenReaders.has(at) || isPlayerInvolved(state, state.npcs[at]!))
             .filter(i => spare.has(state.npcs[i]!.id))
             .sort((a, b) => {
                 const x = state.npcs[a]!, y = state.npcs[b]!;
@@ -457,7 +473,7 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
 
         for (const { reason, who } of taken.values()) {
             const goingTo = whereTheNoticeSendsThem(
-                state, house, faction.seatLocationId, findLocationId, elsewhere, reason);
+                state, house, faction.seatLocationId, findLocationId, elsewhere, reason, groundForWork);
             // WORK DONE AT THE HOUSE is a notice whose place is the house's own
             // seat: a making, not an errand. Nobody moves, the term is the work,
             // and the same close pays it.
@@ -513,7 +529,7 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
         }
 
         took += aSittingAtHomeIsTaken(state, {
-            house, seatLocationId: faction.seatLocationId, roll, reach, day,
+            house, seatLocationId: faction.seatLocationId, roll, reach, day, inStock,
             alreadyTaken: entryId => taken.get(entryId)?.who.length ?? 0
         });
     }

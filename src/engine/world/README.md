@@ -24,6 +24,20 @@ Fact, pending-observation and house/person knowledge reads use a live index.
 The original death, object transfer and provenance are never revised by belief.
 Reports enter the ordinary house account and price paths. A house warning is
 a dated fact, read by the same public wall as its other notices.
+The same background rule governs rumour plans, visits to Dao ground, work-board
+readers, climb reviews, separated presences, uncovered killings, quarrels and news sent home: opportunities
+contribute rates to capped draws on separate seeded streams. Player involvement
+and nearby people bypass those draws. Selected incidents use the ordinary
+resolvers. History reads share indexes by person, house, place, year and sparse
+data column; append cursors and affected-bucket updates survive mortal pruning.
+These indexes are ephemeral readings of the ledger and are rebuilt after loading.
+Place presence and returned reports also retain fact references, so reads do not
+rebuild the accumulated roll each year. Contact settlement reuses the same
+witness and advancement resolvers before cards read their facts; contact review
+receipts in the ledger prevent repeated looks from rerolling practice that year.
+Quarrel rates come from motivated pairs and their computed odds, rather than a
+draw of people who may have no motive. Lifespan settlements share a read of
+possessions and bonds; an estate transfer updates the read before the next death.
 `where-in-a-place-somebody-is-standing.ts` places a body in an area without
 adding it to the living roster; sharing a settlement alone is no proof that
 the player or a witness stood beside it.
@@ -3876,3 +3890,10 @@ Witness reactions read deeds and visible evidence through one trust path. A kill
 
 The annual account phase uses the pass's existing world-knowledge reader.
 Authority queries do not rebuild the historical ledger's indexes.
+
+Witness account and gratitude ties write their ordinary reciprocal end. A
+telling preserves its new fact links when an account changes a relationship.
+Mortal pruning removes forgotten obligation participants while retaining
+accounts whose holder and subject remain. Exact nearby resolution uses the
+card area's placement, including projections, and expires shared activities
+on each scheduled pass's own day.

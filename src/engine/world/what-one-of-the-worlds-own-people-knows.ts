@@ -66,7 +66,7 @@ import {
     whoWouldHaveHeardOfIt
 } from '../cultivation/who-has-heard-of-a-thing-past-the-counter.js';
 import { theHeightAHouseWorksAt } from './where-the-pills-actually-are.js';
-import type { WitnessIndex } from './witness-reaction-index.js';
+import { witnessIndexFor, factsWithData, type WitnessIndex } from './witness-reaction-index.js';
 
 /**
  * What a named holder stands at on one named thing.
@@ -116,6 +116,7 @@ function saidWhereTheyStand(state: WorldState, holder: NpcRecord,
  */
 export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebodyKnowsOfIt {
     const ledger = state.history.facts;
+    const index = witnessIndexFor(state);
 
     // `getNpc` is a linear walk of several hundred rows and this asks per fact
     // per query. One map, built with everything else.
@@ -126,10 +127,10 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
     // The three ground readings, verbatim. `whatAnybodyCouldHaveOfTheGround`
     // exists so a caller cannot quietly ask a narrower question than the world
     // does, and this is a caller.
-    const stoodOnIt = whatStandingOnItGives(ledger);
-    const errands = whatAHousesOwnErrandsBringBack(ledger);
+    const stoodOnIt = whatStandingOnItGives(ledger, index.byPlace, index.stoodOn);
+    const errands = whatAHousesOwnErrandsBringBack(ledger, index.byPlace, index.reportedGround);
     const inTheAir = whatTheAirCarriesOfTheGround({
-        facts: ledger,
+        facts: ledger, indexed: index.byPlace,
         inTheAirFor: (fact, holderId) => {
             const npc = rowFor(holderId);
             if (!npc) return false;
@@ -140,12 +141,12 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
     });
     const ofTheGround = whatAnybodyCouldHaveOfTheGround(stoodOnIt, inTheAir);
 
-    const byHouse = factsByHouse(ledger);
-    const byPerson = factsNaming(ledger);
-    const byFactId = new Map(ledger.map(fact => [fact.id, fact]));
-    const presentAt = whoWasPresent(ledger);
+    const byHouse = index.factsByHouse;
+    const byPerson = index.factsByPerson;
+    const byFactId = index.byId;
+    const presentAt = index.presentAt;
     const tellingsOf = new Map<string, HistoricalFact[]>();
-    for (const fact of ledger) {
+    for (const fact of factsWithData(state, 'toldOfWitnessedFact')) {
         const toldOf = fact.data.toldOfWitnessedFact;
         if (typeof toldOf !== 'string') continue;
         const rows = tellingsOf.get(toldOf) ?? [];
@@ -379,51 +380,6 @@ function ofAnEvent(
 // ─────────────────────────────────────────────────────────────────────────
 // INDEXES OVER THE LEDGER
 // ─────────────────────────────────────────────────────────────────────────
-
-function factsByHouse(ledger: readonly HistoricalFact[]): Map<string, HistoricalFact[]> {
-    const byHouse = new Map<string, HistoricalFact[]>();
-    for (const fact of ledger) {
-        for (const houseId of fact.factionIds) push(byHouse, houseId, fact);
-    }
-    return byHouse;
-}
-
-function factsNaming(ledger: readonly HistoricalFact[]): Map<string, HistoricalFact[]> {
-    const byPerson = new Map<string, HistoricalFact[]>();
-    for (const fact of ledger) {
-        for (const actor of fact.actors) push(byPerson, actor.id, fact);
-    }
-    return byPerson;
-}
-
-/**
- * Who was physically there, per person.
- *
- * The same two columns `whatStandingOnItGives` reads, keyed by person instead
- * of by place, because the question here is "were you there for THIS" rather
- * than "were you ever there".
- */
-function whoWasPresent(ledger: readonly HistoricalFact[]): Map<string, Set<string>> {
-    const present = new Map<string, Set<string>>();
-    const mark = (personId: string, factId: string): void => {
-        let theirs = present.get(personId);
-        if (!theirs) {
-            theirs = new Set<string>();
-            present.set(personId, theirs);
-        }
-        theirs.add(factId);
-    };
-    for (const fact of ledger) {
-        for (const actor of fact.actors) mark(actor.id, fact.id);
-        for (const id of fact.witnessIds) mark(id, fact.id);
-    }
-    return present;
-}
-
-function push(index: Map<string, HistoricalFact[]>, key: string, fact: HistoricalFact): void {
-    const held = index.get(key);
-    if (held) held.push(fact); else index.set(key, [fact]);
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // PLACES AND PEOPLE, RESOLVED

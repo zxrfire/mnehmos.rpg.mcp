@@ -293,9 +293,10 @@ export function sendWordOnJade(
  *
  * Returns how many halves were collected.
  */
-export function theirJadeBreaks(objects: ObjectRecord[], personId: string, _onDay: number): number {
+export function theirJadeBreaks(objects: ObjectRecord[], personId: string, _onDay: number,
+    candidates: readonly ObjectRecord[] = objects): number {
     const gone = new Set<string>();
-    for (const o of objects) {
+    for (const o of candidates) {
         if (!isAJadeHalf(o) || o.data.keyedTo !== personId) continue;
         gone.add(o.id);
         const twinId = o.data.twinId;

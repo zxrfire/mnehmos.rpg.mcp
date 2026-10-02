@@ -79,7 +79,24 @@ export interface WhereCompoundsAre {
 }
 
 /** The compound read, built once for a world. */
+const COMPOUNDS = new WeakMap<readonly LocationRecord[], { length: number;
+    rows: { at: number; row: LocationRecord; id: string; parentId: string | null; kind: string; interior: boolean;
+        purpose: RoomPurpose | null; houseId: unknown }[]; value: WhereCompoundsAre }>();
+
 export function whereCompoundsAre(state: Pick<WorldState, 'locations'>): WhereCompoundsAre {
+    const cached = COMPOUNDS.get(state.locations);
+    if (cached && cached.length === state.locations.length
+        && cached.rows.every(saved => {
+            const row = state.locations[saved.at]!;
+            return row.id === saved.id && row.parentId === saved.parentId && row.kind === saved.kind
+                && (!saved.interior && row.kind !== 'sect_seat' || row === saved.row)
+                && row.tags.includes('interior') === saved.interior
+                && (!saved.interior || purposeOf(row) === saved.purpose)
+                && (row.kind !== 'sect_seat' || (row.data.factionId || row.controllingFactionId) === saved.houseId);
+        })) {
+        return { seatOf: cached.value.seatOf, bySeat: new Map([...cached.value.bySeat].map(([id, compound]) =>
+            [id, { ...compound, offices: null, lessons: null }])) };
+    }
     const byId = new Map(state.locations.map(row => [row.id, row]));
     const bySeat = new Map<string, ACompound>();
     const seatOf = new Map<string, string>();
@@ -111,7 +128,12 @@ export function whereCompoundsAre(state: Pick<WorldState, 'locations'>): WhereCo
         const purpose = purposeOf(row);
         if (purpose !== null && !compound.rooms.has(purpose)) compound.rooms.set(purpose, row);
     }
-    return { bySeat, seatOf };
+    const value = { bySeat, seatOf };
+    COMPOUNDS.set(state.locations, { length: state.locations.length, value,
+        rows: state.locations.map((row, at) => ({ at, row, id: row.id, parentId: row.parentId, kind: row.kind,
+            interior: row.tags.includes('interior'), purpose: purposeOf(row),
+            houseId: row.data.factionId || row.controllingFactionId })) });
+    return { seatOf, bySeat: new Map([...bySeat].map(([id, compound]) => [id, { ...compound }])) };
 }
 
 /** Whether an activity is still running on this day. */

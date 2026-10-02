@@ -39,7 +39,7 @@
  * they are entered, or once they are no longer on that roll.
  */
 
-import { getLocation, type FactionRecord, type WorldState } from './world-state.js';
+import { getLocation, getNpc, type FactionRecord, type WorldState } from './world-state.js';
 import type { NpcRecord } from './npc-state.js';
 import type { LocationRecord } from './locations.js';
 import {
@@ -554,7 +554,7 @@ export function theyAreEntered(state: WorldState, houseId: string, personId: str
  * to the Internal Affairs office, on this day. The slip-less road.
  */
 export function deliverWhatTheyOweTheHouse(state: WorldState, recruiterId: string, houseId: string, day: number): number {
-    const recruiter = state.npcs.find(n => n.id === recruiterId);
+    const recruiter = getNpc(state, recruiterId);
     if (!recruiter) return 0;
     let made = 0;
     for (const owed of theReportsTheyOwe(recruiter)) {

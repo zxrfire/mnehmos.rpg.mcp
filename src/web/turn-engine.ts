@@ -1126,6 +1126,8 @@ import {
     LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
 } from './prompt.js';
 import { howTheyLeftTheChair, thePlayerIsSureItIsThem, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whatTheyRememberOnTheirCard, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
+import { settleWitnessesOnContact } from '../engine/world/witness-reactions.js';
+import { settlePracticeOnContact } from '../engine/world/the-world-changing-on-its-own.js';
 import { whatSomebodyRemembers } from '../engine/world/what-somebody-remembers.js';
 import { opportunitiesTheyCanTell } from './opportunity-questions.js';
 import {
@@ -20474,7 +20476,16 @@ ${fit.line}`;
 
     company(cultivator: Cultivator): Company {
         cultivator = presenceForScene(this, cultivator);
-        const here = this.present(cultivator);
+        let here = this.present(cultivator);
+        if (this.atHand) {
+            const contacts = new Set(here.map(person => person.id));
+            const practice = settlePracticeOnContact(this.atHand, contacts);
+            const witnesses = settleWitnessesOnContact(this.atHand, contacts);
+            if (practice || witnesses) {
+                this.theWorldMoved();
+                here = this.present(cultivator);
+            }
+        }
         const named: Company['named'] = [];
         const strangers: Company['strangers'] = [];
         const ledger = ledgerAbout(this.db as never, cultivator.id);
