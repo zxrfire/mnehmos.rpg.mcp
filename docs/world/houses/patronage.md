@@ -68,6 +68,32 @@ It is a promotion that feels exactly like a demotion, and it should. The player 
 twenty years to be selected should spend their first month being nobody again, and the
 world should be entirely unapologetic about it.
 
+## Where competitions are held, and why a capital has people in it
+
+<!-- tier: 2 trigger="a competition, tournament, auction or exchange is held, or the player asks why people are in a capital" -->
+
+**An open competition is held in a capital. A closed one is held on a house's own grounds.**
+
+- **Open** means anyone can join: any house's disciples and the unaffiliated alike.
+- **Closed** means a house's own contest among its own members: inner trials, rank contests,
+  the conclave tournament in [offices-and-succession.md](offices-and-succession.md). It is
+  internal, so an outsider standing there takes no part in it.
+- **Both are separated by realm.** Entrants compete against their own band, never across it.
+- **Both are calendar events.** Each competition is a fixed event that recurs every so many
+  years. It is a schedule, not a draw, so it is exempt from life-span thresholds (see
+  AGENTS.md, "Calendars are exempt").
+
+The big sects are the most populous places in the world, and that is correct. A capital is
+not filled by emptying them. It is filled by giving people a reason to come:
+
+- **Missions** a house dispatches people on: court business, tribute, postings, escort, a price on somebody.
+- **Auctions**, at the venues in `AUCTION_VENUES` (`src/data/cultivation/rogues.ts`).
+- **Open competitions**, which houses send delegations to.
+- **The exchange**, where cultivators of every house sell their wares.
+
+Each reason is a stint with an end, after which the person goes home. A capital stays busy
+because the reasons keep recurring.
+
 ## At the top, rank stops tracking realm
 
 <!-- tier: 2 trigger="somebody outranks a person plainly stronger than they are" -->

@@ -98,7 +98,7 @@ Generated from the `trigger` attributes in this directory. Do not edit by hand -
 
 <!-- BEGIN GENERATED: triggers -->
 
-**257 situations, from 33 files.**
+**258 situations, from 33 files.**
 Sorted by the situation, not by the file, because the file is the thing you do not know.
 
 | When this is true | Read | Section |
@@ -107,6 +107,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | a building's element is read off it, or somebody assumes a house is built to suit its people | [`places/architecture.md`](places/architecture.md#elemental-architecture-is-a-function-of-intake-not-of-occupants) | Elemental architecture is a function of intake, not of occupants (tier 2) |
 | a character is being made, or somebody's birth is raised as an explanation | [`houses/origin.md`](houses/origin.md#birth-is-the-third-dealt-thing) | Birth is the third dealt thing (tier 2) |
 | a child is being placed at a house whose bar they do not meet, or somebody asks how they got in | [`houses/origin.md`](houses/origin.md#somebodys-word-and-the-bar-it-skips) | Somebody's word, and the bar it skips (tier 2) |
+| a competition, tournament, auction or exchange is held, or the player asks why people are in a capital | [`houses/patronage.md`](houses/patronage.md#where-competitions-are-held-and-why-a-capital-has-people-in-it) | Where competitions are held, and why a capital has people in it (tier 2) |
 | a cultivator considers changing house, is offered a place elsewhere, or leaves one | [`climbing/past-the-ceiling.md`](climbing/past-the-ceiling.md#leaving-and-what-it-costs) | Leaving, and what it costs (tier 2) |
 | a cultivator considers copying a manual, or a house's last master of an art dies | [`climbing/manuals.md`](climbing/manuals.md#who-can-make-another-one) | Who can make another one (tier 2) |
 | a cultivator discovers their path suits them badly, or considers changing it | [`climbing/understanding.md`](climbing/understanding.md#affinity-and-finding-out-too-late) | Affinity, and finding out too late (tier 2) |
