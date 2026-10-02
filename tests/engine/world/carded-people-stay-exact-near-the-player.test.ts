@@ -2,6 +2,7 @@
  * The background shortcut used the whole settlement, while a card names only
  * the people in the player's area. The temporary yearly context must read that
  * same placement, including a party member, and disappear when the player moves.
+ * A projection enters an area with room under the three-person ceiling.
  * No person's row stores a foreground flag.
  */
 import { expect, it } from 'vitest';
@@ -47,10 +48,11 @@ it('derives exact people from the card area and party, then returns them to rate
     const remote = createNpc(world.seed, { id: 'remote', name: 'Remote', locationId: null,
         onDay: world.currentDay, bornOnDay: world.currentDay - 30 * 365 });
     world.npcs.push(remote);
+    const projectionAreaId = read.areas.find(area => ![...read.whereIs.values()].includes(area.id))!.id;
     world.objects.push(makeObject({ id: 'projection', name: 'Projection', kind: 'other', ownerId: remote.id,
-        locationId: place.id, tags: ['acting-proxy'], data: { kind: 'soul', standingIn: areaId,
+        locationId: place.id, tags: ['acting-proxy'], data: { kind: 'soul', standingIn: projectionAreaId,
             madeOnDay: world.currentDay, lapsesOnDay: world.currentDay + 10 } }));
-    resolveWithPlayerPresent(world, { placeId: place.id, areaId, person: player }, () => {
+    resolveWithPlayerPresent(world, { placeId: place.id, areaId: projectionAreaId, person: player }, () => {
         expect(isPlayerInvolved(world, remote)).toBe(true);
     });
     resolveWithPlayerPresent(world, { placeId: place.id, areaId: 'somewhere-else', person: player }, () => {

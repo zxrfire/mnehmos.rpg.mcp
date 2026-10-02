@@ -4,6 +4,7 @@
  * skipped, then meet and talk through the played card path. The original fact
  * owns the reaction; a second card must neither reroll nor duplicate its account.
  * The same world is met after three centuries to check its surviving life facts.
+ * A walk advances the hour, so contact uses the person's routine at arrival.
  */
 import { expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
@@ -13,6 +14,7 @@ import { actorAndVictimOf, observationOf, witnessReactions } from '../../src/eng
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { whatOneOfTheWorldsOwnPeopleKnows } from '../../src/engine/world/what-one-of-the-worlds-own-people-knows.js';
 import { rankName } from '../../src/engine/cultivation/realms.js';
+import { LESSER_ACTION_DAYS } from '../../src/web/lesser-action-costs.js';
 import type { ProviderCallOpts } from '../../src/agent/provider/types.js';
 
 class ContactProvider extends ScriptedProvider {
@@ -47,16 +49,34 @@ it('settles skipped witnesses before a played card and keeps centuries of life c
                 .map(id => ({ fact, person: people.get(id)!, actorId: parties.actorId }));
         });
         expect(missed.length, 'the background draw leaves a surviving real witness to meet').toBeGreaterThan(0);
-        const chosen = [...missed].reverse().find(row => world.locations.some(place => place.id === row.person.locationId
-            && place.kind === 'settlement' && theAreasOf(world, place).areas.length > 1))!;
-        expect(chosen, 'a skipped witness stands in a town the player can walk through').toBeDefined();
         const { cultivator } = await h.game.newRun('Reader');
+        const morningForContact = async () => {
+            if ((world.currentHour ?? 8) < 6 || (world.currentHour ?? 8) >= 12) {
+                provider.plan = { action: 'wait', target: '' };
+                await h.game.act('I wait until morning');
+            }
+        };
+        const areaAfter = (id: string, days: number) => {
+            const person = world.npcs.find(npc => npc.id === id)!;
+            const place = world.locations.find(row => row.id === person.locationId)!;
+            const read = theAreasOf({ ...world, currentHour: (world.currentHour ?? 8) + 24 * days }, place);
+            return read.areas.find(row => row.id === read.whereIs.get(id));
+        };
+        const staysForConversation = (id: string) => {
+            const arrival = areaAfter(id, LESSER_ACTION_DAYS.move);
+            const reply = areaAfter(id, LESSER_ACTION_DAYS.move + LESSER_ACTION_DAYS.interact);
+            return arrival !== undefined && arrival.for !== 'room' && arrival.id === reply?.id;
+        };
+        await morningForContact();
+        const chosen = [...missed].reverse().find(row => world.locations.some(place => place.id === row.person.locationId
+            && place.kind === 'settlement' && staysForConversation(row.person.id)))!;
+        expect(chosen, 'a skipped witness stays in a reachable town area through contact').toBeDefined();
         const meet = async (id: string) => {
             const person = world.npcs.find(npc => npc.id === id)!;
             const place = world.locations.find(row => row.id === person.locationId)!;
             // Arrange only the journey's starting place; walking the area and talking are played.
             h.repos.cultivators.update(cultivator.id, { location: place.name, standingIn: null });
-            const where = theAreasOf(world, place);
+            const where = theAreasOf({ ...world, currentHour: (world.currentHour ?? 8) + 24 * LESSER_ACTION_DAYS.move }, place);
             const area = where.areas.find(row => row.id === where.whereIs.get(id))!;
             expect(area, 'the real person has an area').toBeDefined();
             const arrival = where.areas.find(row => row.id !== area.id) ?? area;
@@ -83,10 +103,12 @@ it('settles skipped witnesses before a played card and keeps centuries of life c
 
         advanceWorldForPlay(world, { days: 270 * 365, stopOnInterrupt: false });
         h.game.theWorldMoved();
+        await morningForContact();
         const elder = world.npcs.find(person => person.status === 'alive' && person.factionId !== null
             && world.locations.some(place => place.id === person.locationId && place.kind === 'settlement')
             && person.relationships.length > 0
-            && world.currentDay - person.identity.bornOnDay >= 200 * 365)!;
+            && world.currentDay - person.identity.bornOnDay >= 200 * 365
+            && staysForConversation(person.id))!;
         expect(elder, 'an old life remains available to meet').toBeDefined();
         const oldCard = await meet(elder.id);
         const settled = world.npcs.find(person => person.id === elder.id)!;
