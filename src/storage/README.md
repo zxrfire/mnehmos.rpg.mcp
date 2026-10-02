@@ -243,3 +243,7 @@ something that opens a file.
   that file documents: one human being, two tables, two ids.
 - [`../server/consolidated/README.md`](../server/consolidated/README.md) - almost every tool
   opens with `getDb()`, so a change to the handle or to tenant scoping is felt there first.
+
+The hour is derived from the run's fractional elapsed day, with no second clock column.
+Invitation deadlines, return walks and interrupted activities use the existing NPC
+activity JSON; daily routines are derived and have no stored schedule.

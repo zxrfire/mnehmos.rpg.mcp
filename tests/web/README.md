@@ -22,3 +22,6 @@ checks that SQLite mutations, held graphs and ambient handles stay isolated.
 The played deed search caches completed candidates in `tests/support/played-deed.ts`.
 Its key follows the played path's sources. World and ledger assertions, plus
 the hearsay readers, run again on each caller's JSON copy.
+
+`routine-invitations.test.ts` plays company, private visits, dismissal and hourly waits
+through scripted model plans. It checks the live routine and the hour derived from the run.

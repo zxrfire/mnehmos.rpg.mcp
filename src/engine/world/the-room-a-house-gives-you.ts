@@ -91,7 +91,7 @@ export interface Quarters extends LodgingRoom {
 }
 
 /** Every room this house lodges people in, outermost first. */
-export function theLodgingsOfAHouse(state: WorldState, factionId: string): LodgingRoom[] {
+export function theLodgingsOfAHouse(state: Pick<WorldState, 'locations'>, factionId: string): LodgingRoom[] {
     const rooms: LodgingRoom[] = [];
     for (const location of state.locations) {
         if (location.controllingFactionId !== factionId) continue;

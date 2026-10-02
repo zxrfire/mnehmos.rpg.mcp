@@ -88,3 +88,7 @@ World NPC `bonded_cultivation_days` stores cultivation received through beast
 agreements as a real number. `world-state.repo.ts` round-trips it with the
 person; the oath and its terms remain in world obligations. Primal essence
 uses the person's existing persistent tags and has no second store.
+
+The hour is derived from the run's fractional elapsed day, with no second clock column.
+Invitation deadlines, return walks and interrupted activities use the existing NPC
+activity JSON; daily routines are derived and have no stored schedule.

@@ -358,6 +358,7 @@ async function worldHandleFor(run: Run): Promise<WorldHandle> {
 export async function worldForRun(run: Run): Promise<WorldState> {
     const handle = await worldHandleFor(run);
     catchUp(handle, run, 0);
+    handle.state.currentHour = (run.elapsedDays - Math.floor(run.elapsedDays)) * 24;
     return handle.state;
 }
 
@@ -436,7 +437,7 @@ function catchUp(handle: WorldHandle, run: Run, less: number): number {
     // guessing one would move the world by the whole of its history.
     if (!record) return 0;
 
-    const target = record.startedOnDay + Math.floor(run.elapsedDays) - Math.floor(less);
+    const target = record.startedOnDay + Math.floor(run.elapsedDays - less);
     const behind = target - handle.state.currentDay;
     if (behind <= 0) return 0;
 
@@ -461,8 +462,8 @@ export async function advanceWorldForCultivator(
     days: number,
     options: { limit?: number } = {}
 ): Promise<WorldAdvance | null> {
-    const span = Math.floor(days);
-    if (span <= 0) return null;
+    if (days <= 0) return null;
+    const span = Math.floor(run.elapsedDays) - Math.floor(run.elapsedDays - days);
 
     const handle = await worldHandleFor(run);
     // The run may not have been recorded yet - a cultivator created before this
@@ -473,7 +474,9 @@ export async function advanceWorldForCultivator(
 
     // Fold in anything the run clock already knows about but the world does
     // not, so the span below is genuinely this call's span.
-    catchUp(handle, run, span);
+    catchUp(handle, run, days);
+    handle.state.currentHour = (run.elapsedDays - Math.floor(run.elapsedDays)) * 24;
+    if (span <= 0) return null;
 
     const fromDay = handle.state.currentDay;
     const place = worldLocationFor(handle.state, cultivator.location);

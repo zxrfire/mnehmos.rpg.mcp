@@ -97,26 +97,13 @@ describe('the budget', () => {
         expect(spendsSomething(budget.toRun[1]!)).toBe(false);
     });
 
-    /**
-     * A FINDING, PINNED SO IT CANNOT BE LOST.
-     *
-     * The design owner's own sentence - "I take his purse, hand it to the man
-     * beside him, and walk away" - contains TWO costly acts by this engine's
-     * pricing, not one. `move` is in `TIME_CONSUMING_ACTIONS` and spends a day,
-     * whether the sentence means a journey to the next province or three paces
-     * back from an exchange, and there is no verb in the set for the latter.
-     *
-     * So the law asks which comes first, which is what the law is for and is
-     * the correct behaviour of the code as written. Whether "walk away" SHOULD
-     * cost a day is a design question about `move`, not about this file, and it
-     * is reported rather than quietly worked around: making the departure free
-     * here would be a second pricing of a verb, reachable by choosing your
-     * words, which is the softening AGENTS.md forbids by name.
-     */
-    it('and the framing sentence costs two acts, because a departure is a day', () => {
+    /** Local departure formerly counted as a whole-day journey. The owner's
+     * fractional-clock ruling makes it a quarter-day walk; only day-long acts
+     * count against this budget, so the framing sentence now runs in order. */
+    it('runs the framing sentence with its fractional departure', () => {
         const budget = whatThisTurnMayRun([THEFT, HANDOFF, WALK]);
-        expect(budget.toRun.map(s => s.action.action)).toEqual([]);
-        expect(budget.askAbout.map(s => s.action.action)).toEqual(['interact', 'move']);
+        expect(budget.toRun.map(s => s.action.action)).toEqual(['interact', 'interact', 'move']);
+        expect(budget.askAbout).toHaveLength(0);
     });
 
     it('stops at the FIRST costly act when there are two, and runs nothing costly', () => {
@@ -126,9 +113,9 @@ describe('the budget', () => {
         expect(budget.heldForTheQuestion.map(s => s.action.action)).toEqual(['interact', 'cultivate']);
     });
 
-    it('the free reads before the question still run, so the question can name them', () => {
-        const budget = whatThisTurnMayRun([step('investigate', { target: 'Gu Peiyan' }), THEFT, WALK]);
-        expect(budget.toRun.map(s => s.action.action)).toEqual(['investigate']);
+    it('the reads before the question still run, so the question can name them', () => {
+        const budget = whatThisTurnMayRun([LOOK, THEFT, step('move', { target: 'Cloud Gate' })]);
+        expect(budget.toRun.map(s => s.action.action)).toEqual(['look']);
     });
 
     it('names what it cut off rather than dropping it', () => {
@@ -175,7 +162,9 @@ describe('one clause is one act, however many patterns claim it', () => {
             step('attack', { target: 'him' }, 'I hit him'),
             step('interact', { target: 'him', intent: 'steal' }, 'then take his purse')
         ]);
-        expect(budget.askAbout).toHaveLength(2);
+        // A fight exchange is now an eighth-day act, beside the day-long theft.
+        expect(budget.askAbout).toHaveLength(0);
+        expect(budget.toRun).toHaveLength(2);
         expect(budget.secondReadings).toHaveLength(0);
     });
 

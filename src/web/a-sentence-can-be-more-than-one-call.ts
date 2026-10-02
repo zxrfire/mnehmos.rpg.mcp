@@ -12,6 +12,7 @@ import {
     type PlannedAction
 } from './actions.js';
 import type { EngineFacts } from './facts.js';
+import { isDayLongAct } from './lesser-action-costs.js';
 import { theFragmentIsOnlyTheDeclaration } from './what-you-are-not-showing.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -853,7 +854,8 @@ export function whatThisTurnMayRun(
      * try is the brittleness that ruling warns against, so where the words do
      * not say, it asks.
      */
-    theReaderDecidedTheOrder = false
+    theReaderDecidedTheOrder = false,
+    spansADay: (action: PlannedAction) => boolean = isDayLongAct
 ): WhatThisTurnMayRun {
     const withoutDoubleReadings = oneClauseIsOneAct(steps);
     // A CLAUSE THAT SAID WHY IS NOT A SECOND THING TO DO. Before the bound and
@@ -868,7 +870,8 @@ export function whatThisTurnMayRun(
     const overTheBound = withoutEmptyGoings.slice(MOST_CALLS_IN_ONE_TURN);
     const secondReadings = withoutDoubleReadings.secondReadings;
 
-    const costly = kept.filter(spendsSomething);
+    const dayLong = (step: PlanStep) => !step.selects && spansADay(step.action);
+    const costly = kept.filter(dayLong);
     if (costly.length < 2) {
         return {
             toRun: kept, askAbout: [], heldForTheQuestion: [], overTheBound,
@@ -876,12 +879,12 @@ export function whatThisTurnMayRun(
         };
     }
 
-    const first = kept.findIndex(spendsSomething);
+    const first = kept.findIndex(dayLong);
 
     // THE PLAYER MAY HAVE ALREADY ANSWERED THE QUESTION, or a reader may have
     // answered it for them. See `theReaderDecidedTheOrder`.
     if (theReaderDecidedTheOrder || theOrderIsAlreadySettled(kept, input)) {
-        const second = kept.findIndex((step, at) => at > first && spendsSomething(step));
+        const second = kept.findIndex((step, at) => at > first && dayLong(step));
         return {
             toRun: kept.slice(0, second),
             askAbout: [],

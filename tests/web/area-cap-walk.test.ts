@@ -4,7 +4,12 @@
  * advance several years. Every stop checks both the full placement and the
  * company handed to narration, including arrivals created after world seeding.
  * The body is raised to inedia after the voyage, letting the test
- * wait years without starving. Movement and time still use the played verbs.
+ * travel without starving. The final yearly checks drive the same world
+ * advance as played spans; qi deviation during a long body wait does not
+ * decide whether this spatial test reaches its third world year.
+ * Sparse hourly placement changed the band encountered on sea-6 from nine to
+ * three, so it withdrew and no deck scene remained. Sea-2 supplies the actual
+ * interrupted voyage this area test needs, found by playing the same world.
  */
 import { describe, expect, it } from 'vitest';
 import { DeterministicNarrator, type NarratorScene } from '../../src/web/narrator';
@@ -44,7 +49,7 @@ function cap(read: ReturnType<typeof theAreasOf>, label: string) {
 describe('the area cap survives a played walk', () => {
     it('walks towns, markets, a compound and ship through three years without an overfull scene', async () => {
         const narrator = new CheckingNarrator();
-        const h = await makeGameInWorld({ seed: 'sea-6', worldSeed: 'road-world', worldEnabled: true, adminMode: true, narrator });
+        const h = await makeGameInWorld({ seed: 'sea-2', worldSeed: 'road-world', worldEnabled: true, adminMode: true, narrator });
         const { game, repos, db } = h;
         const { cultivator } = await game.newRun('Walker');
         let stops = 0;
@@ -124,8 +129,15 @@ describe('the area cap survives a played walk', () => {
         await check();
         await game.act('I go to my quarters');
         const start = game.atHand!.currentDay;
-        for (let i = 0; i < 20 && game.atHand!.currentDay - start < 3 * 365; i++) {
-            await game.act('I wait for a year');
+        for (let i = 0; i < 3; i++) {
+            const now = game.currentRun();
+            repos.runs.advanceDays(now.run.id, 365);
+            await game.advanceWorld(365, now.cultivator, repos.runs.getById(now.run.id)!);
+            game.atHand = await game.loadWorld();
+            await game.act('look around');
+            const run = game.currentRun().run;
+            const entry = game.atHand!.runs.find(record => record.id === run.id)!;
+            expect(game.atHand!.currentDay).toBe(entry.startedOnDay + Math.floor(run.elapsedDays));
             await check(true);
         }
         expect(game.atHand!.currentDay - start).toBeGreaterThanOrEqual(3 * 365);

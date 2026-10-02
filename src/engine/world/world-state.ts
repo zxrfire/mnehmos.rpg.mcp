@@ -209,6 +209,8 @@ export interface WorldState {
     seed: string;
     /** Absolute day. The only clock. Years are derived. */
     currentDay: number;
+    /** Derived from the active run's fractional day; never persisted separately. */
+    currentHour?: number;
 
     locations: LocationRecord[];
     factions: FactionRecord[];

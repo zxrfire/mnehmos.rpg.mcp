@@ -1090,6 +1090,9 @@ function costOfCompany(
     forDays: number,
     theyWant: string | null
 ): RequestCosting {
+    const hours = Math.round(forDays * 24 * 60) / 60;
+    const duration = forDays < 1 ? `${hours} hour${hours === 1 ? '' : 's'}`
+        : `${forDays} day${forDays === 1 ? '' : 's'}`;
     const already = where.outWith;
     if (already && already.withIds.includes(asking.id)) {
         const until = already.untilDay;
@@ -1147,10 +1150,10 @@ function costOfCompany(
 
     const lines = [
         bound === null
-            ? `You are asking for ${forDays} day${forDays === 1 ? '' : 's'} of somebody else's `
+            ? `You are asking for ${duration} of somebody else's `
               + 'life, with no destination said. What it costs them is the road they were going '
               + 'to be on instead.'
-            : `You are asking for ${forDays} day${forDays === 1 ? '' : 's'} of somebody else's `
+            : `You are asking for ${duration} of somebody else's `
               + `life, as far as ${bound}. What it costs them is the road they were going to be `
               + 'on instead.'
     ];
@@ -1253,7 +1256,7 @@ export function whatItWouldCostThem(request: RequestToPrice): RequestCosting {
                 request.asked,
                 request.where ?? { outWith: null, otherwiseAt: null },
                 request.bound ?? null,
-                Math.max(1, Math.trunc(request.forDays ?? A_SEASON_ON_THE_ROAD)),
+                Math.max(0, request.forDays ?? A_SEASON_ON_THE_ROAD),
                 request.theyWant ?? null
             );
         case 'guidance':

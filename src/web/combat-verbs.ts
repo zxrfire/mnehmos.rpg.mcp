@@ -1,4 +1,6 @@
 import { marriageAfterSubmission } from './a-marriage-after-submission.js';
+import { passHours } from './routine-invitations.js';
+import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 /**
  * Hitting somebody, and everything the world does about it afterwards.
  */
@@ -1109,6 +1111,10 @@ export const combatVerbs = {
         held: StandingFight,
         answer: FightAnswer
     ): Promise<Execution> {
+        const advanced = await passHours(this, run, cultivator, LESSER_ACTION_DAYS.attack * 24);
+        if (!advanced.finished && advanced.spent) return advanced.spent;
+        run = this.repos.runs.getById(run.id) ?? run;
+        cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
         const turn = takeAFightTurn(held.state, answer, {
             ambient,
             turn: run.turn + 1,

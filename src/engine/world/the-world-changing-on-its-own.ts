@@ -4501,7 +4501,7 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         // A TERM SERVED IS SERVICE. A sending or a posting that ran its term
         // and came home is counted by the house it was for; a journey to a
         // house that took them is not service yet.
-        const served = doing.kind === 'travelling' ? npc
+        const served = doing.kind === 'travelling' || doing.redirect ? npc
             : whatFinishingBoardWorkPays(npc, doing)
                 ?? creditMerit(npc, whatServiceIsWorth(npc.cultivation.realmOrdinal, doing.untilDay - doing.sinceDay));
         // And what the work made, where it made something, paid for what landed.
@@ -4521,7 +4521,7 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
             : { ...paidFor, tags: paidFor.tags.filter(t => !t.startsWith(OUT_LOOKING_FOR)) };
         state.npcs[i] = {
             ...(back !== null && standing.has(back) ? setLocation(settled, back, day) : settled),
-            activity: null
+            activity: doing.redirect?.previous ?? null
         };
         if (sought !== null && npc.factionId !== null) {
             const dead = state.npcs.find(n => n.id === sought.afterId) ?? null;

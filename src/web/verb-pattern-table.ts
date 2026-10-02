@@ -5033,6 +5033,12 @@ function planIntent(input: string): PlannedAction {
         return { action: 'legacy', target: 'inheritance' };
     }
     if (A_ROOM_OF_YOUR_OWN.test(text)) {
+        const visiting = /\b(?:ask|invite)\s+(?:him|her|them|[^.!?]+?)\s+to\s+come\b.*\b(?:my|our) (?:room|quarters)\b/i.exec(input);
+        if (visiting) {
+            const recipient = /\b(?:ask|invite)\s+(.+?)\s+to\s+come\b/i.exec(input);
+            const room = /\b((?:my|our) (?:room|quarters))\b/i.exec(input);
+            return { action: 'request', intent: 'company', target: recipient?.[1], topic: room?.[1] };
+        }
         const thing = whatIsGoingInOrOutOfTheRoom(input);
         if (OUT_OF_A_ROOM_OF_YOUR_OWN.test(text)
             || (thing !== undefined && usedAsVerb(text, PICKING_IT_BACK_UP))) {
@@ -5795,9 +5801,11 @@ function planIntent(input: string): PlannedAction {
 
     {
         const alongside = input.trim();
+        const dismissed = /^(?:i\s+)?dismiss(?:\s+(.+?))?\s+from (?:my|our) party[.!]?$/i.exec(alongside);
+        if (dismissed) return { action: 'request', intent: 'end_company', ...(dismissed[1] ? { target: dismissed[1] } : {}) };
         const asksNobodyInParticular =
             /^\s*(?:(?:will|would|can|could)\s+you\s+|please\s+)?(?:come(?:\s+along)?|travel|ride|walk|journey)\s+with\s+(?:me|us)\b/i.test(alongside)
-            || /^\s*(?:(?:will|would|can|could)\s+you\s+|please\s+)?(?:come along|join\s+(?:me|us)(?!\s+(?:for|at)\b))\b/i.test(alongside);
+            || /^\s*(?:(?:will|would|can|could)\s+you\s+|please\s+)?(?:follow\s+(?:me|us)|join (?:my|our) party|come along|join\s+(?:me|us)(?!\s+(?:for|at)\b))\b/i.test(alongside);
         if (asksNobodyInParticular && !/\bfor sale\b/.test(text)) {
             const days = parseDuration(text);
             // The same reader the named form uses, so "come with me to the

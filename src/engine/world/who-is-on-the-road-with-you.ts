@@ -90,6 +90,7 @@ export function whoIsOnTheRoadWith(
         const doing = npc.activity;
         if (!doing || doing.kind !== ON_THE_ROAD) return false;
         if (!doing.withIds.includes(leaderId)) return false;
+        if (doing.redirect && today >= doing.redirect.until) return false;
         const until = doing.untilDay;
         return until === null || until === undefined || today < until;
     });
@@ -115,6 +116,7 @@ export function whoTheyAreOutWith(
 ): { withIds: readonly string[]; untilDay: number | null; note: string } | null {
     const doing = npc.activity;
     if (!doing || doing.kind !== ON_THE_ROAD) return null;
+    if (doing.redirect && today >= doing.redirect.until) return null;
     const until = doing.untilDay ?? null;
     if (until !== null && today >= until) return null;
     return { withIds: doing.withIds, untilDay: until, note: doing.note };

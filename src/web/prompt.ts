@@ -2,6 +2,7 @@
  * Narrator prompts - the one module to tune when the prose is wrong.
  */
 
+import { hourOnTheClock } from '../engine/world/npc-routines.js';
 import { readFileSync } from 'node:fs';
 import { AN_AMBITION_IS_A_READ, LANE_NAMES, THE_LANES } from './the-lanes-a-sentence-can-go-down.js';
 import { fileURLToPath } from 'node:url';
@@ -458,6 +459,7 @@ export function narrationSystemPrompt(): string {
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface StateSummaryInput {
+    hour?: number;
     cultivator: Cultivator;
     run: Run;
     ambient: AmbientQi;
@@ -615,9 +617,8 @@ export interface WhereTheyStandNow {
     /**
      * Days since this run opened.
      *
-     * SO THE WEATHER STOPS DRIFTING. The engine has no season and no time of
-     * day, so every arrival invented light and weather fresh and nothing but
-     * the turn before held it steady. A day is a thing the run has always
+     * The world supplies the hour; the run day supplies this layer's season.
+     * Earlier arrivals invented light and weather afresh. A day is a thing the run has always
      * known; a season is one line of arithmetic on top of it, and it belongs
      * in this layer rather than in the engine, which has no use for one.
      */
@@ -725,7 +726,8 @@ export function composeStateSummary(input: StateSummaryInput): string {
         `Known techniques: ${arts.length ? arts.join(', ') : 'none'}`,
         `Location: ${placeName(cultivator)}`,
         `Ambient qi: ${ambient}`,
-        `Run turn ${run.turn}, day ${Math.round(run.elapsedDays)}`,
+        `Run turn ${run.turn}, day ${Math.floor(run.elapsedDays)}`,
+        ...(input.hour === undefined ? [] : [`Hour ${hourOnTheClock(input.hour)}`]),
         '',
         'STANDING HERE (everybody in the square; "everyone here", "them", "the man" and '
             + 'every other pointing phrase mean these people and nobody else):',

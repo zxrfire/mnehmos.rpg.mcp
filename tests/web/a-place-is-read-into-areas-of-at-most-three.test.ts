@@ -11,7 +11,7 @@
  *
  *   OPENING        a run opens in an area of its town, among the faces it knows first, three at most
  *   WALKING IN     "I go to the inn" puts the player in the inn and the people in it in front of
- *                  them, and spends no day; "I go back out to the street" brings them back
+ *                  them, and spends a quarter day; "I go back out to the street" brings them back
  *   LEAVING        any change of place clears where they stood in the last one
  *   THE GATE       a stranger arriving at a house stands outside its gate with the one on watch,
  *                  and the arrival says who that is; somebody of the house the gate lets in
@@ -53,7 +53,7 @@ function aSeatedHouse(world: { locations: any[]; factions: any[] }) {
 }
 
 describe('a place is read into areas of at most three', () => {
-    it('opens a run among the people of its town, and walks it to the inn and out to the street without spending a day', async () => {
+    it('opens among its town\'s people and walks between its areas for fractional days', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'intro-2', worldSeed: 'road-world' });
         const { cultivator } = await game.newRun('Walker');
         const world = (await game.loadWorld())!;
@@ -74,6 +74,7 @@ describe('a place is read into areas of at most three', () => {
         expect(opened.id, 'the test walks to the inn from somewhere else').not.toBe(inn.id);
 
         const day = world.currentDay;
+        const before = game.currentRun().run.elapsedDays;
         const walked = await game.act('I go to the inn');
         expect(walked.toolCalls.map(call => call.name)).toContain('world.walkAcrossThePlace');
         const inside = repos.cultivators.getById(cultivator.id)!;
@@ -81,11 +82,13 @@ describe('a place is read into areas of at most three', () => {
         expect(inside.location).toBe(cultivator.location);
         expect(ids(game.present(inside))).toEqual(ids(npcsInTheArea(world, inn.id)));
         expect((await game.loadWorld())!.currentDay).toBe(day);
+        expect(game.currentRun().run.elapsedDays - before).toBeCloseTo(1 / 4);
 
         await game.act('I go back out to the street');
         const out = repos.cultivators.getById(cultivator.id)!;
         expect(out.standingIn).toBe(street.id);
         expect(ids(game.present(out))).toEqual(ids(npcsInTheArea(world, street.id)));
+        expect(game.currentRun().run.elapsedDays - before).toBeCloseTo(1 / 2);
     }, 300_000);
 
     /**
@@ -174,7 +177,8 @@ describe('a place is read into areas of at most three', () => {
         game.theWorldMoved();
 
         await game.act(`I travel to the ${faction.name}`);
-        await game.act('I go to the gate');
+        // A member's road can end directly on their own grounds.
+        if (repos.cultivators.getById(cultivator.id)!.location !== seat.name) await game.act('I go to the gate');
         const me = repos.cultivators.getById(cultivator.id)!;
         expect(me.location).toBe(seat.name);
         expect(theAreaTheyAreIn((await game.loadWorld())!, me)?.area.for,

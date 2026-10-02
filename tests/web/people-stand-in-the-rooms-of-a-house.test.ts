@@ -19,6 +19,10 @@
  *                     and is standing at the seat afterwards.
  *   THE SHOUT         reaches the house's people in its other rooms.
  *
+ * Hourly sparse placement can leave a hall's entrance empty. These scenes choose
+ * a hall with people at its entrance when the quarter-day walk ends, and assert that area's company, not everyone
+ * elsewhere in the hall.
+ *
  * Red-checked: reading `npcsAt` in `othersPresent` again leaves the lecture
  * hall empty to a player standing in it.
  */
@@ -66,13 +70,19 @@ async function atTheGateOfAHouseWithATalkOn(
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD, adminMode: true });
     await harness.game.newRun('Prober');
     await harness.game.act('I buy a year of provisions');
-    const world = (await harness.game.loadWorld())!;
+    // Set out before dawn; the six-hour crossing arrives during training.
+    await harness.game.act('I wait until night');
+    await harness.game.act('I wait for 5 hours');
+    const beforeWalk = (await harness.game.loadWorld())!;
+    const world = { ...beforeWalk, currentHour: (beforeWalk.currentHour! + 6) % 24 };
     const compounds = whereCompoundsAre(world);
     const found = [...compounds.bySeat.values()]
         .sort((a, b) => (a.seat.id < b.seat.id ? -1 : 1))
         .map(compound => ({ compound, hall: compound.rooms.get('lecture_hall') }))
         .find(({ compound, hall }) => hall !== undefined
             && npcsStandingIn(world, hall.id, compounds).length >= 2
+            && (() => { const read = theAreasOf(world, hall, compounds);
+                return [...read.whereIs.values()].includes(read.areas[0]!.id); })()
             && andAlso(world, compounds, compound, hall));
     expect(found, 'no house in this world has a talk on in its lecture hall').toBeDefined();
     const { compound, hall } = found!;
@@ -129,7 +139,8 @@ describe('walking in and out', () => {
     it('meets the people in the lecture hall only by walking into it, and walks back out to the gate', async () => {
         const { harness, world, compounds, seat, hall, houseId, me } = await atTheGateOfAHouseWithATalkOn('walk-in');
         expect(harness.repos.sects.addMember(houseId, me.id, 0), 'the house has no roll row').not.toBeNull();
-        const inTheHall = npcsStandingIn(world, hall.id, compounds).map(npc => npc.id);
+        const read = theAreasOf(world, hall, compounds);
+        const inTheHall = [...read.whereIs].filter(([, at]) => at === read.areas[0]!.id).map(([id]) => id);
 
         const atTheGate = harness.game.present(harness.game.currentRun().cultivator).map(row => row.id);
         expect(atTheGate.filter(id => inTheHall.includes(id))).toEqual([]);
@@ -137,7 +148,7 @@ describe('walking in and out', () => {
         const before = harness.game.currentRun().run.elapsedDays;
         const walked = await harness.game.act('I go to the lecture hall') as Turn;
         expect(harness.game.currentRun().cultivator.location, everythingSaid(walked)).toBe(hall.name);
-        expect(harness.game.currentRun().run.elapsedDays).toBe(before);
+        expect(harness.game.currentRun().run.elapsedDays - before).toBeCloseTo(1 / 4);
         const inside = harness.game.present(harness.game.currentRun().cultivator).map(row => row.id);
         expect(inside).toEqual(expect.arrayContaining(inTheHall));
 

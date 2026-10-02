@@ -2680,8 +2680,8 @@ Closing it needs a world population scaled to the map it is spread over.
 room read) into areas off what they are at: in a town a counter or a hired hand to a market or
 the street, a table or a sitting to an inn, anything else to the street; at a house's seat the
 one on watch and anybody not of the house outside the gate, the house's own in the forecourt;
-anywhere else one kind. Each kind is split into as few areas as hold three at most, filled
-by a draw of each person's own, the dead who fell there counted so a death pulls nobody across
+anywhere else one kind. Each kind leaves space for roughly one or two occupants, with three
+the ceiling; each person's draw includes the day and three-hour part of the day, the dead who fell there counted so a death pulls nobody across
 (the owner: "AT MOST 3 people per room, 3 NPCs"). An area is an id
 (`<place id>#<kind>#<slug>`), never a location row, for the density reason above; `npcsAt` and
 `npcsStandingIn` still answer for the whole row. The player stands in one area
@@ -2690,7 +2690,9 @@ area. A house's gate always has the lowest rung of the house in its yard on watc
 nobody of the house is home the gate is shut; somebody the gate stops or turns away stands
 outside it. Measured on `road-world`: the start square of four seeds held 6, 11, 21 and 28
 people before, and the area a run opens in now holds two or three, most of them faces it knows;
-over three seeded worlds, of 1,360 areas anybody stands in, 38% hold one, 28% two and 33% three.
+the earlier packing rule filled 33% of occupied areas with three. With hourly routines,
+`road-world`'s busiest town has occupied-area counts (one/two/three) of 6/3/2 at 08:00,
+7/4/1 at noon and 18/0/0 at 22:00 (day 365000; `npc-routines.test.ts`).
 
 Companions take space in that same read; they are never appended afterwards. The
 optional arrivals include run sheets and separated presences. Existing occupants
@@ -2701,6 +2703,14 @@ outside a full private room. The player is excluded; individually tracked beasts
 and bodies count against three, with bodies held separately from living targets.
 Placement is derived on every read, including after travel, summons and world ticks.
 Whole-row and whole-compound readers remain for population and ground mechanics.
+
+`npc-routines.ts` derives daily activity from the world day and hour, existing work,
+rank, realm and house, with personal shifts and house mealtimes on separate streams.
+Away activities retain their existing calendar. Sleep uses the house's existing rung-to-room
+reader or a private home area. The annual driver adds no daily or hourly schedule pass.
+An invitation lives on the existing party activity as a redirect, holding the interrupted
+activity, night deadline and any visited area. Routine reads project its return walk;
+the existing due-home pass restores the interrupted activity without paying service merit.
 
 **A world opens with rings on the hands that could have come by one.**
 `who-opens-the-world-wearing-a-ring.ts`: `whatARingCosts` against `netEarningsPerYear`

@@ -46,6 +46,10 @@ import {
     priceJourney
 } from '../engine/world/what-a-conveyance-does-to-a-journey.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
+import { invitationEndsAt, routineTime } from '../engine/world/npc-routines.js';
+import { passHours, invitationsDue } from './routine-invitations.js';
+import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
+import { walkingDaysFrom } from '../engine/world/locations.js';
 import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import {
     namesOf,
@@ -810,7 +814,7 @@ export const travelVerbs = {
             // Xuxue'"*, about a man standing an arm's length away.
             //
             // Going back to somebody you are already standing with is crossing
-            // a room. It is not a road, it costs no day, and it is the sentence
+            // a room. It is a local walk, and it is the sentence
             // people open a parting or an apology with, which is why it is
             // worth a beat rather than a refusal.
             //
@@ -963,6 +967,9 @@ export const travelVerbs = {
         const onTheRoad = this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
         if (onTheRoad < 1 && worldRow) {
             const walked = this.repos.cultivators.update(cultivator.id, { location: arrivedAt })!;
+            const advanced = await passHours(this, run, walked, LESSER_ACTION_DAYS.move * 24);
+            if (!advanced.finished && advanced.spent) return advanced.spent;
+            this.theyArrivedWithYou(walked, arrivedAt);
             this.noteEncounter(walked, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
                 'witnessed', 'Reached by a local walk.');
             noteWhoseGroundThisIs(this, walked, run, arrivedAt);
@@ -1546,7 +1553,7 @@ export const travelVerbs = {
         this: GameService,
         cultivator: Cultivator,
         party: readonly { id: string; name: string }[],
-        input: { note: string; forDays: number }
+        input: { note: string; forDays: number; invitation?: boolean; visit?: boolean }
     ): string[] {
         const world = this.atHand;
         const today = this.theDayAPartyIsOn();
@@ -1561,6 +1568,14 @@ export const travelVerbs = {
         if (changed.length === 0) return [];
         for (const row of changed) {
             const at = world.npcs.findIndex(npc => npc.id === row.id);
+            if (input.invitation && row.activity && at >= 0) {
+                const previous = world.npcs[at]!.activity;
+                const until = invitationEndsAt(world);
+                row.activity.redirect = { until, previous: previous?.redirect ? previous.redirect.previous : previous,
+                    visit: input.visit ?? false };
+                row.activity.sinceDay = routineTime(world);
+                row.activity.untilDay = until;
+            }
             if (at >= 0) world.npcs[at] = row;
         }
         this.theWorldMoved();
@@ -1574,7 +1589,8 @@ export const travelVerbs = {
     ): readonly NpcRecord[] {
         const today = this.theDayAPartyIsOn();
         if (!this.atHand || today === null) return [];
-        return whoIsOnTheRoadWith(this.atHand.npcs, cultivator.id, today);
+        invitationsDue(this, cultivator);
+        return whoIsOnTheRoadWith(this.atHand.npcs, cultivator.id, routineTime(this.atHand));
     },
 
     /**
@@ -1613,7 +1629,7 @@ export const travelVerbs = {
         const today = this.theDayAPartyIsOn();
         const npc = today === null ? undefined : npcs.find(row => row.id === personId);
         if (!npc || today === null) return { outWith: null, otherwiseAt: null, bringsAlong: [] };
-        const out = whoTheyAreOutWith(npc, today);
+        const out = whoTheyAreOutWith(npc, this.atHand ? routineTime(this.atHand) : today);
         const doing = npc.activity;
         return {
             outWith: out,
@@ -1665,11 +1681,19 @@ export const travelVerbs = {
         const moved = theyComeWithYou(world.npcs, {
             leaderId: cultivator.id,
             arrivedAt: place.id,
-            onDay: today
+            onDay: routineTime(world)
         });
         if (moved.length === 0) return null;
 
         for (const row of moved) {
+            const redirect = row.activity?.redirect;
+            if (redirect && row.activity?.returnTo) {
+                const home = row.activity.returnTo;
+                row.activity = { ...row.activity, redirect: { ...redirect } };
+                const days = walkingDaysFrom(world.locations, place.id).get(home);
+                row.activity.redirect!.returnDays = days ?? null;
+                row.activity!.untilDay = days === undefined ? null : redirect.until + days;
+            }
             const at = world.npcs.findIndex(npc => npc.id === row.id);
             if (at >= 0) world.npcs[at] = row;
         }

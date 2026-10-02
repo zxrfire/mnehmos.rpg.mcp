@@ -10,6 +10,21 @@ Other rooms and decks remain part of their place, without becoming talk targets.
 The offer list has four item slots (`OFFERS_SHOWN`), drawn from at most three
 local sellers. Its former name, `SELLERS_SHOWN`, described the wrong count.
 
+`lesser-action-costs.ts` covers every action. Existing day spans retain their costs;
+otherwise each reply, meal and quick trade takes 1/8 day, local walks take 1/4,
+and a thorough investigation takes 1/2. Scene and sheet reads stay free.
+Fractional acts add within a plan; only spans of a day or more compete for its long act.
+`routine-invitations.ts` persists fractions on `run.elapsedDays`, then passes them through
+`theseDaysPassedInTheWorldToo` after commit. Midnight advances the world with the player
+present. Routines read the derived hour; no hourly simulation pass or clock column exists.
+Named times and hour spans use `wait`. `perceived-daylight.ts` supplies light through the
+existing area sensory facts, withholding it under rock, behind seals and in windowless rooms.
+Each played combat exchange uses the same 1/8-day cost before resolving its blows.
+Company requests, including follow/join/room invitations, use the ordinary consent resolver
+and party activity. Night, explicit dismissal or leaving a visited private room ends the
+redirect. A return across location rows uses the existing walking distance; an interrupted
+activity resumes on arrival. Presence and narrator activity cards read the same routine.
+
 `witness-reactions-in-the-scene.ts` gives new player deeds and found bodies to
 the same witness resolver the yearly world pass uses. A player can account for
 a deed to a witness in their area, or tell a known local post what they
@@ -18,7 +33,7 @@ no model, explicit account words reach the same path.
 
 Local walks use the shared arrival reader in `travel-verbs.ts`. A path from a
 gate town to the grounds places the watch and applies the same admission read
-as a longer journey, without spending a day.
+as a longer journey, spending its local walking fraction.
 House destinations resolve the spoken house before a place match can expand
 it to its gate town. Members returning home reach their own grounds.
 

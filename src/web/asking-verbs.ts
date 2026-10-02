@@ -177,6 +177,7 @@ import { howCloseTheyStandToTheirWall } from './standing-guard.js';
 import { theDescriptionThisIs } from './a-target-can-be-a-description.js';
 import { DEFAULT_CULTIVATION_DAYS } from './verb-day-costs.js';
 import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
+import { dismissCompany } from './routine-invitations.js';
 import {
     isTeachingToday,
     whatTheyCannotPutDown,
@@ -222,7 +223,7 @@ import {
     factsForSomebodyWithNoOpenBusiness,
     factsForWhatTheyAreAfter
 } from './what-somebody-is-after.js';
-import { A_SEASON_ON_THE_ROAD } from '../engine/world/who-is-on-the-road-with-you.js';
+import { invitationEndsAt, routineTime } from '../engine/world/npc-routines.js';
 import { whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import { endTheBond } from './ending-a-bond-you-are-in.js';
 import type { GameService } from './turn-engine.js';
@@ -1248,6 +1249,7 @@ ${unnamed}`;
         days?: number
     ): Promise<Execution> {
         const scope = this.scopeFor(cultivator);
+        if (intent === 'end_company') return dismissCompany(this, run, cultivator, target);
         let query = (target ?? '').trim();
         // WHOEVER THEY WERE TALKING TO, where the sentence named nobody. "Will
         // you come with me", "will you watch me run the form": the pattern table
@@ -1582,7 +1584,7 @@ ${unnamed}`;
         // once here so the costing line, the refusal and the activity written
         // on a yes all name the same number.
         const term = shape === 'company'
-            ? Math.max(1, Math.trunc(days ?? A_SEASON_ON_THE_ROAD))
+            ? (this.atHand ? invitationEndsAt(this.atHand) - routineTime(this.atHand) : 1)
             // What a bare "I cultivate" spends, so asking to be watched for no
             // stated span spends what sitting for no stated span does.
             : shape === 'guidance'

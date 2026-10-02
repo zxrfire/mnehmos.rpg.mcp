@@ -32,7 +32,7 @@
  *                               the house has
  *   otherwise                   the seat: the gate and the forecourt it opens on
  *
- * PURE. The world in, a location id out. No I/O, no RNG, and nothing in the
+ * PURE. The world in, a location id out. No I/O, seeded routine reads, and nothing in the
  * world is written: the one thing kept is who holds which office, on the read's
  * own index, so a roll is dealt once per compound rather than once per person.
  */
@@ -53,6 +53,8 @@ import type { LocationRecord } from './locations.js';
 import { isActing, type NpcRecord } from './npc-state.js';
 import { npcsAt, type WorldState } from './world-state.js';
 import { whoIsAtAClosedLesson } from './where-a-master-takes-their-own-disciples.js';
+import { routineOf } from './npc-routines.js';
+import { theLodgingsOfAHouse, whichRoomARungGets, type LodgingRoom } from './the-room-a-house-gives-you.js';
 
 /** One compound, as much of it as a placement read needs. */
 export interface ACompound {
@@ -64,6 +66,7 @@ export interface ACompound {
     rooms: Map<RoomPurpose, LocationRecord>;
     /** Who holds which office, read once and only when somebody needs it. */
     offices: APortfolio[] | null;
+    lodgings?: LodgingRoom[];
     /** Who is at a closed lesson here, to its room, read once a day when asked. */
     lessons?: { day: number; at: Map<string, string> } | null;
 }
@@ -124,17 +127,25 @@ function stillAtIt(npc: Pick<NpcRecord, 'activity'>, day: number): boolean {
  * somebody who is not.
  */
 export function whereTheyAreStanding(
-    state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay'>,
+    state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay' | 'seed' | 'currentHour'>,
     compounds: WhereCompoundsAre,
     npc: NpcRecord,
     people: ReadonlySet<string>
 ): string | null {
-    const stored = npc.locationId;
+    const routine = routineOf(state, npc);
+    const stored = routine.locationId;
     if (stored === null) return null;
-    const compound = compounds.bySeat.get(stored);
+    const compound = compounds.bySeat.get(compounds.seatOf.get(stored) ?? stored);
     // Not at a seat: either not in a compound at all, or put in a room by name.
     if (!compound) return stored;
     if (npc.factionId !== compound.houseId) return stored;
+
+    if (routine.home) {
+        compound.lodgings ??= theLodgingsOfAHouse(state, compound.houseId);
+        return whichRoomARungGets(compound.lodgings, npc.factionRankIndex)?.locationId ?? stored;
+    }
+    if (stored !== compound.seat.id) return stored;
+    if (npc.activity?.redirect) return stored;
 
     const day = Math.floor(state.currentDay);
     // A CLOSED LESSON IS WHERE THE MASTER LIVES, for the master and for every
@@ -146,8 +157,8 @@ export function whereTheyAreStanding(
     const lesson = compound.lessons.at.get(npc.id);
     if (lesson !== undefined) return lesson;
 
-    if (!stillAtIt(npc, day)) return stored;
-    const doing = npc.activity!;
+    if (!stillAtIt({ activity: routine.activity }, day)) return stored;
+    const doing = routine.activity!;
     if (doing.withIds.some(id => !people.has(id))) return stored;
 
     if (doing.kind === 'the_work_of_their_rank') {
@@ -228,19 +239,25 @@ export const A_SLIP_CUT_TO_ORDER = 'commission-slip-';
  * order: alive, by id.
  */
 export function npcsStandingIn(
-    state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay'>,
+    state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay' | 'seed' | 'currentHour'>,
     locationId: string,
     compounds: WhereCompoundsAre = whereCompoundsAre(state)
 ): NpcRecord[] {
     const seatId = compounds.seatOf.get(locationId);
     if (seatId === undefined) {
-        return npcsAt(state, locationId);
+        const ordinary = npcsAt(state, locationId).filter(n => !n.activity?.redirect);
+        const returning = state.npcs.filter(n => isActing(n.status) && n.activity?.redirect
+            && routineOf(state, n).locationId === locationId);
+        return [...ordinary, ...returning]
+            .sort((a, b) => a.id.localeCompare(b.id));
     }
     const compound = compounds.bySeat.get(seatId)!;
     const people = new Set(state.npcs.map(n => n.id));
     return state.npcs
-        .filter(n => isActing(n.status) && n.locationId !== null
-            && (n.locationId === seatId || compound.inside.has(n.locationId)))
+        .filter(n => {
+            const at = n.activity?.redirect ? routineOf(state, n).locationId : n.locationId;
+            return isActing(n.status) && at !== null && (at === seatId || compound.inside.has(at));
+        })
         .filter(n => whereTheyAreStanding(state, compounds, n, people) === locationId)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 }

@@ -2,6 +2,10 @@
 
 # Server-lifetime state
 
+The run's fractional elapsed day supplies the hour on world reads. World advancement
+uses the difference between the starting and ending whole days, so fractions crossing
+midnight advance with the player's observer. There is no separately persisted hour.
+
 `advanceWorldForCultivator` supplies the player's current body and actual area as a
 temporary visiting presence. NPC advancement can read their suppression and elemental
 neighbourhood without assigning the player a second persisted location.

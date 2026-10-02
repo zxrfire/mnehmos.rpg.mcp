@@ -584,6 +584,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             the engine spends the days between now and it. A name nothing here answers to is
             met with what does have a day on it, never with a day nobody asked for.
 
+            Waiting until morning, midday, evening or night, or for a number of hours,
+            advances the hour and reads who is there from their routine.
+
             Staying the nights AT THE INN is this, with "days" the nights: "I stay at the inn
             for three nights", "I sleep at the inn". The engine pays for the nights the room
             does not already cover, then spends them under its roof.`
@@ -907,9 +910,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             the price asked before it is paid), a_trade (something put down for it that is not
             money), advancement (be raised a rung in your own house - it only moves if the person
             asked is the one whose call it is, and money alone will not buy it), company (ask them
-            to come with you - "topic" is where the party is bound when the sentence said, and
-            "days" is how long they were asked for; they travel with the player until the term
-            runs out, and most people have no reason to follow a stranger), nothing (ask for
+            to come with you, follow you, join your party, or visit your room - "topic" is the destination, and
+            "days" is how long they were asked for; local invitations end at night and visits end
+            when the host leaves the room. end_company dismisses invited company (target names
+            the companion, omitted means everyone), and most people have no reason to follow a stranger), nothing (ask for
             NOTHING - buy them a drink, sit with them, call on them, do
             them a small favour; costs a day and no stones, and it is the only thing that makes
             a stranger somebody who will do you a favour later); "topic" is what was named - the

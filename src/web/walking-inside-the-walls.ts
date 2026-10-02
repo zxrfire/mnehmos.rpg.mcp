@@ -27,8 +27,7 @@
  * forecourt, the gatehouse or the gate is going back to the seat, and nothing
  * stops anybody walking out of a building.
  *
- * NO DAY PASSES. A compound is crossed in the time it takes to walk it, which
- * is the same flat nothing that looking at it costs.
+ * Crossing a compound takes a quarter day on the run clock.
  */
 
 import { isAtLeast } from '../engine/social/discovery.js';
@@ -52,6 +51,8 @@ import { howThisCultivatorStandsInTheHouseHolding } from './how-this-cultivator-
 import { refused } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+import { passHours } from './routine-invitations.js';
+import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 import { theGateBetweenThemAndIt } from './walking-across-a-place.js';
 import {
     A_MASTERS_DWELLING,
@@ -349,7 +350,11 @@ export async function aWalkInsideTheWalls(
     // ── THE WALK ─────────────────────────────────────────────────────────
     game.repos.cultivators.update(cultivator.id, { location: destination.name });
     game.repos.runs.incrementTurn(run.id, 1);
-    const walked: Cultivator = { ...cultivator, location: destination.name };
+    const walked: Cultivator = { ...cultivator, location: destination.name, standingIn: null };
+    const hours = LESSER_ACTION_DAYS.move * 24;
+    const advanced = await passHours(game, run, walked, hours);
+    if (!advanced.finished && advanced.spent) return advanced.spent;
+    game.theyArrivedWithYou(walked, destination.name);
     const people = game.present(walked);
     const out = destination.id === seat.id;
     // THE ROOM'S OWN NAME, not the row's. `destination.name` is
@@ -370,7 +375,7 @@ export async function aWalkInsideTheWalls(
     // put there is read out twice. Where somebody ended up is a fact and it is
     // already in `lines`; the sentence that carries it is the narrator's.
     facts.structure.push(
-        `walkInsideTheWalls: ${here.id} to ${destination.id}, inside ${seat.id}. No time passed; `
+        `walkInsideTheWalls: ${here.id} to ${destination.id}, inside ${seat.id}. ${hours} hours passed; `
         + `${people.length} standing in the arrival area.`
     );
     const execution: Execution = {
@@ -382,7 +387,7 @@ export async function aWalkInsideTheWalls(
         calls: [{
             name: 'world.walkInsideTheWalls',
             action: 'move',
-            summary: `${cultivator.name} walked to ${destination.name}. Location written, no time passed.`,
+            summary: `${cultivator.name} walked to ${destination.name}. Location written; ${hours} hours passed.`,
             ok: true
         }]
     };

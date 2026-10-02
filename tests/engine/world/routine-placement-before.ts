@@ -20,10 +20,10 @@
  *   open water     the decks of a hull, since nobody stands on the sea itself
  *   anywhere else  one kind
  *
- * and each kind leaves space for roughly one or two people per area, with three the ceiling.
- * The dead who fell there are counted. Each person stands in the area a draw of their own points at, or the next with room, so
+ * and each kind has as few areas as hold its people three at a time, the dead who fell there
+ * counted. Each person stands in the area a draw of their own points at, or the next with room, so
  * a death pulls nobody across from elsewhere. People in one activity together
- * (`withIds`) are kept in one area. The draw includes the day and three-hour part of the day. Nothing
+ * (`withIds`) are kept in one area. The draw is on its own stream, so nothing else moves. Nothing
  * writes an area: a new activity is a new reading. Companions take room too;
  * a read with the player's position puts up to three with them and the rest elsewhere.
  *
@@ -37,19 +37,19 @@
  * PURE. The world in, an id or a list out.
  */
 
-import { forStream } from '../cultivation/rng.js';
-import { isOpenWater } from '../../data/cultivation/regions.js';
-import { SEA_LANES } from '../../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
-import { isAwayOnSomething, isActing, PLAYER_ROW_TAG, type ActivityKind, type NpcRecord } from './npc-state.js';
-import type { LocationRecord } from './locations.js';
-import type { WorldState } from './world-state.js';
-import { routineOf } from './npc-routines.js';
+import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { isOpenWater } from '../../../src/data/cultivation/regions.js';
+import { SEA_LANES } from '../../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
+import { isAwayOnSomething, isActing, PLAYER_ROW_TAG, type ActivityKind, type NpcRecord } from '../../../src/engine/world/npc-state.js';
+import type { LocationRecord } from '../../../src/engine/world/locations.js';
+import type { WorldState } from '../../../src/engine/world/world-state.js';
+function routineOf(_state: unknown, npc: NpcRecord) { return { activity: npc.activity, home: false, standingIn: null as string | null }; }
 import {
     npcsStandingIn,
     npcsWithin,
     whereCompoundsAre,
     type WhereCompoundsAre
-} from './where-inside-a-house-somebody-is-standing.js';
+} from '../../../src/engine/world/where-inside-a-house-somebody-is-standing.js';
 
 /** The owner's ceiling: three of the world's people to an area. */
 export const AT_MOST_IN_AN_AREA = 3;
@@ -270,7 +270,6 @@ export function theAreasOf(
     compounds: WhereCompoundsAre = whereCompoundsAre(state),
     standingWith?: StandingWith
 ): APlaceReadIntoAreas {
-    const day = Math.floor(state.currentDay);
     const people = npcsStandingIn(state, place.id, compounds)
         .filter(n => !n.tags.includes(PLAYER_ROW_TAG) && n.id !== standingWith?.id);
     const here = new Map(people.map(n => [n.id, n]));
@@ -325,8 +324,7 @@ export function theAreasOf(
     for (const group of groups.filter(group => kindOf(group) === 'room')) {
         for (const npc of group) {
             const room = aRoomOfTheirOwn(place, npc.id);
-            room.name = (place.kind === 'sect_seat' || ['dormitory', 'residence'].includes(String(place.data.purpose)))
-                ? `private quarters at door ${areas.length + 1}` : `a home at door ${areas.length + 1}`;
+            room.name = place.kind === 'sect_seat' ? 'private quarters' : 'a home';
             areas.push(room);
             whereIs.set(npc.id, room.id);
         }
@@ -340,17 +338,19 @@ export function theAreasOf(
             .map(piece => ({
                 piece,
                 first: piece.some(n => n.id === watch?.id),
-                draw: forStream(state.seed, 'which-area-of-a-place', place.id, piece[0]!.id,
-                    day, Math.floor((state.currentHour ?? 8) / 3)).next()
+                draw: forStream(state.seed, 'which-area-of-a-place', place.id, piece[0]!.id).next()
             }))
             .sort((a, b) => Number(b.first) - Number(a.first) || a.draw - b.draw);
         const total = pieces.reduce((n, p) => n + p.piece.length, 0);
         const names = theNamesFor(place, what);
-        // Spare space is physical room, not a quota to fill. Fallen bodies still take space.
+        // AS FEW AREAS AS HOLD THEM, counting the dead who fell here: each piece goes to the area
+        // its own draw points at, or the next one with room. A death leaves the count and so every
+        // other draw where it was: kill the three in front of you and the room is empty, not
+        // refilled from across the square.
         const fallen = state.npcs.filter(n => !isActing(n.status) && n.locationId === place.id
             && fallenKind(n) === what).sort((a, b) => a.id.localeCompare(b.id));
         const bins: NpcRecord[][] = Array.from(
-            { length: Math.max(names.length, Math.ceil((total + fallen.length) / 1.5)) }, () => []);
+            { length: Math.max(1, Math.ceil((total + fallen.length) / AT_MOST_IN_AN_AREA)) }, () => []);
         for (const { piece, first, draw } of pieces) {
             const from = first ? 0 : Math.floor(draw * bins.length);
             const at = Array.from({ length: bins.length }, (_, k) => (from + k) % bins.length)

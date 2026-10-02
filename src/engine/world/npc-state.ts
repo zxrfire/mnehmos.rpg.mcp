@@ -386,6 +386,14 @@ export type ActivityKind =
 
 export interface NpcActivity {
     kind: ActivityKind;
+    /** A local invitation interrupts the ordinary activity until night or dismissal. */
+    redirect?: {
+        until: number;
+        previous: NpcActivity | null;
+        standingIn?: string | null;
+        visit?: boolean;
+        returnDays?: number | null;
+    };
     /**
      * What they are actually at, in words. The thing itself, not the category.
      *

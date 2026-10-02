@@ -10,7 +10,7 @@
  * WHERE THE PLAYER IS, stored as the area they walked to (`Cultivator.standingIn`) and cleared by
  * any change of `location`, so arriving anywhere by road lands where a road arrives.
  *
- * NO DAY PASSES. A place is crossed in the time it takes to walk it.
+ * A local crossing takes a quarter day on the run clock.
  */
 
 import {
@@ -34,6 +34,8 @@ import type { GameService } from './turn-engine.js';
 import { theHouseWhoseGateThisIs, whatTheGateOfThisHouseSays } from './walking-up-to-a-house.js';
 import { whereTheyAreLodged } from './a-room-at-an-inn.js';
 import { peopleInThisPlace } from './hearsay.js';
+import { passHours } from './routine-invitations.js';
+import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 
 /** The words for a kind of area, where a place has no area by that exact name. */
 const A_WORD_FOR: ReadonlyArray<[RegExp, WhatAnAreaIsFor]> = [
@@ -77,6 +79,15 @@ function theAreaNamed(areas: readonly AnAreaOfAPlace[], wanted: string): AnAreaO
         if (first) return first;
     }
     return null;
+}
+
+/** The same local area names used by walking also price a plan's movement. */
+export function namesALocalArea(game: GameService, cultivator: Cultivator, target: string | undefined): boolean {
+    const here = theAreaTheyAreIn(game.atHand, cultivator);
+    if (!here || !game.atHand || !target) return false;
+    return A_ROOM_OF_THEIR_OWN.test(target)
+        || theAreaNamed(peopleInThisPlace(game.repos, cultivator, game.atHand, here.place).areas,
+            asAnAreaIsNamed(target)) !== null;
 }
 
 /** The place this player is standing in and the area of it, or null where the world has neither. */
@@ -224,6 +235,8 @@ export async function aWalkAcrossThePlace(
 
     // ── THE WALK ─────────────────────────────────────────────────────────
     game.repos.cultivators.standIn(cultivator.id, destination.id);
+    const advanced = await passHours(game, run, { ...cultivator, standingIn: destination.id }, LESSER_ACTION_DAYS.move * 24);
+    if (!advanced.finished && advanced.spent) return advanced.spent;
     game.repos.runs.incrementTurn(run.id, 1);
     const people = game.present({ ...cultivator, standingIn: destination.id });
     const line = `You walk from ${here.area.name} to ${destination.name}.`;
@@ -234,7 +247,7 @@ export async function aWalkAcrossThePlace(
             : `${people.length} ${people.length === 1 ? 'person is' : 'people are'} there.`
     ]);
     facts.structure.push(
-        `walkAcrossThePlace: ${here.area.id} to ${destination.id}, in ${here.place.id}. No time passed; `
+        `walkAcrossThePlace: ${here.area.id} to ${destination.id}, in ${here.place.id}. A quarter day passed; `
         + `${people.length} standing in the arrival area.`
     );
     return {
@@ -246,7 +259,7 @@ export async function aWalkAcrossThePlace(
         calls: [{
             name: 'world.walkAcrossThePlace',
             action: 'move',
-            summary: `${cultivator.name} walked to ${destination.name} in ${here.place.name}. No time passed.`,
+            summary: `${cultivator.name} walked to ${destination.name} in ${here.place.name}. A quarter day passed.`,
             ok: true
         }]
     };
@@ -283,7 +296,7 @@ export function crossToWhoeverTheyNamed(
     return {
         cultivator: game.repos.cultivators.getById(cultivator.id) ?? cultivator,
         line: `You cross to ${theirs.name}, where ${named.name} is.`,
-        structure: `crossToWhoeverTheyNamed: ${here.area.id} to ${theirs.id} for ${named.id}. No time passed.`
+        structure: `crossToWhoeverTheyNamed: ${here.area.id} to ${theirs.id} for ${named.id}. A quarter day passed.`
     };
 }
 

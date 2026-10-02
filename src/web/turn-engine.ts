@@ -201,6 +201,10 @@ import {
 } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
+import { routineOf } from '../engine/world/npc-routines.js';
+import { invitationsDue, waitForHour, passHours } from './routine-invitations.js';
+import { isDayLongAct, lesserActionDays, LESSER_ACTION_DAYS } from './lesser-action-costs.js';
+import { perceivedDaylight } from './perceived-daylight.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import { howItIsHad, transferPossession, ruin, type ObjectRecord } from '../engine/world/possessions.js';
 import { theRowsThatGoWithAStack } from './stack-and-its-row.js';
@@ -575,6 +579,7 @@ import { settleWhatWasPlacedWithAMaker } from './a-commission-placed-with-a-make
 import { intoTheRoomTheWorkIsDoneIn, theDoorsOffThisYard } from './walking-inside-the-walls.js';
 import {
     crossToWhoeverTheyNamed,
+    namesALocalArea,
     openAmongThePeopleOfTheirPlace,
     thePlaceAsTheSceneNamesIt,
     theRestOfThisPlace
@@ -2389,7 +2394,9 @@ export class GameService {
                 alive: true
             });
             const run = this.repos.runs.startRun({ cultivatorId: cultivator.id, seed });
-            return { cultivator: this.repos.cultivators.getById(cultivator.id)!, run };
+            // A life opens at morning; its fractional clock then runs through midnight.
+            this.repos.runs.advanceDays(run.id, 1 / 3);
+            return { cultivator: this.repos.cultivators.getById(cultivator.id)!, run: this.repos.runs.getById(run.id)! };
         })();
 
         // What this life starts holding, in two layers that do different jobs.
@@ -2714,6 +2721,7 @@ export class GameService {
         this.atHand = await this.loadWorld();
 
         // THE PLAYER IS ON THE ROSTER, AND THE SHEET IS THE SOURCE
+        invitationsDue(this, cultivator);
         this.refreshThePlayerRow(cultivator);
         const worldDayBeforeTheTurn = Math.floor(this.atHand?.currentDay ?? 0);
 
@@ -2879,6 +2887,7 @@ export class GameService {
                 // `names-as-they-are-spelled.ts`.
                 inTheSpellingOfTheNamesTheyKnow(trimmed, this.awarenessOf(cultivator).map(row => row.name)),
                 composeStateSummary({
+                    hour: this.atHand?.currentHour ?? 8,
                     cultivator: presenceForScene(this, cultivator),
                     run,
                     ambient,
@@ -3546,7 +3555,8 @@ export class GameService {
                         const status = this.atHand?.npcs.find(n => n.id === p.id)?.status;
                         return status !== undefined && status !== 'alive';
                     }),
-                onTheRoad: after.cultivator.location !== cultivator.location
+                onTheRoad: after.cultivator.location !== cultivator.location,
+                secluded: theTurnsPlan.action.action === 'seclude' && execution.timeSkip !== null
             })
         };
 
@@ -3928,7 +3938,16 @@ export class GameService {
         // A pattern table cannot reason about order at all, and the design
         // owner ruled on that half too: *asking is okay cuz an embedding can't
         // tell, that's too hard and would make it too brittle.* So it asks.
-        const budget = whatThisTurnMayRun(steps, rawInput, plan.source === 'model');
+        const budget = whatThisTurnMayRun(steps, rawInput, plan.source === 'model', action => {
+            if (action.action === 'move' || action.action === 'site') {
+                const named = (action.target ?? '').trim().toLowerCase().replace(/^the\s+/, '');
+                if (namesALocalArea(this, cultivator, action.target)
+                    || theDoorsOffThisYard(this, cultivator).some(door => door.toLowerCase().replace(/^the\s+/, '') === named)) return false;
+                const days = action.action === 'move' ? this.daysOnTheRoadTo(cultivator, action.target ?? '') : null;
+                if (days !== null && days < 1) return false;
+            }
+            return isDayLongAct(action);
+        });
         const done: Execution[] = [];
         let stoppedOn: PlanStep | null = null;
         /** Whether the step that stopped the plan had LANDED. See `howTheStepWent`. */
@@ -4253,6 +4272,26 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
+        const done = await this.executeAction(action, run, cultivator, ambient, rawInput);
+        const nowRun = this.repos.runs.getById(run.id)!;
+        const approach = done.calls.some(call => call.name === 'engine.approachTime') ? LESSER_ACTION_DAYS.move : 0;
+        if (done.outcome !== 'refused' && !done.calls.some(call => !call.ok)
+            && !done.calls.some(call => call.name === 'world.waitForHour')
+            && Math.abs(nowRun.elapsedDays - run.elapsedDays - approach) < 1e-8) {
+            const days = lesserActionDays(action);
+            if (days > 0) {
+                const advanced = await passHours(this, nowRun, this.repos.cultivators.getById(cultivator.id) ?? cultivator, days * 24);
+                if (!advanced.finished && advanced.spent) return advanced.spent;
+                done.calls.push({ name: 'engine.lesserActionTime', action: action.action,
+                    summary: `${days} day spent.`, ok: true });
+            }
+        }
+        return done;
+    }
+
+    private async executeAction(
+        action: PlannedAction, run: Run, cultivator: Cultivator, ambient: AmbientQi, rawInput: string
+    ): Promise<Execution> {
         const carriedUp = enforceCarriedCeiling(this, run, cultivator);
         if (carriedUp) return carriedUp;
         trackElementalStay(this, cultivator, run);
@@ -4295,6 +4334,8 @@ export class GameService {
                 Math.floor(this.atHand.currentDay))) this.theWorldMoved();
         }
         if (crossed) {
+            await passHours(this, this.repos.runs.getById(run.id)!, this.repos.cultivators.getById(actor.id) ?? actor, LESSER_ACTION_DAYS.move * 24);
+            done.calls.push({ name: 'engine.approachTime', action: 'move', summary: 'A quarter day spent crossing the place.', ok: true });
             done.facts.lines.unshift(crossed.line);
             done.facts.structure.push(crossed.structure);
         }
@@ -5023,6 +5064,8 @@ export class GameService {
                 return this.hunt(run, cultivator, ambient, action.target, action.thrown);
 
             case 'wait': {
+                const hourly = await waitForHour(this, run, cultivator, rawInput);
+                if (hourly) return hourly;
                 // ── WAITING UNTIL A THING THE WORLD HAS A DATE FOR ────────
                 //
                 // The span is read off the sentence one layer up and a named
@@ -18494,7 +18537,6 @@ ${fit.line}`;
             // day at all.
             const forDays = Math.max(1, Math.trunc(along.forDays));
             const leftOn = this.theDayAPartyIsOn();
-            const until = leftOn === null ? null : leftOn + forDays;
             // AND WHOEVER HAD ALREADY SAID YES TO THEM. Read off the mustering
             // activity by `whereTheyAlreadyAre` - the world puts a person
             // raising a party in front of the player on purpose, and until this
@@ -18507,9 +18549,12 @@ ${fit.line}`;
                     note: along.bound === null
                         ? `On the road with ${cultivator.name}.`
                         : `On the road with ${cultivator.name}, bound for ${along.bound}.`,
-                    forDays
+                    forDays,
+                    invitation: true,
+                    visit: /\b(?:room|quarters)\b/i.test(along.bound ?? '')
                 }
             );
+            const until = this.atHand?.npcs.find(n => n.id === party.id)?.activity?.redirect?.until ?? null;
             // A person the world holds no row for cannot be put on a road. The
             // ask still landed and the world has nowhere to record it, which is
             // a fact about the roster and not about the answer.
@@ -18534,10 +18579,9 @@ ${fit.line}`;
             lines.push(
                 `${came.length === 1 ? party.name : came.join(', ')} `
                 + `${came.length === 1 ? 'comes' : 'come'} with you for `
-                + `${forDays} day${forDays === 1 ? '' : 's'}`
+                + 'the rest of the day'
                 + `${along.bound === null ? '' : `, bound for ${along.bound}`}`
-                + `. ${came.length === 1 ? 'They are' : 'They are'} where you are from here, and `
-                + 'on the day the term runs out they go back to where they set out from.'
+                + '. They return home at night.'
             );
             calls.push({
                 name: 'world.takeThemWithYou',
@@ -19207,9 +19251,8 @@ ${fit.line}`;
     }
 
     /**
-     * An action that costs a turn of attention and nothing else. No day passes,
-     * no satiety is burned, no roll is made - looking around must never be able
-     * to kill you, and in a permadeath game that is a rule, not a courtesy.
+     * Record facts without a span. The executor charges lesser acts from their
+     * plan; reads of the scene and one's own sheet remain free.
      */
     freeAction(run: Run, action: ActionName, facts: EngineFacts): Execution {
         this.repos.runs.incrementTurn(run.id, 1);
@@ -19222,7 +19265,7 @@ ${fit.line}`;
             calls: [{
                 name: 'engine.readState',
                 action,
-                summary: `${facts.headline} Read only - no time passed and no value changed.`,
+                summary: `${facts.headline} Facts read; any act is charged by the executor.`,
                 ok: true
             }]
         };
@@ -20471,7 +20514,7 @@ ${fit.line}`;
             const remote = person.tags?.find(tag => tag.startsWith('present-as:'))?.slice('present-as:'.length);
             if (this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)) {
                 const row = byId.get(person.id) ?? null;
-                const doing = remote ? null : row?.activity ?? null;
+                const doing = remote || row === null || this.atHand === null ? null : routineOf(this.atHand, row).activity;
                 const account = whatIsSaidAbout({
                     subjectId: cultivator.id,
                     observer: {
@@ -20589,7 +20632,8 @@ ${fit.line}`;
                 });
             } else {
                 // A FACE WITH NO NAME IS STILL A CARD: what they are at, and nothing that names them.
-                const doing = byId.get(person.id)?.activity ?? null;
+                const row = byId.get(person.id);
+                const doing = !row || !this.atHand ? null : routineOf(this.atHand, row).activity;
                 strangers.push({
                     ordinal: person.realmOrdinal,
                     sex: person.sex ?? null,
@@ -21683,17 +21727,20 @@ ${fit.line}`;
      */
     private howThisPlaceIs(
         cultivator: Cultivator,
-        situation: { somebodyDied: boolean; onTheRoad: boolean }
-    ): Pick<NarratorScene, 'whatThisProvinceIsLike' | 'theWayItIsDoneHere'> {
+        situation: { somebodyDied: boolean; onTheRoad: boolean; secluded?: boolean }
+    ): Pick<NarratorScene, 'whatThisProvinceIsLike' | 'whatThisAreaIsLike' | 'theWayItIsDoneHere'> {
         const regionId = regionIdOfPlace(cultivator.location);
         const region = regionId ? REGIONS.find(r => r.id === regionId) : undefined;
-        if (!region) return { whatThisProvinceIsLike: null };
+        const light = situation.secluded ? null : perceivedDaylight(this, cultivator);
+        const area = light ? { light } : null;
+        if (!region) return { whatThisProvinceIsLike: null, whatThisAreaIsLike: area };
         const customs: TheWayItIsDoneHere[] = [];
         if (situation.somebodyDied) customs.push({ when: 'death', text: region.customs.death });
         if (this.introducedThisTurn) customs.push({ when: 'naming', text: region.customs.naming });
         if (situation.onTheRoad) customs.push({ when: 'threat', text: region.customs.threatModel });
-        const said: Pick<NarratorScene, 'whatThisProvinceIsLike' | 'theWayItIsDoneHere'> = {
-            whatThisProvinceIsLike: region.register
+        const said: Pick<NarratorScene, 'whatThisProvinceIsLike' | 'whatThisAreaIsLike' | 'theWayItIsDoneHere'> = {
+            whatThisProvinceIsLike: region.register,
+            whatThisAreaIsLike: area
         };
         if (customs.length > 0) said.theWayItIsDoneHere = customs;
         return said;

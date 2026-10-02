@@ -17,6 +17,7 @@ The storage model behind all of it is
 | Section | Loads when |
 |---|---|
 | [NPCs are protagonists of their own lives](#npcs-are-protagonists-of-their-own-lives) | an NPC does something the player did not prompt, or the player asks what somebody wants |
+| [Daily routines and invitations](#daily-routines-and-invitations) | the hour changes who is present, or somebody comes with the player |
 | [Goals persist, and outlive their holder](#goals-persist-and-outlive-their-holder) | an NPC's goal, deadline, or obstacle is in play, or somebody dies with an unfinished aim |
 | [Morality is contextual](#morality-is-contextual) | an NPC's motives, allegiance, or willingness to do something ugly is in question |
 | [Why didn't the stronger person just kill them?](#why-didnt-the-stronger-person-just-kill-them) | a stronger character declines to remove a weaker one |
@@ -53,6 +54,29 @@ creates potential, not destiny.
 Personality must be real and varied - cowardly, ambitious, greedy, arrogant, kind,
 paranoid, eccentric, lazy, obsessive, loyal, pragmatic - and must drive decisions. **Not
 every cultivator is a cold mysterious genius.**
+
+## Daily routines and invitations
+
+<!-- tier: 2 trigger="the hour changes who is present, or somebody comes with the player" -->
+
+People sleep at home or in the quarters their house already assigns their rung. Their
+work, offices, meals, training and watch bring them elsewhere during the day. Personal
+shifts differ, houses share mealtimes, and a few people work or eat at night. Travel,
+postings and seclusion keep their existing terms. Read this from the person, day and
+hour; background time does not step through everybody's hours. Three people is an area
+ceiling. Empty streets and tables are ordinary.
+
+An accepted invitation interrupts the person's activity until night. They follow the
+party; a private visit stays in the host's room until the host leaves or ends the company.
+Dismissal ends it earlier. Afterwards they walk home by the ordinary roads and resume
+their routine, including their own quarters at night. Invitations use the same consent
+and activity as other company requests. Facts say who is present and what they are doing;
+a stranger's name still needs an introduction.
+
+Replies, meals and quick trades each spend an eighth of a day; crossing a place or
+compound spends a quarter. Fractional acts add within a plan. The hour comes from
+the run's elapsed days. Daylight and lamps enter the area's ordinary perceived facts;
+caves, sealed places, deep seclusion and windowless rooms reveal no hour.
 
 ## Goals persist, and outlive their holder
 
