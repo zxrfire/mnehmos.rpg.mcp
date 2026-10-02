@@ -2630,19 +2630,22 @@ find the party, put something to them - and a reader that can answer with one ve
 refuse it. So the refusal is not the player failing to say the magic word. **It is the reader
 being unable to hold what they said.**
 
-**What makes carrying out a plan safe is that most acts are free.** Looking, asking who is
-here, reading a wall, checking a purse, recalling a name - none of them costs a day, and the
-codebase already marks them (`freeAction`). A plan is usually one costly step with several free
-ones around it, and running the free ones is not spending anything.
+**Reads of what is already in front of you stay free.** Looking, reading a wall,
+checking a purse and recalling a name cost nothing. `freeAction` records facts without
+a span; the executor prices acts through `src/web/lesser-action-costs.ts`.
+Each conversational reply, meal and quick trade costs 1/8 day; local walks cost 1/4
+and a thorough search costs 1/2. A meal while talking adds the meal and each reply.
+Each combat exchange costs 1/8 day. Existing day spans retain their costs.
 
 So the budget is on **what it costs the player**, never on the number of calls:
 
 - **Free reads chain as far as the sentence goes.** Resolving who somebody is, what they hold,
   and what their house would want is one intention and should be one turn.
-- **At most one act that spends time, stones or the body**, and it is the one they asked for -
+- **At most one act of a day or more**, and it is the one they asked for -
   never one added on the way. A sentence must not spend two seasons because the reader chose
   two skips.
-- **And where two costly acts are asked for at once, do neither and ask which comes first.**
+- **Fractional acts add in the order asked.** They do not use the long-act budget.
+- **Where two acts of a day or more are asked for at once, do neither and ask which comes first.**
   Not a truncation, not a refusal, and not a guess: a question, answerable in one word, naming
   them in the player's own terms. A question costs nothing and hands the choice back to the
   person whose life is being spent. Run the free reads first anyway, so the question can name
