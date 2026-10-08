@@ -9,8 +9,8 @@
  * accepted ordinary driver/hull, fare debit and existing passHours continuation.
  * A real dated driver expiry at B tests interruption and parked custody there.
  * Vertex deadlines add no encounter checks or mandatory intermediate action.
- * Direct airborne geometry/innate flight remain a separate unresolved gap.
- * Candidate is unrun; no seed outcome or model acceptance is claimed.
+ * Actual personal flight and wandering now have their own finite-course controls.
+ * These graph controls make no external-model prose acceptance claim.
  */
 import { expect, it, vi } from 'vitest';
 import { makeGameInWorld } from './harness.js';

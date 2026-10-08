@@ -9,6 +9,8 @@ import { readJsonFlag } from '../server/consolidated/cultivation-support.js';
 
 export const FLAG_ROAD_STOPPED = 'road_stopped';
 export interface StoppedRoad {
+    /** A visible road was chosen without learning its endpoint's name. */
+    readonly unplanned?: boolean;
     readonly to: string;
     /** Coarse displayed ground used only to reject a cursor after actual relocation. */
     readonly from: string;

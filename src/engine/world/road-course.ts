@@ -116,8 +116,14 @@ export function continuationOfAdmittedRoad(held:AdmittedRoadCourse):RoadContinua
     return {position:held.position,endpointId:held.route[0]!.locationId,partialDays,route:held.route,
         days:partialDays+(held.route.at(-1)?.days??0)};
 }
-export function positionOnAdmittedRoad(held:AdmittedRoadCourse,elapsed:number,travelDays:number):RoadPosition {
+export function positionOnAdmittedRoad(held:AdmittedRoadCourse,elapsed:number,travelDays:number,departureDay=0):RoadPosition {
     const course=continuationOfAdmittedRoad(held),partial=held.initialTravelDays;
+    // Compare scheduled vertices before subtracting a large world date.
+    const dates=roadVertexMoments(held.route,departureDay,travelDays,partial);
+    const vertex=dates.findIndex(day=>journeyTimeHasReached(departureDay+elapsed,day)
+        &&journeyTimeHasReached(day,departureDay+elapsed));
+    const reached=held.route.filter(stop=>partial+stop.days>0)[vertex];
+    if(reached)return {originLocationId:held.position.originLocationId,kind:'place',locationId:reached.locationId};
     const walking=elapsed<=partial&&partial>0?course.partialDays*Math.max(0,elapsed)/partial
         :course.partialDays+(held.route.at(-1)?.days??0)*Math.max(0,elapsed-partial)/Math.max(Number.MIN_VALUE,travelDays-partial);
     return positionAfterRoadContinuation(course,walking);

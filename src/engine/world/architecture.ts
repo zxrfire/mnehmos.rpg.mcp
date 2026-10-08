@@ -1578,9 +1578,10 @@ export function reachThrough(
 /** The chain from the outermost ancestor down to this room, outermost first. */
 export function pathTo(
     locations: readonly LocationRecord[],
-    locationId: string
+    locationId: string,
+    places?: ReadonlyMap<string, LocationRecord>
 ): LocationRecord[] {
-    const byId = placeScopeFor(locations).places;
+    const byId = places ?? placeScopeFor(locations).places;
     const chain: LocationRecord[] = [];
     const seen = new Set<string>();
     let cursor: string | null = locationId;

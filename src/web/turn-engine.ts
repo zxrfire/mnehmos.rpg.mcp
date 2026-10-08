@@ -599,7 +599,9 @@ import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.j
 import { buyAVesselOffTheBoard } from './buying-a-vessel-off-the-board.js';
 import { whetherTheHousesCounterIsHere } from './a-house-counter-is-where-the-house-is.js';
 import { settleWhatWasPlacedWithAMaker } from './a-commission-placed-with-a-maker.js';
-import { walkIntoTheRoomTheWorkIsDoneIn, theDoorsOffThisYard } from './walking-inside-the-walls.js';
+import { walkIntoTheRoomTheWorkIsDoneIn, theDoorsOffThisYard, asARoomIsNamed } from './walking-inside-the-walls.js';
+import { actualCarrierScene } from './the-actual-carrier-scene.js';
+import { grantVesselRoom } from '../engine/world/rooms-in-a-vessel.js';
 import {
     crossToWhoeverTheyNamed,
     namesALocalArea,
@@ -4111,6 +4113,13 @@ export class GameService {
                 this.ambientFor(now.cultivator, now.run),
                 theClauseThisStepQuotes(step, rawInput) ?? rawInput
             );
+            // Returning in a later clause does not erase leaving an actual post.
+            const heldPost = settleTheMissionPostTheyHold(this, this.currentRun().cultivator);
+            if (heldPost) {
+                one.calls.push({name: 'world.settleTheMissionPostTheyHold', action: 'sect', ok: true,
+                    summary: heldPost.structure.join(' ')});
+                for (const line of heldPost.lines) sayThisWhateverTheNarratorDoes(one.facts, line);
+            }
             // Read BEFORE the bookkeeping row goes on, as well as excluding it
             // there. Two guards for one mistake, because the mistake read as a
             // successful theft and cost a played turn to find.
@@ -4942,11 +4951,11 @@ export class GameService {
                     const atTheGate = askingToBeLetIn(this, run, cultivator, action.target, true);
                     if (atTheGate) return atTheGate;
                 }
-                return this.move(run, cultivator, ambient, action.target, action.intent ?? 'travel');
+                return this.move(run, cultivator, ambient, action.target, action.intent ?? 'travel', action.days, rawInput);
             }
 
             case 'ride':
-                return this.ride(run, cultivator, action.target, action.topic, rawInput);
+                return this.ride(run, cultivator, action.target, action.topic, rawInput, action.days);
 
             case 'fold':
                 return this.fold(run, cultivator, action.target);
@@ -4955,7 +4964,7 @@ export class GameService {
                 return this.passage(
                     run, cultivator, action.target,
                     action.intent ?? DEFAULT_PASSAGE_INTENT,
-                    action.topic
+                    action.topic, rawInput
                 );
 
             case 'oath':
@@ -6071,9 +6080,17 @@ ${noticedWaiting}`;
                     warmth
                         ?? (action.intent === 'company'
                             ? factsForCompany(cultivator, company, standing)
-                            : factsForLook(cultivator, ambient, company, standing, groundIsQuiet))
+                            : factsForLook({...cultivator,location:thePlaceAsTheSceneNamesIt(this,cultivator,placeName(cultivator))}, ambient, company, standing, groundIsQuiet))
                 );
                 if (aboard) sayWhereTheShipIs(looking.facts, placeName(cultivator), aboard);
+                if (this.atHand && (betweenRoadEndpoints(this.db,cultivator)
+                    || worldLocationFor(this.atHand,cultivator.location)?.tags.includes('air-course'))) {
+                    const seen=this.destinations(run,cultivator);
+                    looking.facts.lines.push(...seen.facts.lines);
+                    looking.facts.structure.push(...seen.facts.structure);
+                    looking.facts.prose += '\n\n'+seen.facts.prose;
+                    looking.calls.push(...seen.calls);
+                }
                 // ── AND LOOKING AT A SQUARE IS HOW YOU COME TO KNOW WHO IS
                 //    STANDING IN IT ────────────────────────────────────────
                 //
@@ -14232,6 +14249,25 @@ ${opened.text}` : receipt,
                 return found ? { id: found.id, name: found.name } : null;
             })();
 
+        const carrier = this.atHand && actualCarrierScene(this.repos, cultivator, this.atHand, routineTime(this.atHand));
+        const room = thing && carrier?.rooms.find(one => asARoomIsNamed(one.slot.name) === asARoomIsNamed(thing));
+        if (room && this.atHand && carrier) {
+            const at = this.atHand.objects.findIndex(object => object.id === carrier.vesselId);
+            const vessel = this.atHand.objects[at];
+            const granted = vessel && party && grantVesselRoom(vessel, room.slot.id, cultivator.id, party.id);
+            if (!granted) return refused('world.grantVesselRoom', 'give', factsForRefusal(
+                'The cabin was not assigned.', 'Its actual owner or custodian must assign it to somebody here.', 'No room, title or passenger changed.'));
+            this.atHand.objects[at] = granted;
+            this.theWorldMoved();
+            const recipient = thePlayerIsSureItIsThem(party!.name, this.awarenessOf(cultivator))
+                ? party!.name : to && to !== party!.name ? to : 'the person here';
+            const done = this.freeAction(run, 'give', factsForToolResult('The cabin was assigned.',
+                [room.slot.name + ' is assigned to ' + recipient + '. Its door and passage remain unchanged.']));
+            done.calls = [{ name: 'world.grantVesselRoom', action: 'give', ok: true,
+                summary: room.slot.name + ': actual cabin holding assigned to ' + party!.id + '.' }];
+            done.outcome = 'executed';
+            return done;
+        }
         const outcome = handOver(
             {
                 giver: cultivator,

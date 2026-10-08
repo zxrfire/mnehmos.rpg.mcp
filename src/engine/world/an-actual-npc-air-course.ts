@@ -21,14 +21,17 @@ import { getConveyance, INNATE_FLIGHT_LAUNCH_QI } from '../../data/cultivation/w
 import { isWithThem, itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from './a-vehicle.js';
 import { brokenStatusesOn } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
+import {readActualDepartureApproach} from './departure-approach.js';
 
-export function theExteriorGroundsOfAnNpcAirDeparture(world:WorldState,npc:NpcRecord,toId:string,day:number) {
+export function theExteriorGroundsOfAnNpcAirDeparture(world:WorldState,npc:NpcRecord,toId:string,day:number,vesselId?:string) {
     if (npc.status !== 'alive' || !npc.locationId
         || locationOnNpcJourney(world.locations,npc,day) !== npc.locationId) return null;
     const from=world.locations.find(place=>place.id===npc.locationId);
     const to=world.locations.find(place=>place.id===toId);
     if(!from||!to||[from,to].some(place=>place.tags.includes('interior')
         || ['precinct','hall','chamber','vault','cave','sealed_domain','secret_realm'].includes(place.kind))) return null;
+    if(vesselId&&readActualDepartureApproach(world,npc.id,{intentId:'npc-hull-departure',
+        target:{locationId:from.id,vesselId}},day,npc).kind==='already_aboard')return {from,to};
     const clock={...world,currentDay:day,currentHour:(day%1)*24};
     const routine=routineOf(clock,npc);
     if(routine.home) return null;
@@ -41,7 +44,7 @@ export function theExteriorGroundsOfAnNpcAirDeparture(world:WorldState,npc:NpcRe
 /** Current area/routine and actual exterior ground, not inherited room coordinates. */
 export function quoteNpcAirDeparture(world: WorldState, npc: NpcRecord, toId: string,
     day: number, vehicle?: ObjectRecord, requireLaunchBalance=true, requestedArt?: string) {
-    const ground=theExteriorGroundsOfAnNpcAirDeparture(world,npc,toId,day);
+    const ground=theExteriorGroundsOfAnNpcAirDeparture(world,npc,toId,day,vehicle?.id);
     if(!ground)return null;
     const {from,to}=ground;
     const bodily=canFlyByTheirOwnBody(npc.cultivation.realmOrdinal,brokenStatusesOn(npc.cultivation.injuries));

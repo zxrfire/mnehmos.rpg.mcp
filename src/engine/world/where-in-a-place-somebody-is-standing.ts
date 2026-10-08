@@ -1,4 +1,5 @@
 import { workersAtPublicCounters } from './who-is-working-at-a-public-counter.js';
+import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import { publicCountersAt, publicTransportHubsAt, type PublicCounterKind } from './public-transport-at-a-place.js';
 /**
  * Which area of a place somebody is standing in, and no area holds more than three.
@@ -45,6 +46,7 @@ import { whatKindOfPlace } from './what-somebody-knows-of-the-land.js';
 import { SEA_LANES } from '../../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
 import { isAwayOnSomething, isActing, PLAYER_ROW_TAG, type ActivityKind, type NpcRecord } from './npc-state.js';
 import type { LocationRecord, RouteQueries } from './locations.js';
+import {routeQueriesFor} from './locations.js';
 import type { WorldState } from './world-state.js';
 import { routineOf, routineTime } from './npc-routines.js';
 import { theLodgingsOfAHouse, whichRoomARungGets } from './the-room-a-house-gives-you.js';
@@ -60,7 +62,7 @@ import {
 export const AT_MOST_IN_AN_AREA = 3;
 
 /** What an area of a place is for. */
-export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'board' | 'here' | 'room' | 'deck' | 'exchange' | 'clinic' | 'landing' | 'carriage_station' | 'span_counter';
+export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'board' | 'here' | 'room' | 'deck' | 'exchange' | 'clinic' | 'landing' | 'carriage_station' | 'span_counter' | 'spirit_berth';
 
 export interface AnAreaOfAPlace {
     /** `<place id>#<kind>#<slug>`. */
@@ -198,6 +200,7 @@ function theNamesFor(place: Pick<LocationRecord, 'name' | 'tags'>, what: WhatAnA
         case 'landing': return ['the landing'];
         case 'carriage_station': return ['the carriage station'];
         case 'span_counter': return ['the folding counter'];
+        case 'spirit_berth': return ['the Spirit Boat Berth'];
         case 'clinic': return ["the physician's clinic"];
         case 'table': return town.table;
         case 'gate': return OUTSIDE_THE_GATE;
@@ -295,6 +298,7 @@ export function theAreasOf(
     standingWith?: StandingWith,
     routes?: RouteQueries
 ): APlaceReadIntoAreas {
+    routes ??= routeQueriesFor(state.locations);
     const day = Math.floor(state.currentDay);
     const people = npcsStandingIn(state, place.id, compounds, routes)
         .filter(n => !n.tags.includes(PLAYER_ROW_TAG) && n.id !== standingWith?.id
@@ -418,7 +422,16 @@ export function theAreasOf(
         }
     }
     for (const what of (standingWith?.physical?.hull ? [standingWith.physical.hull.areaKind] : betweenEndpoints ? ['here' as const] : [...theKindsOf(place),
-        ...publicTransportHubsAt(state, place.name, now).map(hub => hub.kind)])) {
+        ...publicTransportHubsAt(state, place.name, now).map(hub => hub.kind),
+        ...((state.objects??[]).some(object=>{
+            const craft=getConveyance(String(object.data.conveyanceId??''));
+            return object.locationId===place.id&&object.tags.includes('conveyance')
+                &&craft&&!craft.crossesGroundThatCannotBeWalked&&!craft.waterOnly;
+        })?['carriage_station' as const]:[]),
+        ...(place.kind === 'sect_seat' || (state.objects ?? []).some(object =>
+            object.locationId === place.id && object.tags.includes('conveyance')
+              && getConveyance(String(object.data.conveyanceId ?? ''))?.crossesGroundThatCannotBeWalked)
+             ? ['spirit_berth' as const] : [])])) {
         // Anybody bigger than an area is taken three at a time; then in the order of a draw per
         // person on its own stream, the one on watch first so the gate a road reaches has them.
         const pieces = groups.filter(group => kindOf(group) === what)

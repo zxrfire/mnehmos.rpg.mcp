@@ -1,13 +1,13 @@
 import { aPostingForItsActualLegs } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import { companyDuringPassage } from './company-during-a-passage.js';
 import { stoppedRoadPoint } from './where-a-carriage-stopped.js';
-import { positionOnRoad, positionOnAdmittedRoad, groundAtRoadPosition, type RoadPosition } from './road-course.js';
+import { positionOnRoad, positionOnAdmittedRoad, groundAtRoadPosition, sameRoadPosition, roadVertexMoments, type RoadPosition } from './road-course.js';
 /**
  * A road has ground between its ends. These are ordinary locations on the
  * existing graph; their two links divide the original price, never add one.
  * The description is a position, not a new named town or a staffed inn.
  */
-import { makeLocation, walkingDaysFrom, walkingRouteFrom, type LocationRecord, type RouteQueries } from './locations.js';
+import { makeLocation, walkingDaysFrom, walkingRouteFrom, routeQueriesFor, type LocationRecord, type RouteQueries } from './locations.js';
 import type { NpcRecord } from './npc-state.js';
 import { isOpenWater } from '../../data/cultivation/regions.js';
 import { SEA_LANES } from '../../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
@@ -19,6 +19,9 @@ import type { SeaLane } from './what-a-sea-crossing-costs.js';
 import { shipIdForLane } from './the-ship-on-a-lane.js';
 import { activityOfAPublicPassage, publicShipLinesFrom, quotePublicPassage } from './public-shipping.js';
 import { isTerminal } from '../cultivation/existence.js';
+import type { WorldState } from './world-state.js';
+import { prepareNpcDepartureApproach } from './npc-departure-approaches.js';
+import { exteriorGroundOfDeparture } from './departure-approach.js';
 
 export const ROUTE_STOP = 'route-stop';
 
@@ -49,6 +52,14 @@ export function daysOfABookedPassage(npcs: readonly NpcRecord[], lane: SeaLane,
 export function bookNpcPassageForRoute(state: { locations: readonly LocationRecord[]; npcs?: readonly NpcRecord[]; seed?: string },
     npc: NpcRecord, destinationId: string, day: number, purpose: string): NpcRecord | null {
     if (!npc.locationId) return null;
+    if('history' in state){
+        const world=state as WorldState;
+        const ground=exteriorGroundOfDeparture(world,npc.locationId);
+        const to=state.locations.find(place=>place.id===destinationId);
+        if(!ground||!to||!publicShipLinesFrom(world,ground.name,day).some(line=>line.to===to.name))return null;
+        const approach=prepareNpcDepartureApproach(state as WorldState,npc,destinationId,day,purpose,'ship');
+        if(approach!==undefined)return approach;
+    }
     const quote = quotePublicPassage(typeof state.seed === 'string'
         ? state as typeof state & { seed: string } : { ...state, seed: npc.id }, npc.locationId, destinationId, day);
     if (!quote || npc.spiritStones < quote.fareStones) return null;
@@ -209,7 +220,7 @@ function projectNpcJourney(
     if (activity?.kind !== 'travelling' || activity.untilDay == null || !activity.returnTo) return npc.locationId;
     const from = activity.fromLocationId ?? npc.locationId;
     if(activity.admittedRoad){
-        const point=positionOnAdmittedRoad(activity.admittedRoad,Math.max(0,day-activity.sinceDay),activity.untilDay-activity.sinceDay);
+        const point=positionOnAdmittedRoad(activity.admittedRoad,Math.max(0,day-activity.sinceDay),activity.untilDay-activity.sinceDay,activity.sinceDay);
         capture?.(point);return groundAtRoadPosition(locations,point);
     }
     if (from === null || day <= activity.sinceDay) return from;
@@ -411,10 +422,13 @@ export function firstTravellerOnTheWay(input: {
     exceptIds?: ReadonlySet<string>;
     /** Already priced canonical endpoint course, including an admitted partial edge. */
     route?: NonNullable<ReturnType<typeof walkingRouteFrom>>;
+    /** A body staying on its actual stretch has zero velocity. */
+    stationaryAt?: RoadPosition;
     /** A flying craft can share the ordinary water beneath its route. */
     overWater?: boolean;
 }): { npc: NpcRecord; place: LocationRecord; afterDays: number } | null {
     if (input.days <= 0) return null;
+    if (input.stationaryAt) return firstTravellerAtTheHeldPosition(input);
     const route = input.route ?? walkingRouteFrom(input.locations, input.fromId, input.toId);
     if (!route) return null;
     const total = route.at(-1)!.days;
@@ -436,6 +450,60 @@ export function firstTravellerOnTheWay(input: {
         if (npc) return { npc, place, afterDays };
     }
     return null;
+}
+
+/** Crossing dates derive from the same actual journey projection as presence. */
+function firstTravellerAtTheHeldPosition(input: Parameters<typeof firstTravellerOnTheWay>[0]): ReturnType<typeof firstTravellerOnTheWay> {
+    const held = input.stationaryAt!;
+    const routes = routeQueriesFor(input.locations);
+    const people = new Map(input.npcs.map(person => [person.id, person]));
+    const currentNpc = (id: string) => people.get(id);
+    let first: ReturnType<typeof firstTravellerOnTheWay> = null;
+    for (const npc of input.npcs) {
+        if (npc.status !== 'alive' || input.exceptIds?.has(npc.id) || !npc.activity) continue;
+        const operator = npc.activity.carrierOperatorId ? currentNpc(npc.activity.carrierOperatorId) : npc;
+        if (!operator || operator.status !== 'alive') continue;
+        const doing = operator.activity;
+        if (!doing || doing.airCourseLocationId) continue;
+        const probes = [input.onDay, Math.max(input.onDay, doing.sinceDay),
+            Math.min(input.onDay + input.days, (doing.untilDay ?? input.onDay) - 1e-7)];
+        const legs = new Map(probes.map(day => {
+            const leg = npcJourneyOnDay(input.locations, operator, day, routes);
+            return [JSON.stringify(leg), leg];
+        }));
+        for (const leg of legs.values()) {
+            if (!leg) continue;
+            const admitted = doing.admittedRoad;
+            const route = admitted?.route ?? walkingRouteFrom(input.locations, leg.from, leg.to, routes);
+            if (!route) continue;
+            const times = [leg.sinceDay, ...roadVertexMoments(route, leg.sinceDay,
+                leg.untilDay - leg.sinceDay, admitted?.initialTravelDays ?? 0), leg.untilDay]
+                .filter((day, index, all) => index === 0 || day > all[index - 1]!);
+            const consider = (day: number) => {
+                const afterDays = day - input.onDay;
+                if (!(afterDays > 0 && afterDays <= input.days) || first && afterDays >= first.afterDays) return;
+                const position = roadPositionOfNpc(input.locations, npc, day, routes, currentNpc);
+                if (!sameRoadPosition(held, position)) return;
+                const place = routes.places.get(groundAtRoadPosition(input.locations, held));
+                if (place) first = { npc, place, afterDays };
+            };
+            for (const day of times) consider(day);
+            if (held.kind !== 'edge') continue;
+            for (let index = 1; index < times.length; index++) {
+                const start = times[index - 1]!, span = times[index]! - start;
+                const middle = start + span / 2;
+                const a = roadPositionOfNpc(input.locations, npc, middle, routes, currentNpc);
+                const b = roadPositionOfNpc(input.locations, npc, middle + span / 4, routes, currentNpc);
+                if (a?.kind !== 'edge' || b?.kind !== 'edge' || a.fromId !== b.fromId || a.toId !== b.toId) continue;
+                const fraction = held.fromId === a.fromId && held.toId === a.toId ? held.fraction
+                    : held.fromId === a.toId && held.toId === a.fromId ? 1 - held.fraction : null;
+                if (fraction === null || a.fraction === b.fraction) continue;
+                const crossing = middle + (fraction - a.fraction) * span / (4 * (b.fraction - a.fraction));
+                if (crossing >= start && crossing <= times[index]!) consider(crossing);
+            }
+        }
+    }
+    return first;
 }
 
 /** Sharing a long corridor does not mean two bodies crossed at its same site. */

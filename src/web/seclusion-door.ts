@@ -24,7 +24,7 @@ import {
 } from '../engine/world/door-materials.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import { residenceOf } from '../engine/world/somewhere-that-is-theirs.js';
-import { theActualResidenceDoor } from '../engine/world/a-residence-door-that-was-broken.js';
+import { theActualResidenceDoor, theResidenceDoorThatCanBeShut } from '../engine/world/a-residence-door-that-was-broken.js';
 import { theQuartersOf } from '../engine/world/the-room-a-house-gives-you.js';
 import { getLocation, indexById } from '../engine/world/world-state.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
@@ -70,8 +70,10 @@ export function theDoorYouSitBehind(service: GameService, cultivator: Cultivator
     const placeId = service.worldPlaceOf(cultivator);
     const here = world && placeId ? getLocation(world, placeId) : null;
     const residenceDoor = here ? theActualResidenceDoor(here) : null;
-    if (residenceDoor) return residenceDoor.brokenOnDay === null
-        ? { ...residenceDoor.material, locationId: residenceDoor.locationId } : null;
+    if (residenceDoor) {
+        const intact=theResidenceDoorThatCanBeShut(here!);
+        return intact?{...intact,locationId:residenceDoor.locationId}:null;
+    }
     return theMaterialOfTheDoorHere(service, cultivator);
 }
 

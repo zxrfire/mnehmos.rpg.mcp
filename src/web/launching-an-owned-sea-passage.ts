@@ -14,22 +14,33 @@ import {whatTheChestBurns} from '../engine/world/what-a-conveyance-does-to-a-jou
 import {acceptOwnedPassage,spendOnOwnedPassage,peopleUnavailableForOwnedBoarding} from './an-owned-passage.js';
 import {factsForRefusal} from './facts.js';
 import {refused} from './tool-result-prose.js';
+import {exteriorGroundOfDeparture} from '../engine/world/departure-approach.js';
+import {theAreasOf} from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import {walkToTheDeparture} from './walking-to-a-departure.js';
 
 export async function launchOwnedSeaPassage(game:GameService,run:Run,body:Cultivator,
- vesselId:string,toId:string,pilotId:string,companions:string[]){
+ vesselId:string,toId:string,pilotId:string,companions:string[]):Promise<import('./turn-wire-shapes.js').Execution>{
  const world=game.atHand,fresh=game.repos.cultivators.getById(body.id)??body;
- const craft=world?.objects.find(o=>o.id===vesselId),from=world&&worldLocationFor(world,fresh.location);
+ const craft=world?.objects.find(o=>o.id===vesselId),physical=world&&worldLocationFor(world,fresh.location);
+ const from=physical&&exteriorGroundOfDeparture(world!,physical.id);
  const refusal=(why:string)=>refused('engine.actualOwnedSeaCourse','ride',factsForRefusal(
   'The ship cannot begin that water passage.',why,'No craft, body, purse, claim or time was altered.'));
  if(!world||!fresh.alive||!craft||isRuined(craft)||craft.ownerId!==body.id||craft.possessorId!==null||!from
   ||!isWithThem(craft,body.id,from.id)||typeof craft.data.conveyanceId!=='string')return refusal('The actual owned ship and operator must be here at the boarding dock.');
  const kind=requireConveyance(craft.data.conveyanceId),heads=1+new Set(companions).size,day=routineTime(world);
  if(!kind.waterOnly||heads>kind.heads||pilotId!==body.id&&!companions.includes(pilotId)
-  ||peopleUnavailableForOwnedBoarding(world,companions,from.id,day).length)return refusal('The actual pilot and passengers must be present and fit in the same finite hull.');
+  ||peopleUnavailableForOwnedBoarding(world,companions,from.id,day,true).length)return refusal('The actual pilot and passengers must be present and fit in the same finite hull.');
  const quote=quoteOwnedSeaDeparture(world,from.id,toId,day,heads);
  if(!quote)return refusal('No native dock-to-dock water lane is open for this actual departure. A walking road or a named ocean is not a sailing route.');
  const fuel=whatTheChestBurns({conveyance:kind,daysOneWay:quote.days,heads,trips:1});
  if(fuel>fresh.spiritStones)return refusal(fuel+' spirit stones are needed for this actual sailing; '+fresh.spiritStones+' are held.');
+ const landing=theAreasOf(world,from).areas.find(area=>area.for==='landing');
+ const approach=await walkToTheDeparture(game,run,fresh,from.id,landing?.id??null,undefined,companions);
+ if(approach)return approach;
+ const reached=game.currentRun();
+ if(reached.run.elapsedDays!==run.elapsedDays||reached.cultivator.location!==fresh.location
+  ||reached.cultivator.standingIn!==fresh.standingIn)
+  return launchOwnedSeaPassage(game,reached.run,reached.cultivator,vesselId,toId,pilotId,companions);
  // No async interleave follows the final quote before the accepted boarding.
  takeItAlong(world.objects,craft,body.id);
  acceptOwnedPassage(game,run,fresh,{vesselId,pilotId,fromId:from.id,toId,walkingDays:quote.walkingDays,

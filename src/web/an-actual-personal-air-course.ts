@@ -21,6 +21,8 @@ import { factsForRefusal } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import { useHeldTechnique } from '../server/consolidated/technique-manage.js';
 import { INNATE_FLIGHT_LAUNCH_QI } from '../data/cultivation/what-a-house-moves-its-people-on.js';
+import { exteriorGroundOfDeparture } from '../engine/world/departure-approach.js';
+import { walkToTheDeparture } from './walking-to-a-departure.js';
 
 const ACTIVE = 'personal_air_course';
 export function personalAirCourseClaim(db: Database.Database, bodyId: string): { locationId: string } | null {
@@ -129,11 +131,14 @@ export function airExteriorReadiness(game: GameService, body: Cultivator, toName
 
 /** All physical/route/art/qi reads precede the ordinary native art-use debit. */
 export async function launchPersonalAirJourney(game: GameService, run: Run, body: Cultivator,
-    toName: string, artId: string | null) {
-    const readiness = airExteriorReadiness(game, body, toName);
-    if (readiness) return readiness;
+    toName: string, artId: string | null, days = Infinity):Promise<import('./turn-wire-shapes.js').Execution> {
     const world = game.atHand;
-    const from = world && worldLocationFor(world, body.location), to = world && worldLocationFor(world, toName);
+    const physical = world && worldLocationFor(world, body.location);
+    const from = physical && exteriorGroundOfDeparture(world!, physical.id), to = world && worldLocationFor(world, toName);
+    if(to&&(to.tags.includes('interior')||['precinct','hall','chamber','vault'].includes(to.kind))){
+        const readiness=airExteriorReadiness(game,body,toName);
+        if(readiness)return readiness;
+    }
     const conveyance = conveyanceOfPersonalFlight(artId);
     const art = artId ? personalFlightArt(body, artId) : null;
     const qi = art?.qiCost ?? INNATE_FLIGHT_LAUNCH_QI;
@@ -149,12 +154,23 @@ export async function launchPersonalAirJourney(game: GameService, run: Run, body
     if (body.qi < qi) return refused('engine.airJourney', 'ride', factsForRefusal('Not enough qi to launch.',
         'The launch costs ' + qi + ' qi; ' + body.qi + ' is held. Nothing is spent.',
         'The ordinary native per-use cost is not an invented daily upkeep.'));
+    const approach=await walkToTheDeparture(game,run,body,from.id,null);
+    if(approach)return approach;
+    const current=game.currentRun();
+    if(current.run.elapsedDays!==run.elapsedDays||current.cultivator.location!==body.location
+        ||current.cultivator.standingIn!==body.standingIn)
+        return launchPersonalAirJourney(game,current.run,current.cultivator,toName,artId,days);
+    const readiness=airExteriorReadiness(game,body,toName);
+    if(readiness)return readiness;
     if (art) {
         const charged = await useHeldTechnique({ action: 'use', cultivatorId: body.id, techniqueId: art.id },
             { resolvesOnTurn: run.turn + 1, finishTurn: false });
         if (!('used' in charged) || charged.used !== true) return refused('technique_manage.use', 'ride',
             factsForRefusal('The actual flight art cannot be used.', JSON.stringify(charged), 'No course was accepted.'));
     } else game.repos.cultivators.applyDeltas(body.id, { qi: -INNATE_FLIGHT_LAUNCH_QI });
+    const previous=personalAirCourseClaim(game.db,body.id);
+    const oldSite=previous&&world.locations.find(place=>place.id===previous.locationId);
+    if(oldSite)stopAnAirCourse(world,oldSite,routineTime(world),'The actual body changed its heading.');
     const accepted = beginAnAirCourse(world, { bodyId: body.id, bodyName: body.name, fromId: from.id, toId: to.id,
         conveyanceId: conveyance.id, power: null, vesselId: null, artId, onDay: routineTime(world),
         runId: run.id, runElapsedDays: run.elapsedDays, heads: 1 });
@@ -164,7 +180,7 @@ export async function launchPersonalAirJourney(game: GameService, run: Run, body
     game.theWorldMoved();
     const launchedBody = game.repos.cultivators.getById(body.id);
     if (!launchedBody) throw new Error('The actual launched body disappeared');
-    const execution = await spendOnPersonalAirCourse(game, run, launchedBody);
+    const execution = await spendOnPersonalAirCourse(game, run, launchedBody, days);
     if (!execution) throw new Error('An accepted native air course lost its body receipt');
     execution.calls.unshift({ name: art ? 'technique_manage.use' : 'engine.bodyFlightLaunch', action: 'ride', ok: true,
         summary: qi + ' qi spent once at launch; direct metric separation ' + quote.distanceLi + ' li.' });

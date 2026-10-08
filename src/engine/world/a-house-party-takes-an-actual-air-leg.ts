@@ -18,6 +18,7 @@ import {theExteriorGroundsOfAnNpcAirDeparture} from './an-actual-npc-air-course.
 import {witnessIndexFor} from './witness-reaction-index.js';
 import {whatThisHouseCouldTakeOut} from './what-a-house-can-take-out.js';
 import {bestForThisRoad} from './what-a-conveyance-does-to-a-journey.js';
+import {beginAnActualHouseAirShuttle} from './a-house-party-takes-an-actual-air-shuttle.js';
 
 export function theHouseLendsAnActualDutyCraft(state:WorldState,house:FactionRecord,pilot:NpcRecord,
  craft:ObjectRecord,portfolios:readonly APortfolio[],roll:readonly OnTheRoll[],day:number){
@@ -34,7 +35,7 @@ export function theHouseLendsAnActualDutyCraft(state:WorldState,house:FactionRec
 }
 /** Pure quote of the actual selected group; multiple trips need an actual shuttle itinerary. */
 export function quoteHouseAirDuty(state:WorldState,house:FactionRecord,people:readonly NpcRecord[],
- pilot:NpcRecord,craft:ObjectRecord,toId:string,day:number){
+ pilot:NpcRecord,craft:ObjectRecord,toId:string,day:number,singleLoad=true){
  const from=pilot.locationId,conveyance=getConveyance(String(craft.data.conveyanceId??''));
  if(!from||!conveyance?.crossesGroundThatCannotBeWalked || isRuined(craft)
   || house.dissolvedOnDay!==null || !people.some(person=>person.id===pilot.id)
@@ -46,7 +47,7 @@ export function quoteHouseAirDuty(state:WorldState,house:FactionRecord,people:re
   {facts:witnessIndexFor(state).byId,onDay:day},1);
  const back=quoteAnAirJourney(state.locations,toId,house.seatLocationId??from,conveyance,craft.power,people.length,
   {facts:witnessIndexFor(state).byId,onDay:day},1);
- if(!quote||!back||quote.trips!==1||back.trips!==1)return null;
+ if(!quote||!back||singleLoad&&(quote.trips!==1||back.trips!==1))return null;
  return {quote,back,from,conveyance};
 }
 /** Caller has already debited these exact native two-leg fuel quotes once. */
@@ -102,7 +103,7 @@ export function admitPaidHouseAirReturn(state:WorldState,npc:NpcRecord,day:numbe
   if(at<0)throw Error('Validated returning duty body disappeared');
   state.npcs[at]={...person,locationId:accepted.location.id,activity:{...activity,
    withIds:people.filter(peer=>peer.id!==person.id).map(peer=>peer.id),untilDay:day+quote.daysOneWay,
-   vesselId:craft.id,airCourseLocationId:accepted.location.id,airDutyReceiptId:undefined},updatedOnDay:day};
+   vesselId:craft.id,airCourseLocationId:accepted.location.id,airDutyReceiptId:oldId},updatedOnDay:day};
  }
  return accepted;
 }
@@ -138,7 +139,7 @@ export function sendASelectedHousePartyOnAnAvailableAirHull(state:WorldState,hou
  people:readonly NpcRecord[],toId:string,day:number,walking:number,water:boolean,budget:number,
  activitiesFor:(read:NonNullable<ReturnType<typeof quoteHouseAirDuty>>,
  taking:ReturnType<typeof whatThisHouseCouldTakeOut>[number])=>ReadonlyMap<string,NpcActivity|null>,
- portfolios:readonly APortfolio[],roll:readonly OnTheRoll[]){
+ portfolios:readonly APortfolio[],roll:readonly OnTheRoll[],sending?:NonNullable<WorldState['pendingSendings']>[number]){
  const refusedCrafts=new Set<string>();
  for(;;){
   const taking=bestForThisRoad(whatThisHouseCouldTakeOut(state,house).filter(row=>
@@ -147,12 +148,16 @@ export function sendASelectedHousePartyOnAnAvailableAirHull(state:WorldState,hou
   if(!taking?.rowId)return null;
   const craft=state.objects.find(row=>row.id===taking.rowId);
   if(craft){for(const pilot of people){
-   const read=quoteHouseAirDuty(state,house,people,pilot,craft,toId,day);
+   const read=quoteHouseAirDuty(state,house,people,pilot,craft,toId,day,sending===undefined);
    if(!read)continue;
    const activities=activitiesFor(read,taking);
-   const admitted=sendAnActualSelectedHouseParty(state,house,people,pilot,craft,toId,day,
-    activities,portfolios,roll);
-   if(admitted)return {...admitted,taking};
+   if(sending&&read.quote.trips>1){
+    const admitted=beginAnActualHouseAirShuttle(state,house,people,pilot,craft,sending,day,activities,portfolios,roll);
+    if(admitted)return {...admitted,taking,dispatchFactId:admitted.row.dispatchFactId};
+   }else{const admitted=sendAnActualSelectedHouseParty(state,house,people,pilot,craft,toId,day,
+     activities,portfolios,roll);
+    if(admitted)return {...admitted,taking,dispatchFactId:undefined};}
+
   }}
   refusedCrafts.add(taking.rowId);
  }

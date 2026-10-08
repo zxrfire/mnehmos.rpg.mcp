@@ -19,12 +19,20 @@ const order: readonly PublicCounterKind[] = ['inn', 'landing', 'carriage_station
 /** Callers supply actual local bodies; this reader neither finds nor moves remote workers. */
 export function workingWorldCounterFacts(state: State,
     people: readonly NpcRecord[], counters: readonly PublicCounterKind[], routes?: RouteQueries): CounterWorkerFacts[] {
+    const terminals=new Map<string,ReturnType<typeof publicTransportHubsAt>>();
+    const hubsAt=(locationId:string|null)=>{
+        const key=locationId??'';
+        let hubs=terminals.get(key);
+        if(!hubs){hubs=publicTransportHubsAt(state,state.locations.find(place=>place.id===locationId)?.name??'',state.currentDay);
+            terminals.set(key,hubs);}
+        return hubs;
+    };
     const working = people.map(person => ({ person, routine: routineOf(state, person, routes) }))
         .filter(({ person, routine }) => isActing(person.status) && !person.tags.includes(PLAYER_ROW_TAG)
             && !routine.home && routine.activity?.withIds.length === 0
             && (routine.activity.kind === 'trade' || routine.activity.kind === 'the_work_of_their_rank'
                 || routine.activity.kind === 'stationed' && person.factionId!==null
-                    && publicTransportHubsAt(state,state.locations.find(place=>place.id===routine.locationId)?.name??'',state.currentDay)
+                    && hubsAt(routine.locationId)
                         .some(hub=>hub.providerHouseId===person.factionId && hub.inheritedTerminal===true)));
     const facts:CounterWorkerFacts[]=working.map(({person,routine})=>({
         id:person.id,realmOrdinal:person.cultivation.realmOrdinal,trading:routine.activity?.kind==='trade',

@@ -364,7 +364,8 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // unspanned ask into one.
     // And `wait`, whose own default is one day. Played: "k im gonna sleep it off for all 3 nights"
     // came back days 3 from the model, and one night was slept.
-    if (days && (name === 'sect' || name === 'request' || name === 'teach' || name === 'wait')) action.days = days;
+    if (days && (name === 'sect' || name === 'request' || name === 'teach' || name === 'wait'
+        || name === 'move' || name === 'ride' || name === 'passage')) action.days = days;
 
     if (parsed.data.proxy && name === 'project') action.proxy = parsed.data.proxy;
     if (days && name === 'project') action.days = days;

@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseIntent } from '../../src/web/actions.js';
 import { theClausesOf, theWholeSentenceAsAPlan } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
-import { isOneClinicalConversation } from '../../src/web/one-clinical-conversation.js';
+import { isOneInformationExchange } from '../../src/web/one-information-exchange.js';
 import { ProviderNarrator } from '../../src/web/narrator.js';
 import { ScriptedProvider } from './harness.js';
 
@@ -28,7 +28,7 @@ describe('one physician conversation', () => {
         // The same exchange at the house shelf must not acquire extra turns
         // merely because its provider is described as an attendant.
         const atTheShelf = 'I greet the attendant dispensing medicine here. May I ask your name, and what I should do if I am hurt?';
-        expect(isOneClinicalConversation(atTheShelf)).toBe(true);
+        expect(isOneInformationExchange(atTheShelf)).toBe(true);
         expect(theClausesOf(atTheShelf)).toEqual([atTheShelf]);
         expect(parseIntent(atTheShelf).topic).toBe(atTheShelf);
     });
@@ -55,7 +55,7 @@ describe('one physician conversation', () => {
     it('does not absorb a requested treatment, purchase or departure into a care question', () => {
         for (const act of ['I buy medicine', 'treat me', 'I go to the mission hall', 'I cultivate for a day']) {
             const input = `${question} and then ${act}`;
-            expect(isOneClinicalConversation(input), input).toBe(false);
+            expect(isOneInformationExchange(input), input).toBe(false);
             expect(theClausesOf(input), input).toEqual([question, act]);
         }
     });

@@ -1,5 +1,8 @@
 import {aboardAnUnfinishedRoad} from './the-actual-carrier-scene.js';
 import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
+import { walkToTheDeparture } from './walking-to-a-departure.js';
+import { exteriorGroundOfDeparture } from '../engine/world/departure-approach.js';
+import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { realiseAcceptedPublicShipHull, publicShipHullCanBeBoarded } from '../engine/world/a-public-ship-hull.js';
 import { ensureShipCrew, bindShipCrewToPassage } from '../engine/world/ship-crew.js';
 import { recordPublicPassage, onSponsoredPublicPassage } from '../engine/world/public-shipping.js';
@@ -210,6 +213,15 @@ export function theLineTo(lines: readonly ALine[], wanted: string, service: ASer
  * `intent` is `board`, `buy` (a seat) or `hire` (the whole carriage); `service`
  * narrows to ships or carriages where the sentence named one.
  */
+function carriageCapacityRefusal(assessment: ReturnType<typeof assessPublicCarriage>) {
+    if (assessment.refusal?.kind !== 'capacity') return null;
+    const { remainingPassengers, requestedPassengers } = assessment.refusal;
+    return refused('engine.publicCarriage', 'passage', factsForRefusal(
+        'Not enough passenger places on this carriage.',
+        `${howMany(remainingPassengers, 'passenger place')} remain; your company needs ${howMany(requestedPassengers, 'place')}. Nothing spent.`,
+        `${howMany(remainingPassengers, 'passenger place')} remaining against ${howMany(requestedPassengers, 'passenger')}.`));
+}
+
 export async function aSeatOnAShipOrACarriage(
     game: GameService,
     run: Run,
@@ -229,6 +241,29 @@ export async function aSeatOnAShipOrACarriage(
         'The landing or station has not been reached.',
         'You are between road endpoints. Reach an actual landing or carriage station before reading its board or buying its passage. Nothing spent.',
         'passage-counter: sole current SQL road cursor is an unfinished edge; its displayed endpoint supplies no counter or keeper.'));
+    if(game.atHand&&target&&intent!=='board'){
+        const place=worldLocationFor(game.atHand,cultivator.location);
+        const ground=place&&exteriorGroundOfDeparture(game.atHand,place.id);
+        const station=ground&&theAreasOf(game.atHand,ground).areas.find(area=>
+            area.for===(service==='ship'?'landing':'carriage_station'));
+        const companions=game.whoIsWithYouOnTheRoad(cultivator).map(person=>person.id);
+        if(ground&&peopleUnavailableForOwnedBoarding(game.atHand,companions,ground.id,routineTime(game.atHand),true).length)
+            return refused('engine.actualPartyBoarding','passage',factsForRefusal('Your agreed company cannot board here together.',
+                'An agreed traveller is absent, no longer alive, or already on another actual passage. Nothing spent.',
+                'Party membership does not recall a body or replace its accepted course.'));
+        const offered=ground&&theLineTo(whatRunsFromHere(game,{...cultivator,location:ground.name},Math.floor(game.atHand.currentDay)),target,service);
+        if(ground&&offered?.service==='carriage'){
+            const to=worldLocationFor(game.atHand,offered.to),grade=intent==='hire'?theGradeAskedFor(`${target} ${askedIn}`):null;
+            const hired=grade?theHireOf(offered,grade):null;
+            const ids=[cultivator.id,...companions],fare=hired?stonesFor(hired.cash):stonesFor(offered.cashPerSeat)*ids.length;
+            const assessment=to&&assessPublicCarriage(game.atHand,{fromId:ground.id,toId:to.id,day:routineTime(game.atHand),
+                conveyanceId:grade?.conveyanceId??THE_DRAWN_CARRIAGE,passengerIds:ids,fareStones:fare,hired:intent==='hire',
+                playedPassenger:{id:cultivator.id,locationId:ground.id,alive:cultivator.alive}});
+            const capacity=assessment&&carriageCapacityRefusal(assessment);if(capacity)return capacity;
+        }
+        if(ground&&station){const approach=await walkToTheDeparture(game,run,cultivator,ground.id,station.id,undefined,companions);
+            if(approach)return approach;({run,cultivator}=game.currentRun());}
+    }
     const here = placeName(cultivator);
     const today = Math.floor(game.atHand?.currentDay ?? run.elapsedDays);
     const weatherDay = Math.floor(run.elapsedDays);
@@ -353,11 +388,7 @@ export async function aSeatOnAShipOrACarriage(
             playedPassenger: { id: cultivator.id, locationId: fromDock.id, alive: cultivator.alive } }) : null;
     const roadQuote = roadAssessment?.quote ?? null;
     if (line.service === 'carriage' && roadAssessment?.refusal?.kind === 'capacity') {
-        const { remainingPassengers, requestedPassengers } = roadAssessment.refusal;
-        return refused('engine.publicCarriage', 'passage', factsForRefusal(
-            'Not enough passenger places on this carriage.',
-            `${howMany(remainingPassengers, 'passenger place')} remain; your company needs ${howMany(requestedPassengers, 'place')}. Nothing spent.`,
-            `${howMany(remainingPassengers, 'passenger place')} remaining against ${howMany(requestedPassengers, 'passenger')}.`));
+        return carriageCapacityRefusal(roadAssessment)!;
     }
     if (line.service === 'carriage' && !roadQuote) return refused('engine.publicCarriage', 'passage', factsForRefusal(
         'No actual carriage can board this passage here.',

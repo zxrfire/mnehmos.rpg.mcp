@@ -39,7 +39,7 @@ export function agreeToOnwardPublicPassage(game:GameService,body:Cultivator,
    fromReceiptId:receiptId,toLocationId:toId,maximumFareStones:quote.fareStones}}),{recur:false});
  world.schedule.push(makeScheduledEffect({id:'onward-word:'+fact.id,kind:'meeting',dueOnDay:actual.arrivalDay,
   summary:'The agreed onward passage can be considered at the actual landfall.',actorIds:[operatorId,body.id],
-  locationId:actual.toId,data:{onwardAgreementId:fact.id}}));
+  locationId:actual.toId,data:{captainOnwardWordId:fact.id}}));
  game.theWorldMoved();
  return{ok:true,lines:['The actual operator agreed to consider the onward berth at the current landfall, for at most '+quote.fareStones+' spirit stones.',
   'The current hull still goes to its actual endpoint first. Onward payment and boarding wait for real arrival and fresh living operator, custody, berth and purse checks.',
@@ -47,7 +47,7 @@ export function agreeToOnwardPublicPassage(game:GameService,body:Cultivator,
 }
 function pendingWords(world:WorldState):HistoricalFact[]{
  const out:HistoricalFact[]=[];
- for(const task of world.schedule){const id=task.data.onwardAgreementId;
+ for(const task of world.schedule){const id=task.data.captainOnwardWordId;
   if(typeof id!=='string'||factsWithDataValue(world,'onwardAgreementResolved',id).length)continue;
   const fact=witnessIndexFor(world).byId.get(id);
   if(fact?.data.captainOnwardAgreement===true && fact.data.service!=='carriage'&&fact.data.service!=='owned')out.push(fact);

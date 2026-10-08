@@ -1640,31 +1640,6 @@ export function theRowForAStatedReason(step: PlanStep): ToolCallRecordish {
 }
 
 /**
- * What the player reads when their own sentence gave the order.
- */
-export function sayingWhatIsStillToCome(held: readonly PlanStep[]): string {
-    const named = held.map(whatThisStepIsCalled);
-    const rest = named.length === 1
-        ? named[0]!
-        : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
-    return `You said what order you wanted, and that is the order it went in. `
-        + `${capitalise(rest)} ${named.length === 1 ? 'is' : 'are'} still ahead of you - `
-        + `they have not run. Say which comes first and the ordered plan can run.`;
-}
-
-/** The same, as an inspector row per held step. */
-export function theRowForSomethingStillToCome(step: PlanStep): ToolCallRecordish {
-    return {
-        name: 'engine.stillToCome',
-        action: step.action.action,
-        summary: `Not run, and not declined: the sentence gave its own order, so `
-            + `${step.action.action}${step.action.target ? `(${step.action.target})` : '()'}`
-            + ' comes after the act this turn spent. Nothing was spent on it.',
-        ok: true
-    };
-}
-
-/**
  * What the player reads when the reading layer dropped one of their clauses.
  */
 export function sayingWhatTheReadingDropped(dropped: readonly PlanStep[], wholeSentence?: string): string {

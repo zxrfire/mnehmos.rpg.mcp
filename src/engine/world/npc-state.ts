@@ -388,6 +388,8 @@ export type ActivityKind =
     | 'squeezing';
 
 export interface NpcActivity {
+    /** The held departure intention; no berth, fare or arrival has been accepted. */
+    departureApproach?: { locationId: string; areaId: string | null; destinationId: string; purpose: string; vehicleId?: string; service?: 'ship'|'carriage'|'air'|'ground'|'gather' };
     /** Sole actual partial road course, held only by its vehicle operator. */
     admittedRoad?: AdmittedRoadCourse;
     /** Source body for a carried changing course; no copied physical position. */

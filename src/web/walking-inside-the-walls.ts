@@ -178,30 +178,6 @@ export async function walkIntoTheRoomTheWorkIsDoneIn(
     return room ? aWalkInsideTheWalls(game, run, cultivator, room.name) : null;
 }
 
-export function intoTheRoomTheWorkIsDoneIn(
-    game: GameService, cultivator: Cultivator, making: WhatIsBeingMade | null
-): string | null {
-    const room = theRoomTheWorkIsDoneIn(game, cultivator, making);
-    const world = game.atHand;
-    const membership = game.repos.sects.getMembership(cultivator.id);
-    const seat = world && theSeatOfTheCompound(world, game.worldPlaceOf(cultivator), whereCompoundsAre(world));
-    if (!room || !world || !membership || !seat) return null;
-    const house = game.repos.sects.getById(membership.sectId);
-    const { access } = howThisCultivatorStandsInTheHouseHolding({
-        ground: room,
-        cultivator,
-        objects: world.objects,
-        standing: house
-            ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length, joinedOnDay: membership.joinedOnDay }
-            : null,
-        onDay: Math.floor(world.currentDay)
-    });
-    const reach = reachThrough(pathTo(world.locations, room.id), access, { enteredAt: seat.id });
-    if (reach.stoppedAt !== null || reach.level === 'barred') return null;
-    game.repos.cultivators.update(cultivator.id, { location: room.name });
-    return `You go to ${room.name} to do the work.`;
-}
-
 /**
  * The rooms this player could walk to from where they are standing.
  *

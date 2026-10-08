@@ -46,11 +46,12 @@ export function theMostPeopledPlaceIn(
 
 function mostPeopled(world: { locations: readonly LocationRecord[] }, provinceId: string): LocationRecord | null {
     let best: LocationRecord | null = null;
+    const places=new Map(world.locations.map(place=>[place.id,place]));
     for (const place of world.locations) {
         if (place.kind !== 'settlement' || place.sealed) continue;
         if (place.thresholds.entry > 0 || place.thresholds.survival > 0) continue;
         if (populationWeightOf(place) <= 0) continue;
-        if (!pathTo(world.locations, place.id).some(step => step.id === provinceId)) continue;
+        if (!pathTo(world.locations, place.id, places).some(step => step.id === provinceId)) continue;
         if (best === null || populationWeightOf(place) > populationWeightOf(best)) best = place;
     }
     return best;

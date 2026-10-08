@@ -5,10 +5,11 @@
  * fellow traveller produces the existing physical contact interruption, not an
  * artificial shorter voyage or a forced resolver result. The actual factory
  * hull carries catalog cabin doors and remains under its real operator.
- * These UNRUN native controls preserve advertised full quote/fare/current
+ * These native controls preserve advertised full quote/fare/current
  * course, actual water, local .25 crossing and .125 speech. Cabin grants are
  * explicit operator fixture acts through the existing grant leaf, not party
- * permissions or a claim that the general request frontdoor is wired.
+ * permissions. The independent passenger begins at the actual landing;
+ * room-to-landing movement is covered by npc-departure-approaches.test.ts.
  */
 import {expect,it} from 'vitest';
 import {makeGame,ScriptedProvider} from './harness.js';
@@ -40,6 +41,8 @@ async function boarded(){
  const to=worldLocationFor(world,line.to)!;
  const merchant={...createNpc(world.seed,{id:'ordinary-public-cabin-passenger',locationId:from.id,onDay:day,
   bornOnDay:day-25*365,occupation:'merchant',takenNames:new Set(world.npcs.map(one=>one.name))}),spiritStones:5000};
+ merchant.activity={kind:'idle',note:'At the landing to board.',withIds:[],sinceDay:day,untilDay:null,
+  standingIn:theAreasOf(world,from).areas.find(one=>one.for==='landing')!.id};
  world.npcs.push(merchant);
  const personal=bookNpcPassageForRoute(world,merchant,to.id,day,'Taking wares to '+to.name+'.');
  expect(personal).not.toBeNull();world.npcs[world.npcs.findIndex(one=>one.id===merchant.id)]=personal!;

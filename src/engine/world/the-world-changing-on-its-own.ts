@@ -2,7 +2,10 @@ import { aRetainedMemberActuallyServed, aRetainedMemberActuallyReturned, stillOn
     stillOnAnActualRetainedReturn, actualRetainedReturnDay, retainedAirReturnBoundary, continueActualRetainedAirReturns } from './a-retained-sending-has-actually-served.js';
 import { initializeMetricGround } from './the-metric-ground-under-a-journey.js';
 import { recordNpcActualArrival } from './a-body-that-actually-arrived.js';
-import { theHouseLendsAnActualDutyCraft, quoteHouseAirDuty, admitPaidHouseAirDuty, admitPaidHouseAirReturn, sendASelectedHousePartyOnAnAvailableAirHull } from './a-house-party-takes-an-actual-air-leg.js';
+import {continueActualHouseAirShuttle,beginHouseSendingAssembly} from './a-house-party-takes-an-actual-air-shuttle.js';
+import { itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from './a-vehicle.js';
+import { continueNpcDepartureApproach } from './npc-departure-approaches.js';
+import { theHouseLendsAnActualDutyCraft, quoteHouseAirDuty, admitPaidHouseAirDuty, admitPaidHouseAirReturn } from './a-house-party-takes-an-actual-air-leg.js';
 
 
 import { companyAfterPassage } from './company-during-a-passage.js';
@@ -253,7 +256,7 @@ import { theWanderersGoAbout } from './the-wanderer-the-catalog-names-is-somebod
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { applyDaoGroundStints, startNpcJourney } from './dao-ground-stints.js';
 import { commitNpcPublicPassage } from './ship-crew.js';
-import { aPostingThatCanReachItsGround, journeyNeedsWater, locationOnNpcJourney, physicalJourneyDays } from './places-on-the-way.js';
+import { aPostingThatCanReachItsGround, journeyNeedsWater, locationOnNpcJourney, physicalJourneyDays, journeyTimeHasReached } from './places-on-the-way.js';
 import { woundsCloseThisYear } from './what-a-house-does-about-its-people-being-hurt.js';
 import {
     A_ROOM_SAW_IT,
@@ -351,7 +354,6 @@ import {
     notFinishedChance,
     partyOrdinal,
     tierFor,
-    aPostingForItsActualLegs,
     whatTheHouseCanSpare,
     whoTheHouseCanSend,
     whoThisErrandIsPitchedFor,
@@ -1004,7 +1006,8 @@ function pressureTasksForYear(state: WorldState, year: number,
     for (const sending of state.pendingSendings ?? []) {
         const returnBoundary = retainedAirReturnBoundary(state, sending);
         if (returnBoundary != null && returnBoundary >= year * 365 && returnBoundary <= yearEndsOn) tasks.push({
-            key: 'sending-return:' + sending.posting.houseId + ':' + sending.departsOnDay,
+            key: sending.dispatchFactId?'sending-load:'+sending.dispatchFactId+':'+returnBoundary
+                :'sending-return:' + sending.posting.houseId + ':' + sending.departsOnDay,
             day: returnBoundary, run: day => continueActualRetainedAirReturns(state, day)
         });
         const due = sending.departsOnDay + sending.posting.days;
@@ -3559,8 +3562,9 @@ function applySendings(
         posting = aPostingThatCanReachItsGround(posting, state.locations, faction.seatLocationId,
             goingTo, taking?.conveyance, taking?.power);
         if (posting.stonesBurned > inTheChest) continue;
-        const reportedWhen = whenTheErrandHappened({ notBefore:yearStartsOn,reportedOn:day,
-            spanEndsOn:yearEndsOn,term:posting.days });
+        const reportedWhen = journeyTimeHasReached(state.currentDay,day)&&journeyTimeHasReached(day,state.currentDay)
+            ? {stillOut:true,departsOnDay:day}
+            : whenTheErrandHappened({ notBefore:yearStartsOn,reportedOn:day,spanEndsOn:yearEndsOn,term:posting.days });
         // AND THE CHEST PAYS FOR THE GROUND THAT IS NOT THERE. One debit, off
         // the figure the posting itself carries, so what a house is charged and
         // what a board would quote cannot come apart. Zero on anything standing
@@ -3573,10 +3577,16 @@ function applySendings(
         // Whom it is pitched for, and nobody it is beneath. The one exception is
         // the ground that would pay: that is the elders reaching past the
         // house's weight with whoever it has, decided just below.
-        const party = named === null
+        let party = named === null
             ? whoThisErrandIsPitchedFor(posting, spare.free)
             : whoTheHouseCanSend(posting, spare.free);
         if (party.length === 0) continue;
+        if(taking && itWantsAPilot(taking.conveyance)
+            && !party.some(member=>member.ordinal>=A_SPIRIT_BOAT_ANSWERS_TO)) {
+            const pilot=spare.free.find(member=>member.ordinal>=A_SPIRIT_BOAT_ANSWERS_TO);
+            if(!pilot)continue;
+            party=[...party,pilot];
+        }
 
         // WALKING ONTO SOMEBODY'S GROUND IS A DECISION, and it is the elders'.
         // A broke house having the reason is not the same as the house acting on
@@ -3639,43 +3649,15 @@ function applySendings(
             // annual errands retain their historical resolution above/below.
             const selected=party.map(member=>state.npcs[at.get(member.id)??-1]);
             if(selected.some(person=>person===undefined||!isTheWorldsToMove(person)))continue;
-            const actualParty=selected.filter((person):person is NpcRecord=>person!==undefined);
             let admittedAir=false;
+            let dispatchFactId:string|undefined;
             if(taking?.conveyance.crossesGroundThatCannotBeWalked&&goingTo===null)continue;
             if(taking?.conveyance.crossesGroundThatCannotBeWalked&&goingTo!==null){
-                const rooms=whoIsInChargeOfWhat({rooms:theRoomsThisHouseHas(state.locations,faction.id),
-                    roll:state.npcs.filter(person=>person.status==='alive'&&person.factionId===faction.id
-                        &&theRoomWouldDealToThemAgain(state,person,faction,day))
-                        .map(person=>({id:person.id,rankIndex:person.factionRankIndex})),
-                    rankCount:faction.ranks.length});
-                const admitted=sendASelectedHousePartyOnAnAvailableAirHull(state,faction,actualParty,
-                    goingTo,day,walking,water,inTheChest/2,(actualLegs,selectedCraft)=>{
-                        const actualPosting=aPostingForItsActualLegs(posting,
-                            actualLegs.quote.daysOneWay,actualLegs.back.daysOneWay);
-                        return new Map(actualParty.map(person=>[person.id,{
-                            kind:'out_with_a_party' as const,
-                            note:'Out for the '+houseName(faction.name)+' on '+reason.name.toLowerCase()+'.',
-                            withIds:partyIds.filter(id=>id!==person.id),sinceDay:day,untilDay:day+actualPosting.days,
-                            returnTo:whereTheyGoBackTo(person),fromLocationId:person.locationId,
-                            conveyanceId:selectedCraft.conveyance.id,conveyancePower:selectedCraft.power
-                        }]));
-                    },rooms,onTheRoll);
-                if(admitted){
-                    taking=admitted.taking;
-                    posting={...aPostingForItsActualLegs(posting,admitted.read.quote.daysOneWay,
-                        admitted.read.back.daysOneWay),stonesBurned:admitted.fuel};
-                    admittedAir=true;
-                }
-                if(!admittedAir){
-                    // A loan refusal or unadmitted multi-load hull does not make
-                    // an airborne party. Ask the existing ordinary alternative.
-                    taking=bestForThisRoad(whatThisHouseCouldTakeOut(state,faction)
-                        .filter(row=>!row.conveyance.crossesGroundThatCannotBeWalked),
-                        walking,party.length,water,inTheChest/2);
-                    if(water&&!taking)continue;
-                    posting=aPostingThatCanReachItsGround({...posting,hands:party.length},state.locations,
-                        faction.seatLocationId,goingTo,taking?.conveyance,taking?.power);
-                }
+                const assembling=beginHouseSendingAssembly(state,faction,{posting,party:party.map(member=>({...member})),
+                    departsOnDay:day,locationId:goingTo,named,reachedPastItsWeight,
+                    counterparties:[...whoTheErrandWasWith(state,aboutHouses,goingTo)]},day);
+                if(assembling){(state.pendingSendings??=[]).push(assembling);sent++;continue;}
+                continue;
             }
             if(!admittedAir){
                 const purseNow=Number(faction.resources.spirit_stones??0);
@@ -3685,7 +3667,7 @@ function applySendings(
             sent++;
             const due = day + posting.days;
             (state.pendingSendings ??= []).push({
-                posting, party: party.map(member => ({ ...member })), departsOnDay: day,
+                posting, dispatchFactId, party: party.map(member => ({ ...member })), departsOnDay: day,
                 locationId: goingTo, named, reachedPastItsWeight,
                 counterparties: [...whoTheErrandWasWith(state, aboutHouses, goingTo)]
             });
@@ -4964,8 +4946,12 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
     for (let i = 0; i < state.npcs.length; i++) {
         let npc = state.npcs[i];
         if (npc === undefined || npc.status !== 'alive') continue;
+        if(continueNpcDepartureApproach(state,npc,day))continue;
         // Actual-clock continuation owns linked work, including an unladen return.
         if (npc.activity?.retrievalRequestId) continue;
+        const shuttle=(state.pendingSendings??[]).find(row=>row.dispatchFactId
+            &&row.dispatchFactId===npc.activity?.capitalMissionId);
+        if(shuttle&&continueActualHouseAirShuttle(state,shuttle,day))continue;
         if (npc.activity?.capitalMissionId && npc.activity.untilDay != null
             && npc.activity.untilDay <= day) {
             const continuing = advancePublicCapitalMission(state, npc.id, day,

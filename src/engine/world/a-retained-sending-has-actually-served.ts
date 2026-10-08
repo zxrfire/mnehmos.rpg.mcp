@@ -10,10 +10,12 @@ import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import { quoteAnAirJourney, conveyanceOfPersonalFlight } from './what-an-air-journey-takes.js';
 import { admitPaidHouseAirReturn } from './a-house-party-takes-an-actual-air-leg.js';
+import {aShuttleMemberActuallyServed,actualShuttleReturnDay,nextActualHouseShuttleBoundary,continueActualHouseAirShuttle} from './a-house-party-takes-an-actual-air-shuttle.js';
 type RetainedSending = NonNullable<WorldState['pendingSendings']>[number];
 
 export function stillOnThisRetainedSending(npc: NpcRecord, row: RetainedSending): boolean {
     const doing = npc.activity;
+    if(row.dispatchFactId)return doing?.capitalMissionId===row.dispatchFactId;
     return doing?.kind === 'out_with_a_party' && doing.sinceDay === row.departsOnDay
         && doing.untilDay === row.departsOnDay + row.posting.days;
 }
@@ -26,13 +28,14 @@ function airDutyOf(state: WorldState, npc: NpcRecord, row: RetainedSending) {
     if (!doing) return null;
     let returning: HistoricalFact | null = null;
     let receipt = doing.airDutyReceiptId ? index.byId.get(doing.airDutyReceiptId) : undefined;
-    if (!receipt && doing.kind === 'travelling') {
+    if (doing.kind === 'travelling') {
         const matches = [...index.byId.values()].filter(fact => fact.data.airCourse === true
             && typeof fact.data.houseDutyReturnOf === 'string' && fact.data.vesselId === doing.vesselId
             && fact.data.departureDay === doing.sinceDay && fact.data.arrivalDay === doing.untilDay
             && fact.data.fromLocationId === row.locationId);
         if (matches.length !== 1) return null;
         returning = matches[0]!;
+        if (receipt && receipt.id !== returning.data.houseDutyReturnOf) return null;
         receipt = index.byId.get(String(returning.data.houseDutyReturnOf));
     } else if (!stillOnThisRetainedSending(npc, row)) return null;
     const data = receipt?.data;
@@ -64,6 +67,7 @@ function enoughService(row: RetainedSending, fromDay: number, untilDay: number) 
 }
 export function aRetainedMemberActuallyServed(state: WorldState, npc: NpcRecord, row: RetainedSending): boolean {
     if (npc.status !== 'alive' || isLostTrackOf(state, npc) || !row.locationId) return false;
+    if(row.dispatchFactId)return aShuttleMemberActuallyServed(state,npc,row);
     const air = airDutyOf(state, npc, row);
     if (air) {
         if (!enoughService(row, air.fromDay, air.untilDay) || !journeyTimeHasReached(state.currentDay, air.untilDay)) return false;
@@ -79,6 +83,7 @@ export function aRetainedMemberActuallyServed(state: WorldState, npc: NpcRecord,
         && locationOnNpcJourney(state.locations, npc, (site.fromDay + site.untilDay) / 2) === row.locationId;
 }
 export function actualRetainedReturnDay(state: WorldState, npc: NpcRecord, row: RetainedSending): number | null {
+    if(row.dispatchFactId)return actualShuttleReturnDay(state,npc,row);
     const doing = npc.activity;
     if (!doing || npc.status !== 'alive' || isLostTrackOf(state, npc)) return null;
     const air = airDutyOf(state, npc, row);
@@ -98,6 +103,7 @@ export function aRetainedMemberActuallyReturned(state: WorldState, npc: NpcRecor
 }
 /** A native appointment at the service boundary, not a stored watch timer. */
 export function retainedAirReturnBoundary(state: WorldState, row: RetainedSending): number | null {
+    if(row.dispatchFactId)return nextActualHouseShuttleBoundary(state,row);
     for (const member of row.party) {
         const npc = state.npcs.find(person => person.id === member.id);
         if (!npc || !stillOnThisRetainedSending(npc, row)) continue;
@@ -110,6 +116,7 @@ export function retainedAirReturnBoundary(state: WorldState, row: RetainedSendin
  * and prepaid commitment checks. No new fare or returning party is invented. */
 export function continueActualRetainedAirReturns(state: WorldState, onDay: number): void {
     for (const row of state.pendingSendings ?? []) {
+        if(row.dispatchFactId){continueActualHouseAirShuttle(state,row,onDay);continue;}
         const readyAt = retainedAirReturnBoundary(state, row);
         if (readyAt == null || !journeyTimeHasReached(onDay, readyAt) || !row.locationId) continue;
         const people = row.party.map(member => state.npcs.find(person => person.id === member.id));

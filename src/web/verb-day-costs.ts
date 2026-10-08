@@ -10,7 +10,7 @@
 
 import type { Cultivator } from '../schema/cultivation.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
-import { UNBOUNDED_LIFESPAN_YEARS, rankName } from '../engine/cultivation/realms.js';
+import { rankName } from '../engine/cultivation/realms.js';
 import {
     daysOfLifeRemaining,
     lifespanCeilingFor
@@ -37,19 +37,6 @@ import type { SpanUnit } from './sentence-parts.js';
  * @deprecated Use {@link daysOfLifeRemaining}.
  */
 export const MAX_CULTIVATION_DAYS = 36_500;
-
-/**
- * Past this a number is not a span at all.
- *
- * What a SCHEMA can bound, and the whole of what it can: a static shape does
- * not know who is asking, so it cannot hold a rule about a body. It rejects
- * the absurd - a model that answers `1e400`, a field that arrived as
- * nonsense - and the real bound is applied where the cultivator is.
- *
- * Derived from the ladder's own marker for a span with no end, so it moves
- * when the ladder does.
- */
-export const LONGER_THAN_ANY_LIFE = UNBOUNDED_LIFESPAN_YEARS * DAYS_PER_YEAR;
 
 /** What the body a span is asked of has to be, for the bound to be read off it. */
 export type ABodyASpanIsAskedOf =

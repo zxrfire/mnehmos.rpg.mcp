@@ -8,6 +8,13 @@
  * share the route, while their actual elapsed days determine who they meet.
  * Live station dispatch formerly put the holder at the post immediately. Its
  * initial passage must take the real route; a term ending is no physical relief.
+ * Future quote chains use the hull-position reader; boarding separately requires
+ * actual departure position. Reusing boarding position inside pricing refused
+ * a return already included in that same pure quote chain.
+ * The former captainless-hull positive now runs with its actual live captain;
+ * removing that captain is a separate refusal, not another advertised ship.
+ * A driver's exact market expiry was projected 3.3e-9 percent beyond its walls;
+ * admitted geometry must compare the scheduled absolute date before subtraction.
  */
 import { describe, expect, it } from 'vitest';
 import { addPlacesOnTheWay, firstTravellerOnTheWay, firstTravellerOnTheWater,
@@ -30,6 +37,8 @@ import { ensureShipCrew, bindShipCrewToPassage, commitNpcPublicPassage } from '.
 import { stonesFor } from '../../../src/engine/world/the-fare-and-calendar-of-a-passage.js';
 import { makeFact, createLedger, appendFact } from '../../../src/engine/world/history.js';
 import { createWorld } from '../../../src/engine/world/world-state.js';
+import { positionOnRoad, positionOnAdmittedRoad } from '../../../src/engine/world/road-course.js';
+import { theAreasOf } from '../../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 function road() {
     const a = makeLocation({ id: 'a', name: 'Departure', kind: 'settlement' });
@@ -46,6 +55,28 @@ function road() {
 }
 
 describe('places on an actual journey', () => {
+    it('keeps an admitted carriage at its exact intermediate appointment on a large world clock', () => {
+        const route = [{locationId:'start',days:0},{locationId:'market',days:.3125},{locationId:'end',days:.75}];
+        const held = {position:positionOnRoad(route,0),route,initialTravelDays:0};
+        const departure = 123456.123456, duration = .1;
+        const atMarket = departure + duration * .3125 / .75;
+        expect(positionOnAdmittedRoad(held,atMarket-departure,duration,departure)).toEqual({
+            kind:'place',locationId:'market',originLocationId:'start'});
+        expect(positionOnAdmittedRoad(held,atMarket-departure-1e-5,duration,departure).kind).toBe('edge');
+        expect(positionOnAdmittedRoad(held,atMarket-departure+1e-5,duration,departure).kind).toBe('edge');
+    });
+    // A stationary body meets the crossing itself, not everybody on its corridor.
+    it('finds actual forward and reverse traffic at a fixed partial road point', () => {
+        const { locations, a, b, npc } = road();
+        const held = positionOnRoad(walkingRouteFrom(locations, a.id, b.id)!, 1);
+        const request = { locations, fromId: a.id, toId: b.id, stationaryAt: held, onDay: 100.5, days: 3 };
+        expect(firstTravellerOnTheWay({ ...request, npcs: [npc] })?.afterDays).toBeCloseTo(.5, 8);
+        expect(firstTravellerOnTheWay({ ...request, days: .25, npcs: [npc] })).toBeNull();
+        expect(firstTravellerOnTheWay({ ...request, npcs: [markDead(npc, 100, 'Died before travelling.')] })).toBeNull();
+        const reverse = startNpcJourney({ locations }, { ...npc, locationId: b.id, activity: null },
+            a.id, 100, 'Returning on their own road.');
+        expect(firstTravellerOnTheWay({ ...request, onDay: 106, npcs: [reverse] })?.afterDays).toBeCloseTo(1, 8);
+    });
     it('keeps equal-price path order, closed roads and minimum edge prices in prepared batches', () => {
         // The complete ten-year profile03 spent 13.24 seconds beneath the
         // emitted naming helper inside walkingDaysFrom. Preparing the graph
@@ -103,7 +134,9 @@ describe('places on an actual journey', () => {
             locationId: from.id, spiritStones: 0, onDay: 100, bornOnDay: 0 });
         // Candidate comparison stays pure; only the chosen, stored paid
         // booking creates the crew and an immutable actual passage receipt.
-        const funded = { ...person, id: 'ordinary-paying-traveller', spiritStones: quote.fareStones * 3 };
+        const funded = { ...person, id: 'ordinary-paying-traveller', spiritStones: quote.fareStones * 3,
+            activity: { kind: 'idle' as const, note: 'At the actual landing.', withIds: [], sinceDay: 100, untilDay: null,
+                standingIn: theAreasOf(world, from).areas.find(area => area.for === 'landing')!.id } };
         const candidate = bookNpcPassageForRoute(world, funded, to.id, 100, 'Taking ordinary passage.')!;
         expect(world.npcs).toHaveLength(0);
         expect(world.history.facts).toHaveLength(0);
@@ -133,9 +166,11 @@ describe('places on an actual journey', () => {
         // other port sail here. Only an existing return can change that fact.
         expect(earliestQuotedPublicPassage(world, from.id, to.id, quote.arrivalDay + 2,
             quote.arrivalDay + 365 * 10_000)).toBeNull();
+        const actualBodies = structuredClone(world.npcs), actualHulls = structuredClone(world.objects);
         const returned = earliestQuotedPublicPassage(world, from.id, to.id, quote.arrivalDay + 2,
             back.arrivalDay + 365, 2, [back])!;
         expect(returned.departureDay).toBe(back.arrivalDay);
+        expect(world.npcs).toEqual(actualBodies);expect(world.objects).toEqual(actualHulls);
         const distantDeparture = back.arrivalDay + 365 * 10_000;
         const futureBooked = quotePublicPassage(world, from.id, to.id, distantDeparture, 2, [back])!;
         const sameFutureSailing = earliestQuotedPublicPassage(world, from.id, to.id, back.arrivalDay + 1,
@@ -149,10 +184,12 @@ describe('places on an actual journey', () => {
         expect(earliestQuotedPublicPassage(world, to.id, from.id, quote.departureDay + 0.5,
             quote.arrivalDay, 2)).toBeNull();
         expect(earliestQuotedPublicPassage({ ...world, npcs: [] }, to.id, from.id,
+            quote.arrivalDay, back.arrivalDay + 365, 2, [quote])).toBeNull();
+        expect(earliestQuotedPublicPassage(world, to.id, from.id,
             quote.arrivalDay, back.arrivalDay + 365, 2, [quote])!.departureDay).toBe(quote.arrivalDay);
 
         expect(locationOnNpcJourney(world.locations, booked, quote.arrivalDay)).toBe(to.id);
-        const planned = quotePublicPassage({ ...world, npcs: [] }, to.id, from.id,
+        const planned = quotePublicPassage(world, to.id, from.id,
             quote.arrivalDay + 2, 2, [quote])!;
         expect(planned.arrivalDay).toBe(back.arrivalDay);
         // Prepaid return legs cannot be preempted while any living member

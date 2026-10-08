@@ -4,6 +4,7 @@ import { spendAboardTheShip, spendAboardTheCarriage } from './an-actual-paid-pas
 import { thePaidCarriageClaim } from './a-paid-carriage-on-the-road.js';
 /** Invitations end at night; visits end when the host leaves the room. */
 import { routineTime } from '../engine/world/npc-routines.js';
+import { journeyTimeHasReached } from '../engine/world/places-on-the-way.js';
 import { walkingDaysFrom } from '../engine/world/locations.js';
 import { isActing, type NpcRecord } from '../engine/world/npc-state.js';
 import type { GameService } from './game.js';
@@ -99,7 +100,10 @@ export async function passHours(game: GameService, run: Run, cultivator: Cultiva
         const owned = game.worldEnabled ? await spendOnOwnedPassage(game, run, cultivator, days, WAITING_FOCUS, resolvesOnTurn, false, finishTurn) : null;
         if (owned) {
             invitationsDue(game, game.repos.cultivators.getById(cultivator.id) ?? cultivator);
-            return { spent: owned, finished: owned.outcome === 'executed' && !owned.cutShort && !owned.timeSkip?.interrupted
+            // An event at the final instant does not erase the span already lived.
+            const whole=journeyTimeHasReached(owned.timeSkip?.simulatedDays??0,days);
+            return { spent: owned, finished: owned.outcome === 'executed'
+                && (whole || !owned.cutShort && !owned.timeSkip?.interrupted)
                 && (game.repos.cultivators.getById(cultivator.id)?.alive ?? false) };
         }
         const aboard = game.worldEnabled ? await spendAboardTheShip(game, run, cultivator, days, resolvesOnTurn, finishTurn) : null;

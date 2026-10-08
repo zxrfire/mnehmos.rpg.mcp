@@ -235,9 +235,15 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     const fresh = game.currentRun(), actual = source();
     const arrived = fresh.cultivator.alive && !spent.skip.died && !spent.skip.interrupted && !stop
         && actual?.locationId === to.id && journeyTimeHasReached(routineTime(game.atHand!), actual.endsOnDay);
+    const destinationKnown=arrived||game.canPointAtLocation(fresh.cultivator,to);
     const facts = factsForToolResult(arrived ? trip.to + ', by ' + trip.service + '.' : 'The actual passage stopped.',
         [...lines, ...spent.applied.tollLines, ...spent.world.lines]);
     facts.structure.push(...structure, ...spent.world.structure);
+    if(!destinationKnown){
+        facts.lines=facts.lines.map(line=>line.split(to.name).join('the ground ahead'));
+        facts.structure=facts.structure.map(line=>line.split(to.name).join('the ground ahead'));
+        facts.prose=facts.prose.split(to.name).join('the ground ahead');
+    }
     const execution: Execution = { facts, timeSkip: spent.skip, events: spent.skip.events, breakthrough: null,
         outcome: 'executed', nights: binding?.airborne && !binding.vesselId ? 'in_the_open' : 'under_a_roof', calls: [...skipCalls('passage', spent.skip, null), ...worldCalls(spent.world)],
         cutShort: spent.skip.interrupted ? { askedDays: trip.days, livedDays: spent.skip.simulatedDays,

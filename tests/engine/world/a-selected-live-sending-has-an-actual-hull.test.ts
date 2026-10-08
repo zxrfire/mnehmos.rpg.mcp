@@ -30,7 +30,9 @@ function arranged(){
  const house=makeFaction({id:'sending-house',name:'Sending house',ranks:['Disciple','Elder','Head'],seatLocationId:from.id,resources:{spirit_stones:1000}});world.factions.push(house);
  const pilot=setRealm(createNpc(world.seed,{id:'selected-pilot',name:'Selected pilot',locationId:from.id,onDay:day,bornOnDay:day-100*365}),29,day);
  const peer=createNpc(world.seed,{id:'selected-peer',name:'Selected disciple',locationId:from.id,onDay:day,bornOnDay:day-30*365});
- for(const person of [pilot,peer]){person.factionId=house.id;person.factionRankIndex=0;}world.npcs.push(pilot,peer);
+ for(const person of [pilot,peer]){person.factionId=house.id;person.factionRankIndex=0;
+  person.activity={kind:'out_with_a_party',note:'At the departure ground.',withIds:[],sinceDay:day,untilDay:day+1};}
+ world.npcs.push(pilot,peer);
  const craft=aVehicleOf({id:'selected-real-hull',conveyanceId:'conv-spirit-boat',ownerId:house.id,ownerName:house.name,at:from.id});world.objects.push(craft);
  const people=[pilot,peer],roll=people.map(person=>({id:person.id,rankIndex:person.factionRankIndex}));
  const activities=new Map(people.map(person=>[person.id,{kind:'out_with_a_party' as const,note:'Actual selected live sending',withIds:people.filter(p=>p.id!==person.id).map(p=>p.id),sinceDay:day,untilDay:day+720,fromLocationId:from.id,returnTo:from.id}]));

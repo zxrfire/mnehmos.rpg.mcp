@@ -69,6 +69,8 @@ export function withinSight(horizonDays: number, days: number | null): boolean {
  * One thing on the ground, as it looks from above it.
  */
 export interface Sighting {
+    /** The actual ground overlaps the viewer's local physical ground. */
+    locallyVisible?: boolean;
     /** Internal position reference; it never carries the place's name. */
     locationId?: string;
     /**
@@ -216,7 +218,7 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
         + `${input.onTheGround.length} piece(s) of ground offered.`
     ];
 
-    if (horizon <= 0) {
+    if (horizon <= 0 && !input.onTheGround.some(row=>row.locallyVisible)) {
         return {
             headline: 'You cannot get above it.',
             // THREE FACTS: what they see, what seeing further takes, and how a
@@ -242,7 +244,7 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
     }
 
     const seen = input.onTheGround
-        .filter(row => withinSight(horizon, row.days))
+        .filter(row => row.locallyVisible || withinSight(horizon, row.days))
         .sort((a, b) => (a.days ?? -1) - (b.days ?? -1));
 
     structure.push(
@@ -283,7 +285,7 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
             ? 'One thing down there you have never been told about.'
             : `${seen.length} things down there nobody has told you about.`,
         lines: [
-            ...howHighTheyGet(input.ordinal),
+            ...(horizon>0?howHighTheyGet(input.ordinal):[]),
             ...[...grouped].map(([line, count]) => count === 1 ? line : `${line} ${andAgain(count)}`),
             A_SIGHTING_HAS_NO_NAME_ON_IT
         ],

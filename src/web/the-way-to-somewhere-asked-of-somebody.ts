@@ -6,7 +6,7 @@ import { SPAN_ROUTES, SPAN_CASH_PER_WALKED_DAY, counterPlaceNameAt } from '../en
 import { humanDays } from '../engine/encounters/how-a-task-is-worded.js';
 import { routineTime } from '../engine/world/npc-routines.js';
 import { worldLocationFor } from './entities.js';
-import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
+import { betweenRoadEndpoints, stoppedRoadFor } from './a-road-stopped-partway.js';
 /**
  * "Where would I find X?" put to a person is answered with the way there, from
  * what THEY know: `placed` gives the gate and the road, `named` gives the name
@@ -128,8 +128,10 @@ export function theWayAskedOfTheCrowd(
     if (!world || present.length === 0) return null;
     const people = present.map(asked => whoTheyAreOf(world, asked));
     const here = standingOf(cultivator).placeName ?? cultivator.location;
-    const house = theHouseNamed(game, where);
-    const place = house ? null : thePlaceNamed(world, where);
+    const roadQuestion = /^(?:this|the) road(?: ahead)?$/i.test(where);
+    const cursor = roadQuestion ? stoppedRoadFor(game.db, cultivator, world) : null;
+    const house = roadQuestion ? null : theHouseNamed(game, where);
+    const place = cursor ? thePlaceNamed(world, cursor.to) : house ? null : thePlaceNamed(world, where);
     const found = house
         ? whoAmongThemKnowsTheWay(world, here, people, house.factionId)
         : place ? whoAmongThemKnowsTheWayToAPlace(world, here, people, place.name) : -1;
@@ -169,10 +171,12 @@ export function theWayTo(
     const who = knownAlready ? asked.name : somebodyHereHasBeen ? 'Somebody here' : 'The one nearest to hand';
     const them = world?.npcs.find(row => row.id === asked.id) ?? null;
 
-    const house = theHouseNamed(game, where);
-    const place = house ? house.seat : thePlaceNamed(world ?? null, where);
-    const name = house?.factionName ?? place?.name ?? where;
-    const called = house && !/^the\s/i.test(name) ? `the ${name}` : name;
+    const roadQuestion = /^(?:this|the) road(?: ahead)?$/i.test(where);
+    const cursor = roadQuestion ? stoppedRoadFor(game.db, cultivator, world) : null;
+    const house = roadQuestion ? null : theHouseNamed(game, where);
+    const place = cursor ? thePlaceNamed(world ?? null, cursor.to)
+        : house ? house.seat : roadQuestion ? null : thePlaceNamed(world ?? null, where);
+    let name = roadQuestion ? 'the road ahead' : house?.factionName ?? place?.name ?? where;
 
     const land = world ? whatThisPersonKnowsOfTheLand(game, cultivator.id, world, asked) : null;
     const stage: 'placed' | 'named' | null =
@@ -184,6 +188,8 @@ export function theWayTo(
                 ? (them?.locationId === place.id ? 'placed'
                     : land?.places.find(row => row.name === place.name)?.stage ?? null)
                 : null;
+    if (roadQuestion && stage !== null && place) name = place.name;
+    const called = house && !/^the\s/i.test(name) ? `the ${name}` : name;
 
     // A local public venue is common knowledge even to somebody who never rode.
     // Asking its way does not silently disclose every advertised destination.
@@ -269,11 +275,16 @@ export function theWayTo(
         }
     } else if (stage === 'named') {
         lines.push(`${who} knows ${called} by name and says they do not know the road there.`);
+        if (roadQuestion && place) game.knowledge.learnIfNew({holderId: cultivator.id,
+            onDay: Math.floor(run.elapsedDays), kind: 'place', id: place.id, name: place.name,
+            stage: 'named', sourceKind: 'told', fromHolderId: asked.id,
+            sourceNote: asked.name + ' named the place but could not give its route.'});
     } else {
         lines.push(`${who} does not know where ${called} is.`);
     }
 
-    const facts = factsForToolResult(`${knownAlready ? asked.name : 'Somebody'}, asked the way to ${name}.`, lines);
+    const facts = factsForToolResult(roadQuestion ? 'Somebody here, asked where this road leads.'
+        : `${knownAlready ? asked.name : 'Somebody'}, asked the way to ${name}.`, lines);
     const execution = game.freeAction(run, 'interact', facts, registerTurn);
     execution.calls = calls;
     return execution;

@@ -8,8 +8,8 @@
  * Two claims have to hold at once and they pull opposite ways, which is why
  * they are tested together rather than in two files:
  *
- *   THE GATE STILL BINDS AT THE BOTTOM. A low cultivator learns the world by
- *   being told about it, and nothing here may hand them anything.
+ *   THE GATE STILL BINDS AT THE BOTTOM. Nearby physical ground can be seen,
+ *   including from a road; its name and route still require discovery or testimony.
  *   THE GATE SCALES. A high one sees the world without anybody's help.
  *
  * And the invariant that survives every height: PERCEPTION GIVES YOU THE WORLD
@@ -31,6 +31,15 @@ import {
 } from '../../src/web/what-you-can-see-from-up-there';
 import { MAX_ORDINAL, realmForOrdinal } from '../../src/engine/cultivation/realms';
 import { makeGame, makeGameInWorld } from './harness';
+
+it('sees local ground without a flight grant, name, or remote sight',()=>{
+ const local:Sighting={locationId:'visible-town',kind:'settlement',bearing:'east',days:.05,
+  ambient:null,inhabited:null,locallyVisible:true};
+ const remote:Sighting={...local,locationId:'distant-town',days:10,locallyVisible:false};
+ const seen=whatCanBeSeenFromUpThere({ordinal:0,from:'centre',onTheGround:[local,remote]});
+ expect(seen.seen).toBe(1);expect(seen.located?.map(row=>row.id)).toEqual([local.locationId]);
+ expect(seen.lines.join(' ')).not.toMatch(/sword|cloud|flight|distant-town|visible-town/);
+});
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE ANCHORS ARE THE CATALOG'S, NOT THIS MODULE'S
@@ -55,18 +64,19 @@ describe('the floor is where the world already puts flight', () => {
     });
 
     /**
-     * Flight is not a realm grant here and this module must not become the
-     * place one gets minted. Checked against the capability layer rather than
-     * asserted in a comment.
+     * Sight never grants flight. The transport ruling now grants bodily flight
+     * at Void Tribulation; first sword flight still requires its actual art.
      */
-    it('adds no capability grant anywhere', async () => {
+    it('does not grant bodily flight at the first sword-flight rung', async () => {
         const capability = await import('../../src/engine/world/capability.js');
         // `CLASS_GRANTS` is module-private. Asked of the exported reader at the
         // top of the ladder instead, which is cumulative and so is the whole
         // table. This used to read `capability.CLASS_GRANTS ?? {}`, which was
         // always `{}` - the three lines below asserted nothing at all.
         const grants = JSON.stringify(capability.grantsAvailableAt(MAX_ORDINAL));
-        expect(grants).not.toContain('fl');
+        expect(capability.grantsAvailableAt(LEAVES_THE_GROUND)).not.toContain('body_flight');
+        expect(capability.grantsAvailableAt(28)).not.toContain('body_flight');
+        expect(capability.grantsAvailableAt(29)).toContain('body_flight');
         expect(grants).not.toContain('sight');
         expect(grants).not.toContain('horizon');
     });

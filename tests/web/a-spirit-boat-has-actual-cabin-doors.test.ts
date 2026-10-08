@@ -33,6 +33,7 @@ import {acceptOwnedPassage,ownedPassageClaim} from '../../src/web/an-owned-passa
 import {passHours} from '../../src/web/routine-invitations.js';
 import {peopleInThisPlace} from '../../src/web/hearsay.js';
 import {actualVesselRooms,grantVesselRoom,setVesselRoomDoor,vesselRoomAreaId} from '../../src/engine/world/rooms-in-a-vessel.js';
+import {walkToTheDeparture} from '../../src/web/walking-to-a-departure.js';
 async function largeBoat() {
     const plans:string[]=[];
     const {game,db}=makeGame({seed:'precise-owned-ocean',worldEnabled:true,
@@ -96,6 +97,9 @@ it('enters an authored cabin through its actual holder door and remains there du
   expect(game.present(now.cultivator)).toHaveLength(0); // party is not an invitation through a cabin door
   expect(journeyTimeHasReached(routineTime(world)-moment,.25)&&journeyTimeHasReached(.25,routineTime(world)-moment)).toBe(true);
   const held=now.cultivator.standingIn;
+  expect(await walkToTheDeparture(game,now.run,now.cultivator,ground.id,null,boat.id)).toBeNull();
+  expect(game.currentRun().run.elapsedDays).toBe(now.run.elapsedDays);
+  expect(game.currentRun().cultivator.standingIn).toBe(held);
   const reply=await passHours(game,now.run,now.cultivator,3);
   expect(reply.finished,JSON.stringify(reply.spent?.calls)).toBe(true);
   expect(game.currentRun().cultivator.standingIn?.endsWith(held!.slice(held!.indexOf('#room#')))).toBe(true);
@@ -103,6 +107,28 @@ it('enters an authored cabin through its actual holder door and remains there du
   expect(whoItIsWith(world.objects.find(one=>one.id===boat.id)!)).toBe(now.cultivator.id);
   expect(companions.every(npc=>!game.present(game.currentRun().cultivator).some(one=>one.id===npc.id))).toBe(true);
  } finally {db.close();resetCultivationWorlds();}
+});
+it('assigns a cabin in play without moving its recipient or admitting a party',async()=>{
+ const {game,db,plans,world,boat,companions}=await largeBoat();
+ try {
+  const body=game.currentRun().cultivator;
+  const read=peopleInThisPlace(game.repos,body,world,worldLocationFor(world,body.location)!);
+  const peer=world.npcs.find(person=>person.id===companions[1]!.id)!;
+  game.repos.cultivators.standIn(body.id,read.whereIs.get(peer.id)!);
+  const current=game.currentRun().cultivator;
+  const descriptor=game.reachFrom(current).find(person=>person.id===peer.id)?.alsoCalled
+   .find(said=>game.somebodyAtHand(said,current)?.id===peer.id);
+  expect(descriptor).toBeTruthy();
+  const room=actualVesselRooms(boat).find(one=>one.slot.id==='inner-cabin')!;
+  const area=peer.activity!.standingIn;
+  plans.push(JSON.stringify({action:'give',target:descriptor,topic:room.slot.name}));
+  const result=await game.act('I give '+room.slot.name+' to '+descriptor+'.');
+  expect(result.toolCalls.some(call=>call.name==='world.grantVesselRoom'&&call.ok),JSON.stringify(result.toolCalls)).toBe(true);
+  const assigned=actualVesselRooms(world.objects.find(one=>one.id===boat.id)!).find(one=>one.slot.id===room.slot.id)!;
+  expect(assigned.holderId).toBe(peer.id);expect(assigned.closed).toBe(room.closed);
+  expect(world.npcs.find(person=>person.id===peer.id)!.activity!.standingIn).toBe(area);
+  expect(world.objects.find(one=>one.id===boat.id)!.ownerId).toBe(body.id);
+ }finally{db.close();resetCultivationWorlds();}
 });
 it('holds actual cabin assignment and damage on the hull without a party entry grant',async()=>{
  const {game,db,plans,world,boat,companions,receiptId}=await largeBoat();

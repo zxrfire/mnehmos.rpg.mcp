@@ -399,8 +399,23 @@ export interface JourneyInput {
     crossesGroundThatCannotBeWalked?: boolean;
 }
 
+/** Actual piloted load order, derived only from native seating. This is a
+ * transient quote projection, not a future accepted itinerary or people roster. */
+export function pilotedJourneyLoads(heads:number,capacity:number,pilots:number){
+ if(!Number.isInteger(heads)||!Number.isInteger(capacity)||!Number.isInteger(pilots)
+  ||heads<1||capacity<1||pilots<1||pilots>heads||pilots>=capacity&&heads>capacity)return null;
+ const loads:{heads:number;direction:'outbound'|'return'}[]=[];
+ let remaining=heads-pilots;
+ do{const carried=Math.min(remaining,capacity-pilots);loads.push({heads:pilots+carried,direction:'outbound'});
+  remaining-=carried;if(remaining>0)loads.push({heads:pilots,direction:'return'});
+ }while(remaining>0);
+ return loads;
+}
+
 export interface JourneyCost {
     daysOneWay: number;
+    /** Present only for an explicitly piloted multi-load quote; never stored as acceptance. */
+    pilotedLoads?: readonly {heads:number;direction:'outbound'|'return'}[];
     /**
      * Trips needed to move everybody. A conveyance that holds four and a party
      * of nine is three trips, and the days are what the last of them arrives
@@ -443,12 +458,17 @@ export function priceJourney(input: JourneyInput): JourneyCost | null {
     // again. The party that went first is already there and is not counted
     // twice, which is why this is 2n-1 legs rather than 2n.
     const daysForEverybody = daysOneWay * (2 * trips - 1);
+    const loads=pilots>0&&trips>1?pilotedJourneyLoads(heads,capacity,pilots):null;
+    if(pilots>0&&trips>1&&!loads)return null;
     return {
         daysOneWay,
         trips,
         daysForEverybody,
         daysSavedAgainstWalking: Math.max(0, (input.preciseDays ? input.walkingDays : Math.ceil(input.walkingDays)) - daysOneWay),
-        stonesBurned: whatTheChestBurns({
+        ...(loads?{pilotedLoads:loads}:{}),
+        stonesBurned: loads?loads.reduce((total,leg)=>total+whatTheChestBurns({
+            conveyance:input.conveyance,daysOneWay,heads:leg.heads,trips:1,pilotHeads:pilots
+        }),0):whatTheChestBurns({
             conveyance: input.conveyance, daysOneWay, heads, trips, pilotHeads: input.pilotHeads
         }),
         wrongToolNote: unsuitedFor(

@@ -98,6 +98,10 @@ import {
     whatThisThingWants
 } from './ground-that-teaches-a-road.js';
 import { loosePlaceKey } from './knowledge.js';
+import { metricGroundRead, LI_PER_WALKING_DAY } from '../engine/world/the-metric-ground-under-a-journey.js';
+import { witnessIndexFor } from '../engine/world/witness-reaction-index.js';
+import { routineTime } from '../engine/world/npc-routines.js';
+import { stoppedRoadFor } from './a-road-stopped-partway.js';
 import { theRungTheyHold } from './walking-up-to-a-house.js';
 import { wholeWorkVolumes } from './manual-volumes.js';
 import { stagesHeldBy, stagesWrittenSince } from './stages.js';
@@ -115,6 +119,7 @@ import {
     whatIsWorthDoingStandingHere
 } from './what-is-worth-doing-standing-here.js';
 import { wayOut, whereThisFightStands } from '../engine/cultivation/unfinished-fight.js';
+import { thePlaceAsTheSceneNamesIt } from './walking-across-a-place.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import { readAdmission } from '../data/cultivation/inheritance-trials.js';
 import { canHurtYou } from './action-set.js';
@@ -682,9 +687,34 @@ export const situatedReads = {
             }
         }
 
+        // Physical positions replace provincial null distances when the world is present.
+        if(this.atHand){
+            const world=this.atHand,metric=metricGroundRead(world.locations,
+                {facts:witnessIndexFor(world).byId,onDay:routineTime(world)});
+            const here=worldLocationFor(world,cultivator.location),cursor=stoppedRoadFor(this.db,cultivator,world);
+            let point=here&&metric.point(here.id);
+            if(cursor?.position?.kind==='edge'){
+                const edge=cursor.position,a=metric.point(edge.fromId),b=metric.point(edge.toId);
+                if(a&&b)point={xLi:a.xLi+(b.xLi-a.xLi)*edge.fraction,yLi:a.yLi+(b.yLi-a.yLi)*edge.fraction};
+            }
+            onTheGround.length=0;
+            if(point)for(const place of world.locations){
+                if(place.id===here?.id||place.layer!==here?.layer||place.tags.includes('interior')
+                    ||place.tags.includes('air-course')||place.tags.includes('route-stop')
+                    ||['region','precinct','hall','chamber','vault'].includes(place.kind)
+                    ||this.canPointAtLocation(cultivator,place))continue;
+                const there=metric.point(place.id);if(!there)continue;
+                const dx=there.xLi-point.xLi,dy=there.yLi-point.yLi;
+                const localExtent=Number(here?.data.metricExtentLi??0)+Number(place.data.metricExtentLi??0);
+                onTheGround.push({locationId:place.id,kind:place.kind,
+                    locallyVisible:localExtent>0&&Math.hypot(dx,dy)<=localExtent,
+                    bearing:Math.abs(dx)>=Math.abs(dy)?(dx>=0?'east':'west'):(dy>=0?'north':'south'),
+                    days:Math.hypot(dx,dy)/LI_PER_WALKING_DAY,ambient:null,inhabited:null});
+            }
+        }
         const overlook = whatCanBeSeenFromUpThere({
             ordinal: cultivator.realmOrdinal,
-            from: fromRegion.bearing,
+            from: this.atHand ? 'centre' : fromRegion.bearing,
             onTheGround
         });
         if (overlook.located?.length) {
@@ -806,7 +836,7 @@ export const situatedReads = {
 
         const read = whereCouldTheyGo({
             ordinal: cultivator.realmOrdinal,
-            placeName: placeName(cultivator),
+            placeName: thePlaceAsTheSceneNamesIt(this,cultivator,placeName(cultivator)),
             regionName: fromRegion.name,
             localCeilingOrdinal: fromRegion.localCeilingOrdinal,
             reachable: one ? [one] : reachable,

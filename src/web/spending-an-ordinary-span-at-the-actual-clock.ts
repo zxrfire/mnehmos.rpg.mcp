@@ -10,6 +10,11 @@ import type { GameService } from './turn-engine.js';
 import { applyTimeSkip } from './apply.js';
 import { spendAtWorldBoundaries } from './a-span-spent-at-world-boundaries.js';
 import type { WorldReport } from './tool-result-prose.js';
+import { stoppedRoadFor } from './a-road-stopped-partway.js';
+import { firstTravellerOnTheWay, roadPositionOfNpc } from '../engine/world/places-on-the-way.js';
+import { sameRoadPosition } from '../engine/world/road-course.js';
+import { peopleInThisPlace } from './hearsay.js';
+import { worldLocationFor } from './entities.js';
 
 /** Only actual services read by the held native iterator; no GameService construction. */
 export type OrdinarySpanServices = Pick<GameService,
@@ -28,9 +33,11 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
     checks?: { dates: readonly number[]; afterBoundary(): void | Promise<void>; stop(): string | null },
     finishTurn = true) {
     const active = game.worldEnabled && game.atHand?.npcs.some(n => n.activity?.retrievalRequestId);
+    const stationary = !groundAt && game.worldEnabled
+        ? stoppedRoadFor(game.repos.db, initial, game.atHand)?.position : null;
     // Ordinary nonintegral spans use the same held native body as appointments.
     // Whole inactive spans retain their existing fast path.
-    if (!active && Number.isInteger(days) && !groundAt && !checks) {
+    if (!active && !stationary && Number.isInteger(days) && !groundAt && !checks) {
         const skip = simulateTimeSkip(initial, days, context);
         if (provisions === 'pack') game.putBackWhatWasNotEaten(initial, skip);
         const applied = applyTimeSkip(game.repos, { before: initial, run, skip,
@@ -44,6 +51,8 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
     }
     const start = game.atHand ? routineTime(game.atHand) : run.elapsedDays;
     const world: WorldReport = { lines: [], structure: [] };
+    let meeting: ReturnType<typeof firstTravellerOnTheWay> = null;
+    let contact: string | null = null;
     let unopened = context.rations ?? 0;
     let exposed = false;
     // A reserved sitting bundle is still the original purchased bundle. Other
@@ -64,8 +73,16 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
     const spent = await spendAtWorldBoundaries(game.repos, run, initial, days, context, {
         preciseDays: true, resolvesOnTurn, finishTurn, groundAt,
         nextBoundary: (elapsed, requested) => {
+            const state = game.atHand;
+            const body = game.repos.cultivators.getById(initial.id);
+            const held = body && state && stoppedRoadFor(game.repos.db, body, state)?.position;
+            meeting = stationary && state && sameRoadPosition(stationary, held ?? null)
+                ? firstTravellerOnTheWay({ locations: state.locations, npcs: state.npcs,
+                    fromId: initial.location ?? '', toId: initial.location ?? '', stationaryAt: stationary,
+                    onDay: start + elapsed, days: requested - elapsed, exceptIds: new Set([initial.id]) }) : null;
             const next = game.atHand && nextWorldClockBoundary(game.atHand,
-                start + elapsed, start + requested, checks?.dates ?? []);
+                start + elapsed, start + requested, [...(checks?.dates ?? []),
+                    ...(meeting ? [start + elapsed + meeting.afterDays] : [])]);
             return next ? next.onDay - start : null;
         },
         commitProvisions: cumulative => {
@@ -81,10 +98,24 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
             world.lines.push(...report.lines); world.structure.push(...report.structure);
             // Cursor checkpoint and native world consequences precede current check input.
             await checks?.afterBoundary();
+            const state = game.atHand, body = game.repos.cultivators.getById(initial.id);
+            const npc = meeting && state?.npcs.find(person => person.id === meeting!.npc.id);
+            if (stationary && state && body?.alive && npc?.status === 'alive'
+                && sameRoadPosition(stationary, stoppedRoadFor(game.repos.db, body, state)?.position ?? null)
+                && sameRoadPosition(stationary, roadPositionOfNpc(state.locations, npc, routineTime(state),
+                    undefined, id => state.npcs.find(person => person.id === id)))) {
+                const place = worldLocationFor(state, body.location);
+                const area = place && peopleInThisPlace(game.repos, body, state, place).whereIs.get(npc.id);
+                if (area) {
+                    game.repos.cultivators.standIn(body.id, area);
+                    contact = 'Another traveller is here on this road.';
+                    world.lines.push(contact);
+                }
+            }
         },
         whatStopsTheSpan: () => {
             const fresh = game.repos.cultivators.getById(initial.id);
-            return !fresh?.alive ? 'The actual body can no longer continue this span.' : checks?.stop() ?? null;
+            return !fresh?.alive ? 'The actual body can no longer continue this span.' : checks?.stop() ?? contact;
         },
         sceneNow: () => {
             const fresh = game.repos.cultivators.getById(initial.id) ?? initial;

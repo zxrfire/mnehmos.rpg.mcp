@@ -334,7 +334,7 @@ function hullPositionAt(hull: HullRead, fromId: string, toId: string, departureD
     } else if (past) blocked = past.toId !== fromId;
     if (!past && !same) {
         // An elapsed unboarded reservation never establishes an actual landfall.
-        const earliest = legs.filter(leg => !leg.reserved || leg.arrivalDay > departureDay)
+        const earliest = legs.filter(leg => !leg.reserved)
             .sort((a, b) => a.departureDay - b.departureDay)[0];
         blocked ||= !!earliest && earliest.fromId !== fromId;
         blocked ||= standingCrew.some(npc => npc.locationId !== fromId);
@@ -385,7 +385,7 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     const lane = line.lane;
     const vesselId = actualVesselId ?? shipIdForLane(lane);
     if (world.objects && world.npcs && !publicShipHullCanBeBoarded({objects:world.objects,npcs:world.npcs,locations:world.locations},
-        {vesselId,fromId,departureDay})) return {quote:null,retryAt:null};
+        {vesselId,fromId,departureDay}, false)) return {quote:null,retryAt:null};
     const hull = held ?? readHull(world, vesselId, consideredLegs);
     const legs = hull.legs;
     const position = hullPositionAt(hull, fromId, toId, departureDay, lane.id);

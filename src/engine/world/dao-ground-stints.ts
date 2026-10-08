@@ -22,6 +22,7 @@ import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-peo
 import { priceJourney } from './what-a-conveyance-does-to-a-journey.js';
 import { A_SPIRIT_BOAT_ANSWERS_TO, isWithThem, itWantsAPilot } from './a-vehicle.js';
 import { commitNpcPublicPassage } from './ship-crew.js';
+import { prepareNpcDepartureApproach } from './npc-departure-approaches.js';
 
 /** A timed journey. Presence reads its route from the departure and the clock. */
 export function startNpcJourney(
@@ -34,6 +35,10 @@ export function startNpcJourney(
 ): NpcRecord {
     if (npc.locationId === null) return npc;
     if ('history' in state) {
+        const craft=vehicle&&getConveyance(String(vehicle.data.conveyanceId??''));
+        const approach=prepareNpcDepartureApproach(state,npc,destinationId,day,note,
+            craft?.crossesGroundThatCannotBeWalked?'air':craft&&!craft.waterOnly?'carriage':'ground',vehicle?.id);
+        if(approach!==undefined)return approach??npc;
         const air=startNpcAirJourney(state,npc,destinationId,day,note,vehicle);
         if(air?.activity?.airCourseLocationId) return air;
         // A real dose remains on the body even if flight did not become possible.

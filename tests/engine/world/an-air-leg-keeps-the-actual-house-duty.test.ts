@@ -35,7 +35,9 @@ function arranged(){
  const house=makeFaction({id:'actual-sending-house',name:'Actual sending house',seatLocationId:from.id,resources:{spirit_stones:1000}});world.factions.push(house);
  const pilot=setRealm(createNpc(world.seed,{id:'duty-pilot',name:'Actual pilot',locationId:from.id,onDay:day,bornOnDay:day-100*365}),29,day);
  const peer=createNpc(world.seed,{id:'duty-peer',name:'Actual disciple',locationId:from.id,onDay:day,bornOnDay:day-20*365});
- pilot.factionId=house.id;peer.factionId=house.id;world.npcs.push(pilot,peer);
+ pilot.factionId=house.id;peer.factionId=house.id;
+ for(const person of [pilot,peer])person.activity={kind:'out_with_a_party',note:'At the departure ground.',withIds:[],sinceDay:day,untilDay:day+1};
+ world.npcs.push(pilot,peer);
  const craft=aVehicleOf({id:'actual-duty-hull',conveyanceId:'conv-spirit-boat',ownerId:house.id,ownerName:house.name,at:from.id});world.objects.push(craft);
  return {world,day,from,to,house,pilot,peer,craft};
 }
@@ -51,6 +53,8 @@ function admitted(){
  // This operator fixture records a real house debit, not a pilot's invented debt.
  h.house.resources.spirit_stones=Number(h.house.resources.spirit_stones??0)-accepted.quote.stonesBurned-back.stonesBurned;
  recordPaidAirCourseFuel(h.world,accepted.fact.id,h.house.id,h.day+accepted.quote.daysOneWay,accepted.quote.stonesBurned);
+ h.pilot=h.world.npcs.find(person=>person.id===h.pilot.id)!;
+ h.peer=h.world.npcs.find(person=>person.id===h.peer.id)!;
  for(const person of [h.pilot,h.peer]){person.locationId=accepted.location.id;person.activity={kind:'stationed',note:'Actual service term',withIds:[person.id===h.pilot.id?h.peer.id:h.pilot.id],sinceDay:h.day-10,untilDay:h.day+60,returnTo:h.from.id,fromLocationId:h.from.id,vesselId:h.craft.id,airCourseLocationId:accepted.location.id,airDutyReceiptId:accepted.fact.id};}
  return {...h,accepted};
 }

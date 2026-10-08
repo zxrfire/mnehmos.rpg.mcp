@@ -533,3 +533,8 @@ rows already state five days at their post/work; travel and conveyance speed
 must not consume or compress those five days. Reasons without this field retain
 their whole-away term. One posting projection combines the native outbound and
 inbound quotes with on-site service; no independent attendance timer is stored.
+
+An authored on-site duty remains per actual body when its transport needs
+several loads. A hull pilot serving as transport does not earn the post term
+while away fetching the rest; actual final delivery starts that service. This
+changes no authored duty days or whole-away reason semantics.

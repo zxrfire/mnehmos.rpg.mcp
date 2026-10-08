@@ -51,6 +51,7 @@ const A_WAY_TOPIC =
 
 /** The place a way-topic asks after, or null for any other topic. */
 export function theWayAskedFor(topic: string): string | null {
+    if (/\bwhere\b.*\b(?:this|the)\s+road\b.*\b(?:go|goes|lead|leads|end|ends)\b/i.test(topic)) return 'this road';
     const place = A_WAY_TOPIC.exec(topic.trim())?.[1]?.trim();
     return place && place.length >= 2 ? place : null;
 }

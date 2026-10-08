@@ -49,6 +49,7 @@ const A_WORD_FOR: ReadonlyArray<[RegExp, WhatAnAreaIsFor]> = [
     [/^(?:street|streets|square|out|outside)$/, 'street'],
     [/^(?:landing|dock|harbour|harbor|ferry landing)$/, 'landing'],
     [/^(?:carriage station|carriage yard|carters yard|carter's yard)$/, 'carriage_station'],
+    [/^(?:spirit boat berth|灵舟坞)$/, 'spirit_berth'],
     [/^(?:folding counter|paid folding counter|folding station|portal|teleportation counter)$/, 'span_counter'],
     [/^(?:market|markets|marketplace|market place|stalls?|stall row|row)$/, 'market'],
     [/^(?:exchange|exchange hall)$/, 'exchange'],
@@ -156,14 +157,20 @@ export function theRestOfThisPlace(game: GameService, cultivator: Cultivator): s
  * a road arrives. Outside a house's gate is always said, so a scene never puts somebody the gate
  * turned away inside the grounds.
  */
-export function thePlaceAsTheSceneNamesIt(game: GameService, cultivator: Cultivator, place: string): string {
+export function thePlaceAsTheSceneNamesIt(game: GameService, cultivator: Cultivator, place: string, includeArea=true): string {
+    if(game.atHand&&worldLocationFor(game.atHand,cultivator.location)?.tags.includes('air-course'))
+        return 'Above the ground';
     const position = stoppedRoadFor(game.repos.db, cultivator, game.atHand)?.position;
     if (position?.kind === 'edge' && game.atHand) {
-        const from = game.atHand.locations.find(row => row.id === position.fromId)?.name;
-        const to = game.atHand.locations.find(row => row.id === position.toId)?.name;
+        const knownName=(id:string)=>{const row=game.atHand!.locations.find(row=>row.id===id);
+            return row&&game.canPointAtLocation(cultivator,row)?row.name:undefined;};
+        const from = knownName(position.fromId);
+        const to = knownName(position.toId);
+        if(!to)return from?'On the road out of '+from:'On the unfinished road';
         return from && to ? 'On the road from ' + from + ' toward ' + to : 'On the unfinished road';
     }
     if (betweenRoadEndpoints(game.repos.db, cultivator)) return 'On the unfinished road';
+    if(!includeArea)return place;
     const here = theAreaTheyAreIn(game.atHand, cultivator);
     if (!here || !game.atHand) return place;
     const read = peopleInThisPlace(game.repos, cultivator, game.atHand, here.place);

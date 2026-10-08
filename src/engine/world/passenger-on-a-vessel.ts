@@ -153,9 +153,10 @@ function settleRuinedPublicHulls(world:WorldState,day:number):void {
    &&n.activity.returnTo===doing.returnTo&&n.activity.untilDay===doing.untilDay);
   recordPublicPassage(world,{lane,vesselId:hull.id,fromId:doing.fromLocationId,toId:ground,
    departureDay:doing.sinceDay,arrivalDay:loss.onDay},loss.onDay,ground,matched.map(n=>n.id),parent.id,undefined,undefined,undefined,true);
-  for(const n of matched){const at=world.npcs.findIndex(one=>one===n);if(at<0)continue;
-   world.npcs[at]={...setLocation(n,locationOnNpcJourney(world.locations,n,loss.onDay),loss.onDay),
-    activity:companyAfterPassage(n,loss.onDay)};
+  for(const n of matched){const at=world.npcs.findIndex(one=>one.id===n.id);if(at<0)continue;
+   const actual=world.npcs[at]!;
+   world.npcs[at]={...setLocation(actual,ground,loss.onDay),
+    activity:companyAfterPassage(actual,loss.onDay)};
   }
  }
 }

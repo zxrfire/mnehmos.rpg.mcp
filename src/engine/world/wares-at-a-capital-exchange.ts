@@ -10,7 +10,7 @@ import { makeObject, transferPossession, isRuined, type ObjectRecord } from './p
 import { whatThisThingIs } from './what-a-house-gives-merit-for.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
-import { factsWithDataValue, pendingAuctionLots } from './witness-reaction-index.js';
+import { factsWithDataValue, pendingAuctionLots, witnessIndexFor } from './witness-reaction-index.js';
 import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import type { AnOfferStandingHere } from './what-somebody-standing-here-would-part-with.js';
 import type { WorldState } from './world-state.js';
@@ -23,7 +23,9 @@ export function loadExchangeConsignment(state: WorldState, seller: NpcRecord, da
     if (!house || !seller.activity || !seller.locationId) return;
     const ground = locationOnNpcJourney(state.locations, seller, day, routes);
     if (!ground) return;
-    const destination = state.locations.find(l => l.id === seller.locationId)?.name ?? seller.locationId;
+    const mission=seller.activity.capitalMissionId?witnessIndexFor(state).byId.get(seller.activity.capitalMissionId):undefined;
+    const destinationId=typeof mission?.data.destinationId==='string'?mission.data.destinationId:seller.locationId;
+    const destination = state.locations.find(l => l.id === destinationId)?.name ?? destinationId;
     const rng = forStream(state.seed, 'exchange-consignment', house.id, seller.id, day);
     const wares = [...waresMadeBy(house.id)].sort((a, b) =>
         forStream(state.seed, 'exchange-ware', seller.id, day, a).next()
@@ -80,6 +82,9 @@ export function exchangeOffers(state: WorldState, seller: NpcRecord,
     positions?: ReadonlyMap<string, string | null>): AnOfferStandingHere[] {
     if (!seller.activity || seller.status !== 'alive'
         || (positions?.has(seller.id) ? positions.get(seller.id) : locationOnNpcJourney(state.locations, seller, day)) !== seller.locationId) return [];
+    const mission=seller.activity.capitalMissionId
+        ?witnessIndexFor(state).byId.get(seller.activity.capitalMissionId):null;
+    if(seller.activity.capitalMissionId&&mission?.data.destinationId!==seller.locationId)return [];
     const objects = stockPositions === undefined
         ? state.objects.filter(o => o.tags.includes('exchange') && o.possessorId === seller.id
             && o.ownerId === seller.factionId && !isRuined(o))

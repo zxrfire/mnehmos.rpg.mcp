@@ -1,4 +1,5 @@
 import { beastQiShare, shareBeastCultivation } from '../engine/world/beast-cultivation-contracts.js';
+import { thePlaceAsTheSceneNamesIt } from './walking-across-a-place.js';
 /**
  * Sitting down for a long time, and everything that can interrupt it.
  */
@@ -519,7 +520,9 @@ export const seclusionVerbs = {
         this.pendingArrivals = consumeArrivals(this.pendingArrivals, happened);
 
         const facts = factsForTimeSkip(
-            provisioned, applied.cultivator, skip, ambient,
+            {...provisioned, location: thePlaceAsTheSceneNamesIt(this, provisioned, placeName(provisioned), false)},
+            {...applied.cultivator, location: thePlaceAsTheSceneNamesIt(this, applied.cultivator, placeName(applied.cultivator), false)},
+            skip, ambient,
             sealed ? 'Closed-door seclusion' : 'Seclusion',
             // `lived` was already cut down by the encounter layer before the
             // skip saw it, so the skip's own idea of what was requested is the
@@ -1119,7 +1122,10 @@ export const seclusionVerbs = {
         this.pendingArrivals = consumeArrivals(this.pendingArrivals, happened);
 
         // WHAT THE PLAYER ASKED FOR, NOT WHAT WAS LEFT OF IT
-        const facts = factsForTimeSkip(before, applied.cultivator, skip, ambient, label, days);
+        const facts = factsForTimeSkip(
+            {...before, location: thePlaceAsTheSceneNamesIt(this, before, placeName(before), false)},
+            {...applied.cultivator, location: thePlaceAsTheSceneNamesIt(this, applied.cultivator, placeName(applied.cultivator), false)},
+            skip, ambient, label, days);
         facts.lines.push(...enc2.lines);
         facts.lines.push(...world.lines);
         facts.structure.push(...enc2.structure);

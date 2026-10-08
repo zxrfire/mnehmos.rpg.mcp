@@ -55,8 +55,9 @@ it('talks to an actual unknown fellow carriage passenger and keeps prior company
   const body=game.currentRun().cultivator,ground=worldLocationFor(world,body.location)!;
   const read=peopleInThisPlace(game.repos,body,world,ground),area=read.whereIs.get(passenger.id)!;expect(area).toBeTruthy();game.repos.cultivators.standIn(body.id,area);
   expect(game.present(game.currentRun().cultivator).map(one=>one.id)).toContain(passenger.id);
-  const descriptor=['the man','the woman','the first man','the last man','the first woman','the last woman'].find(said=>game.somebodyAtHand(said,game.currentRun().cultivator)?.id===passenger.id)!;
-  expect(descriptor).toBeTruthy();expect(thePlayerIsSureItIsThem(passenger.name,game.knowledge.provenanceOf(body.id,'cultivator',passenger.id))).toBe(false);
+  const descriptor=game.reachFrom(game.currentRun().cultivator).find(person=>person.id===passenger.id)?.alsoCalled
+   .find(said=>game.somebodyAtHand(said,game.currentRun().cultivator)?.id===passenger.id)!;
+  expect(descriptor,JSON.stringify(game.present(game.currentRun().cultivator))).toBeTruthy();expect(thePlayerIsSureItIsThem(passenger.name,game.knowledge.provenanceOf(body.id,'cultivator',passenger.id))).toBe(false);
   const before=game.currentRun(),day=routineTime(world);
   plans.push(JSON.stringify({action:'interact',target:descriptor,intent:'talk',topic:'hello'}));
   const greeting=await game.act('I greet '+descriptor+' beside me.');

@@ -2,13 +2,13 @@
  * fiction for mortal public crews. A public ship is realised only at accepted
  * boarding under its existing living operator. Its maritime lane remains the
  * duration/fare authority; possession loss and ruin never mint another hull.
- * These source controls are UNRUN and do not establish played cabin acceptance.
+ * Hull admission is checked here; played cabin acceptance is in a-public-ship-has-real-cabins.test.ts.
  */
 import {expect,it} from 'vitest';
 import {seedWorld} from '../../../src/engine/world/seeding.js';
 import {loadCultivationCatalog} from '../../../src/engine/world/catalog.js';
 import {SEA_LANES} from '../../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
-import {publicShipLinesFrom,quotePublicPassage} from '../../../src/engine/world/public-shipping.js';
+import {publicShipLinesFrom,quotePublicPassage,theLandfall} from '../../../src/engine/world/public-shipping.js';
 import {ensureShipCrew,bindShipCrewToPassage} from '../../../src/engine/world/ship-crew.js';
 import {publicShipHullCanBeBoarded,realiseAcceptedPublicShipHull} from '../../../src/engine/world/a-public-ship-hull.js';
 import {requireConveyance} from '../../../src/data/cultivation/what-a-house-moves-its-people-on.js';
@@ -20,7 +20,7 @@ const catalog=await loadCultivationCatalog();
 function acceptedCourse(){
  const world=seedWorld({seed:'ordinary-public-water-hull',catalog,presentYear:0}).state;
  const lane=SEA_LANES.find(one=>one.openMonthsPerYear===12)??SEA_LANES[0]!;
- const from=world.locations.find(place=>place.name===lane.fromPlace)!;
+ const from=world.locations.find(place=>place.name===theLandfall(lane.fromPlace))!;
  const day=world.currentDay;
  const line=publicShipLinesFrom(world,from.name,day).find(one=>one.runsFromDay===null)!;
  const to=world.locations.find(place=>place.name===line.to)!;

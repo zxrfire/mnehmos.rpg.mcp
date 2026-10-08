@@ -4,11 +4,12 @@ import { thePlanIsTheReadInsideTheVerb } from './action-set.js';
 import type { PlannedAction } from './planned-action.js';
 import { PRESSING_SOMEBODY } from './asking-is-not-doing.js';
 import { isAskingAboutWhatIsAlreadyInFrontOfThem } from './investigation-targets.js';
+import { LOCAL_WALK_DAYS } from '../engine/world/local-walking-cost.js';
 
 /** Existing spans win; these costs apply only when the handler spent no time. */
 export const LESSER_ACTION_DAYS: Readonly<Record<ActionName, 0 | 0.125 | 0.25 | 0.5>> = {
     project: 0.25, possess: 0.25, reconstruct: 0.5,
-    interact: 0.125, investigate: 0.5, move: 0.25, ride: 0.25, fold: 0.25,
+    interact: 0.125, investigate: 0.5, move: LOCAL_WALK_DAYS, ride: 0.25, fold: 0.25,
     passage: 0.125, oath: 0.125, attack: 0.125, coerce: 0.125, insult: 0.125,
     cultivate: 0.125, seclude: 0.125, breakthrough: 0.125, train_technique: 0.125,
     refine: 0.125, craft: 0.125, gather: 0.5, hunt: 0.5,
@@ -26,6 +27,7 @@ export const LESSER_ACTION_DAYS: Readonly<Record<ActionName, 0 | 0.125 | 0.25 | 
 
 /** A board or one's stored belongings are reads, even inside an action verb. */
 export function lesserActionDays(plan: PlannedAction): number {
+    if (plan.action === 'move' && plan.intent === 'stop') return 0;
     if (thePlanIsTheReadInsideTheVerb(plan)) return 0;
     if (plan.action === 'stow' && (!plan.intent || plan.intent === 'look')) return 0;
     if (plan.action === 'carry' && !plan.target && (!plan.intent || plan.intent === 'wear')) return 0;
@@ -43,7 +45,7 @@ export function isDayLongAct(plan: PlannedAction): boolean {
     if (plan.action === 'move' && /^(?:(?:the|my|our|a)\s+)?(?:room|street|market|table|gate|far gate|forecourt|courtyard|upstairs|downstairs)$/i.test(plan.target ?? '')) return false;
     if (plan.action === 'wait' && plan.days !== undefined && plan.days < 1) return false;
     if (plan.action === 'interact') return PRESSING_SOMEBODY.has(plan.intent ?? '');
-    if (plan.action === 'request' && plan.intent === 'end_company') return false;
+    if (plan.action === 'request' && ['end_company', 'course_change'].includes(plan.intent ?? '')) return false;
     return ['cultivate', 'seclude', 'train_technique', 'refine', 'craft', 'gather', 'hunt',
         'wait', 'work', 'treat', 'learn_technique', 'teach', 'derive', 'guard', 'propose',
         'decline', 'child', 'request', 'move', 'ride', 'fold', 'passage', 'site', 'legacy',

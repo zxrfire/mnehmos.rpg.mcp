@@ -62,6 +62,7 @@ it('implicit played fighting selects actual offensive or defensive work instead 
  if(!rite||!combat)throw Error('Actual catalog lacks ritual/defensive role controls');
  h.game.repos.cultivators.update(entry.cultivator.id,{realmOrdinal:Math.max(rite.requiredOrdinal,combat.requiredOrdinal)});
  for(const known of h.game.repos.techniques.listKnown(entry.cultivator.id))h.game.repos.techniques.forget(entry.cultivator.id,known.id);
+ h.game.repos.techniques.upsert(rite);h.game.repos.techniques.upsert(combat);
  if(!h.game.repos.techniques.learn(entry.cultivator.id,rite.id,1))throw Error('Actual native ritual lesson failed');
  expect(h.game.artTheyWouldFightWith(h.game.currentRun().cultivator)).toBeUndefined();
  if(!h.game.repos.techniques.learn(entry.cultivator.id,combat.id,.25))throw Error('Actual native defensive lesson failed');

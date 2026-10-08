@@ -379,7 +379,17 @@ async function theModelIsNotWhyThisTurnIsDangerous(
         };
     }
 
-    if (!spendsMoreThanASentence(fromModel.action)) {
+    // A captain's answer spends a conversation; accepting it does not sail the leg.
+    if (!spendsMoreThanASentence(fromModel.action)
+        || (fromModel.action === 'request' && fromModel.intent === 'course_change')) {
+        return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
+    }
+    if(fromModel.action==='move'&&fromModel.intent==='stop'&&/\b(?:stop|halt)\b/i.test(input)){
+        return {action:fromModel,declined:null,tierFailure:withoutAModel.tierFailure};
+    }
+    if ((fromModel.action === 'move' || fromModel.action === 'ride')
+        && /\b(?:walk|walking|take|follow|fly|flying|wander|wandering|keep going|continue)\b/i.test(input)
+        && /\b(?:road|around|wander|wandering|keep going|continue)\b/i.test(input)) {
         return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
     }
     if (spendsMoreThanASentence(withoutAModel.action.action)) {

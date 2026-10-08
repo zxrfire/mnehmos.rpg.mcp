@@ -2,6 +2,38 @@
 
 # The Web Front Door
 
+An indoor traveller uses `walking-to-a-departure.ts` before boarding. Its SQL
+body reads the same containment, locks and quarter-day station approach as an
+NPC, with the ordinary body/world span and interruptions. Geographic legs keep
+the existing route knowledge and walking authorities. No room name grants a key
+or passage. Spirit boats depart from the actual Spirit Boat Berth (灵舟坞).
+
+Taking a visible road or wandering needs no named endpoint. `move` chooses an
+actual open road edge, follows its existing intermediate ground, and keeps the
+ordinary stopped-road cursor for partial spans and continuation. `ride` wandering
+uses a seeded heading and an actual accepted metric flight with its native body
+or held art, launch qi and range. Stopping holds the reached physical point;
+changing a flight heading stops the prior course before accepting the next.
+Ordinary looking reads metric separation through the existing unnamed sighting
+reader and numbered located-place knowledge. Local overlapping ground remains
+visible below the flight rung. Neither sight nor departure teaches an unknown
+destination's name; actual arrival and informed testimony retain that authority.
+Asking where the current road leads resolves its existing cursor and reads the
+actual person's land knowledge. A name alone never supplies the route.
+A stopped road remains habitable: ordinary spans preserve its sole cursor.
+The existing journey reader derives when a real traveller crosses that point;
+the held body pauses at that appointment only if current presence confirms it.
+Talking neither recruits the passer nor moves the body to a settlement.
+An owner or custodian can explicitly give an actual cabin to somebody present;
+the hull holds that assignment without changing its door, title or passenger course.
+
+A terminal watch keeps the accepted term on its existing oath. Its initial due
+date is the deadline to reach the actual terminal; arrival starts the full paid
+span there and sets its service deadline once. Leaving that terminal abandons
+the post before completion is considered. Each executed clause reads that same
+settlement authority, so a later return cannot erase leaving. Travel cannot count
+as service.
+
 Named requests for ordinary tracked, durable house objects reach
 `whetherItLeavesTheStore` through petition or a request to an actual member.
 Collection requires the object's accessible current storage room, its actual
@@ -3544,16 +3576,15 @@ second fuel-rate table is created. A living pilot and valid custody are
 independent requirements from committed fuel. Owner death stops an unfunded
 remaining course at its paid reached point, even when a living pilot retains
 custody. A genuinely paid full native quote can support independent steering
-through that same payment seam. NPC mission acceptance has not yet been
-wired to this new physical course; the component control arranges and debits
-an actual actor explicitly and does not claim that path is complete.
+through that same payment seam. Native house posting and sending acceptance
+use the actual course through their current pilot and store-loan authority.
 
 A remembered personal name resolves a subject, not a present listener. Personal
 interaction reads the actual current physical roster before witnessing an
 approach, introduction or reply. Native local approaches keep their own time
 and fresh area/body projection; house institutional counter/message paths are
 separate. People sharing a real hull remain reachable through that same roster.
-The new scripted controls are unrun and do not establish live-model acceptance.
+Scripted controls establish engine reachability, not live-model prose acceptance.
 
 A crossing watch is read and accepted at its house's actual mission board.
 When several real terminals are posted, the member must name the actual site
@@ -3701,10 +3732,9 @@ word; final payment waits for actual independent shared arrival. Repeated
 status does not settle twice. The original player-driver offered-ride path
 continues through the same settlement implementation.
 
-This is an unvalidated source draft with scripted/component controls, not a
-live-model acceptance claim. The existing captain dependency must be narrowly
-composed with its current physical course adapter before the new request path
-can be checked. Environmental relief weighting remains unbuilt: no emergency
+The captain request path uses its current physical course adapter, with
+scripted/component controls rather than a live-model prose acceptance claim.
+Environmental relief weighting remains unbuilt: no emergency
 goal, forecast storm, arrival healing or unexecuted NPC harm is inferred.
 
 NPC combat pricing reads the actual finite qi and held-art readiness map.

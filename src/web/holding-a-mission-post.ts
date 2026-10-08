@@ -1,4 +1,5 @@
 import { publicWatchTargetForPost } from '../engine/world/where-a-house-keeps-its-public-watch.js';
+import { journeyTimeHasReached } from '../engine/world/places-on-the-way.js';
 /**
  * A long mission or a named remote watch is a post held at its actual ground.
  *
@@ -53,6 +54,7 @@ const MERIT = 'post-merit:';
 const PAYS = 'post-pays:';
 /** Set once they have stood at the post. Before it, being elsewhere is still getting there. */
 const ARRIVED = 'post-arrived';
+const TERM = 'post-term-days:';
 const PITCH = 'post-pitch:';
 const CONTRACT = 'post-contractor-oath:';
 
@@ -154,12 +156,16 @@ export function takeUpTheMissionPost(
             `${MERIT}${merit}`,
             `${PAYS}${duty.contribution}:${duty.stones}`,
             `${PITCH}${duty.pitchOrdinal}`,
+            ...(theMissionBehind(chosen.entry.id)?.at==='its_public_terminal'
+                ?[`${TERM}${Math.max(0,(sworn.dueOnDay??duty.dueOnDay)-sworn.incurredOnDay)}`]:[]),
             ...(there ? [ARRIVED] : [])
         ]
     });
     const due = record.dueOnDay ?? duty.dueOnDay;
     const lines = [
-        `You take up the post: ${chosen.entry.name}. It runs to day ${due}.`,
+        theMissionBehind(chosen.entry.id)?.at==='its_public_terminal'&&!there
+            ?`You take up the post: ${chosen.entry.name}. Reach it before day ${due}; its ${tagged(record,TERM)} days of service begin there.`
+            :`You take up the post: ${chosen.entry.name}. It runs to day ${due}.`,
         `${duty.factionName ?? 'The house'} counts ${duty.contribution} contribution and pays ${duty.stones} spirit `
         + 'stones when it is served.',
         `Leaving ${post?.name ?? 'the post'} before then is leaving the post.`
@@ -201,7 +207,7 @@ function thePostIsLeft(
     const world = game.atHand;
     const { title, houseId, houseName, place } = thePost(world, record);
     const due = record.dueOnDay ?? today;
-    const termDays = Math.max(1, due - record.incurredOnDay);
+    const termDays = Math.max(1, tagged(record,TERM)===null?due-record.incurredOnDay:aNumber(tagged(record,TERM)));
     const daysLeft = Math.max(0, due - leftFrom);
     const [contribution, stones] = (tagged(record, PAYS) ?? '0:0').split(':').map(aNumber);
     // The share of the term's contribution a stretch of it earns, on the post's own curve.
@@ -293,9 +299,9 @@ export function settleTheMissionPostTheyHold(game: GameService, cultivator: Cult
 
 function settleThisMissionPost(game: GameService, cultivator: Cultivator, record: ObligationRecord): WhatThePostDid | null {
     const world = game.atHand!;
-    const today = Math.floor(game.currentRun().run.elapsedDays);
-    const due = record.dueOnDay ?? today;
     const { title, houseName, place, mission } = thePost(world, record);
+    const today = mission?.at==='its_public_terminal'?game.currentRun().run.elapsedDays:Math.floor(game.currentRun().run.elapsedDays);
+    const due = record.dueOnDay ?? today;
     const contractId = tagged(record, CONTRACT);
     if (contractId !== null) {
         settleHiredDuties(world, Math.floor(world.currentDay));
@@ -328,8 +334,14 @@ function settleThisMissionPost(game: GameService, cultivator: Cultivator, record
     if (contractId === null && arrived && !at) return thePostIsLeft(game, cultivator, record, today, 'by walking away from it');
 
     // NEVER TAKEN UP: the whole term was left.
-    if (today >= due && !arrived) return thePostIsLeft(game, cultivator, record, today, 'by never reaching it', record.incurredOnDay);
-    if (today >= due) {
+    if (journeyTimeHasReached(today,due) && !arrived) return thePostIsLeft(game, cultivator, record, today, 'by never reaching it', record.incurredOnDay);
+    if (!arrived && at && mission?.at==='its_public_terminal') {
+        const servedUntil=today+(tagged(record,TERM)===null?mission.days:aNumber(tagged(record,TERM)));
+        writeOneObligation(game.repos.db as unknown as DatabaseHandle,{...record,dueOnDay:servedUntil,tags:[...record.tags,ARRIVED]});
+        return {lines:[`You are at your post, until day ${servedUntil}: ${title.charAt(0).toLowerCase()}${title.slice(1)}.`],
+            structure:[`${record.id} reached on day ${today}; its full terminal service runs to ${servedUntil}.`]};
+    }
+    if (journeyTimeHasReached(today,due)) {
         const [contribution, stones] = (tagged(record, PAYS) ?? '0:0').split(':').map(aNumber);
         game.repos.db.transaction(() => {
             writeOneObligation(game.repos.db as unknown as DatabaseHandle, settleObligation(record, {

@@ -31,13 +31,17 @@ export function airPositionAt(world: WorldState, place: LocationRecord, onDay: n
 }
 
 /** Readiness and launch debit belong to the caller before this actual acceptance. */
-export function beginAnAirCourse(world: WorldState, input: {
+export function readAnAirCourseAdmission(world: WorldState, input: {
     bodyId: string; bodyName: string; fromId: string; toId: string; conveyanceId: string;
     power: number | null; vesselId: string | null; artId: string | null;
     onDay: number; runId?: string; runElapsedDays?: number; heads: number;
     owned?: { ownerId: string; pilotId: string }; priorReceiptId?:string; changedCourse?:boolean;
     houseDutyFunding?: { houseId: string; returnStones: number };
     houseDutyReturnOf?: string;
+    actualLoad?: readonly {id:string;name:string}[];
+    houseDutyDispatchId?: string;
+    dutyCauses?: readonly string[];
+    houseDutyPhase?: 'delivery'|'collecting'|'homebound'|'reloading';
 }) {
     const worldBody = input.runId === undefined && input.runElapsedDays === undefined;
     if (worldBody && !world.npcs.some(npc => npc.id === input.bodyId && npc.status === 'alive')) return null;
@@ -52,13 +56,26 @@ export function beginAnAirCourse(world: WorldState, input: {
         conveyance, input.power, input.heads, { facts: witnessIndexFor(world).byId, onDay: input.onDay },
         input.owned ? 1 : 0);
     if (!from || !to || !quote || !(quote.daysForEverybody > 0) || quote.trips !== 1) return null;
+    if(input.actualLoad&&(input.actualLoad.length!==input.heads||new Set(input.actualLoad.map(person=>person.id)).size!==input.heads
+        ||!input.actualLoad.some(person=>person.id===input.bodyId)
+        ||input.actualLoad.some(person=>!world.npcs.some(npc=>npc.id===person.id&&npc.status==='alive'
+            &&npc.locationId===from.id))))return null;
     const prior=input.priorReceiptId?witnessIndexFor(world).byId.get(input.priorReceiptId):null;
     if(input.priorReceiptId&&(!prior||prior.data.ownedPassage!==true
         ||prior.data.ownerId!==input.owned?.ownerId||prior.data.vesselId!==input.vesselId
         ||prior.data.pilotId!==input.owned?.pilotId))return null;
-    const fact = appendWorldFact(world, makeFact({ causes:prior?[prior.id]:[], day: input.onDay, kind: 'gathering',
+    return {from,to,conveyance,quote,prior,worldBody};
+}
+
+/** The same pure admission read is used before and at actual acceptance. */
+export function beginAnAirCourse(world: WorldState, input: Parameters<typeof readAnAirCourseAdmission>[1]) {
+    const read=readAnAirCourseAdmission(world,input);
+    if(!read)return null;
+    const {from,to,conveyance,quote,prior,worldBody}=read;
+    const fact = appendWorldFact(world, makeFact({ causes:[...(prior?[prior.id]:[]),...(input.houseDutyDispatchId?[input.houseDutyDispatchId]:[]),...(input.dutyCauses??[])], day: input.onDay, kind: 'gathering',
         locationId: from.id, visibility: 'secret', summary: 'An actual direct air course began.',
-        actors: [{ id: input.bodyId, name: input.bodyName, role: 'traveller' }],
+        actors: input.actualLoad?.map(person=>({id:person.id,name:person.name,role:'traveller'}))
+            ?? [{ id: input.bodyId, name: input.bodyName, role: 'traveller' }],
         data: { airCourse: true, bodyId: input.bodyId, fromLocationId: from.id, toLocationId: to.id,
             conveyanceId: conveyance.id, conveyancePower: input.power, vesselId: input.vesselId,
             artId: input.artId, departureDay: input.onDay, arrivalDay: input.onDay + quote.daysOneWay,
@@ -66,6 +83,7 @@ export function beginAnAirCourse(world: WorldState, input: {
             ...(worldBody ? { worldClockAirCourse: true } : {}),
             ...(input.houseDutyFunding ? { houseDutyHouseId: input.houseDutyFunding.houseId,
                 houseDutyReturnStones: input.houseDutyFunding.returnStones } : {}),
+            ...(input.houseDutyDispatchId?{houseDutyDispatchId:input.houseDutyDispatchId,houseDutyPhase:input.houseDutyPhase}:{}),
             ...(input.houseDutyReturnOf ? { houseDutyReturnOf: input.houseDutyReturnOf } : {}),
             ...(input.changedCourse ? { changedOwnedCourse:true } : {}),
             ...(input.owned ? { ownedPassage: true, ownerId: input.owned.ownerId, pilotId: input.owned.pilotId,

@@ -15,7 +15,6 @@ import { resolveRuntimeProviderConfig } from '../../src/agent/provider/config';
 import { buildNarrator } from '../../src/web/server';
 import { DeterministicNarrator, ProviderNarrator } from '../../src/web/narrator';
 import { validatePlan, parseIntent, parseDuration, extractJsonObject } from '../../src/web/actions';
-import { LONGER_THAN_ANY_LIFE } from '../../src/web/verb-day-costs';
 import {
     makeGame, cultivatorRow, injuryCount, planned, engineCalls,
     ScriptedProvider, UnreachableProvider
@@ -168,8 +167,9 @@ describe('a hallucinating model cannot mutate state', () => {
         expect(userMessage).toContain('Clear River Ferry');
         // And it is told, in the same call, that the facts are the whole truth.
         const systemMessage = narrationCall.messages.find(m => m.role === 'system')!.content;
-        expect(systemMessage).toMatch(/Do not add outcomes/);
-        expect(systemMessage).toMatch(/Do not soften/);
+        // The current narrator frame states both constraints in its authority section.
+        expect(systemMessage).toMatch(/Only engine rulings settle outcomes: no new item, stone, injury, rank, deal, debt or teaching/);
+        expect(systemMessage).toMatch(/Never soften outcomes or add consolation/);
     });
 });
 
@@ -230,17 +230,17 @@ describe('the schema gate itself', () => {
      * schema cannot know. It moved to a runtime check that holds the
      * cultivator and answers with the figure - see
      * `a-span-longer-than-the-life-asking-for-it.test.ts` - and what is left
-     * here is the shape: a whole number, at least one, not a span at all past
-     * the ladder's own marker for a life with no end.
+     * here is the shape: a positive finite number, including a fractional day. The retired static
+     * immortal marker cannot bound a body; the runtime lifespan reader does.
      */
-    it('keeps days only for cultivate, and only where it is still a number of days', () => {
+    it('keeps finite positive spans for timed actions', () => {
         expect(validatePlan({ action: 'cultivate', days: 3650 })).toEqual({
             ok: true, action: { action: 'cultivate', days: 3650 }
         });
         expect(validatePlan({ action: 'cultivate', days: 0 }).ok).toBe(false);
         expect(validatePlan({ action: 'cultivate', days: -5 }).ok).toBe(false);
-        expect(validatePlan({ action: 'cultivate', days: 1.5 }).ok).toBe(false);
-        expect(validatePlan({ action: 'cultivate', days: LONGER_THAN_ANY_LIFE + 1 }).ok)
+        expect(validatePlan({ action: 'cultivate', days: 1.5 }).ok).toBe(true);
+        expect(validatePlan({ action: 'cultivate', days: Infinity }).ok)
             .toBe(false);
         // And a five-hundred-year seclusion is a plan, not a malformed field.
         // It reaches the engine, which answers it against the body.
@@ -268,7 +268,8 @@ describe('the deterministic path is a first-class way to play', () => {
         expect(parseDuration('90 days')).toBe(90);
         expect(parseDuration('three months')).toBe(90);
         expect(parseDuration('a decade in seclusion')).toBe(3650);
-        expect(parseDuration('half a year')).toBe(183);
+        // Hourly routines preserve the fractional day instead of rounding it away.
+        expect(parseDuration('half a year')).toBe(182.5);
         expect(parseDuration('I strike the barrier')).toBeNull();
     });
 

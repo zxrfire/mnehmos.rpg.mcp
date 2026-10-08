@@ -6,6 +6,7 @@ import { isAwayOnSomething, type NpcActivity, type NpcRecord } from './npc-state
 import type { RouteQueries } from './locations.js';
 import type { WorldState } from './world-state.js';
 import { locationOnNpcJourney, npcIsTravellingOnDay } from './places-on-the-way.js';
+import { vesselRoomChosen } from './rooms-in-a-vessel.js';
 
 type Clock = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour'> & Partial<Pick<WorldState, 'locations' | 'npcs'>>;
 
@@ -71,7 +72,8 @@ export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries,
     const locationId = redirect ? npc.activity?.returnTo ?? npc.locationId
         : state.locations ? locationOnNpcJourney(state.locations, npc, now, routes, undefined, id=>state.npcs?.find(person=>person.id===id)) : npc.locationId;
     const result = (activity: NpcActivity | null, home = false) => ({ activity, home,
-        standingIn: !redirect ? actualHullArea?.(npc) ?? null : null, locationId });
+        standingIn: !redirect ? actualHullArea?.(npc) ?? (activity === journeyActivity
+            && !vesselRoomChosen(ordinary?.standingIn) ? ordinary?.standingIn : null) ?? null : null, locationId });
     // An errand, a posting and a timed seclusion already have their own calendar.
     if (!redirect && ordinary && (isAwayOnSomething(ordinary.kind)
         || (ordinary.untilDay != null && ordinary.untilDay >= Math.floor(state.currentDay)))) return result(journeyActivity);

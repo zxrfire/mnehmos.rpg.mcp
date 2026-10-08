@@ -3,10 +3,6 @@ import { CARRIAGES_BY_GRADE, countedHolding, getConveyance, requireConveyance } 
 import type { Conveyance } from './what-a-conveyance-does-to-a-journey.js';
 import { isRuined } from './possessions.js';
 import { whereItStands, whoItIsWith } from './a-vehicle.js';
-import { bestForThisRoad, priceJourney } from './what-a-conveyance-does-to-a-journey.js';
-import { walkingDaysFrom } from './locations.js';
-import { journeyNeedsWater } from './places-on-the-way.js';
-import type { NpcRecord } from './npc-state.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
 export function whatThisHouseCouldTakeOut(state: WorldState, faction: FactionRecord):
@@ -30,30 +26,4 @@ export function whatThisHouseCouldTakeOut(state: WorldState, faction: FactionRec
         out.push({ conveyance: kind, power: thing.power ?? null, rowId: thing.id });
     }
     return out;
-}
-
-/** A receiving house pays for the selected disciple's actual route to its seat. */
-export function journeyToHouseSeat(state: WorldState, house: FactionRecord,
-    npc: NpcRecord, day: number): NpcRecord | null {
-    const from = npc.locationId;
-    const to = house.seatLocationId;
-    if (!from || !to) return null;
-    if (from === to) return { ...npc, activity: null, updatedOnDay: day };
-    const distance = walkingDaysFrom(state.locations, from).get(to);
-    if (distance === undefined) return null;
-    const water = journeyNeedsWater(state.locations, from, to);
-    const purse = Number(house.resources.spirit_stones ?? 0);
-    const taking = bestForThisRoad(whatThisHouseCouldTakeOut(state, house), distance, 1, water, purse);
-    if (water && !taking) return null;
-    const quote = taking ? priceJourney({ walkingDays: distance,
-        conveyance: taking.conveyance, power: taking.power, heads: 1,
-        crossesGroundThatCannotBeWalked: water }) : null;
-    if (quote && quote.stonesBurned > purse) return null;
-    if (quote && quote.stonesBurned > 0) house.resources.spirit_stones = purse - quote.stonesBurned;
-    return { ...npc, activity: { kind: 'travelling',
-        note: `Travelling to ${house.name} after selection.`, withIds: [],
-        sinceDay: day, untilDay: day + (quote?.daysForEverybody ?? Math.max(1, Math.ceil(distance))),
-        fromLocationId: from, returnTo: to,
-        conveyanceId: taking?.conveyance.id ?? null,
-        conveyancePower: taking?.power ?? null }, updatedOnDay: day };
 }

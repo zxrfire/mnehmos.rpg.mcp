@@ -12,7 +12,8 @@ export interface WorldClockBoundary {
 
 /** Public callers read the same queue the world executor consumes. */
 export function nextWorldClockBoundary(world: WorldState, fromDay: number, untilDay: number,
-    passageDates: readonly number[] = [], pressure: PressureOptions = {}): WorldClockBoundary | null {
+    passageDates: readonly number[] = [], pressure: PressureOptions = {},
+    scope: 'all' | 'transport' = 'all'): WorldClockBoundary | null {
     if (!(untilDay > fromDay)) return null;
     let next: WorldClockBoundary | null = null;
     const consider = (onDay: number, cause: WorldClockBoundary['cause'], sourceId: string): void => {
@@ -30,6 +31,9 @@ export function nextWorldClockBoundary(world: WorldState, fromDay: number, until
     }
     const airSites=new Map(world.locations.filter(place=>place.tags.includes('air-course')).map(place=>[place.id,place]));
     for (const npc of world.npcs) {
+        const transport = npc.activity?.departureApproach || npc.activity?.capitalMissionId
+            || npc.activity?.capitalMissionWaiting || npc.activity?.airCourseLocationId || npc.activity?.vesselId;
+        if (scope === 'transport' && (npc.status !== 'alive' || !transport)) continue;
         const expires = bodyLifespanEndsOn(world, npc);
         if (expires !== null) consider(expires, 'body_expiry', npc.id);
         const airSite=npc.activity?.airCourseLocationId ? airSites.get(npc.activity.airCourseLocationId) : undefined;

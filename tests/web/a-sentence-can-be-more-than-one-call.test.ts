@@ -16,7 +16,6 @@ import { describe, expect, it } from 'vitest';
 import {
     foldTheCallsIntoOneTurn,
     howTheStepWent,
-    sayingWhatIsStillToCome,
     sayingWhatItCostTheRest,
     sayingWhereItStopped,
     spendsSomething,
@@ -237,10 +236,10 @@ describe('where the sentence gives its own order, the turn takes it', () => {
         expect(budget.toRun).toHaveLength(0);
     });
 
-    it('names the acts still awaiting an unresolved-order answer', () => {
-        const said = sayingWhatIsStillToCome([SITTING]);
-        expect(said).toContain('Sit down and cultivate for a year');
-        expect(said).toContain('still ahead of you');
+    it('names what a refused preceding act leaves unspent', () => {
+        const said = sayingWhereItStopped(WALK, [SITTING]);
+        expect(said).toContain('sit down and cultivate for a year');
+        expect(said).toContain('Nothing was spent on what came after.');
         expect(said).not.toMatch(/step \d|not executed|declined|refus/i);
     });
 });

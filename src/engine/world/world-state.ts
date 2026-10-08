@@ -288,6 +288,8 @@ export interface WorldState {
     /** The posting and departing party are retained until the errand is resolved. */
     pendingSendings?: {
         posting: Posting;
+        /** Original actual dispatch intent; each load has its own caused acceptance. */
+        dispatchFactId?: string;
         party: Candidate[];
         departsOnDay: number;
         locationId: string | null;

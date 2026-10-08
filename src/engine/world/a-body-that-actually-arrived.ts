@@ -101,7 +101,7 @@ export function actualBodiesArrivedTogether(world: WorldState, bodies: readonly 
     const receipts = bodies.map(body => factsWithDataValue(world, 'bodyId', body.id).flatMap(fact => {
         const course = arrivalCourseOfFact(fact);
         return fact.data.actualBodyArrival === true && course && course.toLocationId === destinationId
-            && fact.day >= acceptedOnDay && course.departureDay >= acceptedOnDay ? [course] : [];
+            && fact.day >= acceptedOnDay && !journeyTimeHasReached(acceptedOnDay, course.arrivalDay) ? [course] : [];
     }));
     return receipts[0]!.some(course => receipts.every(body => body.some(arrived => sameActualArrivalCourse(course, arrived))));
 }

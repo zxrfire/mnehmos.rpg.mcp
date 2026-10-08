@@ -29,6 +29,7 @@ import { requireConveyance } from '../data/cultivation/what-a-house-moves-its-pe
 import { priceJourney, whatTheChestBurns } from '../engine/world/what-a-conveyance-does-to-a-journey.js';
 import { routineTime } from '../engine/world/npc-routines.js';
 import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { exteriorGroundOfDeparture } from '../engine/world/departure-approach.js';
 import { executeActualPaidPassage } from './an-actual-paid-passage.js';
 import type { PhysicalCarrier } from './a-physical-span.js';
 
@@ -41,11 +42,12 @@ export function ownedPassageClaim(db: Database.Database, playerId: string): { re
  * An already travelling body remains on its own accepted course. Continuations
  * and turn-backs use their existing course authority before this new-booking path. */
 export function peopleUnavailableForOwnedBoarding(world: WorldState, ids: readonly string[],
-    fromId: string, onDay: number): string[] {
+    fromId: string, onDay: number, approaching = false): string[] {
     return [...new Set(ids)].filter(id => {
         const person = world.npcs.find(npc => npc.id === id);
         return !person || person.status !== 'alive' || person.activity?.kind === 'travelling'
-            || locationOnNpcJourney(world.locations, person, onDay) !== fromId;
+            || (()=>{const physical=locationOnNpcJourney(world.locations, person, onDay);
+                return physical!==fromId&&(!approaching||!physical||exteriorGroundOfDeparture(world,physical)?.id!==fromId);})();
     });
 }
 

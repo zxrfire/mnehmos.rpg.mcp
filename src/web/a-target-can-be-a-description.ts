@@ -35,6 +35,7 @@ import { A_REALM_ANSWERS_TO,
 
 /** Which end of an ordering the phrase asks for. */
 export type WhichEnd =
+    | 'first' | 'second' | 'third' | 'last'
     | 'nearest'
     | 'youngest'
     | 'oldest'
@@ -135,6 +136,7 @@ const A_PHRASE_FOR_NEAREST: readonly string[] = [
 ].sort((a, b) => b.length - a.length);
 
 const ORDERINGS: Readonly<Record<string, WhichEnd>> = Object.freeze({
+    first: 'first', second: 'second', third: 'third', last: 'last',
     nearest: 'nearest', closest: 'nearest',
     youngest: 'youngest', newest: 'youngest',
     oldest: 'oldest', eldest: 'oldest',
@@ -410,6 +412,11 @@ export function whoTheDescriptionFits(input: {
         a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 
     switch (what.end) {
+        // These pointers follow the visible roster, including indistinguishable strangers.
+        case 'first': return fits;
+        case 'second': return fits.slice(1, 2);
+        case 'third': return fits.slice(2, 3);
+        case 'last': return fits.slice(-1);
         case 'nearest':
             return fits.sort((a, b) =>
                 Math.abs(a.realmOrdinal - me.ordinal)

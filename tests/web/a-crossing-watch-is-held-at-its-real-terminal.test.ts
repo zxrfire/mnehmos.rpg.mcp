@@ -1,103 +1,15 @@
-/** Watch25 full native74204 executed all10:9PASS1FAIL, exact names and source
- * coverage. Local native60-day watch/pay passed. The remote actual paid ship
- * carried the living body22 days to intermediate Sweet Spring Island, but its
- * helper first demanded legacy engine.takeTheSeat. Accepted world receipts now
- * use executeActualPaidPassage and engine.simulateTimeSkip; that call-name check
- * failed before the next actual route leg or final watch landfall/service.
- * Watch26 observes the fresh accepted public receipt bound to this actual run,
- * origin and offered lane/destination, retaining native debit, crew and reached
- * port checks. All final terminal/course/60-day/pay assertions remain unchanged
- * and unproved until the full native run reaches them. No runtime change. */
-/** Watch22 native92290 executed10:9PASS1FAIL. Local actual60-day service/pay
- * passed. The remote body reached Sweet Spring Island on its real22-day ship
- * course, with actual fare and crew checks already passed. Its final native
- * continuation returned engine.simulateTimeSkip(action passage), so the old
- * tool-name regex move/travel/Journey/takeTheSeat rejected a real landfall.
- * Watch23 observes actual new per-body arrival with its accepted public course
- * cause, alive destination, time and preserved fare/crew checks. No runtime or
- * term changes. The remaining remote60-day/pay is still unproven until native
- * execution reaches those original assertions; this is not a service waiver. */
-/** Static review stopped Watch21 before heavy: the native duration units do
- * not support minutes/hours, so fifteen minutes was not an admitted input.
- * Watch22 uses the accepted fractional-day grammar, explicit 1/96 day, and
- * checks actual run/world spending never becomes an unsupported whole day.
- * A shorter actual wait must have a real span-cut interruption. No time source
- * or input grammar is altered here; Watch21 and its reasoning are preserved. */
-/** Watch19 native87421 executed10:8PASS2FAIL. Roof purchase walked .25 day
- * from hour14 to floating hour20 and found no actual keeper, so no room/fare was
- * sold. Watch21 explicitly walks to the inn, reads current keeper availability,
- * and spends ordinary fractional-day waits until a real keeper works there;
- * no staff, attendance, global clock rounding or roof coverage is fabricated.
- * The second failure was an observer: declining pending entry369745 wrote its
- * real refused account and cost standing14, then the world issued new369746.
- * This fixture verifies the old entry's refusal and allows only a different
- * new pending entry, to be answered by the next explicit player decision.
- * Runtime is exact19; full native60-day service and paid ship remain unproven
- * until root runs this successor. No world agency or original term is changed. */
-/** Watch15 full native34098 measured7PASS3FAIL: a real pending summons cut
- * the first wait after one day; shared grammar rounded59.416666666666664 to59;
- * the real directions offered a paid19-day ship leg via Sweet Spring Island,
- * while the fixture demanded direct walking; the scripted actual printed title
- * exceeded the schema80-character cap. Watch17 retains the actual60-day oath
- * and all ten behaviour controls, composes the separate shared input repair,
- * explicitly answers real summons and issues subsequent spans from actual time,
- * buys native inn coverage, and uses actual public landing/seat/crew/landfall.
- * No world event, provider, food, HP, lifespan, clock or arrival is overridden.
- * These are native/mocked-plan candidate controls, uncompiled and unrun; neither
- * full service nor live-model prose is accepted by this draft. */
-/** Watch12 root native50819 measured meaningful work-adapter red: first actual
- * Emerald Water watch was accepted, .125 spent. Green honestly listed BOTH real
- * Emerald Water/Fourfold Stele titles, no oath and unchanged .333333 run/world.
- * The failing "Name the post" assertion pinned an invented prose/headline label,
- * absent from actual emitted narration. Watch13 changes only that observer to
- * actual printed choices/refusal/no oath/no elapsed world/run clock; candidate
- * source is exact12. The original unresolved-floor site control uses the same
- * observable choices rather than that unmeasured implementation wording.
- * No refusal source, native site policy, original physics or term is changed. */
-/** Compiler26 Watch11 caught two TS2367 observer mistakes: PlanSource uses
- * model for a provider plan, including ScriptedProvider, never llm. Watch12
- * corrects only those two observer labels; all ten behaviour assertions and
- * production source remain unchanged. This is still mocked routing, not live
- * model prose acceptance. Earlier compiler/native records remain preserved. */
-/** Watch10 root compiler24 zero and native4201 proved only the short actual
- * printed-title front door: exact grammar red1FAIL then green1PASS, native site
- * oath and .125 exchange. Original seven journey/service/body controls were
- * deliberately unselected and remain unproven until the full Watch11 run.
- * Work previously picked the first matching paper and passed its full title,
- * turning an unresolved site into a selected assignment. It now passes original
- * wanted words to the one native duty/site binder. Main-front-door controls use
- * a scripted model reading of a vague taking as one actual printed title, and
- * a work reading that retains unresolved site authority; neither is live prose.
- * Long service uses the full actual accepted term, existing provisions bought
- * through the native front door and ordinary world/body advancement. No food
- * stock, provider, arrival, payout or elapsed clock is fabricated by the test.
- */
-/** Watch10 source proof follows measured Watch08/09 front-door failures.
- * Internal IDs read sect state; the actual displayed title instead reached mortal
- * work with only "Emerald Water City for Shrinking Earth Pavilion for the next
- * 2 months" retained as target. No oath was written; .125 day was spent.
- * The shared taking grammar had no authored HOUSE_MISSIONS handles and stripped
- * recognized titles to a handle. This candidate uses those existing handles and
- * retains actual player words for the existing site-specific native binder.
- * The selected short test proves actual printed-title acceptance and native .125
- * exchange before any journey/service. Longer retained controls remain unproven
- * on this successor until root runs them; no acceptance claim from source reads.
- */
-/** Watch08 root diagnostic retained7 failures: internal-ID takes read the sect
- * and wrote no oath; the raw vague request instead selected one real post through
- * work. Watch09 first measures the displayed-title front door independently.
- * No runtime/policy change. Original service/body/term assertions are retained;
- * their concrete acceptance utterance now names the actual printed entry.name,
- * not a hidden ID. The vague refusal assertion remains frozen and unaccepted.
- * The diagnostic config selects only the new short acceptance measurement. */
-/** Watch07 root native63454 completed48cases/8files:41PASS7FAIL. New acceptance
- * controls failed before service: acceptDuty flags/oath missing, vague take picked
- * an actual post. This observer preserves every07 assertion and exact source,
- * records displayed offer/raw/native calls/narration/oath/body/world clock BEFORE
- * those failures, and makes no parser/source/policy finding or waiver. */
+/** A board watch belongs to its actual owned terminal. The played case takes
+ * the post, asks an informed present person for directions, boards real finite
+ * ship legs and serves the full accepted span before payment. Its lanes begin
+ * without other houses' paid reservations; berth conflicts have separate native
+ * controls. Earlier controls required a private observation sink and checked
+ * obsolete tool names instead of actual course receipts. Observations are now
+ * optional, and every receipt, living landfall, exact terminal and payment check
+ * remains. Travel used to shorten service; arrival now starts the full term. */
 import { appendFileSync } from 'node:fs';
 import { readPendingSummons } from '../../src/web/pending-summons.js';
 import { publicTransportFrom, publicTransportHubsAt } from '../../src/engine/world/public-transport-at-a-place.js';
+import { shipIdForLane } from '../../src/engine/world/the-ship-on-a-lane.js';
 import { recordedVoyage } from '../../src/web/a-ship-at-sea.js';
 import { arrivalCourseOfFact, sameActualArrivalCourse } from '../../src/engine/world/a-body-that-actually-arrived.js';
 import { shipPassengerAt } from '../../src/engine/world/passenger-on-a-vessel.js';
@@ -135,6 +47,7 @@ import { settleTheMissionPostTheyHold, theMissionPostTheyHold } from '../../src/
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { publicWatchTargetsOf, publicWatchTargetForPost } from '../../src/engine/world/where-a-house-keeps-its-public-watch.js';
 import { THE_SPAN_HOUSE_ID } from '../../src/engine/world/where-the-measured-span-still-answers.js';
+import { makeLocation, linkLocations } from '../../src/engine/world/locations.js';
 
 async function atTheBoard(seed:string,provider?:ScriptedProvider) {
     const h=await makeGameInWorld({seed,worldSeed:'road-world',...(provider?{provider}:{})});
@@ -142,6 +55,8 @@ async function atTheBoard(seed:string,provider?:ScriptedProvider) {
     const world=await h.game.loadWorld();
     if(!world)throw new Error('No actual world');
     h.game.atHand=world;
+    // This service fixture leaves the lane free of other houses' paid missions.
+    for(const other of world.factions)if(other.id!==THE_SPAN_HOUSE_ID)other.resources.spirit_stones=0;
     const house=world.factions.find(f=>f.id===THE_SPAN_HOUSE_ID);
     const sql=h.repos.sects.getById(THE_SPAN_HOUSE_ID);
     const seat=world.locations.find(l=>l.id===house?.seatLocationId);
@@ -165,11 +80,10 @@ async function atTheBoard(seed:string,provider?:ScriptedProvider) {
 
 async function observedAct(h:Awaited<ReturnType<typeof atTheBoard>>,raw:string){
  const sink=process.env.WATCH_ACCEPTANCE_OBSERVATIONS;
- if(!sink)throw Error('Explicit watch observation file is required');
  const snapshot=()=>{const now=h.game.currentRun(),body=now.cultivator;return {run:{id:now.run.id,elapsedDays:now.run.elapsedDays,turn:now.run.turn},body:{id:body.id,alive:body.alive,location:body.location,standingIn:body.standingIn,hp:body.hp,spiritStones:body.spiritStones},worldMoment:h.game.atHand?routineTime(h.game.atHand):null,oath:theMissionPostTheyHold(h.game,h.id)};};
- appendFileSync(sink,JSON.stringify({when:'before',raw,offer:h.offer,site:{id:h.site.id,name:h.site.name},body:snapshot()})+'\n');
- try{const result=await h.game.act(raw);appendFileSync(sink,JSON.stringify({when:'after',raw,toolCalls:result.toolCalls,narration:result.narration,body:snapshot()})+'\n');return result;}
- catch(error){appendFileSync(sink,JSON.stringify({when:'error',raw,error:String(error),body:snapshot()})+'\n');throw error;}
+ if(sink)appendFileSync(sink,JSON.stringify({when:'before',raw,offer:h.offer,site:{id:h.site.id,name:h.site.name},body:snapshot()})+'\n');
+ try{const result=await h.game.act(raw);if(sink)appendFileSync(sink,JSON.stringify({when:'after',raw,toolCalls:result.toolCalls,narration:result.narration,body:snapshot()})+'\n');return result;}
+ catch(error){if(sink)appendFileSync(sink,JSON.stringify({when:'error',raw,error:String(error),body:snapshot()})+'\n');throw error;}
 }
 
 describe('actual crossing watch',()=>{
@@ -194,7 +108,7 @@ describe('actual crossing watch',()=>{
         h.repos.cultivators.standIn(h.id,null);
         await observedAct(h, 'I look around');
         expect(theMissionPostTheyHold(h.game,h.id)!.tags).toContain('post-arrived');
-        const due=oath!.dueOnDay;
+        const due=theMissionPostTheyHold(h.game,h.id)!.dueOnDay;
         if(due===null)throw new Error('Native watch has no deadline');
         const [merit,pay]=oath!.tags.find(t=>t.startsWith('post-pays:'))!.slice('post-pays:'.length).split(':').map(Number);
         const contribution=h.repos.sects.getMembership(h.id)!.contribution;
@@ -254,6 +168,8 @@ describe('actual crossing watch',()=>{
         expect(oath?.tags).toContain('post-arrived');
         if(!oath||oath.dueOnDay===null)throw new Error('Actual journey lost its unserved watch oath');
         const termLeft=oath.dueOnDay-h.game.currentRun().run.elapsedDays;
+        const term=Number(oath.tags.find(tag=>tag.startsWith('post-term-days:'))!.slice('post-term-days:'.length));
+        expect(termLeft,'travel cannot count as days held at the real terminal').toBeCloseTo(term,7);
         if(termLeft<=0)throw new Error('Actual journey used the whole accepted watch term');
         const contribution=h.repos.sects.getMembership(h.id)!.contribution;
         await buyActualPostRoof(h,oath.dueOnDay);
@@ -263,7 +179,7 @@ describe('actual crossing watch',()=>{
         expect(h.game.currentRun().run.elapsedDays).toBeGreaterThanOrEqual(oath.dueOnDay);
         expect(h.repos.sects.getMembership(h.id)!.contribution).toBeGreaterThan(contribution);
         expect(theMissionPostTheyHold(h.game,h.id)).toBeNull();
-    },240000);
+    },900000);
     it('does not start watch merely elsewhere in the same province and does not accept an unspecified site',async()=>{
         const h=await atTheBoard('crossing-watch-exact');
         const before=h.game.state().run.elapsedDays;
@@ -351,6 +267,37 @@ async function buyActualTermFood(h:Awaited<ReturnType<typeof atTheBoard>>) {
  expect(h.game.rationsHeld(h.game.currentRun().cultivator)).toBeGreaterThan(stock);
  expect(h.game.currentRun().cultivator.spiritStones).toBeLessThan(before.cultivator.spiritStones);
 }
+/** A known short road isolates clause settlement from the full maritime journey.
+ * Returning before the sentence ends must not erase having left a held post. */
+it('settles leaving the actual terminal before a later clause returns there',async()=>{
+ const plans:string[]=[],h=await atTheBoard('watch-leaves-and-returns',new ScriptedProvider({plans,narrations:[]}));
+ try {
+  await observedAct(h,'I take the post '+h.offer.entry.name);
+  h.repos.cultivators.update(h.id,{location:h.site.name,hp:10000,maxHp:10000,satiety:100});
+  h.repos.cultivators.standIn(h.id,null);
+  await observedAct(h,'I look around');
+  const oath=theMissionPostTheyHold(h.game,h.id)!;
+  expect(oath.tags).toContain('post-arrived');
+  const world=h.game.atHand!,site=world.locations.find(place=>place.id===h.site.id)!;
+  const village=makeLocation({id:'watch-road-village',name:'Reed Lantern Ford',kind:'settlement',parentId:site.parentId});
+  world.locations.push(village);linkLocations(site,village,'road',.125);h.game.theWorldMoved();
+  const before=h.game.currentRun();
+  for(const place of [site,village])h.game.noteEncounter(before.cultivator,before.run,
+   {kind:'place',id:place.name,name:place.name},'told','An actual known road.');
+  const first='I walk to '+village.name,second='I return to '+site.name;
+  plans.push(JSON.stringify({steps:[{action:'move',target:village.name,said:first},{action:'move',target:site.name,said:second}]}));
+  const result=await observedAct(h,first+'; then '+second+'.');
+  expect(result.toolCalls.find(call=>call.name==='narrator.plan')?.source).toBe('model');
+  expect(result.narration).toContain(village.name);
+  expect(h.game.worldPlaceOf(h.game.currentRun().cultivator)).toBe(site.id);
+  expect(h.game.currentRun().run.elapsedDays).toBeGreaterThan(before.run.elapsedDays);
+  expect(theMissionPostTheyHold(h.game,h.id)).toBeNull();
+  const settled=ledgerAbout(h.db,h.id).find(record=>record.id===oath.id)!;
+  expect(settled.status).not.toBe('open');
+  expect(settled.settlement?.resolution).not.toBe('oath_fulfilled');
+  expect(result.narration).not.toContain('Your post is served');
+ }finally{h.db.close();}
+},120000);
 it('a scripted main-frontdoor reading can resolve a vague taking to an actual displayed terminal',async()=>{
  const plans:string[]=[],h=await atTheBoard('crossing-watch-model-site',new ScriptedProvider({plans,narrations:[]}));try{
   const printed=await observedAct(h,'what missions are there');expect(printed.narration).toContain(h.offer.entry.name);
@@ -446,7 +393,12 @@ async function followTheActualOfferedRoute(h:Awaited<ReturnType<typeof atTheBoar
   const boarding=h.game.currentRun(),boardingOrigin=h.game.worldPlaceOf(boarding.cultivator);
   result=await observedAct(h,'I take the ship to '+line!.to);
   const receipt=h.game.atHand!.history.facts.find(fact=>!facts.has(fact.id)&&fact.data.publicPassage===true);
-  expect(receipt,'actual counter must bind a real finite hull course before the journey').toBeDefined();
+  expect(receipt,'actual counter must bind a real finite hull course before the journey: '+JSON.stringify({calls:result.toolCalls,
+   at:before.cultivator.location,line,clock:[h.game.atHand!.currentDay,routineTime(h.game.atHand!)],
+   hull:h.game.atHand!.objects.find(o=>o.id===shipIdForLane(line!.lane!)),
+   plans:h.game.atHand!.history.facts.filter(f=>typeof f.data.publicReservations==='string'&&String(f.data.publicReservations).includes(shipIdForLane(line!.lane!))).map(f=>f.data),
+   crew:h.game.atHand!.npcs.filter(n=>n.tags.includes('crew-of:'+shipIdForLane(line!.lane!))),
+   receipts:h.game.atHand!.history.facts.filter(f=>f.data.vesselId===shipIdForLane(line!.lane!)).map(f=>({day:f.day,data:f.data}))})).toBeDefined();
   expect(receipt!.data.runId).toBe(boarding.run.id);
   expect(receipt!.data.boardingRunElapsedDays).toBe(boarding.run.elapsedDays);
   expect(receipt!.data.fromLocationId).toBe(boardingOrigin);

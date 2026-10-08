@@ -1,13 +1,19 @@
 import {launchOwnedSeaPassage} from './launching-an-owned-sea-passage.js';
-import { quoteAnAirJourney } from '../engine/world/what-an-air-journey-takes.js';
+import { quoteAnAirJourney, conveyanceOfPersonalFlight } from '../engine/world/what-an-air-journey-takes.js';
 import { witnessIndexFor } from '../engine/world/witness-reaction-index.js';
 import { personalAirCourseClaim, personalFlightArt, launchPersonalAirJourney, spendOnPersonalAirCourse, airExteriorReadiness } from './an-actual-personal-air-course.js';
+import { stopAnAirCourse } from '../engine/world/an-air-course-in-the-world.js';
 import { canFlyByTheirOwnBody } from '../engine/world/what-an-air-journey-takes.js';
 import { acceptedRidersForBoarding, companySelectedForBoarding } from './an-offered-ride-is-an-agreement.js';
 
 import { whereTheRoadEndsIn as thePublicRoadEndsIn } from '../engine/world/public-transport-at-a-place.js';
 import { enteringAnActualLocalCave } from './entering-an-actual-local-cave.js';
 import { spendFootJourneyAtItsChecks } from './a-foot-journey-at-its-checks.js';
+import { walkToTheDeparture } from './walking-to-a-departure.js';
+import { exteriorGroundOfDeparture } from '../engine/world/departure-approach.js';
+import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { metricGroundRead } from '../engine/world/the-metric-ground-under-a-journey.js';
+import { forStream } from '../engine/cultivation/rng.js';
 import { stoppedRoadFor, betweenRoadEndpoints, FLAG_ROAD_STOPPED, type StoppedRoad } from './a-road-stopped-partway.js';
 import { roadContinuationTo, roadContinuationAhead, positionOnRoad, positionAfterRoadContinuation, sameRoadPosition, roadVertexMoments } from '../engine/world/road-course.js';
 import { acceptOwnedPassage, continueOwnedPassage, spendOnOwnedPassage, peopleUnavailableForOwnedBoarding } from './an-owned-passage.js';
@@ -652,7 +658,9 @@ export const travelVerbs = {
         cultivator: Cultivator,
         ambient: AmbientQi,
         target: string | undefined,
-        intent: string
+        intent: string,
+        askedDays?: number,
+        rawInput = ''
     ): Promise<Execution> {
         // ── AND HOME IS A PLACE, ONCE THERE IS SOMEWHERE THAT IS YOURS ────
         //
@@ -662,6 +670,50 @@ export const travelVerbs = {
         // abode on the other side of the Lid, which is not walked to.
         let said = target;
         this.atHand ??= await this.loadWorld();
+        if(personalAirCourseClaim(this.db,cultivator.id)&&(intent==='stop'||/\b(?:stop|halt)\b/i.test(rawInput)))
+            return this.ride(run,cultivator,'stop','body flight',rawInput);
+        const retainedRoad=stoppedRoadFor(this.db,cultivator,this.atHand);
+        if(retainedRoad&&(intent==='stop'||/^(?:i\s+)?(?:stop|halt)(?:\s|[.!]|$)/i.test(rawInput))){
+            return this.freeAction(run,'move',factsForToolResult('You stopped on the road.',
+                ['Your actual road position is retained. Walking can continue from here.']));
+        }
+        let unplanned=retainedRoad?.unplanned===true&&(target??'').trim().length===0;
+        const roadWord=(target??'').trim()||rawInput;
+        const roadDirection=/\b(north|south|east|west)\b/i.exec(roadWord)?.[1]?.toLowerCase();
+        const settingOut=/\b(?:road|wander|wandering|random|set out|set off)\b/i.test(roadWord)
+            || /^(?:north|south|east|west)$/i.test(roadWord);
+        if(settingOut&&!retainedRoad&&this.atHand){
+            const inside=worldLocationFor(this.atHand,cultivator.location);
+            const exterior=inside&&exteriorGroundOfDeparture(this.atHand,inside.id);
+            if(exterior&&inside?.id!==exterior.id){
+                const approach=await walkToTheDeparture(this,run,cultivator,exterior.id,null);
+                if(approach)return approach;
+                ({run,cultivator}=this.currentRun());
+            }
+            const ground=worldLocationFor(this.atHand,cultivator.location);
+            const points=metricGroundRead(this.atHand.locations);
+            const start=ground&&points.point(ground.id);
+            const exits=(ground?.links??[]).filter(link=>link.open&&['road','path'].includes(link.kind)
+                &&!link.requiresKeyId).map(link=>({link,place:this.atHand!.locations.find(place=>place.id===link.toLocationId)}))
+                .filter((row):row is typeof row&{place:NonNullable<typeof row.place>}=>!!row.place&&!row.place.tags.includes('interior'))
+                .filter(row=>{if(!roadDirection||!start)return true;const end=points.point(row.place.id);if(!end)return false;
+                    const dx=end.xLi-start.xLi,dy=end.yLi-start.yLi;
+                    return roadDirection==='east'?dx>0&&Math.abs(dx)>=Math.abs(dy):roadDirection==='west'?dx<0&&Math.abs(dx)>=Math.abs(dy)
+                        :roadDirection==='north'?dy>0&&Math.abs(dy)>=Math.abs(dx):dy<0&&Math.abs(dy)>=Math.abs(dx);});
+            const chosen=exits.length?exits[forStream(run.seed,'wandering-road',run.turn,ground!.id).int(0,exits.length-1)]:null;
+            if(!chosen)return refused('engine.visibleRoad','move',factsForRefusal('No open road leaves here in that direction.',
+                'The actual roads and doors decide where walking can begin.','No movement or time spent.'));
+            let ahead=chosen.place,previous=ground!.id;
+            const passed=new Set([previous]);
+            while(ahead.tags.includes(ROUTE_STOP)&&!passed.has(ahead.id)){
+                passed.add(ahead.id);
+                const onward=ahead.links.find(link=>link.open&&!link.requiresKeyId&&['road','path'].includes(link.kind)
+                    &&link.toLocationId!==previous&&!passed.has(link.toLocationId));
+                const next=onward&&this.atHand.locations.find(place=>place.id===onward.toLocationId);
+                if(!next)break;previous=ahead.id;ahead=next;
+            }
+            said=ahead.name;unplanned=true;
+        }
         const startedBetweenEndpoints = betweenRoadEndpoints(this.repos.db, cultivator);
         // Local offered hull areas use the native finite approach before any geographic
         // continuation. Asking for the foredeck is not changing the destination.
@@ -869,7 +921,7 @@ export const travelVerbs = {
         // driver off, places in this engine are documented free text and
         // there is nothing that could say a name is wrong; refusing then
         // would make travel impossible rather than safe.
-        const unknownRoute = routeTheyHaveNotLearned(this, cultivator, place.name, 'move');
+        const unknownRoute = unplanned?null:routeTheyHaveNotLearned(this, cultivator, place.name, 'move');
         if (unknownRoute) return unknownRoute;
         if (this.atHand && !this.somewhereReal(place.name, cultivator)) {
             // ── SOMEBODY STANDING HERE IS NOT A JOURNEY ──────────────
@@ -1065,9 +1117,13 @@ export const travelVerbs = {
         const onTheRoad = course ? (resuming ? held!.walked : 0) + course.days
             : resuming ? held.road : this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
         if (((course !== null && course.days === 0) || (!course && onTheRoad < 1)) && worldRow) {
-            const walked = this.repos.cultivators.update(cultivator.id, { location: arrivedAt })!;
-            const advanced = await passHours(this, run, walked, LESSER_ACTION_DAYS.move * 24);
+            const advanced = await passHours(this, run, cultivator, LESSER_ACTION_DAYS.move * 24);
             if (!advanced.finished && advanced.spent) return advanced.spent;
+            const actual=this.currentRun().cultivator;
+            if(!actual.alive||actual.location!==cultivator.location||actual.standingIn!==cultivator.standingIn)
+                return refused('engine.localWalk','move',factsForRefusal('The local walk was interrupted.',
+                    'The traveller no longer occupies its actual origin.','No arrival was committed.'));
+            const walked = this.repos.cultivators.update(cultivator.id, { location: arrivedAt })!;
             this.theyArrivedWithYou(walked, arrivedAt);
             this.noteEncounter(walked, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
                 'witnessed', 'Reached by a local walk.');
@@ -1089,7 +1145,8 @@ export const travelVerbs = {
         // start.
         if (held !== null) clearFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED);
         const alreadyWalked = resuming ? held.walked : 0;
-        const leg = course?.days ?? onTheRoad - alreadyWalked;
+        const wholeLeg = course?.days ?? onTheRoad - alreadyWalked;
+        const leg = Math.min(wholeLeg,askedDays===undefined?Infinity:Math.max(0,askedDays));
 
         const departure = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
         const destination = this.atHand && worldLocationFor(this.atHand, arrivedAt);
@@ -1150,6 +1207,7 @@ export const travelVerbs = {
             writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify({
                 to: arrivedAt, from: placeName(body), road: onTheRoad,
                 walked: alreadyWalked + committed,
+                ...(unplanned?{unplanned:true}:{}),
                 acceptedMoment,
                 position: positionAfterRoadContinuation(course, committed, courseDeparture)
             } satisfies StoppedRoad));
@@ -1218,7 +1276,7 @@ export const travelVerbs = {
         const spent = footChecks?.spent ?? null;
         const skip = spent?.skip ?? simulateTimeSkip(setOut, lived, context);
         if (!spent) this.putBackWhatWasNotEaten(cultivator, skip);
-        const incomplete = !journeyTimeHasReached(skip.simulatedDays, leg);
+        const incomplete = !journeyTimeHasReached(skip.simulatedDays, wholeLeg);
         const stopped = !skip.died && incomplete;
         const actualRoadGround = spent && this.atHand
             ? worldLocationFor(this.atHand, spent.applied.cultivator.location) : null;
@@ -1245,6 +1303,10 @@ export const travelVerbs = {
         const nights = footChecks || skip.died ? [] : Array.from({ length: skip.simulatedDays }, (_, i) => startDay + i);
         const charged = nights.length > 0 ? chargeTheNightsInTheOpen(this, run, applied.cultivator, nights) : null;
         const walker = this.repos.cultivators.getById(cultivator.id) ?? applied.cultivator;
+        const roadSpanFacts = () => factsForTimeSkip(
+            {...cultivator, location: thePlaceAsTheSceneNamesIt(this, cultivator, placeName(cultivator), false)},
+            {...walker, location: thePlaceAsTheSceneNamesIt(this, walker, placeName(walker), false)},
+            skip, ambient, 'Travel', leg);
         const whatWasEaten = skip.died ? null : whatTheRoadAte(walker, carried, skip.endState.rationsRemaining);
         const sayTheRoadsFood = (facts: Execution['facts']): void => {
             if (packShort) facts.lines.unshift(packShort);
@@ -1259,7 +1321,7 @@ export const travelVerbs = {
             && journeyTimeHasReached(committed, skip.simulatedDays)
             && journeyTimeHasReached(skip.simulatedDays, committed);
         if (walker.alive && !stillOnThisCourse) {
-            const facts = factsForTimeSkip(cultivator, walker, skip, ambient, 'Travel', leg);
+            const facts = roadSpanFacts();
             const line = 'The actual body left this admitted road before its arrival was resolved.';
             facts.lines.unshift(line);
             facts.required = [...(facts.required ?? []), line];
@@ -1279,7 +1341,8 @@ export const travelVerbs = {
         if (stopped && walker.alive) {
             if (roadGround) {
                 this.theyArrivedWithYou(walker, roadGround.name);
-                if (!course || positionAfterRoadContinuation(course, skip.simulatedDays, courseDeparture).kind === 'place')
+                if (!roadGround.tags.includes(ROUTE_STOP)
+                    && (!course || positionAfterRoadContinuation(course, skip.simulatedDays, courseDeparture).kind === 'place'))
                     this.noteEncounter(walker, run,
                         { kind: 'place', id: roadGround.name, name: roadGround.name }, 'witnessed', 'Reached on the road.');
             }
@@ -1290,14 +1353,18 @@ export const travelVerbs = {
                 from: placeName(walker),
                 road: onTheRoad,
                 walked,
+                ...(unplanned?{unplanned:true}:{}),
                 ...(course ? { acceptedMoment, position: positionAfterRoadContinuation(course, skip.simulatedDays, courseDeparture) } : {})
             };
             if (!course) writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify(stoppedRoad));
             const cut = whatCutTheSpanShort({
                 asked: leg, lived, skip, arrival: enc, startDay, world: null
             });
-            const facts = factsForTimeSkip(cultivator, walker, skip, ambient, 'Travel', leg);
-            const line = `The road to ${arrivedAt} stopped short. `
+            const visiblePlace=thePlaceAsTheSceneNamesIt(this,walker,placeName(walker));
+            const facts = roadSpanFacts();
+            const knownEnd=!destination||this.canPointAtLocation(walker,destination);
+            const ahead=knownEnd?arrivedAt:'the road ahead';
+            const line = `The road toward ${ahead} stopped short. `
                 + (cut ? sayingWhatEndedTheSpan(cut, humanDays) : `${humanDays(skip.simulatedDays)} were spent on it.`)
                 + ` You are not there. The rest of the road is still ahead of you, ${humanDays(remaining)} of it`
                 + ` - say it again and you walk only that.`;
@@ -1315,7 +1382,7 @@ export const travelVerbs = {
             facts.required = [...(facts.required ?? []), line];
             facts.lines.push(...onTheWay.lines, ...world.lines);
             facts.structure.push(...onTheWay.structure, ...world.structure,
-                `move: stopped on day ${walked} of ${onTheRoad} for ${arrivedAt}; location ${walker.location}.`);
+                `move: stopped on day ${walked} of ${onTheRoad}; location ${visiblePlace}.`);
             const halted: Execution = {
                 facts,
                 events: [...skip.events, ...onTheWay.events],
@@ -1328,8 +1395,8 @@ export const travelVerbs = {
                 calls: [{
                     name: 'engine.encounterWindow',
                     action: 'move',
-                    summary: `The road to ${arrivedAt} was stopped on day ${walked} of `
-                        + `${onTheRoad}. At ${walker.location}; ${remaining} day(s) of road remain.`,
+                    summary: `The road toward ${ahead} was stopped on day ${walked} of `
+                        + `${onTheRoad}. At ${visiblePlace}; ${remaining} day(s) of road remain.`,
                     ok: true
                 }],
                 nights: 'charged'
@@ -1342,7 +1409,7 @@ export const travelVerbs = {
         }
 
         if (skip.died || !walker.alive) {
-            const facts = factsForTimeSkip(cultivator, walker, skip, ambient, 'Travel', leg);
+            const facts = roadSpanFacts();
             facts.lines.push(...onTheWay.lines, ...world.lines);
             facts.structure.push(...onTheWay.structure, ...world.structure);
             const ended: Execution = { facts, events: [...skip.events, ...onTheWay.events], timeSkip: skip, breakthrough: null,
@@ -1575,7 +1642,8 @@ export const travelVerbs = {
         if (canFlyByTheirOwnBody(cultivator.realmOrdinal, brokenStatusesOn(cultivator.injuries)))
             available.push({ conveyance: requireConveyance('conv-body-flight'), power: null });
 
-        const here = this.worldPlaceOf(cultivator);
+        const physicalHere = this.worldPlaceOf(cultivator);
+        const here = this.atHand && physicalHere ? exteriorGroundOfDeparture(this.atHand, physicalHere)?.id ?? physicalHere : physicalHere;
         for (const row of this.atHand?.objects ?? []) {
             // Held OR owned. `mintCraft` moors a craft rather than handing it
             // to somebody - a craft with a possessor is one `bestObjectHeldBy`
@@ -2055,7 +2123,8 @@ export const travelVerbs = {
         cultivator: Cultivator,
         target: string | undefined,
         wanted: string | undefined,
-        rawInput = ''
+        rawInput = '',
+        askedDays?: number
     ): Promise<Execution> {
         if (this.worldEnabled) {
             this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
@@ -2064,12 +2133,26 @@ export const travelVerbs = {
         }
         const currentAir = personalAirCourseClaim(this.db, cultivator.id);
         const airSite = currentAir && this.atHand?.locations.find(place => place.id === currentAir.locationId);
+        if(currentAir&&airSite&&(target==='stop'||/\b(?:stop|halt)\b/i.test(rawInput))){
+            stopAnAirCourse(this.atHand!,airSite,routineTime(this.atHand!),'The actual body stopped its flight.');
+            clearFlag(this.db,cultivator.id,'personal_air_course');
+            this.theWorldMoved();
+            return this.freeAction(run,'ride',factsForToolResult('The flight stopped at its actual airborne point.',[]));
+        }
         const airFact = airSite && this.atHand && typeof airSite.data.airCourseId === 'string'
             ? witnessIndexFor(this.atHand).byId.get(airSite.data.airCourseId) : null;
         const airDestination = airFact && this.atHand?.locations.find(place => place.id === airFact.data.toLocationId);
         if (currentAir && (!target || airDestination && loosePlaceKey(airDestination.name) === loosePlaceKey(target))) {
-            const continued = await spendOnPersonalAirCourse(this, run, cultivator);
-            if (continued) return continued;
+            const continued = await spendOnPersonalAirCourse(this, run, cultivator, askedDays ?? Infinity);
+            if (continued) {
+                const body=this.currentRun().cultivator;
+                if(airDestination&&body.location===airDestination.name){
+                    const introduced=whatArrivingIntroduces(this,body);
+                    continued.facts.lines.push(...introduced.lines);continued.facts.structure.push(...introduced.structure);
+                    continued.perceived=introduced.perceived;
+                }
+                return continued;
+            }
         }
         const ownedOnward = await continueOwnedPassage(this, run, cultivator, target);
         if (ownedOnward) return ownedOnward;
@@ -2088,6 +2171,30 @@ export const travelVerbs = {
             return aSeatOnAShipOrACarriage(this, run, cultivator, target, 'buy', service, wanted ?? '');
         }
 
+        if(this.atHand&&(!target||/^(?:around|random|randomly|wander)$/i.test(target))
+            && /fly|flight|flying|air|sword|cloud/i.test((wanted??'')+' '+rawInput)){
+            const from=worldLocationFor(this.atHand,cultivator.location);
+            const art=/sword|cloud/i.test(wanted??'')?personalFlightArt(cultivator,/cloud/i.test(wanted??'')?'cloud':'sword'):null;
+            const craft=conveyanceOfPersonalFlight(art?.id??null);
+            const candidates=from&&craft?this.atHand.locations.filter(place=>place.id!==from.id&&!place.tags.includes('interior')&&!place.tags.includes('air-course')&&!place.tags.includes('route-stop')
+                &&['settlement','sect_seat','wilds','site','ruin'].includes(place.kind)).map(place=>({place,
+                    quote:quoteAnAirJourney(this.atHand!.locations,from.id,place.id,craft,null,1,
+                        {facts:witnessIndexFor(this.atHand!).byId,onDay:routineTime(this.atHand!)})}))
+                .filter(row=>row.quote&&row.quote.daysOneWay>0):[];
+            candidates.sort((a,b)=>a.quote!.distanceLi-b.quote!.distanceLi);
+            const headings=candidates;
+            const chosen=headings.length?headings[forStream(run.seed,'wandering-flight',run.turn,from!.id).int(0,headings.length-1)]:null;
+            if(chosen){
+                const flight=await launchPersonalAirJourney(this,run,cultivator,chosen.place.name,art?.id??null,askedDays??Infinity);
+                const body=this.currentRun().cultivator;
+                if(body.location===chosen.place.name){
+                    const introduced=whatArrivingIntroduces(this,body);
+                    flight.facts.lines.push(...introduced.lines);flight.facts.structure.push(...introduced.structure);
+                    flight.perceived=introduced.perceived;
+                }
+                return flight;
+            }
+        }
         const going = this.whereThisJourneyGoes(cultivator, target, 'ride');
         if ('facts' in going) return going;
 
@@ -2145,7 +2252,7 @@ export const travelVerbs = {
         const actualDeparture = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
         const unavailable = this.atHand && actualDeparture
             ? peopleUnavailableForOwnedBoarding(this.atHand, withYou.map(person => person.id),
-                actualDeparture.id, routineTime(this.atHand)) : [];
+                exteriorGroundOfDeparture(this.atHand,actualDeparture.id)?.id??actualDeparture.id, routineTime(this.atHand),true) : [];
         if (unavailable.length > 0) {
             const names = withYou.filter(person => unavailable.includes(person.id)).map(person => person.name);
             return refused('world.availableForOwnedBoarding', 'ride', factsForRefusal(
@@ -2203,15 +2310,6 @@ export const travelVerbs = {
             }
             return flight;
         }
-        if (chosen.conveyance.id === 'conv-body-flight' || chosen.artId) {
-            const flight = await launchPersonalAirJourney(this, run, cultivator, arrivedAt, chosen.artId ?? null);
-            const actual = this.repos.cultivators.getById(cultivator.id);
-            if (flight.outcome === 'executed' && actual?.alive && actual.location === arrivedAt) {
-                const introduced = whatArrivingIntroduces(this, actual);
-                flight.facts.lines.push(...introduced.lines);
-            }
-            return flight;
-        }
         // NOTHING THAT GOES ON GROUND GOES OVER WATER: a mount or a cart to open water is a ship
         // from the landing, as walking is. See `the-way-there-is-by-ship.ts`.
         if (!chosen.conveyance.crossesGroundThatCannotBeWalked) {
@@ -2222,12 +2320,9 @@ export const travelVerbs = {
             }
         }
 
-        if (chosen.conveyance.crossesGroundThatCannotBeWalked) {
-            const exterior = airExteriorReadiness(this, cultivator, target ?? arrivedAt);
-            if (exterior) return exterior;
-        }
         const flightEndpoints = this.atHand && {
-            from: worldLocationFor(this.atHand, cultivator.location),
+            from: (()=>{const physical=worldLocationFor(this.atHand!,cultivator.location);
+                return physical&&exteriorGroundOfDeparture(this.atHand!,physical.id);})(),
             to: worldLocationFor(this.atHand, arrivedAt)
         };
         const journey = chosen.conveyance.crossesGroundThatCannotBeWalked
@@ -2258,6 +2353,26 @@ export const travelVerbs = {
                 + `carry ${cultivator.spiritStones}. Nothing is spent, and it does not lift.`,
                 `ride: ${chosen.conveyance.id} burns ${journey.stonesBurned} over ${journey.daysOneWay} day(s), `
                 + `heads ${heads}, trips ${journey.trips}; purse ${cultivator.spiritStones}. Location unchanged, no time passed.`));
+        }
+        if(this.atHand){
+            const physical=worldLocationFor(this.atHand,cultivator.location);
+            const ground=physical&&exteriorGroundOfDeparture(this.atHand,physical.id);
+            const berth=ground&&theAreasOf(this.atHand,ground).areas.find(area=>area.for===
+                (chosen.conveyance.crossesGroundThatCannotBeWalked?'spirit_berth':'carriage_station'));
+            if(ground){
+                const prior=run.elapsedDays;
+                const approach=await walkToTheDeparture(this,run,cultivator,ground.id,berth?.id??null,chosen.rowId,
+                    withYou.map(person=>person.id));
+                if(approach)return approach;
+                const fresh=this.currentRun();
+                if(fresh.run.elapsedDays!==prior||fresh.cultivator.location!==cultivator.location
+                    ||fresh.cultivator.standingIn!==cultivator.standingIn)
+                    return this.ride(fresh.run,fresh.cultivator,target,wanted,rawInput,askedDays);
+            }
+            if(chosen.conveyance.crossesGroundThatCannotBeWalked){
+                const exterior=airExteriorReadiness(this,cultivator,target??arrivedAt);
+                if(exterior)return exterior;
+            }
         }
         // Ridden, it goes with them, whether it was going with them already or left standing here.
         const rowId = available.find(a => a.conveyance.id === chosen.conveyance.id && a.power === chosen.power)?.rowId;
@@ -2578,7 +2693,8 @@ export const travelVerbs = {
         target: string | undefined,
         intent: string,
         /** Which counter, where the sentence named a ship or a carriage. */
-        topic?: string
+        topic?: string,
+        rawInput = ''
     ): Promise<Execution> {
         const paidRoad = await continueThePaidCarriage(this, run, cultivator, target, 'passage',
             theServiceNamed(topic) !== null && theServiceNamed(topic) !== 'carriage');
@@ -2600,7 +2716,7 @@ export const travelVerbs = {
         // A SHIP OR A CARRIAGE is bought at its own counter: whenever the sentence
         // names one, and where the Span keeps no counter and a line here goes
         // where the sentence asked. Anything else is still the Span's.
-        const service = theServiceNamed(topic);
+        const service = theServiceNamed(topic) ?? theServiceNamed(rawInput);
         const runsFromHere = counter === null ? whatRunsFromHere(this, cultivator, today) : [];
         if (service !== null
             || (target !== undefined && theLineTo(runsFromHere, target, null) !== null)) {

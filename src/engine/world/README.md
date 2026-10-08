@@ -2,6 +2,35 @@
 
 # The World Layer
 
+Departures use `departure-approach.ts`: containment supplies the enclosing exterior,
+actual doors and carried keys decide the exit, and `LOCAL_WALK_DAYS` supplies the
+existing quarter-day walk to the departure area. An approach holds an intention
+in the person's existing activity. It holds no paid seat, fare or future arrival.
+Admission rechecks the body and doors at the reached clock. A real occupant of
+the requested hull is already aboard; its cabin is not a shore departure.
+
+`npc-departure-approaches.ts` feeds this same approach into ordinary ship and
+owned carriage journeys, and walks indoor bodies out before their own road or
+air leg. Paid house ship itineraries include that walk and preserve the reached
+dock while waiting for the booked date. Native house sendings gather their real selected members
+at the Spirit Boat Berth before the ordinary loan, pilot, capacity and fuel reads.
+A free capable pilot is part of the selected group and consumes a berth. The world
+driver visits actual calendar and transport boundaries when a house holds an air
+craft or a person holds an approach. Background transport precision does not
+enumerate unrelated practice deadlines; explicit precise and played advances
+retain every body boundary. It never enumerates hours. A closed exit
+cannot fall through to an immediate air or land departure.
+
+Capital business and selected-member travel use the existing actual land/public
+ship mission itinerary. A quote for a parked house craft supplies neither its
+captain nor a remote pickup. Owned house air travel uses the native house sending
+and shuttle authorities; the parallel quote-only capital transport path is removed.
+
+Area and counter reads reuse route, containment and terminal indexes only within
+their synchronous read. An active travel test sampled repeated walking-tree and
+province-containment construction while staffing a counter; current bodies and
+clocks remain inputs, and no index survives a world mutation.
+
 `forcing-an-actual-vault-lock.ts` reads a generated vault's actual own-lock
 entry rating, or its recorded reinforcement, through the existing `canUnmake`
 authority. Explicit force removes that lock's sealed and entry bars through
@@ -587,9 +616,9 @@ calendar dates once; returns run before each dated task and at a span's end.
 The activity keeps the departure ground and destination. `locationOnNpcJourney`
 places a delegate on the route until arrival, at the capital through service,
 and on the return route before the stint ends. A delegation that cannot reach a
-dated event by its event day does not enter it. The ordinary house yard and
-journey quote choose and pay for conveyance. Across water without a house craft,
-the house can prepay both directions on the public board. The mission fact keeps
+dated event by its event day does not enter it. Capital missions use the actual
+land itinerary and prepay both water directions on the public board. A parked
+house craft does not supply a captain or an admitted flight. The mission fact keeps
 its dated berth reservations while a living delegate is still assigned. Each
 actual boarding uses the shared public passage and crew, and each land leg has
 an exact arrival on the pressure calendar. A route with no available passage or
@@ -4427,10 +4456,9 @@ owner's life, determine whether it can continue. NPC passengers reference the
 actual same physical site. Terminal actors are not moved to a target merely
 from an activity deadline.
 
-This prototype still requires native review of shared hull/death behavior.
-Independent NPC personal-flight qi and mission air quoting remain unbuilt;
-multiple capacity-driven shuttle legs remain unbuilt. These are gaps, not a
-license to price flights as road detours or grant free NPC qi.
+The original prototype gaps now use native NPC launch resources, actual mission
+air quotes and capacity-driven shuttle legs. Shared hull/death controls retain
+the same physical course authority; no road detour substitutes for flight.
 
 The incremental owned-air voyage records each already-executed native fuel
 debit as a caused payment fact. The existing causal history index exposes
@@ -4439,9 +4467,8 @@ second fuel-rate table is created. A living pilot and valid custody are
 independent requirements from committed fuel. Owner death stops an unfunded
 remaining course at its paid reached point, even when a living pilot retains
 custody. A genuinely paid full native quote can support independent steering
-through that same payment seam. NPC mission acceptance has not yet been
-wired to this new physical course; the component control arranges and debits
-an actual actor explicitly and does not claim that path is complete.
+through that same payment seam. Native house posting and sending acceptance
+now enter this physical course through the actual pilot and store loan.
 
 The actual PC operator can change a feasible owned air course directly; an NPC pilot requires ordinary consent. Both use the accepted air site and the native metric quote at the current actual clock, retain the same craft/custody/local area, and cause the old historical course rather than parking people at an endpoint. Changed geometry starts at the actual stopped old-course point. A changed target does not supply route knowledge, missing fuel or a new pilot.
 
@@ -4457,7 +4484,7 @@ from their actual exterior endpoints without a stored position copy.
 
 NPC travel resources (preparation contract, unvalidated): qi is one actual balance on NpcCultivation. Insight and rung derive its ceiling; native carriedAcross preserves the spent share across a rung. Saved worlds initialize a missing balance once, while zero stays zero. No passive qi recovery is authored. Ordinary personally held restore_qi pills use native dose/toxicity preparation and retain their spent object rows. Unsettled medicine's wider NPC sheet consequences and effective held-art cooldown chronology remain unfinished.
 
-A real NPC air leg has a historical accepted course and ordinary physical site. Personal death causes a stop before estate handling. Physical arrival preserves the existing native activity for recruit/mission/return settlement. Posting duty terms must not substitute for accepted-leg arrival dates. Multi-leg posting/sending integration is still a gap, not licensed by this draft.
+A real NPC air leg has a historical accepted course and ordinary physical site. Personal death causes a stop before estate handling. Physical arrival preserves the existing native activity for recruit/mission/return settlement. Posting duty terms must not substitute for accepted-leg arrival dates. Posting and sending integration uses those dates for each actual leg.
 
 The shared common-land reading retains knowledge of an authored road subdivision only when its ROUTE_STOP ground has exact endpoint IDs and the existing positive road/path links, and both endpoint ways are already placed in that same seed reading. A generated name, arbitrary graph reachability, named-only endpoint or private/nonroad ground grants nothing. This is route knowledge, never entry/custody/room permission. The full historical NPC knowledge reader still omits seeded common places; its canonical composition is a separate unresolved source seam and is not claimed by this frontdoor slice.
 
@@ -4465,7 +4492,7 @@ The world-owned air-pilot pass distinguishes a native world body from a SQL play
 
 NPC usable art IDs and one sparse remaining-cooldown map govern actual movement-art launches. The catalog owns costs and duration; the existing school/rung gate is shared with played bodies. Native held previous/cumulative receipts reach each committed world portion before new pressure uses. No absolute last-use clock, passive qi refill or future requested-span burn is introduced.
 
-### Live house postings on an actual air hull (bounded candidate)
+### Live house postings on an actual air hull
 
 The canonical yard projection retains each tracked craft's row identity and
 excludes ruined or borrowed-away hulls. Work selection does not authorize a
@@ -4485,11 +4512,12 @@ stationed duty since/until remain the service clocks. The accepted pointer,
 actual body/site and vessel bind the pilot even when service dates differ from
 leg dates. Replacing that pointer stops unsupported flight.
 
-The new component controls are UNRUN. They cover two real bodies sharing a
+The component controls cover two real bodies sharing a
 finite-capacity course, supersession, exact hull selection, and a native posting
-departure/arrival. Retrospective already-completed annual sendings, sequential
-multi-trip shuttle itineraries and full portal-watch board acceptance/relief
-remain unfinished; these controls do not prove those paths or live narration.
+departure/arrival. Separate shuttle and portal-watch controls cover scheduled
+assembly, sequential loads, board acceptance, actual terminal service and pay.
+Retrospective reporting never invents a course in the past. Scripted controls
+do not establish external-model prose acceptance.
 
 Actual piloted group quotes pass the included operator count to the existing
 conveyance price authority. The pilot occupies a seat on every loaded leg and
@@ -4497,9 +4525,9 @@ burns fuel on its repeated outward and return legs. The old unqualified quote
 keeps its existing arithmetic. Audit found eight bodies in a four-seat craft
 quoted two loads, although one pilot plus seven passengers needs three loads.
 The new explicit-pilot read returns no quote where all seats are operators and
-additional passengers cannot fit. This closes quoting only: actual multi-load
-shuttle admission remains unfinished; a single air course refuses trips above
-one rather than placing every body aboard. New controls are unrun.
+additional passengers cannot fit. Actual shuttles admit those loads separately;
+a single air course still refuses trips above one rather than placing every
+body aboard.
 
 
 A paid house-duty hull can return its actual co-located peers on one accepted
@@ -4509,8 +4537,8 @@ Only the original pilot, held hull and outbound receipt's already-paid return
 commitment can admit that leg. All selected bodies reference its actual course;
 no second debit, automatic relief or new duty term is authored. A shared receipt
 does not license a second trip for somebody who was not ready for that return.
-The new native handover/group controls remain unrun. Multi-load shuttles and
-later transport for a peer left behind remain unfinished.
+Native handover/group controls retain those gates. Multi-load shuttles carry
+later peers only on their own actual admitted collecting and return legs.
 
 A retained sending that leaves now can obtain an actual tracked hull only through
 the ordinary store loan, with its selected actual pilot and co-located party.
@@ -4518,8 +4546,8 @@ Both direct leg fuel quotes and one-load readiness precede commitment and debit.
 A denied or unadmitted hull falls through to the existing ordinary alternative;
 no nominal airborne party or aggregate shuttle itinerary is written. Completed
 annual sendings retain their retrospective resolver and are not backdated into
-new courses. This slice does not prove continuous mission attendance, retained
-mission settlement at a reached site, or multi-load shuttle motion.
+new courses. Retained service reads actual attendance and reached receipts;
+shuttle service derives separately for each delivered member.
 
 **Retained site service is not a due date.** The former resolver rolled success,
 return, loss and stake settlement for any surviving member, including a living
@@ -4555,14 +4583,40 @@ A current retained air sending retries actual spare hulls through the same yard
 selector after a physical or ordinary store refusal. Each candidate uses the
 existing selected-party quote, pilot, purse and loan authority before any write.
 The transient refused-row set is not a stored decision; exhaustion falls through
-to the existing ordinary alternative. Multiple-load execution remains a gap: an
-aggregate quote still does not admit an itinerary or move waiting people.
+to the existing ordinary alternative. The earlier single-load guard was a gap: an
+aggregate quote could not admit an itinerary or move waiting people. The actual
+shuttle contract below uses successive real receipts instead.
 
 The full native NPC place reader composes ordinary seeded public land with actual physical/history/errand knowledge using highestStage. The pure existing person profile is shared with spoken directions; occupation remains in identity and no knowledge roster/rows are stored. Common seeding excludes player mirrors using isTheWorldsToMove. Name-only ground supplies no route, and knowledge never grants private entry. Witness-index fast and all non-place branches retain their existing authority.
 
 A surviving native factual receipt or testimony keeps its existing historical references through the witness index during mortal forgetting. Reference closure follows only actual indexed fact IDs reachable from surviving rows; an orphan dead-only cycle is still forgotten. Bodies, live presence and forgotten actor fields are still pruned. This preserves original published notice terms referenced by an actual payment receipt without a second name/terms catalog, resurrection, payment or private-scene grant. Pricing05 measured an already-paid same-day repeated claim losing its original notice after its only mortal actor was pruned.
 
 Newly retained referenced archival evidence keeps its original historical participant identity and data terms. The mortal NPC body still disappears; no current body, listener, position, custody or permission is synthesized. Other surviving mixed testimony retains existing forgotten-body sanitation. The reference closure is transient and stored nowhere.
+
+**Owned shuttles advance actual loads.** An explicitly piloted multi-load quote
+derives transient leg head counts from the existing capacity and sums existing
+one-leg fuel quotes, including each native rounding. Single-load and unspecified
+legacy quotes keep their arithmetic. The existing retained sending owns the
+original party and one caused dispatch commitment. Waiting people remain at
+departure; only actually admitted load actors enter a new air course. Each real
+arrival may permit the same actual pilot/hull to return empty or collect another
+physically waiting load. No future accepted course, copied passenger roster or
+second fuel purse is stored. Real paid-course facts consume the original house
+commitment without a second house debit or pilot debt.
+
+Per-body service starts at that body's actual delivered receipt. A pilot's final
+delivery starts their on-site term; earlier visits while shuttling earn no
+attendance. Actual homeward receipts cause each admitted body's genuine prior
+delivery, so later empty collecting legs do not inflate served time. Superseding
+activity, missing bodies, actual loss/custody failure or a caused stop cannot
+manufacture a next load or success. Existing whole-away terms remain authored;
+explicit on-site terms retain their actual days. The native driver derives
+effective precise boundaries for a house with an available air craft and for
+live transport commitments, even for an integer requested total. Background
+precision visits calendar and transport appointments, leaving unrelated practice
+rate-based; explicit precise and played spans retain every body boundary. The
+same native time/body/world iterator owns those portions. Dated historical tasks
+cannot backdate new loads.
 
 An accepted public carriage stores its admitted directed road geometry only on the actual driver activity. Fellow passengers derive that same changing course through the current operator read; they do not copy its edge fraction. A caused historical course receipt retains the paid claim. Reversal admits the actual directed reverse edge, never a shortest detour pretending to reverse. Its already admitted partial edge retains its accepted time; the route beyond its legal endpoint uses the native conveyance price once. Missing historical price inputs cannot be reconstructed from a subsequently changed graph.
 Actual finite-course landfall is written once per living body and accepted physical course in ordinary world history, after actual destination location commits and before the original activity or played carrier pointer is forgotten. `a-body-that-actually-arrived` retains immutable course/cause provenance and deduplicates identical arrivals. Current party membership, a ticket, a scheduled deadline or unrelated bodies meeting at a destination do not prove delivery. Player carriage, held craft and public ship projectors require their actual live arrival authority; unavailable carriers and dead bodies do not write an arrival. NPCs record their finite leg only when the native arrival path actually commits destination ground. A pending sending that did not move is not credited. No new clock, roster or payment system is stored. A common-course proof reads individual arrival facts and current living co-location; distinct tickets for the same exact hull/course can share a journey. Played foot travel still lacks an accepted per-body finite course and is not silently supplied equivalent proof.
@@ -4599,3 +4653,24 @@ position before ordinary homegoing reads a walking route. After genuine retained
 settlement, its still-bound reached activity ends through the ordinary company
 restoration reader. Neither pass moves a body or hull, infers future arrival,
 extends service, clears superseding work, nor grants a replacement course.
+
+A person staying between settlements retains their actual partial road point.
+Public quotes derive prospective hull positions from their existing considered
+legs while preserving actual operator and custody checks. Boarding then checks
+the actual departure position; a price never moves the captain or hull.
+`firstTravellerOnTheWay` also reads stationary crossings from existing journey
+projections and admitted edge geometry. The ordinary held span visits that
+derived appointment and rechecks presence; it creates no passer or route record.
+Admitted carriage vertices compare their scheduled absolute dates before clock
+subtraction, including a driver expiring exactly at an intermediate settlement.
+Capital dispatch selection reads each free member's actual enclosing grounds;
+a member in lodging is at home and still walks the actual departure approach.
+
+A live house shuttle's first admission requires the actual current world clock.
+Retrospective annual reporting cannot accept a present-body course at an earlier
+task date; refusal leaves funding, custody, people and occurrence history alone.
+Long catalog levy/campaign terms can remain pending, but the annual chance and
+actual selected group still decide whether that path is reached. The calendar
+acceptance fixture supplies an actual road, funded chest, free pilot and spare
+members, then advances ordinary appointments until selection and timed assembly
+produce actual current-clock loads.

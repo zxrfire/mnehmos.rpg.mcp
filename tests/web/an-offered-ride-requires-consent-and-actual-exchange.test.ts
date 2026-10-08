@@ -48,7 +48,9 @@
  * Ride02 also protects explicit selection: asking for passengers with no
  * accepted rider refuses before departure; a promise followed by riding alone
  * neither summons its holder nor exchanges payment. Ride01 stays frozen.
- * Scripted routing is not an actual-model prose acceptance claim. Unrun draft.
+ * The station walk must persist its area through the area writer. A general
+ * body update left the rider in the street and repeatedly charged the walk.
+ * Scripted routing proves engine play, not actual-model prose acceptance.
  */
 import { expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
@@ -128,9 +130,11 @@ async function offer(h:Awaited<ReturnType<typeof scene>>,payment:string,utteranc
  expect(h.party()).toContain(h.member.id);expect(h.party()).not.toContain(h.rider.id);
 }
 async function land(h:Awaited<ReturnType<typeof scene>>){
+ const departed=h.game.currentRun().run.elapsedDays;
  h.plans.push(JSON.stringify({action:'ride',target:h.to.name,topic:'my spirit boat'}));
  const result=await h.game.act('I ride my spirit boat to '+h.to.name+' with passengers.');
  expect(result.toolCalls.some(c=>c.name==='engine.priceJourney'&&c.ok)).toBe(true);
+ expect(h.game.currentRun().run.elapsedDays-departed).toBeLessThanOrEqual(h.quote.daysOneWay+.25+1e-8);
  const accepted=ownedPassageClaim(h.db,h.game.currentRun().cultivator.id);
  const rider=h.currentRider();
  // The played ride may already finish; otherwise follow its real accepted leg.

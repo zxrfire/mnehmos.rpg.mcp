@@ -361,7 +361,7 @@ export function quoteActualCarriageReturn(world:WorldState,receiptId:string,pass
  const held=actual.driver.activity?.admittedRoad;
  const route=walkingRouteFrom(world.locations,actual.leg.fromId,actual.leg.toId);
  if(!held&&!route)return null;
- const position=held?positionOnAdmittedRoad(held,day-actual.leg.departureDay,actual.leg.arrivalDay-actual.leg.departureDay)
+ const position=held?positionOnAdmittedRoad(held,day-actual.leg.departureDay,actual.leg.arrivalDay-actual.leg.departureDay,actual.leg.departureDay)
   :positionOnRoad(route!,Math.max(0,day-actual.leg.departureDay)/(actual.leg.arrivalDay-actual.leg.departureDay)*route!.at(-1)!.days,root.leg.fromId);
  if(position.kind!=='edge')return null;
  const course=roadContinuationTo(world.locations,position,targetId);

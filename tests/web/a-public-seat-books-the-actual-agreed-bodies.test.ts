@@ -37,7 +37,9 @@
  * counts from their same pure resolver. It asserts the actual numbered refusal
  * and physical agreement/position/life/currency, rather than perception-history
  * bookkeeping. No reservation, fare, clock, ownership or boarding rule changes.
- * New Public07 compiler/native acceptance remains unrun.
+ * Public07's historical runner was unrun. These controls now run under plain
+ * vitest. Bodies start at the actual counter before independently booking the
+ * same imminent departure; walking to the counter is covered separately.
  */
 import { expect, it, vi } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
@@ -54,6 +56,7 @@ import { shipPassengerAt } from '../../src/engine/world/passenger-on-a-vessel.js
 import { stonesFor } from '../../src/engine/world/the-fare-and-calendar-of-a-passage.js';
 import { journeyTimeHasReached, locationOnNpcJourney } from '../../src/engine/world/places-on-the-way.js';
 import { passHours } from '../../src/web/routine-invitations.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 async function scene(service: 'ship' | 'carriage', fellowCount: number, needsIndependentShip = false) {
     const plans: string[] = [];
@@ -83,6 +86,12 @@ async function scene(service: 'ship' | 'carriage', fellowCount: number, needsInd
     const memberAt = world.npcs.findIndex(row => row.id === member.id);
     world.npcs[memberAt] = takeThemWithYou(world.npcs, { party: [{ id: member.id, name: member.name }],
         leaderId: body.id, note: 'An existing agreement to travel together.', onDay: day, untilDay: day + 365 })[0]!;
+    // Everybody who catches this exact departure is already at its real counter.
+    const area=theAreasOf(world,from).areas.find(one=>one.for===(service==='ship'?'landing':'carriage_station'))!;
+    expect(area).toBeDefined();h.repos.cultivators.standIn(body.id,area.id);
+    for(const person of people){const at=world.npcs.findIndex(one=>one.id===person.id);
+        world.npcs[at]={...world.npcs[at]!,activity:{kind:'idle',note:'At the boarding counter.',withIds:[],sinceDay:day,untilDay:null,
+            ...world.npcs[at]!.activity,standingIn:area.id}};}
     for (const person of people) h.game.theyGaveTheirName(body, h.game.currentRun().run, person);
     if (fellows.length > 0) {
         if (service === 'carriage') {

@@ -160,6 +160,10 @@ export function whereTheyAreStanding(
     const routine = routineOf(state, npc, routes);
     const stored = routine.locationId;
     if (stored === null) return null;
+    const chosen = routine.standingIn?.split('#')[0];
+    if (chosen && state.locations.some(place => place.id === chosen)
+        && (chosen === stored || compounds.seatOf.get(chosen) === compounds.seatOf.get(stored)
+            && compounds.seatOf.has(stored))) return chosen;
     const compound = compounds.bySeat.get(compounds.seatOf.get(stored) ?? stored);
     // Not at a seat: either not in a compound at all, or put in a room by name.
     if (!compound) return stored;
