@@ -3,7 +3,9 @@
  * repacking and unrelated water-region company. Private craft were additionally
  * missing public hull grouping because their legitimate activities have no sea
  * lane ID. Eight real travelling companions expose more than the foreground cap
- * and require another actual deck; capacity does not invent cabins. Local deck
+ * and require another actual deck; capacity does not invent cabins. The later authored interior-layout
+ * addition supplies real catalog rooms separately; this proof still validates
+ * every public deck and exact-hull co-location without deriving rooms from heads. Local deck
  * movement must retain the same course and spend native .25 time before entry,
  * not call continueOwnedPassage as if foredeck were a new geographical port.
  * A different actually booked public ship on the same water is not this boat's
@@ -83,7 +85,9 @@ it('moves to another actual private-boat deck then greets a real person without 
         const read=peopleInThisPlace(game.repos,before.cultivator,world,ground);
         const ids=new Set(companions.map(one=>one.id));
         expect(read.people.filter(one=>ids.has(one.id)).length).toBe(8);
-        expect(read.areas.every(area=>area.for==='deck')).toBe(true);
+        expect(read.areas.filter(area=>area.for!=='room').every(area=>area.for==='deck')).toBe(true);
+        expect(read.areas.filter(area=>area.for==='room').map(area=>area.name)).toEqual(
+            conveyance.interiorLayout!.map(slot=>slot.name));
         expect(game.present(before.cultivator).length).toBeLessThanOrEqual(3);
         const other=read.areas.find(area=>area.id!==before.cultivator.standingIn
             && companions.some(person=>read.whereIs.get(person.id)===area.id))!;

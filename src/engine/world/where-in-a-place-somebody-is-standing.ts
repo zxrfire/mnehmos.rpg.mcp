@@ -82,7 +82,10 @@ interface StandingWith {
     others?: readonly { id: string; standingIn?: string | null }[];
     physical?: { accepts: (npc: NpcRecord) => boolean; betweenEndpoints: boolean;
         /** Supplied by an accepted physical carrier read, never a stored passenger roster. */
-        hull?: { key: string; operatorId: string; areaKind: 'deck' | 'here' } }; 
+        hull?: { key: string; operatorId: string; areaKind: 'deck' | 'here';
+            /** Authored current hull slots and a validated single NPC area fact. */
+            rooms?: readonly AnAreaOfAPlace[];
+            actualAreaFor?: (npc: NpcRecord) => string | null } }; 
 }
 
 const MARK = '#';
@@ -298,7 +301,7 @@ export function theAreasOf(
             && (!standingWith?.physical || standingWith.physical.accepts(n)));
     const betweenEndpoints = standingWith?.physical?.betweenEndpoints === true;
     const here = new Map(people.map(n => [n.id, n]));
-    const routines = new Map(people.map(n => [n.id, routineOf(state, n, routes)]));
+    const routines = new Map(people.map(n => [n.id, routineOf(state, n, routes, standingWith?.physical?.hull?.actualAreaFor)]));
     const house = theHouseOfTheSeat(place);
     const watch = betweenEndpoints || house === null ? null : theOneOnWatchAtTheGate(state, place, compounds, routes);
     const aboard = isOpenWaterRow(place) || standingWith?.physical?.hull?.areaKind === 'deck';
@@ -386,7 +389,7 @@ export function theAreasOf(
         return (kind === undefined ? undefined : WHERE_A_THING_IS_DONE_IN_A_TOWN[kind]) ?? 'street';
     };
 
-    const areas: AnAreaOfAPlace[] = [];
+    const areas: AnAreaOfAPlace[] = [...(standingWith?.physical?.hull?.rooms ?? [])];
     const whereIs = new Map<string, string>();
     const whereBodiesAre = new Map<string, string>();
     // Quarters belong to the whole living roll, even while their holders are working or away.
@@ -485,7 +488,7 @@ export function theAreasOf(
         const desired = routines.get(npc.id)!.standingIn;
         if (!desired || betweenEndpoints) continue;
         const area = standingWith?.physical?.hull
-            ? areas.find(one => one.id === desired && one.for === standingWith.physical!.hull!.areaKind)
+            ? areas.find(one => one.id === desired && (one.for === standingWith.physical!.hull!.areaKind || standingWith.physical!.hull!.rooms?.some(room => room.id === one.id)))
             : areaTheyStandIn(place, areas, desired, npc.factionId);
         if (!area) continue;
         if (!areas.some(one => one.id === area.id)) areas.push(area);
@@ -507,7 +510,7 @@ export function theAreasOf(
         for (const other of standingWith.others ?? []) {
             if (other.id === standingWith.id) continue;
             const desired = standingWith.physical?.hull
-                ? areas.find(one => one.id === other.standingIn && one.for === standingWith.physical!.hull!.areaKind)
+                ? areas.find(one => one.id === other.standingIn && (one.for === standingWith.physical!.hull!.areaKind || standingWith.physical!.hull!.rooms?.some(room => room.id === one.id)))
                     ?? areas.find(one => one.for === standingWith.physical!.hull!.areaKind)!
                 : areaTheyStandIn(place, areas, other.standingIn, null);
             if (!areas.some(area => area.id === desired.id)) areas.push(desired);
@@ -515,14 +518,14 @@ export function theAreasOf(
             whereIs.set(other.id, (count(desired.id) < AT_MOST_IN_AN_AREA ? desired : elsewhere(desired)).id);
         }
         const at = standingWith.physical?.hull
-            ? areas.find(one => one.id === standingWith.standingIn && one.for === standingWith.physical!.hull!.areaKind)
+            ? areas.find(one => one.id === standingWith.standingIn && (one.for === standingWith.physical!.hull!.areaKind || standingWith.physical!.hull!.rooms?.some(room => room.id === one.id)))
                 ?? areas.find(one => one.for === standingWith.physical!.hull!.areaKind)!
             : areaTheyStandIn(place, areas, standingWith.standingIn, standingWith.sectId ?? null);
         if (!areas.some(area => area.id === at.id)) areas.push(at);
-        const companions = people.filter(n => routines.get(n.id)!.activity?.withIds.includes(standingWith.id))
+        const companions = people.filter(n => (!standingWith.physical?.hull || at.for !== 'room') && routines.get(n.id)!.activity?.withIds.includes(standingWith.id))
             // Following a leader cannot override this person's actual chosen hull area.
             .filter(n => !standingWith.physical?.hull || !areas.some(area =>
-                area.id === routines.get(n.id)!.standingIn && area.for === standingWith.physical!.hull!.areaKind))
+                area.id === routines.get(n.id)!.standingIn && (area.for === standingWith.physical!.hull!.areaKind || standingWith.physical!.hull!.rooms?.some(room => room.id === area.id))))
             .sort((a, b) => a.id.localeCompare(b.id));
         // Companions use free space; they cannot displace the person being approached.
         for (const companion of companions) {

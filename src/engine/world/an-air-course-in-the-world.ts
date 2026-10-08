@@ -1,7 +1,7 @@
 import type { NpcRecord } from './npc-state.js';
 import { setLocation, isTheWorldsToMove } from './npc-state.js';
 import { whoItIsWith, itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from './a-vehicle.js';
-import { isRuined } from './possessions.js';
+import { isRuined,transferPossession } from './possessions.js';
 import { journeyTimeHasReached } from './places-on-the-way.js';
 import { LI_PER_WALKING_DAY } from './the-metric-ground-under-a-journey.js';
 /**
@@ -35,7 +35,9 @@ export function beginAnAirCourse(world: WorldState, input: {
     bodyId: string; bodyName: string; fromId: string; toId: string; conveyanceId: string;
     power: number | null; vesselId: string | null; artId: string | null;
     onDay: number; runId?: string; runElapsedDays?: number; heads: number;
-    owned?: { ownerId: string; pilotId: string };
+    owned?: { ownerId: string; pilotId: string }; priorReceiptId?:string; changedCourse?:boolean;
+    houseDutyFunding?: { houseId: string; returnStones: number };
+    houseDutyReturnOf?: string;
 }) {
     const worldBody = input.runId === undefined && input.runElapsedDays === undefined;
     if (worldBody && !world.npcs.some(npc => npc.id === input.bodyId && npc.status === 'alive')) return null;
@@ -47,9 +49,14 @@ export function beginAnAirCourse(world: WorldState, input: {
         : requireConveyance(input.conveyanceId);
     if (!conveyance) return null;
     const quote = quoteAnAirJourney(world.locations, input.fromId, input.toId,
-        conveyance, input.power, input.heads, { facts: witnessIndexFor(world).byId, onDay: input.onDay });
+        conveyance, input.power, input.heads, { facts: witnessIndexFor(world).byId, onDay: input.onDay },
+        input.owned ? 1 : 0);
     if (!from || !to || !quote || !(quote.daysForEverybody > 0) || quote.trips !== 1) return null;
-    const fact = appendWorldFact(world, makeFact({ day: input.onDay, kind: 'gathering',
+    const prior=input.priorReceiptId?witnessIndexFor(world).byId.get(input.priorReceiptId):null;
+    if(input.priorReceiptId&&(!prior||prior.data.ownedPassage!==true
+        ||prior.data.ownerId!==input.owned?.ownerId||prior.data.vesselId!==input.vesselId
+        ||prior.data.pilotId!==input.owned?.pilotId))return null;
+    const fact = appendWorldFact(world, makeFact({ causes:prior?[prior.id]:[], day: input.onDay, kind: 'gathering',
         locationId: from.id, visibility: 'secret', summary: 'An actual direct air course began.',
         actors: [{ id: input.bodyId, name: input.bodyName, role: 'traveller' }],
         data: { airCourse: true, bodyId: input.bodyId, fromLocationId: from.id, toLocationId: to.id,
@@ -57,6 +64,10 @@ export function beginAnAirCourse(world: WorldState, input: {
             artId: input.artId, departureDay: input.onDay, arrivalDay: input.onDay + quote.daysOneWay,
             runId: input.runId ?? null, boardingRunElapsedDays: input.runElapsedDays ?? null,
             ...(worldBody ? { worldClockAirCourse: true } : {}),
+            ...(input.houseDutyFunding ? { houseDutyHouseId: input.houseDutyFunding.houseId,
+                houseDutyReturnStones: input.houseDutyFunding.returnStones } : {}),
+            ...(input.houseDutyReturnOf ? { houseDutyReturnOf: input.houseDutyReturnOf } : {}),
+            ...(input.changedCourse ? { changedOwnedCourse:true } : {}),
             ...(input.owned ? { ownedPassage: true, ownerId: input.owned.ownerId, pilotId: input.owned.pilotId,
                 walkingDays: quote.distanceLi / LI_PER_WALKING_DAY, heads: input.heads } : {}) }
     }), { recur: false, bystanders: false });
@@ -85,14 +96,16 @@ export function stopAnAirCourse(world: WorldState, place: LocationRecord, onDay:
 
 /** Record only a native debit already made by its actual payer. No new purse or rate. */
 export function recordPaidAirCourseFuel(world: WorldState, receiptId: string, payerId: string,
-    throughDay: number, stonesDebited: number) {
+    throughDay: number, stonesDebited: number, paidOnDay = throughDay) {
     const course = witnessIndexFor(world).byId.get(receiptId);
     const data = course?.data;
     if (!course || data?.airCourse !== true || data.ownedPassage !== true
         || typeof data.departureDay !== 'number' || typeof data.arrivalDay !== 'number'
-        || !Number.isFinite(throughDay) || !Number.isFinite(stonesDebited) || stonesDebited < 0
+        || !Number.isFinite(throughDay) || !Number.isFinite(paidOnDay)
+        || paidOnDay < data.departureDay || paidOnDay > throughDay
+        || !Number.isFinite(stonesDebited) || stonesDebited < 0
         || throughDay < data.departureDay || throughDay > data.arrivalDay) return null;
-    return appendWorldFact(world, makeFact({ day: throughDay, kind: 'gathering',
+    return appendWorldFact(world, makeFact({ day: paidOnDay, kind: 'gathering',
         locationId: course.locationId, visibility: 'secret', causes: [receiptId],
         summary: 'The actual payer supplied the native fuel for part of an accepted air course.',
         data: { airFuelPaidFor: receiptId, payerId, throughDay, stonesDebited }
@@ -128,8 +141,10 @@ export function actualNpcPilotOfAirCourse(world: WorldState, receiptId: string) 
     return pilot?.status === 'alive' && craft && !isRuined(craft)
         && (held === pilot.id || held === data.ownerId)
         && (!itWantsAPilot(conveyance) || pilot.cultivation.realmOrdinal >= A_SPIRIT_BOAT_ANSWERS_TO)
-        && pilot.activity?.vesselId === craft.id && pilot.activity.sinceDay === data.departureDay
-        && pilot.activity.untilDay === data.arrivalDay ? pilot : null;
+        && pilot.activity?.vesselId === craft.id
+        && world.locations.some(site => site.id === pilot.activity?.airCourseLocationId
+            && site.id === pilot.locationId && site.data.airCourseId === receiptId
+            && typeof site.data.airStoppedFactId !== 'string') ? pilot : null;
 }
 
 /** World-owned operators can lose their course after the SQL passenger has died. */
@@ -176,7 +191,7 @@ export function settleWorldAirTravellers(world: WorldState, onDay: number): void
         const npc=world.npcs[at], site=npc.locationId ? sites.get(npc.locationId) : undefined;
         if(!site || typeof site.data.airCourseId!=='string' || typeof site.data.airStoppedFactId==='string') continue;
         const fact=witnessIndexFor(world).byId.get(site.data.airCourseId), data=fact?.data;
-        if(!data || typeof data.arrivalDay!=='number' || typeof data.toLocationId!=='string') continue;
+        if(!fact || !data || typeof data.arrivalDay!=='number' || typeof data.toLocationId!=='string') continue;
         if(data.ownedPassage!==true && data.bodyId===npc.id) {
             if(npc.status!=='alive') {
                 stopPersonalNpcAirCourseAtDeath(world,npc,npc.diedOnDay??onDay);
@@ -189,6 +204,18 @@ export function settleWorldAirTravellers(world: WorldState, onDay: number): void
         }
         if(npc.status!=='alive' || npc.activity?.airCourseLocationId!==site.id
             || !journeyTimeHasReached(onDay,data.arrivalDay)) continue;
+        if (typeof data.vesselId === 'string') {
+            const objectAt=world.objects.findIndex(row=>row.id===data.vesselId && row.locationId===site.id);
+            const row=world.objects[objectAt];
+            if(row) {
+                const returned=typeof data.houseDutyReturnOf==='string' && row.ownerId===data.ownerId
+                    && row.possessorId===data.pilotId ? transferPossession(row,{onDay,toHolderId:null,
+                        toHolderName:row.ownerName??'the house store',how:'unknown',factId:fact.id,
+                        source:'Returned from the actual house duty',note:'The original loan reached home.'}) : row;
+                world.objects[objectAt]={...returned,locationId:data.toLocationId,
+                    data:{...returned.data,...(returned!==row?{withId:data.ownerId,mooredAt:data.toLocationId}:{})}};
+            }
+        }
         const arrived=setLocation(npc,data.toLocationId,onDay);
         world.npcs[at]={...arrived, activity:{...npc.activity,airCourseLocationId:undefined}};
     }

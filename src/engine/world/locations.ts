@@ -1,3 +1,4 @@
+import { stoppedRoadPoint } from './where-a-carriage-stopped.js';
 /**
  * Locations: mutable places that carry their own history as queryable state.
  */
@@ -1411,6 +1412,25 @@ function walkingGraphFor(locations: readonly LocationRecord[],
 function forEachWalkingStep(graph: WalkingGraph, node: LocationRecord,
     visit: (toId: string, days: number) => void): void {
     const { childrenOf, approaches } = graph;
+    const stopped = typeof node.data.stoppedRoadPoint === 'string' ? stoppedRoadPoint([node], node.id) : null;
+    if (stopped?.kind === 'edge') {
+        // Geometry is historic; admitting an endpoint continuation reads the
+        // CURRENT actual directed edge. No detour or containment is reversal.
+        const directed = (fromId: string, toId: string): number | null => {
+            const from = graph.byId.get(fromId);
+            if (!from) return null;
+            let cost: number | null = null;
+            forEachWalkingStep(graph, from, (id, days) => {
+                if (id === toId && (cost === null || days < cost)) cost = days;
+            });
+            return cost;
+        };
+        const ahead = directed(stopped.fromId, stopped.toId);
+        if (ahead !== null) visit(stopped.toId, (1 - stopped.fraction) * ahead);
+        const back = directed(stopped.toId, stopped.fromId);
+        if (back !== null) visit(stopped.fromId, stopped.fraction * back);
+        return;
+    }
     for (const link of node.links) {
         if (!link.open) continue;
         visit(link.toLocationId, Math.max(0.1, link.travelDays));

@@ -1333,3 +1333,10 @@ Boundary trial damage is applied by `applyCrossingConsequence` in direct player 
 The proposed a-pill-dose-on-an-actual-body leaf moves native grade-dose and toxicity preparation out of the MCP adapter without adding a dose or draw. Actual actor adapters keep their own resource/item stores. Ordinary NPC recovery uses the same dose, native poison injury and restoration arithmetic; no passive rate is introduced. This preparation remains unvalidated and does not supply missing NPC chaos-sheet effects.
 
 Native art readiness reads the actual cooldown and qi before one debit. Cooldown burn preserves the existing whole elapsed-day rule: independent fractional actions do not accumulate credit; portions of one held receipt use floor(cumulative) minus floor(previous).
+
+Implicit fighting arts and numerical cast preparation ask the same authored
+category/damage reader. Offensive and defensive arts retain their existing
+confrontation projection, as do other actual damage-bearing workings. A
+partner ritual, cultivation manual or noncombat service does not become a
+cast merely because its holder punches. Their existing named use paths
+remain separate; no qi or cooldown is charged for imaginary combat work.

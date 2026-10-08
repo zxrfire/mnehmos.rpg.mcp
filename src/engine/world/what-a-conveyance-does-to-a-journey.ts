@@ -33,6 +33,16 @@ export type ConveyanceHolding = 'none' | 'counted' | 'tracked' | 'personal';
 /**
  * A KIND of conveyance. Not an instance.
  */
+export interface VesselInteriorSlot {
+    /** Stable authored local identity, unrelated to capacity or a person's name. */
+    readonly id: string;
+    readonly name: string;
+    readonly opensOnto: 'deck';
+    readonly access: 'public' | 'holder';
+    readonly doorMaterial: import('./door-materials.js').DoorMaterial;
+    readonly initiallyClosed: boolean;
+}
+
 export interface Conveyance {
     id: string;
     name: string;
@@ -50,6 +60,8 @@ export interface Conveyance {
      * most of why the map is the shape it is.
      */
     crossesGroundThatCannotBeWalked: boolean;
+    /** A water-bound hull crosses only admitted maritime courses, never a road or cliff. */
+    waterOnly?: true;
     /**
      * Whether a stranger at the gate can tell what arrived before anybody
      * speaks. The whole of the expensive-signal argument rests on this being
@@ -64,6 +76,8 @@ export interface Conveyance {
      */
     drawnByBeast: boolean;
     description: string;
+    /** Authored real rooms; heads and cargo never manufacture an interior. */
+    interiorLayout?: readonly VesselInteriorSlot[];
 }
 
 // SPEED
@@ -169,8 +183,11 @@ export function burnsStonesUnderWay(conveyance: Conveyance): boolean {
  * less on it - which comes out of `walkingDaysPerDay` rather than out of a
  * table of running costs that would have to agree with it.
  */
-export function headDaysUnderWay(daysOneWay: number, heads: number, trips: number): number {
-    return Math.max(0, daysOneWay) * (Math.max(1, heads) + Math.max(1, trips) - 1);
+export function headDaysUnderWay(daysOneWay: number, heads: number, trips: number, pilotHeads?: number): number {
+    // A known operator is included in total heads once, then crosses in both
+    // directions for each further load. Unspecified legacy quotes stay unchanged.
+    const repeated = pilotHeads && pilotHeads > 0 ? 2 * pilotHeads : 1;
+    return Math.max(0, daysOneWay) * (Math.max(1, heads) + repeated * (Math.max(1, trips) - 1));
 }
 
 /**
@@ -182,10 +199,11 @@ export function whatTheChestBurns(input: {
     daysOneWay: number;
     heads: number;
     trips: number;
+    pilotHeads?: number;
 }): number {
     if (!burnsStonesUnderWay(input.conveyance)) return 0;
     return Math.ceil(
-        headDaysUnderWay(input.daysOneWay, input.heads, input.trips)
+        headDaysUnderWay(input.daysOneWay, input.heads, input.trips, input.pilotHeads)
         * STONES_BURNED_PER_HEAD_PER_DAY
     );
 }
@@ -212,6 +230,7 @@ export function unsuitedFor(
     crossesGroundThatCannotBeWalked = false
 ): string | null {
     const days = Math.max(0, Math.ceil(walkingDays));
+    if (conveyance.waterOnly) return `${conveyance.name} needs an admitted water passage; a walking road is not its course.`;
     if (crossesGroundThatCannotBeWalked && !conveyance.crossesGroundThatCannotBeWalked) {
         return `${conveyance.name} needs ground under it. Where the ground stops it stops, `
             + 'and the party is on the bank looking at the far side like everybody else.';
@@ -374,6 +393,8 @@ export interface JourneyInput {
     power?: number | null;
     /** How many are going. More than the conveyance holds means two trips. */
     heads: number;
+    /** Actual operators included in heads and occupying seats on every load. */
+    pilotHeads?: number;
     /** Whether any part of the route has no ground under it. */
     crossesGroundThatCannotBeWalked?: boolean;
 }
@@ -406,11 +427,17 @@ export interface JourneyCost {
 /**
  * Price one journey.
  */
-export function priceJourney(input: JourneyInput): JourneyCost {
+export function priceJourney(input: JourneyInput & { pilotHeads: number }): JourneyCost | null;
+export function priceJourney(input: JourneyInput): JourneyCost;
+export function priceJourney(input: JourneyInput): JourneyCost | null {
     const power = input.power ?? null;
     const heads = Math.max(1, Math.floor(input.heads));
     const capacity = Math.max(1, Math.floor(input.conveyance.heads));
-    const trips = Math.ceil(heads / capacity);
+    const pilots = input.pilotHeads ?? 0;
+    if (!Number.isInteger(pilots) || pilots < 0 || pilots > heads
+        || (heads > capacity && pilots >= capacity)) return null;
+    const trips = pilots === 0 ? Math.ceil(heads / capacity)
+        : heads <= capacity ? 1 : Math.ceil((heads - pilots) / (capacity - pilots));
     const daysOneWay = daysByConveyance(input.walkingDays, input.conveyance, power, input.preciseDays ?? false);
     // Two extra legs per additional trip: back for the next load, and out
     // again. The party that went first is already there and is not counted
@@ -422,7 +449,7 @@ export function priceJourney(input: JourneyInput): JourneyCost {
         daysForEverybody,
         daysSavedAgainstWalking: Math.max(0, (input.preciseDays ? input.walkingDays : Math.ceil(input.walkingDays)) - daysOneWay),
         stonesBurned: whatTheChestBurns({
-            conveyance: input.conveyance, daysOneWay, heads, trips
+            conveyance: input.conveyance, daysOneWay, heads, trips, pilotHeads: input.pilotHeads
         }),
         wrongToolNote: unsuitedFor(
             input.conveyance,
@@ -437,8 +464,8 @@ export function priceJourney(input: JourneyInput): JourneyCost {
  * The best of what is available for this road, or null where nothing offered suits
  * it and the party is walking.
  */
-export function bestForThisRoad(
-    available: readonly { conveyance: Conveyance; power: number | null }[],
+export function bestForThisRoad<T extends { conveyance: Conveyance; power: number | null }>(
+    available: readonly T[],
     walkingDays: number,
     heads: number,
     crossesGroundThatCannotBeWalked = false,
@@ -453,7 +480,7 @@ export function bestForThisRoad(
      * the answer it has always got.
      */
     purse: number | null = null
-): { conveyance: Conveyance; power: number | null } | null {
+): T | null {
     const affordable = purse === null
         ? available
         : available.filter(a => whatTheChestBurns({

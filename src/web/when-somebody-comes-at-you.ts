@@ -1,3 +1,4 @@
+import { writeTheNpcArtsActuallyUsed } from '../engine/world/the-arts-an-npc-actually-uses-in-a-fight.js';
 /**
  * Somebody on a road or at a cave door comes at the player, and it is a fight.
  *
@@ -288,7 +289,7 @@ export function theRestOfTheFight(
     const fight = (escort: ReturnType<typeof bodies>, bandits: number, stream: string) => {
         const them = bodies('bandit', bandits, bandRung);
         if (escort.length === 0 || them.length === 0) return null;
-        return resolveMelee([
+        const result = resolveMelee([
             { id: 'escort', name: 'the escort', members: escort },
             { id: 'band', name: 'the band', members: them }
         ], {
@@ -297,6 +298,9 @@ export function theRestOfTheFight(
             turn: run.turn + 1,
             intent: { thrown: AN_ORDINARY_SWING, willWithdraw: true }
         });
+        if (service.atHand) writeTheNpcArtsActuallyUsed(service.atHand,result.exchanges,
+            'escort:'+run.id+':'+stream+':'+occurrence.absoluteDay,occurrence.absoluteDay);
+        return result;
     };
     const named = (ids: readonly string[]) => (crew ?? []).filter(person => ids.includes(person.id)).map(person => person.name);
     const said = (result: ReturnType<typeof resolveMelee>, who: string): string => {

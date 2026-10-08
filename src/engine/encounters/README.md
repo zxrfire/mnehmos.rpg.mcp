@@ -701,4 +701,11 @@ water and ordinary ground retain their existing authorities. This does not
 prove that every portable hostile actor has an airborne approach. Actual
 actor mobility/source validation remains required prototype work.
 
+Site-bearing watch offers carry the actual stable location id alongside the
+ordinary mission and house ids. Board construction and post resolution share
+one provider-site projection; display names never determine stored targets.
+A remote watch is held after acceptance even on the outer rung: accepting at
+the board does not serve its sixty days or transport the member to the site.
+Original untargeted mission ids and their rung/term rules remain valid.
+
 

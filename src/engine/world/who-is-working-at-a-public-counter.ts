@@ -11,7 +11,7 @@ import { routineOf } from './npc-routines.js';
 import type { RouteQueries } from './locations.js';
 import type { WorldState } from './world-state.js';
 import { ordinaryProfessionOf } from './the-work-an-ordinary-mortal-does.js';
-import type { PublicCounterKind } from './public-transport-at-a-place.js';
+import { publicTransportHubsAt, type PublicCounterKind } from './public-transport-at-a-place.js';
 type State = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour' | 'locations'>;
 /** Transient actual worker facts, never persisted or promoted into an NPC record. */
 export interface CounterWorkerFacts { id:string; realmOrdinal:number; trading:boolean; counters:readonly PublicCounterKind[] }
@@ -22,10 +22,14 @@ export function workingWorldCounterFacts(state: State,
     const working = people.map(person => ({ person, routine: routineOf(state, person, routes) }))
         .filter(({ person, routine }) => isActing(person.status) && !person.tags.includes(PLAYER_ROW_TAG)
             && !routine.home && routine.activity?.withIds.length === 0
-            && (routine.activity.kind === 'trade' || routine.activity.kind === 'the_work_of_their_rank'));
+            && (routine.activity.kind === 'trade' || routine.activity.kind === 'the_work_of_their_rank'
+                || routine.activity.kind === 'stationed' && person.factionId!==null
+                    && publicTransportHubsAt(state,state.locations.find(place=>place.id===routine.locationId)?.name??'',state.currentDay)
+                        .some(hub=>hub.providerHouseId===person.factionId && hub.inheritedTerminal===true)));
     const facts:CounterWorkerFacts[]=working.map(({person,routine})=>({
         id:person.id,realmOrdinal:person.cultivation.realmOrdinal,trading:routine.activity?.kind==='trade',
         counters:counters.filter(counter=>{
+            if(routine.activity?.kind==='stationed'&&counter!=='span_counter')return false;
             if(routine.standingIn && !routine.standingIn.includes('#'+(counter==='inn'?'table':counter)+'#'))return false;
             const profession=ordinaryProfessionOf(person);
             return !profession || (counter==='inn'?profession.id==='job-innkeeper'

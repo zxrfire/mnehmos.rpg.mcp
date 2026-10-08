@@ -519,4 +519,17 @@ non-property description, with one initial authored 25-qi launch term, not upkee
 or a folding charge. Existing sword/cloud arts keep their native per-use charges.
 The precise air quote still reads the one conveyance speed/fuel authority.
 
+The crossing-watch mission reuses lamp-watch eligibility, monthly pay and
+term. Its extra fact is a real inherited terminal owned by the posting house,
+not a new reward schedule or personal spatial capability. A courier route is
+not an inherited terminal. Names and provider ownership come from the existing
+span catalog and public transport profile.
 
+
+
+Sending reasons can explicitly mark `termBasis: 'on_site'` when their authored
+term states service at the destination. The posting check and talisman cutting
+rows already state five days at their post/work; travel and conveyance speed
+must not consume or compress those five days. Reasons without this field retain
+their whole-away term. One posting projection combines the native outbound and
+inbound quotes with on-site service; no independent attendance timer is stored.

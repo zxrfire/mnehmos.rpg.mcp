@@ -11,12 +11,13 @@ export function canFlyByTheirOwnBody(ordinal: number, brokenStatusKeys: readonly
 }
 
 export function quoteAnAirJourney(locations: readonly LocationRecord[], fromId: string, toId: string,
-    conveyance: Conveyance, power: number | null = null, heads = 1, courseContext?: MetricCourseContext): (JourneyCost & { distanceLi: number }) | null {
+    conveyance: Conveyance, power: number | null = null, heads = 1, courseContext?: MetricCourseContext, pilotHeads = 0): (JourneyCost & { distanceLi: number }) | null {
     if (!conveyance.crossesGroundThatCannotBeWalked) return null;
     const distanceLi = distanceThroughTheAir(locations, fromId, toId, courseContext);
     if (distanceLi === null) return null;
-    return { ...priceJourney({ walkingDays: distanceLi / LI_PER_WALKING_DAY,
-        conveyance, power, heads, preciseDays: true, crossesGroundThatCannotBeWalked: true }), distanceLi };
+    const quote = priceJourney({ walkingDays: distanceLi / LI_PER_WALKING_DAY,
+        conveyance, power, heads, pilotHeads, preciseDays: true, crossesGroundThatCannotBeWalked: true });
+    return quote ? { ...quote, distanceLi } : null;
 }
 
 /** The native art grade enters the single conveyance-speed authority; no cloud speed table. */

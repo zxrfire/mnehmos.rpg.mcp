@@ -22,7 +22,7 @@ export function passageRunMoment(world: WorldState, receiptId: string): Accepted
     while (fact && !visited.has(fact.id)) {
         visited.add(fact.id);
         const data = fact.data;
-        if (typeof data.runId === 'string' && typeof data.boardingRunElapsedDays === 'number'
+        if (data.changedOwnedCourse !== true && typeof data.runId === 'string' && typeof data.boardingRunElapsedDays === 'number'
             && Number.isFinite(data.boardingRunElapsedDays) && data.boardingRunElapsedDays >= 0
             && typeof data.departureDay === 'number' && Number.isFinite(data.departureDay))
             return { runId: data.runId, elapsedDays: data.boardingRunElapsedDays, boardedOnDay: data.departureDay };

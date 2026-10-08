@@ -1,3 +1,4 @@
+import { publicWatchTargetForPost } from '../engine/world/where-a-house-keeps-its-public-watch.js';
 /**
  * A house's mission board: a thing standing in one area of its seat, behind the gate.
  *
@@ -137,14 +138,16 @@ export function theWallWhereTheyStand(
         const mission = theMissionBehind(entryId);
         if (!mission) return undefined;
         if (seat === null || !entryId.endsWith(`@${houseId}`)) return null;
+        if(mission.at==='its_public_terminal'&&(!world||!houseId||!publicWatchTargetForPost(world,houseId,entryId)))return null;
         return theFirstRungOf(mission.rung, ladder.length) === null ? null : mission;
     };
     const titled = (entryId: string, name: string, mission: HouseMission | undefined): string => {
         const contract = theContractBehind(entryId);
         if (contract) return aContractAsAnOffer(contract, cultivator.location?.trim() || null).name;
         if (!mission || seat === null) return name;
-        const place = mission.at === 'its_ground' ? ground ?? seat.name : seat.name;
-        return aMissionAsAnOffer(mission, { id: houseId ?? '', name: houseName }, place).name;
+        const target=mission.at==='its_public_terminal'&&world&&houseId?publicWatchTargetForPost(world,houseId,entryId):null;
+        const place = mission.at==='its_public_terminal'?target?.name??null:mission.at === 'its_ground' ? ground ?? seat.name : seat.name;
+        return aMissionAsAnOffer(mission, { id: houseId ?? '', name: houseName }, place,target?.id).name;
     };
     const whyNot = (mission: HouseMission): Omit<WithheldHere, 'entryId' | 'name'> | null => {
         if (ours === null) return { reason: `${houseName} posts this for its own, and you are not on its roll.` };

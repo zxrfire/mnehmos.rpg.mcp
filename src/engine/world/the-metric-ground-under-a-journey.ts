@@ -1,3 +1,4 @@
+import { stoppedRoadPoint } from './where-a-carriage-stopped.js';
 /**
  * Physical ground positions, independent of roads and of an observer's knowledge.
  * Generated exterior sites sample their parent's extent once; interiors and
@@ -49,6 +50,16 @@ export function metricGroundRead(locations: readonly LocationRecord[], courseCon
             const a = course && point(course.fromId), b = course && point(course.toId);
             if (course && a && b && courseContext && (typeof stopId !== 'string' || stopped))
                 answer = interpolateAirCoursePoint(course, a, b, courseContext.onDay, stopped)?.point ?? null;
+        } else if (typeof place.data.stoppedRoadPoint === 'string') {
+            const held = stoppedRoadPoint([place], place.id);
+            const from = held?.kind === 'edge' ? byId.get(held.fromId) : null;
+            const to = held?.kind === 'edge' ? byId.get(held.toId) : null;
+            const a = from?.layer === place.layer ? point(from.id) : null;
+            const b = to?.layer === place.layer ? point(to.id) : null;
+            if (held?.kind === 'edge' && a && b) answer = {
+                xLi: a.xLi + (b.xLi - a.xLi) * held.fraction,
+                yLi: a.yLi + (b.yLi - a.yLi) * held.fraction
+            };
         } else if (place.tags.includes('route-stop')) {
             const from = byId.get(String(place.data.fromLocationId ?? ''));
             const to = byId.get(String(place.data.toLocationId ?? ''));

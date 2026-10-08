@@ -1,3 +1,4 @@
+import { publicWatchTargetsOf } from '../engine/world/where-a-house-keeps-its-public-watch.js';
 import { journeyTimeHasReached } from '../engine/world/places-on-the-way.js';
 /**
  * The turn loop's adapter onto `src/engine/encounters/`.
@@ -1112,6 +1113,7 @@ function aHouseAsItStands(
             id: faction.id,
             name: faction.name,
             holdsGround: world.locations.some(l => l.controllingFactionId === faction.id),
+            publicWatchTargets: publicWatchTargetsOf(world,faction.id).map(place=>place.id),
             standing: faction.standing,
             hasAFind: find !== null,
             // WHO THIS HOUSE WOULD SIT DOWN WITH, and it is asked rather than
@@ -1329,7 +1331,9 @@ function whatTheHouseItselfNeedsDone(
         // mission. Posted to the house's own, and a reader off the roll is told so in the words
         // every other posting uses. See `what-a-house-posts-for-its-own.ts`.
         for (const mission of theMissionsAHousePosts(standing.house, standing.reach)) {
-            const entry = aMissionAsAnOffer(mission, standing.house);
+          const targets=mission.at==='its_public_terminal'&&world ? publicWatchTargetsOf(world,standing.house.id) : [null];
+          for(const target of targets) {
+            const entry = aMissionAsAnOffer(mission, standing.house,target?.name??null,target?.id);
             const terms = dutyTermsAtAMonthlyRate({
                 entry,
                 cashPerMonth: mission.cashPerMonth,
@@ -1343,6 +1347,8 @@ function whatTheHouseItselfNeedsDone(
                 : takeableOffAWall(terms.regard.band) ? null : terms.regard.reaction;
             if (why === null) wall.offers.push({ entry, terms, weight: entry.weight });
             else wall.refusals.push({ entryId: entry.id, name: entry.name, reason: why });
+        }
+
         }
 
         // AND WHAT THE HOUSE IS SENDING ITS SISTERS, carried by its own. The owner: "a sect doesn't

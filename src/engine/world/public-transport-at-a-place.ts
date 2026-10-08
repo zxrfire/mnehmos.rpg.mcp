@@ -10,7 +10,7 @@ import { requireConveyance } from '../../data/cultivation/what-a-house-moves-its
 import { publicShipLinesFrom, theProvinceOf, type DockWorld } from './public-shipping.js';
 import { daysByConveyance } from './what-a-conveyance-does-to-a-journey.js';
 import { theSeatFare } from './the-fare-and-calendar-of-a-passage.js';
-import { counterPlaceNameAt, routesFrom } from './where-the-measured-span-still-answers.js';
+import { counterPlaceNameAt, routesFrom, THE_SPAN_HOUSE_ID } from './where-the-measured-span-still-answers.js';
 import { populationWeightOf, placeScopeFor, type LocationRecord, type PlaceScope } from './locations.js';
 import { pathTo } from './architecture.js';
 import { worldLocationFor } from './place-lookup.js';
@@ -109,7 +109,7 @@ export function publicTransportFrom(world: DockWorld, here: string, today: numbe
 
 
 export type PublicHubKind = 'landing' | 'carriage_station' | 'span_counter';
-export interface PublicHub { kind: PublicHubKind; name: string; destinations: string[] }
+export interface PublicHub { kind: PublicHubKind; name: string; destinations: string[]; providerHouseId?: string; inheritedTerminal?: boolean }
 /** Physical public venues persist through closed timetables or occupied seats. */
 export function publicTransportHubsAt(world: DockWorld, here: string, today: number): PublicHub[] {
     const lines = publicTransportFrom(world, here, today);
@@ -119,7 +119,7 @@ export function publicTransportHubsAt(world: DockWorld, here: string, today: num
         if (destinations.length) hubs.push({ kind, name, destinations });
     }
     const counter = counterPlaceNameAt(here);
-    if (counter) hubs.push({ kind: 'span_counter', name: 'the folding counter', destinations: routesFrom(counter).map(route => route.toPlace) });
+    if (counter) hubs.push({ kind: 'span_counter', name: 'the folding counter', destinations: routesFrom(counter).map(route => route.toPlace), providerHouseId: THE_SPAN_HOUSE_ID, inheritedTerminal: routesFrom(counter).some(route => route.inheritedTerminal) });
     return hubs;
 }
 

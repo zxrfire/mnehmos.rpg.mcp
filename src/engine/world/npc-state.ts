@@ -1,3 +1,4 @@
+import type {AdmittedRoadCourse} from './road-course.js';
 /**
  * NPCs as small durable records.
  */
@@ -387,6 +388,12 @@ export type ActivityKind =
     | 'squeezing';
 
 export interface NpcActivity {
+    /** Sole actual partial road course, held only by its vehicle operator. */
+    admittedRoad?: AdmittedRoadCourse;
+    /** Source body for a carried changing course; no copied physical position. */
+    carrierOperatorId?: string;
+    /** Actual chosen local hull area; validated by its current accepted source. */
+    standingIn?: string | null;
     /** Original company agreement suspended once under an actual passage; never a passenger roster. */
     passageCompany?: NpcActivity;
     kind: ActivityKind;
@@ -401,6 +408,8 @@ export interface NpcActivity {
     fromLocationId?: string | null;
     /** Physical site referring to the same accepted air-course history, not a copied point. */
     airCourseLocationId?: string;
+    /** Original paid native duty course; its immutable receipt holds any return commitment. */
+    airDutyReceiptId?: string;
     /** The actual craft selected for an away journey; null means on foot. */
     conveyanceId?: string | null;
     conveyancePower?: number | null;

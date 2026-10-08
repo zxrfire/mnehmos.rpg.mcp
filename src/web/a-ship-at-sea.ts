@@ -1,4 +1,5 @@
 import type { WorldState } from '../engine/world/world-state.js';
+import {routineTime} from '../engine/world/npc-routines.js';
 import { shipPassengerAt } from '../engine/world/passenger-on-a-vessel.js';
 /**
  * A ship at sea between two ports: where it is, how far on, and sailing the rest of the way.
@@ -106,7 +107,11 @@ export function endTheVoyage(db: Db, cultivatorId: string): void {
  */
 export function theRationsAboard(db: Db, cultivator: Cultivator, world?: WorldState | null): number {
     const voyage = theVoyageUnderWay(db, cultivator, world);
-    return voyage ? Math.max(0, voyage.hullRationDays - voyage.sailed) : 0;
+    if(!voyage)return 0;
+    const actual=voyage.receiptId && world ? shipPassengerAt(world,voyage.receiptId,routineTime(world)):null;
+    // A return resets effective-leg sailed, not the stores bought at boarding.
+    return actual ? Math.max(0,voyage.hullRationDays-(routineTime(world!)-actual.boardedOnDay))
+        : Math.max(0,voyage.hullRationDays-voyage.sailed);
 }
 
 /**
@@ -117,8 +122,9 @@ export function theRationsAboard(db: Db, cultivator: Cultivator, world?: WorldSt
 export function takeFromTheHull(db: Db, cultivator: Cultivator, days: number, world?: WorldState | null): number {
     const voyage = theVoyageUnderWay(db, cultivator, world);
     if (!voyage) return 0;
-    const taken = Math.max(0, Math.min(Math.floor(days), voyage.hullRationDays - voyage.sailed));
-    if (taken > 0) writeTheVoyage(db, cultivator.id, { ...voyage, hullRationDays: voyage.hullRationDays - taken });
+    const taken = Math.max(0, Math.min(Math.floor(days),theRationsAboard(db,cultivator,world)));
+    if (taken > 0) { const claim=recordedVoyage(db,cultivator.id) ?? voyage;
+        writeTheVoyage(db,cultivator.id,{...claim,hullRationDays:claim.hullRationDays-taken}); }
     return taken;
 }
 

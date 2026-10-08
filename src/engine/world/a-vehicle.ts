@@ -49,14 +49,14 @@ export const WHAT_A_HEAD_OF_A_SPIRIT_BOAT_CARRIES = { volume: 2_000, weight: 2_4
 export const A_SPIRIT_BOAT_ANSWERS_TO = 29;
 
 /** Whether a conveyance wants somebody at that rank to fly it: a spirit boat, and nothing on the ground. */
-export function itWantsAPilot(conveyance: Pick<Conveyance, 'crossesGroundThatCannotBeWalked' | 'holding'>): boolean {
-    return conveyance.crossesGroundThatCannotBeWalked && conveyance.holding === 'tracked';
+export function itWantsAPilot(conveyance: Pick<Conveyance, 'crossesGroundThatCannotBeWalked' | 'holding' | 'waterOnly'>): boolean {
+    return !conveyance.waterOnly && conveyance.crossesGroundThatCannotBeWalked && conveyance.holding === 'tracked';
 }
 
 export function whatAVehicleHolds(vehicle: Pick<ObjectRecord, 'data'>): { volume: number; weight: number } {
     const kind = getConveyance(String(vehicle.data?.conveyanceId ?? ''));
     const heads = kind?.heads ?? 1;
-    const each = kind?.crossesGroundThatCannotBeWalked ? WHAT_A_HEAD_OF_A_SPIRIT_BOAT_CARRIES : WHAT_A_HEAD_OF_CARGO;
+    const each = kind?.crossesGroundThatCannotBeWalked && !kind.waterOnly ? WHAT_A_HEAD_OF_A_SPIRIT_BOAT_CARRIES : WHAT_A_HEAD_OF_CARGO;
     return { volume: heads * each.volume, weight: heads * each.weight };
 }
 

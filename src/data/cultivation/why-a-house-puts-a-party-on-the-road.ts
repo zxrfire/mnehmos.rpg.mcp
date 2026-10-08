@@ -216,7 +216,9 @@ export const ReasonNeedSchema = z.enum([
      * The house's own stock of communication talismans is below what it keeps.
      * `itsCommunicationTalismansRunLow`. The work is done at the house.
      */
-    'communication_talismans_running_low'
+    'communication_talismans_running_low',
+    /** Existing provider-owned inherited terminal, derived from its public service profile. */
+    'a_public_terminal'
 ]);
 export type ReasonNeed = z.infer<typeof ReasonNeedSchema>;
 
@@ -269,8 +271,10 @@ export const SendingReasonSchema = z.object({
      * lands as when its term closes.
      */
     makes: z.string().min(1).nullable(),
-    /** Days the party is gone. A term, not a computation. */
+    /** Authored term; whole away by default, expressly on-site where termBasis says so. */
     days: z.number().int().min(1),
+    /** Explicit service at the destination; absence retains the whole-away contract. */
+    termBasis: z.enum(['away', 'on_site']).optional(),
     /** How many the house puts on it when it is not short of anybody. */
     hands: z.number().int().min(1),
     atStake: AtStakeSchema,
@@ -602,8 +606,9 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         floorOrdinal: null,
         makes: null,
         // Days at the post. The road there and back is the map's, added by the
-        // pass that sends them.
+        // canonical posting projection from both actual leg quotes.
         days: 5,
+        termBasis: 'on_site',
         hands: 1,
         atStake: 'nothing_but_the_party',
         // What comes back is word of one person, said in the house's own hall.
@@ -626,6 +631,7 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         makes: THE_COMMUNICATION_TALISMAN.id,
         // A few days at it, which is short enough to fit between other work.
         days: 5,
+        termBasis: 'on_site',
         hands: 1,
         atStake: 'nothing_but_the_party',
         factKind: 'said_in_public',

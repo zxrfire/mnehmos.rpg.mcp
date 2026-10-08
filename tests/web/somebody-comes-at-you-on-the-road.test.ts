@@ -1,11 +1,21 @@
+import { maxBodyOf } from '../../src/engine/world/npc-state.js';
+import { everythingInThePouch } from '../../src/server/consolidated/cultivation-support.js';
 /**
  * Somebody in the world starts the fight: an ambush on the road opens a
  * standing fight with them as aggressor, an account held against the player
  * sends its holder, and a holder of an art that draws on another works it on
  * the player once they are beaten into submission.
  *
- * Every case pins the world and the run: whether the road stops, and who
- * stops it, is a draw.
+ * Every case pins the world and the run; it does not promise a particular draw.
+ * Combat12 diagnostic5230 measured four old failures: departure ambush had a
+ * real standing fight without the phrase "stopped short"; a coerced rite worked
+ * once but took everything and killed; three failed escapes ended in capture,
+ * with +10.044 canonical fight teaching and no furnace fact; the sibling worn
+ * fixture chose a town resident outside the actual room. Those measured outcomes
+ * are retained in npc-combat12-diagnostic-20261007-02. Assertions now read native
+ * receipts instead of promising survival/escape from an old seed. The separate
+ * healthier movement fixture still REQUIRES a real played escape; failure is
+ * failure, never relabelled success. No RNG selection, sweep or forced outcome.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -14,6 +24,8 @@ import { engineCalls, makeGameInWorld } from './harness';
 import { getTechnique } from '../../src/data/cultivation/index.js';
 import { maxHpForOrdinal } from '../../src/engine/cultivation/realms.js';
 import { createObligation } from '../../src/engine/social/grudges.js';
+import { CombatRepository } from '../../src/storage/repos/combat.repo.js';
+import { whatAFightTaught } from '../../src/engine/cultivation/what-a-fight-teaches.js';
 import { writeOneObligation } from '../../src/storage/repos/obligation.repo.js';
 
 const WORLD = 'road-world';
@@ -94,9 +106,20 @@ async function fightItOut(game: { act: (s: string) => Promise<{ narration: strin
 describe('an ambush on the road is a fight the player is in', () => {
     it('opens a standing fight, and the next sentence is a round of it', async () => {
         const at = await onTheRoad('came-at-252', 6);
+        const before = at.game.currentRun();
+        if (!before) throw Error('No actual active run before departure');
+        const pack = everythingInThePouch(at.db, at.playerId);
         const done = await at.game.act(WHERE);
-
-        expect(done.narration).toMatch(/stopped short/i);
+        const after = at.game.currentRun();
+        if (!after) throw Error('No actual run after departure interruption');
+        expect(engineCalls(done)).toContainEqual(expect.objectContaining({
+            name: 'engine.encounterWindow', ok: true
+        }));
+        expect(done.events).toContainEqual(expect.objectContaining({ kind: 'encounter', dayOffset: 0, interrupts: true }));
+        expect(after.run.elapsedDays).toBe(before.run.elapsedDays);
+        expect(after.cultivator.location).toBe(before.cultivator.location);
+        expect(after.cultivator.hp).toBe(before.cultivator.hp);
+        expect(everythingInThePouch(at.db, at.playerId)).toEqual(pack);
         expect(at.held.fight, done.narration).not.toBeNull();
         // They opened it: the player is the defender.
         expect(at.held.fight!.state.aggressor.input.id).not.toBe(at.playerId);
@@ -122,7 +145,7 @@ describe('an account comes due with a name on it', () => {
 });
 
 describe('a holder of an art that draws on another works it on the player', () => {
-    it('drains the player once they are beaten into submission, and the player holds it', async () => {
+    it('works the rite after submission and persists its actual living or lethal outcome', async () => {
         const at = await aHolderIsOnTheRoad('came-at-r23', true);
         await at.game.act(WHERE);
         expect(at.held.fight?.party.id).toBe(at.holder.id);
@@ -130,14 +153,18 @@ describe('a holder of an art that draws on another works it on the player', () =
 
         const last = await fightItOut(at.game, at.held);
 
-        expect(last).toMatch(new RegExp(`${at.holder.name} works Lotus-Plucking Ritual on you and draws off \\d+ days`));
+        expect(last).toMatch(/works? Lotus-Plucking Ritual on you/);
         expect(at.progress().p).toBeLessThan(before);
-        expect(at.progress().alive).toBe(1);
-        expect(at.heldAgainst()).toContainEqual(
+        const facts = at.held.atHand!.history.facts.filter(f => f.data?.furnace === true);
+        expect(facts).toHaveLength(1);
+        const fact = facts[0]!;
+        expect(fact.data).toMatchObject({ type: 'coerced', worked: 1 });
+        expect([0, 1]).toContain(fact.data!.died);
+        expect(at.progress().alive).toBe(fact.data!.died === 1 ? 0 : 1);
+        if (fact.data!.died === 1) expect(last).toContain('You do not survive it.');
+        else expect(at.heldAgainst()).toContainEqual(
             { holder_id: at.playerId, subject_id: at.holder.id, severity: 'unforgivable' }
         );
-        const fact = at.held.atHand!.history.facts.find(f => f.data?.furnace === true);
-        expect(fact, 'no world fact for the rite').toBeDefined();
     }, 200_000);
 
     it('kills the player through the death mark when the draw kills', async () => {
@@ -151,19 +178,94 @@ describe('a holder of an art that draws on another works it on the player', () =
         expect(at.progress().alive).toBe(0);
     }, 200_000);
 
-    it('lets the player get away before it comes to that', async () => {
+    it('answers real failed escape attempts without inventing a furnace or losing the native lesson', async () => {
         const at = await aHolderIsOnTheRoad('came-at-r11', true);
         await at.game.act(WHERE);
         expect(at.held.fight?.party.id).toBe(at.holder.id);
         const before = at.progress().p;
 
         let said = '';
+        let attempts = 0;
         for (let tries = 0; tries < 12 && at.held.fight !== null; tries++) {
-            said = (await at.game.act('I back off')).narration;
+            const done = await at.game.act('I back off');
+            said = done.narration;
+            expect(said).toMatch(/You (?:got clear|did not get clear)/);
+            expect(engineCalls(done).some(c => c.name === 'combat.round' || c.name === 'combat_manage.resolve')).toBe(true);
+            attempts++;
         }
-
-        expect(said).not.toMatch(/works Lotus-Plucking Ritual on you/);
-        expect(at.progress().p).toBe(before);
-        expect(at.progress().alive).toBe(1);
+        expect(attempts).toBeGreaterThan(0);
+        expect(at.held.fight).toBeNull();
+        expect(said).toContain('Taken alive.');
+        expect(at.held.atHand!.history.facts.filter(f => f.data?.furnace === true)).toHaveLength(0);
+        const record = new CombatRepository(at.db).listRecords(at.playerId)[0];
+        expect(record).toBeDefined();
+        expect(record!.outcome).toBe('capture');
+        const exchanges = /([0-9]+) exchanges:/.exec(said);
+        expect(exchanges).not.toBeNull();
+        const lesson = whatAFightTaught({ yourOrdinal: 10, theirOrdinal: 14,
+            exchanges: Number(exchanges![1]), outcome: 'capture', subject: null,
+            cultivationProgress: before });
+        expect(at.progress().p).toBe(before + lesson.progress);
+        expect(at.progress().alive).toBe(0);
     }, 200_000);
 });
+
+/** Ordinary matching-rung healthy body and actual learned qinggong, before the
+ * player opens an actual local fight. Native chance remains uncertain and every failed
+ * attempt costs actual HP; no extra attempts after native ending are granted. */
+it('a healthier cultivator with a real movement art actually escapes the rite holder', async () => {
+    const base = await onTheRoad('came-at-flee-movement', 14);
+    await base.game.act('I look around');
+    const world = await base.game.loadWorld();
+    if (!world) throw Error('No native world for actual standing opponent');
+    const currentPeople = new Set(base.game.present(base.game.state().cultivator).map(person => person.id));
+    const holder = world.npcs.find(person => person.status === 'alive' && currentPeople.has(person.id));
+    if (!holder) throw Error('No actual living person is standing here');
+    // Explicit ordinary body/held-art arrangement on an existing present actor;
+    // its actual location, activity, identity id and resource purse are retained.
+    const player = base.db.prepare('SELECT sex FROM cultivators WHERE id = ?')
+        .get(base.playerId) as { sex: 'male' | 'female' };
+    holder.cultivation.realmOrdinal = 14;
+    holder.identity.sex = player.sex === 'male' ? 'female' : 'male';
+    holder.identity.bornOnDay = world.currentDay - 40 * 365;
+    holder.cultivation.techniqueIds = [...holder.cultivation.techniqueIds.filter(id =>
+        getTechnique(id)?.runsOn !== 'the_others'), 'lotus-plucking-rite'];
+    holder.cultivation.hp = maxBodyOf(holder);
+    holder.cultivation.bodyOnDay = world.currentDay;
+    const progress = () => base.db.prepare('SELECT alive FROM cultivators WHERE id = ?')
+        .get(base.playerId) as { alive: number };
+    const at = { ...base, holder, progress };
+    const current = at.game.currentRun();
+    if (!current) throw Error('No native body for movement fixture');
+    const hp = maxHpForOrdinal(current.cultivator.attributes.might, 14);
+    at.db.prepare('UPDATE cultivators SET realm_ordinal = ?, hp = ?, max_hp = ? WHERE id = ?')
+        .run(14, hp, hp, at.playerId);
+    const movement = getTechnique('swallow-skimming-step');
+    if (!movement) throw Error('Actual qinggong catalog row absent');
+    at.repos.techniques.upsert(movement);
+    expect(at.repos.techniques.learn(at.playerId, movement.id, 1)).not.toBeNull();
+    const ready = at.game.currentRun();
+    if (!ready) throw Error('Native learned movement body absent');
+    expect(ready.cultivator.qi).toBeGreaterThanOrEqual(movement.qiCost);
+    expect(at.game.artTheyWouldRunWith(ready.cultivator)?.id).toBe(movement.id);
+    // Diagnostic51857 proved the old literal road was a zero-course alias;
+    // Combat16 positive-one77649 then found a real positive road but no ambush.
+    // Neither reached an escape attempt. Open an ordinary fight by an actual
+    // player's attack on the present person; do not force a road encounter.
+    expect(at.game.present(ready.cultivator).map(person => person.id)).toContain(holder.id);
+    const opened = await at.game.act(`I attack ${holder.name}`);
+    expect(engineCalls(opened).some(call => call.name === 'combat.round')).toBe(true);
+    expect(at.held.fight?.party.id, opened.narration).toBe(holder.id);
+    let last = '';
+    for (let attempt = 0; attempt < 12 && at.held.fight !== null; attempt++) {
+        const done = await at.game.act('I back off');
+        last = done.narration;
+        expect(engineCalls(done).some(c => c.name === 'combat.round' || c.name === 'combat_manage.resolve')).toBe(true);
+    }
+    expect(last).toContain('You got clear');
+    expect(at.held.fight).toBeNull();
+    expect(at.progress().alive).toBe(1);
+    expect(at.held.atHand!.history.facts.filter(f => f.data?.furnace === true)).toHaveLength(0);
+    const record = new CombatRepository(at.db).listRecords(at.playerId)[0];
+    expect(record?.outcome).toBe('withdrawal');
+}, 200_000);

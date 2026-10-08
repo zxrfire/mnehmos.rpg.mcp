@@ -1,11 +1,12 @@
+import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
 import { settleAgreedRides } from './an-offered-ride-is-an-agreement.js';
 import { transferActualSpiritStones } from './transferring-actual-spirit-stones.js';
-import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
 
 import { attemptWasAccepted } from '../engine/social-leverage/an-attempt-to-move-somebody.js';
 import { executionWithItsSpentSpan } from './an-execution-with-its-spent-span.js';
 import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
 import { spendOnOwnedPassage, ownedPassageClaim, ownedCarrierAt } from './an-owned-passage.js';
+import { physicalPassageScene } from './the-actual-carrier-scene.js';
 import { recordedVoyage } from './a-ship-at-sea.js';
 import { thePaidCarriageClaim } from './a-paid-carriage-on-the-road.js';
 import { paidCarrierSource } from './an-actual-paid-passage.js';
@@ -1328,6 +1329,7 @@ import {
 import { stowVerbs, whatIsKeptInYourRoom, type StowIntent } from './leaving-a-thing-in-your-own-room.js';
 import { theWeatherTakesItsShare } from './where-the-nights-were-spent.js';
 import { AT_THE_INN, takeARoom, theCountersHere, whereTheyAreLodged } from './a-room-at-an-inn.js';
+import { publicWatchTargetForPost } from '../engine/world/where-a-house-keeps-its-public-watch.js';
 import { theCounterThisKeeperKeeps, whoKeepsTheCounter, theCounterWorkersHere } from './who-keeps-a-counter-here.js';
 import { theBoothsHere, theCountersAsSeenHere } from './a-seat-on-a-ship-or-a-carriage.js';
 import { investigateVerb } from './investigate-verb.js';
@@ -8147,7 +8149,7 @@ ${noticed}`;
         // one posted to a rung above theirs is refused with the rung it is for.
         if (!readingTheBoard && named === undefined) {
             const paper = onTheWall.find(line => names(line.row.said));
-            if (paper) return this.duty(run, cultivator, ambient, paper.offer.entry.name);
+            if (paper) return this.duty(run, cultivator, ambient, wanted);
             const above = HOUSE_MISSIONS.find(mission => names(mission.said));
             if (above) return this.duty(run, cultivator, ambient, above.said);
         }
@@ -18060,7 +18062,19 @@ ${fit.line}`;
             const handle = theMissionBehind(entryId)?.said ?? theContractBehind(entryId)?.said;
             return handle !== undefined && new RegExp(String.raw`\b${handle}\b`, 'i').test(wanted);
         };
-        const chosen = board.offers.length === 1 && GameService.THE_ONE_ON_THE_BOARD.test(wanted)
+        // A site-bearing post is one actual place, not the first matching handle.
+        const siteOffers = board.offers.filter(offer=>theMissionBehind(offer.entry.id)?.at==='its_public_terminal');
+        const asksForSite = siteOffers.some(offer=>saysTheHandleOf(offer.entry.id) || wanted.includes(offer.entry.id));
+        const namedSites = siteOffers.filter(offer=>{
+            const houseId=offer.entry.id.slice(offer.entry.id.indexOf('@')+1);
+            const site=this.atHand?publicWatchTargetForPost(this.atHand,houseId,offer.entry.id):null;
+            return wanted.includes(offer.entry.id) || site!==null && wanted.toLowerCase().includes(site.name.toLowerCase());
+        });
+        if(asksForSite && namedSites.length!==1)return refused('encounters.sectBoardFor','sect',factsForRefusal(
+            'Name the post you would take.', siteOffers.map(offer=>offer.entry.name).join('; '),
+            'Site-bearing mission was not uniquely named. No duty accepted, no time spent.'));
+        const siteChoice=asksForSite?namedSites[0]:undefined;
+        const chosen = siteChoice ?? (board.offers.length === 1 && GameService.THE_ONE_ON_THE_BOARD.test(wanted)
             ? board.offers[0]
             : theHouses
                 ?? board.offers.find(offer => saysTheHandleOf(offer.entry.id))
@@ -18072,7 +18086,7 @@ ${fit.line}`;
                 // "Escort a charge of Azure Cloud Pavilion to Autumn Gate within
                 // 2 months" is a player naming a thing off a closed table of
                 // reasons, not guessing. See `whichPostingTheyMeant`.
-                ?? matchedPosting(wanted, board.offers);
+                ?? matchedPosting(wanted, board.offers));
         if (!chosen) {
             // NAMED, AND WITHHELD: the wall's own reason, a rung above theirs
             // included, rather than a claim that it is not there.
@@ -20142,6 +20156,12 @@ ${fit.line}`;
     somebodyAtHand(query: string, cultivator: Cultivator): RosterEntry | null {
         const wanted = query.trim();
         const here = this.present(cultivator);
+        // The actual driver/pilot is the captain. This is a visible role of the
+        // accepted hull, not a separate spawned person or remote name grant.
+        if (/^(?:the\s+)?(?:captain|driver|pilot|shipmaster)$/i.test(wanted)) {
+            const carrier=this.atHand ? physicalPassageScene(this.repos,cultivator,this.atHand,routineTime(this.atHand)) : null;
+            if (carrier) return here.find(person=>person.id===carrier.operatorId) ?? null;
+        }
 
         // THE KEEPER OF A COUNTER HERE: "the innkeeper", "the ticket clerk".
         // Read off who is standing in the place; see `who-keeps-a-counter-here.ts`.
@@ -20907,6 +20927,7 @@ ${fit.line}`;
             const work = counter === 'inn' ? 'keeping the inn counter'
                 : counter === 'landing' ? 'keeping the landing counter'
                 : counter === 'carriage_station' ? 'keeping the carriage station counter'
+                : byId.get(worker.id)?.activity?.kind === 'stationed' ? 'keeping watch at the crossing and its public route board'
                 : 'keeping the folding counter and its public route board';
             clinicalWork.set(worker.id, work);
         }

@@ -1,3 +1,6 @@
+import { shipHandsForHull, publicShipHullCanBeBoarded } from './a-public-ship-hull.js';
+import { requireConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
+import type { ObjectRecord } from './possessions.js';
 import { companyDuringPassage } from './company-during-a-passage.js';
 /**
  * Where a ship puts in: every lane's landfalls, and every place on open water, each at its own dock.
@@ -30,8 +33,8 @@ import { stonesFor } from './the-fare-and-calendar-of-a-passage.js';
 import { provisionForLane, resolveCrossing } from './what-a-sea-crossing-costs.js';
 import type { NpcActivity, NpcRecord } from './npc-state.js';
 import { shipIdForLane } from './the-ship-on-a-lane.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
-import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js';
+import { locationOnNpcJourney, journeyTimeHasReached } from './places-on-the-way.js';
+import { factsWithDataValue, witnessIndexFor, type HistoryFactSource } from './witness-reaction-index.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 export { theLandfall };
@@ -218,11 +221,13 @@ export interface PublicPassageQuote extends PublicPassageLeg {
     crossing: ReturnType<typeof resolveCrossing>;
 }
 type ShippingWorld = NonNullable<DockWorld> & {
-    npcs?: readonly NpcRecord[]; history?: Pick<WorldState['history'], 'facts'>;
+    npcs?: readonly NpcRecord[]; objects?: readonly ObjectRecord[]; history?: Pick<WorldState['history'], 'facts'>;
 };
 
+function shippingHasHistory(world:ShippingWorld):world is ShippingWorld & HistoryFactSource { return !!world.history; }
+
 /** Only the physical booking bounds are needed to locate a known hull. */
-type HullLeg = Omit<PublicPassageLeg, 'lane'> & { laneId: string; reserved?: true };
+type HullLeg = Omit<PublicPassageLeg, 'lane'> & { laneId: string; reserved?: true; passengerIds?: readonly string[] };
 
 /** Paid future berths exist only while a living participant continues the mission. */
 function activeReservedLegs(world: ShippingWorld, vesselId: string): HullLeg[] {
@@ -249,7 +254,8 @@ function activeReservedLegs(world: ShippingWorld, vesselId: string): HullLeg[] {
                 || typeof leg.arrivalDay !== 'number' || !Number.isFinite(leg.departureDay)
                 || !Number.isFinite(leg.arrivalDay) || leg.arrivalDay <= leg.departureDay) continue;
             legs.push({ vesselId, fromId: leg.fromId, toId: leg.toId,
-                departureDay: leg.departureDay, arrivalDay: leg.arrivalDay, laneId: leg.lane.id, reserved: true });
+                departureDay: leg.departureDay, arrivalDay: leg.arrivalDay, laneId: leg.lane.id, reserved: true,
+                passengerIds: (world.npcs ?? []).filter(npc=>npc.status==='alive' && npc.activity?.capitalMissionId===id).map(npc=>npc.id) });
         }
     }
     return legs;
@@ -318,7 +324,7 @@ function hullPositionAt(hull: HullRead, fromId: string, toId: string, departureD
     const legs = hull.legs;
     const same = legs.find(leg => leg.fromId === fromId && leg.toId === toId
         && leg.departureDay === departureDay && leg.laneId === laneId);
-    const past = legs.filter(leg => !leg.reserved && leg.arrivalDay <= departureDay)
+    const past = legs.filter(leg => !leg.reserved && journeyTimeHasReached(departureDay,leg.arrivalDay))
         .sort((a, b) => b.arrivalDay - a.arrivalDay)[0];
     const standingCrew = hull.standingCrew.filter(npc => npc.updatedOnDay <= departureDay);
     const confirmed = [...standingCrew].sort((a, b) => b.updatedOnDay - a.updatedOnDay)[0];
@@ -347,14 +353,29 @@ function hullPositionAt(hull: HullRead, fromId: string, toId: string, departureD
 /** A first boarding realises the lane's hull at that dock, as the existing crew factory does. */
 export function quotePublicPassage(world: ShippingWorld, fromId: string, toId: string,
     departureDay: number, heads = 1, consideredLegs: readonly PublicPassageLeg[] = [],
-    crossingSeed = `${world.seed}:${departureDay}`): PublicPassageQuote | null {
-    return quoteAPublicPassage(world, fromId, toId, departureDay, heads, consideredLegs, crossingSeed).quote;
+    crossingSeed = `${world.seed}:${departureDay}`, requestingIds: readonly string[] = []): PublicPassageQuote | null {
+    return quoteAPublicPassage(world, fromId, toId, departureDay, heads, consideredLegs, crossingSeed, undefined, requestingIds).quote;
+}
+
+/** A real existing hull may take an admitted onward line only from its actual port.
+ * This is a quote, not consent, payment or a future boarding. It creates nothing.
+ * The same fare/calendar/weather/finite-capacity/position core remains authoritative.
+ */
+export function quotePublicPassageOnActualHull(world: ShippingWorld, vesselId:string,
+    fromId:string,toId:string,departureDay:number,heads=1,
+    consideredLegs:readonly PublicPassageLeg[]=[],crossingSeed=`${world.seed}:${departureDay}`,
+    requestingIds:readonly string[]=[]):PublicPassageQuote|null {
+    if (!world.objects?.some(object=>object.id===vesselId) || !world.npcs
+        || !publicShipHullCanBeBoarded({objects:world.objects,npcs:world.npcs,locations:world.locations},
+            {vesselId,fromId,departureDay})) return null;
+    return quoteAPublicPassage(world,fromId,toId,departureDay,heads,consideredLegs,crossingSeed,
+        undefined,requestingIds,vesselId).quote;
 }
 
 /** The single fare, weather and hull-position authority behind both public readers. */
 function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     departureDay: number, heads: number, consideredLegs: readonly PublicPassageLeg[],
-    crossingSeed: string, held?: HullRead): { quote: PublicPassageQuote | null; retryAt?: number | null } {
+    crossingSeed: string, held?: HullRead, requestingIds: readonly string[] = [], actualVesselId?: string): { quote: PublicPassageQuote | null; retryAt?: number | null } {
     if (!Number.isInteger(heads) || heads < 1 || !Number.isFinite(departureDay)) return { quote: null };
     const from = world.locations.find(place => place.id === fromId);
     const to = world.locations.find(place => place.id === toId);
@@ -362,18 +383,50 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     const line = publicShipLinesFrom(world, from.name, departureDay).find(one => one.to === to.name);
     if (!line || line.runsFromDay !== null) return { quote: null };
     const lane = line.lane;
-    const vesselId = shipIdForLane(lane);
+    const vesselId = actualVesselId ?? shipIdForLane(lane);
+    if (world.objects && world.npcs && !publicShipHullCanBeBoarded({objects:world.objects,npcs:world.npcs,locations:world.locations},
+        {vesselId,fromId,departureDay})) return {quote:null,retryAt:null};
     const hull = held ?? readHull(world, vesselId, consideredLegs);
     const legs = hull.legs;
     const position = hullPositionAt(hull, fromId, toId, departureDay, lane.id);
     if (position.blockedUntil !== undefined) return { quote: null, retryAt: position.blockedUntil };
     const same = position.same;
+    const aboard = new Set((world.npcs ?? []).filter(npc => npc.activity?.kind === 'travelling'
+        && npc.activity.vesselId === vesselId && npc.activity.sinceDay === departureDay)
+        .map(npc => npc.id));
+    const bookings = shippingHasHistory(world) ? factsWithDataValue(world,'vesselId',vesselId)
+        .filter(fact => fact.data.publicPassage===true && fact.data.actualBoarding===true
+            && fact.data.departureDay===departureDay && fact.data.fromLocationId===fromId
+            && fact.data.toLocationId===toId) : [];
+    for (const booking of bookings) for (const actor of booking.actors) if (actor.role==='aboard') aboard.add(actor.id);
+    const crewIds=new Set((world.npcs ?? []).filter(npc=>npc.tags.includes('crew-of:'+vesselId)).map(npc=>npc.id));
+    for (const reserved of activeReservedLegs(world,vesselId)) if (reserved.departureDay===departureDay
+        && reserved.fromId===fromId && reserved.toId===toId)
+        for (const id of reserved.passengerIds ?? []) aboard.add(id);
+    const requesting=new Set(requestingIds);
+    if (requesting.size>heads) return {quote:null,retryAt:null};
+    const passengers=[...aboard].filter(id=>!crewIds.has(id) && !requesting.has(id)).length;
+    // An older player boarding omitted its actor entirely. Do not fabricate
+    // free berths from that omission: this unknown active claim blocks another
+    // acceptance until the actual dated arrival. A read/refusal stores nothing.
+    const unknownLegacy = shippingHasHistory(world) ? factsWithDataValue(world,'vesselId',vesselId)
+        .some(fact=>fact.data.publicPassage===true && fact.data.actualBoarding!==true
+            && fact.data.departureDay===departureDay && typeof fact.data.runId==='string'
+            && typeof fact.data.arrivalDay==='number' && fact.data.arrivalDay>departureDay) : false;
+    if (unknownLegacy) return {quote:null,retryAt:same?.arrivalDay ?? null};
+    // Existing realised crew occupy berths too; the first boarding uses the
+    // exact crew-factory draw before any people or object are materialised.
+    const crewHeads=Math.max((world.npcs ?? []).filter(npc=>npc.status==='alive' && crewIds.has(npc.id)).length,
+        1+shipHandsForHull(world.seed,vesselId));
+    const capacity=requireConveyance('conv-water-ship').heads;
+    if (crewHeads+heads>capacity) return {quote:null,retryAt:null};
+    if (passengers+crewHeads+heads>capacity) return {quote:null,retryAt:same?.arrivalDay ?? null};
     const provision = provisionForLane(lane, heads);
     const crossing = resolveCrossing(crossingSeed, lane, provision, monthOf(departureDay));
     if (crossing.laneWasShut) return { quote: null };
     const days = same ? same.arrivalDay - same.departureDay : crossing.daysTaken;
     const arrivalDay = departureDay + days;
-    if (legs.some(leg => leg.departureDay < arrivalDay && departureDay < leg.arrivalDay
+    if (legs.some(leg => !journeyTimeHasReached(leg.departureDay,arrivalDay) && !journeyTimeHasReached(departureDay,leg.arrivalDay)
         && !(leg.fromId === fromId && leg.toId === toId && leg.departureDay === departureDay))) return { quote: null };
     const next = legs.filter(leg => leg.departureDay >= arrivalDay)
         .sort((a, b) => a.departureDay - b.departureDay)[0];
@@ -443,7 +496,7 @@ export function earliestQuotedPublicPassage(world: ShippingWorld, fromId: string
 export function activityOfAPublicPassage(leg: PublicPassageLeg, purpose: string, withIds: string[] = []): NpcActivity {
     return { kind: 'travelling', note: purpose, withIds,
         fromLocationId: leg.fromId, returnTo: leg.toId, sinceDay: leg.departureDay,
-        untilDay: leg.arrivalDay, seaLaneId: leg.lane.id, vesselId: shipIdForLane(leg.lane) };
+        untilDay: leg.arrivalDay, seaLaneId: leg.lane.id, vesselId: leg.vesselId };
 }
 
 /** The caller pays the quoted sponsoring purse once; no personal wallet is injected. */
@@ -457,28 +510,52 @@ export function onSponsoredPublicPassage(world: ShippingWorld, npc: NpcRecord, q
 /** A historical booking/course change survives the people who once carried it. */
 export function recordPublicPassage(world: WorldState, leg: PublicPassageLeg,
     onDay = leg.departureDay, locationId = leg.fromId, actorIds: readonly string[] = [],
-    priorReceiptId?: string, boardingMoment?: PassageRunMoment): HistoricalFact {
+    priorReceiptId?: string, boardingMoment?: PassageRunMoment,
+    boardingPeople?: readonly {id:string;name:string}[], onwardAgreementId?:string, lost=false): HistoricalFact {
     const parent = priorReceiptId ? witnessIndexFor(world).byId.get(priorReceiptId) : undefined;
     const validParent = parent?.data.publicPassage === true && parent.data.vesselId === leg.vesselId
-        && parent.data.seaLaneId === leg.lane.id && parent.day <= onDay
+        && (parent.data.seaLaneId === leg.lane.id
+            || onwardAgreementId && typeof parent.data.arrivalDay==='number'
+                && journeyTimeHasReached(leg.departureDay,parent.data.arrivalDay) && parent.data.toLocationId===leg.fromId)
+        && parent.day <= onDay
         && typeof parent.data.departureDay === 'number' && parent.data.departureDay <= leg.departureDay
         ? parent : undefined;
     const previous = validParent ?? factsWithDataValue(world, 'vesselId', leg.vesselId)
         .filter(fact => fact.data.publicPassage === true && fact.data.departureDay === leg.departureDay)
         .sort((a, b) => b.day - a.day)[0];
-    if (previous && previous.data.fromLocationId === leg.fromId && previous.data.toLocationId === leg.toId
+    const actors = actorIds.flatMap(id => {
+        const named=boardingPeople?.find(person=>person.id===id);
+        const npc=world.npcs.find(person=>person.id===id);
+        return named || npc ? [{id,name:named?.name ?? npc!.name,role:'aboard'}] : [];
+    });
+    // A supplied historic parent establishes lineage, not uniqueness. Repeated
+    // settlement asks the same existing receipt identity, including its actors.
+    const existing = factsWithDataValue(world, 'vesselId', leg.vesselId).find(candidate =>
+        candidate.data.publicPassage === true && candidate.data.departureDay === leg.departureDay
+        && (!validParent || candidate.id === validParent.id || candidate.causes.includes(validParent.id))
+        && (!lost || candidate.data.publicPassageLost === true)
+        && actors.every(actor => candidate.actors.some(prior => prior.id === actor.id))
+        && (!boardingPeople?.length || candidate.data.actualBoarding === true)
+        && candidate.data.fromLocationId === leg.fromId && candidate.data.toLocationId === leg.toId
+        && candidate.data.arrivalDay === leg.arrivalDay && candidate.data.seaLaneId === leg.lane.id
+        && (!boardingMoment || candidate.data.runId === boardingMoment.runId
+            && candidate.data.boardingRunElapsedDays === boardingMoment.elapsedDays));
+    if (existing) return existing;
+    if (previous && (!lost || previous.data.publicPassageLost===true) && actors.every(actor=>previous.actors.some(prior=>prior.id===actor.id))
+        && (!boardingPeople?.length || previous.data.actualBoarding===true)
+        && previous.data.fromLocationId === leg.fromId && previous.data.toLocationId === leg.toId
         && previous.data.arrivalDay === leg.arrivalDay && previous.data.seaLaneId === leg.lane.id
         && (!boardingMoment || previous.data.runId === boardingMoment.runId
             && previous.data.boardingRunElapsedDays === boardingMoment.elapsedDays)) return previous;
     return appendWorldFact(world, makeFact({ day: onDay, kind: 'gathering', locationId,
         summary: `Public ship passage: ${leg.fromId} to ${leg.toId}; arrival day ${leg.arrivalDay}.`,
         visibility: 'public', causes: previous ? [previous.id] : [],
-        actors: actorIds.flatMap(id => {
-            const npc = world.npcs.find(one => one.id === id);
-            return npc ? [{ id, name: npc.name, role: 'aboard' }] : [];
-        }), data: { publicPassage: true, vesselId: leg.vesselId, seaLaneId: leg.lane.id,
+        actors, data: { publicPassage: true, vesselId: leg.vesselId, seaLaneId: leg.lane.id,
             fromLocationId: leg.fromId, toLocationId: leg.toId,
             departureDay: leg.departureDay, arrivalDay: leg.arrivalDay,
+            ...(boardingPeople?.length ? {actualBoarding:true} : {}),
+            ...(onwardAgreementId && validParent ? {onwardAgreementId} : {}),
+            ...(lost ? {publicPassageLost:true} : {}),
             ...(boardingMoment ? { runId: boardingMoment.runId,
                 boardingRunElapsedDays: boardingMoment.elapsedDays } : {}) } }), { recur: false });
 }

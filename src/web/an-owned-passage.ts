@@ -1,9 +1,12 @@
-import { arrivalCourseOfFact, recordActualBodyArrival } from '../engine/world/a-body-that-actually-arrived.js';
+import {changeOwnedSeaCourse} from './changing-the-owned-sea-course.js';
+import {ownedSeaGround,readAcceptedSeaLane,quoteOwnedSeaDeparture} from '../engine/world/an-owned-sea-course.js';
+import type {SeaLane} from '../engine/world/what-a-sea-crossing-costs.js';
+import {changeOwnedAirCourse} from './changing-the-owned-air-course.js';
 import { beginAnAirCourse, airPositionAt, stopAnAirCourse, actualNpcPilotOfAirCourse, recordPaidAirCourseFuel, paidAirCourseThrough } from '../engine/world/an-air-course-in-the-world.js';
+import { arrivalCourseOfFact, recordActualBodyArrival } from '../engine/world/a-body-that-actually-arrived.js';
 
-import { companyDuringPassage, companyAfterPassage } from '../engine/world/company-during-a-passage.js';
+import { companyDuringPassage } from '../engine/world/company-during-a-passage.js';
 import { actualCarrierScene, selectedAreaOnActualCarrier } from './the-actual-carrier-scene.js';
-import { setLocation } from '../engine/world/npc-state.js';
 import { loosePlaceKey } from './knowledge.js';
 import { worldLocationFor } from './entities.js';
 import { factsForRefusal } from './facts.js';
@@ -15,7 +18,7 @@ import type { WorldState } from '../engine/world/world-state.js';
 import type { GameService } from './turn-engine.js';
 import { readJsonFlag, writeFlag, clearFlag } from '../server/consolidated/cultivation-support.js';
 import { CultivatorRepository } from '../storage/repos/cultivator.repo.js';
-import { witnessIndexFor } from '../engine/world/witness-reaction-index.js';
+import { witnessIndexFor, factsWithDataValue } from '../engine/world/witness-reaction-index.js';
 import { passageRunMoment } from '../engine/world/passage-moment.js';
 import { makeFact } from '../engine/world/history.js';
 import { appendWorldFact } from '../engine/world/who-was-there-when-it-happened.js';
@@ -23,7 +26,7 @@ import { locationOnRoute, locationOnNpcJourney, journeyTimeHasReached } from '..
 import { leaveItHere, takeItAlong, whoItIsWith, itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from '../engine/world/a-vehicle.js';
 import { isRuined } from '../engine/world/possessions.js';
 import { requireConveyance } from '../data/cultivation/what-a-house-moves-its-people-on.js';
-import { priceJourney } from '../engine/world/what-a-conveyance-does-to-a-journey.js';
+import { priceJourney, whatTheChestBurns } from '../engine/world/what-a-conveyance-does-to-a-journey.js';
 import { routineTime } from '../engine/world/npc-routines.js';
 import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { executeActualPaidPassage } from './an-actual-paid-passage.js';
@@ -59,13 +62,26 @@ export function ownedCarrierAt(world: WorldState, receiptId: string, body: Culti
         || typeof data.fromLocationId !== 'string' || typeof data.toLocationId !== 'string'
         || typeof data.departureDay !== 'number' || typeof data.arrivalDay !== 'number'
         || typeof data.conveyanceId !== 'string' || typeof data.pilotId !== 'string') return null;
+    const originalArrival = data.arrivalDay;
+    // A later actually accepted onward boarding proves the old endpoint was
+    // reached even after its pilot begins the next independent finite course.
+    if (body.alive && journeyTimeHasReached(onDay, data.arrivalDay)
+        && factsWithDataValue(world, 'vesselId', data.vesselId).some(next => next.data.ownedPassage === true
+            && next.data.ownerId === body.id && typeof next.data.onwardAgreementId === 'string'
+            && next.causes.includes(fact!.id) && next.data.fromLocationId === data.toLocationId
+            && typeof next.data.departureDay === 'number'
+            && journeyTimeHasReached(next.data.departureDay, originalArrival)
+            && journeyTimeHasReached(onDay, next.data.departureDay)))
+        return {locationId:data.toLocationId,endsOnDay:data.arrivalDay,boardedOnDay:data.departureDay,
+            boardingMoment:passageRunMoment(world,receiptId),unavailable:null};
     const craft = heldPrivateCraft(world, body.id, data.vesselId);
     const kind = requireConveyance(data.conveyanceId);
     const pilot = data.pilotId === body.id ? null : world.npcs.find(npc => npc.id === data.pilotId);
     const airSite = data.airCourse === true
         ? world.locations.find(place => place.tags.includes('air-course') && place.originFactId === receiptId) : null;
     const air = airSite && airPositionAt(world, airSite, onDay);
-    const location = airSite && air ? air.kind === 'place' && air.fraction === 1 ? air.locationId : airSite.id : locationOnRoute(world.locations, data.fromLocationId, data.toLocationId,
+    const seaLane = data.seaCourse === true ? readAcceptedSeaLane(data.seaLane) : null;
+    const location = seaLane ? ownedSeaGround(world,data.fromLocationId,data.toLocationId,data.departureDay,data.arrivalDay,seaLane,onDay) : airSite && air ? air.kind === 'place' && air.fraction === 1 ? air.locationId : airSite.id : locationOnRoute(world.locations, data.fromLocationId, data.toLocationId,
         Math.max(0, onDay - data.departureDay), data.arrivalDay - data.departureDay,
         kind.crossesGroundThatCannotBeWalked);
     const pilotArrived = pilot?.status === 'alive' && journeyTimeHasReached(onDay, data.arrivalDay)
@@ -135,36 +151,49 @@ export function projectOwnedPassenger(db: Database.Database, world: WorldState, 
     if (carrier.unavailable || journeyTimeHasReached(onDay, carrier.endsOnDay)) clearFlag(db, playerId, ACTIVE);
 }
 
-export function acceptOwnedPassage(game: GameService, run: Run, body: Cultivator, input: {
+export type OwnedPassagePort = Pick<GameService, 'atHand' | 'db' | 'theWorldMoved'> & { repos: Pick<GameService['repos'], 'cultivators'> };
+
+export function acceptOwnedPassage(game: OwnedPassagePort, run: Run, body: Cultivator, input: {
     vesselId: string; pilotId: string; fromId: string; toId: string;
-    walkingDays: number; days: number; conveyanceId: string; power: number | null; companions: string[]; air?: boolean;
+    walkingDays: number; days: number; conveyanceId: string; power: number | null; companions: string[]; priorReceiptId?: string; onwardAgreementId?: string; air?: boolean; seaLane?: SeaLane;
 }): string {
     const world = game.atHand!, departure = routineTime(world);
     // Fail before any receipt, passenger activity, claim or custody mutation.
     if (!body.alive || worldLocationFor(world, body.location)?.id !== input.fromId
         || !heldPrivateCraft(world, body.id, input.vesselId))
         throw new Error('The actual owner and held craft are not available to board here.');
-    const unavailable = peopleUnavailableForOwnedBoarding(world, input.companions, input.fromId, departure);
-    if (unavailable.length > 0 || input.pilotId !== body.id && !input.companions.includes(input.pilotId))
-        throw new Error('The actual selected passengers or pilot are not available to board here.');
+    const seaQuote = input.seaLane ? quoteOwnedSeaDeparture(world,input.fromId,input.toId,departure,1+input.companions.length) : null;
+    if(input.seaLane && (!seaQuote || seaQuote.lane.id!==input.seaLane.id || seaQuote.days!==input.days
+        || !requireConveyance(input.conveyanceId).waterOnly
+        || 1+input.companions.length>requireConveyance(input.conveyanceId).heads))
+        throw new Error('The actual private ship has no matching native sea quote.');
     const capacityQuote = priceJourney({ walkingDays: input.walkingDays,
         conveyance: requireConveyance(input.conveyanceId), power: input.power, heads: 1 + input.companions.length });
     if (capacityQuote.trips > 1) throw new Error('The actual selected people exceed this leg capacity: '
         + requireConveyance(input.conveyanceId).heads + ' places including driver, '
         + (1 + input.companions.length) + ' requested. Select the people aboard this leg.');
+    const unavailable = peopleUnavailableForOwnedBoarding(world, input.companions, input.fromId, departure);
+    if (unavailable.length > 0 || input.pilotId !== body.id && !input.companions.includes(input.pilotId))
+        throw new Error('The actual selected passengers or pilot are not available to board here.');
+    const prior = input.priorReceiptId ? witnessIndexFor(world).byId.get(input.priorReceiptId) : null;
+    if (input.priorReceiptId && (!prior || prior.data.ownedPassage !== true || prior.data.ownerId !== body.id
+        || prior.data.vesselId !== input.vesselId || prior.data.toLocationId !== input.fromId
+        || typeof prior.data.arrivalDay !== 'number' || !journeyTimeHasReached(departure, prior.data.arrivalDay)))
+        throw new Error('The prior actual private course has not reached this boarding endpoint.');
     const acceptedAir = input.air ? beginAnAirCourse(world, { bodyId: body.id, bodyName: body.name,
         fromId: input.fromId, toId: input.toId, conveyanceId: input.conveyanceId, power: input.power,
         vesselId: input.vesselId, artId: null, onDay: departure, runId: run.id, runElapsedDays: run.elapsedDays,
-        heads: 1 + input.companions.length, owned: { ownerId: body.id, pilotId: input.pilotId } }) : null;
+        heads: 1 + input.companions.length, owned: { ownerId: body.id, pilotId: input.pilotId }, priorReceiptId:prior?.id }) : null;
     if (input.air && !acceptedAir) throw new Error('Actual owned air endpoints lost their accepted quote');
-    const receipt = acceptedAir?.fact ?? appendWorldFact(world, makeFact({ day: departure, kind: 'gathering',
+    const receipt = acceptedAir?.fact ?? appendWorldFact(world, makeFact({ day: departure, kind: 'gathering', causes: prior ? [prior.id] : [],
 
         locationId: input.fromId, visibility: 'secret', summary: 'A private craft began its actual passage.',
         actors: [{ id: body.id, name: body.name, role: 'pilot_or_passenger' }],
         data: { ownedPassage: true, ownerId: body.id, vesselId: input.vesselId, pilotId: input.pilotId,
             fromLocationId: input.fromId, toLocationId: input.toId, departureDay: departure,
             arrivalDay: departure + input.days, conveyanceId: input.conveyanceId, conveyancePower: input.power,
-            walkingDays: input.walkingDays, heads: 1 + input.companions.length, runId: run.id, boardingRunElapsedDays: run.elapsedDays }
+            ...(input.seaLane ? {seaCourse:true,seaLaneId:input.seaLane.id,seaLane:JSON.stringify(input.seaLane)} : {}),
+            walkingDays: input.walkingDays, heads: 1 + input.companions.length, ...(input.onwardAgreementId ? { onwardAgreementId: input.onwardAgreementId } : {}), runId: run.id, boardingRunElapsedDays: run.elapsedDays }
     }), { recur: false, bystanders: false });
     if (acceptedAir) game.repos.cultivators.update(body.id, { location: acceptedAir.location.id, standingIn: null });
     for (const id of input.companions) {
@@ -173,11 +202,15 @@ export function acceptOwnedPassage(game: GameService, run: Run, body: Cultivator
         const person = world.npcs[at]!;
         world.npcs[at] = { ...person, ...(acceptedAir ? { locationId: acceptedAir.location.id } : {}), activity: companyDuringPassage(person.activity, { ...person.activity, kind: 'travelling',
             note: person.activity?.note ?? 'On the privately held craft.',
+            standingIn: null,
             withIds: [body.id, ...input.companions.filter(other => other !== id)],
             fromLocationId: input.fromId, returnTo: input.toId, sinceDay: departure, untilDay: departure + input.days,
             conveyanceId: input.conveyanceId, conveyancePower: input.power, vesselId: input.vesselId,
+            ...(input.seaLane ? {seaLaneId:input.seaLane.id} : {}),
             ...(acceptedAir ? { airCourseLocationId: acceptedAir.location.id } : {}) }, departure) };
     }
+    // A fresh accepted boarding is not a continuation of a previous local cabin visit.
+    game.repos.cultivators.standIn(body.id, null);
     writeFlag(game.db, body.id, ACTIVE, JSON.stringify({ receiptId: receipt.id }));
     game.theWorldMoved();
     return receipt.id;
@@ -195,7 +228,9 @@ export async function spendOnOwnedPassage(game: GameService, run: Run, body: Cul
         || typeof data.arrivalDay !== 'number' || typeof data.conveyanceId !== 'string' || typeof data.heads !== 'number') return null;
     const conveyance = requireConveyance(data.conveyanceId);
     const departure = data.departureDay, duration = data.arrivalDay - departure;
-    const fuelThrough = (day: number) => day <= departure ? 0 : priceJourney({ walkingDays: data.walkingDays as number
+    const fuelThrough = (day: number) => day <= departure ? 0 : data.seaCourse === true
+        ? whatTheChestBurns({conveyance,daysOneWay:Math.min(duration,Math.max(0,day-departure)),heads:data.heads as number,trips:1})
+        : priceJourney({ walkingDays: data.walkingDays as number
         * Math.min(duration, Math.max(0, day - departure)) / duration, conveyance,
         power: typeof data.conveyancePower === 'number' ? data.conveyancePower : null,
         heads: data.heads as number, preciseDays: data.airCourse === true }).stonesBurned;
@@ -257,26 +292,19 @@ export async function continueOwnedPassage(game: GameService, run: Run, body: Cu
     if (!said || /^(?:on|onward|onwards|ahead|forward)$/i.test(said)
         || loosePlaceKey(said) === loosePlaceKey(to?.name ?? ''))
         return spendOnOwnedPassage(game, run, body, Number.POSITIVE_INFINITY);
-    const actual = ownedCarrierAt(game.atHand, claim.receiptId, body, routineTime(game.atHand));
-    const craft = game.atHand.objects.find(object => object.id === fact?.data.vesselId);
-    if (craft && actual?.locationId) {
-        const airSite = game.atHand.locations.find(place => place.tags.includes('air-course') && place.originFactId === claim.receiptId);
-        if (airSite) stopAnAirCourse(game.atHand, airSite, routineTime(game.atHand), 'The actual operator ended this course to change destination.');
-        leaveItHere(game.atHand.objects, craft, actual.locationId);
-        for (let i = 0; i < game.atHand.npcs.length; i++) {
-            const person = game.atHand.npcs[i]!;
-            const doing = person.activity;
-            if (person.status !== 'alive' || doing?.kind !== 'travelling'
-                || doing.vesselId !== craft.id || doing.sinceDay !== fact?.data.departureDay
-                || doing.untilDay !== fact?.data.arrivalDay) continue;
-            const activity = { ...doing, kind: 'the_work_of_their_rank' as const, withIds: [] };
-            delete activity.fromLocationId; delete activity.returnTo; delete activity.untilDay;
-            delete activity.vesselId; delete activity.seaLaneId; delete activity.passageCompany;
-            delete activity.conveyanceId; delete activity.conveyancePower; delete activity.airCourseLocationId;
-            game.atHand.npcs[i] = { ...setLocation(person, actual.locationId, routineTime(game.atHand)), activity: companyAfterPassage(person, routineTime(game.atHand)) ?? activity };
-        }
+    const targetPlace=worldLocationFor(game.atHand,said);
+    const fresh=game.repos.cultivators.getById(body.id)??body;
+    if(fact?.data.pilotId===body.id&&targetPlace){
+        const changed=changeOwnedAirCourse(game,fresh,targetPlace.id,body.id)
+            ??changeOwnedSeaCourse(game,fresh,targetPlace.id,body.id);
+        if(changed)return spendOnOwnedPassage(game,game.currentRun().run,game.currentRun().cultivator,Number.POSITIVE_INFINITY);
+        return refused('engine.actualOwnedCourse','ride',factsForRefusal(
+            'That changed course is not currently feasible.',
+            'The actual craft, accepted point, route knowledge, capacity and native fuel must supply it. The existing course remains unchanged.',
+            'No route, body, purse or claim was altered.'));
     }
-    clearFlag(game.db, body.id, ACTIVE);
-    game.theWorldMoved();
-    return null;
+    return refused('engine.actualOwnedCourse','ride',factsForRefusal(
+        'The actual pilot has not agreed to that changed destination.',
+        'Ask the actual pilot to change course. Owning a seat or the craft does not substitute for their consent; the existing course remains unchanged.',
+        'No route, body, purse or claim was altered.'));
 }

@@ -1,5 +1,7 @@
+import { aPostingForItsActualLegs } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import { companyDuringPassage } from './company-during-a-passage.js';
-import { positionOnRoad, type RoadPosition } from './road-course.js';
+import { stoppedRoadPoint } from './where-a-carriage-stopped.js';
+import { positionOnRoad, positionOnAdmittedRoad, groundAtRoadPosition, type RoadPosition } from './road-course.js';
 /**
  * A road has ground between its ends. These are ordinary locations on the
  * existing graph; their two links divide the original price, never add one.
@@ -123,8 +125,21 @@ export function addPlacesOnTheWay(locations: LocationRecord[]): void {
 /** Historic departure and the activity's destination/date are the only journey state. */
 export function locationOnNpcJourney(
     locations: readonly LocationRecord[], npc: NpcRecord, day: number, routes?: RouteQueries,
-    capture?: (position: RoadPosition) => void
+    capture?: (position: RoadPosition) => void, currentNpc?: (id:string)=>NpcRecord|undefined
 ): string | null {
+    const doing=npc.activity;
+    if(!isTerminal(npc.status)&&doing?.kind==='travelling'&&doing.carrierOperatorId&&doing.carrierOperatorId!==npc.id){
+        const source=currentNpc?.(doing.carrierOperatorId),on=source?.activity;
+        if(!source||source.status!=='alive')return null;
+        if(on?.kind==='travelling'&&on.admittedRoad&&on.vesselId===doing.vesselId
+            &&on.sinceDay===doing.sinceDay&&on.untilDay===doing.untilDay&&on.returnTo===doing.returnTo)
+            return locationOnNpcJourney(locations,source,day,routes,capture,currentNpc);
+        // Arrival may already have restored the operator's ordinary activity.
+        // Its actual endpoint body/date proves this due landing, not a guessed old route.
+        if(doing.untilDay!=null&&journeyTimeHasReached(day,doing.untilDay)&&source.locationId===doing.returnTo
+            &&source.updatedOnDay>=doing.untilDay){capture?.({kind:'place',locationId:doing.returnTo!,originLocationId:doing.fromLocationId??doing.returnTo!});return doing.returnTo;}
+        return null;
+    }
     if (!capture) return projectNpcJourney(locations, npc, day, routes);
     let captured = false;
     const location = projectNpcJourney(locations, npc, day, routes, point => {
@@ -136,13 +151,15 @@ export function locationOnNpcJourney(
 
 /** Exact geometry comes from the same capability-guarded route read as physical ground. */
 export function roadPositionOfNpc(locations: readonly LocationRecord[], npc: NpcRecord,
-    day: number, routes?: RouteQueries): RoadPosition | null {
+    day: number, routes?: RouteQueries, currentNpc?:(id:string)=>NpcRecord|undefined): RoadPosition | null {
+    const stopped=stoppedRoadPoint(locations,npc.locationId);
+    if(stopped)return stopped;
     // A carried party with no admitted route has only a coarse marker here.
     // Its actual leader position must be supplied by the adapter that owns it.
     if (npc.activity?.kind === 'out_with_a_party' && npc.activity.fromLocationId == null
         && npc.activity.withIds.length > 0) return null;
     let position: RoadPosition | null = null;
-    locationOnNpcJourney(locations, npc, day, routes, point => { position = point; });
+    locationOnNpcJourney(locations, npc, day, routes, point => { position = point; },currentNpc);
     return position;
 }
 
@@ -158,6 +175,9 @@ function projectNpcJourney(
     if (activity?.airCourseLocationId === npc.locationId
         && locations.some(place => place.id === npc.locationId && place.tags.includes('air-course')))
         return npc.locationId;
+    // An admitted duty keeps an actual physical row after air landfall. Its
+    // historic departure is not an unadmitted foot leg or automatic road return.
+    if (activity?.airDutyReceiptId) return npc.locationId;
     if (activity?.kind === 'stationed' && activity.fromLocationId != null) {
         const passage = passageToAPost(locations, npc, routes);
         if (!passage) return activity.fromLocationId;
@@ -188,6 +208,10 @@ function projectNpcJourney(
     }
     if (activity?.kind !== 'travelling' || activity.untilDay == null || !activity.returnTo) return npc.locationId;
     const from = activity.fromLocationId ?? npc.locationId;
+    if(activity.admittedRoad){
+        const point=positionOnAdmittedRoad(activity.admittedRoad,Math.max(0,day-activity.sinceDay),activity.untilDay-activity.sinceDay);
+        capture?.(point);return groundAtRoadPosition(locations,point);
+    }
     if (from === null || day <= activity.sinceDay) return from;
     if (activity.vesselId && activity.seaLaneId) {
         if (journeyTimeHasReached(day, activity.untilDay)) return activity.returnTo;
@@ -241,6 +265,30 @@ function daysOnHeldRoute(route: HeldRoute, craft?: Conveyance | null, power?: nu
     if (walking === 0) return 0;
     return craft ? priceJourney({ walkingDays: walking, conveyance: craft, power, heads }).daysForEverybody
         : Math.max(1, Math.ceil(walking));
+}
+
+
+/** The uninterrupted away activity's actual site interval, excluding both legs.
+ * This is a projection of the same held routes/prices used by physical presence,
+ * not a second watch clock or evidence of an independently logged attendance. */
+export function siteIntervalOnAnNpcPosting(locations: readonly LocationRecord[], npc: NpcRecord,
+    routes?: RouteQueries): { locationId: string; fromDay: number; untilDay: number } | null {
+    const doing = npc.activity;
+    if (!doing || doing.kind !== 'out_with_a_party' || doing.untilDay == null || !npc.locationId
+        || doing.airCourseLocationId) return null;
+    if (doing.fromLocationId == null) return { locationId: npc.locationId,
+        fromDay: doing.sinceDay, untilDay: doing.untilDay };
+    const outward = walkingRouteFrom(locations, doing.fromLocationId, npc.locationId, routes);
+    const returning = walkingRouteFrom(locations, npc.locationId, doing.returnTo ?? doing.fromLocationId, routes);
+    if (!outward || !returning) return null;
+    const places = routes?.locations === locations ? routes.places : new Map(locations.map(place => [place.id, place]));
+    const craft = doing.conveyanceId ? getConveyance(doing.conveyanceId) : undefined;
+    if ((waterOnHeldRoute(outward, places) || waterOnHeldRoute(returning, places))
+        && !craft?.crossesGroundThatCannotBeWalked) return null;
+    const heads = new Set([npc.id, ...doing.withIds]).size;
+    return { locationId: npc.locationId,
+        fromDay: doing.sinceDay + daysOnHeldRoute(outward, craft, doing.conveyancePower, heads),
+        untilDay: doing.untilDay - daysOnHeldRoute(returning, craft, doing.conveyancePower, heads) };
 }
 
 export function locationOnRoute(locations: readonly LocationRecord[], from: string, to: string,
@@ -297,14 +345,17 @@ export function physicalJourneyDays(locations: readonly LocationRecord[], from: 
         : Math.max(1, Math.ceil(walking));
 }
 
-/** Reason.days is the entire away term; physical travel must fit inside it. */
+/** The original reading treated reason.days as the entire away term. Unmarked
+ * reasons retain that contract. Explicit on-site reasons instead keep their
+ * authored service in addition to both canonical physical legs. */
 export function aPostingThatCanReachItsGround(posting: Posting, locations: readonly LocationRecord[],
     from: string | null, to: string | null, craft?: Conveyance | null, power?: number | null): Posting {
     const walking = from && to ? walkingDaysFrom(locations, from).get(to) ?? 1 : 1;
     const quote = craft ? priceJourney({ walkingDays: walking, conveyance: craft,
         power, heads: posting.hands }) : null;
     const journey = quote?.daysForEverybody ?? physicalJourneyDays(locations, from, to);
-    return { ...posting, days: Math.max(posting.days, 2 * journey),
+    const back = physicalJourneyDays(locations, to, from, craft, power, posting.hands);
+    return { ...aPostingForItsActualLegs(posting, journey, back),
         // The service term does not keep a parked hull under way. Both real
         // passages draw the same existing head/capacity/fuel quote.
         stonesBurned: quote ? 2 * quote.stonesBurned : 0 };
@@ -380,7 +431,7 @@ export function firstTravellerOnTheWay(input: {
         const day = input.onDay + afterDays;
         const npc = input.npcs.find(person => person.status === 'alive'
             && !input.exceptIds?.has(person.id) && npcIsTravellingOnDay(input.locations, person, day)
-            && locationOnNpcJourney(input.locations, person, day) === place.id
+            && locationOnNpcJourney(input.locations, person, day,undefined,undefined,id=>input.npcs.find(one=>one.id===id)) === place.id
             && npcCrossesThisRouteSite(input.locations, person, place.id, day));
         if (npc) return { npc, place, afterDays };
     }

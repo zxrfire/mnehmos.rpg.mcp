@@ -78,6 +78,8 @@ export type RequestKind =
      * road with you is ordinary in this genre; buying a rung is not.
      */
     | 'company'
+    /** The current operator is asked, never commanded by the fare, to change course. */
+    | 'course_change'
     /** Consenting to a particular offered ride; preserves existing party affiliation. */
     | 'passage'
     /**
@@ -135,6 +137,7 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
         // cannot be bought), and an open-handed person says yes more often
         // (`DISPOSITION_REACH` is 1 at this rung and below 0.4 at every other),
         // so who would come is a fact about people rather than about a table.
+        case 'course_change':
         case 'company':
         case 'passage':
             return 'a_real_favour';

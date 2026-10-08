@@ -145,8 +145,36 @@ export const CONVEYANCES: readonly Conveyance[] = [
             + 'no hull is a house that had a hull.'
     },
     {
+        id: 'conv-water-ship',
+        name: 'A timber ship',
+        grade: 'mortal',
+        range: 'crossing',
+        holding: 'tracked',
+        // Authored berths, including the operator and hands. Public passages
+        // retain their SeaLane prices and durations rather than walking speed.
+        heads: 30,
+        waterOnly: true,
+        crossesGroundThatCannotBeWalked: true,
+        seenComing: false,
+        drawnByBeast: false,
+        interiorLayout: [
+            {id:'lower-cabin',name:'the lower cabin',opensOnto:'deck',access:'public',doorMaterial:'residence_door',initiallyClosed:false},
+            {id:'inner-cabin',name:'the inner cabin',opensOnto:'deck',access:'holder',doorMaterial:'residence_door',initiallyClosed:true},
+            {id:'aft-cabin',name:'the aft cabin',opensOnto:'deck',access:'holder',doorMaterial:'residence_door',initiallyClosed:true}
+        ],
+        description: 'An ordinary timber hull worked by a shipmaster and hands. It sails between actual docks; it neither flies nor crosses a land road.'
+    },
+    {
         id: 'conv-spirit-boat',
         name: 'A spirit boat',
+        interiorLayout: [
+            { id:'lower-cabin', name:'the lower cabin', opensOnto:'deck', access:'public',
+                doorMaterial:'residence_door', initiallyClosed:false },
+            { id:'inner-cabin', name:'the inner cabin', opensOnto:'deck', access:'holder',
+                doorMaterial:'residence_door', initiallyClosed:true },
+            { id:'aft-cabin', name:'the aft cabin', opensOnto:'deck', access:'holder',
+                doorMaterial:'residence_door', initiallyClosed:true }
+        ],
         grade: 'heaven',
         range: 'crossing',
         holding: 'tracked',

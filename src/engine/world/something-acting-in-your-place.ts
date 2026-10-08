@@ -1,3 +1,4 @@
+import { writeTheNpcArtsActuallyUsed } from './the-arts-an-npc-actually-uses-in-a-fight.js';
 /** A remote presence is a dated world object. Its maker's body stays where it was. */
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { NASCENT_SOUL_ORDINAL, hasBody, canEnterExistenceState, isTheSamePerson } from '../cultivation/existence.js';
@@ -143,6 +144,9 @@ export function proxyCombatant(world: WorldState, proxy: ObjectRecord): Combatan
     const sword = world.objects.find(o => o.id === proxy.data.swordId);
     return { ...base, id: proxy.id, name: `A ${proxy.data.kind}`, realmOrdinal: proxy.power ?? 0,
         hp: Number(proxy.data.hp), maxHp, qi: maxHp, maxQi: maxHp,
+        // A made proxy has its existing separate sustaining resource, not its
+        // maker's bodily cast receipt. That broader art-use seam is unchanged.
+        techniqueCooldowns: undefined,
         weapon: sword && sword.power !== null ? { ...sword, power: sword.power } : null, technique: proxy.data.kind === 'sword' ? null : base.technique,
         injuries: [], soulState: maker.soulState };
 }
@@ -281,6 +285,8 @@ export function advanceSeparatedPresences(world: WorldState, fromDay: number): v
             rng: forStream(world.seed, 'proxy-fight', proxy.id, target.id, world.currentDay),
             intent: { thrown: AN_ORDINARY_SWING }
         });
+        writeTheNpcArtsActuallyUsed(world,fight.exchanges,
+            'proxy:'+proxy.id+':'+world.history.nextFactSeq,world.currentDay);
         if (fight.loserId === target.id && (fight.finished || fight.outcome === 'body_destroyed')
             && !theWorldMayEnd(target)) continue;
         proxy.data.hp = fight.hp[proxy.id] ?? attacker.hp;

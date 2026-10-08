@@ -60,7 +60,8 @@ function boardKeyOf(fact: HistoricalFact): string {
         fact.data.capitalCompetition === true);
 }
 
-const INDEXES = new WeakMap<WorldState, WitnessIndex>();
+export type HistoryFactSource = {history:Pick<WorldState['history'],'facts'>};
+const INDEXES = new WeakMap<HistoryFactSource, WitnessIndex>();
 export function referenceKeys(fact: HistoricalFact): string[] {
     return [...fact.actors.map(actor => actor.id), ...fact.witnessIds, ...fact.causes,
         ...Object.values(fact.data).filter((value): value is string => typeof value === 'string'),
@@ -321,7 +322,7 @@ function removeFact(index: WitnessIndex, fact: HistoricalFact, dropped: boolean,
     }
 }
 
-export function witnessIndexFor(world: WorldState): WitnessIndex {
+export function witnessIndexFor(world: HistoryFactSource): WitnessIndex {
     const facts = world.history.facts;
     let index = INDEXES.get(world);
     if (!index || index.facts !== facts || index.length > facts.length
@@ -361,7 +362,7 @@ export function factsAddedSince(world: WorldState, cursor: number): HistoricalFa
 }
 
 /** A sparse column is indexed on first use, then only appended rows are read. */
-export function factsWithData(world: WorldState, key: string): readonly HistoricalFact[] {
+export function factsWithData(world: HistoryFactSource, key: string): readonly HistoricalFact[] {
     const index = witnessIndexFor(world);
     let rows = index.byData.get(key);
     if (!rows) {
@@ -383,7 +384,7 @@ export function factsInSpan(world: WorldState, fromDay: number, toDay: number): 
 }
 
 /** A receipt or report keyed by the subject recorded in its sparse column. */
-export function factsWithDataValue(world: WorldState, key: string,
+export function factsWithDataValue(world: HistoryFactSource, key: string,
     value: string | number | boolean | null): readonly HistoricalFact[] {
     const index = witnessIndexFor(world);
     let values = index.byDataValue.get(key);

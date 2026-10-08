@@ -15,6 +15,7 @@ import { journeyNeedsWater, locationOnNpcJourney } from './places-on-the-way.js'
 import { earliestQuotedPublicPassage, onSponsoredPublicPassage, publicShipLinesFrom,
     quotePublicPassage, recordPublicPassage, thePortsShipsPutInAt,
     type PublicPassageLeg, type PublicPassageQuote } from './public-shipping.js';
+import { realiseAcceptedPublicShipHull, publicShipHullCanBeBoarded } from './a-public-ship-hull.js';
 import { bindShipCrewToPassage, ensureShipCrew } from './ship-crew.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
 import { bestForThisRoad, priceJourney } from './what-a-conveyance-does-to-a-journey.js';
@@ -163,7 +164,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
             }
             return true;
         }
-        quote = quotePublicPassage(state, from.id, to.id, departure, members.length);
+        quote = quotePublicPassage(state, from.id, to.id, departure, members.length, [], undefined, members.map(member=>member.id));
         if (!quote) {
             const retry = day + 30;
             for (const member of members) {
@@ -177,8 +178,12 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
             return true;
         }
         due = quote.arrivalDay;
+        if (!publicShipHullCanBeBoarded(state,quote)) return false;
         ensureShipCrew(state, quote.lane, from.id, day);
         bindShipCrewToPassage(state, quote);
+        const operator=state.npcs.find(npc=>npc.status==='alive' && npc.tags.includes('crew-of:'+quote!.vesselId)
+            && npc.identity.occupation==='shipmaster');
+        if (!operator || !realiseAcceptedPublicShipHull(state,quote,operator)) throw new Error('Accepted public ship custody changed synchronously.');
     }
     for (const member of members) {
         const at = state.npcs.findIndex(n => n.id === member.id);
@@ -192,7 +197,8 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
             ...moved.activity, capitalMissionId: missionId, capitalMissionLeg: missionStep } };
         onDue?.(member.id, due);
     }
-    if (quote) recordPublicPassage(state, quote, day, from.id, members.map(n => n.id));
+    if (quote) recordPublicPassage(state, quote, day, from.id, members.map(n => n.id),undefined,undefined,
+        members.map(n=>({id:n.id,name:n.name})));
     return true;
 }
 

@@ -64,6 +64,7 @@ import {
     whatItWouldTake
 } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import { createObligation, severityRank } from '../engine/social/grudges.js';
+import { requestedCaptainCourse, costOfCaptainCourse, carryOutCaptainCourse } from './asking-the-actual-captain.js';
 import { whatAHeldBodyDoesWith } from '../engine/social/a-body-under-somebody-elses-hand.js';
 import { whatWasPutAcrossTheTable } from './going-back-and-forth-over-a-price.js';
 
@@ -267,7 +268,7 @@ const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
     // being asked. It goes down the ordinary request road - one costing, one
     // roll, one record - and what it leaves behind is a term written onto their
     // own activity rather than a roster.
-    'company', 'passage',
+    'company', 'course_change', 'passage',
     // Their hands for a season, which is not the same ask as a thing they are
     // already holding and does not end in the same place.
     'a_making',
@@ -1269,7 +1270,7 @@ ${unnamed}`;
         // interrogative cannot reach the attempt by carrying it along.
         const reread = requestPutToSomebody(rawInput);
         const weighing = intent === 'weigh';
-        const kind: RequestKind = REQUEST_KINDS.has(intent)
+        let kind: RequestKind = REQUEST_KINDS.has(intent)
             ? intent as RequestKind
             : reread?.kind ?? 'a_thing';
         // A CATEGORY WORD IS NOT A NAME. "Teach me an art" arrives with the
@@ -1384,6 +1385,12 @@ ${unnamed}`;
             });
         }
         if (!party) return this.nobodyByThatName(cultivator, query, scope, 'request');
+        const captainCourse = requestedCaptainCourse(this, cultivator, party.id, said, rawInput);
+        if (captainCourse) kind = 'course_change';
+        else if (kind === 'course_change') return refused('engine.actualCaptainCourse', 'request', factsForRefusal(
+            'No actual visible operator received that course request.',
+            'Address the current driver or pilot aboard this hull and name the requested destination.',
+            'No course, fare, body position, company or obligation was changed.'));
 
         // A requested clinical act keeps its resolved listener. The ordinary
         // care path owns all physical-provider, fight, grade, price and stock gates.
@@ -1605,7 +1612,7 @@ ${unnamed}`;
         // requests retain the sustained social attempt's existing span.
         const sustainedCompany = shape === 'company' && (days !== undefined
             || ASKING_FOR_SUSTAINED_COMPANY.test(named + ' ' + rawInput));
-        const localCompanyConsent = (shape === 'company' || shape === 'passage')
+        const localCompanyConsent = (shape === 'company' || shape === 'passage' || captainCourse !== null)
             && this.present(cultivator).some(row => row.id === party.id);
         const term = shape === 'company'
             ? (sustainedCompany ? (days === undefined ? null : Math.max(1, Math.trunc(days)))
@@ -1661,7 +1668,7 @@ ${unnamed}`;
             ? this.theWorldsNameFor(named)
             : null;
 
-        const costing = whatItWouldCostThem({
+        const costing = captainCourse ? costOfCaptainCourse(captainCourse) : whatItWouldCostThem({
             kind: shape as 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company' | 'passage' | 'guidance',
             asking,
             asked,
@@ -2042,7 +2049,7 @@ ${alsoSaid.join(' ')}`;
         execution.calls = calls;
 
         // ── AND THE THING ACTUALLY HAPPENS ───────────────────────────────
-        if (attemptWasAccepted(result.outcome)) {
+        if (!captainCourse && attemptWasAccepted(result.outcome)) {
             // A SPAN DOES NOT BEGIN AFTER THE ASKING DID NOT END. Whatever cut
             // the asking short - or ended the life doing it - is also what the
             // lesson would have started in the middle of.
@@ -2112,7 +2119,18 @@ ${done.span.facts.prose}`;
                 summary: `${result.days} day spent on the local consent exchange.`, ok: true });
                 // The answer already happened. A later native interruption
                 // must not retrospectively change actual consent into refusal.
-                return { ...timed, outcome: advanced.finished ? execution.outcome : (advanced.spent?.outcome ?? execution.outcome) };
+            if (captainCourse && attemptWasAccepted(result.outcome)) {
+                const fresh=this.repos.cultivators.getById(cultivator.id);
+                const done=advanced.finished && fresh?.alive
+                    ? carryOutCaptainCourse(this,fresh,captainCourse)
+                    : {ok:false,lines:['The native request span stopped before any changed course could begin.']};
+                timed.facts.lines.push(...done.lines);
+                timed.facts.prose += '\n\n'+done.lines.join(' ');
+                timed.calls.push({name:'engine.actualCaptainCourse',action:'request',
+                    summary:done.lines.join(' '),ok:done.ok});
+                if(!done.ok) timed.outcome='refused';
+            }
+            return { ...timed, outcome: advanced.finished ? timed.outcome : (advanced.spent?.outcome ?? timed.outcome) };
         }
         return execution;
     },

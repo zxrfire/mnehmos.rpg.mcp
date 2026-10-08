@@ -3,6 +3,8 @@ import type { AcceptedPassageMoment } from '../engine/world/passage-moment.js';
 import type Database from 'better-sqlite3';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { RoadPosition } from '../engine/world/road-course.js';
+import type { WorldState } from '../engine/world/world-state.js';
+import { stoppedRoadPoint } from '../engine/world/where-a-carriage-stopped.js';
 import { readJsonFlag } from '../server/consolidated/cultivation-support.js';
 
 export const FLAG_ROAD_STOPPED = 'road_stopped';
@@ -13,13 +15,15 @@ export interface StoppedRoad {
     readonly road: number;
     readonly walked: number;
     readonly position?: RoadPosition;
+    /** A reached immutable loss site; no second copied partial point. */
+    readonly stoppedLocationId?: string;
     /** Historical admission moment, not the body's current clock. */
     readonly acceptedMoment?: AcceptedPassageMoment;
 }
 
 /** Reopening a service reads this same durable record; memory is not an authority. */
 export function stoppedRoadFor(db: Database.Database,
-    body: Pick<Cultivator, 'id' | 'location'>): StoppedRoad | null {
+    body: Pick<Cultivator, 'id' | 'location'>, world?:Pick<WorldState,'locations'>|null): StoppedRoad | null {
     const cursor = readJsonFlag<StoppedRoad>(db, body.id, FLAG_ROAD_STOPPED);
     if (!cursor || cursor.from !== body.location || typeof cursor.to !== 'string'
         || !Number.isFinite(cursor.road) || cursor.road <= 0
@@ -33,6 +37,11 @@ export function stoppedRoadFor(db: Database.Database,
     if (cursor.acceptedMoment && (typeof cursor.acceptedMoment.runId !== 'string'
         || !Number.isFinite(cursor.acceptedMoment.elapsedDays) || cursor.acceptedMoment.elapsedDays < 0
         || !Number.isFinite(cursor.acceptedMoment.boardedOnDay))) return null;
+    if(cursor.stoppedLocationId&&world){
+        const point=stoppedRoadPoint(world.locations,cursor.stoppedLocationId);
+        if(!point)return null;
+        return {...cursor,position:point};
+    }
     return cursor;
 }
 
@@ -40,6 +49,6 @@ export function stoppedRoadFor(db: Database.Database,
 export function betweenRoadEndpoints(db: Database.Database,
     body: Pick<Cultivator, 'id' | 'location'>): boolean {
     const cursor = stoppedRoadFor(db, body);
-    return cursor?.position?.kind === 'edge'
+    return typeof cursor?.stoppedLocationId === 'string' || cursor?.position?.kind === 'edge'
         || !!cursor && !cursor.position && cursor.walked > 0 && cursor.walked < cursor.road;
 }

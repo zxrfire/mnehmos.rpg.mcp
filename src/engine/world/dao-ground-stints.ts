@@ -51,6 +51,8 @@ export function startNpcJourney(
     const craft = vehicle && getConveyance(String(vehicle.data.conveyanceId ?? ''));
     if (vehicle && (!craft || !isWithThem(vehicle, npc.id, npc.locationId)
         || (vehicle.ownerId !== npc.id && vehicle.possessorId !== npc.id))) return npc;
+    // A water ship's accepted maritime course is not a walking-graph journey.
+    if (craft?.waterOnly) return npc;
     if (craft && itWantsAPilot(craft) && npc.cultivation.realmOrdinal < A_SPIRIT_BOAT_ANSWERS_TO) return npc;
     if (water && !craft?.crossesGroundThatCannotBeWalked) return npc;
     const walking = walkingDaysFrom(state.locations, npc.locationId).get(destinationId);

@@ -3,6 +3,8 @@ import type { Cultivator, Run } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { AnAreaOfAPlace } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { vesselRoomChosen, vesselRoomAccess, setVesselRoomDoor } from '../engine/world/rooms-in-a-vessel.js';
+import { theDoorKeysTheyActuallyCarry } from './the-door-keys-they-actually-carry.js';
 import { routineTime } from '../engine/world/npc-routines.js';
 import { actualCarrierScene, areasOfActualCarrier, type ActualCarrierScene } from './the-actual-carrier-scene.js';
 import { passHours } from './routine-invitations.js';
@@ -42,6 +44,27 @@ export async function walkOnTheActualCarrier(game: GameService, run: Run, body: 
             'That area is no longer on this actual hull.', 'The spent approach remains spent; the destination was not entered.',
             cannotContinue() ?? 'The freshly read accepted hull no longer offers that area.')));
         return advanced.spent ? executionWithItsSpentSpan(advanced.spent, denied, denied) : denied;
+    }
+    const chosen=vesselRoomChosen(reached.id);
+    if (chosen) {
+        const world=game.atHand!;
+        const vessel=world.objects.find(one=>one.id===chosen.vesselId);
+        const room=current!.rooms.find(one=>one.slot.id===chosen.slotId);
+        const keys=theDoorKeysTheyActuallyCarry(world.objects,body.id);
+        const access=room ? vesselRoomAccess(room,body.id,keys) : null;
+        if (!vessel || !room || !access?.physicalEntry) {
+            const denied=finish(refused('engine.walkAcrossThePlace','move',factsForRefusal(
+                'The actual cabin door no longer admits this crossing.',
+                'The native approach remains spent. No cabin was entered.',
+                'Fresh hull, slot, door and held-key facts were checked after the approach.')));
+            return advanced.spent ? executionWithItsSpentSpan(advanced.spent,denied,denied) : denied;
+        }
+        if (room.closed) {
+            const opened=setVesselRoomDoor(vessel,room.slot.id,body.id,keys,false);
+            if (!opened) throw new Error('Validated cabin holder/key could not open its actual door.');
+            world.objects[world.objects.indexOf(vessel)]=opened;
+            game.theWorldMoved();
+        }
     }
     game.repos.cultivators.standIn(body.id, reached.id);
     const arrived = game.freeAction(live.run, 'move', factsForToolResult(

@@ -1,3 +1,4 @@
+import { missionPostId, targetInMissionPostId } from '../world/where-a-house-keeps-its-public-watch.js';
 /**
  * The board is what the house needs doing, not a list somebody wrote out.
  *
@@ -384,10 +385,11 @@ export function theMissionsAHousePosts(house: HouseAsItStands, reachOfTheHouse: 
 export function aMissionAsAnOffer(
     mission: HouseMission,
     house: { id: string; name: string },
-    placeName: string | null = null
+    placeName: string | null = null,
+    targetId?: string
 ): EncounterEntry {
     return {
-        id: `${mission.id}@${house.id}`,
+        id: missionPostId(mission.id,house.id,targetId),
         name: aTaskAsPosted(mission.task, {
             house: house.name,
             place: placeName,
@@ -409,14 +411,20 @@ export function aMissionAsAnOffer(
 /** The mission a board line was made from, or null. */
 export function theMissionBehind(entryId: string): HouseMission | null {
     const at = entryId.indexOf('@');
-    return at < 0 ? null : getHouseMission(entryId.slice(0, at)) ?? null;
+    if(at<1 || at!==entryId.lastIndexOf('@') || at===entryId.length-1)return null;
+    const mission=getHouseMission(entryId.slice(0,at).split('~')[0]!);
+    if(!mission)return null;
+    const target=targetInMissionPostId(entryId);
+    return mission.at==='its_public_terminal' ? target!==null?mission:null
+        : entryId.slice(0,at).includes('~')?null:mission;
 }
 
 /**
  * Whether a board line is a mission held as a post rather than spent in one act: anything above
- * the outer rung. See `web/holding-a-mission-post.ts`.
+ * the outer rung, or one whose real remote site must be reached before service.
+ * See `web/holding-a-mission-post.ts`.
  */
 export function isHeldAsAPost(entryId: string): boolean {
     const mission = theMissionBehind(entryId);
-    return mission !== null && mission.rung !== 'outer';
+    return mission !== null && (mission.rung !== 'outer' || mission.at === 'its_public_terminal');
 }

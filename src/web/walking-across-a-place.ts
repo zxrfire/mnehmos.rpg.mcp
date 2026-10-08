@@ -35,6 +35,8 @@ import type { GameService } from './turn-engine.js';
 import { theHouseWhoseGateThisIs, whatTheGateOfThisHouseSays } from './walking-up-to-a-house.js';
 import { whereTheyAreLodged } from './a-room-at-an-inn.js';
 import { peopleInThisPlace } from './hearsay.js';
+import { vesselRoomChosen, vesselRoomAccess } from '../engine/world/rooms-in-a-vessel.js';
+import { theDoorKeysTheyActuallyCarry } from './the-door-keys-they-actually-carry.js';
 import { actualCarrierScene } from './the-actual-carrier-scene.js';
 import { walkOnTheActualCarrier } from './walking-on-the-actual-carrier.js';
 import { passHours } from './routine-invitations.js';
@@ -80,6 +82,15 @@ function ownName(area: AnAreaOfAPlace): string {
 /** A private door is reachable by its holder or by an actual invitation, never by a name alone. */
 function canEnterArea(game: GameService, cultivator: Cultivator, area: AnAreaOfAPlace): boolean {
     if (area.for !== 'room') return true;
+    const hullRoom = vesselRoomChosen(area.id);
+    if (hullRoom) {
+        const world=game.atHand;
+        const carrier=world ? actualCarrierScene(game.repos,cultivator,world,routineTime(world)) : null;
+        const room=carrier?.vesselId===hullRoom.vesselId
+            ? carrier.rooms.find(one=>one.slot.id===hullRoom.slotId) : null;
+        return !!world && !!room && vesselRoomAccess(room,cultivator.id,
+            theDoorKeysTheyActuallyCarry(world.objects,cultivator.id)).physicalEntry;
+    }
     const holder = area.id.slice(area.id.indexOf('#room#') + '#room#'.length);
     if (holder === cultivator.id) return true;
     const host = game.atHand?.npcs.find(npc => npc.id === holder);
@@ -146,7 +157,7 @@ export function theRestOfThisPlace(game: GameService, cultivator: Cultivator): s
  * turned away inside the grounds.
  */
 export function thePlaceAsTheSceneNamesIt(game: GameService, cultivator: Cultivator, place: string): string {
-    const position = stoppedRoadFor(game.repos.db, cultivator)?.position;
+    const position = stoppedRoadFor(game.repos.db, cultivator, game.atHand)?.position;
     if (position?.kind === 'edge' && game.atHand) {
         const from = game.atHand.locations.find(row => row.id === position.fromId)?.name;
         const to = game.atHand.locations.find(row => row.id === position.toId)?.name;

@@ -1,4 +1,4 @@
-import { journeyTimeHasReached } from './places-on-the-way.js';
+import { journeyTimeHasReached, ROUTE_STOP } from './places-on-the-way.js';
 /** A stopped road cursor is the sole partial physical position. The original
  * admitted edge cost is historical: closing a road later does not erase the
  * part already entered. Reversal admits the actual directed reverse edge now.
@@ -102,4 +102,28 @@ export function roadVertexMoments(route: Route, departureDay: number, travelDays
     return route.map(stop => departureDay + initialDays
         + (total > 0 ? (travelDays - initialDays) * stop.days / total : 0))
         .filter(day => day > departureDay);
+}
+
+/** One admitted changing ground course held by its actual operator activity.
+ * Passenger activities refer to the operator, never copy this geometry. */
+export interface AdmittedRoadCourse {
+    position: RoadPosition;
+    route: RoadContinuation['route'];
+    initialTravelDays: number;
+}
+export function continuationOfAdmittedRoad(held:AdmittedRoadCourse):RoadContinuation {
+    const partialDays=held.position.kind==='edge'?(1-held.position.fraction)*held.position.admittedDays:0;
+    return {position:held.position,endpointId:held.route[0]!.locationId,partialDays,route:held.route,
+        days:partialDays+(held.route.at(-1)?.days??0)};
+}
+export function positionOnAdmittedRoad(held:AdmittedRoadCourse,elapsed:number,travelDays:number):RoadPosition {
+    const course=continuationOfAdmittedRoad(held),partial=held.initialTravelDays;
+    const walking=elapsed<=partial&&partial>0?course.partialDays*Math.max(0,elapsed)/partial
+        :course.partialDays+(held.route.at(-1)?.days??0)*Math.max(0,elapsed-partial)/Math.max(Number.MIN_VALUE,travelDays-partial);
+    return positionAfterRoadContinuation(course,walking);
+}
+/** Existing foot display read, shared without granting either endpoint access. */
+export function groundAtRoadPosition(locations:readonly LocationRecord[],point:RoadPosition):string {
+    return point.kind==='place'?point.locationId:locations.find(row=>row.id===point.toId)?.tags.includes(ROUTE_STOP)
+        ?point.toId:point.fromId;
 }

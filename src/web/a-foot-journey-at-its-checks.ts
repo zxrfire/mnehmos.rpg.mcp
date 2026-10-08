@@ -38,7 +38,7 @@ export interface FootCheckOptions {
 export async function spendFootJourneyAtItsChecks(game: GameService, run: Run, body: Cultivator,
     days: number, options: FootCheckOptions) {
     const start = routineTime(game.atHand!);
-    const initialCursor = stoppedRoadFor(game.db, body);
+    const initialCursor = stoppedRoadFor(game.db, body, game.atHand);
     if (!initialCursor) throw new Error('An admitted foot course lost its sole physical cursor.');
     let chargedNights = 0;
     // Projection/checkpoint zero already happened at actual acceptance, before input.
@@ -68,7 +68,7 @@ export async function spendFootJourneyAtItsChecks(game: GameService, run: Run, b
     const resolveHere = () => {
         const currentBody = game.currentRun().cultivator;
         if (!currentBody.alive) return;
-        const cursorNow = stoppedRoadFor(game.db, currentBody);
+        const cursorNow = stoppedRoadFor(game.db, currentBody, game.atHand);
         if (!options.occupiesCourse(cursorNow)) {
             stop = 'The actual body no longer occupies this admitted road.';
             refreshDates(); return;
@@ -118,7 +118,7 @@ export async function spendFootJourneyAtItsChecks(game: GameService, run: Run, b
             && journeyTimeHasReached(day, start + options.meeting.afterDays)) {
             contactReached = true;
             const current = game.currentRun(), npc = game.atHand!.npcs.find(row => row.id === options.meeting!.npc.id);
-            const cursor = stoppedRoadFor(game.db, current.cultivator);
+            const cursor = stoppedRoadFor(game.db, current.cultivator, game.atHand);
             if (npc?.status === 'alive' && sameRoadPosition(cursor?.position ?? null,
                 roadPositionOfNpc(game.atHand!.locations, npc, day))) {
                 const place = worldLocationFor(game.atHand!, current.cultivator.location);

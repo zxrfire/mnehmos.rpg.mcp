@@ -570,7 +570,6 @@ real, at which point it is generated and *then* persisted. The rule is stated in
 
 ---
 
-
 ## How far up the world reaches
 
 **The rule lives in `src/engine/world/how-far-up-the-world-reaches.md`.** How
@@ -3049,12 +3048,15 @@ restarts. Opening a year no longer pays its bills or performs its crossings imme
 Births draw on their own demography stream; each incident has its own pressure-event stream.
 The errand's `notBefore` remains the year's first day, independent of the caller's slices.
 
-**Long postings now settle.** The old gap let a 720-day war party return without an
-outcome. `pendingSendings` retains the posting, departing party, destination and the
-counterparties actually visited. On the due day, the live pass resolves the surviving
-party through `resolveSending` and the same settlement used for short errands, writes
-the return fact, then brings survivors home. Dead or already missing members stay losses;
-they are never restored by settlement. Neither outcomes nor news are written in advance.
+**Long postings retain their outcomes.** The original gap let a 720-day war party
+return without an outcome. Its first repair retained the posting and visited
+counterparties, then resolved surviving members on the due day. The retained-site
+reader refines that due-day assumption: a living party elsewhere has not proved
+service or return. Only the original activity, actual site interval and bound
+journey receipts establish those acts. Unfulfilled work is neutral unfinished
+news, not success, a sighting, a loss or an assured trip home. Dead or already
+missing members retain their existing loss authority and are never restored.
+Neither outcomes nor news are written before the actual boundary.
 
 **Structural recovery is lived by NPCs too.** The yearly care appointment reads the same
 house eligibility and real stock used by the player's request. A spent dose starts a
@@ -3902,7 +3904,6 @@ rate (seals still held, ground forbidden, ruins in existence). If the rate moves
 those hold flat, something changed in the combat arithmetic and that is a different
 finding.
 
-
 ## A house's road decides which roots can be in it, and how high
 
 Two seeded facts used to be rolled independently of the seat they were being placed
@@ -4129,8 +4130,6 @@ neighbourhood reset also discards the context, so subsequent reads follow
 settlement and crossing mutations. Standing IDs and areas keep their existing
 per-place read lifetime; rates re-read the current people and their bodies.
 
-
-
 The yearly witness pass and homecoming sweep each own a fresh synchronous
 route-only read batch. Their nested work changes people, possessions,
 resources and history, but does not mutate the location graph. Witness
@@ -4140,9 +4139,7 @@ mission continuations and prior returns. Neither batch caches NPC rows,
 clocks, placement, pressure or the whole world. Discard the context before
 introducing any nested geography mutation.
 
-
 Capital sending, posting, witness and homecoming passes share only graph queries within a synchronous pass whose callers leave the graph unchanged. Capital public route choices use the same scope; no WorldState cache or coarse revision survives a pass. Quotes, reservations, purses and the current people are still read at each decision. Later calls rebuild from the current graph, including edits to existing links.
-
 
 Within an explicit route read batch, the location lookup, child ordering and
 province approach gateways are prepared once. Every source tree uses the same
@@ -4244,7 +4241,6 @@ existing remaining-course authority. Played direct aircourses remain separate
 unresolved scope: a ground vertex chain is not an air route. The metric and
 capability foundation below does not itself execute a flight.
 
-
 Public travel venues derive from the same public route profile used by ticket
 menus. A landing, carriage station or folding counter has a local area only
 where the existing native offering or surveyed counter exists. Ordinary locals
@@ -4294,7 +4290,6 @@ with exact quoted days; unrelated legacy arrival callers retain their costs.
 This corrects duration only; separate crossing/recovery ground phases remain
 a required physical-travel follow-up rather than a completion claim.
 
-
 Public counter staff are actual local working people selected by one derived
 read shared by area placement, anonymous keeper resolution and current-work
 scene facts. A worker sleeping, eating, away, in company or doing a concrete
@@ -4328,7 +4323,78 @@ agreement without cancelling or moving the physical passage.
 
 Public carriage quotes and numbered capacity refusals share one pure native assessment. The existing quote API derives its nullable quote from that assessment; callers do not recount seats. The same actual reservation set and native head count include the driver, while a refusal reports remaining passenger places against requested bodies. Other unavailable source/custody/course refusals stay distinct; neither refusal commits a booking, cost or clock.
 
-Actual finite-course landfall is written once per living body and accepted physical course in ordinary world history, after actual destination location commits and before the original activity or played carrier pointer is forgotten. `a-body-that-actually-arrived` retains immutable course/cause provenance and deduplicates identical arrivals. Current party membership, a ticket, a scheduled deadline or unrelated bodies meeting at a destination do not prove delivery. Player carriage, held craft and public ship projectors require their actual live arrival authority; unavailable carriers and dead bodies do not write an arrival. NPCs record their finite leg only when the native arrival path actually commits destination ground. A pending sending that did not move is not credited. No new clock, roster or payment system is stored. A common-course proof reads individual arrival facts and current living co-location; distinct tickets for the same exact hull/course can share a journey. Played foot travel still lacks an accepted per-body finite course and is not silently supplied equivalent proof.
+Crossing watch derives from the same public service profile as the folding
+counter. Only genuine provider-owned inherited terminals are watch targets;
+courier-only counters and ordinary empty ruins remain excluded. The existing
+posting pass adds those sites to its ordinary vacancies and uses its existing
+spare members, routes, conveyance fuel, arrival, term, relief and return. It
+creates no guaranteed worker or independent staff roster. A stationed member
+can staff that terminal's public watch only after actual arrival, through the
+same worker read used by venue placement and addressed counter resolution.
+
+Actual authored hull rooms (review candidate, not integrated):
+The existing conveyance catalog supplies stable slots; its head count does not
+create cabins. Each real hull object holds only changing door state and explicit
+room grants. Its accepted course remains the physical source. SQL standingIn and
+NpcActivity.standingIn are the respective sole changing local-area facts; a
+transient accepted-hull selector validates slots, preserving invitations first.
+Party membership never supplies a cabin invitation. Native local crossing leaves
+the old area until the span finishes and fresh actual door/key access is checked.
+Physical door force uses canUnmake and the existing material ladder; breaking
+the slab neither enters it nor changes title, key, goods or room assignment.
+
+Fresh accepted boarding resets the sole player/NPC selected local area. A matched
+prior actual hull leg may retain its chosen offered slot during a course change;
+an earlier completed visit cannot admit a fresh boarding into that cabin.
+
+An accepted public ship now realises its advertised hull as the ordinary water-only
+conveyance object under its actual shipmaster. Quotes create no objects or people.
+Berths include the exact existing crew factory's minimum and real accepted
+passengers; active prepaid mission participants retain their reserved seats until
+their existing mission pointer is cleared. Each actual independently boarded
+person appears in the existing immutable passage facts, including SQL players;
+there is no second passenger roster. An active old player receipt with unknown
+occupancy cannot be read as spare seats. The lane remains the fare and water-course
+authority. A timber ship does not lift onto a walking-graph road. Generic owned
+water-only course scheduling is refused pending its actual maritime adapter, not
+priced as flight. This is a remaining adapter gap, not a rule against owning ships.
+
+Catalog cabins use the real hull's existing scalar room data and ordinary doors.
+Cabin membership grants no title, keys, or course control; a room crossing and
+speech advance the actual same hull and preserve its accepted destination. Public
+operator grants are tested through the existing leaf; their general request
+frontdoor and same-hull onward consent remain separate unfinished work.
+
+Captain course request (limited review candidate, not integrated):
+The driver/pilot is the captain; there is no separate spawned captain. Addressing
+that role selects only the actual operator in current capped hull presence.
+Course requests use ordinary resolveAttempt traits/ties/ledger and the native
+local .125 exchange, never company recruitment or a fare-based command right.
+A consent effect begins only after a fresh living body/operator/same-course
+check. The current bounded public-ship effect reuses the existing shorter-way
+return and its receipt causes; actual other passengers keep their purposes.
+No arrival teleport, new fare, invented maritime edge or guaranteed yes/no occurs.
+Carriage/owned mid-edge and arbitrary onward endpoint chaining are unfinished
+physical adapters, explicitly not a justification for permanently refusing them.
+
+An agreed public ship onward passage uses the existing calendar meeting to name
+an immutable operator/passenger word. Actual B passenger projection precedes
+fresh existing hull/custody, berth, individual native fare and purse admission;
+people booked only to B do not acquire a C claim. The vessel ID is retained
+across an admitted onward lane; no new captain, hull or incidental party is made.
+An agreed return after the midpoint follows actual accepted sailed progress:
+[commitDayOf](../world/what-a-sea-crossing-costs.ts)
+states that return is longer than going on, not impossible. The shorter-way
+convenience remains available; consent does not refill original hull provisions,
+refund fare or teleport bodies. Carriage and owned-craft changed-course adapters
+remain separate unfinished scope; this ship package does not complete them.
+
+A ruined accepted public hull stops at its ordinary lost provenance day. The existing lost-passage settlement projects only living bodies still on that actual finite course to reached ground, restores their existing agreement through companyAfterPassage, and writes a caused publicPassageLost receipt. The current read is unavailable, never a successful water arrival; a later wreck does not retroactively affect passengers already disembarked. Corpses, unrelated replacement activities, title and native ruin custody are unchanged. No new hull, fleet position or loss timer is stored.
+
+An actual carriage driver can receive an ordinary course request. A consented onward word retains the admitted current road to its endpoint first. At actual arrival the existing public board, same held carriage and living driver, finite native seats and independently consenting passenger purse are re-read before one new paid claim is accepted. Its immutable receipt causes the prior completed course; passengers with no onward consent retain that reached endpoint. The future word is not a new course, copied location or a promise of arbitrary mid-edge reversal.
+
+The privately held craft owner may put an onward course request to its actual companion pilot through the ordinary consent resolver. An agreed word keeps the old course to its actual endpoint first. Fresh native pilot/body/company availability, held custody, graph reach, capability, capacity and priceJourney fuel gate the next boarding. Its immutable receipt causes the old actual leg and holds a new historical boarding moment; current movement remains the actual pilot activity and the existing owner claim. The original fuel is still burned by native elapsed passage portions, never reset or prepaid by an agreement. Other occupants gain no incidental party consent. Immediate private mid-edge geometry remains a separate unfinished case.
+
 Metric ground lives once in exterior location data. Catalog region/place anchors
 are authored in li; a walking-day of physical distance is eighty li. Independent
 generated sites sample their parent's actual bounded extent on the world seed's
@@ -4377,10 +4443,21 @@ through that same payment seam. NPC mission acceptance has not yet been
 wired to this new physical course; the component control arranges and debits
 an actual actor explicitly and does not claim that path is complete.
 
+The actual PC operator can change a feasible owned air course directly; an NPC pilot requires ordinary consent. Both use the accepted air site and the native metric quote at the current actual clock, retain the same craft/custody/local area, and cause the old historical course rather than parking people at an endpoint. Changed geometry starts at the actual stopped old-course point. A changed target does not supply route knowledge, missing fuel or a new pilot.
+
+Private timber ships use existing dock lanes, resolveCrossing's actual season/weather duration and waterUnderSeaPassage's water projection. Their accepted historical lane/dates are the course authority; no public ticket, free ship stores or flying-pilot requirement is implied. Native packs and whatTheChestBurns supply resources at actual boundaries. The actual PC can steer; an NPC pilot changes course only after ordinary consent and fresh custody/body/resource validation. A return after the midpoint is longer, not impossible: see what-a-sea-crossing-costs.ts commitDayOf. Unsupported mid-water targets need an actual native endpoint/onward route and are refused without a teleport or fare policy.
+Actual finite-course landfall is written once per living body and accepted physical course in ordinary world history, after actual destination location commits and before the original activity or played carrier pointer is forgotten. `a-body-that-actually-arrived` retains immutable course/cause provenance and deduplicates identical arrivals. Current party membership, a ticket, a scheduled deadline or unrelated bodies meeting at a destination do not prove delivery. Player carriage, held craft and public ship projectors require their actual live arrival authority; unavailable carriers and dead bodies do not write an arrival. NPCs record their finite leg only when the native arrival path actually commits destination ground. A pending sending that did not move is not credited. No new clock, roster or payment system is stored. A common-course proof reads individual arrival facts and current living co-location; distinct tickets for the same exact hull/course can share a journey. Played foot travel still lacks an accepted per-body finite course and is not silently supplied equivalent proof.
+Metric ground lives once in exterior location data. Catalog region/place anchors
+are authored in li; a walking-day of physical distance is eighty li. Independent
+generated sites sample their parent's actual bounded extent on the world seed's
+physical-ground-position stream once (province extents are authored; the local
+exterior extent is three li). Renaming, road changes and later reads do not move
+an assigned site. Compound interiors and the existing single road midpoint derive
+from their actual exterior endpoints without a stored position copy.
+
 NPC travel resources (preparation contract, unvalidated): qi is one actual balance on NpcCultivation. Insight and rung derive its ceiling; native carriedAcross preserves the spent share across a rung. Saved worlds initialize a missing balance once, while zero stays zero. No passive qi recovery is authored. Ordinary personally held restore_qi pills use native dose/toxicity preparation and retain their spent object rows. Unsettled medicine's wider NPC sheet consequences and effective held-art cooldown chronology remain unfinished.
 
 A real NPC air leg has a historical accepted course and ordinary physical site. Personal death causes a stop before estate handling. Physical arrival preserves the existing native activity for recruit/mission/return settlement. Posting duty terms must not substitute for accepted-leg arrival dates. Multi-leg posting/sending integration is still a gap, not licensed by this draft.
-
 
 The shared common-land reading retains knowledge of an authored road subdivision only when its ROUTE_STOP ground has exact endpoint IDs and the existing positive road/path links, and both endpoint ways are already placed in that same seed reading. A generated name, arbitrary graph reachability, named-only endpoint or private/nonroad ground grants nothing. This is route knowledge, never entry/custody/room permission. The full historical NPC knowledge reader still omits seeded common places; its canonical composition is a separate unresolved source seam and is not claimed by this frontdoor slice.
 
@@ -4388,8 +4465,137 @@ The world-owned air-pilot pass distinguishes a native world body from a SQL play
 
 NPC usable art IDs and one sparse remaining-cooldown map govern actual movement-art launches. The catalog owns costs and duration; the existing school/rung gate is shared with played bodies. Native held previous/cumulative receipts reach each committed world portion before new pressure uses. No absolute last-use clock, passive qi refill or future requested-span burn is introduced.
 
+### Live house postings on an actual air hull (bounded candidate)
+
+The canonical yard projection retains each tracked craft's row identity and
+excludes ruined or borrowed-away hulls. Work selection does not authorize a
+loan: the selected actual pilot asks whetherItLeavesTheStore, with the same
+use_it_and_return_it meaning, object/room projection, native roll, portfolios,
+ledger and current day used for other house loans. Refusal changes no custody
+or fuel; selection retries an available alternate craft or the ordinary foot
+route. Counted carriages retain their existing authority.
+
+Live ordinary postings admit the approved exact hull, actual qualified pilot
+and course site. The existing house purse pays the two native geometry/fuel
+quotes once. The outbound receipt records that actual return commitment;
+return admission cannot charge a pilot's purse, spend it twice, or invent extra
+fuel after power, custody or availability changed. Native relief still gates
+return and service settlement. Leg arrival comes from its accepted receipt;
+stationed duty since/until remain the service clocks. The accepted pointer,
+actual body/site and vessel bind the pilot even when service dates differ from
+leg dates. Replacing that pointer stops unsupported flight.
+
+The new component controls are UNRUN. They cover two real bodies sharing a
+finite-capacity course, supersession, exact hull selection, and a native posting
+departure/arrival. Retrospective already-completed annual sendings, sequential
+multi-trip shuttle itineraries and full portal-watch board acceptance/relief
+remain unfinished; these controls do not prove those paths or live narration.
+
+Actual piloted group quotes pass the included operator count to the existing
+conveyance price authority. The pilot occupies a seat on every loaded leg and
+burns fuel on its repeated outward and return legs. The old unqualified quote
+keeps its existing arithmetic. Audit found eight bodies in a four-seat craft
+quoted two loads, although one pilot plus seven passengers needs three loads.
+The new explicit-pilot read returns no quote where all seats are operators and
+additional passengers cannot fit. This closes quoting only: actual multi-load
+shuttle admission remains unfinished; a single air course refuses trips above
+one rather than placing every body aboard. New controls are unrun.
+
+
+A paid house-duty hull can return its actual co-located peers on one accepted
+return leg. The homecoming pass reads the same due, missing-person and actual
+relief authority for each body; an unrelieved member is left on their real post.
+Only the original pilot, held hull and outbound receipt's already-paid return
+commitment can admit that leg. All selected bodies reference its actual course;
+no second debit, automatic relief or new duty term is authored. A shared receipt
+does not license a second trip for somebody who was not ready for that return.
+The new native handover/group controls remain unrun. Multi-load shuttles and
+later transport for a peer left behind remain unfinished.
+
+A retained sending that leaves now can obtain an actual tracked hull only through
+the ordinary store loan, with its selected actual pilot and co-located party.
+Both direct leg fuel quotes and one-load readiness precede commitment and debit.
+A denied or unadmitted hull falls through to the existing ordinary alternative;
+no nominal airborne party or aggregate shuttle itinerary is written. Completed
+annual sendings retain their retrospective resolver and are not backdated into
+new courses. This slice does not prove continuous mission attendance, retained
+mission settlement at a reached site, or multi-load shuttle motion.
+
+**Retained site service is not a due date.** The former resolver rolled success,
+return, loss and stake settlement for any surviving member, including a living
+party elsewhere. The retained path now requires its original unsuperseded away
+activity and the canonical physical site interval (travel is excluded). Air duties
+also require their bound accepted receipt, actual target arrival and no caused
+stop. A whole away term remains the inherited term; no independent watch timer
+or continuous attendance log is added. Unsupported service is neutral
+`unfinished` news: no sighting, loss, return, reward or stake penalty is inferred.
+A real still-active course remains retained, and an elapsed unfulfilled term is
+not silently extended into later success. Superseding work is not kept blocked.
+Actual interrupted-course return instructions and a separate attendance history
+remain separate questions; this reader does not manufacture either.
+
+A retained air sending now admits its actual paid return at the projected native
+service boundary. That boundary derives from the accepted outbound receipt and
+the same canonical return quote; no watch clock or fleet roster is added. The
+existing paid-return authority checks actual living group, original pilot, held
+hull, capacity and committed return fuel. An unavailable return remains genuine
+unfulfilled work. Return news requires its bound actual receipt to land; a
+late honest return is dated by that receipt, not nominal due or a teleported body.
+Service proof uses the uninterrupted activity/bound departure, not a fabricated
+continuous attendance log. Newly admitted unrelated passengers cannot join this
+retained departing party through settlement.
+
+Prepaid duty fuel distinguishes when payment happened from how far its real
+commitment covers. Its native fact is dated at the actual departure payment;
+`throughDay` still records the accepted paid endpoint. Existing portion-paid
+callers retain their original default timestamp. No completed future payment
+event is written merely because already-debited fuel covers a later arrival.
+
+A current retained air sending retries actual spare hulls through the same yard
+selector after a physical or ordinary store refusal. Each candidate uses the
+existing selected-party quote, pilot, purse and loan authority before any write.
+The transient refused-row set is not a stored decision; exhaustion falls through
+to the existing ordinary alternative. Multiple-load execution remains a gap: an
+aggregate quote still does not admit an itinerary or move waiting people.
+
 The full native NPC place reader composes ordinary seeded public land with actual physical/history/errand knowledge using highestStage. The pure existing person profile is shared with spoken directions; occupation remains in identity and no knowledge roster/rows are stored. Common seeding excludes player mirrors using isTheWorldsToMove. Name-only ground supplies no route, and knowledge never grants private entry. Witness-index fast and all non-place branches retain their existing authority.
 
 A surviving native factual receipt or testimony keeps its existing historical references through the witness index during mortal forgetting. Reference closure follows only actual indexed fact IDs reachable from surviving rows; an orphan dead-only cycle is still forgotten. Bodies, live presence and forgotten actor fields are still pruned. This preserves original published notice terms referenced by an actual payment receipt without a second name/terms catalog, resurrection, payment or private-scene grant. Pricing05 measured an already-paid same-day repeated claim losing its original notice after its only mortal actor was pruned.
 
 Newly retained referenced archival evidence keeps its original historical participant identity and data terms. The mortal NPC body still disappears; no current body, listener, position, custody or permission is synthesized. Other surviving mixed testimony retains existing forgotten-body sanitation. The reference closure is transient and stored nowhere.
+
+An accepted public carriage stores its admitted directed road geometry only on the actual driver activity. Fellow passengers derive that same changing course through the current operator read; they do not copy its edge fraction. A caused historical course receipt retains the paid claim. Reversal admits the actual directed reverse edge, never a shortest detour pretending to reverse. Its already admitted partial edge retains its accepted time; the route beyond its legal endpoint uses the native conveyance price once. Missing historical price inputs cannot be reconstructed from a subsequently changed graph.
+Actual finite-course landfall is written once per living body and accepted physical course in ordinary world history, after actual destination location commits and before the original activity or played carrier pointer is forgotten. `a-body-that-actually-arrived` retains immutable course/cause provenance and deduplicates identical arrivals. Current party membership, a ticket, a scheduled deadline or unrelated bodies meeting at a destination do not prove delivery. Player carriage, held craft and public ship projectors require their actual live arrival authority; unavailable carriers and dead bodies do not write an arrival. NPCs record their finite leg only when the native arrival path actually commits destination ground. A pending sending that did not move is not credited. No new clock, roster or payment system is stored. A common-course proof reads individual arrival facts and current living co-location; distinct tickets for the same exact hull/course can share a journey. Played foot travel still lacks an accepted per-body finite course and is not silently supplied equivalent proof.
+Metric ground lives once in exterior location data. Catalog region/place anchors
+are authored in li; a walking-day of physical distance is eighty li. Independent
+generated sites sample their parent's actual bounded extent on the world seed's
+physical-ground-position stream once (province extents are authored; the local
+exterior extent is three li). Renaming, road changes and later reads do not move
+an assigned site. Compound interiors and the existing single road midpoint derive
+from their actual exterior endpoints without a stored position copy.
+
+A carriage losing its actual operator stops at the captured admitted road point,
+before mortal forgetting. Its ordinary reached site holds that immutable point
+and no static endpoint links. The canonical walking-step enumerator derives
+both partial endpoint steps from the current original directed edge. The parked hull and surviving bodies refer
+to this ground; no station can recall it. A played paid claim ends, while the
+existing SQLite stopped-road cursor references this site for physical continuation
+and endpoint access checks. Dead title and historical names retain generic
+forgetting semantics; this grants no replacement driver, rescue or refund.
+
+NPC combat reads the same actual finite qi and sparse art cooldown state as a
+movement launch. Combat power/pricing reads never spend either. An actual
+resolved strike carries the resolver's numeric art-use receipt; the ordinary
+NPC art-use writer applies it once and records its existing fight/exchange
+identity in secret history for replay safety. A wide volley is one cast, not
+one charge per target. A spent/unready art leaves ordinary physical striking
+available. Held rounds refresh resources from the current actual actor; no
+per-round cooldown clock or passive refill is authored. Precharged PC named
+strikes retain their own writer, and NPC escape/proxy-sustaining art pricing
+remain separate unbuilt seams rather than receiving an invented charge.
+
+A retained native air return uses its existing bound receipt and actual home
+position before ordinary homegoing reads a walking route. After genuine retained
+settlement, its still-bound reached activity ends through the ordinary company
+restoration reader. Neither pass moves a body or hull, infers future arrival,
+extends service, clears superseding work, nor grants a replacement course.

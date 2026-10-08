@@ -212,6 +212,9 @@ describe('combat_manage', () => {
             const after = repo.getById(id)!;
             expect(after.qi).toBe(before.qi - art.qiCost);
             expect(result.qiRemaining).toBe(after.qi);
+            // Generic NPC receipt handling must leave this authorized named PC
+            // strike charged once, with its own actual catalog cooldown.
+            expect(new TechniqueRepository(db).getKnown(id, art.id)?.cooldownRemaining).toBe(art.cooldown);
         });
 
         it('will not aim an elemental art at a soul', async () => {

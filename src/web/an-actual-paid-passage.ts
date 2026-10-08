@@ -41,8 +41,11 @@ export function paidCarrierSource(game: Pick<GameService, 'atHand'>, playerId: s
     if (roadReceiptId) {
         const actual = publicCarriagePassage(state, roadReceiptId, playerId, onDay);
         return actual ? { locationId: actual.locationId, endsOnDay: actual.leg.arrivalDay, boardedOnDay: actual.leg.departureDay,
-            vertexDates: roadVertexMoments(walkingRouteFrom(state.locations, actual.leg.fromId, actual.leg.toId) ?? [],
-                actual.leg.departureDay, actual.leg.arrivalDay - actual.leg.departureDay),
+            vertexDates: actual.driver.activity?.admittedRoad
+                ? roadVertexMoments(actual.driver.activity.admittedRoad.route,actual.leg.departureDay,
+                    actual.leg.arrivalDay-actual.leg.departureDay,actual.driver.activity.admittedRoad.initialTravelDays)
+                : roadVertexMoments(walkingRouteFrom(state.locations,actual.leg.fromId,actual.leg.toId)??[],
+                    actual.leg.departureDay,actual.leg.arrivalDay-actual.leg.departureDay),
             boardingMoment: passageRunMoment(state, roadReceiptId), providedFoodUntilDay: actual.leg.arrivalDay, unavailable: null } : null;
     }
     if (sea?.receiptId) {

@@ -71,6 +71,8 @@ export interface HouseAsItStands {
     name: string;
     /** True when it controls any location at all. */
     holdsGround: boolean;
+    /** Actual service-owned inherited watch sites, computed by the caller. */
+    publicWatchTargets?: readonly string[];
     /** Standing toward other houses, -1..1. The record's own map. */
     standing: Readonly<Record<string, number>>;
     /**
@@ -151,6 +153,7 @@ export const RIVAL_STANDING = -0.3;
  */
 export const NEED_PREDICATES: Record<ReasonNeed, (house: HouseAsItStands) => boolean> = {
     nothing: () => true,
+    a_public_terminal: house => (house.publicWatchTargets?.length ?? 0) > 0,
     ground: house => house.holdsGround,
     a_subsidiary: house => getSubsidiariesOf(house.id).length > 0,
     a_parent: house => theBodyItAnswersTo(house.id) !== null,
@@ -756,7 +759,7 @@ export function postingFor(input: {
     const walkingDays = input.reason.days;
     const conveyance = input.conveyance ?? null;
     const power = input.conveyancePower ?? null;
-    const days = conveyance
+    const days = input.reason.termBasis === 'on_site' ? walkingDays : conveyance
         ? daysByConveyance(walkingDays, conveyance, power)
         : walkingDays;
     // See `Posting.hands`. The work's floor, filled out to what is carrying it,
@@ -1059,6 +1062,14 @@ export function notFinishedChance(regard: Regard): number {
  * The chance that one member of an unfinished party does not come back, read
  * off that member's own regard against the pitch.
  */
+/** One total away term from authored service semantics and native leg receipts.
+ * A conveyance shortens travel, never the expressly authored days at a post. */
+export function aPostingForItsActualLegs(posting: Posting, outboundDays: number, inboundDays: number): Posting {
+    return { ...posting, days: posting.reason.termBasis === 'on_site'
+        ? outboundDays + posting.reason.days + inboundDays
+        : Math.max(posting.days, outboundDays + inboundDays) };
+}
+
 export function lostChance(regard: Regard): number {
     const notFinished = notFinishedChance(regard);
     return notFinished * notFinished;
@@ -1074,7 +1085,9 @@ export type SendingOutcome =
     /** They did not, and somebody came back to say what they saw. */
     | 'came_back_short'
     /** They did not, and nobody came back. */
-    | 'did_not_come_back';
+    | 'did_not_come_back'
+    /** The due date arrived without an established served errand. No return or loss is inferred. */
+    | 'unfinished';
 
 /**
  * What a party saw and could not take.
@@ -1257,7 +1270,9 @@ export function newsOfASending(sending: Sending, opts: {
         + `${/^[aeiou]/.test(called) ? 'an' : 'a'} ${called} `
         + `at ordinal ${posting.pitchOrdinal}`;
 
-    const what = outcome === 'finished'
+    const what = outcome === 'unfinished'
+        ? `${sent}. Its term elapsed without an established fulfilled errand; no return or loss is reported.`
+        : outcome === 'finished'
         ? `${sent}, and it was done.`
         : outcome === 'came_back_short'
             ? `${sent}. ${sending.sighted!.seenBy.length} came back and `
@@ -1269,12 +1284,14 @@ export function newsOfASending(sending: Sending, opts: {
         kind: posting.reason.factKind,
         scale: posting.reason.scale,
         summary: what,
+        truth: outcome === 'unfinished' ? 'unresolved' : 'objective',
         locationId: posting.locationId,
         factionIds: [posting.houseId],
         actors: sending.party.map(member => ({
             id: member.id,
             name: member.name,
-            role: sending.lost.some(l => l.id === member.id)
+            role: outcome === 'unfinished' ? 'sent on an unfinished errand'
+                : sending.lost.some(l => l.id === member.id)
                 ? WENT_AND_DID_NOT
                 : WENT_AND_CAME_BACK
         })),
@@ -1389,7 +1406,7 @@ export const A_FAILURE_WITH_EVERYBODY_BACK = 0.25;
  * How badly it went, 0..1. Zero on an errand that finished.
  */
 export function howBadlyItWent(sending: Sending): number {
-    if (sending.outcome === 'finished') return 0;
+    if (sending.outcome === 'finished' || sending.outcome === 'unfinished') return 0;
     if (sending.party.length === 0) return 1;
     return Math.max(
         A_FAILURE_WITH_EVERYBODY_BACK,
@@ -1633,6 +1650,7 @@ export const WHERE_A_NEED_SENDS_YOU: Record<ReasonNeed, 'a_seat' | 'ground' | 'h
     a_counterpart: 'a_seat',
     a_rival: 'ground',
     a_find: 'ground',
+    a_public_terminal: 'ground',
     a_containment: 'ground',
     forbidden_ground: 'ground',
     // The ground itself, and never the hall of whoever is standing on it. A
@@ -1673,6 +1691,7 @@ const WHO_A_NEED_IS_ABOUT:
     nothing: () => [],
     ground: () => [],
     a_find: () => [],
+    a_public_terminal: () => [],
     a_containment: () => [],
     forbidden_ground: () => [],
     // A rival is a house and the errand still ends on ground between the two:

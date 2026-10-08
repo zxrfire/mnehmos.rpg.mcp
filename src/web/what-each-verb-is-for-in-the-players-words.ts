@@ -138,6 +138,7 @@ const EVERY_REQUEST_KIND: Record<RequestKind, true> = {
     a_trade: true,
     advancement: true,
     company: true,
+    course_change: true,
     passage: true,
     nothing: true,
     unstated: true

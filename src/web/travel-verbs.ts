@@ -1,8 +1,9 @@
-import { acceptedRidersForBoarding, companySelectedForBoarding } from './an-offered-ride-is-an-agreement.js';
+import {launchOwnedSeaPassage} from './launching-an-owned-sea-passage.js';
 import { quoteAnAirJourney } from '../engine/world/what-an-air-journey-takes.js';
 import { witnessIndexFor } from '../engine/world/witness-reaction-index.js';
 import { personalAirCourseClaim, personalFlightArt, launchPersonalAirJourney, spendOnPersonalAirCourse, airExteriorReadiness } from './an-actual-personal-air-course.js';
 import { canFlyByTheirOwnBody } from '../engine/world/what-an-air-journey-takes.js';
+import { acceptedRidersForBoarding, companySelectedForBoarding } from './an-offered-ride-is-an-agreement.js';
 
 import { whereTheRoadEndsIn as thePublicRoadEndsIn } from '../engine/world/public-transport-at-a-place.js';
 import { enteringAnActualLocalCave } from './entering-an-actual-local-cave.js';
@@ -211,7 +212,7 @@ const A_ROOF_ON_THE_ROAD: ReadonlySet<string> = new Set([
 /** What a "carriage" or a "boat" means when it is their own, which `ride` takes before any counter. */
 const OF_THEIR_OWN: Readonly<Record<AService, ReadonlySet<string>>> = {
     carriage: new Set(['conv-carriage-mortal', 'conv-carriage-earth', 'conv-carriage-heaven']),
-    ship: new Set(['conv-spirit-boat'])
+    ship: new Set(['conv-spirit-boat', 'conv-water-ship'])
 };
 
 
@@ -627,7 +628,7 @@ function routeTheyHaveNotLearned(engine: GameService, cultivator: Cultivator,
     const place = worldLocationFor(engine.atHand, destination);
     // This is the same admitted road, not a newly supplied destination or route.
     // Legacy geometry may continue its measured remainder, never infer another origin.
-    const held = action === 'move' ? stoppedRoadFor(engine.repos.db, cultivator) : null;
+    const held = action === 'move' ? stoppedRoadFor(engine.repos.db, cultivator, engine.atHand) : null;
     if (place && held && held.walked > 0 && held.walked < held.road
         && worldLocationFor(engine.atHand, held.to)?.id === place.id) return null;
     if (!place || (!betweenRoadEndpoints(engine.repos.db, cultivator)
@@ -1041,7 +1042,7 @@ export const travelVerbs = {
             run = this.repos.runs.getById(run.id) ?? run;
             cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
         }
-        const held = stoppedRoadFor(this.repos.db, cultivator);
+        const held = stoppedRoadFor(this.repos.db, cultivator, this.atHand);
         const resuming = held !== null && held.to === arrivedAt && held.from === placeName(cultivator)
             && held.walked >= 0 && held.walked < held.road;
         const fromHere = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
@@ -1063,7 +1064,7 @@ export const travelVerbs = {
             'move: actual partial edge has no lawful requested continuation; no time or movement.'));
         const onTheRoad = course ? (resuming ? held!.walked : 0) + course.days
             : resuming ? held.road : this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
-        if (!course && onTheRoad < 1 && worldRow) {
+        if (((course !== null && course.days === 0) || (!course && onTheRoad < 1)) && worldRow) {
             const walked = this.repos.cultivators.update(cultivator.id, { location: arrivedAt })!;
             const advanced = await passHours(this, run, walked, LESSER_ACTION_DAYS.move * 24);
             if (!advanced.finished && advanced.spent) return advanced.spent;
@@ -1253,7 +1254,7 @@ export const travelVerbs = {
 
         // A committed world boundary can actually remove the body from this
         // course. Its old target never wins over that fresh physical authority.
-        const currentRoad = course ? stoppedRoadFor(this.repos.db, walker) : null;
+        const currentRoad = course ? stoppedRoadFor(this.repos.db, walker, this.atHand) : null;
         const stillOnThisCourse = !course || occupiesCourse(currentRoad)
             && journeyTimeHasReached(committed, skip.simulatedDays)
             && journeyTimeHasReached(skip.simulatedDays, committed);
@@ -1487,7 +1488,7 @@ export const travelVerbs = {
      */
     daysOnTheRoadTo(this: GameService, cultivator: Cultivator, destination: string): number | null {
         const bare = (name: string) => name.replace(/^the\s+/i, '').trim().toLowerCase();
-        const road = stoppedRoadFor(this.repos.db, cultivator);
+        const road = stoppedRoadFor(this.repos.db, cultivator, this.atHand);
         const targetRow = this.atHand && worldLocationFor(this.atHand, destination);
         if (road?.position && this.atHand && targetRow) return (road.to === destination
             ? roadContinuationAhead : roadContinuationTo)(this.atHand.locations, road.position, targetRow.id)?.days ?? null;
@@ -2184,6 +2185,24 @@ export const travelVerbs = {
             ? flyable.find(a => a.conveyance.id === asked.id)!
             : flyable.find(option => option === bestOnThisRoad))
             ?? flyable[0] ?? available[0];
+        if (chosen.conveyance.waterOnly) {
+            const hull = chosen.rowId && this.atHand?.objects.find(object => object.id === chosen.rowId);
+            const seaTarget = this.atHand && worldLocationFor(this.atHand, arrivedAt);
+            if (hull && seaTarget) return launchOwnedSeaPassage(this,run,cultivator,hull.id,seaTarget.id,
+                cultivator.id,withYou.map(person => person.id));
+            return refused('engine.actualOwnedSeaCourse','ride',factsForRefusal(
+                'The actual owned ship is not here.', 'A native dock, real hull and water lane are needed.',
+                'No walking or airborne course substituted for a water-only ship.'));
+        }
+        if (chosen.conveyance.id === 'conv-body-flight' || chosen.artId) {
+            const flight = await launchPersonalAirJourney(this, run, cultivator, arrivedAt, chosen.artId ?? null);
+            const actual = this.repos.cultivators.getById(cultivator.id);
+            if (flight.outcome === 'executed' && actual?.alive && actual.location === arrivedAt) {
+                const introduced = whatArrivingIntroduces(this, actual);
+                flight.facts.lines.push(...introduced.lines);
+            }
+            return flight;
+        }
         if (chosen.conveyance.id === 'conv-body-flight' || chosen.artId) {
             const flight = await launchPersonalAirJourney(this, run, cultivator, arrivedAt, chosen.artId ?? null);
             const actual = this.repos.cultivators.getById(cultivator.id);

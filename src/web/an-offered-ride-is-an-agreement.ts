@@ -18,6 +18,7 @@ import { isAVehicle, takeItAlong, whoItIsWith } from '../engine/world/a-vehicle.
 import { whatABodyCanCarry, whatAllOfThatTakes } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import { howManyHeld, together, whatTheirThingsTake, whereItWouldGo } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { everythingInThePouch } from '../server/consolidated/cultivation-support.js';
+import { countedHoldings } from './breaking-a-thing-you-are-holding.js';
 import { actualSpiritStones, transferActualSpiritStones } from './transferring-actual-spirit-stones.js';
 import { factsForRefusal } from './facts.js';
 import { refused } from './tool-result-prose.js';
@@ -70,7 +71,7 @@ export function prepareRideOffer(game: GameService, body: Cultivator,
     return { terms: { driverId: body.id, riderId: rider.id, fromId: origin.id, toId: destination.id,
         acceptedWorldDay: routineTime(world), payment } satisfies AgreedRideTerms, destinationName: destination.name };
 }
-export function bindAgreedRide(game: GameService, body: Cultivator, rider: { id: string; name: string },
+export function bindAgreedRide(game: GameService, body: { id: string; name: string }, rider: { id: string; name: string },
     terms: AgreedRideTerms, destinationName: string) {
     const price = terms.payment.kind === 'free' ? 'free passage'
         : terms.payment.kind === 'stones' ? `${terms.payment.stones} spirit stones` : terms.payment.name;
@@ -119,53 +120,66 @@ export function acceptedRidersForBoarding(game: GameService, body: Cultivator, d
     if (picked.length === 0 && (all || namedCompany.length === 0)) missing.push(all ? 'No rider has accepted passage to this destination' : 'No accepted ride agreement names ' + requested);
     return { riders: picked.flatMap(row => row.person && !unavailable.includes(row.person.id) ? [row.person] : []), missing };
 }
-/** Exchange reads current real custody and funds after individual native landfall. */
+/** Read the actual stored player or the actual living world person; never mint SQL NPCs. */
+function actualRideBody(game: GameService, id: string) {
+    const world = game.atHand, stored = game.repos.cultivators.getById(id);
+    if (!world) return null;
+    if (stored) return { id, name: stored.name, alive: stored.alive,
+        locationId: worldLocationFor(world, stored.location)?.id ?? null, ordinal: stored.realmOrdinal,
+        counted: everythingInThePouch(game.db, id) };
+    const npc = world.npcs.find(person => person.id === id);
+    return npc ? { id, name: npc.name, alive: npc.status === 'alive',
+        locationId: routineOf(world, npc).locationId, ordinal: npc.cultivation.realmOrdinal,
+        counted: countedHoldings(game.db, id) } : null;
+}
+/** Exchange reads both actual participants after individual native landfall.
+ * The same oath/payment implementation serves either participant direction. */
 export function settleAgreedRides(game: GameService, body: Cultivator): { lines: string[]; structure: string[] } | null {
-    const world = game.atHand, here = world && worldLocationFor(world, body.location);
-    if (!world || !body.alive || !here) return null;
+    const world = game.atHand;
+    if (!world || !game.repos.cultivators.getById(body.id)?.alive) return null;
     const lines: string[] = [], structure: string[] = [];
     for (const oath of ledgerAbout(game.db, body.id)) {
-        const terms = agreedRideOn(oath), rider = terms && world.npcs.find(person => person.id === terms.riderId);
-        if (!terms || oath.status !== 'open' || terms.driverId !== body.id || !rider) continue;
-        if (!actualBodiesArrivedTogether(world, [
-            { id: body.id, name: body.name, alive: body.alive, locationId: here.id },
-            { id: rider.id, name: rider.name, alive: rider.status === 'alive', locationId: routineOf(world, rider).locationId }
-        ], terms.toId, terms.acceptedWorldDay)) continue;
+        const terms = agreedRideOn(oath);
+        if (!terms || oath.status !== 'open' || terms.driverId === terms.riderId
+            || (terms.driverId !== body.id && terms.riderId !== body.id)) continue;
+        const driver = actualRideBody(game, terms.driverId), rider = actualRideBody(game, terms.riderId);
+        if (!driver || !rider || !actualBodiesArrivedTogether(world, [driver, rider], terms.toId, terms.acceptedWorldDay)) continue;
         const closed = settleObligation(oath, { resolution: 'oath_fulfilled', onDay: routineTime(world),
-            byId: body.id, note: 'Actual individual shared-course arrival and agreed exchange completed.' });
+            byId: driver.id, note: 'Actual individual shared-course arrival and agreed exchange completed.' });
         if (terms.payment.kind === 'stones') {
-            const moved = transferActualSpiritStones(game, rider.id, body.id, terms.payment.stones,
+            const moved = transferActualSpiritStones(game, rider.id, driver.id, terms.payment.stones,
                 () => { writeOneObligation(game.db, closed); });
             if (!moved.ok) {
-                lines.push(`${rider.name} has ${moved.available} spirit stones; ${terms.payment.stones} remain owed, ${moved.short} short. Nothing exchanged.`);
+                lines.push(rider.name+' has '+moved.available+' spirit stones; '+terms.payment.stones+' remain owed, '+moved.short+' short. Nothing exchanged.');
                 continue;
             }
-            lines.push(`${rider.name} paid the agreed ${terms.payment.stones} spirit stones after actual arrival.`);
+            lines.push(rider.name+' paid the agreed '+terms.payment.stones+' spirit stones after actual arrival.');
         } else if (terms.payment.kind === 'goods') {
             const objectId = terms.payment.objectId;
             const index = world.objects.findIndex(object => object.id === objectId), object = world.objects[index];
             if (!object || object.ownerId !== rider.id || object.possessorId !== rider.id || isRuined(object)) {
-                lines.push(`${rider.name} no longer owns and carries ${terms.payment.name}. The agreed exchange remains open.`);
+                lines.push(rider.name+' no longer owns and carries '+terms.payment.name+'. The agreed exchange remains open.');
                 continue;
             }
-            let moved = transferPossession(object, { onDay: routineTime(world), toHolderId: body.id,
-                toHolderName: body.name, how: 'bought', transfersOwnership: true,
+            let moved = transferPossession(object, { onDay: routineTime(world), toHolderId: driver.id,
+                toHolderName: driver.name, how: 'bought', transfersOwnership: true,
                 source: oath.id, note: 'Agreed passage payment after actual shared landfall.' });
-            const landed = whereItWouldGo(together(whatAllOfThatTakes(everythingInThePouch(game.db, body.id)),
-                whatTheirThingsTake(world.objects, body.id)), moved, whatABodyCanCarry(body.realmOrdinal),
-                howManyHeld(world.objects, body.id));
+            const landed = whereItWouldGo(together(whatAllOfThatTakes(driver.counted),
+                whatTheirThingsTake(world.objects, driver.id)), moved, whatABodyCanCarry(driver.ordinal),
+                howManyHeld(world.objects, driver.id));
             moved = isAVehicle(moved) ? moved : landed === 'held' ? hadAs(moved, 'held')
-                : landed === 'inventory' ? moved : { ...moved, possessorId: null, locationId: here.id };
+                : landed === 'inventory' ? moved : { ...moved, possessorId: null, locationId: terms.toId };
             game.db.transaction(() => { writeOneObligation(game.db, closed); })();
             world.objects[index] = moved;
-            if (isAVehicle(moved)) takeItAlong(world.objects, moved, body.id);
+            if (isAVehicle(moved)) takeItAlong(world.objects, moved, driver.id);
             game.theWorldMoved();
-            lines.push(`${rider.name} exchanged the actual ${object.name} after arrival; it ${landed === 'inventory' || landed === 'held' ? 'is in your custody' : 'lies here'}.`);
+            lines.push(rider.name+' exchanged the actual '+object.name+' after arrival; it '+
+                (landed === 'inventory' || landed === 'held' ? 'is in '+driver.name+'’s custody' : 'lies here')+'.');
         } else {
             writeOneObligation(game.db, closed);
-            lines.push(`${rider.name}'s agreed free passage ended on actual arrival. No payment moved.`);
+            lines.push(rider.name+'’s agreed free passage ended on actual arrival. No payment moved.');
         }
-        structure.push(`Actual passage oath ${oath.id} settled once; individual live landfall and actual exchange, no gift favour or theft.`);
+        structure.push('Actual passage oath '+oath.id+' settled once; individual live landfall and actual exchange, no gift favour or theft.');
     }
     return lines.length ? { lines, structure } : null;
 }

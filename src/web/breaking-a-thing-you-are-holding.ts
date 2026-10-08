@@ -48,6 +48,7 @@ import { matchScore } from './entities.js';
 import type { PouchItemKind } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import type Database from 'better-sqlite3';
 import { tryingToBreakAnActualVaultLock } from './trying-to-break-an-actual-vault-lock.js';
+import { tryingToBreakAnActualCabinDoor } from './breaking-the-door-of-an-actual-cabin.js';
 import { tryingToBreakAnActualResidenceDoor } from './breaking-the-door-on-an-actual-residence.js';
 
 /**
@@ -230,6 +231,8 @@ export const destroyVerbs = {
 
         this.atHand = this.atHand ?? await this.loadWorld();
         const world = this.atHand;
+        const cabinDoor = await tryingToBreakAnActualCabinDoor(this, run, cultivator, said);
+        if (cabinDoor) return cabinDoor;
         const residenceDoor = await tryingToBreakAnActualResidenceDoor(this, run, cultivator, said);
         if (residenceDoor) return residenceDoor;
         const door = await tryingToBreakAnActualVaultLock(this, run, cultivator, said);

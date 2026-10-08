@@ -1,3 +1,4 @@
+import { writeTheNpcArtsActuallyUsed } from './the-arts-an-npc-actually-uses-in-a-fight.js';
 /**
  * A war between two houses, which is a group fight and nothing else.
  */
@@ -296,6 +297,7 @@ function fightOneYear(
         intent: { thrown: A_BLOW_MEANT_TO_END_IT }
     });
 
+    writeTheNpcArtsActuallyUsed(state,result.exchanges,'war:'+state.history.nextFactSeq,day);
     const byId = new Map<string, NpcRecord>(
         [...partyA, ...partyB].map(n => [n.id, n])
     );

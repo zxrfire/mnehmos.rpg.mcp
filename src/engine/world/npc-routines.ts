@@ -7,7 +7,7 @@ import type { RouteQueries } from './locations.js';
 import type { WorldState } from './world-state.js';
 import { locationOnNpcJourney, npcIsTravellingOnDay } from './places-on-the-way.js';
 
-type Clock = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour'> & Partial<Pick<WorldState, 'locations'>>;
+type Clock = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour'> & Partial<Pick<WorldState, 'locations' | 'npcs'>>;
 
 const samples = new WeakMap<Clock, { seed: string; day: number; stable: Map<string, number>; daily: Map<string, number> }>();
 
@@ -51,7 +51,8 @@ export function invitationEndsAt(state: Pick<Clock, 'currentDay' | 'currentHour'
 }
 
 /** A person's ordinary activity remains the source of their work and trade. */
-export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries): {
+export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries,
+    actualHullArea?: (npc: NpcRecord) => string | null): {
     activity: NpcActivity | null; home: boolean; standingIn: string | null; locationId: string | null;
 } {
     const now = routineTime(state);
@@ -68,8 +69,9 @@ export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries): 
             returnTo: npc.activity?.returnTo }, home: false, standingIn: null, locationId: npc.locationId };
     }
     const locationId = redirect ? npc.activity?.returnTo ?? npc.locationId
-        : state.locations ? locationOnNpcJourney(state.locations, npc, now, routes) : npc.locationId;
-    const result = (activity: NpcActivity | null, home = false) => ({ activity, home, standingIn: null, locationId });
+        : state.locations ? locationOnNpcJourney(state.locations, npc, now, routes, undefined, id=>state.npcs?.find(person=>person.id===id)) : npc.locationId;
+    const result = (activity: NpcActivity | null, home = false) => ({ activity, home,
+        standingIn: !redirect ? actualHullArea?.(npc) ?? null : null, locationId });
     // An errand, a posting and a timed seclusion already have their own calendar.
     if (!redirect && ordinary && (isAwayOnSomething(ordinary.kind)
         || (ordinary.untilDay != null && ordinary.untilDay >= Math.floor(state.currentDay)))) return result(journeyActivity);

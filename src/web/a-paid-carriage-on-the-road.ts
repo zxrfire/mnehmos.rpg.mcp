@@ -6,6 +6,8 @@ import { CultivatorRepository } from '../storage/repos/cultivator.repo.js';
 import { clearFlag, readJsonFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 import { publicCarriagePassage, groundOfTheAcceptedCarriage } from '../engine/world/public-carriages.js';
 import { routineTime } from '../engine/world/npc-routines.js';
+import { stoppedRoadPoint } from '../engine/world/where-a-carriage-stopped.js';
+import { roadContinuationAhead } from '../engine/world/road-course.js';
 import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { loosePlaceKey } from './knowledge.js';
 import { factsForRefusal, placeName } from './facts.js';
@@ -45,6 +47,11 @@ export function carryThePaidPassenger(db: Database.Database, world: WorldState, 
         const ground = actualGround && world.locations.find(place => place.id === actualGround);
         if (ground) repository.update(playerId, { location: ground.name, standingIn: null });
         leaveThePaidCarriage(db, playerId);
+        const point=ground&&stoppedRoadPoint(world.locations,ground.id);
+        const accepted=world.history.facts.find(fact=>fact.id===claim.receiptId);
+        const to=typeof accepted?.data.toLocationId==='string'?world.locations.find(place=>place.id===accepted.data.toLocationId):undefined;
+        const course=point&&to&&roadContinuationAhead(world.locations,point,to.id);
+        if(ground&&course&&course.days>0)writeFlag(db,playerId,STOPPED_ROAD,JSON.stringify({from:ground.name,to:to!.name,road:course.days,walked:0,stoppedLocationId:ground.id}));
         return;
     }
     const ground = world.locations.find(place => place.id === passage.locationId);

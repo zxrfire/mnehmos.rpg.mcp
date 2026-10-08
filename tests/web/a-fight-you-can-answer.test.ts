@@ -20,25 +20,16 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { npcsAt } from '../../src/engine/world/world-state';
+import type { GameService } from '../../src/web/turn-engine';
 import { bodyStandingOn, bodyTaken, maxBodyOf } from '../../src/engine/world/npc-state';
-import { worldLocationFor } from '../../src/web/entities';
 import { MAX_EXCHANGES } from '../../src/engine/cultivation/combat';
 import { cultivatorRow, makeGameInWorld } from './harness';
 
-/** Everybody standing where the player is standing. */
-async function peopleHere(game: {
-    loadWorld: () => Promise<unknown>;
-    state: () => unknown;
-}) {
-    const world = (await game.loadWorld()) as {
-        npcs: unknown[];
-        locations?: unknown;
-    } | null;
-    if (!world) return { world: null, people: [] as ReturnType<typeof npcsAt> };
-    const where = (game.state() as { cultivator: { location: string } }).cultivator.location;
-    const place = worldLocationFor(world as never, where);
-    return { world, people: place ? npcsAt(world as never, place.id) : [] };
+/** Actual local people, not every nominal resident of the whole town. */
+async function peopleHere(game: GameService) {
+    const world = await game.loadWorld();
+    const ids = new Set(game.present(game.state().cultivator).map(person => person.id));
+    return { world, people: world?.npcs.filter(person => ids.has(person.id)) ?? [] };
 }
 
 const names = (r: { toolCalls: Array<{ name: string }> }) => r.toolCalls.map(c => c.name);
@@ -209,13 +200,26 @@ describe('somebody the world has already worn down', () => {
         const them = people.find(n => n.cultivation.hp !== undefined);
         expect(them, 'nobody was standing here to wear down').toBeDefined();
 
+        // Diagnostic5230 selected npc-65 in the noodle stall while the actual
+        // three-person room roster excluded them; six hours of legitimate
+        // approach did not reach them. Select actual present current world row,
+        // and arrange an ordinary matching-rung player body so the exchange is
+        // contested rather than ended by the gap before HP is shown.
+        const current = game.currentRun();
+        if (!current) throw Error('No current played body');
+        const { maxHpForOrdinal } = await import('../../src/engine/cultivation/realms.js');
+        const hp = maxHpForOrdinal(current.cultivator.attributes.might, them!.cultivation.realmOrdinal);
+        game.repos.db.prepare('UPDATE cultivators SET realm_ordinal = ?, hp = ?, max_hp = ? WHERE id = ?')
+            .run(them!.cultivation.realmOrdinal, hp, hp, current.cultivator.id);
+        expect(game.present(game.state().cultivator).map(person => person.id)).toContain(them!.id);
+
         // Take half their body, the way a crossing does, and write it back.
-        const day = Math.floor((world as unknown as { currentDay: number }).currentDay);
+        const day = world!.currentDay;
         const whole = maxBodyOf(them!);
         const worn = bodyTaken(them!, Math.floor(whole / 2), day);
         expect(bodyStandingOn(worn, day)).toBeLessThan(whole);
-        const npcs = (world as unknown as { npcs: unknown[] }).npcs;
-        npcs[npcs.findIndex(n => (n as { id: string }).id === them!.id)] = worn;
+        const npcs = world!.npcs;
+        npcs[npcs.findIndex(n => n.id === them!.id)] = worn;
 
         const opened = await game.act(`I attack ${them!.name}`);
 

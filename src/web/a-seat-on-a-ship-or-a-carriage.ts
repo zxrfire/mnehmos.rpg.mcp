@@ -1,4 +1,6 @@
+import {aboardAnUnfinishedRoad} from './the-actual-carrier-scene.js';
 import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
+import { realiseAcceptedPublicShipHull, publicShipHullCanBeBoarded } from '../engine/world/a-public-ship-hull.js';
 import { ensureShipCrew, bindShipCrewToPassage } from '../engine/world/ship-crew.js';
 import { recordPublicPassage, onSponsoredPublicPassage } from '../engine/world/public-shipping.js';
 import { peopleUnavailableForOwnedBoarding } from './an-owned-passage.js';
@@ -78,7 +80,7 @@ const THE_DRAWN_CARRIAGE = 'conv-carriage-mortal';
  * it holds at the seat fare, times this. A titled carriage is a house's and is
  * not let.
  */
-const A_HIRED_CARRIAGE_BY_GRADE: readonly { conveyanceId: string; fareTimesItsSeats: number }[] = [
+export const A_HIRED_CARRIAGE_BY_GRADE: readonly { conveyanceId: string; fareTimesItsSeats: number }[] = [
     { conveyanceId: 'conv-carriage-mortal', fareTimesItsSeats: 1 },
     { conveyanceId: 'conv-carriage-earth', fareTimesItsSeats: 2 }
 ];
@@ -122,14 +124,14 @@ export function theShipsFrom(game: GameService, here: string, today: number): AL
  * Everything that runs from where they stand, ships first, nearest first.
  */
 export function whatRunsFromHere(game: GameService, cultivator: Cultivator, today: number): ALine[] {
-    if (betweenRoadEndpoints(game.db, cultivator)) return [];
+    if ((betweenRoadEndpoints(game.db, cultivator) || !!game.atHand && aboardAnUnfinishedRoad(game.repos,cultivator,game.atHand,routineTime(game.atHand)))) return [];
     today = Math.floor(game.atHand?.currentDay ?? today);
     return publicTransportFrom(game.atHand, placeName(cultivator), today, standingOf(cultivator).regionId);
 }
 
 /** The counters kept here for ships and carriages, whatever the season. */
 export function theBoothsHere(game: GameService, cultivator: Cultivator): ACounter[] {
-    if (betweenRoadEndpoints(game.db, cultivator)) return [];
+    if ((betweenRoadEndpoints(game.db, cultivator) || !!game.atHand && aboardAnUnfinishedRoad(game.repos,cultivator,game.atHand,routineTime(game.atHand)))) return [];
     return publicTransportHubsAt(game.atHand, placeName(cultivator), game.atHand?.currentDay ?? 0).map(hub => hub.kind);
 }
 
@@ -137,7 +139,7 @@ export function theBoothsHere(game: GameService, cultivator: Cultivator): ACount
 
 
 /** A whole carriage of one grade on this line: its fare in cash and its days. */
-function theHireOf(line: ALine, grade: typeof A_HIRED_CARRIAGE_BY_GRADE[number]) {
+export function theHireOf(line: ALine, grade: typeof A_HIRED_CARRIAGE_BY_GRADE[number]) {
     const carriage = requireConveyance(grade.conveyanceId);
     return {
         name: carriage.name.toLowerCase(),
@@ -223,7 +225,7 @@ export async function aSeatOnAShipOrACarriage(
         cultivator = game.repos.cultivators.getById(cultivator.id) ?? cultivator;
         run = game.repos.runs.getById(run.id) ?? run;
     }
-    if (betweenRoadEndpoints(game.db, cultivator)) return refused('engine.passageCounterReach', 'passage', factsForRefusal(
+    if ((betweenRoadEndpoints(game.db, cultivator) || !!game.atHand && aboardAnUnfinishedRoad(game.repos,cultivator,game.atHand,routineTime(game.atHand)))) return refused('engine.passageCounterReach', 'passage', factsForRefusal(
         'The landing or station has not been reached.',
         'You are between road endpoints. Reach an actual landing or carriage station before reading its board or buying its passage. Nothing spent.',
         'passage-counter: sole current SQL road cursor is an unfinished edge; its displayed endpoint supplies no counter or keeper.'));
@@ -363,7 +365,7 @@ export async function aSeatOnAShipOrACarriage(
         'The advertised road service does not recall its actual vehicle from elsewhere.'));
     const publicQuote = line.lane && game.atHand && fromDock && toDock
         ? quotePublicPassage(game.atHand, fromDock.id, toDock.id, game.atHand.currentDay,
-            passengerIds.length, [], `${run.seed}:${weatherDay}`) : null;
+            passengerIds.length, [], `${run.seed}:${weatherDay}`, passengerIds) : null;
     if (line.lane && game.atHand && !publicQuote) {
         return refused('engine.takeTheSeat', 'passage', factsForRefusal(
             'The ship cannot board here for this departure.',
@@ -398,9 +400,10 @@ export async function aSeatOnAShipOrACarriage(
             if (!current?.alive || current.spiritStones < stones
                 || placeName(current) !== here) return null;
             const rechecked = quotePublicPassage(game.atHand!, publicQuote.fromId, publicQuote.toId,
-                publicQuote.departureDay, passengerIds.length, [], run.seed + ':' + weatherDay);
+                publicQuote.departureDay, passengerIds.length, [], run.seed + ':' + weatherDay, passengerIds);
             if (!rechecked || rechecked.vesselId !== publicQuote.vesselId
                 || rechecked.arrivalDay !== publicQuote.arrivalDay) return null;
+            if (!publicShipHullCanBeBoarded(game.atHand!,publicQuote)) return null;
             if (peopleUnavailableForOwnedBoarding(game.atHand!, companionIds, publicQuote.fromId, publicQuote.departureDay).length > 0) return null;
             const companions = companionIds.map(id => game.atHand!.npcs.find(person => person.id === id)!);
             const boarded = companions.map(person => onSponsoredPublicPassage(game.atHand!, person, publicQuote,
@@ -412,9 +415,13 @@ export async function aSeatOnAShipOrACarriage(
                 game.atHand!.npcs[index] = person!;
             }
             bindShipCrewToPassage(game.atHand!, publicQuote);
+            const operator=game.atHand!.npcs.find(person=>person.status==='alive'
+                && person.tags.includes('crew-of:'+publicQuote.vesselId) && person.identity.occupation==='shipmaster');
+            if (!operator || !realiseAcceptedPublicShipHull(game.atHand!,publicQuote,operator)) return null;
             const accepted = recordPublicPassage(game.atHand!, publicQuote, publicQuote.departureDay,
                 publicQuote.fromId, [...passengerIds, ...crew.map(person => person.id)], undefined,
-                { runId: game.currentRun().run.id, elapsedDays: game.currentRun().run.elapsedDays });
+                { runId: game.currentRun().run.id, elapsedDays: game.currentRun().run.elapsedDays },
+                [{id:current.id,name:current.name},...companions.map(person=>({id:person.id,name:person.name}))]);
             game.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
             voyage.receiptId = accepted.id; voyage.crew = crew.length;
             writeTheVoyage(game.db, cultivator.id, voyage);

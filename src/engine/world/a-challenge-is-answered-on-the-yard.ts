@@ -1,3 +1,4 @@
+import { writeTheNpcArtsActuallyUsed } from './the-arts-an-npc-actually-uses-in-a-fight.js';
 /**
  * Somebody is challenged in front of people, and it is answered at their own
  * house.
@@ -319,6 +320,8 @@ export function holdADuel(
         }
     );
 
+    writeTheNpcArtsActuallyUsed(state,result.exchanges,
+        'duel:'+state.history.nextFactSeq,day);
     const byId = (id: string | null): NpcRecord | null =>
         id === null ? null : [input.challenger, input.challenged].find(n => n.id === id) ?? null;
     const winner = byId(result.winnerId);

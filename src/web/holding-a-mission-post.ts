@@ -1,7 +1,9 @@
+import { publicWatchTargetForPost } from '../engine/world/where-a-house-keeps-its-public-watch.js';
 /**
- * A mission above the outer rung is a post, held rather than spent in one act.
+ * A long mission or a named remote watch is a post held at its actual ground.
  *
- * Outer chores run days to months and are served in one span, as any duty is. An inner or higher
+ * Seat chores run days to months and are served in one span. A remote watch must first be
+ * reached, even at the outer rung; its existing lamp-watch terms do not buy instant travel. An inner or higher
  * mission runs months to decades, so taking it writes the word (`acceptDuty`) and keeps on it
  * where the post is, the realm and merit they took it at, and what the term pays. The holder stays
  * at the post's place and lives there as they like - cultivating, talking, anything - and the days
@@ -96,10 +98,11 @@ function theSeatOf(world: WorldState, place: LocationRecord): LocationRecord | n
 }
 
 /** Whether somebody here is at the post: inside the same walls, or in the same province where the post has none. */
-function standsAtThePost(world: WorldState, hereId: string | null, post: LocationRecord): boolean {
+function standsAtThePost(world: WorldState, hereId: string | null, post: LocationRecord, exact = false): boolean {
     const here = hereId === null ? undefined : world.locations.find(row => row.id === hereId);
     if (!here) return false;
     if (here.id === post.id) return true;
+    if(exact)return false;
     const walls = theSeatOf(world, post);
     if (walls !== null) return theSeatOf(world, here)?.id === walls.id;
     const province = theProvinceAround(world.locations, post.id);
@@ -110,7 +113,9 @@ function whereThisPostIs(game: GameService, cultivator: Cultivator, entryId: str
     const houseId = entryId.slice(entryId.indexOf('@') + 1);
     const seat = theBoardTheyStandAt(game.atHand, cultivator);
     const ground = game.atHand?.locations.find(row => row.controllingFactionId === houseId) ?? null;
-    return theMissionBehind(entryId)?.at === 'its_ground' ? ground ?? seat : seat;
+    const mission=theMissionBehind(entryId);
+    if(mission?.at==='its_public_terminal')return game.atHand?publicWatchTargetForPost(game.atHand,houseId,entryId):null;
+    return mission?.at === 'its_ground' ? ground ?? seat : seat;
 }
 
 /** The sheet's line for the post they hold, or null. */
@@ -139,7 +144,7 @@ export function takeUpTheMissionPost(
     const world = game.atHand;
     const post = whereThisPostIs(game, cultivator, chosen.entry.id);
     const merit = game.repos.sects.getMembership(cultivator.id)?.contribution ?? 0;
-    const there = world !== null && post !== null && standsAtThePost(world, game.worldPlaceOf(cultivator), post);
+    const there = world !== null && post !== null && standsAtThePost(world, game.worldPlaceOf(cultivator), post,theMissionBehind(chosen.entry.id)?.at==='its_public_terminal');
     const record = writeOneObligation(game.repos.db as unknown as DatabaseHandle, {
         ...sworn,
         tags: [
@@ -290,7 +295,7 @@ function settleThisMissionPost(game: GameService, cultivator: Cultivator, record
     const world = game.atHand!;
     const today = Math.floor(game.currentRun().run.elapsedDays);
     const due = record.dueOnDay ?? today;
-    const { title, houseName, place } = thePost(world, record);
+    const { title, houseName, place, mission } = thePost(world, record);
     const contractId = tagged(record, CONTRACT);
     if (contractId !== null) {
         settleHiredDuties(world, Math.floor(world.currentDay));
@@ -316,8 +321,11 @@ function settleThisMissionPost(game: GameService, cultivator: Cultivator, record
                 structure: [`${record.id} broken; contractor term ${contractId} failed; member answerable.`] };
         }
     }
-    const at = place === null || standsAtThePost(world, game.worldPlaceOf(cultivator), place);
+    const at = place === null || standsAtThePost(world, game.worldPlaceOf(cultivator), place,mission?.at==='its_public_terminal');
     const arrived = record.tags.includes(ARRIVED);
+
+    // Actual departure is read before a reached deadline can declare service complete.
+    if (contractId === null && arrived && !at) return thePostIsLeft(game, cultivator, record, today, 'by walking away from it');
 
     // NEVER TAKEN UP: the whole term was left.
     if (today >= due && !arrived) return thePostIsLeft(game, cultivator, record, today, 'by never reaching it', record.incurredOnDay);
@@ -347,7 +355,6 @@ function settleThisMissionPost(game: GameService, cultivator: Cultivator, record
             structure: [`settleTheMissionPostTheyHold: ${record.id} reached on day ${today}.`]
         };
     }
-    if (contractId === null && arrived && !at) return thePostIsLeft(game, cultivator, record, today, 'by walking away from it');
     return null;
 }
 
@@ -373,8 +380,8 @@ export function hireForYourDuty(game: GameService, run: Run, cultivator: Cultiva
         || (worker.activity?.untilDay != null && worker.activity.untilDay > world.currentDay)) {
         return no('They are already committed to other work.');
     }
-    const { place, title, houseName } = thePost(world, record);
-    if (!place || !standsAtThePost(world, worker.locationId, place)) return no('The contractor must reach the post before taking it over.');
+    const { place, title, houseName, mission } = thePost(world, record);
+    if (!place || !standsAtThePost(world, worker.locationId, place,mission?.at==='its_public_terminal')) return no('The contractor must reach the post before taking it over.');
     const today = Math.floor(run.elapsedDays);
     const days = (record.dueOnDay ?? today) - today;
     if (days <= 0) return no('The term has already ended.');

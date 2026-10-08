@@ -1,4 +1,4 @@
-import { actualCarrierScene } from './the-actual-carrier-scene.js';
+import { physicalPassageScene, failedPublicPassageScene, carrierAreaBinding } from './the-actual-carrier-scene.js';
 import { stoppedRoadFor, betweenRoadEndpoints } from './a-road-stopped-partway.js';
 import { sameRoadPosition } from '../engine/world/road-course.js';
 import { roadPositionOfNpc } from '../engine/world/places-on-the-way.js';
@@ -265,7 +265,7 @@ function readOthersPresent(
     const area = read.areas.find(one => one.id === cultivator.standingIn)?.id
         // A stale endpoint room/market label is not an area on the actual edge.
         // The one cursor's filtered placement supplies the observer's road scene.
-        ?? (betweenRoadEndpoints(repos.db, cultivator) ? read.areas.find(one => one.for !== 'room')?.id
+        ?? (betweenRoadEndpoints(repos.db, cultivator) || failedPublicPassageScene(repos,cultivator,world,routineTime(world)) ? read.areas.find(one => one.for !== 'room')?.id
             : whereInThisPlaceTheyStand(world, place, cultivator.standingIn, cultivator.sectId,
                 cultivator.standingIn == null ? read.areas : undefined).id);
     return read.people.filter(row => read.whereIs.get(row.id) === area);
@@ -286,27 +286,27 @@ export function peopleInThisPlace(
     const observerProxy = proxies.get(cultivator.id);
     const throughProxy = observerProxy?.locationId === place.id
         && String(observerProxy.data.standingIn) === cultivator.standingIn;
-    const cursor = throughProxy ? null : stoppedRoadFor(repos.db, cultivator);
+    const cursor = throughProxy ? null : stoppedRoadFor(repos.db, cultivator, world);
     const betweenEndpoints = !throughProxy && betweenRoadEndpoints(repos.db, cultivator);
     const routes = routesForPresenceRead(world.locations);
     const now = routineTime(world);
-    const carrier = throughProxy ? null : actualCarrierScene(repos, cultivator, world, now);
+    const carrier = throughProxy ? null : physicalPassageScene(repos, cultivator, world, now);
     const followers = new Set(whoIsOnTheRoadWith(world.npcs, cultivator.id, now).map(npc => npc.id));
     const accepts = (npc: import('../engine/world/npc-state.js').NpcRecord): boolean => {
         if (carrier && !carrier.accepts(npc)) return false;
         if (!cursor) return true;
         if (followers.has(npc.id) && npc.activity?.fromLocationId == null
             && npc.locationId === place.id) return true;
-        return sameRoadPosition(cursor.position ?? null, roadPositionOfNpc(world.locations, npc, now, routes));
+        return sameRoadPosition(cursor.position ?? null, roadPositionOfNpc(world.locations, npc, now, routes,id=>world.npcs.find(one=>one.id===id)));
     };
     const stored = repos.cultivators.roster().filter(row => row.id !== cultivator.id && row.alive
         && worldLocationFor(world, row.location)?.id === place.id
         && (!carrier || (() => {
             const sheet = repos.cultivators.getById(row.id);
-            return !!sheet && actualCarrierScene(repos, sheet, world, now)?.key === carrier.key;
+            return !!sheet && physicalPassageScene(repos, sheet, world, now)?.key === carrier.key;
         })())
         && (!cursor || sameRoadPosition(cursor.position ?? null,
-            stoppedRoadFor(repos.db, row)?.position ?? { kind: 'place', locationId: place.id, originLocationId: place.id })));
+            stoppedRoadFor(repos.db, row, world)?.position ?? { kind: 'place', locationId: place.id, originLocationId: place.id })));
     const remote: { row: RosterEntry; standingIn: string }[] = [];
     for (const npc of world.npcs) {
         if (npc.id === cultivator.id || !isActing(npc.status)) continue;
@@ -321,7 +321,7 @@ export function peopleInThisPlace(
     const read = theAreasOf(world, place, undefined, {
         id: cultivator.id, sectId: cultivator.sectId, standingIn: betweenEndpoints ? null : cultivator.standingIn,
         ...(cursor || carrier ? { physical: { accepts, betweenEndpoints,
-            ...(carrier ? { hull: { key:carrier.key, operatorId:carrier.operatorId, areaKind:carrier.areaKind } } : {}) } } : {}),
+            ...(carrier ? { hull: carrierAreaBinding(carrier) } : {}) } } : {}),
         others: [
             ...stored.map(row => ({ id: row.id, standingIn: betweenEndpoints ? null : repos.cultivators.getById(row.id)?.standingIn })),
             ...remote.map(one => ({ id: one.row.id, standingIn: one.standingIn }))

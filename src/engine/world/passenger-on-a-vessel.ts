@@ -1,4 +1,8 @@
 /** A passenger follows an accepted hull's actual crew, never a copied sailed counter. */
+import {isRuined} from './possessions.js';
+import {setLocation} from './npc-state.js';
+import {companyAfterPassage} from './company-during-a-passage.js';
+import {whoItIsWith} from './a-vehicle.js';
 import type { WorldState } from './world-state.js';
 import type { NpcRecord } from './npc-state.js';
 import type { HistoricalFact } from './history.js';
@@ -32,7 +36,8 @@ export function shipPassengerAt(world: WorldState, receiptId: string, onDay: num
     if (!booked || origin?.publicPassage !== true || typeof origin.vesselId !== 'string'
         || typeof origin.seaLaneId !== 'string' || typeof origin.departureDay !== 'number') return null;
     const courses = factsWithDataValue(world, 'vesselId', origin.vesselId)
-        .filter(fact => fact.data.publicPassage === true && fact.data.seaLaneId === origin.seaLaneId && fact.day <= onDay)
+        .filter(fact => fact.data.publicPassage === true && fact.data.seaLaneId === origin.seaLaneId && fact.day <= onDay
+            && (fact.id===booked.id || typeof fact.data.onwardAgreementId!=='string'))
         .sort((a, b) => a.day - b.day || (witnessIndexFor(world).order.get(a.id) ?? 0)
             - (witnessIndexFor(world).order.get(b.id) ?? 0));
     let receipt = booked;
@@ -55,27 +60,44 @@ export function shipPassengerAt(world: WorldState, receiptId: string, onDay: num
         && npc.activity.fromLocationId === data.fromLocationId
         && npc.activity.returnTo === data.toLocationId
         && npc.activity.untilDay === data.arrivalDay));
-    const elapsed = Math.max(0, onDay - departureDay);
+    const hull=world.objects.find(object=>object.id===origin.vesselId);
+    const lostOnDay=hull && isRuined(hull) ? hull.provenance.filter(entry=>entry.how==='lost'&&entry.onDay<=onDay).at(-1)?.onDay : undefined;
+    const lost = data.publicPassageLost===true || !!hull && isRuined(hull)
+        && (lostOnDay!==undefined && journeyTimeHasReached(lostOnDay,departureDay) && journeyTimeHasReached(arrivalDay,lostOnDay)
+            || hull.provenance.length===0);
+    // A later wreck cannot retroactively stop somebody already disembarked.
+    const actualEnd = lostOnDay===undefined ? onDay : Math.min(onDay,lostOnDay);
+    const elapsed = Math.max(0, actualEnd - departureDay);
     // A surviving matched source, not the passenger's stored water name, supplies ground.
     const source = crew.find(npc => npc.identity.occupation === 'shipmaster') ?? crew[0];
     const last = world.npcs.filter(npc => npc.tags.includes('crew-of:' + origin.vesselId)
         && npc.activity?.vesselId === origin.vesselId && npc.activity.sinceDay === departureDay
         && npc.diedOnDay != null && npc.diedOnDay <= onDay)
         .sort((a, b) => (b.diedOnDay ?? 0) - (a.diedOnDay ?? 0))[0];
-    const locationId = source ? locationOnNpcJourney(world.locations, source, onDay)
+    // A later actual boarding from this landfall proves the old finite leg
+    // reached it even after its crew left. Planned reservations prove nothing.
+    const leftThisLandfall=arrived && factsWithDataValue(world,'vesselId',origin.vesselId).some(fact=>
+        fact.data.publicPassage===true && fact.data.actualBoarding===true
+        && fact.data.fromLocationId===data.toLocationId
+        && typeof fact.data.departureDay==='number' && journeyTimeHasReached(fact.data.departureDay,arrivalDay)
+        && fact.day<=onDay && fact.causes.includes(receipt.id));
+    const locationId = data.publicPassageLost===true ? data.toLocationId
+        : lost && lostOnDay===undefined ? null
+        : leftThisLandfall ? data.toLocationId : source ? locationOnNpcJourney(world.locations, source, actualEnd)
         : last?.locationId ?? (data.toLocationId !== origin.toLocationId ? data.toLocationId : null);
-    const atPort = arrived && locationId === data.toLocationId && !!source;
+    const atPort = !lost && arrived && locationId === data.toLocationId && (!!source || leftThisLandfall);
     return { receipt, vesselId: origin.vesselId, seaLaneId: origin.seaLaneId,
         fromId: data.fromLocationId, toId: data.toLocationId,
         departureDay, boardedOnDay: origin.departureDay, arrivalDay: data.arrivalDay,
         sailed: atPort ? data.arrivalDay - departureDay : Math.min(elapsed, data.arrivalDay - departureDay),
-        remainingDays: atPort ? 0 : Math.max(0, data.arrivalDay - onDay), crew, locationId,
+        remainingDays: atPort || lost ? 0 : Math.max(0, data.arrivalDay - onDay), crew:lost?[]:crew, locationId,
         arrived: atPort,
-        unavailable: source ? null : 'The accepted hull has no actual crew carrying this leg.' };
+        unavailable: lost ? 'The actual accepted hull was ruined; no passage continues.' : source || atPort ? null : 'The accepted hull has no actual crew carrying this leg.' };
 }
 
 /** Loss writes the actual final ground before the last mortal source can be forgotten. */
 export function settleLostPublicPassages(world: WorldState, day: number): void {
+    settleRuinedPublicHulls(world,day);
     const ended = new Set<string>();
     for (const npc of world.npcs) {
         const activity = npc.activity;
@@ -101,8 +123,53 @@ export function settleLostPublicPassages(world: WorldState, day: number): void {
     }
 }
 
+/** A dated ordinary ruin stops only bodies still on that actual finite leg.
+ * Title and custody remain under ruin/estate authority; this neither repairs a
+ * hull nor touches corpses or unrelated replacement activities. */
+function settleRuinedPublicHulls(world:WorldState,day:number):void {
+ const activeHulls=new Set(world.npcs.flatMap(n=>n.status==='alive'&&n.activity?.kind==='travelling'
+  &&n.activity.seaLaneId&&n.activity.vesselId&&n.tags.includes('crew-of:'+n.activity.vesselId)?[n.activity.vesselId]:[]));
+ if(!activeHulls.size)return;
+ const rows=new Map(world.objects.filter(o=>activeHulls.has(o.id)).map(o=>[o.id,o]));
+ for(const id of activeHulls){
+  const hull=rows.get(id);if(!hull||!isRuined(hull))continue;
+  const loss=hull.provenance.filter(entry=>entry.how==='lost'&&entry.onDay<=day).at(-1);
+  if(!loss)continue; // no invented historic loss timestamp
+  const doingCrew=world.npcs.find(n=>n.status==='alive'&&n.tags.includes('crew-of:'+hull.id)
+   &&n.activity?.kind==='travelling'&&n.activity.vesselId===hull.id&&n.activity.seaLaneId
+   &&n.activity.untilDay!=null&&n.activity.sinceDay<=loss.onDay&&loss.onDay<n.activity.untilDay);
+  const doing=doingCrew?.activity;if(!doingCrew||!doing?.fromLocationId||!doing.returnTo||!doing.seaLaneId)continue;
+  const facts=factsWithDataValue(world,'vesselId',hull.id).filter(f=>f.data.publicPassage===true&&f.data.seaLaneId===doing.seaLaneId);
+  const parent=[...facts].reverse().find(f=>f.data.departureDay===doing.sinceDay&&f.data.fromLocationId===doing.fromLocationId&&f.data.toLocationId===doing.returnTo);
+  const lane=facts.flatMap(f=>{
+   const from=world.locations.find(p=>p.id===f.data.fromLocationId);
+   return from?publicShipLinesFrom(world,from.name,typeof f.data.departureDay==='number'?f.data.departureDay:doing.sinceDay):[];
+  }).find(line=>line.lane.id===doing.seaLaneId)?.lane;
+  const ground=locationOnNpcJourney(world.locations,doingCrew,loss.onDay);
+  if(!parent||!lane||!ground)continue;
+  const matched=world.npcs.filter(n=>n.status==='alive'&&n.activity?.kind==='travelling'
+   &&n.activity.vesselId===hull.id&&n.activity.seaLaneId===doing.seaLaneId
+   &&n.activity.sinceDay===doing.sinceDay&&n.activity.fromLocationId===doing.fromLocationId
+   &&n.activity.returnTo===doing.returnTo&&n.activity.untilDay===doing.untilDay);
+  recordPublicPassage(world,{lane,vesselId:hull.id,fromId:doing.fromLocationId,toId:ground,
+   departureDay:doing.sinceDay,arrivalDay:loss.onDay},loss.onDay,ground,matched.map(n=>n.id),parent.id,undefined,undefined,undefined,true);
+  for(const n of matched){const at=world.npcs.findIndex(one=>one===n);if(at<0)continue;
+   world.npcs[at]={...setLocation(n,locationOnNpcJourney(world.locations,n,loss.onDay),loss.onDay),
+    activity:companyAfterPassage(n,loss.onDay)};
+  }
+ }
+}
+
 /** Only living actual crew can begin a real shorter-way return; the old receipt remains history. */
 export function turnBackPublicPassage(world: WorldState, receiptId: string, day: number): PublicPassageLeg | null {
+    return returnAnActualPublicPassage(world,receiptId,day,true);
+}
+
+/** An agreed return may be longer than continuing; commitDayOf is not a barrier. */
+export function returnPublicPassageAfterAgreement(world:WorldState,receiptId:string,day:number):PublicPassageLeg|null {
+    return returnAnActualPublicPassage(world,receiptId,day,false);
+}
+function returnAnActualPublicPassage(world:WorldState,receiptId:string,day:number,shorterOnly:boolean):PublicPassageLeg|null {
     const actual = shipPassengerAt(world, receiptId, day);
     const original = witnessIndexFor(world).byId.get(receiptId)?.data;
     if (!actual || actual.unavailable || actual.arrived || !actual.locationId || !actual.crew.length
@@ -112,9 +179,14 @@ export function turnBackPublicPassage(world: WorldState, receiptId: string, day:
     const to = world.locations.find(place => place.id === original.toLocationId);
     const lane = from && to && publicShipLinesFrom(world, from.name, actual.boardedOnDay)
         .find(line => line.lane.id === actual.seaLaneId && line.to === to.name)?.lane;
-    if (!lane || !canTurnBack(lane, day - actual.boardedOnDay)) return null;
+    const hull=world.objects.find(object=>object.id===actual.vesselId);
+    const operator=actual.crew.find(npc=>npc.identity.occupation==='shipmaster');
+    if (!lane || shorterOnly && !canTurnBack(lane, day - actual.boardedOnDay)
+        || !shorterOnly && (!operator || !hull)
+        || hull && (isRuined(hull) || !operator
+            || !(hull.possessorId===operator.id || hull.possessorId===null && whoItIsWith(hull)===operator.id))) return null;
     const leg: PublicPassageLeg = { lane, vesselId: actual.vesselId, fromId: actual.locationId,
-        toId: original.fromLocationId, departureDay: day, arrivalDay: day + (day - actual.boardedOnDay) };
+        toId: original.fromLocationId, departureDay: day, arrivalDay: day + actual.sailed };
     bindShipCrewToPassage(world, leg, day, actual.departureDay);
     recordPublicPassage(world, leg, day, leg.fromId, actual.crew.map(one => one.id), actual.receipt.id);
     return leg;

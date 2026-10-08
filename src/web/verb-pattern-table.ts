@@ -2238,7 +2238,10 @@ const DUTY_PHRASES: readonly string[] = [...new Set(
  * reaches here. The handles are distinctive phrases for the same reason: "I take
  * a stand to defend her" is not the standing to.
  */
-const POSTED_DUTY_PHRASES: readonly RegExp[] = [...new Set(SENDING_REASONS.map(reason => reason.said))]
+const POSTED_DUTY_PHRASES: readonly RegExp[] = [...new Set([
+    ...SENDING_REASONS.map(reason => reason.said),
+    ...HOUSE_MISSIONS.map(mission => mission.said)
+])]
     .sort((a, b) => b.length - a.length)
     // The handles are words and spaces - that table is authored, not user
     // input - so nothing needs escaping here.
@@ -6063,7 +6066,9 @@ function planIntent(input: string): PlannedAction {
             && tradeNamedIn(text) === undefined)
         ? dutyNamed(text) : undefined;
     if (namedDuty) {
-        return { action: 'sect', intent: 'duty', target: namedDuty };
+        // The handle recognizes a taking; its actual site and employer remain
+        // in the player's words for the one native board binder to resolve.
+        return { action: 'sect', intent: 'duty', target: input.trim() };
     }
 
     // HOW MUCH CONTRIBUTION DO I HAVE

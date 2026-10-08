@@ -1,3 +1,4 @@
+import { realiseAcceptedPublicShipHull, publicShipHullCanBeBoarded, shipHandsForHull } from './a-public-ship-hull.js';
 import { companyDuringPassage, companyAfterPassage } from './company-during-a-passage.js';
 /** The public hull's existing crew factory and finite passage binding. */
 import { lifespanForOrdinal } from '../cultivation/realms.js';
@@ -25,7 +26,7 @@ const A_HAND = 'sailor';
 export function ensureShipCrew(world: CrewWorld, lane: SeaLane, at: string, onDay: number): NpcRecord[] {
     const ship = shipIdForLane(lane);
     const tag = `${CREW_OF}${ship}`;
-    const hands = forStream(world.seed, 'the-crew-of-a-ship', ship).int(2, 3);
+    const hands = shipHandsForHull(world.seed,ship);
     const aboard = () => world.npcs.filter(npc => npc.status === 'alive' && npc.tags.includes(tag));
     const wanted = [
         ...(aboard().some(npc => npc.identity.occupation === THE_SHIPMASTER) ? [] : [THE_SHIPMASTER]),
@@ -62,8 +63,16 @@ export function ensureShipCrew(world: CrewWorld, lane: SeaLane, at: string, onDa
 
 /** The current activity is the hull's real bounded leg, with no fleet position copy. */
 export function bindShipCrewToPassage(world: CrewWorld, leg: PublicPassageLeg, onDay = leg.departureDay, priorDepartureDay = leg.departureDay): void {
-    const tag = `${CREW_OF}${shipIdForLane(leg.lane)}`;
+    const tag = `${CREW_OF}${leg.vesselId}`;
     const crew = world.npcs.filter(npc => npc.status === 'alive' && npc.tags.includes(tag));
+    // Only an actual matched prior course carries a changing local slot onward.
+    const priorArea = (npc: NpcRecord): string | null => npc.activity?.kind === 'travelling'
+        && npc.activity.vesselId === leg.vesselId
+        && npc.activity.untilDay != null && !journeyTimeHasReached(onDay, npc.activity.untilDay)
+        && journeyTimeHasReached(onDay, npc.activity.sinceDay)
+        && journeyTimeHasReached(npc.activity.sinceDay, priorDepartureDay)
+        && journeyTimeHasReached(priorDepartureDay, npc.activity.sinceDay)
+        ? npc.activity.standingIn ?? null : null;
     const ids = crew.map(npc => npc.id);
     const passengers = world.npcs.filter(npc => npc.status === 'alive' && !ids.includes(npc.id)
         && npc.activity?.kind === 'travelling' && npc.activity.vesselId === leg.vesselId
@@ -74,14 +83,14 @@ export function bindShipCrewToPassage(world: CrewWorld, leg: PublicPassageLeg, o
         const at = world.npcs.indexOf(one);
         world.npcs[at] = { ...one, activity: companyDuringPassage(one.activity, { ...one.activity, ...activityOfAPublicPassage(leg,
             one.identity.occupation === THE_SHIPMASTER ? 'Keeping the ship.' : 'Working the ship.',
-            ids.filter(id => id !== one.id)) }, onDay), updatedOnDay: onDay };
+            ids.filter(id => id !== one.id)), standingIn: priorArea(one) }, onDay), updatedOnDay: onDay };
     }
     // A rerouted hull carries the already booked people, without changing why
     // they went or who accompanied them. Another departure remains its own trip.
     for (const one of passengers) {
         const at = world.npcs.indexOf(one);
         world.npcs[at] = { ...one, activity: companyDuringPassage(one.activity, { ...one.activity, ...activityOfAPublicPassage(leg,
-            one.activity!.note, one.activity!.withIds) }, onDay), updatedOnDay: onDay };
+            one.activity!.note, one.activity!.withIds), standingIn: priorArea(one) }, onDay), updatedOnDay: onDay };
     }
 }
 
@@ -117,8 +126,13 @@ export function commitNpcPublicPassage(world: WorldState, accepted: NpcRecord): 
     if (!lane || shipIdForLane(lane) !== doing.vesselId) return false;
     const leg: PublicPassageLeg = { lane, vesselId: doing.vesselId, fromId: from.id, toId: to.id,
         departureDay: doing.sinceDay, arrivalDay: doing.untilDay };
+    if (!publicShipHullCanBeBoarded(world,leg)) return false;
     ensureShipCrew(world, lane, from.id, doing.sinceDay);
     bindShipCrewToPassage(world, leg);
-    recordPublicPassage(world, leg, doing.sinceDay, from.id, [accepted.id]);
+    const operator=world.npcs.find(npc=>npc.status==='alive' && npc.tags.includes('crew-of:'+leg.vesselId)
+        && npc.identity.occupation==='shipmaster');
+    if (!operator || !realiseAcceptedPublicShipHull(world,leg,operator)) throw new Error('Accepted public ship custody changed synchronously.');
+    recordPublicPassage(world, leg, doing.sinceDay, from.id, [accepted.id],undefined,undefined,
+        [{id:accepted.id,name:accepted.name}]);
     return true;
 }

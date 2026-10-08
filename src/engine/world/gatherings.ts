@@ -1,3 +1,4 @@
+import { npcCombatArts, writeTheNpcArtsActuallyUsed } from './the-arts-an-npc-actually-uses-in-a-fight.js';
 /**
  * The chosen of allied houses meet each other.
  */
@@ -15,7 +16,6 @@ import {
     type ConfrontationResult
 } from '../cultivation/combat.js';
 import type { Injury } from '../../schema/cultivation.js';
-import { getTechnique } from '../../data/cultivation/techniques.js';
 import { isBelowTheLid } from './layers.js';
 import { fillConsequences, makeFact, reserveFactSlot, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -724,6 +724,7 @@ function runChallenge(
             }
         );
 
+        writeTheNpcArtsActuallyUsed(state,result.exchanges,'gathering:'+factId+':'+i,day);
         const winner = result.winnerId === a.id ? a : result.winnerId === b.id ? b : null;
         const loser = result.loserId === a.id ? a : result.loserId === b.id ? b : null;
 
@@ -1511,6 +1512,8 @@ function boardsFor(entrants: readonly NpcRecord[]): Map<RealmKey, NpcRecord[]> {
  * Price an NPC for the combat layer.
  */
 export function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
+    // Callers can hold a pre-bout row; the actual body may already have cast.
+    npc = state.npcs.find(person=>person.id===npc.id) ?? npc;
     const wounds: Injury[] = woundsCarriedBy(npc);
     const max = maxBodyOf(npc);
     const share = max > 0 ? bodyStandingOn(npc, state.currentDay) / max : 1;
@@ -1525,9 +1528,7 @@ export function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
         injuries: wounds,
         hp: Math.max(1, Math.round(BOUT_BODY * Math.max(0, Math.min(1, share)))),
         maxHp: BOUT_BODY,
-        qi: BOUT_BODY,
-        maxQi: BOUT_BODY,
-        technique: bestArt(npc)
+        ...npcCombatArts(npc, state.currentDay)
     };
 }
 
@@ -1582,24 +1583,6 @@ function applyBoutBreakages(
         lines.push(`${object.name} broke in the bout, and works at half`);
     }
     return lines;
-}
-
-/**
- * The art they would actually bring.
- */
-function bestArt(npc: NpcRecord): CombatantInput['technique'] {
-    let best: CombatantInput['technique'] = null;
-    let bar = -1;
-    for (const id of npc.cultivation.techniqueIds) {
-        const t = getTechnique(id) as unknown as
-            (NonNullable<CombatantInput['technique']> & { requiredOrdinal?: number }) | undefined;
-        if (!t) continue;
-        const need = Number(t.requiredOrdinal ?? 0);
-        if (need > npc.cultivation.realmOrdinal || need <= bar) continue;
-        bar = need;
-        best = t;
-    }
-    return best;
 }
 
 /** Re-exported for a harness that wants the raw resolver result. */

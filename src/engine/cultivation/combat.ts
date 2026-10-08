@@ -1,3 +1,5 @@
+import { anArtThatCanBeUsedInAFight } from './an-art-that-can-be-used-in-a-fight.js';
+import { artUseReadiness } from './an-art-that-is-ready-to-use.js';
 /**
  * Cultivation combat.
  */
@@ -330,6 +332,9 @@ export interface CombatantInput {
     technique?: Technique | null;
     /** Mastery of that art as THIS combatant holds it, 0..1. */
     techniqueMastery?: number;
+    /** Transient read of an actor's canonical art cooldowns. Absent on callers
+     * which already charge their own named art use, including the PC tool. */
+    techniqueCooldowns?: Readonly<Record<string, number>>;
     /**
      * WHAT THIS PERSON IS LIKE, when they are the one being swung at from far
      * below and the decision is theirs alone.
@@ -1306,11 +1311,38 @@ export interface ConfrontationContext extends ExchangeContext {
     vector?: AttackVector;
 }
 
+/** One actual cast, numeric engine output. A wide volley carries this once. */
+export interface CombatArtUse { techniqueId: string; qiSpent: number; cooldownStarted: number }
+
+/** Free preparation; its after row is committed only if a real strike resolves. */
+export function prepareCombatArtUse(input: CombatantInput):
+    { input: CombatantInput; after: CombatantInput; use?: CombatArtUse } {
+    const art = input.technique;
+    if (art && !anArtThatCanBeUsedInAFight(art)) {
+        const ordinary = { ...input, technique: null };
+        return { input: ordinary, after: ordinary };
+    }
+    if (input.techniqueCooldowns === undefined || !art) return { input, after: input };
+    const notReady = art.requiredOrdinal > input.realmOrdinal
+        || artUseReadiness(art, input.techniqueCooldowns[art.id] ?? 0, input.qi);
+    if (notReady) {
+        const ordinary = { ...input, technique: null };
+        return { input: ordinary, after: ordinary };
+    }
+    const qi = input.qi - art.qiCost;
+    return { input, after: { ...input, qi,
+        technique: art.cooldown > 0 || qi < art.qiCost ? null : art,
+        techniqueCooldowns: { ...input.techniqueCooldowns, [art.id]: art.cooldown } },
+        use: { techniqueId: art.id, qiSpent: art.qiCost, cooldownStarted: art.cooldown } };
+}
+
 export interface ExchangeRecord {
     index: number;
     attackerId: string;
     defenderId: string;
     result: ExchangeResult;
+    /** Only an actual resolved strike has a cast receipt. */
+    artUse?: CombatArtUse;
     /** Defender HP after the exchange was applied to the running total. */
     defenderHpAfter: number;
 }
@@ -1469,7 +1501,10 @@ export function theGapDecidesItAlone(
         // distance, and nothing about consequences is written twice. At this
         // ratio it will usually be a removal, which is exactly "maybe you just
         // die" and is not a special case.
-        const answered = resolveExchange(defender, aggressor, aggressorInput.maxHp, {
+        const answeringArt = prepareCombatArtUse(defenderInput);
+        const answeringPower = answeringArt.input === defenderInput ? defender
+            : assessPower(answeringArt.input,{ambient:ctx.ambient});
+        const answered = resolveExchange(answeringPower, aggressor, aggressorInput.maxHp, {
             ...ctx,
             vector: 'body'
         } as ExchangeContext);
@@ -1496,6 +1531,7 @@ export function theGapDecidesItAlone(
                 attackerId: defenderInput.id,
                 defenderId: aggressorInput.id,
                 result: answered,
+                ...(answeringArt.use ? {artUse:answeringArt.use} : {}),
                 defenderHpAfter: left
             }],
             theirDecision: decision
@@ -1603,7 +1639,7 @@ export function resolveConfrontationRound(
     if (ctx.opening && ctx.fromConcealment) order.pop();
 
     for (const aggressorStrikes of order) {
-        const striker = aggressorStrikes ? aggressor : defender;
+        let striker = aggressorStrikes ? aggressor : defender;
         const target = aggressorStrikes ? defender : aggressor;
         if (hp[striker.input.id] <= 0) continue;
 
@@ -1611,6 +1647,9 @@ export function resolveConfrontationRound(
         // is charged by there being nothing here to resolve - not by a
         // multiplier that would have to be believed.
         if (striker.act === 'guard') continue;
+        const art = prepareCombatArtUse(striker.input);
+        if (art.input !== striker.input) striker = { ...striker, input: art.input,
+            power: assessPower(art.input, powerCtx) };
 
         const result = resolveExchange(striker.power, target.power, target.input.maxHp, {
             suppressionPulses: ctx.suppressionPulses,
@@ -1633,6 +1672,10 @@ export function resolveConfrontationRound(
                 : target.act === 'press' ? 1 / POSTURE_WORTH : 1
         });
 
+        // The current blow used its ready art; later blows read the spent row.
+        if (art.after !== striker.input) striker = { ...striker, input: art.after,
+            power: assessPower(art.after, powerCtx) };
+        if (aggressorStrikes) aggressor = striker; else defender = striker;
         hp[target.input.id] = Math.max(0, hp[target.input.id] - result.damage);
         if (result.injury) injuries[target.input.id].push(result.injury);
 
@@ -1661,6 +1704,7 @@ export function resolveConfrontationRound(
             attackerId: striker.input.id,
             defenderId: target.input.id,
             result,
+            ...(art.use ? { artUse: art.use } : {}),
             defenderHpAfter: hp[target.input.id]
         });
 
@@ -3076,6 +3120,10 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
             // below still land one strike a round between them however wide
             // their arts are, while one person above them can answer all twenty
             // at once.
+            const art = prepareCombatArtUse(striker.input);
+            if (art.input !== striker.input) { striker.input = art.input;
+                striker.power = assessPower(art.input, powerCtx); }
+            let artResolved = false;
             const reach = reachOf(striker.input.technique);
             const targets = orderTargets(striker, enemiesOf(striker), hp)
                 .slice(0, REACH_TARGETS[reach]);
@@ -3180,8 +3228,10 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
                     attackerId: striker.input.id,
                     defenderId: target.input.id,
                     result,
+                    ...(!artResolved && art.use ? { artUse: art.use } : {}),
                     defenderHpAfter: hp[target.input.id]
                 });
+                artResolved = true;
 
                 const targetIntent = sides[target.sideIndex].intent ?? ctx.intent;
                 if (hp[target.input.id] <= 0) {
@@ -3198,6 +3248,12 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
                 }
             }
 
+            if (artResolved && art.after !== art.input) {
+                // One cast for the whole volley; preserve a weapon broken within it.
+                striker.input = { ...striker.input, qi: art.after.qi,
+                    technique: art.after.technique, techniqueCooldowns: art.after.techniqueCooldowns };
+                striker.power = assessPower(striker.input, powerCtx);
+            }
             if (new Set(living().map(f => f.sideIndex)).size < 2) break;
         }
 

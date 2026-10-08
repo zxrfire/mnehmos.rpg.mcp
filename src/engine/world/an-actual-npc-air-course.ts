@@ -22,9 +22,7 @@ import { isWithThem, itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from './a-vehicle
 import { brokenStatusesOn } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
 
-/** Current area/routine and actual exterior ground, not inherited room coordinates. */
-export function quoteNpcAirDeparture(world: WorldState, npc: NpcRecord, toId: string,
-    day: number, vehicle?: ObjectRecord, requireLaunchBalance=true, requestedArt?: string) {
+export function theExteriorGroundsOfAnNpcAirDeparture(world:WorldState,npc:NpcRecord,toId:string,day:number) {
     if (npc.status !== 'alive' || !npc.locationId
         || locationOnNpcJourney(world.locations,npc,day) !== npc.locationId) return null;
     const from=world.locations.find(place=>place.id===npc.locationId);
@@ -37,6 +35,15 @@ export function quoteNpcAirDeparture(world: WorldState, npc: NpcRecord, toId: st
     const areas=theAreasOf(clock,from);
     const area=areas.areas.find(one=>one.id===areas.whereIs.get(npc.id));
     if(area?.for==='room'||area?.for==='clinic') return null;
+    return {from,to};
+}
+
+/** Current area/routine and actual exterior ground, not inherited room coordinates. */
+export function quoteNpcAirDeparture(world: WorldState, npc: NpcRecord, toId: string,
+    day: number, vehicle?: ObjectRecord, requireLaunchBalance=true, requestedArt?: string) {
+    const ground=theExteriorGroundsOfAnNpcAirDeparture(world,npc,toId,day);
+    if(!ground)return null;
+    const {from,to}=ground;
     const bodily=canFlyByTheirOwnBody(npc.cultivation.realmOrdinal,brokenStatusesOn(npc.cultivation.injuries));
     const art=vehicle?null:requestedArt||!bodily
         ?heldPersonalFlightArt(npc.cultivation.realmOrdinal,npc.cultivation.techniqueIds,requestedArt):null;

@@ -1,3 +1,7 @@
+import { anArtThatCanBeUsedInAFight } from '../engine/cultivation/an-art-that-can-be-used-in-a-fight.js';
+import { isTheWorldsToMove } from '../engine/world/npc-state.js';
+import { npcCombatArts, writeTheNpcArtsActuallyUsed } from '../engine/world/the-arts-an-npc-actually-uses-in-a-fight.js';
+import { routineTime } from '../engine/world/npc-routines.js';
 import { marriageAfterSubmission } from './a-marriage-after-submission.js';
 import { passHours } from './routine-invitations.js';
 import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
@@ -351,7 +355,7 @@ export const combatVerbs = {
 
     artTheyWouldFightWith(this: GameService, cultivator: Cultivator): string | undefined {
         const usable = this.repos.techniques.listKnown(cultivator.id)
-            .filter(art => art.requiredOrdinal <= cultivator.realmOrdinal)
+            .filter(art => art.requiredOrdinal <= cultivator.realmOrdinal && anArtThatCanBeUsedInAFight(art))
             .sort((a, b) => b.mastery - a.mastery || (a.id < b.id ? -1 : 1));
         return usable[0]?.id;
     },
@@ -572,12 +576,13 @@ export const combatVerbs = {
         const howItOpened = inTheHand === null ? opening : 'open';
 
         // AND NOW IT IS A FIGHT RATHER THAN A RESULT
+        const fightId = `${run.turn + 1}:${PLAYER_ROLL_IDENTITY}:${opponentBody.realmOrdinal}`;
         const opened = openFight({
             // Stable for the life of the fight and unique to it, so round four
             // is round four however long the player took over it. Not the row
             // ids: `PLAYER_ROLL_IDENTITY` exists because those are randomUUIDs
             // and keying on them made the same seed produce a different fight.
-            id: `${run.turn + 1}:${PLAYER_ROLL_IDENTITY}:${opponentBody.realmOrdinal}`,
+            id: fightId,
             seed: run.seed,
             aggressor: {
                 input: selfBody,
@@ -617,9 +622,9 @@ export const combatVerbs = {
 
         const held: StandingFight = {
             state: opened.fight ?? {
-                // Never read when the gap settled it; the shape is filled so the
-                // conclusion below can be given one object rather than two.
-                id: '', seed: run.seed, roundsFought: 0, roundBudget: 0,
+                // The original opening identity also binds a categorical answer's
+                // actual cast; the remaining shape serves only the conclusion.
+                id: fightId, seed: run.seed, roundsFought: 0, roundBudget: 0,
                 aggressor: { input: selfBody, edges: [], vector: 'body', movement: null, movementMastery: 0 },
                 defender: { input: opponentBody, edges: [], vector: 'body', movement: null, movementMastery: 0 },
                 hp: {}, injuries: {}, hpAtOpening: {}, exchanges: [], brokenObjects: [],
@@ -1115,6 +1120,12 @@ export const combatVerbs = {
         if (!advanced.finished && advanced.spent) return advanced.spent;
         run = this.repos.runs.getById(run.id) ?? run;
         cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+        if (this.atHand) {
+            for (const side of [held.state.aggressor,held.state.defender]) {
+                const npc = this.atHand.npcs.find(person=>person.id===side.input.id);
+                if (npc && isTheWorldsToMove(npc)) side.input = { ...side.input, ...npcCombatArts(npc,routineTime(this.atHand)) };
+            }
+        }
         const turn = takeAFightTurn(held.state, answer, {
             ambient,
             turn: run.turn + 1,
@@ -1129,6 +1140,8 @@ export const combatVerbs = {
                 : undefined
         });
 
+        if (this.atHand) writeTheNpcArtsActuallyUsed(this.atHand,turn.exchanges,
+            'played:'+held.runId+':'+held.state.id,routineTime(this.atHand));
         if (turn.finished) {
             // Recorded before the field goes, because the estate settles after
             // this and has no other way to learn that anybody was swinging.
@@ -1330,6 +1343,8 @@ export const combatVerbs = {
         result: ConfrontationResult,
         lastRound?: FightTurn
     ): Execution {
+        if (this.atHand) writeTheNpcArtsActuallyUsed(this.atHand,result.exchanges,
+            'played:'+held.runId+':'+held.state.id,routineTime(this.atHand));
         const settled = settleAFight({
             repos: this.repos,
             run,

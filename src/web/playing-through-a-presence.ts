@@ -1,3 +1,6 @@
+import { isTheWorldsToMove } from '../engine/world/npc-state.js';
+import { routineTime } from '../engine/world/npc-routines.js';
+import { npcCombatArts, writeTheNpcArtsActuallyUsed } from '../engine/world/the-arts-an-npc-actually-uses-in-a-fight.js';
 /** A player's remote acts use the ordinary scene and the ordinary combat round. */
 import type { GameService } from './turn-engine.js';
 import type { Cultivator, Run, AmbientQi } from '../schema/cultivation.js';
@@ -148,10 +151,17 @@ export async function actThroughAPresence(game: GameService, action: PlannedActi
                 turn: run.turn, ambient });
             fight = opened.fight;
             settled = opened.settled;
+            if (settled) writeTheNpcArtsActuallyUsed(world,settled.exchanges,
+                'presence:'+run.id+':'+storage.id+':'+run.turn,routineTime(world));
         }
         let line = 'The presence fought.';
         if (fight) {
+            for (const side of [fight.aggressor,fight.defender]) {
+                const npc = world.npcs.find(person=>person.id===side.input.id);
+                if (npc && isTheWorldsToMove(npc)) side.input = {...side.input,...npcCombatArts(npc,routineTime(world))};
+            }
             const round = takeAFightTurn(fight, whatTheySaidInTheFight(raw) ?? { kind: 'strike' }, { ambient, turn: run.turn });
+            writeTheNpcArtsActuallyUsed(world,round.exchanges,'presence:'+run.id+':'+fight.id,routineTime(world));
             fight = round.fight;
             settled = round.finished;
             line = round.line;
@@ -264,6 +274,8 @@ export function settleTheSeparatedBody(game: GameService, beforeDay: number): st
         rng: forStream(run.seed, 'unguarded-body', attacker.id, run.turn), ambient: game.ambientFor(body, run),
         turn: run.turn, intent: { thrown: AN_ORDINARY_SWING }
     });
+    writeTheNpcArtsActuallyUsed(world,result.exchanges,
+        'unguarded-body:'+run.id+':'+body.id+':'+run.turn,routineTime(world));
     game.repos.cultivators.update(body.id, { hp: Math.max(0, result.hp[body.id] ?? body.hp) });
     for (const wound of result.injuries[body.id] ?? []) game.repos.cultivators.addInjury(body.id, wound);
     if ((result.hp[body.id] ?? body.hp) <= 0 && result.finished) game.repos.cultivators.markDead(body.id, 'combat_defeat', run.turn, 'The body was destroyed by an assault.', true);

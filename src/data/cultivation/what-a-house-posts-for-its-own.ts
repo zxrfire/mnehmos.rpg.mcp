@@ -57,7 +57,7 @@ export const HouseMissionSchema = z.object({
     /** The term. */
     days: z.number().int().min(1),
     /** Where the work is done: the house's seat, or ground it holds. */
-    at: z.enum(['the_seat', 'its_ground']),
+    at: z.enum(['the_seat', 'its_ground', 'its_public_terminal']),
     /** The first ordinal of the realm a `{realm}` slot names. */
     realmCrossedInto: z.number().int().min(0).optional(),
     settlements: OccupationSchema.shape.settlements,
@@ -69,6 +69,8 @@ export const HouseMissionSchema = z.object({
 export type HouseMission = z.infer<typeof HouseMissionSchema>;
 
 const YEAR = 365;
+/** Shared watch terms: crossing watch adds a venue, not a second wage schedule. */
+const LAMP_WATCH: HouseMission = { id: 'mission-lamp-watch', said: 'lamp watch', task: 'Stand the lamp watch at {place} for {house} for the next {term}', rung: 'outer', minOrdinal: 4, cashPerMonth: 700, days: 60, at: 'the_seat', settlements: ['sect_town', 'city'], risk: 'low', needs: 'nothing', note: 'Walking the house\'s halls and yards through the night in turns with a lamp, and sending word up about anything that is where it should not be.' };
 
 export const HOUSE_MISSIONS: readonly HouseMission[] = [
     // OUTER: chores and errands, days to months.
@@ -77,7 +79,12 @@ export const HOUSE_MISSIONS: readonly HouseMission[] = [
     // stone (goes into sect treasury)".
     { id: 'mission-refectory', said: 'refectory duty', task: 'Take refectory duty at {place} for {house} for the next {term}', rung: 'outer', minOrdinal: 1, cashPerMonth: 450, days: 30, at: 'the_seat', settlements: ['sect_town'], risk: 'low', needs: 'nothing', note: 'Cooking for the house and taking a stone a bowl off everybody who eats, which goes into the treasury and not to the cook.' },
     { id: 'mission-messages', said: 'messages', task: 'Carry messages for {house} from {place} to the towns below it for the next {term}', rung: 'outer', minOrdinal: 2, cashPerMonth: 600, days: 30, at: 'the_seat', settlements: ['sect_town', 'city'], risk: 'low', needs: 'nothing', note: 'Letters, tallies and summonses down to the towns the house deals with, and their answers back up. Walking, mostly, and the first thing an outer disciple is trusted with outside the gate.' },
-    { id: 'mission-lamp-watch', said: 'lamp watch', task: 'Stand the lamp watch at {place} for {house} for the next {term}', rung: 'outer', minOrdinal: 4, cashPerMonth: 700, days: 60, at: 'the_seat', settlements: ['sect_town', 'city'], risk: 'low', needs: 'nothing', note: 'Walking the house\'s halls and yards through the night in turns with a lamp, and sending word up about anything that is where it should not be.' },
+    LAMP_WATCH,
+    // An inherited crossing is a named post; unlike a seat chore it must be reached.
+    { ...LAMP_WATCH, id: 'mission-crossing-watch', said: 'crossing watch',
+      task: 'Keep the crossing watch at {place} for {house} for the next {term}',
+      at: 'its_public_terminal', needs: 'a_public_terminal',
+      note: 'Watching an inherited crossing and reporting who passes through it. The watcher does not fold space for passengers; the terminal and the house keep that service.' },
     // INNER: posts of months to years.
     { id: 'mission-pass-watch', said: 'pass watch', task: 'Keep the pass watch below {place} for {house} for the next {term}', rung: 'inner', minOrdinal: 6, cashPerMonth: 1_500, days: 5 * YEAR, at: 'the_seat', settlements: ['sect_town', 'city'], risk: 'moderate', needs: 'nothing', note: 'Holding the road up to the house: who comes up it, what they carry, and whether the house hears of them before they reach the gate.' },
     { id: 'mission-vein-warden', said: 'vein warding', task: 'Keep the vein warding at {place} for {house} for the next {term}', rung: 'inner', minOrdinal: 21, cashPerMonth: 12_000, days: 3 * YEAR, at: 'its_ground', settlements: ['sect_town', 'city'], risk: 'moderate', needs: 'ground', note: 'Sitting on the house\'s vein so that nothing else draws on it. The pay is nominal; what the house is actually giving is the right to cultivate on the ground being guarded.' },

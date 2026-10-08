@@ -157,4 +157,3 @@ field or an action-router SessionContext callback.
 
 The proposed pill-dose extraction preserves PC consume_pill stream names, draw order, grade consequences, poisoning, stock debit and repository effects. Only pure dose/toxicity/restoration reads move into an engine leaf. An NPC adapter must consume finite actual medicine and persist its actual body effects; creating a second SQL cultivator for it is not an adapter. Preparation not yet runtime verified.
 
-
