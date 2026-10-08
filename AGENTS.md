@@ -217,9 +217,77 @@ Before adding any limit, say which it is. If it is neither, it is not wanted.
 A flat constant standing where a rule should be is the commonest way this gets
 broken, and it is usually visible as being wrong in *both* directions at once.
 
+### A locked door can be broken
+
+**Owner ruling, 2026-10-03:** lacking a key does not prohibit an attempt to force
+entry. The player has to break the actual door or seal; their force against its
+grade decides whether they get through. A refusal of ordinary keyed entry is not
+a refusal of that different physical act.
+
+Read physical doors through [`door-materials.ts`](src/engine/world/door-materials.ts)
+and the existing [`canUnmake`](src/engine/cultivation/whether-a-weapon-survives-being-used.ts)
+authority. Wards and seals keep their existing strength and breaking authorities,
+as seals on people do. Do not invent another grade ladder or let a request bypass
+the barrier. Successful force must change the actual barrier state and enter the
+ordinary consequence paths; the narrator cannot declare it broken.
+
 ---
 
 ## The engine states what can be perceived, not what the record holds
+
+### Player knowledge and character knowledge are different
+
+**Owner ruling, 2026-10-03:** knowledge checks must not erase what the human
+learned on previous runs. A first-time player learns what cultivation rooms are
+when the world introduces them. A returning player can ask for them directly;
+their new character need not repeat that introduction before the request works.
+
+For ordinary local facilities, services, items and practices, a prior encounter
+is not a universal prerequisite for a named request or attempt. In particular,
+asking to go to cultivation rooms at a place that has them identifies an ordinary
+destination. Resolve the actual route and access rather than refusing because
+nobody has shown this character the room yet. Player learning is part of the
+replayability of the game.
+
+This affects gameplay: player learning changes the available informed choices
+and how early somebody can make them. Implement it in action routing and
+resolution, not only in narrator wording or recognition. A returning player
+can pursue a useful room or plan a journey at the right rung without waiting
+for this character to repeat the introduction.
+
+**Owner clarification, 2026-10-03:** knowing about cultivation rooms lets the
+player check an ordinary local room earlier. Remembering Hollow Court's admission
+route is also a real advantage: the player can plan for it, pursue it at the
+right rung and skip rediscovering the opportunity. Knowing Hollow Court's name does
+not supply the character's rung, a journey, membership or entry. The example's
+29 is its ordinary admission threshold, held by the existing
+[`sect-hollow-court` catalog row](src/data/cultivation/sects.ts), not a knowledge
+score or a new rule here. The character still has to go there and meet the
+actual entry conditions. Preserve the existing admission and entry authorities;
+player familiarity never stands in for what they require.
+
+**Owner clarification, 2026-10-06:** remembering a real destination's name does
+not give this character the road to it. A request to travel there needs an actual
+known route. The player may nevertheless ask somebody how to get there before
+this character has heard of it; that informed question is another advantage of
+having played before. Read the actual person's knowledge to decide their answer.
+Knowing only the name does not make them able to give directions. An actual
+answer that supplies the route can teach it through the existing knowledge
+authority; asking alone neither supplies it nor moves the character.
+
+NPC knowledge comes from their actual life and the existing knowledge readers,
+including locality, upbringing, occupation, travel, house and learned events.
+Do not make every person know every real destination or create another knowledge
+catalog for this interaction. Ordinary local facilities and actual signposted
+routes retain their existing availability; this clarification does not require
+a repeated introduction to a local cultivation room.
+
+Keep unsolicited descriptions and character testimony tied to what the character
+can perceive or has learned. A player's informed request does not invent a past
+encounter, an introduction, a relationship or a knowledge record. Hidden locations
+and private facts still need a discoverable route; real distance, doors, permissions,
+ownership, resources and bodily limits still decide what an attempt achieves.
+Knowledge is not access, and lack of a prior encounter is not automatically a wall.
 
 The engine knows everything. A person standing in a square knows what they can
 see. **A fact the record holds and the eye cannot reach must not be handed to
