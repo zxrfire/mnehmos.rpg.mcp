@@ -9,6 +9,9 @@
 import { describe, expect, it } from 'vitest';
 import { makeLocation } from '../../../src/engine/world/locations';
 import { createNpc, markDead, PLAYER_ROW_TAG } from '../../../src/engine/world/npc-state';
+import { SEA_LANES } from '../../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water';
+import { REGIONS } from '../../../src/data/cultivation/regions';
+import { commitDayOf } from '../../../src/engine/world/what-a-sea-crossing-costs';
 import {
     aRoomOfTheirOwn, npcsWhereTheyStand, theAreasOf
 } from '../../../src/engine/world/where-in-a-place-somebody-is-standing';
@@ -38,6 +41,46 @@ function capped(read: ReturnType<typeof theAreasOf>) {
 }
 
 describe('companions take room in an area', () => {
+    /**
+     * Paid passage stopped beside a fellow passenger, then put the observer on
+     * that person's independently drawn deck, hiding the actual shipmaster.
+     * Actual bounded hull itineraries now derive deck groups without inventing
+     * a talking party. Another vessel on the same ocean never shares their bin.
+     */
+    it('keeps the shipmaster and passenger together, with extra hands on reachable decks', () => {
+        const lane = SEA_LANES.find(one => one.water)!;
+        const day = commitDayOf(lane) + 1;
+        const water = makeLocation({ id: 'water', name: lane.water!, kind: 'region',
+            data: { catalogRegionId: REGIONS.find(region => region.openWater)!.id } });
+        const from = makeLocation({ id: 'from', name: lane.fromPlace, kind: 'settlement' });
+        const to = makeLocation({ id: 'to', name: lane.toPlace, kind: 'settlement' });
+        const person = (id: string, vesselId: string, occupation: string, crew = false) => {
+            const npc = createNpc('decks', { id, bornOnDay: -7300, onDay: day, locationId: to.id,
+                occupation, tags: crew ? [`crew-of:${vesselId}`] : [] });
+            npc.activity = { kind: 'travelling', note: 'On passage', withIds: [], sinceDay: 0,
+                untilDay: day + 20, fromLocationId: from.id, returnTo: to.id, vesselId, seaLaneId: lane.id };
+            return npc;
+        };
+        const npcs = [person('z-master', 'first-hull', 'shipmaster', true),
+            person('a-passenger', 'first-hull', 'traveller'),
+            ...Array.from({ length: 3 }, (_, i) => person(`hand-${i}`, 'first-hull', 'sailor', true)),
+            person('other-master', 'other-hull', 'shipmaster', true),
+            person('other-passenger', 'other-hull', 'traveller')];
+        const state = { seed: 'decks', currentDay: day, currentHour: 8,
+            locations: [water, from, to], npcs, factions: [] };
+        const before = structuredClone(state);
+        const read = theAreasOf(state, water);
+        capped(read);
+        const passengerDeck = read.whereIs.get('a-passenger')!;
+        expect(passengerDeck).toBeDefined();
+        expect(read.whereIs.get('z-master')).toBe(passengerDeck);
+        const firstDecks = new Set(npcs.slice(0, 5).map(n => read.whereIs.get(n.id)));
+        for (const npc of npcs.slice(5)) expect(firstDecks.has(read.whereIs.get(npc.id))).toBe(false);
+        for (const npc of npcs) expect(npcsWhereTheyStand(state, water, read.whereIs.get(npc.id)!, { id: 'player' })
+            .map(one => one.id)).toContain(npc.id);
+        expect(state).toEqual(before);
+    });
+
     it('places every companion, beast and body, excludes the player, and mutates nothing', () => {
         const { state, place } = arrangement();
         const before = structuredClone(state);

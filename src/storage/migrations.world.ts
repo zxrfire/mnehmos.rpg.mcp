@@ -324,6 +324,8 @@ export function migrateWorld(db: Database.Database): void {
       description TEXT NOT NULL DEFAULT '',
 
       realm_ordinal INTEGER NOT NULL DEFAULT 0,
+      qi REAL, -- NULL is a legacy balance never recorded; zero is an actual exhausted pool
+      technique_cooldowns TEXT, -- sparse remaining catalog cooldowns from real NPC uses
       spirit_root TEXT NOT NULL,
       attributes TEXT NOT NULL DEFAULT '{}',         -- JSON might/insight/fortune/charm
       foundation TEXT NOT NULL DEFAULT 'incomplete', -- a history, not a rank
@@ -1090,22 +1092,33 @@ function addWorldColumns(db: Database.Database): void {
     // beside it does not. Zero is the honest reading of every row written
     // before the world struck at a wall: they have been accumulating since
     // they last advanced, which is what `lastAdvancedOnDay` already says.
-    if (!columnsOf('world_npcs').includes('accumulating_since_day')) {
+    if (!npcColumns.includes('accumulating_since_day')) {
         console.error('[Migration] Adding accumulating_since_day column to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN accumulating_since_day INTEGER NOT NULL DEFAULT 0;');
+    }
+
+    // NULL is a legacy balance never recorded, not an empty pool. The native
+    // world opening initializes that absence once; an actual zero is persisted
+    // unchanged and must never become a free refill on another load.
+    if (!npcColumns.includes('technique_cooldowns')) {
+        db.exec('ALTER TABLE world_npcs ADD COLUMN technique_cooldowns TEXT;');
+    }
+    if (!npcColumns.includes('qi')) {
+        console.error('[Migration] Adding qi column to world_npcs table');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN qi REAL;');
     }
 
     // The body, which the world had no room for until a crossing started costing
     // one. -1 rather than 0 is the sentinel for a row written before this,
     // because 0 is a real and reachable value meaning nothing left standing, and
     // reading a whole population as corpses on load is not a migration.
-    if (!columnsOf('world_npcs').includes('hp')) {
+    if (!npcColumns.includes('hp')) {
         console.error('[Migration] Adding hp and body_on_day columns to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN hp INTEGER NOT NULL DEFAULT -1;');
         db.exec('ALTER TABLE world_npcs ADD COLUMN body_on_day INTEGER NOT NULL DEFAULT 0;');
     }
 
-    if (!columnsOf('world_npcs').includes('wounds')) {
+    if (!npcColumns.includes('wounds')) {
         console.error('[Migration] Adding wounds column to world_npcs table');
         db.exec("ALTER TABLE world_npcs ADD COLUMN wounds TEXT NOT NULL DEFAULT '[]';");
     }
@@ -1114,7 +1127,7 @@ function addWorldColumns(db: Database.Database): void {
     // legibly arbitrary rather than honest, which is the difference from
     // origin_tier's 'thin_county': a coin flip has no majority to read a
     // legacy row as. Everything seeded since carries a rolled value.
-    if (!columnsOf('world_npcs').includes('sex')) {
+    if (!npcColumns.includes('sex')) {
         console.error('[Migration] Adding sex column to world_npcs table');
         db.exec("ALTER TABLE world_npcs ADD COLUMN sex TEXT NOT NULL DEFAULT 'female';");
     }
@@ -1125,7 +1138,7 @@ function addWorldColumns(db: Database.Database): void {
     // NULL for everybody in a saved world, and it reads correctly: nobody was
     // born with anything, because until this column there was nothing to be
     // born with. Unlike sex there is a genuine majority to default to.
-    if (!columnsOf('world_npcs').includes('physique')) {
+    if (!npcColumns.includes('physique')) {
         console.error('[Migration] Adding physique column to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN physique TEXT;');
     }
@@ -1133,12 +1146,12 @@ function addWorldColumns(db: Database.Database): void {
     // NULL for every row in a saved world, and it is the correct reading:
     // until this column there was nothing in the world state a house could
     // seal, so nobody in one is carrying a seal.
-    if (!columnsOf('world_npcs').includes('qi_seal')) {
+    if (!npcColumns.includes('qi_seal')) {
         console.error('[Migration] Adding qi_seal column to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN qi_seal TEXT;');
     }
 
-    if (!columnsOf('world_npcs').includes('bloodline_species')) {
+    if (!npcColumns.includes('bloodline_species')) {
         console.error('[Migration] Adding bloodline columns to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN bloodline_species TEXT;');
         db.exec('ALTER TABLE world_npcs ADD COLUMN bloodline_tier TEXT;');

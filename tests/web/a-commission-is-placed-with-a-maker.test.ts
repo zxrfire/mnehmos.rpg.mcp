@@ -15,19 +15,25 @@
  *                 with them. Both are said.
  *
  * THE WORLD IS PINNED, because these read whoever is standing in the square.
+ * Replies and approaches now spend time. Meet each maker in their current
+ * area rather than asking an earlier crowd from another area; the busy check
+ * is made beside the maker before its due day, retaining the pending-work
+ * assertion. Waiting for completion and actual interruption stay unchanged.
  */
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import { makeGameInWorld, type Harness } from './harness';
 import type { WorldState } from '../../src/engine/world/world-state';
 import type { NpcRecord } from '../../src/engine/world/npc-state';
-import type { Cultivator } from '../../src/schema/cultivation';
 import { readJsonFlag, writeFlag } from '../../src/server/consolidated/cultivation-support';
 import {
     FLAG_COMMISSIONS_PLACED,
     type ACommissionPlaced
 } from '../../src/web/a-commission-placed-with-a-maker';
 import { whatIsBeingMade } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { worldLocationFor } from '../../src/web/entities';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 const WORLD = 'a-commission-is-placed';
 
@@ -47,10 +53,14 @@ describe('a commission placed with a maker', () => {
     /** Ask each person standing here in turn until one of them takes the work. */
     async function placeWithSomebody(skip: ReadonlySet<string>): Promise<NpcRecord | null> {
         const cultivator = h.repos.cultivators.getById(cultivatorId)!;
-        const here = (h.game as unknown as { present(c: Cultivator): { id: string; name: string }[] })
-            .present(cultivator);
+        const place = worldLocationFor(world(), cultivator.location)!;
+        const placement = theAreasOf(world(), place);
+        const here = world().npcs.filter(n => n.status === 'alive' && placement.whereIs.has(n.id)
+            && n.id !== cultivator.id);
         for (const person of here) {
             if (skip.has(person.id)) continue;
+            await standWhereThePeopleAre(h, cultivatorId, new Set([person.id]));
+            if (!h.game.present(h.repos.cultivators.getById(cultivatorId)!).some(p => p.id === person.id)) continue;
             const before = placed().length;
             await h.game.act(`I pay ${person.name} 100 stones to cut me a talisman`);
             if (placed().length > before) return row(placed().at(-1)!.makerId);
@@ -89,9 +99,12 @@ describe('a commission placed with a maker', () => {
 
     it('and a maker already at work takes nothing else on', async () => {
         const one = placed().at(-1)!;
+        await standWhereThePeopleAre(h, cultivatorId, new Set([one.makerId]));
+        expect(Math.floor(world().currentDay), 'the busy check must precede delivery').toBeLessThan(one.dueOnDay);
         const turn = await h.game.act(`I pay ${one.makerName} 100 stones to cut me a talisman`);
         expect(said(turn)).toMatch(/is at work already/);
-        expect(placed().length).toBe(1);
+        expect(placed().length, JSON.stringify({ day: world().currentDay, due: one.dueOnDay,
+            activity: row(one.makerId).activity, calls: (turn as unknown as Turn).toolCalls })).toBe(1);
     }, 300_000);
 
     it('is made on its day, and is the asker\'s', async () => {

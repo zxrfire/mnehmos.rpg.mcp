@@ -32,6 +32,7 @@ export const THE_DROWNED_REACH: Region = {
     name: REGION_NAME.DROWNED_SEA,
     role: 'adjacent',
     bearing: 'south',
+    metric: { xLi: 0, yLi: -240, extentLi: 30 },
     traditionId: 'tradition-drawn',
     summary:
         'Open water south of everything, with a drowned mountain range under it whose peaks are the islands. The drowned veins are granted to houses that can reach them, while cultivation aboard a hull is bought by the day out of a stone chest. Every institution that has tried to hold a strait has held it on paper.',
@@ -114,7 +115,7 @@ export const THE_DROWNED_REACH: Region = {
     ],
     places: [
         {
-            name: PLACE.SWEETSPRING_ISLE,
+            name: PLACE.SWEETSPRING_ISLE, metric: { xLi: 20, yLi: -235 },
             kind: 'market_town', ambient: 'thin', note: 'The only island on the eastern passage with fresh water on it, which is the entire reason there is a town there and the entire reason four parties claim it.',
             connections: [
                 {
@@ -134,7 +135,7 @@ export const THE_DROWNED_REACH: Region = {
             ]
         },
         {
-            name: PLACE.BRONZE_BELL_CAPE,
+            name: PLACE.BRONZE_BELL_CAPE, metric: { xLi: 6, yLi: -218 },
             kind: 'waystation', ambient: 'thin', note: 'A headland with a bell on it. A hull that rings it has come through, and a hull that does not is counted, and the counting is the only record anybody keeps out here.',
             connections: [
                 {
@@ -153,9 +154,9 @@ export const THE_DROWNED_REACH: Region = {
                 }
             ]
         },
-        { name: PLACE.DRAGONVEIN_ROCK, kind: 'site', ambient: 'dense', grounds: ['spirit_vein'], note: 'One rock stands on a vein head that breaks the surface at low water. It is the best ground in the province, it is about forty paces across, and everybody waters at it.' },
+        { name: PLACE.DRAGONVEIN_ROCK, metric: { xLi: -6, yLi: -236 }, kind: 'site', ambient: 'dense', grounds: ['spirit_vein'], note: 'One rock stands on a vein head that breaks the surface at low water. It is the best ground in the province, it is about forty paces across, and everybody waters at it.' },
         {
-            name: PLACE.THE_BITTER_CROSSING,
+            name: PLACE.THE_BITTER_CROSSING, metric: { xLi: -18, yLi: -245 },
             kind: 'site', ambient: 'thin', grounds: ['lake_bottom'], note: 'The stretch of the eastern passage with no landfall in it. Hulls carry their own water across and the ration is what the name is about; nobody finds it clever after the fourth day.',
             connections: [
                 {
@@ -167,7 +168,7 @@ export const THE_DROWNED_REACH: Region = {
                 }
             ]
         },
-        { name: PLACE.THE_FAR_SHORE, heldByFactionId: 'house-shrinking-earth', kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Jade Gorge, when it opens, which is four days in nine and never in a storm.' },
+        { name: PLACE.THE_FAR_SHORE, metric: { xLi: 12, yLi: -261 }, heldByFactionId: 'house-shrinking-earth', kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Jade Gorge, when it opens, which is four days in nine and never in a storm.' },
         // ── the middle of the water, which was a gap in the map ────────
         //
         // The province was written as coasts and the water between them
@@ -179,7 +180,7 @@ export const THE_DROWNED_REACH: Region = {
         // middle. These four are that blank, and every one of them is
         // somewhere a hull is rather than somewhere a hull calls.
         {
-            name: PLACE.SILVER_ISLE,
+            name: PLACE.SILVER_ISLE, metric: { xLi: 12, yLi: -239 },
             // "None of them holds a strait - one because it holds forty acres of
             // island instead and would be worth nothing if it held any more."
             // The forty acres are this island. No patron owns it and the
@@ -222,9 +223,9 @@ export const THE_DROWNED_REACH: Region = {
                 }
             ]
         },
-        { name: PLACE.THE_WAITING_SAILS, kind: 'site', ambient: 'thin', note: 'The anchorage off Silver Island, where forty hulls lie waiting on wind, water or a price, close enough to hear each other\'s bells. A quarter of the port\'s business is done between hulls without anybody going ashore.' },
-        { name: PLACE.THE_BOUNDLESS, kind: 'site', ambient: 'thin', grounds: ['lake_bottom', 'abyss'], note: 'Eleven days of the northern crossing with no landfall, no bottom a line will reach and nothing on the horizon in any direction. What everybody at sea means when they say they were out.' },
-        { name: PLACE.THE_SALT_FIELDS, kind: 'site', ambient: 'thin', grounds: ['marsh'], note: 'Shoal water on the western capes where the salt is raked off drying flats a hull can stand into, and where four claims overlap and none of them has ever been enforced for a season.' }
+        { name: PLACE.THE_WAITING_SAILS, metric: { xLi: 14, yLi: -240 }, kind: 'site', ambient: 'thin', note: 'The anchorage off Silver Island, where forty hulls lie waiting on wind, water or a price, close enough to hear each other\'s bells. A quarter of the port\'s business is done between hulls without anybody going ashore.' },
+        { name: PLACE.THE_BOUNDLESS, metric: { xLi: -15, yLi: -258 }, kind: 'site', ambient: 'thin', grounds: ['lake_bottom', 'abyss'], note: 'Eleven days of the northern crossing with no landfall, no bottom a line will reach and nothing on the horizon in any direction. What everybody at sea means when they say they were out.' },
+        { name: PLACE.THE_SALT_FIELDS, metric: { xLi: -24, yLi: -230 }, kind: 'site', ambient: 'thin', grounds: ['marsh'], note: 'Shoal water on the western capes where the salt is raked off drying flats a hull can stand into, and where four claims overlap and none of them has ever been enforced for a season.' }
     ],
     openWater: true,
     // Straits, islands and the ground under the water. Everything that lives

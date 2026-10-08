@@ -1,3 +1,10 @@
+import { isTerminal } from '../cultivation/existence.js';
+import { journeyTimeHasReached } from './places-on-the-way.js';
+import { spendNpcArtInterval } from './the-arts-an-npc-has-spent.js';
+import type { AnArtUseInterval } from '../cultivation/an-art-that-is-ready-to-use.js';
+import { settleNpcPilotedAirCourses, settleWorldAirTravellers } from './an-air-course-in-the-world.js';
+import { initializeMetricGround } from './the-metric-ground-under-a-journey.js';
+import { settleLostPublicPassages } from './passenger-on-a-vessel.js';
 /**
  * The driver: one call, and the world moves with the cultivator.
  *
@@ -42,6 +49,8 @@
  * joined only by the number of days.
  */
 
+import { nextWorldClockBoundary } from './world-clock-boundaries.js';
+import { settlePublicCarriages } from './public-carriages.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { factsAddedSince, witnessIndexFor } from './witness-reaction-index.js';
 import { resolveWithPlayerPresent } from './background-incident-draw.js';
@@ -68,8 +77,16 @@ import { theWorldForgetsTheMortalDead } from './world-state.js';
 import type { WorldState } from './world-state.js';
 
 export interface AdvanceForPlayOptions {
+    /** One held native body receipt; omitted standalone calls begin at elapsed zero. */
+    artUseInterval?: AnArtUseInterval;
     /** In-world days to advance. The same span the cultivator is spending. */
     days: number;
+    /** Accepted physical spans alone consume exact fractions. Legacy callers floor. */
+    preciseDays?: boolean;
+    /** Extra actual dates of the already accepted carrier leg; no booking store. */
+    passageDates?: readonly number[];
+    /** Actual clock and consequences are committed before this synchronous read. */
+    atWorldBoundary?: (world: WorldState, onDay: number) => void;
     /** Who is asking, for the digest. Omit and no digest is built. */
     access?: PlayerAccess;
     /**
@@ -176,6 +193,8 @@ export function advanceWorldForPlay(
     opts: AdvanceForPlayOptions
 ): PlayAdvanceResult {
     const fromDay = state.currentDay;
+    let geometrySeenLocations = state.locations.length;
+    if (opts.preciseDays) state.currentHour = (state.currentDay - Math.floor(state.currentDay)) * 24;
     // A stable append cursor survives pruning and reserved-row insertion.
     //
     // This was a length, and the year's events were whatever sat past that
@@ -185,7 +204,7 @@ export function advanceWorldForPlay(
     // slice and the digest under-reports the year it just simulated. Nothing
     // would have thrown.
     const factsBefore = witnessIndexFor(state).nextOrder;
-    const requested = Math.max(0, Math.floor(opts.days));
+    const requested = Math.max(0, opts.preciseDays ? opts.days : Math.floor(opts.days));
 
     // ── Why this is a loop and not two calls ─────────────────────────────
     //
@@ -214,10 +233,15 @@ export function advanceWorldForPlay(
     let interruptReason: string | null = null;
 
     while (remaining > 0) {
-        const slice = Math.min(STEP, remaining);
+        const until = state.currentDay + Math.min(STEP, remaining);
+        const boundary = opts.preciseDays
+            ? nextWorldClockBoundary(state, state.currentDay, until, opts.passageDates, opts.pressure) : null;
+        const slice = Math.min(STEP, remaining, boundary ? boundary.onDay - state.currentDay : Infinity);
         const before = state.currentDay;
+        const livingBefore = new Set(state.npcs.filter(npc => npc.status === 'alive').map(npc => npc.id));
         const time = resolveWithPlayerPresent(state, opts.pressure?.visitingPresence, () => advanceTime(state, slice, {
             inPlace: true,
+            preciseDays: opts.preciseDays,
             observer: opts.observer,
             interruptPolicy: opts.interruptPolicy,
             stopOnInterrupt: opts.stopOnInterrupt,
@@ -228,6 +252,30 @@ export function advanceWorldForPlay(
         time.deathHandoffs.push(...summitDeaths);
         for (const death of summitDeaths) opts.onDeath?.(death);
 
+        // Arrived air bodies enter pressure on actual ground; the native activity
+        // remains for its existing mission/recruit/return settlement authority.
+        settleNpcPilotedAirCourses(state, state.currentDay);
+        settleWorldAirTravellers(state, state.currentDay);
+        // Burn only this committed portion before dated pressure can start a new art.
+        // The final receipt supplies exact elapsed; intermediate dates use the
+        // driver's existing actual spent amount, with no persistent credit clock.
+        const intervalStart = (opts.artUseInterval?.previousElapsed ?? 0) + requested - remaining;
+        const reachedEnd = journeyTimeHasReached(time.toDay, fromDay + requested)
+            && journeyTimeHasReached(fromDay + requested, time.toDay);
+        const intervalEnd = reachedEnd
+            ? opts.artUseInterval?.cumulativeElapsed ?? requested
+            : intervalStart + time.daysAdvanced;
+        for (let at = 0; at < state.npcs.length; at++) {
+            const npc = state.npcs[at]!;
+            if (!livingBefore.has(npc.id)) continue;
+            const endedAt = isTerminal(npc.status) && npc.diedOnDay !== null
+                ? Math.min(time.toDay, npc.diedOnDay) : time.toDay;
+            state.npcs[at] = spendNpcArtInterval(npc, {
+                previousElapsed: intervalStart,
+                cumulativeElapsed: endedAt === time.toDay ? intervalEnd
+                    : intervalStart + Math.max(0, endedAt - before)
+            }, endedAt);
+        }
         const pressure = applyPressure(state, before, time.toDay, opts.pressure);
         pressureEvents.push(...pressure.events);
         born += pressure.born;
@@ -283,6 +331,15 @@ export function advanceWorldForPlay(
         //
         // Anybody a priced deed names is kept: a man whose brother still
         // carries the account is not one of the corpses this is for.
+        settlePublicCarriages(state, state.currentDay);
+        settleLostPublicPassages(state, state.currentDay);
+        if (state.locations.length !== geometrySeenLocations) {
+            initializeMetricGround(state.locations, state.seed);
+            geometrySeenLocations = state.locations.length;
+        }
+        settleNpcPilotedAirCourses(state, state.currentDay);
+        settleWorldAirTravellers(state, state.currentDay);
+        opts.atWorldBoundary?.(state, state.currentDay);
         theWorldForgetsTheMortalDead(state);
         remaining -= time.daysAdvanced;
         if (time.interrupted) {

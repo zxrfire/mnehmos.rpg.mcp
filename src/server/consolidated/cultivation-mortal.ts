@@ -60,7 +60,7 @@ import { worldLocationFor } from '../../web/entities.js';
 import { untreatedInjuryCount } from '../../engine/cultivation/injuries.js';
 import { CRIPPLING_UNTREATED_INJURIES } from '../../schema/cultivation.js';
 import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
-import { RATION_COST_STONES } from './cultivation-manage.js';
+import { RATION_COST_STONES } from './what-a-ration-costs.js';
 import { standingOf, type Standing } from './where-a-cultivator-is-standing.js';
 import {
     DAYS_PER_MONTH,
@@ -140,7 +140,9 @@ export { standingOf, type Standing };
  * the span, and this pays for it. The dependency is injected so the shared tool
  * file exports one function and nothing here duplicates its persistence.
  */
-export type CultivateRunner = (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
+/** Internal native readiness seam; no tool argument can grant provision money. */
+export type CultivateRunner = (args: Record<string, unknown>,
+    beforeProvisions?: (body: Cultivator) => void) => Promise<Record<string, unknown>>;
 
 export async function handleWork(
     args: z.infer<typeof WorkSchema>,
@@ -293,15 +295,20 @@ export async function handleWork(
     const requested = args.rations ?? 0;
     const rations = Math.max(requested, rationsNeeded);
     const boardAsked = rations * RATION_COST_STONES;
-    const stonesAtEntry = cultivator.spiritStones;
-    // Only the part the purse genuinely cannot cover. Somebody with stones
-    // pays for their own food and takes no advance at all.
-    const advanceAsked = Math.max(0, boardAsked - stonesAtEntry);
-    if (advanceAsked > 0) {
-        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: advanceAsked });
-    }
+    let stonesAtEntry = cultivator.spiritStones;
+    let advanceAsked = 0;
+    // Native cultivation calls this only after actual clock/body/ground readiness.
+    // Its fresh purse includes real preparation effects; refusal earns no float.
+    const advanceWhenReady = (body: Cultivator) => {
+        stonesAtEntry = body.spiritStones;
+        advanceAsked = Math.max(0, boardAsked - stonesAtEntry);
+        if (advanceAsked > 0) {
+            repos.cultivators.applyDeltas(body.id, { spiritStones: advanceAsked });
+        }
+    };
 
-    // ── The span. One pass, and the engine owns every outcome in it. ──
+    // One native runner owns readiness and each actual body/world portion.
+    // The internal callback funds its provision debit; only its receipt settles wages.
     const spanResult = await cultivate({
         action: 'cultivate',
         cultivatorId: cultivator.id,
@@ -311,7 +318,7 @@ export async function handleWork(
         rations,
         autoBreakthrough: true,
         randomEvents: true
-    });
+    }, advanceWhenReady);
 
     if (typeof spanResult.error === 'string') return spanResult;
 

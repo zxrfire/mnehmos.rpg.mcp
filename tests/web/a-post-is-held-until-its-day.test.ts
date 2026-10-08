@@ -6,6 +6,8 @@
  * Arranged: a place on the roll, the realm, where they stand, and the days passing (the run's
  * clock moved forward, which is what any span of living there does). Played: the taking, the
  * sheet, the leaving and the settling.
+ * Taking the post now spends its conversational eighth-day, from the 08:00
+ * opening. It still must not spend the post's years in the acceptance turn.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -35,7 +37,7 @@ async function onPost(seed: string) {
     const took = (await game.act('I take the pass watch')).narration ?? '';
     const face = () => faceOf(game.atHand!.npcs.find(n => n.id === cultivator.id) ?? { face: 0 });
     return {
-        game, repos, db, took, face,
+        game, repos, db, took, face, openedAt: run.elapsedDays,
         id: cultivator.id,
         // ARRANGED: whatever the house has sent for them about since is off the table, so the
         // leave is judged on the change the test is about. A summons waiting is its own case.
@@ -52,7 +54,7 @@ describe('a post held until its day', () => {
         const at = await onPost('post-served');
         expect(at.took).toContain('You take up the post: Keep the pass watch below');
         expect(at.took).toMatch(/It runs to day \d+\./);
-        expect(at.days(), 'the years were spent in one act').toBe(0);
+        expect(at.days() - at.openedAt, 'acceptance spent the term instead of a reply').toBeCloseTo(1 / 8);
         expect(await at.sheet()).toMatch(/On post: keep the pass watch below .+ until day \d+\./);
 
         const due = Number(/It runs to day (\d+)/.exec(at.took)![1]);

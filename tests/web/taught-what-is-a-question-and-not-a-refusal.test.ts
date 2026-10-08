@@ -307,9 +307,11 @@ describe('asking to be taught, played', () => {
         expect(text).not.toMatch(/No art called/i);
         for (const art of them!.offers) expect(text, text).toContain(art);
         expect(declined(said)).toBe(false);
-        // A question costs nothing. A word taken for a name reaches the
-        // resolver and spends a fortnight.
-        expect(said.state!.run.elapsedDays).toBe(before);
+        // A question put to somebody is a conversational reply now, and
+        // those spend their own eighth day on the lesser-action table - not
+        // the fortnight a word taken for a real art's name would spend.
+        expect(said.state!.run.elapsedDays).toBeGreaterThan(before);
+        expect(said.state!.run.elapsedDays).toBeLessThan(before + 1);
     }, 300_000);
 
     /**

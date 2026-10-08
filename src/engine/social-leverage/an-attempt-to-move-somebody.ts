@@ -325,6 +325,11 @@ export interface AttemptInput {
  */
 export type AttemptOutcome = 'taken' | 'turned' | 'countered' | 'refused' | 'reported';
 
+/** They did the thing; a turned acceptance also retains its counter-obligation. */
+export function attemptWasAccepted(outcome: AttemptOutcome): boolean {
+    return outcome === 'taken' || outcome === 'turned';
+}
+
 /** One side of a tie the attempt asks the caller to write. */
 export interface TieSide {
     type: RelationshipType;

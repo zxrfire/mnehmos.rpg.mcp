@@ -72,6 +72,7 @@ import {
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import { ROGUE_FLED, ROGUE_HOUSE_FELL, offTheRoll, releaseTheRoll } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { indexById, type FactionRecord, type WorldState } from './world-state.js';
+import { routineOf } from './npc-routines.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SHAPE
@@ -758,8 +759,9 @@ function applyExpend(
     replaceLocation(state, scarred);
 
     // ── The people ───────────────────────────────────────────────────────
+    const observing = { ...state, currentDay: day };
     const present = state.npcs.filter(
-        n => n.status === 'alive' && isBelowTheLid(n) && n.locationId === target.id
+        n => n.status === 'alive' && isBelowTheLid(n) && routineOf(observing, n).locationId === target.id
     );
     const deaths: DeathHandoff[] = [];
     const killedIds: string[] = [];

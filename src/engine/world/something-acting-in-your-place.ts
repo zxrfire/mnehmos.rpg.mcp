@@ -37,10 +37,25 @@ function floorFor(kind: ProxyKind): number {
 
 /** Reads the surviving record, including its clock, without storing an active flag. */
 export function whereYouCanActFrom(world: WorldState, makerId: string, onDay = world.currentDay): ObjectRecord | null {
-    return world.objects.find(o => o.tags.includes('acting-proxy') && o.ownerId === makerId
-        && !o.tags.includes('ruined') && Number(o.data.madeOnDay) <= onDay
-        && (o.data.endedOnDay === undefined || Number(o.data.endedOnDay) > onDay)
-        && Number(o.data.lapsesOnDay) > onDay) ?? null;
+    return world.objects.find(o => o.ownerId === makerId && isAnActiveProxy(o, onDay)) ?? null;
+}
+
+function isAnActiveProxy(object: ObjectRecord, onDay: number): boolean {
+    return object.tags.includes('acting-proxy') && !object.tags.includes('ruined')
+        && Number(object.data.madeOnDay) <= onDay
+        && (object.data.endedOnDay === undefined || Number(object.data.endedOnDay) > onDay)
+        && Number(object.data.lapsesOnDay) > onDay;
+}
+
+/** A single observation's equivalent first surviving proxy for each maker. Never cached. */
+export function activeProxiesByOwner(world: Pick<WorldState, 'objects' | 'currentDay'>,
+    onDay = world.currentDay): ReadonlyMap<string, ObjectRecord> {
+    const byOwner = new Map<string, ObjectRecord>();
+    for (const object of world.objects) {
+        if (object.ownerId !== null && !byOwner.has(object.ownerId) && isAnActiveProxy(object, onDay))
+            byOwner.set(object.ownerId, object);
+    }
+    return byOwner;
 }
 
 export function whatIsLeftUnguarded(world: WorldState, makerId: string, onDay = world.currentDay): NpcRecord | null {

@@ -116,6 +116,8 @@ export interface AHouseOnTheRoad {
     crossingDays: number;
     party: readonly Candidate[];
     posting: Posting;
+    /** The rating of the particular craft selected for this journey. */
+    conveyancePower?: number | null;
     /** They set out to arrive rather than hearing it was open and starting. */
     knewTheDate: boolean;
     /** Whose reading of the schedule the house walked on. Null when nobody's. */
@@ -145,6 +147,7 @@ export function whoSendsWhenADoorOpens(input: {
     houses: readonly AHouseThatCouldGo[];
     /** Walking days from the door to a place. `walkingDaysFrom` over the links. */
     walkingDaysTo: (locationId: string) => number | undefined;
+    crossesWaterTo?: (locationId: string) => boolean;
     /**
      * Whether one of the world's own people has anything of this ground.
      *
@@ -208,7 +211,10 @@ export function whoSendsWhenADoorOpens(input: {
         // anybody has finished.
         const term = { ...reason, days: Math.min(reason.days, convergence.windowDays) };
         const purse = house.purse ?? null;
-        const taking = bestForThisRoad(house.yard ?? [], term.days, term.hands, false, purse);
+        const water = input.crossesWaterTo?.(house.seatLocationId) ?? false;
+        const taking = bestForThisRoad(house.yard ?? [], crossingDays, term.hands, water,
+            purse === null ? null : purse / 2);
+        if (water && !taking?.conveyance.crossesGroundThatCannotBeWalked) continue;
         const posting = postingFor({
             reason: term,
             house,
@@ -243,6 +249,7 @@ export function whoSendsWhenADoorOpens(input: {
             crossingDays,
             party,
             posting,
+            conveyancePower: taking?.power ?? null,
             knewTheDate: reading.settingOutInAdvance,
             readerId: holdsTheDate?.readerId ?? null
         });

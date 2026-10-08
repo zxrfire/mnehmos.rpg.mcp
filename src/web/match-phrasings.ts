@@ -166,7 +166,12 @@ export function familyStep(text: string, input: string): PlannedAction | null {
     if (DECLINING_VERBS.test(text) && A_MATCH_NOUN.test(text) && !merelyAsking) {
         return {
             action: 'decline',
-            target: extractSubject(
+            // `extractSubject` reads the words after "decline", so "decline
+            // the match with Gu Lielu" used to hand `partyPutTo` the whole
+            // arrangement rather than the person in it. The existing match
+            // reader already owns this natural `match with <person>` shape;
+            // use it before the ordinary direct-object forms below.
+            target: whoTheMatchIsWith(input) ?? extractSubject(
                 input,
                 /(?:from|out of|off) (?:the |this |my |our )?(?:match|marriage|betrothal|engagement|union)|decline|refuse|reject|turn down|say no to/
             ),

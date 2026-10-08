@@ -35,6 +35,7 @@ export const THE_LOW_FALL: Region = {
     name: REGION_NAME.JADE_GORGE,
     role: 'home',
     bearing: 'centre',
+    metric: { xLi: 0, yLi: 0, extentLi: 30 },
     traditionId: 'tradition-drawn',
     summary:
         'The centre, and the only province with a road to every other one: nine river towns, four sect mountains, a live trade in medicine and manuals, and seventeen institutions with overlapping claims on eleven veins. What limits a cultivator here is talent and money, not the ground.',
@@ -134,9 +135,9 @@ export const THE_LOW_FALL: Region = {
         }
     ],
     places: [
-        { name: PLACE.GREEN_FALL, kind: 'city', ambient: 'normal', note: 'The province town under the gorge, and the Azure Cloud Pavilion\'s market.' },
+        { name: PLACE.GREEN_FALL, metric: { xLi: 0, yLi: -5 }, kind: 'city', ambient: 'normal', note: 'The province town under the gorge, and the Azure Cloud Pavilion\'s market.' },
         {
-            name: PLACE.STONE_FORD,
+            name: PLACE.STONE_FORD, metric: { xLi: 8, yLi: -12 },
             kind: 'market_town',
             ambient: 'thin',
             note: 'The last ford before the border road, and where Buddha Precipice goods are sold.',
@@ -171,7 +172,7 @@ export const THE_LOW_FALL: Region = {
             ]
         },
         {
-            name: PLACE.CLEAR_CREEK_VILLAGE,
+            name: PLACE.CLEAR_CREEK_VILLAGE, metric: { xLi: -12, yLi: -15 },
             kind: 'village', ambient: 'thin', grounds: ['farmland', 'riverbank'], note: 'Rice on the gorge floor, a mill, and one road down to the province town.',
             // THE GORGE IS THE ROAD.
             //
@@ -189,7 +190,7 @@ export const THE_LOW_FALL: Region = {
             ]
         },
         {
-            name: PLACE.BURNT_EARTH,
+            name: PLACE.BURNT_EARTH, metric: { xLi: -18, yLi: 12 },
             kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Vermilion Sigil Terrace.',
             connections: [
                 {
@@ -209,7 +210,7 @@ export const THE_LOW_FALL: Region = {
             ]
         },
         {
-            name: PLACE.NINE_PEAKS,
+            name: PLACE.NINE_PEAKS, metric: { xLi: -12, yLi: 22 },
             kind: 'sect_town', ambient: 'dense', grounds: ['spirit_vein', 'mountain'], note: 'The deepest vein anyone has kept, and the Ascetic Sect sitting on it.',
             connections: [
                 {
@@ -238,7 +239,7 @@ export const THE_LOW_FALL: Region = {
         // the ground the grant is disputed over; the flank is where people
         // live.
         {
-            name: PLACE.THE_FLANK,
+            name: PLACE.THE_FLANK, metric: { xLi: 7, yLi: 20 },
             kind: 'sect_town', ambient: 'normal', grounds: ['volcanic'],
             note: 'The Ashen Anvil compound, cut into the flank around a furnace that was there before the clan was. Everybody in it takes a turn at the rota, including the children and the chief.',
             connections: [
@@ -259,7 +260,7 @@ export const THE_LOW_FALL: Region = {
             ]
         },
         {
-            name: PLACE.THE_CALDERA,
+            name: PLACE.THE_CALDERA, metric: { xLi: 12, yLi: 24 },
             kind: 'site', ambient: 'dense', grounds: ['volcanic'],
             note: 'The rim and what is inside it, held by the Nine Abyss Flame Sect on a grant the righteous houses of the province do not believe exists. Nobody has produced the document and nobody has removed them.',
             connections: [
@@ -273,7 +274,7 @@ export const THE_LOW_FALL: Region = {
             ]
         },
         {
-            name: PLACE.THE_VENT_VEIN,
+            name: PLACE.THE_VENT_VEIN, metric: { xLi: 14, yLi: 25 },
             // `site` and not `vein`: a place row carries the seven settlement
             // kinds plus `site`, and the seeder maps `site` to `wilds`. The
             // ground says it is a vein, which is the authored statement
@@ -304,7 +305,7 @@ export const THE_LOW_FALL: Region = {
         // the house's own ground, and the prefecture's `seat` stays prose for
         // that reason.
         {
-            name: PLACE.PLUM_VILLAGE,
+            name: PLACE.PLUM_VILLAGE, metric: { xLi: -4, yLi: -20 },
             kind: 'village', ambient: 'normal', grounds: ['deep_forest', 'farmland'],
             note: 'At the mouth of the valley, under the first of the old trees. Nothing here can be proved by a document and nothing ever has been; what the village has instead is four hundred years of plums, and everybody knows which family put in which row.',
             connections: [
@@ -339,7 +340,7 @@ export const THE_LOW_FALL: Region = {
             ]
         },
         {
-            name: PLACE.TWO_STREAMS,
+            name: PLACE.TWO_STREAMS, metric: { xLi: 4, yLi: -18 },
             kind: 'village', ambient: 'thin', grounds: ['farmland', 'riverbank'],
             note: 'Terraces cut where the mountain\'s two streams met. One of them has not run in a hundred years and the name has not changed, because there is nothing here that a name is written on.',
             connections: [
@@ -353,7 +354,7 @@ export const THE_LOW_FALL: Region = {
             ]
         },
         {
-            name: PLACE.SMOKE_RIDGE,
+            name: PLACE.SMOKE_RIDGE, metric: { xLi: 10, yLi: -17 },
             // The ridge is young worked wood, not the valley. The Grove's old
             // trees have never been cut, and a coppice is the reason that is a
             // choice rather than a shortage.
@@ -362,7 +363,7 @@ export const THE_LOW_FALL: Region = {
             connections: []
         },
         {
-            name: PLACE.PINE_SPRING,
+            name: PLACE.PINE_SPRING, metric: { xLi: -9, yLi: -22 },
             // The world's only `hamlet`, and the kind had been in the schema
             // and in `PLACE_POPULATION_WEIGHT` with nothing standing in it -
             // `cultivators-the-road-finished.ts` already places people in

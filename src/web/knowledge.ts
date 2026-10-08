@@ -44,19 +44,8 @@ import { theOperatorReachesPast } from './operator-knowledge-reach.js';
  */
 export type { KnownEntityKind };
 
-/** Stable id for a place, which has no row of its own to point at. */
-export function placeKey(name: string): string {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'unnamed';
-}
-
-/**
- * `placeKey` with a leading article dropped. FOR COMPARISON ONLY - never for a
- * stored key, or every knowledge record ever written stops resolving.
- */
-export function loosePlaceKey(name: string): string {
-    // `^the-` rather than `^the`, so "Theodore's Rest" is not quietly renamed.
-    return placeKey(name).replace(/^the-/, '') || 'unnamed';
-}
+export { placeKey, loosePlaceKey } from '../engine/world/place-lookup.js';
+import { placeKey } from '../engine/world/place-lookup.js';
 
 /**
  * The claim key for "this thing exists".

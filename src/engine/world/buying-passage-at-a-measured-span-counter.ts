@@ -188,6 +188,9 @@ export const PASSENGER_SETTLING_AT_THE_BOTTOM = 3;
  *
  * Never lethal, and nothing here decides that anybody dies. It returns days.
  */
+/** The catalog crossing is one hour; all quotes and native clocks read it here. */
+export const SPAN_CROSSING_DAYS = 1 / 24;
+
 export function settlingDaysForPassenger(ordinal: number): number {
     const o = clampOrdinal(ordinal);
     if (o >= FOLD_FLOOR_ORDINAL) return 0;
@@ -247,12 +250,9 @@ export function quotePassageAtACounter(
     const settlingDays = settlingDaysForPassenger(input.worstPassengerOrdinal);
     const walked = Math.max(0, Math.ceil(route.walkedDaysItReplaces));
 
-    // The crossing itself is an hour. It is counted as no days at all rather
-    // than as one, which is the single place this engine departs from the
-    // "a road is a road, round it to a day" rule everywhere else - because the
-    // entire product is that no day was spent on the road, and rounding it up
-    // to one would price away the thing being bought.
-    const daysSpent = waitDays + settlingDays;
+    // The former whole-day clock omitted this hour to avoid rounding it
+    // into a day. Native fractional spans now retain the actual crossing.
+    const daysSpent = waitDays + SPAN_CROSSING_DAYS + settlingDays;
 
     return {
         routeId: route.id,

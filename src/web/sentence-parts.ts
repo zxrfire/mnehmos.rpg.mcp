@@ -116,7 +116,7 @@ export const WORD_NUMBER_ALTERNATION = Object.keys(WORD_NUMBERS)
 
 /** A span a sentence names, in days and in the unit it was said in. */
 export interface ASpanNamedInASentence {
-    /** Whole days, exactly as asked. Never shortened. */
+    /** Days, including a positive fractional part, exactly as asked. */
     readonly days: number;
     /** Days in the unit the sentence used. */
     readonly unitDays: number;
@@ -151,7 +151,7 @@ export function theSpanTheSentenceNames(input: string): ASpanNamedInASentence | 
 
         const count = howManyWereNamed(tail);
 
-        return { days: Math.max(1, Math.round(count * unitDays)), unitDays, unit };
+        return { days: count * unitDays, unitDays, unit };
     }
 
     // A bare number with no unit is not a duration. "I strike the barrier 3

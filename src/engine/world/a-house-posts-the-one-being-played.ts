@@ -45,9 +45,14 @@
  * row (`isTheWorldsToMove`), so nothing takes it off them either.
  */
 
+import { makeFact } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js';
 import { getSendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
+import { locationOnNpcJourney } from './places-on-the-way.js';
+import type { RouteQueries } from './locations.js';
 import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
 import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { keepTheTwins, takeOffTheStack, howManyTheHouseHas } from './a-communication-talisman-carries-word-home.js';
@@ -70,10 +75,8 @@ import {
     type OnTheRollForAnErrand
 } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import { stagnationYearsForOrdinal } from '../../schema/cultivation.js';
-import {
-    A_CONTEST_EVERY,
-    NEVER_OFTENER_THAN_YEARS
-} from './a-conclave-seat-is-won-in-a-tournament.js';
+const SHARE_OF_A_CAREER_AT_AN_OFFICE = 1 / 4;
+const SHORTEST_OFFICE_TOUR_YEARS = 5;
 import type { FactionRecord, WorldState } from './world-state.js';
 
 /** The posting a house would put the player on, relieving somebody at it. */
@@ -98,13 +101,12 @@ export interface APostToTakeOver {
  *
  * The house doc's rule for a junior is that they leave a posting by OUTGROWING
  * it, so the term is read off the ladder rather than chosen: a quarter of the
- * years the ladder credits at their own rung, which is the same fraction and the
- * same reason the conclave's cycle uses (`A_CONTEST_EVERY` - four of them inside
- * a career at that height), floored the same way so nothing becomes a season.
+ * years the ladder credits at their own rung, with at least five years.
+ * Conclave calendars now state their own periods independently of this body-bound tour.
  */
 export function howLongATourUnderAnOfficeRuns(ordinal: number): number {
     const credited = stagnationYearsForOrdinal(ordinal);
-    return Math.max(NEVER_OFTENER_THAN_YEARS, Math.round(credited * A_CONTEST_EVERY)) * DAYS_PER_YEAR;
+    return Math.max(SHORTEST_OFFICE_TOUR_YEARS, Math.round(credited * SHARE_OF_A_CAREER_AT_AN_OFFICE)) * DAYS_PER_YEAR;
 }
 
 /**
@@ -209,18 +211,59 @@ export function aPostTheHouseWouldSendThemTo(
     };
 }
 
-/**
- * The person relieved goes home: their tour ends today, and the world's own
- * pass brings them back and counts what they served. False where they are no
- * longer at that post.
- */
-export function theyAreRelieved(state: WorldState, input: { relievedId: string; townId: string; today: number }): boolean {
+/** Relief starts only after the replacement arrives; their shared day carries the handover. */
+export function theyAreRelieved(state: WorldState, input: {
+    relievedId: string; townId: string; today: number; replacementId?: string
+}, routes?: RouteQueries): boolean {
     const at = state.npcs.findIndex(n => n.id === input.relievedId);
     const npc = state.npcs[at];
     const doing = npc?.activity;
-    if (!npc || npc.status !== 'alive' || !doing || doing.kind !== 'stationed' || npc.locationId !== input.townId) return false;
-    if (doing.untilDay !== null && doing.untilDay !== undefined && doing.untilDay <= input.today) return false;
-    state.npcs[at] = { ...npc, activity: { ...doing, untilDay: input.today }, updatedOnDay: input.today };
+    if (!npc || npc.status !== 'alive' || doing?.kind !== 'stationed'
+        || locationOnNpcJourney(state.locations, npc, input.today, routes) !== input.townId) return false;
+    if (factsWithDataValue(state, 'outgoingId', npc.id).some(f => f.data.postRelief === true
+        && f.day >= doing.sinceDay)) return false;
+    const replacement = state.npcs.find(n => n.id !== npc.id && n.factionId === npc.factionId
+        && n.status === 'alive' && n.activity?.kind === 'stationed'
+        && locationOnNpcJourney(state.locations, n, input.today, routes) === input.townId
+        && (!input.replacementId || n.id === input.replacementId));
+    if (!replacement) return false;
+    const factIndex = witnessIndexFor(state);
+    const byId = factIndex.byId;
+    const accounts = new Map<string, (typeof state.history.facts)[number]>();
+    const pending = (factIndex.byPlace.get(input.townId) ?? []).filter(f =>
+        f.day >= doing.sinceDay && f.day <= input.today
+        && (f.witnessIds.includes(npc.id) || f.actors.some(a => a.id === npc.id)));
+    const seen = new Set<string>();
+    while (pending.length) {
+        const source = pending.pop()!;
+        if (seen.has(source.id)) continue;
+        seen.add(source.id);
+        const told = typeof source.data.toldOfWitnessedFact === 'string' ? [source.data.toldOfWitnessedFact]
+            : source.data.postingHandover === true ? source.causes : [];
+        if (told.length) for (const id of told) {
+            const original = byId.get(String(id));
+            if (original) pending.push(original);
+        }
+        else accounts.set(source.id, source);
+    }
+    if (accounts.size) appendWorldFact(state, makeFact({ day: input.today,
+        kind: 'said_in_public', locationId: input.townId, visibility: 'faction', factionIds: npc.factionId ? [npc.factionId] : [],
+        summary: `${npc.name} gave ${replacement.name} ${accounts.size} accounts during the handover.`,
+        actors: [{ id: npc.id, name: npc.name, role: 'outgoing' }], witnessIds: [npc.id, replacement.id],
+        causes: [...accounts.keys()],
+        data: { fromWitness: npc.id, postingHandover: true } }), { recur: false });
+    appendWorldFact(state, makeFact({ day: input.today, kind: 'said_in_public', locationId: input.townId,
+        visibility: 'public', factionIds: npc.factionId ? [npc.factionId] : [],
+        summary: `${npc.name} is handing the post over to ${replacement.name}. Departure: day ${input.today + 1}.`,
+        actors: [{ id: npc.id, name: npc.name, role: 'outgoing' }, { id: replacement.id, name: replacement.name, role: 'replacement' }],
+        data: { postRelief: true, outgoingId: npc.id, replacementId: replacement.id,
+            servedSinceDay: doing.sinceDay, servedUntilDay: input.today + 1 } }), { recur: false });
+    const outgoing = state.npcs[at]!;
+    state.npcs[at] = { ...outgoing, activity: { ...doing, withIds: [replacement.id],
+        note: `Handing the post over to ${replacement.name}.`, untilDay: input.today + 1 }, updatedOnDay: input.today };
+    const nextAt = state.npcs.findIndex(n => n.id === replacement.id);
+    const next = state.npcs[nextAt]!;
+    state.npcs[nextAt] = { ...next, activity: { ...next.activity!, withIds: [npc.id] } };
     return true;
 }
 

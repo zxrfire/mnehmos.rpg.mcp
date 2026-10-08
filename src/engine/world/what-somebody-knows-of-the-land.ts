@@ -1,3 +1,5 @@
+import { publicTransportHubsAt, type PublicHub } from './public-transport-at-a-place.js';
+import { ROUTE_STOP } from './places-on-the-way.js';
 /**
  * What somebody knows of the land: which places they could find, which they have only heard
  * named, and which houses. And what kind of place each settlement is.
@@ -22,8 +24,8 @@
  */
 
 import { APEX_INSTITUTIONS } from '../../data/cultivation/governance-and-water-rights.js';
-import { PLACE } from '../../data/cultivation/place-names.js';
-import { REGIONS } from '../../data/cultivation/regions.js';
+import { REGIONS, PROVINCIAL_CAPITALS, whatKindOfPlace, type ASettlementTier } from '../../data/cultivation/regions.js';
+export { PROVINCIAL_CAPITALS, whatKindOfPlace, type ASettlementTier } from '../../data/cultivation/regions.js';
 import { getSect } from '../../data/cultivation/sects.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
 import { realmIndexOf } from '../cultivation/realms.js';
@@ -34,39 +36,9 @@ import type { WorldState } from './world-state.js';
 // WHAT KIND OF PLACE IT IS
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * The seat each province is governed from. The White Stair has none: it has "no court, no grant
- * book, three institutions and nothing else". The Burial Sands has none because no province
- * holds it.
- */
-export const PROVINCIAL_CAPITALS: Readonly<Record<string, string>> = {
-    'region-low-fall': PLACE.GREEN_FALL,
-    'region-quiet-marches': PLACE.IRON_GATE,
-    // "The largest of the nine, and the city the whole province sets its clocks by."
-    'region-wide-field': PLACE.CLOUD_GATE,
-    'region-drowned-reach': PLACE.SILVER_ISLE
-};
-
-export type ASettlementTier = 'hamlet' | 'village' | 'waystation' | 'town' | 'city' | 'provincial capital';
-
 const CAPITALS = new Set(Object.values(PROVINCIAL_CAPITALS));
 
 const PLACES = REGIONS.flatMap(region => region.places.map(place => ({ ...place, regionId: region.id })));
-
-/** What kind of settlement a place is, by its name, or null for anything that is not one. */
-export function whatKindOfPlace(name: string | null | undefined): ASettlementTier | null {
-    if (!name) return null;
-    if (CAPITALS.has(name)) return 'provincial capital';
-    switch (PLACES.find(place => place.name === name)?.kind) {
-        case 'hamlet': return 'hamlet';
-        case 'village': return 'village';
-        case 'waystation': return 'waystation';
-        case 'market_town':
-        case 'sect_town': return 'town';
-        case 'city': return 'city';
-        default: return null;
-    }
-}
 
 const isACity = (name: string) => whatKindOfPlace(name) === 'city' || CAPITALS.has(name);
 const settlementsOf = (regionId: string) =>
@@ -81,6 +53,8 @@ export interface WhatTheyKnowOfTheLand {
     /** `placed`: they could find it. `named`: they have heard of it. */
     places: { name: string; stage: 'placed' | 'named' }[];
     houses: { id: string; name: string; stage: 'placed' | 'named' }[];
+    /** Common local public offerings, not personal travel or private provider knowledge. */
+    publicHubs?: (PublicHub & { place: string })[];
 }
 
 /** The province a world row stands in, off its parents, as a catalog region id. */
@@ -196,7 +170,7 @@ function theSeatedHouses(world: Pick<WorldState, 'locations' | 'factions'>) {
 }
 
 export function whatSomebodyKnowsOfTheLand(
-    world: Pick<WorldState, 'locations' | 'factions'>,
+    world: Pick<WorldState, 'locations' | 'factions'> & Partial<Pick<WorldState, 'seed' | 'currentDay'>>,
     who: WhoTheyAre
 ): WhatTheyKnowOfTheLand {
     const home = provinceOf(world, who.from);
@@ -245,6 +219,25 @@ export function whatSomebodyKnowsOfTheLand(
             || settlementsOf(region.id).some(name => places.get(name) === 'placed')) know(region.name, 'placed');
     }
 
+    // Native intermediate ground is part of the same already-known public
+    // road, not a new destination discovered by reading its generated name.
+    // Only the authored subdivision tag, endpoint IDs and actual positive
+    // road/path links establish that relation; both endpoint ways must be known.
+    const byId = new Map(world.locations.map(place => [place.id, place]));
+    for (const ground of world.locations) {
+        if (ground.kind !== 'wilds' || !ground.tags.includes(ROUTE_STOP)
+            || typeof ground.data.fromLocationId !== 'string' || typeof ground.data.toLocationId !== 'string'
+            || ground.data.fromLocationId === ground.data.toLocationId) continue;
+        const from = byId.get(ground.data.fromLocationId), to = byId.get(ground.data.toLocationId);
+        if (!from || !to || from.tags.includes(ROUTE_STOP) || to.tags.includes(ROUTE_STOP)
+            || places.get(from.name) !== 'placed' || places.get(to.name) !== 'placed') continue;
+        const admitted = from.links.some(link => link.toLocationId === ground.id
+            && (link.kind === 'road' || link.kind === 'path') && Number.isFinite(link.travelDays) && link.travelDays > 0
+            && ground.links.some(next => next.toLocationId === to.id && next.kind === link.kind
+                && Number.isFinite(next.travelDays) && next.travelDays > 0));
+        if (admitted) know(ground.name, 'placed');
+    }
+
     // THE HOUSES, nearest first and by standing.
     const seats = theSeatedHouses(world);
     const houses = new Map<string, { id: string; name: string; stage: 'placed' | 'named' }>();
@@ -283,7 +276,11 @@ export function whatSomebodyKnowsOfTheLand(
 
     return {
         places: [...places.entries()].map(([name, stage]) => ({ name, stage })),
-        houses: [...houses.values()]
+        houses: [...houses.values()],
+        publicHubs: who.from && world.seed !== undefined
+            ? publicTransportHubsAt({ seed: world.seed, locations: world.locations }, who.from, world.currentDay ?? 0)
+                .map(hub => ({ ...hub, place: who.from! }))
+            : []
     };
 }
 

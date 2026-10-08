@@ -26,6 +26,29 @@ import { whatTheyCanTell } from './what-you-can-tell-about-the-ground.js';
 import { howThisCultivatorStandsInTheHouseHolding } from './how-this-cultivator-stands-on-this-ground.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
+import { physicalObjectPlace, readQuartersTogether } from '../engine/world/what-somebody-keeps-in-their-quarters.js';
+import { whereInThisPlaceTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+
+/** Physical room stock, not the whole house's inventory or another person's pack. */
+export function theThingsVisibleInThisRoom(game: GameService, cultivator: Cultivator): string[] {
+    const world = game.atHand;
+    const placeId = game.worldPlaceOf(cultivator);
+    const place = world?.locations.find(row => row.id === placeId);
+    if (!world || !place) return [];
+    const area = whereInThisPlaceTheyStand(world, place, cultivator.standingIn, cultivator.sectId);
+    const quarters = readQuartersTogether(world);
+    const names = world.objects.filter(object => {
+        const at = physicalObjectPlace(world, object, quarters);
+        if (!at || at.locationId !== place.id) return false;
+        if (at.areaId !== null) return at.areaId === area.id;
+        // A private area does not see the public building's cupboard through its door.
+        if (area.for === 'room' || object.possessorId !== null) return false;
+        return typeof object.data.quantity !== 'number' || object.data.quantity > 0;
+    }).sort((a, b) => a.id.localeCompare(b.id)).map(object =>
+        typeof object.data.resource === 'string' && typeof object.data.quantity === 'number'
+            ? `${object.data.quantity} ${object.data.resource}` : object.name);
+    return names.length ? [`Standing here: ${names.join('; ')}.`] : [];
+}
 
 export interface BuiltHereInput {
     locations: readonly LocationRecord[];
@@ -259,12 +282,13 @@ function whatStandsOverIt(here: LocationRecord): string[] {
  * that offers it. Two would be two answers to *is this person one of ours*.
  * Null where nothing is built, which is most of the map.
  */
-export function theBuiltGroundUnder(
+function builtGroundInput(
     game: GameService,
     cultivator: Cultivator
-): BuiltHereReading | null {
+): Omit<BuiltHereInput, 'headsHere'> | null {
     if (!game.atHand) return null;
-    const ground = game.atHand.locations.find(row => row.id === game.worldPlaceOf(cultivator));
+    const placeId = game.worldPlaceOf(cultivator);
+    const ground = game.atHand.locations.find(row => row.id === placeId);
     if (!ground) return null;
 
     const membership = game.repos.sects.getMembership(cultivator.id);
@@ -272,6 +296,7 @@ export function theBuiltGroundUnder(
     const { viewer, access } = howThisCultivatorStandsInTheHouseHolding({
         ground,
         cultivator,
+        objects: game.atHand.objects,
         standing: membership && house
             ? {
                 sectId: membership.sectId,
@@ -282,13 +307,27 @@ export function theBuiltGroundUnder(
             : null,
         onDay: Math.floor(game.atHand.currentDay)
     });
-    const built = whatIsBuiltWhereYouAreStanding({
+    return {
         locations: game.atHand.locations,
         standingAt: ground.id,
         viewer,
         access,
-        readerOrdinal: cultivator.realmOrdinal,
-        headsHere: game.present(cultivator).length
-    });
+        readerOrdinal: cultivator.realmOrdinal
+    };
+}
+
+/** Architectural affordances read the same access, without surveying people or room stock. */
+export function theBuiltArchitectureUnder(game: GameService, cultivator: Cultivator): WhatIsBuiltOnThisGround | null {
+    const input = builtGroundInput(game, cultivator);
+    if (!input) return null;
+    return whatIsBuiltOnThisGround(input);
+}
+
+/** The actual look retains its people count and physical, private-area stock. */
+export function theBuiltGroundUnder(game: GameService, cultivator: Cultivator): BuiltHereReading | null {
+    const input = builtGroundInput(game, cultivator);
+    if (!input) return null;
+    const built = whatIsBuiltWhereYouAreStanding({ ...input, headsHere: game.present(cultivator).length });
+    built.lines.push(...theThingsVisibleInThisRoom(game, cultivator));
     return built.lines.length === 0 ? null : built;
 }

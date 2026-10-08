@@ -226,12 +226,13 @@ describe('going somewhere and then doing something there', () => {
     });
 
     /**
-     * The bound is unchanged. Two acts that both spend time still spend one of
-     * them, and the rest is still ahead of the player - this is here so that a
-     * later reading of the fix above cannot quietly turn a sentence into two
-     * seasons.
+     * The bound is on a day-long span, not on every moment that passes. A
+     * gather and a sale both now take their lesser-action time, but only the
+     * former occupies the turn's one day-long slot. This was formerly pinned
+     * to the old "anything with a cost stops the plan" rule, which made a
+     * successful sale disappear after lesser actions began to move the clock.
      */
-    it('still spends one costly act and holds the rest', async () => {
+    it('runs the lesser follow-up after the turn\'s one day-long act', async () => {
         const { game } = await playing([
             STEPS(
                 { action: 'gather', target: 'herbs', said: 'I gather herbs' },
@@ -242,7 +243,7 @@ describe('going somewhere and then doing something there', () => {
 
         const turn = await game.act('I gather herbs and then sell them');
 
-        expect(ranInOrder(turn)).toEqual(['gather']);
-        expect(turn.narration).toContain('still ahead of you');
+        expect(ranInOrder(turn)).toEqual(['gather', 'sell']);
+        expect(turn.toolCalls.some(row => row.name === 'engine.stillToCome')).toBe(false);
     });
 });

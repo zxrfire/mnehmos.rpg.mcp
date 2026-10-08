@@ -932,8 +932,9 @@ export function evaluateAccess(location: LocationRecord, query: AccessQuery): Ac
     }
 
     const keyed =
-        location.data.keyId == null || (query.keyIds ?? []).includes(String(location.data.keyId));
-    const cycleOpen = query.onDay === undefined ? true : isOpenOn(location, query.onDay);
+        location.data.keyId != null && (query.keyIds ?? []).includes(String(location.data.keyId));
+    const cycleOpen = location.cycle === null || query.onDay === undefined
+        ? true : isOpenOn(location, query.onDay);
     // On cycled ground the schedule is the whole of whether the door is shut.
     // It shuts itself when the window ends, so the `sealed` column is a reading
     // of the schedule and asking both would be asking the same question twice
@@ -1256,6 +1257,31 @@ export function openingsBetween(
 // TRAVEL
 // ─────────────────────────────────────────────────────────────────────────
 
+/** A transient shortest-tree read for one synchronous batch with a read-only graph.
+ * Never retain it across a world transition or graph mutation. NPCs and clocks
+ * are not cached here: their current activity and body remain ordinary inputs.
+ */
+export interface RouteQueries {
+    readonly locations: readonly LocationRecord[];
+    readonly places: ReadonlyMap<string, LocationRecord>;
+    treeFrom(startId: string): { days: ReadonlyMap<string, number>; previous: ReadonlyMap<string, string> };
+}
+
+export function routeQueriesFor(locations: readonly LocationRecord[]): RouteQueries {
+    const places = new Map(locations.map(place => [place.id, place]));
+    let graph: WalkingGraph | undefined;
+    const trees = new Map<string, { days: ReadonlyMap<string, number>; previous: ReadonlyMap<string, string> }>();
+    return { locations, places, treeFrom(startId) {
+        let tree = trees.get(startId);
+        if (!tree) {
+            const previous = new Map<string, string>();
+            tree = { days: walkingDaysOn(graph ??= walkingGraphFor(locations, places), startId, previous), previous };
+            trees.set(startId, tree);
+        }
+        return tree;
+    } };
+}
+
 /**
  * Walking days from one place to everywhere the roads reach.
  *
@@ -1270,9 +1296,28 @@ export function openingsBetween(
  */
 export function walkingDaysFrom(
     locations: readonly LocationRecord[],
-    startId: string
+    startId: string,
+    previous?: Map<string, string>,
+    routes?: RouteQueries
 ): Map<string, number> {
-    const byId = new Map(locations.map(l => [l.id, l]));
+    if (routes?.locations === locations) {
+        const tree = routes.treeFrom(startId);
+        if (previous) for (const [id, from] of tree.previous) previous.set(id, from);
+        // Public distance maps retain their independent mutable-result contract.
+        return new Map(tree.days);
+    }
+    return walkingDaysOn(walkingGraphFor(locations), startId, previous);
+}
+
+interface WalkingGraph {
+    byId: Map<string, LocationRecord>;
+    childrenOf: Map<string, string[]>;
+    approaches: Set<string>;
+}
+
+/** The existing containment/gateway read, prepared once per read-only batch. */
+function walkingGraphFor(locations: readonly LocationRecord[],
+    byId = new Map(locations.map(l => [l.id, l]))): WalkingGraph {
     const childrenOf = new Map<string, string[]>();
     for (const l of locations) {
         if (l.parentId === null) continue;
@@ -1298,10 +1343,45 @@ export function walkingDaysFrom(
                     if (link.open && byId.get(link.toLocationId)?.parentId === parentId) pending.push(link.toLocationId);
                 }
             }
-            approaches.add(component.find(id => byId.get(id)?.tags.includes('city')) ?? component[0]!);
+            const ordinary = component.filter(id => !byId.get(id)?.tags.includes('route-stop'));
+            const approach = ordinary.find(id => byId.get(id)?.tags.includes('city')) ?? ordinary[0];
+            if (approach !== undefined) approaches.add(approach);
         }
     }
 
+    return { byId, childrenOf, approaches };
+}
+
+/** The exact directed graph steps used by the walking search. */
+function forEachWalkingStep(graph: WalkingGraph, node: LocationRecord,
+    visit: (toId: string, days: number) => void): void {
+    const { childrenOf, approaches } = graph;
+    for (const link of node.links) {
+        if (!link.open) continue;
+        visit(link.toLocationId, Math.max(0.1, link.travelDays));
+    }
+    if (node.parentId !== null && approaches.has(node.id)) visit(node.parentId, 1);
+    for (const child of childrenOf.get(node.id) ?? []) {
+        if (approaches.has(child)) visit(child, 1);
+    }
+}
+
+/** One actual directed edge, including canonical containment approaches.
+ * An indirect path between these endpoints is never admission to this edge.
+ */
+export function walkingStepDays(locations: readonly LocationRecord[], fromId: string, toId: string): number | null {
+    const graph = walkingGraphFor(locations);
+    const node = graph.byId.get(fromId);
+    if (!node) return null;
+    let days: number | null = null;
+    forEachWalkingStep(graph, node, (id, cost) => {
+        if (id === toId && (days === null || cost < days)) days = cost;
+    });
+    return days;
+}
+
+function walkingDaysOn(graph: WalkingGraph, startId: string, previous?: Map<string, string>): Map<string, number> {
+    const { byId } = graph;
     const best = new Map<string, number>([[startId, 0]]);
     // A heap ordered by days and then by push order, which pops in exactly the
     // order a stable sort-and-shift did - so the map comes back in the same
@@ -1312,26 +1392,43 @@ export function walkingDaysFrom(
     );
     let seq = 0;
     frontier.push({ id: startId, days: 0, seq: seq++ });
+    // One relaxation closure per search, preserving the original push order.
+    const step = (fromId: string, toId: string, days: number): void => {
+        if (days >= (best.get(toId) ?? Infinity)) return;
+        best.set(toId, days);
+        previous?.set(toId, fromId);
+        frontier.push({ id: toId, days, seq: seq++ });
+    };
+    let stepFrom = startId;
+    let stepDistance = 0;
+    const visitStep = (toId: string, cost: number) => step(stepFrom, toId, stepDistance + cost);
     while (frontier.size > 0) {
         const here = frontier.pop()!;
         if ((best.get(here.id) ?? Infinity) < here.days) continue;
         const node = byId.get(here.id);
         if (!node) continue;
-        const step = (toId: string, days: number): void => {
-            if (days >= (best.get(toId) ?? Infinity)) return;
-            best.set(toId, days);
-            frontier.push({ id: toId, days, seq: seq++ });
-        };
-        for (const link of node.links) {
-            if (!link.open) continue;
-            step(link.toLocationId, here.days + Math.max(0.1, link.travelDays));
-        }
-        if (node.parentId !== null && approaches.has(node.id)) step(node.parentId, here.days + 1);
-        for (const child of childrenOf.get(node.id) ?? []) {
-            if (approaches.has(child)) step(child, here.days + 1);
-        }
+        stepFrom = here.id; stepDistance = here.days;
+        forEachWalkingStep(graph, node, visitStep);
     }
     return best;
+}
+
+/** The priced path, read from the same search that quotes every distance. */
+export function walkingRouteFrom(
+    locations: readonly LocationRecord[], startId: string, destinationId: string, routes?: RouteQueries
+): { locationId: string; days: number }[] | null {
+    const previous = new Map<string, string>();
+    const tree = routes?.locations === locations ? routes.treeFrom(startId) : null;
+    const days = tree?.days ?? walkingDaysFrom(locations, startId, previous);
+    const predecessors = tree?.previous ?? previous;
+    if (!days.has(destinationId)) return null;
+    const route = [{ locationId: destinationId, days: days.get(destinationId)! }];
+    while (route[0]!.locationId !== startId) {
+        const id = predecessors.get(route[0]!.locationId);
+        if (id === undefined) return null;
+        route.unshift({ locationId: id, days: days.get(id)! });
+    }
+    return route;
 }
 
 /** Symmetric link. A road that only exists in one direction is a bug. */

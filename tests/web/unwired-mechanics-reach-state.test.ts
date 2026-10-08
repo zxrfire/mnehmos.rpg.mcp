@@ -13,6 +13,7 @@ import { persistCrossingConsequence } from '../../src/server/consolidated/cultiv
 import { createGrudge } from '../../src/engine/social/grudges';
 import { writeOneObligation, ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import { withTheAttemptLanding } from '../../src/server/consolidated/forcing-an-attempt-to-land';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import type { BreakthroughResult } from '../../src/schema/cultivation';
 
 async function player(seed: string) {
@@ -92,28 +93,57 @@ describe('a match can settle an account and leaving reopens it', () => {
             && repos.sects.getById(n.factionId) && n.locationId)!;
         expect(partner).toBeTruthy();
         const place = world.locations.find(l => l.id === partner.locationId)!;
+        const partnerArea = theAreasOf(world, place).whereIs.get(partner.id)!;
+        expect(partnerArea, 'the proposed-to person has a current area').toBeDefined();
         repos.sects.addMember(partner.factionId!, id);
-        repos.cultivators.update(id, { realmOrdinal: 44, location: place.name, standingIn: place.id });
+        repos.cultivators.update(id, { realmOrdinal: 44, location: place.name });
+        // `standingIn` is a flag, not an update column.  Changing place clears
+        // the old flag; persist the partner's actual area through its one
+        // writer before asking the engine to resolve a match there.
+        repos.cultivators.standIn(id, partnerArea);
         game.knowledge.learn({ holderId: id, kind: 'cultivator', id: partner.id,
             name: partner.name, onDay: 0, sourceKind: 'witnessed', stage: 'known' });
         const account = createGrudge({ holderId: partner.id, subjectId: id,
             cause: 'violated', severity: 'grave', onDay: 0, description: 'The offered settlement.' });
         writeOneObligation(game.db, account);
         game.atHand = world;
-        await withTheAttemptLanding('propose', () => game.proposeAMatch(
-            repos.runs.getActiveRun(id)!, repos.cultivators.getById(id)!, 'normal',
+        const suitor = repos.cultivators.getById(id)!;
+        expect(suitor.standingIn, 'the live sheet retained the proposed-to area').toBe(partnerArea);
+        expect(game.worldPlaceOf(suitor), 'the live sheet retained the proposed-to place').toBe(place.id);
+        expect(game.present(suitor).map(person => person.id),
+            'the match is put to the named person in their actual area').toContain(partner.id);
+        const attempted = await withTheAttemptLanding('propose', () => game.proposeAMatch(
+            repos.runs.getActiveRun(id)!, suitor, 'normal',
             partner.name, 'protection', 'propose', undefined,
             `I offer this match to settle the account with ${partner.name}`
         ));
+        // The forced decision is a receipt from the resolver, not a promise
+        // made by the helper. If the scene cannot reach the person, this makes
+        // that missing precondition visible before a later ledger assertion.
+        expect(attempted.forced.reaches).toContain('an_approach_to_somebody');
+        expect(attempted.forced.landed).toContain('an_approach_to_somebody');
+        const decision = attempted.result.calls.find(call => call.name === 'engine.whatAHouseWouldTakeForAMatch');
+        expect(decision, `the match did not reach a house decision: ${attempted.result.facts.structure.join(' ')}`)
+            .toBeDefined();
+        expect(decision!.ok, decision!.summary).toBe(true);
+        expect(decision!.summary).toMatch(/attempt (taken|turned)/);
         const held = ledgerAbout(game.db, id);
         const oath = held.find(r => r.status === 'open' && r.cause === 'marriage_pact');
         expect(oath, 'the accepted settlement left no binding').toBeTruthy();
         expect(oath!.severity).toBe(account.severity);
         expect(oath!.tags).toContain(`closed:${account.id}`);
         expect(held.find(r => r.id === account.id)!.status).not.toBe('open');
-        await game.act(`I decline the match with ${partner.name}`);
+        const declined = await game.act(`I decline the match with ${partner.name}`);
         const afterwards = ledgerAbout(game.db, id);
-        expect(afterwards.find(r => r.id === account.id)!.status).toBe('open');
-        expect(afterwards.some(r => r.status === 'open' && r.cause === 'broken_oath')).toBe(true);
+        const declineEvidence = JSON.stringify({
+            calls: declined.toolCalls,
+            narration: declined.narration,
+            state: declined.state,
+            current: repos.cultivators.getById(id),
+            present: game.present(repos.cultivators.getById(id)!).map(person => ({ id: person.id, name: person.name })),
+            partner: game.atHand?.npcs.find(person => person.id === partner.id)
+        });
+        expect(afterwards.find(r => r.id === account.id)!.status, declineEvidence).toBe('open');
+        expect(afterwards.some(r => r.status === 'open' && r.cause === 'broken_oath'), declineEvidence).toBe(true);
     }, 120000);
 });

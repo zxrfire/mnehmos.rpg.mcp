@@ -47,6 +47,8 @@ import { getTechnique } from '../data/cultivation/techniques.js';
 import { matchScore } from './entities.js';
 import type { PouchItemKind } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import type Database from 'better-sqlite3';
+import { tryingToBreakAnActualVaultLock } from './trying-to-break-an-actual-vault-lock.js';
+import { tryingToBreakAnActualResidenceDoor } from './breaking-the-door-on-an-actual-residence.js';
 
 /**
  * What the engine can make, said once, for the refusal that names the line.
@@ -228,6 +230,10 @@ export const destroyVerbs = {
 
         this.atHand = this.atHand ?? await this.loadWorld();
         const world = this.atHand;
+        const residenceDoor = await tryingToBreakAnActualResidenceDoor(this, run, cultivator, said);
+        if (residenceDoor) return residenceDoor;
+        const door = await tryingToBreakAnActualVaultLock(this, run, cultivator, said);
+        if (door) return door;
         const within = world
             ? whatIsWithinReachOf(world, cultivator.id, cultivator.location)
             : [];

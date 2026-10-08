@@ -1,3 +1,4 @@
+import type { MetricPoint } from '../../data/cultivation/regions/region-schema.js';
 /**
  * The narrow view of the content catalogs that seeding needs.
  *
@@ -217,6 +218,7 @@ export interface CatalogFaction {
 }
 
 export interface CatalogPlace {
+    metric?: MetricPoint;
     interior?: { parentPlaceName: string; inscription?: string; comprehensionKey?: string;
         comprehensionOrdinal?: number; gateOrdinal?: number; contents?: { name: string; text: string }[] };
     name: string;
@@ -271,6 +273,7 @@ export interface CatalogConnection {
 }
 
 export interface CatalogRegion {
+    metric?: MetricPoint & { extentLi: number };
     id: string;
     name: string;
     /** The one region the player starts in. */
@@ -473,6 +476,7 @@ interface RawCharacter {
 }
 
 interface RawRegion {
+    metric?: CatalogRegion['metric'];
     id: string;
     name: string;
     role?: string;
@@ -487,6 +491,7 @@ interface RawRegion {
     politics?: string;
     factionIds?: string[];
     places?: {
+        metric?: MetricPoint;
         name: string;
         kind: string;
         ambient: AmbientQi;
@@ -611,6 +616,7 @@ function mapRegion(raw: RawRegion, register: readonly RawPrefecture[]): CatalogR
         id: raw.id,
         name: raw.name,
         home: raw.role === 'home',
+        metric: raw.metric,
         summary: raw.summary ?? '',
         ambient: dominantAmbient(profile),
         qiDensity: densityFromProfile(profile),
@@ -621,6 +627,7 @@ function mapRegion(raw: RawRegion, register: readonly RawPrefecture[]): CatalogR
         factionIds: (raw.factionIds ?? []).slice(),
         places: (raw.places ?? []).map(p => ({
             name: p.name,
+            metric: p.metric,
             kind: p.kind as CatalogPlace['kind'],
             ambient: p.ambient,
             note: p.note,

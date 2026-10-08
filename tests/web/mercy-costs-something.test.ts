@@ -117,6 +117,13 @@ describe('mercy is a decision with a price on it', () => {
         const opened = await game.act('I attack someone of my own rank');
         expect(names(opened), opened.narration).toContain('combat.round');
 
+        // Areas now hold more than one match for "someone of my own rank" -
+        // sparse placement can put a second person of the player's rank
+        // beside the one weakened above, and the attack is free to land on
+        // either. The fight itself says who it actually is; read the id off
+        // it rather than trusting the npc we pre-wore.
+        const opponentId = game.fight!.state.defender.input.id;
+
         let ended: any = null;
         for (let round = 0; round < 8 && ended === null; round++) {
             const answer = await game.act('I spare him');
@@ -129,7 +136,7 @@ describe('mercy is a decision with a price on it', () => {
         // ── THEY ARE ALIVE, WHICH IS THE ENTIRE RISK ─────────────────────
         const after = await game.loadWorld();
         expect(after, 'the world went away over the fight').toBeTruthy();
-        const survivor = after!.npcs.find((n: any) => n.id === them!.id);
+        const survivor = after!.npcs.find((n: any) => n.id === opponentId);
         expect(survivor, 'the one who was spared is not in the world').toBeTruthy();
         expect(survivor!.status).toBe('alive');
 
@@ -142,7 +149,8 @@ describe('mercy is a decision with a price on it', () => {
         const ledger = ledgerAbout(db as never, player.id);
 
         const favour = ledger.find(row =>
-            row.kind === 'favor' && row.holderId === player.id && row.cause === 'spared');
+            row.kind === 'favor' && row.holderId === player.id && row.cause === 'spared'
+            && row.subjectId === opponentId);
         expect(
             favour,
             `no favour was opened. ledger: ${ledger.map(r =>
@@ -154,7 +162,7 @@ describe('mercy is a decision with a price on it', () => {
         // go", and `seedObligations` has always answered it with a grave
         // grudge held BY the loser ABOUT the winner.
         const grudge = ledger.find(row =>
-            row.kind === 'grudge' && row.holderId === them!.id && row.subjectId === player.id);
+            row.kind === 'grudge' && row.holderId === opponentId && row.subjectId === player.id);
         expect(
             grudge,
             `the spared party holds nothing. ledger: ${ledger.map(r =>

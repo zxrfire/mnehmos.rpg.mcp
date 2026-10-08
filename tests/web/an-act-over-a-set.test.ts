@@ -182,6 +182,10 @@ describe('an act aimed at a set, played', () => {
         const { cultivator } = await game.newRun('Brawler');
         await game.act('I look around');
         standAtTheTopOfTheLadder(db, cultivator.id);
+        // People are now placed by the hour and sparsely (`npc-routines.ts`), so
+        // the square's fifteen no longer land three deep in the player's own
+        // starting area by default; stand where the crowd actually is.
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id);
 
         const standing = (game as any).present((game as any).currentRun().cultivator) as { id: string }[];
         const before = standing.length;

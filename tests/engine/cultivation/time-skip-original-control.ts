@@ -1,0 +1,1825 @@
+import { applyCrossingConsequence } from '../../../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
+/**
+ * The long-simulation primitive.
+ *
+ * The four location thresholds - entry, survival, operational, mastery - had been
+ * calibrated across every place in the world and nothing read them at the point
+ * where somebody was actually standing somewhere. Measured: an ordinal 0
+ * cultivator was put inside a compound whose survival bar is 19, cultivated for
+ * seven months, gained a full rank, and was never touched.
+ */
+
+import {
+    CRIPPLING_UNTREATED_INJURIES,
+    SATIETY_COST_PER_ACTION,
+    SATIETY_MAX,
+    STARVATION_TURNS,
+    HP_RECOVERY_FRACTION_PER_DAY,
+    stagnationYearsForOrdinal,
+    type Cultivator,
+    type DeathCause,
+    type Element,
+    type FoundationQuality,
+    type ImmortalStatus,
+    type Achievement,
+    type Insight,
+    type Injury,
+    type VisionSeed,
+    type SimEvent,
+    type SimEventKind,
+    type TimeSkipResult,
+    type TollResult
+} from '../../../src/schema/cultivation.js';
+import { rankName } from '../../../src/engine/cultivation/realms.js';
+import { getSpiritRoot } from '../../../src/engine/cultivation/spirit-roots.js';
+import { AMBIENT_REFRESH_DAYS, ambientForBlock, impliedDensityFor } from '../../../src/engine/cultivation/ambient.js';
+import {
+    DAYS_PER_YEAR,
+    computeCultivationRate,
+    daysToNextBreakthrough,
+    techniqueCeiling,
+    type CultivationOptions
+} from '../../../src/engine/cultivation/cultivation.js';
+import {
+    attemptBreakthrough,
+    whatACrossingTakesFrom,
+    canAttemptBreakthrough,
+    computeBreakthroughOdds,
+    overflowBonus,
+    MAX_OVERFLOW_BONUS
+} from '../../../src/engine/cultivation/breakthrough.js';
+import type { RoadWithinReach } from '../../../src/engine/cultivation/what-a-road-in-reach-costs-to-walk.js';
+import type { FoundationConditions } from '../../../src/engine/cultivation/foundation.js';
+import type { TollConditions } from '../../../src/engine/cultivation/toll.js';
+import {
+    INSIGHT_CHECK_DAYS,
+    INSIGHT_FROM_CRIPPLING_DEVIATION,
+    INSIGHT_FROM_TRIBULATION,
+    VISION_CHECK_DAYS,
+    VISION_KINDS,
+    discoverableInsights,
+    formInsight,
+    formVision,
+    integrateInsight,
+    meditativeStateChance,
+    recordAchievement,
+    visionChance,
+    type DiscoveryContext
+} from '../../../src/engine/cultivation/understanding.js';
+import {
+    AFFINITY_INITIAL_DEGREE,
+    affinityFor,
+    daoOf,
+    isRecognition,
+    pickNarrowed
+} from '../../../src/engine/cultivation/dao.js';
+import { resolveDeviation, rollDeviation } from '../../../src/engine/cultivation/deviation.js';
+import { aggregateInjuryPenalties, untreatedInjuryCount } from '../../../src/engine/cultivation/injuries.js';
+import {
+    bleedOut,
+    burnSatiety,
+    eat,
+    evaluateDeathConditions,
+    lifespanCeilingFor,
+    satietyBurnMultiplier,
+    stillNeedsToEat,
+    turnsUntilStarvation
+} from '../../../src/engine/cultivation/survival.js';
+import { forStream } from '../../../src/engine/cultivation/rng.js';
+
+// EVENT CADENCE
+// All three grids are multiples of the 30-day ambient block, which keeps the
+// chunk boundaries sparse and the digest readable. Rates are per CHECK, not
+// per day: a dual root's 0.08 innate deviation risk fires roughly once every
+// three years of seclusion, which is a hazard. Fired daily it would be a
+// death sentence inside a season.
+
+/**
+ * Days between qi-deviation checks, ON DAYS THE CULTIVATOR IS CULTIVATING.
+ *
+ * Ruled by the design owner, and it reverses what this file used to do: the check
+ * used to fire every thirty days regardless, which made the clock the enemy.
+ * Measured through `ADMIN advance_days` at idle focus, an untreated body took
+ * better than one wound a year having done nothing whatever, hit the three-wound
+ * threshold in 780 days, and died of `qi_deviation` inside a decade whatever it
+ * paid for food.
+ */
+export const DEVIATION_CHECK_DAYS = 30;
+/** Days between "did something find you out here" checks. */
+export const ENCOUNTER_CHECK_DAYS = 90;
+/** Days between "did you stumble onto something" checks. */
+export const OPPORTUNITY_CHECK_DAYS = 180;
+
+/** Probability that an encounter check produces an encounter at all. */
+export const ENCOUNTER_CHANCE = 0.2;
+/** Of encounters, the fraction serious enough to interrupt seclusion. */
+export const MAJOR_ENCOUNTER_FRACTION = 0.35;
+
+// FORTUNE
+//
+// Luck generates opportunity, not success. Fortune appears in this file and
+// almost nowhere else, because event generation is the only place it belongs.
+//
+// THE RULE, and it is narrow: Fortune may influence WHICH of the branches the
+// world already permits occurs, and WHEN. It biases timing, presence,
+// availability and coincidence. It must never manufacture a branch, never
+// soften a resolution, and never reach into a probability that represents a
+// real capability gap.
+//
+// Legitimate:   the patrol arrives twenty minutes later; the herb happens to
+//               grow nearby; the elder takes the other road; the treasure has
+//               not already been taken; the window is still open.
+// Illegitimate: an encounter the world says is lethal resolves as survivable;
+//               a weak cultivator's luck kills a strong one; an outcome that
+//               contradicts an established fact or a capability threshold.
+//
+// Concretely, below: Fortune moves whether an opportunity is DRAWN, whether it
+// is still AVAILABLE when reached, and whether a passing danger ARRIVES on top
+// of the cultivator or goes past. Once something has arrived, Fortune has no
+// further say - it does not touch the damage, the severity, the deviation
+// roll, the breakthrough, or the tribulation.
+
+/** Base probability of an opportunity being drawn, before Fortune. */
+export const OPPORTUNITY_BASE_CHANCE = 0.1;
+/**
+ * Added opportunity probability per point of Fortune. Weighted heavily: this
+ * is where Fortune earns its place on the character sheet, now that it has
+ * been taken out of breakthrough odds and tribulation survival.
+ */
+export const OPPORTUNITY_PER_FORTUNE = 0.1;
+
+/**
+ * Chance a drawn opportunity has already been taken, or the window has already
+ * closed, by the time the cultivator gets to it. Falls with Fortune: "arriving
+ * four days late" is exactly what low Fortune means.
+ */
+export const OPPORTUNITY_MISSED_BASE = 0.4;
+export const OPPORTUNITY_MISSED_PER_FORTUNE = -0.11;
+
+/**
+ * Chance that a minor disturbance passes by instead of landing on the
+ * cultivator. This is presence and timing - whether the thing arrives at all -
+ * and NOT a reduction in what it does once it has.
+ */
+export const DISTURBANCE_PASSES_BASE = 0.15;
+export const DISTURBANCE_PASSES_PER_FORTUNE = 0.12;
+
+/**
+ * Chance that a major encounter arrives at a moment the cultivator can simply
+ * withdraw from: the elder took the other road, the patrol is facing the wrong way.
+ * It changes whether the confrontation happens, never who would win it. The
+ * encounter still interrupts either way, and any fight that does happen is resolved
+ * by the combat layer at full strength.
+ */
+export const CLEAN_WITHDRAWAL_BASE = 0.1;
+export const CLEAN_WITHDRAWAL_PER_FORTUNE = 0.12;
+
+/** Fortune clamped to its legal 0..3 range, defensively. */
+function fortuneOf(attributes: { fortune: number }): number {
+    const f = attributes.fortune;
+    return Number.isFinite(f) ? Math.max(0, Math.min(3, f)) : 0;
+}
+
+/** Hard iteration ceiling. A safety net against a future edit that stalls the
+ *  chunker; it should never be reached, and the simulation reports it if it is. */
+const MAX_ITERATIONS = 100_000;
+
+// CONTEXT
+
+export interface TimeSkipContext {
+    /** The run seed. Every sub-stream in the skip derives from this. */
+    seed: string;
+    /** Where the cultivator is sitting. Drives location-stable ambient qi. */
+    locationId: string;
+    /**
+     * USABLE qi at that location, 0..1 - the world layer's `spiritualDensity`. The
+     * month's ambient varies AROUND this rather than being drawn from a global
+     * distribution, which is what keeps a thin province thin and stops a decade of
+     * seclusion quietly becoming a decade somewhere else.
+     */
+    locationDensity?: number;
+    /**
+     * This site is a POCKET REALM THAT HAS NOT BEEN OPENED.
+     *
+     * Not `sealed`, on the owner's vocabulary: seal is people, locked is a room,
+     * forbidden is ground a house bars, and a pocket realm is a separate space
+     * with an open status. Only the last makes the qi stand. See
+     * `SiteConditions.anUnopenedPocket`.
+     */
+    anUnopenedPocket?: boolean;
+    /**
+     * The identity this cultivator's PER-CULTIVATOR draws are keyed on.
+     */
+    rollIdentity?: string;
+    /** Turn number the skip begins on, stamped onto injuries. */
+    turn?: number;
+    /** Absolute in-world day the skip begins on, so grids line up across skips. */
+    startDay?: number;
+    /** Rate multipliers - manual, sect, site, focus. */
+    options?: CultivationOptions;
+    /**
+     * Element of the art being cultivated throughout. `null` for elementless
+     * qi-gathering, which any root practises safely.
+     */
+    techniqueElement?: Element | null;
+    /** Days of provisions carried. Each ration refills satiety to full. */
+    rations?: number;
+/**
+ * The cultivator is on grain abstinence (辟穀) and does not eat. Note that this
+ * scales the THRESHOLD and never skips a draw: every sample is taken
+ * unconditionally to keep the stream aligned across cultivators, and sealing must
+ * not shift what anybody else would have rolled.
+ */
+    grainAbstinence?: boolean;
+    /** Attempt breakthroughs automatically when eligible. Default true. */
+    autoBreakthrough?: boolean;
+    /** Roll encounters and opportunities. Default true. */
+    randomEvents?: boolean;
+    /**
+     * Scales how often those rolls land, without switching them off. Default 1.
+     */
+    randomEventScale?: number;
+    /**
+     * HOW EXPOSED THIS PLACE IS, as a multiplier on how often somebody comes at
+     * the cultivator. 1 is nobody watching, which is every caller that does not
+     * set it and every place the engine has ever simulated.
+     *
+     * SEPARATE FROM `randomEventScale`, and the separation is the point.
+     * `randomEventScale` is a DOOR: it is clamped to at most 1 because a shut
+     * door can only ever reduce what comes through it, and lifting that clamp
+     * to let a crowd raise it would also make a crowd hand out OPPORTUNITIES -
+     * a market square would start producing the buried ruin and the passing
+     * master, which is the opposite of what being watched means.
+     *
+     * This scales the ENCOUNTER draw and nothing else, because being seen makes
+     * exactly one thing likelier: somebody deciding to do something about you.
+     *
+     * The design owner: *"you typically can't cultivate for 20 years in a
+     * square"*, *"someone will tell you to go somewhere else"*, *"that's like
+     * being homeless"*, *"you'll be bugged"*. See
+     * `sitting-down-where-people-can-see-you.ts`, which is where the number
+     * comes from and why.
+     */
+    botheredScale?: number;
+    /**
+     * Whether the span is spent SITTING DOWN somewhere hidden.
+     *
+     * FOUND BY PLAYING BLIND. This function is the one time skip for every verb
+     * that spends days - seclusion, a duty, a journey, a day on the herb ground,
+     * a hunt - and two of the sentences it can produce were written for a cave
+     * and are a flat lie about anything else: *"Seclusion broken: somebody has
+     * found this place"*, said to a cultivator fifteen days into an escort for a
+     * house, and *"Found while in seclusion: a spirit-stone cache"*, said on a
+     * road. Nothing gated either one; the wording simply assumed the caller.
+     *
+     * Defaults to `true`, which is what every caller was getting before it
+     * existed, so a caller that does not say keeps the seclusion voice.
+     */
+    spanIsASitting?: boolean;
+    /**
+     * Conditions for the price of advancement at any realm boundary crossed during the
+     * skip. The candidate list must come from real rows - the engine holds no
+     * database - so a caller that omits it will see the crossing find nothing
+     * worth taking, which is a visible result rather than a silent skip.
+     */
+    toll?: TollConditions;
+    /**
+     * Conditions for the foundation, if the skip crosses 12 -> 13. A decade of
+     * unattended seclusion is by definition an unhurried crossing, but the
+     * caller still owns whether a site was chosen and a pill was bought.
+     */
+    foundation?: Omit<FoundationConditions, 'ambient'>;
+    /**
+     * 道心 - how much of this cultivator's record is unfinished, 0..1, and how many
+     * accounts that is.
+     */
+    daoHeart?: number;
+    daoHeartOpen?: number;
+    /**
+     * What the cultivator is doing and where, for understanding. Supplied by
+     * the caller from real world state - the engine holds no map and no
+     * technique table. Omitted means "sitting in a cave practising nothing in
+     * particular", for which the insight chance is exactly zero.
+     */
+    understanding?: Omit<DiscoveryContext, 'survived'>;
+/**
+ * Roads the WORLD has put within this cultivator's reach - ground they can get
+ * at, a material spent on them, a house they are inside.
+ *
+ * The same facts as `daoGrounds`, read the other way: that says what a place puts
+ * within reach to COMPREHEND, this says what it puts within reach to WALK, and
+ * the two must never be able to disagree about which places those are.
+ */
+    roadsWithinReach?: readonly RoadWithinReach[];
+    /**
+     * What standing here does to a body that has no business being here.
+     */
+    hostility?: {
+        /** An imperfect body's remaining elemental tolerance on entry. */
+        safeDays?: number;
+        /**
+         * Fraction of max HP the place takes per day, 0..1. Zero for ground
+         * they can survive; large for ground rungs above their survival bar.
+         */
+        dailyHpFraction: number;
+        /**
+         * The ground is above what they can work in: alive, and useless.
+         * Progress does not accrue while this is true - which is the
+         * `survival <= x < operational` band, stated as arithmetic.
+         */
+        inert: boolean;
+        /** Engine-authored reason, stamped on the event the damage raises. */
+        reason: string;
+    };
+}
+
+// THE SIMULATION
+
+/**
+ * Simulate `days` of elapsed time for one cultivator.
+ *
+ * Returns a `TimeSkipResult`: how many days were actually simulated, whether
+ * something interrupted, the chronological event digest, and the net deltas.
+ */
+export function simulateTimeSkipBeforeBoundaries(
+    cultivator: Cultivator,
+    days: number,
+    ctx: TimeSkipContext
+): TimeSkipResult {
+    const requestedDays = Number.isFinite(days) ? Math.max(0, Math.floor(days)) : 0;
+    const turn = Math.max(0, Math.floor(ctx.turn ?? 0));
+    /**
+     * The turn this whole stretch resolves on.
+     */
+    const resolvesOnTurn = turn + 1;
+
+    /**
+     * Roads the world has put in reach, in the shape the dao gate reads.
+     */
+    const roadsWithinReach: readonly RoadWithinReach[] =
+        ctx.roadsWithinReach
+        ?? (ctx.understanding?.daoGrounds ?? []).map(ground => ({
+            domain: ground.domain,
+            subject: ground.subject,
+            sourceId: ground.id ?? ground.label,
+            sourceName: ground.label,
+            how: ground.how ?? 'ground_open'
+        }));
+    const startDay = Math.max(0, Math.floor(ctx.startDay ?? 0));
+    const autoBreakthrough = ctx.autoBreakthrough ?? true;
+    // Every per-cultivator stream in this file keys on THIS, never on the row
+    // id directly. See `TimeSkipContext.rollIdentity`.
+    const identity = ctx.rollIdentity ?? cultivator.id;
+    const randomEvents = ctx.randomEvents ?? true;
+    const eventScale = Math.min(1, Math.max(0, ctx.randomEventScale ?? 1));
+    // NOT clamped at 1, which is the whole difference between this and the
+    // door above. Floored at 0 and ceilinged well clear of any real value, so a
+    // caller cannot turn encounters off through it or drive the chance to
+    // nonsense; turning them off is `randomEvents`, which says so.
+    const botheredScale = Math.min(64, Math.max(0, ctx.botheredScale ?? 1));
+    // See `spanIsASitting`. A span on its feet gets the same events in the same
+    // order and a sentence that is true of where the cultivator actually is.
+    const sitting = ctx.spanIsASitting !== false;
+    const grainAbstinence = ctx.grainAbstinence ?? false;
+    const hostility = ctx.hostility;
+
+    /**
+     * Whether this span is spent DRAWING QI, which is the act qi deviation is the
+     * price of. See the banner over `DEVIATION_CHECK_DAYS`.
+     */
+    const drawingQi = (ctx.options?.focusMultiplier ?? 1) > 0;
+
+    // Working state. A shallow copy; the input is never touched.
+    const startAge = cultivator.age;
+    let burnedYears = 0;
+    let soulState = cultivator.soulState;
+    let identityContinuity = cultivator.identityContinuity;
+    const startYearsAtRealm = cultivator.yearsAtCurrentRealm;
+
+    let ordinal = cultivator.realmOrdinal;
+    let progress = cultivator.cultivationProgress;
+    let hp = cultivator.hp;
+    const qi = cultivator.qi;
+    let satiety = cultivator.satiety;
+    let starvationTurns = cultivator.starvationTurns;
+    let bleedingTurns = cultivator.bleedingTurns;
+    let injuries: Injury[] = [...cultivator.injuries];
+    let spiritStones = cultivator.spiritStones;
+    let rations = Math.max(0, Math.floor(ctx.rations ?? 0));
+    /** May be set during the skip, if it crosses Foundation Establishment. */
+    let foundation: FoundationQuality = cultivator.foundationQuality ?? 'none';
+    /** May be set during the skip, if it resolves the last crossing. */
+    let immortalStatus: ImmortalStatus = cultivator.immortalStatus ?? 'none';
+    /** Everything the crossings took during the skip, for the caller to apply. */
+    const tolls: TollResult[] = [];
+    /** Remarkable things that actually happened, and what was taken from them. */
+    const achievements: Achievement[] = [];
+    const insightsGained: Insight[] = [];
+    /** Beliefs with no ground truth behind them, for the knowledge layer. */
+    const visions: VisionSeed[] = [];
+    let insights: Insight[] = [...(cultivator.insights ?? [])];
+
+    /** Integer day counters. Ages are derived from these, never accumulated,
+     *  so a thousand chunks introduce no float drift. */
+    let elapsed = 0;
+    let daysSinceAdvance = 0;
+    /** Years-at-realm at the last advance; reset to 0 when a rank is gained. */
+    let realmClockBase = startYearsAtRealm;
+
+    /**
+     * The ground under this place, resolved once.
+     *
+     * ── THE WORLD'S OWN DENSITY, WHICH WAS ONE FIELD AWAY ────────────────
+     *
+     * `ctx.locationDensity` is the front door and NOTHING in the repository
+     * has ever passed it - not one of the ten `simulateTimeSkip` call sites.
+     * So every skip in the played game fell to `impliedDensityFor`, which is a
+     * hash of the place's NAME, and a cultivator's progress was decided by how
+     * their location was spelled.
+     *
+     * MEASURED across a seeded world of 1064 locations: the band that read out
+     * was wrong at 77.5% of them, the rate multiplier was off by 2x at 45.7%
+     * and by 4x at 22.1%, and a ten-year seclusion on the richest drawable
+     * ground in the world returned 27.6% of what that ground is worth.
+     *
+     * And the real number was already here. `options.ground` is a
+     * `GroundConditions` carrying the location's actual `spiritualDensity`;
+     * nine of the ten call sites already build it and pass it, and this
+     * function already reads it - for crowding and for the barren-ground
+     * ceiling - and then threw it away when it came to the band. The same
+     * fact, derived in three places, with only the worst derivation allowed to
+     * decide anything.
+     *
+     * So this is a fallback CHAIN and not a new argument: an explicit
+     * `locationDensity` still wins where a caller states one, the world's own
+     * ground answers next, and the name hash is what is left for a caller that
+     * knows neither - which is now only a test.
+     *
+     * ── AND THE POCKET FLAG IS DELIBERATELY NOT JOINED HERE ─────────────
+     *
+     * `ambientForLocationOnDay` short-circuits to `sealed_vein` the moment
+     * `anUnopenedPocket` is true, BEFORE it reads any density - and `sealed_vein` is
+     * the richest band in the game and the only one that carries anybody past
+     * ordinal 32. Passing a locked vault's real density alongside a pocket flag
+     * would hand the thinnest ground in the world the best rate in it. Whether
+     * a pocket is open is a separate ruling and does not ride in on this one.
+     */
+    const groundDensity = ctx.locationDensity
+        ?? ctx.options?.ground?.density
+        ?? impliedDensityFor(ctx.seed, ctx.locationId);
+
+    const events: SimEvent[] = [];
+    let interrupted = false;
+    let interruptReason: string | null = null;
+    let died = false;
+    let deathCause: DeathCause | null = null;
+    /**
+     * What took the last point of HP, when it was not violence.
+     */
+    let hpDepletedBy: DeathCause | null = null;
+    /** Fractional HP mended but not yet whole. See the recovery block below. */
+    let mending = 0;
+    /** Said once. See the deferral block: the condition is standing, not momentary. */
+    let crossingDeferred = false;
+    /**
+     * Every wound the skip produced, in the order it happened. This is the
+     * authoritative record the caller persists; `deltas.injuriesGained` is
+     * derived from its length so the two can never disagree.
+     */
+    const sustained: Injury[] = [];
+    /** Ranks gained on the current day, enforcing MAX_RANKS_PER_TURN. */
+    let ranksOnDay = 0;
+    let ranksOnDayFor = -1;
+    let depletionAnnounced = false;
+    /**
+     * Seeded from the entry state, not from false.
+     */
+    let starvationAnnounced =
+        !stillNeedsToEat(cultivator.realmOrdinal, cultivator.injuries) ||
+        (cultivator.satiety <= 0 && (ctx.rations ?? 0) <= 0);
+    /**
+     * Seeded from the entry state, exactly as starvation is.
+     */
+    let bleedAnnounced = untreatedInjuryCount(cultivator.injuries) >= CRIPPLING_UNTREATED_INJURIES;
+
+    const push = (
+        kind: SimEventKind,
+        summary: string,
+        interrupts: boolean,
+        data: Record<string, unknown> = {}
+    ): void => {
+        // Identical lines collapse. A forty-year seclusion that reports the
+        // same warning six times has buried whatever else it said, and the one
+        // thing a digest must not do is hide the line that mattered.
+        const existing = events.find(e => e.kind === kind && e.summary === summary);
+        if (existing) {
+            existing.occurrences++;
+            existing.data = { ...existing.data, lastDayOffset: elapsed };
+            return;
+        }
+        events.push({ kind, dayOffset: elapsed, summary, interrupts, occurrences: 1, data });
+    };
+
+    // Two flavours of the same clock, deliberately.
+    //
+    // `raw*` is used to compute how many days remain before a threshold: it
+    // must not be rounded, because rounding DOWN by half a microsecond makes
+    // the remaining distance look a fraction of a day longer and the chunker
+    // then steps one day past the threshold.
+    //
+    // `current*` is rounded and is what the death check and the returned deltas
+    // see: `Math.ceil` on the day count can land a few nanoseconds short of the
+    // threshold, and rounding to the nearest microsecond snaps that back onto
+    // the documented number so death fires exactly ON it.
+    const rawAge = (): number => startAge + burnedYears + elapsed / DAYS_PER_YEAR;
+    const rawYearsAtRealm = (): number => realmClockBase + daysSinceAdvance / DAYS_PER_YEAR;
+    const currentAge = (): number => roundYears(rawAge());
+    const currentYearsAtRealm = (): number => roundYears(rawYearsAtRealm());
+
+    const snapshot = () => ({
+        realmOrdinal: ordinal,
+        cultivationProgress: progress,
+        spiritRoot: cultivator.spiritRoot,
+        attributes: cultivator.attributes,
+        foundationQuality: foundation,
+        insights,
+        // THE TWO FIELDS THE DAO GATE READS BESIDES `insights`, and they have
+        // to travel with every subject built in this file or the player is
+        // back on a rule of their own. Comprehension is no longer only what
+        // survived something: an art practised for years and ground stood on
+        // for years walk a road too, by the same function the world layer
+        // asks - see `what-a-road-in-reach-costs-to-walk.ts`. Before this the
+        // player's list held only event-formed insights, which measured
+        // between 0.6% and 3.4% a year, and every completed playtest run
+        // ended with `insights: []` while every NPC was handed one per art at
+        // birth.
+        knownTechniques: cultivator.knownTechniques,
+        roadsWithinReach,
+        immortalStatus,
+        // THE BODY, WHICH WAS NOT HERE. Without it `evaluateDeathConditions`
+        // read `physique` as undefined and priced every skip at the rung's
+        // ceiling, so a Profound Yin cultivator (0.35 of the rung's years) sat
+        // 2.9x past the age at which the same gate kills them outside a skip.
+        // `lifespanCeilingFor` below reads this object for the same reason, so
+        // the boundary the chunker stops on and the gate that kills cannot
+        // disagree.
+        physique: cultivator.physique,
+        name: cultivator.name,
+        injuries,
+        hp,
+        maxHp: cultivator.maxHp,
+        satiety,
+        starvationTurns,
+        bleedingTurns,
+        age: currentAge(),
+        soulState, identityContinuity,
+        yearsAtCurrentRealm: currentYearsAtRealm(),
+        alive: true as const
+    });
+
+    const checkDeath = (): boolean => {
+        const cause = evaluateDeathConditions(
+            snapshot(),
+            hpDepletedBy ? { hpDepletedBy } : {}
+        );
+        if (cause === null) return false;
+        died = true;
+        deathCause = cause;
+        interrupted = true;
+        interruptReason = `death:${cause}`;
+        push('death', deathSummary(cause, cultivator.name, ordinal, currentAge()), true, { cause });
+        return true;
+    };
+
+    /**
+     * Turn something that actually happened into an achievement, and possibly into
+     * understanding.
+     */
+    const comprehend = (
+        kind: Parameters<typeof recordAchievement>[0]['kind'],
+        summary: string,
+        absDay: number,
+        survived: DiscoveryContext['survived'],
+        rng: ReturnType<typeof forStream>,
+        detail: Record<string, string | number> = {}
+    ): void => {
+        const candidates = discoverableInsights({ ...cultivator, id: identity, insights }, {
+            ...(ctx.understanding ?? {}),
+            survived,
+            // Suitability is live in play: what is in reach is filtered by what
+            // this particular cultivator can take out of it.
+            runSeed: ctx.seed,
+            affinityOf: target => affinityFor(ctx.seed, identity, target)
+        });
+        const achievement = recordAchievement(
+            { kind, onDay: absDay, turn: resolvesOnTurn, summary, detail },
+            rng
+        );
+        achievements.push(achievement);
+        push('achievement', summary, false, { kind, achievementId: achievement.id });
+
+        if (candidates.length === 0) return;
+        // A road already walked bends which of these arrives, and a latent
+        // affinity bends it further - but only among candidates ACCESS has
+        // already put in reach. Consumes exactly one sample, same as a uniform
+        // pick, so nothing downstream shifts.
+        const candidate = pickNarrowed(rng, candidates, daoOf(insights), {
+            runSeed: ctx.seed,
+            cultivatorId: identity
+        });
+        const integrated = integrateInsight(insights, candidate, achievement);
+        insights = integrated.insights;
+        insightsGained.push(integrated.insight);
+        push(
+            'insight_gained',
+            `Understanding: ${integrated.insight.subject} ` +
+            `${integrated.deepened ? 'deepened' : 'comprehended'} - ${candidate.opening}.`,
+            false,
+            {
+                insightId: integrated.insight.id,
+                domain: integrated.insight.domain,
+                subject: integrated.insight.subject,
+                degree: integrated.insight.degree,
+                deepened: integrated.deepened,
+                accessKind: candidate.access.kind,
+                accessLabel: candidate.access.label
+            }
+        );
+    };
+
+    let iterations = 0;
+    while (elapsed < requestedDays && !interrupted) {
+        if (++iterations > MAX_ITERATIONS) {
+            interrupted = true;
+            interruptReason = 'iteration_limit';
+            break;
+        }
+
+        const absDay = startDay + elapsed;
+
+        // 1. Breakthrough, if the accumulated progress permits one.
+        if (ranksOnDayFor !== absDay) {
+            ranksOnDayFor = absDay;
+            ranksOnDay = 0;
+        }
+        const ambient = ambientForBlock(ctx.seed, ctx.locationId, absDay, {
+            density: groundDensity,
+            anUnopenedPocket: ctx.anUnopenedPocket
+        });
+
+        if (autoBreakthrough) {
+            const eligibility = canAttemptBreakthrough(
+                {
+                    realmOrdinal: ordinal,
+                    cultivationProgress: progress,
+                    alive: true,
+                    spiritRoot: cultivator.spiritRoot,
+                    insights,
+                    // See `snapshot` - the gate reads all three of these.
+                    knownTechniques: cultivator.knownTechniques,
+                    roadsWithinReach,
+                    age: currentAge(),
+                    // A False Immortal is refused here for the rest of the
+                    // skip, so the loop stops re-attempting the last crossing.
+                    immortalStatus
+                },
+                { ranksGainedThisTurn: ranksOnDay }
+            );
+            // WAITING IS STILL WORTH MORE THAN STRIKING
+            //
+            // An unattended skip used to strike the instant the gate opened,
+            // which is by construction the WORST legal moment: no overflow has
+            // accumulated, so the odds are at their minimum for that rung.
+            // Played live, that meant a realm boundary attempted at 2% - the
+            // floor of the entire scale - on a healthy, fully provisioned
+            // cultivator who had never chosen it and was never told it was
+            // coming. A boundary failure inflicts qi deviation and meridian
+            // injuries, and the injuries killed the run.
+            //
+            // The rule is derived rather than picked, because a threshold in
+            // percent would be a number nobody could defend. `overflowBonus`
+            // saturates towards MAX_OVERFLOW_BONUS, so at any moment the most
+            // that CONTINUING TO SIT could still add is the headroom left in
+            // it. While that headroom is worth more than the whole attempt is
+            // worth, striking is the dominated move and the engine will not
+            // make it on somebody's behalf.
+            //
+            // It always resolves: sitting raises the chance and shrinks the
+            // headroom at the same time, so the two cross. From a 2% floor
+            // that is about 1.4x the requirement - a modest extra wait that
+            // takes the crossing from 2% to roughly 8.5%. Nobody is trapped,
+            // and a player who wants the gamble can still take it deliberately
+            // through `breakthrough`, which this does not touch.
+            //
+            // AND THE LINE HAS TO SAY WHAT ACTUALLY HAPPENS
+            //
+            // It used to end "The attempt is yours to make whenever you want
+            // it", which is not true and was the last thing a lot of
+            // cultivators read. Measured in one turn, 130 days apart:
+            //
+            //   Day 50   The gate is open and was not struck... prices at 10.6%
+            //            ... The attempt is yours to make whenever you want it.
+            //   Day 180  Breakthrough failed catastrophically at 25.9%. The
+            //            meridians ruptured completely. The cultivator is dead.
+            //
+            // This event is pushed with `interrupts: false`, so the player gets
+            // no turn between the promise and the attempt, and the caller sets
+            // `autoBreakthrough` on the cultivate path. Deferring is right and
+            // is not what changed; the sentence claimed a control the player
+            // did not have, and now states the one they do - shorten the
+            // stretch, or strike deliberately.
+            const odds = eligibility.eligible
+                ? computeBreakthroughOdds(snapshot(), {
+                    ambient,
+                    daoHeart: ctx.daoHeart,
+                    daoHeartOpen: ctx.daoHeartOpen
+                })
+                : null;
+            const headroom = odds
+                ? Math.max(0, MAX_OVERFLOW_BONUS - overflowBonus(ordinal, progress))
+                : 0;
+            const worthWaiting = odds !== null && odds.finalChance <= headroom;
+
+            if (worthWaiting && !crossingDeferred) {
+                // Once. A line every chunk would bury the digest, and the
+                // condition is standing rather than momentary.
+                crossingDeferred = true;
+                push(
+                    'crossing_deferred',
+                    `The gate is open and was not struck. From here the crossing to `
+                    + `${rankName(ordinal + 1)} prices at ${(odds!.finalChance * 100).toFixed(1)}%, `
+                    + 'and sitting on a full gate is still worth more than that: accumulated '
+                    + 'progress beyond the price is the one thing that improves it. Striking '
+                    + 'sooner is a thing you can say out loud. Saying nothing is not waiting - '
+                    + 'this stretch will strike on your behalf the moment sitting stops being '
+                    + 'worth more, and it will not stop to ask first.',
+                    false,
+                    {
+                        finalChance: odds!.finalChance,
+                        fromOrdinal: ordinal,
+                        headroom,
+                        progress,
+                        deferred: true
+                    }
+                );
+            }
+
+            if (eligibility.eligible && !worthWaiting) {
+                const result = attemptBreakthrough(snapshot(), {
+                    rng: forStream(ctx.seed, 'breakthrough', absDay, ordinal),
+                    ambient,
+                    turn: resolvesOnTurn,
+                    ranksGainedThisTurn: ranksOnDay,
+                    daoHeart: ctx.daoHeart,
+                    daoHeartOpen: ctx.daoHeartOpen,
+                    toll: ctx.toll,
+                    foundation: ctx.foundation
+                });
+
+                progress = Math.max(0, progress - result.progressConsumed);
+                // Every breakthrough outcome that wounds contributes here -
+                // failure_injured, failure_deviation, a fatal rupture, and the
+                // burns from a survived tribulation. This is the path callers
+                // used to recover by scraping a severity word out of the
+                // narration hint; they now get the records themselves.
+                if (result.injuriesSustained.length > 0) {
+                    injuries = [...injuries, ...result.injuriesSustained];
+                    sustained.push(...result.injuriesSustained);
+                }
+
+                if (result.crossing) {
+                    const changed = applyCrossingConsequence({ soulState, identityContinuity, age: burnedYears }, result.crossing);
+                    burnedYears = changed.age;
+                    soulState = changed.soulState;
+                    identityContinuity = changed.identityContinuity;
+                    if (result.crossing.foundationQuality) foundation = result.crossing.foundationQuality;
+                    if (checkDeath()) break;
+                }
+
+                if (result.outcome === 'success') {
+                    ordinal = result.toOrdinal;
+                    ranksOnDay++;
+                    daysSinceAdvance = 0;
+                    realmClockBase = 0;
+
+                    // WHAT ARRIVING COST THE BODY
+                    //
+                    // The design owner's ruling, and the second of the two
+                    // callers that has to honour it. See `bodyCost` on
+                    // `BreakthroughResultSchema`: a crossing costs, and the one
+                    // thing that separates the Heaven-Ascending Golden Pill from a qi pill is
+                    // that the qi pill still makes you cross.
+                    //
+                    // Against `cultivator.maxHp` because that is the pool this
+                    // whole function is denominated in - `hp` is tracked against
+                    // it for mending, hostility and deviation alike, and
+                    // `advanceRealm` re-derives the real pool afterwards in
+                    // `applyTimeSkip`, carrying the share across.
+                    //
+                    // CLAMPED, and the clamp is `whatACrossingTakesFrom`'s
+                    // rather than this caller's: a crossing takes a share of the
+                    // pool or a share of what is standing, whichever is less, so
+                    // it can never be the reason the next event is lethal. See
+                    // `A_CROSSING_MAY_NOT_TAKE_MORE_THAN` for the played run
+                    // that made that necessary.
+                    const paidWithTheBody = whatACrossingTakesFrom(
+                        hp, cultivator.maxHp, result.bodyCost
+                    );
+                    hp -= paidWithTheBody;
+                    if (result.foundationEstablished !== null) {
+                        foundation = result.foundationEstablished;
+                    }
+                    if (result.immortalStatusGained !== null) {
+                        immortalStatus = result.immortalStatusGained;
+                    }
+                    // Standing under heavenly lightning and still being there
+                    // afterwards is the definition of surviving something
+                    // extraordinary. It is rolled, and it usually teaches
+                    // nothing - but this is an event that genuinely occurred.
+                    if (result.tribulation !== null && result.tribulation.survived) {
+                        const rng = forStream(ctx.seed, 'understanding', absDay, 'tribulation');
+                        if (rng.chance(INSIGHT_FROM_TRIBULATION)) {
+                            comprehend(
+                                'survived_extraordinary',
+                                `Weathered ${result.tribulation.strikes} strikes of heavenly ` +
+                                'tribulation and was still standing afterwards.',
+                                absDay,
+                                'tribulation',
+                                rng,
+                                { strikes: result.tribulation.strikes }
+                            );
+                        }
+                    }
+                    push(
+                        'breakthrough_success',
+                        // What it cost, in the same sentence as what it bought.
+                        // A digest that reports a rank gained and is silent
+                        // about a quarter of the body is the omission this
+                        // engine keeps finding: the number moved on the sheet
+                        // and no sentence said which way or why.
+                        paidWithTheBody > 0
+                            ? `${result.narrationHint} Getting through it took `
+                              + `${paidWithTheBody} of the body. Every rung costs that, and `
+                              + 'nothing gives it back but time.'
+                            : result.narrationHint,
+                        false,
+                        {
+                            fromOrdinal: result.fromOrdinal,
+                            toOrdinal: result.toOrdinal,
+                            finalChance: result.finalChance,
+                            bodyCost: result.bodyCost,
+                            paidWithTheBody,
+                            tribulation: result.tribulation,
+                            foundationEstablished: result.foundationEstablished,
+                            immortalStatusGained: result.immortalStatusGained
+                        }
+                    );
+
+                    // The price of the crossing gets its own line in the digest.
+                    // A crossing that cost someone a brother must not be a
+                    // footnote inside a success message.
+                    if (result.toll !== null) {
+                        tolls.push(result.toll);
+                        const took = result.toll.outcome === 'taken';
+                        push('toll_charged', result.toll.narrationHint, took, {
+                            outcome: result.toll.outcome,
+                            boundaryIndex: result.toll.boundaryIndex,
+                            risk: result.toll.risk,
+                            taken: result.toll.taken
+                        });
+                        if (took) {
+                            // Losing a person, a memory or an art is not
+                            // something a player should read about ten years
+                            // later in a list. Hand control back.
+                            interrupted = true;
+                            interruptReason = 'toll_charged';
+                            break;
+                        }
+                    }
+                    continue;
+                }
+
+                if (result.outcome === 'death') {
+                    died = true;
+                    deathCause = result.tribulation ? 'heavenly_tribulation' : 'failed_breakthrough';
+                    interrupted = true;
+                    interruptReason = `death:${deathCause}`;
+                    push('breakthrough_failure', result.narrationHint, true, {
+                        fromOrdinal: result.fromOrdinal,
+                        finalChance: result.finalChance
+                    });
+                    push('death', deathSummary(deathCause, cultivator.name, ordinal, currentAge()), true, {
+                        cause: deathCause
+                    });
+                    break;
+                }
+
+                // A survivable failure. Only a wounding one interrupts - a
+                // clean failure is just a lost season and the skip continues.
+                const wounded = result.injuriesSustained.length > 0;
+                push('breakthrough_failure', result.narrationHint, wounded, {
+                    fromOrdinal: result.fromOrdinal,
+                    finalChance: result.finalChance,
+                    outcome: result.outcome
+                });
+                if (wounded) {
+                    interrupted = true;
+                    interruptReason = `breakthrough_${result.outcome}`;
+                    break;
+                }
+                continue;
+            }
+        }
+
+        // 2. How far can we safely jump?
+        //
+        // `ordinal` rather than `cultivator.realmOrdinal`: the LIVE rung, which
+        // a skip that advances ranks changes underneath itself. Passing the
+        // entry ordinal would price a forty-year seclusion at the realm the
+        // cultivator walked in at, which is the whole thing this term is for.
+        const rate = computeCultivationRate(
+            {
+                spiritRoot: cultivator.spiritRoot,
+                injuries,
+                foundationQuality: foundation,
+                insights,
+                realmOrdinal: ordinal
+            },
+            ambient,
+            {
+                ...ctx.options,
+                techniqueElement: ctx.techniqueElement ?? null,
+                techniqueSubject: ctx.understanding?.techniqueSubjects?.[0] ?? null
+            }
+        );
+
+        // 2b. Say it, if there is no book.
+        //
+        // The one fact a stalled cultivator most needs and was never given.
+        // Eleven of twelve measured lives sat through fifty years of correct
+        // play, took injuries, aged, and died of stagnation at ordinal 0
+        // without the digest once mentioning that they were practising no
+        // method - because an absence generates no event of its own, so
+        // nothing was there to hang the sentence off.
+        //
+        // Pushed rather than returned only, because the person sitting in the
+        // cave is reading the digest and not an inspector. `push` collapses
+        // identical lines, so a forty-year seclusion says it once.
+        //
+        // It does NOT interrupt. Being told is not a reason to stop the
+        // seclusion out from under a player who may have chosen it knowingly,
+        // and an interrupt every chunk would make a stalled cultivator unable
+        // to pass time at all.
+        const ceiling = techniqueCeiling(ordinal, ctx.options?.techniqueCap);
+        if (ceiling.line !== null) {
+            push(
+                'method_ceiling',
+                ceiling.line,
+                false,
+                { state: ceiling.state, techniqueCap: ctx.options?.techniqueCap ?? null }
+            );
+        }
+
+        const chunk = Math.min(
+            hostility?.safeDays !== undefined
+                ? Math.max(1, hostility.safeDays - elapsed)
+                : Infinity,
+            nextChunk({
+            elapsed,
+            absDay,
+            requestedDays,
+            breakthroughDays: autoBreakthrough
+                ? daysToNextBreakthrough(
+                      {
+                          realmOrdinal: ordinal,
+                          cultivationProgress: progress,
+                          spiritRoot: cultivator.spiritRoot,
+                          insights
+                      },
+                      rate.perDay
+                  )
+                : Infinity,
+            // Off `snapshot()`, which carries the LIVE rung, the immortal
+            // status a crossing inside this skip may have granted, and the
+            // body - so the chunk boundary is the same ceiling the death gate
+            // enforces rather than a second answer derived from the rung.
+            lifespanDays: daysUntilYear(lifespanCeilingFor(snapshot()), rawAge()),
+            stagnationDays: daysUntilYear(stagnationYearsForOrdinal(ordinal), rawYearsAtRealm()),
+            starvationDays:
+                grainAbstinence || rations > 0
+                    ? Infinity
+                    : turnsUntilStarvation({ satiety, starvationTurns }),
+            emptyBellyDays:
+                grainAbstinence || rations > 0
+                    ? Infinity
+                    : Math.floor(satiety / SATIETY_COST_PER_ACTION),
+            randomEvents
+        }));
+
+        // 3. Apply the chunk.
+        //
+        // Ground they cannot work in gives up nothing, however long they sit in
+        // it. That is the `survival <= x < operational` band from `locations.ts`
+        // - alive, standing in the vault, unable to open anything - and it is
+        // the reason better ground is a decision rather than a free upgrade.
+        progress += (hostility?.inert ? 0 : rate.perDay) * chunk;
+        elapsed += chunk;
+        daysSinceAdvance += chunk;
+
+        // What the place itself takes. Applied on the same days everything else
+        // is, before the food and bleed clocks resolve, so a chunk that ends in
+        // death ends in death from the first cause that reaches zero.
+        if (hostility && hostility.dailyHpFraction > 0 && hp > 0
+            && (hostility.safeDays === undefined || elapsed > hostility.safeDays)) {
+            const taken = Math.min(
+                hp,
+                Math.max(1, Math.round(cultivator.maxHp * hostility.dailyHpFraction * chunk))
+            );
+            hp -= taken;
+            interrupted = true;
+            interruptReason = 'hostile_ground';
+            push(
+                'injury_sustained',
+                `${hostility.reason} ${taken} HP over ${chunk} day${chunk === 1 ? '' : 's'}, `
+                + `and it does not stop while they stay. ${hp} HP left.`,
+                true,
+                { environmental: true, damage: taken, hpRemaining: hp }
+            );
+            if (hp <= 0) break;
+        }
+
+        // How long the channels have been open advances on the same days
+        // everything else does. NOTHING DIES AT THE END OF IT any more - it is
+        // an odometer rather than a clock, and it is kept because how long
+        // somebody has been carrying an open wound is a true fact about them
+        // and is what the player is shown in place of the countdown that used
+        // to be here. Still unconditional, and still with no grain-abstinence
+        // escape, because a pill that means you need not eat does not close a
+        // torn meridian.
+        //
+        // One call for the whole stretch is exact: the untreated count cannot
+        // change inside a chunk, since injuries are only minted by the grid
+        // checks below and those land on chunk boundaries.
+        bleedingTurns = bleedOut(
+            { untreatedInjuries: untreatedInjuryCount(injuries), bleedingTurns },
+            chunk
+        ).bleedingTurns;
+
+        // THE BODY MENDS
+        //
+        // HP only ever went down, and it killed people who were not in any
+        // danger. Measured: ordinal 13, age 38 of 100, full belly, ZERO
+        // injuries, killed by a 3 HP scratch the engine's own line says nothing
+        // followed - because the running total from every prior seclusion had
+        // never come back up. See HP_RECOVERY_FRACTION_PER_DAY for the ruling.
+        //
+        // Two gates, and each is a system that already existed:
+        //
+        //   at zero satiety - a body with nothing to eat does not mend. It is
+        //     already spending itself.
+        //   at zero HP - the death gate below owns that, and a body cannot mend
+        //     its way back across it inside the chunk that emptied it.
+        //
+        // AND A THIRD GATE THAT WAS HERE AND HAD TO GO
+        //
+        // Open channels at the crippling count used to block mending outright,
+        // which was defensible while such a cultivator was dead in ninety days
+        // anyway. With the bleed-out death retired it became the amplifier on a
+        // runaway loop, and the loop is the whole reason this had to be
+        // measured rather than reasoned about:
+        //
+        //   a wound raises deviation risk (RISK_PER_UNTREATED_INJURY)
+        //     -> a deviation costs HP and leaves another wound
+        //       -> which raises the risk again and blocked the repair
+        //
+        // Measured: with the death clause removed and this gate still standing,
+        // `untreated_injuries` fell to 0 of 15 runs and `qi_deviation` rose to
+        // 15 of 15, at a median age of 26 against 21. The wall moved five years
+        // and changed its name. Softening the gate to a quarter speed was not
+        // enough either - the loop still outran the repair.
+        //
+        // So the gate is GONE rather than reduced, and the reason is in its own
+        // original justification: it cited the owner's exception "unless you
+        // are so injured you are slowly dying". Nobody is slowly dying of a
+        // channel wound any more, so the exception has nothing left to stand
+        // on. A torn muscle does not stop a bruise closing. What a channel
+        // wound takes is the cultivation rate, the quality of a blow and the
+        // odds at a crossing; it does not take the flesh's ordinary ability to
+        // knit, and giving it that was the extra penalty that turned an
+        // impairment back into a death.
+        //
+        // Note what this does NOT do: nothing here closes the channel wounds
+        // themselves. They still never heal without a physician or a pill, they
+        // still raise deviation risk every check, and the deviations still
+        // hurt. The body simply recovers from the bruising in between.
+        //
+        // The carry is a float so the arithmetic is exact across chunk
+        // boundaries: half a point a day over a 30-day grid must be fifteen
+        // points, not thirty roundings of zero. It is dropped whenever recovery
+        // is blocked, because a body that stopped mending has not been quietly
+        // banking it.
+        const mendingBlocked =
+            hp <= 0
+            || (stillNeedsToEat(ordinal, injuries) && satiety <= 0);
+        if (mendingBlocked) {
+            mending = 0;
+        } else if (hp < cultivator.maxHp) {
+            mending += cultivator.maxHp * HP_RECOVERY_FRACTION_PER_DAY * chunk;
+            const whole = Math.floor(mending);
+            if (whole > 0) {
+                mending -= whole;
+                hp = Math.min(cultivator.maxHp, hp + whole);
+            }
+        }
+
+        if (!grainAbstinence) {
+            // The wound list goes with the rung, because a failed
+            // transformation takes the meals back - see
+            // `satietyBurnMultiplier`. It has to be the CURRENT list rather
+            // than the entry one, since a crossing inside this skip is exactly
+            // where such a wound is minted.
+            const fed = consumeFood(
+                chunk, { satiety, starvationTurns, rations }, cultivator.realmOrdinal, injuries
+            );
+            satiety = fed.satiety;
+            starvationTurns = fed.starvationTurns;
+            rations = fed.rations;
+
+            // A resource is about to run out and something can still be
+            // done about it.
+            //
+            // This is its own category of interrupt, and it was missing. Every
+            // other interrupt is a thing that HAPPENED to the cultivator -
+            // death, a wound, someone arriving. This one is a thing that is
+            // ABOUT to happen and is trivially preventable: the player has
+            // stones, there is a settlement, and buying food is solved. They
+            // were simply never asked.
+            //
+            // The skip must not be the one place a player dies without a
+            // decision. Starving to death stays entirely possible - a player
+            // told the food is gone who presses on anyway has earned it - but
+            // it has to be a choice they declined rather than one they never
+            // got.
+            if (rations === 0 && !depletionAnnounced && fed.rationsUsed > 0) {
+                depletionAnnounced = true;
+                interrupted = true;
+                interruptReason = 'provisions_exhausted';
+                push(
+                    'resource_depleted',
+                    'The last of the provisions is gone. ' +
+                    `There is food for about ${Math.floor(satiety / SATIETY_COST_PER_ACTION)} more days, ` +
+                    `and ${STARVATION_TURNS} days beyond that before it kills.`,
+                    true,
+                    { rations: 0, satiety, daysOfFoodLeft: Math.floor(satiety / SATIETY_COST_PER_ACTION) }
+                );
+                break;
+            }
+
+            // Entering starvation proper: no belly and nothing to put in it.
+            // Announced ONCE. Somebody on grain abstinence, or with rations in
+            // hand, is fine and is not stopped - and the belly touching zero at
+            // a chunk boundary with food still in the pack is not news at all,
+            // which is what produced six identical warnings in one digest.
+            if (satiety === 0 && rations === 0 && !starvationAnnounced) {
+                starvationAnnounced = true;
+                interrupted = true;
+                interruptReason = 'starvation_begun';
+                push(
+                    'starvation_warning',
+                    `Nothing left to eat. ${STARVATION_TURNS} days of this is fatal.`,
+                    true,
+                    { starvationTurns }
+                );
+                break;
+            }
+        }
+
+        const newAbsDay = startDay + elapsed;
+
+        // 4. Grid checks that land exactly on this day.
+        if (drawingQi && onGrid(newAbsDay, DEVIATION_CHECK_DAYS)) {
+            const check = rollDeviation(
+                { spiritRoot: cultivator.spiritRoot, injuries },
+                forStream(ctx.seed, 'deviation', newAbsDay),
+                {
+                    techniqueElement: ctx.techniqueElement ?? null,
+                    overfullProgress: canAttemptBreakthrough({
+                        realmOrdinal: ordinal,
+                        cultivationProgress: progress,
+                        spiritRoot: cultivator.spiritRoot,
+                        insights,
+                        knownTechniques: cultivator.knownTechniques,
+                        roadsWithinReach,
+                        age: currentAge(),
+                        alive: true
+                    }).eligible
+                }
+            );
+            if (check.deviated) {
+                const resolution = resolveDeviation(
+                    { cultivationProgress: progress, hp, maxHp: cultivator.maxHp },
+                    forStream(ctx.seed, 'deviation_resolve', newAbsDay),
+                    { turn: resolvesOnTurn }
+                );
+                progress = Math.max(0, progress - resolution.progressLost);
+                hp = Math.max(0, hp - resolution.hpLost);
+                // The turning qi is what emptied the bar, and it is the only
+                // caller in a position to say so. See `hpDepletedBy`.
+                if (hp <= 0 && resolution.hpLost > 0) hpDepletedBy = 'qi_deviation';
+                injuries = [...injuries, ...resolution.injuries];
+                sustained.push(...resolution.injuries);
+                push('qi_deviation', resolution.summary, false, {
+                    severity: resolution.severity,
+                    risk: check.risk
+                });
+
+                // Feeling the qi turn and coming back from it teaches
+                // something about the meridians that no manual does. Only the
+                // worst grade qualifies, and only sometimes.
+                if (resolution.severity === 'crippling') {
+                    const rng = forStream(ctx.seed, 'understanding', newAbsDay, 'deviation');
+                    if (rng.chance(INSIGHT_FROM_CRIPPLING_DEVIATION)) {
+                        comprehend(
+                            'profound_principle',
+                            'Came back from a crippling qi deviation, having felt exactly ' +
+                            'how the circulation turns.',
+                            newAbsDay,
+                            'deviation',
+                            rng,
+                            { severity: resolution.severity }
+                        );
+                    }
+                }
+
+                // Crossing the open-channel threshold is not a death and no
+                // longer starts a clock towards one - see the ruling in
+                // `injuries.ts`. What it IS is the moment the body stops coping:
+                // it will not mend itself from here, the rate is a fraction of
+                // what it was, and a fight goes badly. That is worth handing
+                // control back for exactly once, because it is the point at
+                // which somebody would want to go and do something about it.
+                //
+                // Once, and not every chunk. A player who has been told and
+                // chose to press on has chosen; stopping them again every
+                // fortnight is the engine arguing with them.
+                if (untreatedInjuryCount(injuries) >= CRIPPLING_UNTREATED_INJURIES && !bleedAnnounced) {
+                    bleedAnnounced = true;
+                    interrupted = true;
+                    interruptReason = 'lethal_injury_threshold';
+                    const rateLoss = Math.round(
+                        aggregateInjuryPenalties(injuries).cultivationPenalty * 100
+                    );
+                    push(
+                        'bleeding_warning',
+                        // SAYS WHAT IT COSTS AND NAMES THE CURE.
+                        //
+                        // It used to say the wound was fatal and count down to
+                        // it. It is not fatal - a torn channel is a torn muscle
+                        // - and a warning that threatens a death the engine no
+                        // longer delivers teaches the player to ignore warnings.
+                        //
+                        // What it says instead is the true and genuinely
+                        // alarming thing: this is costing you most of your
+                        // progress, indefinitely, and it will not get better on
+                        // its own. The cure is named because it exists and is
+                        // cheap at this end of the ladder - a month under a
+                        // physician, worst wound first, for a handful of stones
+                        // - and a sentence that names the blocker without the
+                        // fix is the defect that made this the leading cause of
+                        // death in the first place.
+                        `${untreatedInjuryCount(injuries)} untreated meridian injuries. They will not close on ` +
+                        `their own and they are taking ${rateLoss}% of the cultivation rate, blunting every ` +
+                        'blow struck with them, and stopping the body mending at all. It is not fatal and it ' +
+                        'does not improve. What closes them is a physician - a month of care in any ' +
+                        'settlement, worst wound first - or a healing pill, which is faster and dearer. ' +
+                        'Both have to be gone to.',
+                        true,
+                        {
+                            untreated: untreatedInjuryCount(injuries),
+                            // How long they have been carried, not how long is
+                            // left. There is no longer anything to be left of.
+                            bleedingTurns,
+                            cultivationPenalty: rateLoss / 100
+                        }
+                    );
+                }
+            }
+        }
+
+        if (randomEvents && onGrid(newAbsDay, ENCOUNTER_CHECK_DAYS)) {
+            // Four samples drawn unconditionally, so the stream stays aligned
+            // whatever the cultivator's Fortune: whether something comes, how
+            // serious it is, whether it lands, and whether it can be left.
+            const rng = forStream(ctx.seed, 'encounter', newAbsDay);
+            // The door reduces it and being watched raises it. A sealed hall
+            // in the middle of a crowded compound is quiet, and an open sitting
+            // in a market square is not, and both fall out of this one line.
+            const came = rng.chance(ENCOUNTER_CHANCE * eventScale * botheredScale);
+            const major = rng.chance(MAJOR_ENCOUNTER_FRACTION);
+            const landed = rng.next();
+            const withdrawal = rng.next();
+            const fortune = fortuneOf(cultivator.attributes);
+
+            if (came && major) {
+                // Fortune decides whether the confrontation happens at all -
+                // the elder took the other road - and nothing whatever about
+                // who would win it if it does. Either way the player gets
+                // control back, because either way this is a decision point.
+                const canWithdraw =
+                    withdrawal < CLEAN_WITHDRAWAL_BASE + fortune * CLEAN_WITHDRAWAL_PER_FORTUNE;
+                interrupted = true;
+                interruptReason = 'major_encounter';
+                // AN INTERRUPT IS A QUESTION, NOT A BULLETIN
+                //
+                // Measured across about 350 in-world years: interrupted this
+                // way roughly thirty times, met somebody once. Nobody arrives
+                // because nothing here materialises anybody - the engine
+                // computes that a decision point exists and then the sentence
+                // announced an arrival, so the player waited for a person who
+                // was never going to come and read the whole channel as broken.
+                //
+                // And the withdrawable variant was self-defeating: "another
+                // cultivator is nearby and has not seen this place yet" is not
+                // a reason to stop sitting, which is exactly what it did.
+                //
+                // What is actually true is what these say now. The stretch has
+                // stopped, the reason it stopped is somebody's proximity, and
+                // the cultivator is standing up with a choice in front of them
+                // - go now and stay unseen, or stay and be found sitting. The
+                // engine does not resolve that choice and must not pretend to:
+                // the next thing the player types is the resolution.
+                // AND A THIRD CASE, WHICH IS NOT A DISCOVERY AT ALL.
+                //
+                // Both sentences below are about a place that was HIDDEN -
+                // "has not seen this place yet", "has found this place". That
+                // is the right account of a cave and a flat lie about a village
+                // square, where nothing was ever concealed and nobody found
+                // anything. The cultivator sat down in front of people and the
+                // people have now done what people do.
+                //
+                //   *"someone will tell you to go somewhere else"* -
+                //   *"that's like being homeless"* - *"you'll be bugged"*
+                //
+                // Note what is NOT said: not who came, not what they want, not
+                // what they will do about it. The engine states that somebody
+                // has come over about it, because that is the part a person
+                // sitting there perceives. Who they are and what they say is
+                // the next turn's, and the player is standing up with the same
+                // choice as the other two branches.
+                push(
+                    'encounter',
+                    botheredScale > 1
+                        ? 'Seclusion broken: you sat down in plain view and somebody has come '
+                          + 'over about it. Nothing was found and nothing was hidden - you have '
+                          + 'been sitting where anybody could see you since the first day, and '
+                          + 'this is the first of them to say something. Going means finding '
+                          + 'somewhere out of the way; staying means having this again. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`
+                        : canWithdraw && sitting
+                        ? 'Seclusion broken: somebody is close enough to matter and has not seen '
+                          + 'this place yet. There is a road out that does not cross them, and it '
+                          + 'is open for as long as you are not sitting down. Going costs the '
+                          + 'stretch; staying means being found here, by whoever that is. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`
+                        : canWithdraw
+                        ? 'The stretch stopped: somebody is close enough to matter and has not '
+                          + 'noticed you yet. There is a way past that does not cross them, and '
+                          + 'it is open for as long as you keep moving. Going costs what is left '
+                          + 'of the stretch; staying means being found here, by whoever that is. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`
+                        : sitting
+                        ? 'Seclusion broken: somebody has found this place and there is no road '
+                          + 'out that does not cross them. Whether you are sitting or standing '
+                          + 'when they arrive is the only part of it still yours. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`
+                        : 'The stretch stopped: somebody is close enough to matter and there is '
+                          + 'no way on that does not cross them. What you are doing when they '
+                          + 'arrive is the only part of it still yours. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`,
+                    true,
+                    { severity: 'major', canWithdraw }
+                );
+            } else if (came) {
+                // Presence, not severity. Fortune can mean the thing passed by;
+                // it cannot mean the thing arrived and hurt less.
+                const passedBy =
+                    landed < DISTURBANCE_PASSES_BASE + fortune * DISTURBANCE_PASSES_PER_FORTUNE;
+                if (passedBy) {
+                    push(
+                        'encounter',
+                        // NOT "the cave". The simulator does not know where the
+                        // cultivator sat and must not say: this same line ran
+                        // over a sitting in the middle of a village, and told
+                        // the player about a cave that did not exist. Same
+                        // class as the branch above, which described a hidden
+                        // place being found in a square where nothing was ever
+                        // hidden. What is true either way is that something
+                        // came near and did not stop.
+                        'Something passed close by and went on without stopping.',
+                        false,
+                        { severity: 'minor', passedBy: true, damage: 0 }
+                    );
+                } else {
+                    const damage = Math.min(hp, Math.max(1, Math.round(cultivator.maxHp * 0.1)));
+                    hp -= damage;
+                    push(
+                        'encounter',
+                        `A minor disturbance interrupted cultivation and cost ${damage} HP. Nothing followed it.`,
+                        false,
+                        { severity: 'minor', passedBy: false, damage }
+                    );
+                }
+            }
+        }
+
+        if (randomEvents && !interrupted && onGrid(newAbsDay, OPPORTUNITY_CHECK_DAYS)) {
+            // Three samples drawn unconditionally, keeping the stream aligned
+            // across cultivators of different Fortune: was there something,
+            // was it still there, and how much was it worth.
+            const rng = forStream(ctx.seed, 'opportunity', newAbsDay);
+            const drawn = rng.next();
+            const availability = rng.next();
+            const size = rng.int(10, 60);
+            const fortune = fortuneOf(cultivator.attributes);
+
+            const chance = (OPPORTUNITY_BASE_CHANCE + fortune * OPPORTUNITY_PER_FORTUNE) * eventScale;
+            if (drawn < chance) {
+                // The window is the second half of luck, and the half the genre
+                // actually turns on: the cache is there either way, and low
+                // Fortune means arriving after someone else did.
+                const missedChance =
+                    OPPORTUNITY_MISSED_BASE + fortune * OPPORTUNITY_MISSED_PER_FORTUNE;
+                if (availability < missedChance) {
+                    push(
+                        'opportunity_missed',
+                        'There had been a spirit-stone cache in the rock nearby. ' +
+                        'Someone reached it first, and not recently.',
+                        false,
+                        { missedBy: 'already_taken' }
+                    );
+                } else {
+                    const stones = size * (1 + ordinal);
+                    spiritStones += stones;
+                    push(
+                        'opportunity',
+                        sitting
+                            ? `Found while in seclusion: a spirit-stone cache worth ${stones} stones.`
+                            // Its own missed-twin four lines up is already
+                            // verb-neutral and reads correctly everywhere.
+                            : `A spirit-stone cache in the rock nearby, worth ${stones} stones, `
+                              + 'and nobody had reached it first.',
+                        false,
+                        { spiritStones: stones }
+                    );
+                }
+            }
+        }
+
+        // 5. A rare meditative state, if the circumstances are exceptional.
+        //
+        // Zero chance for a cultivator in ordinary qi practising nothing in
+        // particular, which is most of them. This grid can never award
+        // anything for time served: every term in the chance is a fact about
+        // where they are, what they are practising, or how well they read.
+        // Recognition. Not a roll: a fact arriving.
+        //
+        // The first time something a cultivator was ALWAYS going to be
+        // extraordinary at comes within reach, it is simply obvious to them.
+        // Nothing warned them, because nothing knew - the affinity was rolled
+        // at creation and has never been readable by anything. Access was the
+        // only missing piece, and most cultivators die never having stood in a
+        // room where their own Dao was being practised.
+        if (!interrupted && onGrid(newAbsDay, INSIGHT_CHECK_DAYS)) {
+            const reachable = discoverableInsights({ ...cultivator, id: identity, insights }, {
+                ...(ctx.understanding ?? {}),
+                survived: null,
+                runSeed: ctx.seed,
+                affinityOf: target => affinityFor(ctx.seed, identity, target)
+            });
+            for (const candidate of reachable) {
+                const held = insights.some(
+                    i => i.domain === candidate.domain && i.subject === candidate.subject
+                );
+                if (held) continue;
+                if (!isRecognition(affinityFor(ctx.seed, identity, candidate))) continue;
+
+                const rng = forStream(
+                    ctx.seed, 'understanding', newAbsDay, `recognition:${candidate.subject}`
+                );
+                const achievement = recordAchievement(
+                    {
+                        kind: 'recognition',
+                        onDay: newAbsDay,
+                        turn: resolvesOnTurn,
+                        summary:
+                            `Saw ${candidate.subject} at close range for the first time, and it was ` +
+                            'obvious. Comprehension arrived at a speed nothing in their experience ' +
+                            'prepared them for. To anyone watching, they simply went quiet.',
+                        detail: { subject: candidate.subject, access: candidate.access.kind }
+                    },
+                    rng
+                );
+                achievements.push(achievement);
+                push('achievement', achievement.summary, false, {
+                    kind: 'recognition',
+                    achievementId: achievement.id
+                });
+
+                const insight = formInsight(
+                    candidate,
+                    AFFINITY_INITIAL_DEGREE.extraordinary,
+                    achievement
+                );
+                insights = [...insights, insight];
+                insightsGained.push(insight);
+                push(
+                    'insight_gained',
+                    `Understanding: ${insight.subject} comprehended - ${candidate.opening}.`,
+                    false,
+                    {
+                        insightId: insight.id,
+                        domain: insight.domain,
+                        subject: insight.subject,
+                        degree: insight.degree,
+                        deepened: false,
+                        recognition: true,
+                        accessKind: candidate.access.kind,
+                        accessLabel: candidate.access.label
+                    }
+                );
+            }
+        }
+
+        if (!interrupted && onGrid(newAbsDay, INSIGHT_CHECK_DAYS)) {
+            const rng = forStream(ctx.seed, 'understanding', newAbsDay, 'meditation');
+            const rootElements = getSpiritRoot(cultivator.spiritRoot).elements;
+            const practised = ctx.understanding?.techniqueElement ?? ctx.techniqueElement ?? null;
+            const { chance } = meditativeStateChance({
+                ambient,
+                matchedTechnique: practised !== null && rootElements.includes(practised),
+                atSiteOfUnderstanding: (ctx.understanding?.locationTags ?? []).length > 0,
+                insight: cultivator.attributes.insight
+            });
+            if (chance > 0 && rng.chance(chance)) {
+                comprehend(
+                    'meditative_state',
+                    'Entered a rare meditative state and did not come out of it the same.',
+                    newAbsDay,
+                    null,
+                    rng
+                );
+            }
+        }
+
+        // 6. A temporal phenomenon. Information, never capability.
+        //
+        // These do not touch a single number on the cultivator. What comes out
+        // is a belief with no fact behind it, handed to the knowledge layer,
+        // where it can be acted on, doubted, traded, and turn out to have been
+        // wrong all along.
+        if (!interrupted && onGrid(newAbsDay, VISION_CHECK_DAYS)) {
+            const rng = forStream(ctx.seed, 'understanding', newAbsDay, 'vision');
+            const atSite = (ctx.understanding?.locationTags ?? []).length > 0;
+            if (rng.chance(visionChance(atSite))) {
+                const kind = rng.pick(VISION_KINDS);
+                // `cultivator.id` and NOT `identity`, deliberately. This is the
+                // one use of the row id in this file that is correct: a vision
+                // is OWNED by a row, and `holderId` plus the `claimKey` derived
+                // from it are what the knowledge layer stores it against.
+                // Substituting the roll identity would file every player run's
+                // visions under one shared owner.
+                //
+                // Nothing here is drawn from it - the vision's occurrence, kind
+                // and confidence all come off the day-keyed stream above, so
+                // this was already reproducible and stays so.
+                visions.push(
+                    formVision(cultivator.id, kind, newAbsDay, rng.float(0.2, 0.6))
+                );
+                push(
+                    'vision',
+                    'Something arrived that does not sit cleanly in time. It offers a ' +
+                    'direction and no proof, and it may be true of nothing at all.',
+                    false,
+                    { kind }
+                );
+            }
+        }
+
+        // 7. Did any of that kill us?
+        if (checkDeath()) break;
+    }
+
+    // A minor encounter or deviation can take HP to zero without any later
+    // check running, so make one final pass. `checkDeath` is idempotent.
+    if (!died) checkDeath();
+
+    const finalAge = currentAge();
+
+    return {
+        requestedDays,
+        simulatedDays: elapsed,
+        interrupted,
+        interruptReason,
+        events,
+        deltas: {
+            cultivationProgress: progress - cultivator.cultivationProgress,
+            realmOrdinal: ordinal - cultivator.realmOrdinal,
+            hp: hp - cultivator.hp,
+            qi: qi - cultivator.qi,
+            satiety: satiety - cultivator.satiety,
+            spiritStones: spiritStones - cultivator.spiritStones,
+            age: roundYears(finalAge - startAge),
+            // Derived, never tracked separately, so the count and the records
+            // cannot drift apart.
+            injuriesGained: sustained.length
+        },
+        died,
+        deathCause,
+        injuriesSustained: sustained,
+        tolls,
+        endState: {
+            soulState, identityContinuity,
+            starvationTurns,
+            bleedingTurns,
+            yearsAtCurrentRealm: currentYearsAtRealm(),
+            // What the pack still holds. Reported, never acted on here - see
+            // the field's own note in the schema for the one caller that needs
+            // it and why a resumed sitting would otherwise buy its food twice.
+            rationsRemaining: rations
+        },
+        foundationEstablished:
+            foundation === (cultivator.foundationQuality ?? 'none') ? null : foundation,
+        immortalStatusGained:
+            immortalStatus === (cultivator.immortalStatus ?? 'none') ? null : immortalStatus,
+        achievements,
+        insightsGained,
+        visions
+    };
+}
+
+// CHUNKING
+// The whole optimisation, and the whole determinism argument, lives here.
+
+interface ChunkInputs {
+    elapsed: number;
+    absDay: number;
+    requestedDays: number;
+    breakthroughDays: number;
+    lifespanDays: number;
+    stagnationDays: number;
+    starvationDays: number;
+    emptyBellyDays: number;
+    // `bleedOutDays` used to be a candidate here, so the loop always stopped on
+    // the ninetieth day of open channels to kill somebody. Nothing happens on
+    // that day any more and a boundary that resolves nothing is only a slower
+    // skip. Removing it cannot perturb a roll: every check fires on an absolute
+    // day grid rather than on a chunk edge, which is the whole determinism
+    // argument of this block.
+    randomEvents: boolean;
+}
+
+/**
+ * Days to advance before anything can possibly change.
+ */
+function nextChunk(input: ChunkInputs): number {
+    const candidates: number[] = [
+        input.requestedDays - input.elapsed,
+        daysToNextGridPoint(input.absDay, AMBIENT_REFRESH_DAYS),
+        daysToNextGridPoint(input.absDay, DEVIATION_CHECK_DAYS)
+    ];
+
+    if (input.randomEvents) {
+        candidates.push(daysToNextGridPoint(input.absDay, ENCOUNTER_CHECK_DAYS));
+        candidates.push(daysToNextGridPoint(input.absDay, OPPORTUNITY_CHECK_DAYS));
+    }
+
+    // Positive-only: a candidate of 0 would stall, and eligibility at 0 is
+    // handled before the chunk is ever computed.
+    for (const candidate of [
+        input.breakthroughDays,
+        input.lifespanDays,
+        input.stagnationDays,
+        input.starvationDays,
+        input.emptyBellyDays
+    ]) {
+        if (Number.isFinite(candidate) && candidate > 0) candidates.push(candidate);
+    }
+
+    const chunk = Math.min(...candidates);
+    return Math.max(1, Math.min(chunk, input.requestedDays - input.elapsed));
+}
+
+/**
+ * Days from `day` to the NEXT multiple of `interval`. Always in [1, interval] -
+ * standing exactly on a grid point returns a full interval rather than 0, so a
+ * check that has just fired cannot fire again on the same day.
+ */
+function daysToNextGridPoint(day: number, interval: number): number {
+    return interval - (((day % interval) + interval) % interval);
+}
+
+function onGrid(day: number, interval: number): boolean {
+    return day > 0 && day % interval === 0;
+}
+
+// FOOD
+
+interface FoodState {
+    satiety: number;
+    starvationTurns: number;
+    rations: number;
+}
+
+/**
+ * Burn `days` days of food, eating a ration whenever the belly empties.
+ *
+ * The loop is bounded, not O(days): a chunk is at most AMBIENT_REFRESH_DAYS
+ * (30) days and one ration covers 50, so it runs at most twice.
+ */
+function consumeFood(
+    days: number,
+    state: FoodState,
+    realmOrdinal = 0,
+    injuries?: readonly Injury[]
+): FoodState & { rationsUsed: number } {
+    let { satiety, starvationTurns, rations } = state;
+    let remaining = days;
+    let rationsUsed = 0;
+
+    // Above the point where hunger stops, a seclusion of any length costs
+    // nothing to eat through and no rations are opened.
+    const perDay = SATIETY_COST_PER_ACTION * satietyBurnMultiplier(realmOrdinal, injuries);
+    if (perDay <= 0) return { satiety, starvationTurns: 0, rations, rationsUsed: 0 };
+
+    while (remaining > 0) {
+        const fedActions = Math.floor(satiety / perDay);
+        const step = Math.min(remaining, fedActions);
+        if (step > 0) {
+            const burned = burnSatiety({ satiety, starvationTurns }, step, realmOrdinal, injuries);
+            satiety = burned.satiety;
+            starvationTurns = burned.starvationTurns;
+            remaining -= step;
+        }
+        if (remaining === 0) break;
+
+        if (rations > 0) {
+            rations--;
+            rationsUsed++;
+            const fed = eat({ satiety, starvationTurns }, SATIETY_MAX);
+            satiety = fed.satiety;
+            starvationTurns = fed.starvationTurns;
+            continue;
+        }
+
+        // No food left: the rest of the stretch is spent starving.
+        const starved = burnSatiety({ satiety, starvationTurns }, remaining, realmOrdinal);
+        satiety = starved.satiety;
+        starvationTurns = starved.starvationTurns;
+        remaining = 0;
+    }
+
+    // Finish on a meal if there is one to eat.
+    //
+    // The loop only opens a ration when there are days left to cover, so a
+    // stretch that ends exactly as the belly empties - fifty days of work on a
+    // full stomach, which is the commonest thing a new player does - used to
+    // end at zero with food still in the pack. The next action then started
+    // already starving. Nobody finishes a season of hauling, sits down next to
+    // their own rations, and does not eat.
+    if (satiety <= 0 && rations > 0) {
+        rations--;
+        rationsUsed++;
+        const fed = eat({ satiety, starvationTurns }, SATIETY_MAX);
+        satiety = fed.satiety;
+        starvationTurns = fed.starvationTurns;
+    }
+
+    return { satiety, starvationTurns, rations, rationsUsed };
+}
+
+// HELPERS
+
+/**
+ * Ages are derived from integer day counters and then rounded, so that a skip
+ * taken in one chunk and the same skip taken in three hundred produce bit-equal
+ * numbers rather than numbers that differ in the fifteenth decimal place.
+ */
+function roundYears(years: number): number {
+    return Math.round(years * 1e6) / 1e6;
+}
+
+/**
+ * Whole days from `current` years to `limit` years.
+ */
+function daysUntilYear(limit: number, current: number): number {
+    return Math.ceil((limit - current) * DAYS_PER_YEAR - 1e-6);
+}
+
+function deathSummary(cause: DeathCause, name: string, ordinal: number, age: number): string {
+    return `${name} died at ${rankName(ordinal)}, age ${Math.floor(age)}: ${cause.replace(/_/g, ' ')}.`;
+}

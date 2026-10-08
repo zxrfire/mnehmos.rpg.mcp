@@ -7,6 +7,8 @@ import type { ViewerStanding } from '../engine/world/architecture.js';
 import type { AccessQuery, LocationRecord } from '../engine/world/locations.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
+import type { ObjectRecord } from '../engine/world/possessions.js';
+import { theDoorKeysTheyActuallyCarry } from './the-door-keys-they-actually-carry.js';
 
 /** Enough of a membership row to answer whose house this is and how far up. */
 export interface StandingInAHouse {
@@ -22,6 +24,7 @@ export function howThisCultivatorStandsInTheHouseHolding(input: {
     cultivator: Cultivator;
     standing: StandingInAHouse | null;
     keyIds?: readonly string[];
+    objects?: readonly ObjectRecord[];
     onDay?: number;
 }): { viewer: ViewerStanding; access: AccessQuery } {
     // `controllingFactionId` and not the compound's `data.factionId`: the
@@ -43,7 +46,7 @@ export function howThisCultivatorStandsInTheHouseHolding(input: {
         },
         access: {
             realmOrdinal: input.cultivator.realmOrdinal,
-            keyIds: input.keyIds ?? [],
+            keyIds: input.keyIds ?? theDoorKeysTheyActuallyCarry(input.objects ?? [], input.cultivator.id),
             onDay: input.onDay
         }
     };

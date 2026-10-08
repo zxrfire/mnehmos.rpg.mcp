@@ -114,6 +114,7 @@ export const THE_WHITE_STAIR: Region = {
     name: REGION_NAME.WHITE_STAIR,
     role: 'adjacent',
     bearing: 'north',
+    metric: { xLi: 0, yLi: 240, extentLi: 30 },
     traditionId: 'tradition-drawn',
     summary:
         'Above the snowline, past a pass that is shut five months a year: the richest air anybody has ever stood in, in a band forty paces wide, moving uphill. Three institutions, no register, no market and no arbitration, on ground that is measurably worth less every year and knows the figure - and one of the three is not on the ice at all.',
@@ -192,7 +193,7 @@ export const THE_WHITE_STAIR: Region = {
     ],
     places: [
         {
-            name: PLACE.COLD_PEAK,
+            name: PLACE.COLD_PEAK, metric: { xLi: -8, yLi: 258 },
             // The note says whose town it is. The White Stair has no prefecture
             // register - no court, no grant book, three institutions and
             // nothing else - so the place is where the fact can live.
@@ -215,10 +216,10 @@ export const THE_WHITE_STAIR: Region = {
                 }
             ]
         },
-        { name: PLACE.THE_LIVING_ICE, kind: 'site', ambient: 'spirit_tide', grounds: ['glacier', 'spirit_vein'], note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Living Ice and nobody says how much longer it will be living.' },
-        { name: PLACE.STONE_SHADOW, kind: 'site', ambient: 'thin', grounds: ['sky_island', 'high_peak'], note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
+        { name: PLACE.THE_LIVING_ICE, metric: { xLi: -12, yLi: 260 }, kind: 'site', ambient: 'spirit_tide', grounds: ['glacier', 'spirit_vein'], note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Living Ice and nobody says how much longer it will be living.' },
+        { name: PLACE.STONE_SHADOW, metric: { xLi: 4, yLi: 259 }, kind: 'site', ambient: 'thin', grounds: ['sky_island', 'high_peak'], note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
         {
-            name: PLACE.DEEP_SNOW,
+            name: PLACE.DEEP_SNOW, metric: { xLi: -16, yLi: 242 },
             kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.',
             connections: [
                 {
@@ -238,7 +239,7 @@ export const THE_WHITE_STAIR: Region = {
             ]
         },
         {
-            name: PLACE.FOUR_GRAVES,
+            name: PLACE.FOUR_GRAVES, metric: { xLi: 6, yLi: 248 },
             kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, carrying the four names the record gives for the men who kept it the winter it was cut. Three of them are in the wall and there were five.',
             // THE PROVINCE IS A STAIRCASE AND NOTHING SAID SO.
             //
@@ -260,7 +261,7 @@ export const THE_WHITE_STAIR: Region = {
             ]
         },
         {
-            name: PLACE.ORCHID_TERRACE,
+            name: PLACE.ORCHID_TERRACE, metric: { xLi: 14, yLi: 235 },
             heldByFactionId: 'sect-orchid-court',
             kind: 'sect_town',
             ambient: 'normal',
@@ -285,7 +286,7 @@ export const THE_WHITE_STAIR: Region = {
             ]
         },
         {
-            name: PLACE.ORCHID_VALLEY,
+            name: PLACE.ORCHID_VALLEY, metric: { xLi: 18, yLi: 229 },
             kind: 'site',
             // Dense, and it is the province's own argument rather than an
             // exception to it: the qi here came out of the ice and did not go

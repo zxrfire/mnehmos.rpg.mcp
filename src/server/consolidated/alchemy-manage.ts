@@ -3,6 +3,8 @@
  */
 
 import { z } from 'zod';
+import { preparePillDose,preparePillToxicity,qiRestoredByDose,TOXICITY_TOLERANCE } from '../../engine/cultivation/a-pill-dose-on-an-actual-body.js';
+export { TOXICITY_TOLERANCE } from '../../engine/cultivation/a-pill-dose-on-an-actual-body.js';
 import { theseDaysPassedInTheWorldToo, worldForRun } from '../state/cultivation-world.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
@@ -21,7 +23,6 @@ import {
     forStream,
     rankName,
     ordinaryWoundFor,
-    rollInjurySeverity,
     treatWorstInjury
 } from '../../engine/cultivation/index.js';
 import { INJURY_SEVERITY_ORDER, howBadItIsSaid } from '../../engine/cultivation/injuries.js';
@@ -56,7 +57,7 @@ import { RECIPES, getRecipe } from '../../data/cultivation/recipes.js';
 import { getHerb } from '../../data/cultivation/herbs.js';
 import { whatThisCauldronAddsFor } from '../../engine/cultivation/what-you-refine-in.js';
 import { theBestVesselToHand } from '../../engine/world/the-vessel-somebody-works-at.js';
-import type { TechniqueGrade } from '../../schema/cultivation.js';
+import type { TechniqueGrade, Cultivator, Run } from '../../schema/cultivation.js';
 import {
     howYouWouldComeByIt,
     whatAnIngredientIs
@@ -70,7 +71,7 @@ import { disciplineWorksIn, getRegion } from '../../data/cultivation/regions.js'
 import { whatThisGroundAddsToAPrice } from './what-this-ground-adds-to-a-price.js';
 import { gradeRank } from '../../data/cultivation/techniques.js';
 import { REALM_TIERS } from '../../engine/cultivation/realms.js';
-import { pillBandOrdinal, whatACrossingTakesFrom } from '../../engine/cultivation/breakthrough.js';
+import { whatACrossingTakesFrom } from '../../engine/cultivation/breakthrough.js';
 import {
     formInsight,
     recordAchievement,
@@ -82,10 +83,7 @@ import {
 } from '../../engine/cultivation/half-mad-stretch.js';
 // The one place a grade's spread lives. Nothing here branches on a grade name.
 import {
-    drawGradeOutcome,
     isSettledOnUse,
-    rungsUnderThePitch,
-    whatItDoesToTheSheet,
     whatTheBlastTakesFrom,
     whatTheRecordsSay
 } from '../../engine/cultivation/grade-spread.js';
@@ -140,7 +138,7 @@ export const MAX_REFINE_CHANCE = 0.97;
 /**
  * Accumulated toxicity the body absorbs before a meridian gives out.
  */
-export const TOXICITY_TOLERANCE = 3;
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -298,7 +296,23 @@ function refineChance(
     return { chance: clamped, modifiers };
 }
 
-export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<object> {
+/** Readiness is the same read for MCP refinement and a played approach to a cauldron. */
+export interface RefinePreparation {
+    prepared: true;
+    repos: ReturnType<typeof ensureCultivationDb>;
+    run: Run;
+    cultivator: Cultivator;
+    recipe: NonNullable<ReturnType<typeof getRecipe>>;
+    supplements: NonNullable<z.infer<typeof RefineSchema>['supplements']>;
+    supplementBonus: number;
+    supplementDetail: Array<Record<string, unknown>>;
+}
+
+export function isRefinePreparation(value: object): value is RefinePreparation {
+    return 'prepared' in value && value.prepared === true;
+}
+
+export function prepareRefine(args: z.infer<typeof RefineSchema>): RefinePreparation | ReturnType<typeof guidingError> {
     const repos = ensureCultivationDb();
     const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
     if (isGuidingErrorBody(resolved)) return resolved;
@@ -434,6 +448,15 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
     }
     supplementBonus = Math.min(REFINE_SUPPLEMENT_CAP, supplementBonus);
 
+    return { prepared: true as const, repos, run, cultivator, recipe,
+        supplements, supplementBonus, supplementDetail };
+}
+
+export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<object> {
+    const preparation = prepareRefine(args);
+    if (!isRefinePreparation(preparation)) return preparation;
+    const { repos, run, cultivator, recipe, supplements, supplementBonus, supplementDetail } = preparation;
+
     // THE CAULDRON THEY ARE CARRYING, bought or lent, read off the world the way
     // a pill's effect reads it. No world is the clay pot everybody has.
     const worldHere = await worldForRun(run).catch(() => null);
@@ -563,26 +586,9 @@ export async function handleConsumePill(
 
     // WHAT THIS ONE TURNS OUT TO DO
     const outcomeRng = forStream(run.seed, 'pill_outcome', run.turn, pill.id);
-    // HOW FAR UNDER THE THING THIS BODY IS
-    const pitch = pillBandOrdinal(pill.grade);
-    const under = rungsUnderThePitch(cultivator.realmOrdinal, pitch);
-    const outcome = drawGradeOutcome(pill.grade, outcomeRng, under);
-    const change = whatItDoesToTheSheet(
-        outcome,
-        {
-            spiritRoot: cultivator.spiritRoot,
-            insights: cultivator.insights,
-            realmOrdinal: cultivator.realmOrdinal
-        },
-        { sourceOrdinal: pitch },
-        outcomeRng
-    );
-
-    // The dose that actually arrived, which is not always the dose printed on
-    // it. Everything downstream reads THIS pill, so the effect resolver keeps
-    // its one rule - the catalog row decides what happens - and never learns
-    // that a spread exists.
-    const dosed: Pill = { ...pill, potency: pill.potency * outcome.potencyMultiplier };
+    const {pitch,under,outcome,change,dosed}=preparePillDose(pill,{
+        spiritRoot:cultivator.spiritRoot,insights:cultivator.insights,realmOrdinal:cultivator.realmOrdinal
+    },outcomeRng);
     // WHICH ONE A MEDICINE THAT NAMES NOTHING CLOSES. Its own stream, so it
     // does not move when the outcome draw or the toxicity draw does - a turn
     // replays the same way and one draw is not readable off another.
@@ -616,23 +622,9 @@ export async function handleConsumePill(
 
     // ── Toxicity: the medicine keeps its own ledger. ──
     const toxicityBefore = readNumberFlag(repos.db, cultivator.id, FLAG_PILL_TOXICITY, 0);
-    const toxicityAfterRaw = toxicityBefore + pill.toxicity * outcome.toxicityMultiplier;
-    const poisoned = toxicityAfterRaw >= TOXICITY_TOLERANCE;
-    const toxicityAfter = poisoned ? toxicityAfterRaw - TOXICITY_TOLERANCE : toxicityAfterRaw;
     const toxicityRng = forStream(run.seed, 'pill_toxicity', run.turn, pill.id);
-    const poisonSeverity = rollInjurySeverity(toxicityRng);
-    const poisonInjury = poisoned
-        ? createInjury(
-            {
-                severity: poisonSeverity,
-                source: 'poison',
-                turn: nextTurn,
-                woundType: ordinaryWoundFor('poison', poisonSeverity),
-                description: `Accumulated pill toxicity finally told. ${pill.name} was one too many.`
-            },
-            toxicityRng
-        )
-        : null;
+    const {poisoned,toxicityAfter,poisonInjury}=preparePillToxicity(
+        pill,outcome.toxicityMultiplier,toxicityBefore,nextTurn,toxicityRng);
 
     let death: { cause: string; description: string } | null = null;
     let stretch: HalfMadStretch | null = null;
@@ -950,7 +942,7 @@ function resolvePillEffect(
             };
         }
         case 'restore_qi': {
-            const restored = Math.min(pill.potency, cultivator.maxQi - cultivator.qi);
+            const restored = qiRestoredByDose(cultivator.qi,cultivator.maxQi,pill.potency);
             return {
                 ...base,
                 deltas: { qi: pill.potency },

@@ -24,6 +24,9 @@
  * should mention. like, you've heard the abc sect is recruiting."*
  * The catalog now includes landless advertisers. A known name keeps its
  * recruiting paper even when there is no seat to walk to.
+ * Refusals retain the current clock, including the 08:00 opening fraction;
+ * successful journeys must spend additional time rather than merely be after
+ * absolute day zero.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -48,6 +51,7 @@ describe('a house you were told about stays known when you ask the way', () => {
         // and a look names houses from every source. It also stopped naming any
         // once the opening began reading the wall, because a wall already read
         // goes quiet; asking for it prints the whole wall either way.
+        const before = game.state().run.elapsedDays;
         const posted = await game.act('what is posted here');
         const house = SECTS.find(row => posted.narration.includes(`${row.name} is holding an intake`))?.name;
         // A guard that skips the path it exists for is the defect it guards.
@@ -73,10 +77,10 @@ describe('a house you were told about stays known when you ask the way', () => {
         const destination = game.atHand && theHouseThisNameReaches(game.atHand, house!);
         if (destination) {
             expect(said).not.toMatch(/You do not have the road/);
-            expect(went.state.run.elapsedDays).toBeGreaterThan(0);
+            expect(went.state.run.elapsedDays).toBeGreaterThan(before);
         } else {
             expect(said).toMatch(/You have the name/);
-            expect(went.state.run.elapsedDays).toBe(0);
+            expect(went.state.run.elapsedDays).toBe(before);
         }
     }, 300_000);
 
@@ -90,12 +94,13 @@ describe('a house you were told about stays known when you ask the way', () => {
             seed: 'heard-of-nobody', worldSeed: 'heard-of-nobody', worldEnabled: true
         });
         await game.newRun('Wen Shu');
+        const before = game.state().run.elapsedDays;
 
         const went = await game.act('I go to the Ninefold Abyssal Vigil');
         const said = `${went.narration} ${(went.state.log ?? [])
             .filter((row: { role: string }) => row.role === 'engine')
             .map((row: { text: string }) => row.text).join(' ')}`;
         expect(said).toMatch(/no road goes there|matches no world location/i);
-        expect(went.state.run.elapsedDays).toBe(0);
+        expect(went.state.run.elapsedDays).toBe(before);
     }, 300_000);
 });

@@ -18,6 +18,7 @@ import { LANE_NAMES, THE_LANES, isALane, theVerbForThisLane } from '../../src/we
 import { carryWhatOnlyTheSentenceKnows, validatePlan } from '../../src/web/planned-action';
 import { ACTION_NAMES } from '../../src/web/action-set';
 import { parseIntent } from '../../src/web/actions';
+import { INTENT_SYSTEM_PROMPT } from '../../src/web/prompt';
 
 describe('a lane is a choice a model can make', () => {
     it('offers far fewer choices than the action set', () => {
@@ -154,4 +155,35 @@ describe('a lane is a choice a model can make', () => {
         expect(said.ok).toBe(true);
         if (said.ok) expect(said.action.action).toBe('cultivate');
     });
+});
+
+/** Observed 2026-10-03: six native vault controls proved the destroy handler,
+ * but the live classifier's generated THE_LANES glossary offered no breaking
+ * intent. A scripted bare destroy plan did not prove that model surface.
+ * make/break now reaches the existing closed action with its actual target;
+ * this lexical choice grants no force, access or breach. The older production
+ * intents and person, seal, breakthrough and site routes retain their verbs.
+ * Removing only the new break mapping must make the expansion control red;
+ * played lane controls in the vault file pin the native physical outcome.
+ */
+it('offers deliberate thing breaking in the actual classifier prompt and preserves its target', () => {
+    const target = 'door of Actual vault';
+    const result = validatePlan({ lane: 'make', intent: 'break', target });
+    expect(result.ok && result.action).toMatchObject({ action: 'destroy', target });
+    expect(ACTION_NAMES).toContain('destroy');
+    expect(INTENT_SYSTEM_PROMPT).toContain(THE_LANES.make.says);
+    const makeEntry = INTENT_SYSTEM_PROMPT.split('  make - ')[1]?.split('  sustain - ')[0];
+    expect(makeEntry).toMatch(/intents: craft, gather, hunt, refine, break/);
+    expect(makeEntry).toMatch(/doors and locks/);
+});
+it('retains production and non-thing breaking authorities', () => {
+    for (const intent of ['craft', 'gather', 'hunt', 'refine'] as const) {
+        const result = validatePlan({ lane: 'make', intent, target: 'actual material' });
+        expect(result.ok && result.action.action).toBe(intent);
+    }
+    expect(theVerbForThisLane('cultivate', 'cross')).toBe('breakthrough');
+    expect(theVerbForThisLane('house', 'seal')).toBe('seal');
+    expect(theVerbForThisLane('fight', 'strike')).toBe('attack');
+    expect(theVerbForThisLane('fight', 'make_them_comply')).toBe('coerce');
+    expect(theVerbForThisLane('site', 'enter')).toBe('site');
 });

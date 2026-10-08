@@ -7,6 +7,7 @@ import { factsForToolResult, factsForRefusal } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import { worldLocationFor } from './entities.js';
 import { getNpc } from '../engine/world/world-state.js';
+import { routineOf } from '../engine/world/npc-routines.js';
 import { hasBody } from '../engine/cultivation/existence.js';
 import {
     sendAProxy, whereYouCanActFrom, endAProxy, proxyCombatant, recoverABody, whatIsLeftUnguarded, prepareASoulAnchor
@@ -88,7 +89,8 @@ export async function actThroughAPresence(game: GameService, action: PlannedActi
     }
     if (action.action === 'possess' || action.action === 'reconstruct') {
         const actor = action.action === 'reconstruct' && action.target
-            ? world.npcs.find(n => n.name.toLowerCase() === action.target!.toLowerCase() && n.locationId === maker.locationId)
+            ? world.npcs.find(n => n.name.toLowerCase() === action.target!.toLowerCase()
+                && (n.status === 'physically_dead' ? n.locationId : routineOf(world, n).locationId) === maker.locationId)
             : maker;
         if (!actor) return refuse('No such remnant is here.');
         let vessel;
@@ -218,8 +220,10 @@ export function settleTheSeparatedBody(game: GameService, beforeDay: number): st
     }
     if (world.currentDay <= beforeDay) return lines;
     const bodyPlace = game.worldPlaceOf(body);
+    const physicalPlaces = new Map(world.npcs.map(n => [n.id,
+        n.status === 'physically_dead' ? n.locationId : routineOf(world, n).locationId]));
     for (const npc of world.npcs.slice()) {
-        if (npc.id === body.id || !isActing(npc.status) || !hasBody(npc.status) || npc.locationId === bodyPlace
+        if (npc.id === body.id || !isActing(npc.status) || !hasBody(npc.status) || physicalPlaces.get(npc.id) === bodyPlace
             || !npc.goals.some(g => ['revenge', 'reunion'].includes(g.kind) && g.status === 'active' && g.targetId === body.id)
             || !bodyPlace || whereYouCanActFrom(world, npc.id)) continue;
         const sent = sendAProxy(world, npc, 'strongest', bodyPlace).proxy;
@@ -228,7 +232,7 @@ export function settleTheSeparatedBody(game: GameService, beforeDay: number): st
             game.theWorldMoved();
         }
     }
-    const taking = world.npcs.find(n => n.id !== body.id && n.locationId === bodyPlace
+    const taking = world.npcs.find(n => n.id !== body.id && physicalPlaces.get(n.id) === bodyPlace
         && ['remnant', 'soul_preserved'].includes(n.status)
         && forStream(world.seed, 'seek-a-body', n.id, world.currentDay).chance(0.15));
     if (taking && mirror && bodyPlace && (theAreasOf(world, world.locations.find(p => p.id === bodyPlace)!).whereIs.get(taking.id)
@@ -248,7 +252,7 @@ export function settleTheSeparatedBody(game: GameService, beforeDay: number): st
     const positions = theAreasOf(world, place).whereIs;
     const exposed = whatIsLeftUnguarded(world, body.id, beforeDay);
     const attackers = world.npcs.filter(n => n.id !== body.id && isActing(n.status) && hasBody(n.status)
-        && exposed && n.locationId === bodyPlace && positions.get(n.id) === bodyArea
+        && exposed && physicalPlaces.get(n.id) === bodyPlace && positions.get(n.id) === bodyArea
         && n.relationships.some(t => t.targetId === body.id && t.kind === 'enemy'));
     const remote = world.objects.find(o => o.tags.includes('acting-proxy') && o.ownerId !== body.id
         && o.data.endedOnDay === undefined && Number(o.data.lapsesOnDay) > world.currentDay

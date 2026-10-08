@@ -1,3 +1,4 @@
+import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
 /**
  * Walking from one room of a compound to another.
  *
@@ -13,7 +14,8 @@
  *
  *   which rooms there are     the compound this player is standing in, and no
  *                             other house's rooms
- *   whether they know where   `roomStageFor` at `placed`, the floor
+ *   whether they know where   an explicit ordinary facility request, otherwise
+ *                             `roomStageFor` at `placed`, the floor
  *                             `roomsVisibleTo` names for the rooms a viewer
  *                             could set out for. Below it the answer is the
  *                             same as for a room that does not exist, so the
@@ -54,6 +56,8 @@ import type { GameService } from './turn-engine.js';
 import { passHours } from './routine-invitations.js';
 import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 import { theGateBetweenThemAndIt } from './walking-across-a-place.js';
+import { aRoomOfTheirOwn } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { theQuartersThisCultivatorHas } from './leaving-a-thing-in-your-own-room.js';
 import {
     A_MASTERS_DWELLING,
     theLessonYourMasterCalledYouTo,
@@ -66,7 +70,18 @@ const BACK_TO_THE_GATE =
 
 /** A name that is about a room, whether or not this house has that room. */
 const A_ROOM_WORD =
-    /\b(?:hall|halls|yard|pavilion|archive|quarters|dormitory|refectory|infirmary|workshop|cell|cells|chamber|room|treasury|residence|precinct|court|gatehouse|forecourt|cut|cuts|floor)\b/;
+    /\b(?:hall|halls|yard|pavilion|archive|quarters|dormitory|refectory|infirmary|workshop|cell|cells|chamber|room|rooms|treasury|residence|precinct|court|gatehouse|forecourt|cut|cuts|floor)\b/;
+
+/** Ordinary facilities a returning player can seek without repeating discovery.
+ * This affects explicit requests only; roomsVisibleTo still owns unsolicited views.
+ * Hidden stores, private residences and exceptional chambers are not facilities.
+ */
+const ORDINARY_FACILITIES = new Set([
+    'gatehouse', 'forecourt', 'practice_yard', 'refectory', 'dormitory',
+    'scripture_pavilion', 'alchemy_hall', 'furnace_room', 'infirmary', 'workshop',
+    'mission_hall', 'lecture_hall', 'duelling_ground', 'artifact_refining_hall',
+    'audience_hall', 'meditation_cell'
+]);
 
 /** The words a compound's own ground is called by, after its name. */
 const A_GROUND_WORD = /\s+(?:grounds?|compound|seat|estate|ground)$/;
@@ -87,7 +102,7 @@ function namesTheHouseItself(seat: LocationRecord, wanted: string): boolean {
 }
 
 /** What a player typed, as a room would be named. */
-function asARoomIsNamed(said: string): string {
+export function asARoomIsNamed(said: string): string {
     return said.trim().toLowerCase()
         .replace(/[.!?]+$/, '')
         .replace(/^(?:back\s+)?(?:out\s+|in\s+|inside\s+|into\s+)?(?:to\s+)?/, '')
@@ -101,12 +116,24 @@ export function aRoomsOwnName(room: LocationRecord): string {
     return (at < 0 ? room.name : room.name.slice(at + 2)).replace(/^the\s+/i, '');
 }
 
-function namesThisRoom(room: LocationRecord, wanted: string): boolean {
+export function namesThisRoom(room: LocationRecord, wanted: string): boolean {
     const own = aRoomsOwnName(room).toLowerCase();
     const purpose = (purposeOf(room) ?? '').replace(/_/g, ' ');
+    const aliases: Readonly<Record<string, readonly string[]>> = {
+        practice_yard: ['training grounds', 'training ground', 'training yard', 'practice grounds'],
+        mission_hall: ['missions hall', 'missions', 'mission office'],
+        scripture_pavilion: ['scripture hall'],
+        alchemy_hall: ['alchemy', 'pill hall', 'pill refining room', 'pill refining hall'],
+        infirmary: ['medical hall', 'doctors', 'physicians'],
+        meditation_cell: ['cultivation room', 'cultivation rooms', 'meditation room', 'meditation rooms'],
+        artifact_refining_hall: ['artifact hall', 'artifact forge', 'crafting hall', 'refining hall']
+    };
     return asARoomIsNamed(room.name) === wanted || own === wanted || purpose === wanted
+        || aliases[purposeOf(room) ?? '']?.includes(wanted) === true
         || (wanted.length >= 4 && own.endsWith(` ${wanted}`));
 }
+
+const THEIR_QUARTERS = /^(?:(?:my|our|your|the)\s+)?(?:quarters|room|rooms|bed|dormitory)$/;
 
 /**
  * Going to the room a piece of work is done in, before doing it.
@@ -121,11 +148,11 @@ function namesThisRoom(room: LocationRecord, wanted: string): boolean {
  *
  * Returns the line that says where they went, or null where they stayed put.
  */
-export function intoTheRoomTheWorkIsDoneIn(
+function theRoomTheWorkIsDoneIn(
     game: GameService,
     cultivator: Cultivator,
     making: WhatIsBeingMade | null
-): string | null {
+): LocationRecord | null {
     const world = game.atHand;
     if (!world || making === null) return null;
     const membership = game.repos.sects.getMembership(cultivator.id);
@@ -140,10 +167,30 @@ export function intoTheRoomTheWorkIsDoneIn(
         .map(purpose => compound.rooms.get(purpose))
         .find((one): one is LocationRecord => one !== undefined);
     if (!room || room.id === hereId) return null;
+    return room;
+}
+
+/** A successful preparation walks to the bench before spending its work days. */
+export async function walkIntoTheRoomTheWorkIsDoneIn(
+    game: GameService, run: Run, cultivator: Cultivator, making: WhatIsBeingMade | null
+): Promise<Execution | null> {
+    const room = theRoomTheWorkIsDoneIn(game, cultivator, making);
+    return room ? aWalkInsideTheWalls(game, run, cultivator, room.name) : null;
+}
+
+export function intoTheRoomTheWorkIsDoneIn(
+    game: GameService, cultivator: Cultivator, making: WhatIsBeingMade | null
+): string | null {
+    const room = theRoomTheWorkIsDoneIn(game, cultivator, making);
+    const world = game.atHand;
+    const membership = game.repos.sects.getMembership(cultivator.id);
+    const seat = world && theSeatOfTheCompound(world, game.worldPlaceOf(cultivator), whereCompoundsAre(world));
+    if (!room || !world || !membership || !seat) return null;
     const house = game.repos.sects.getById(membership.sectId);
     const { access } = howThisCultivatorStandsInTheHouseHolding({
         ground: room,
         cultivator,
+        objects: world.objects,
         standing: house
             ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length, joinedOnDay: membership.joinedOnDay }
             : null,
@@ -190,6 +237,10 @@ export function theDoorsOffThisYard(
     const called = theLessonYourMasterCalledYouTo(game, world, cultivator);
 
     const doors: string[] = [];
+    const quarters = theQuartersThisCultivatorHas(game, world, cultivator);
+    if (quarters?.factionId === compound.houseId) doors.push('your quarters');
+    const town = world.locations.find(row => row.data.gateId === seat.id);
+    if (town) doors.push(town.name);
     for (const room of world.locations) {
         if (!compound.inside.has(room.id) || room.id === hereId) continue;
         const purpose = purposeOf(room);
@@ -199,6 +250,7 @@ export function theDoorsOffThisYard(
         const { viewer } = howThisCultivatorStandsInTheHouseHolding({
             ground: room,
             cultivator,
+            objects: world.objects,
             standing: membership && house
                 ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length, joinedOnDay: membership.joinedOnDay }
                 : null,
@@ -225,7 +277,7 @@ export async function aWalkInsideTheWalls(
     target: string | undefined
 ): Promise<Execution | null> {
     const said = (target ?? '').trim();
-    if (said.length === 0) return null;
+    if (said.length === 0 || betweenRoadEndpoints(game.repos.db, cultivator)) return null;
     game.atHand = game.atHand ?? await game.loadWorld();
     const world = game.atHand;
     if (!world) return null;
@@ -245,11 +297,14 @@ export async function aWalkInsideTheWalls(
     // Where the player's master lives, named as that, and whether the master
     // has called them there. See `a-master-calls-their-disciples-in.ts`.
     const called = theLessonYourMasterCalledYouTo(game, world, cultivator);
-    const named = BACK_TO_THE_GATE.test(wanted)
+    const ownQuarters = THEIR_QUARTERS.test(wanted) ? theQuartersThisCultivatorHas(game, world, cultivator) : null;
+    const assigned = ownQuarters?.factionId === compound.houseId
+        ? inside.find(row => row.id === ownQuarters.quarters.locationId) ?? null : null;
+    const named = assigned ?? (BACK_TO_THE_GATE.test(wanted)
         ? seat
         : A_MASTERS_DWELLING.test(wanted)
             ? whereYourMasterLives(game, world, cultivator)?.dwelling ?? null
-            : inside.find(row => namesThisRoom(row, wanted)) ?? null;
+            : inside.find(row => namesThisRoom(row, wanted)) ?? null);
     const destination = named !== null && ['gatehouse', 'forecourt'].includes(purposeOf(named) ?? '')
         ? seat
         : named;
@@ -281,6 +336,7 @@ export async function aWalkInsideTheWalls(
     const standingIn = (ground: LocationRecord) => howThisCultivatorStandsInTheHouseHolding({
         ground,
         cultivator,
+        objects: world.objects,
         standing: membership && house
             ? { sectId: membership.sectId, rankIndex: membership.rankIndex, rankCount: house.ranks.length, joinedOnDay: membership.joinedOnDay }
             : null,
@@ -293,11 +349,12 @@ export async function aWalkInsideTheWalls(
     // Being called somewhere is being told where it is.
     const invited = destination !== null && called?.dwelling.id === destination.id;
     const known = destination !== null
-        && (destination.id === seat.id || invited
+        && (destination.id === seat.id || invited || ORDINARY_FACILITIES.has(purposeOf(destination) ?? '')
             || isAtLeast(roomStageFor(destination, standingIn(destination).viewer), 'placed'));
     if (!known) {
         const elsewhere = worldLocationFor(world, said);
-        if (!A_ROOM_WORD.test(wanted) && !(elsewhere?.tags.includes('interior'))) return null;
+        if (!A_ROOM_WORD.test(wanted) && !inside.some(row => namesThisRoom(row, wanted))
+            && !(elsewhere?.tags.includes('interior'))) return null;
         return refused('engine.walkInsideTheWalls', 'move', factsForRefusal(
             `Nowhere inside ${seat.name} you could walk to by that name.`,
             `Nobody has shown you anywhere called ${said} inside ${seat.name}. What you can find `
@@ -308,7 +365,8 @@ export async function aWalkInsideTheWalls(
         ));
     }
 
-    if (destination.id === here.id) {
+    const privateRoom = assigned ? aRoomOfTheirOwn(destination, cultivator.id) : null;
+    if (destination.id === here.id && (!privateRoom || cultivator.standingIn === privateRoom.id)) {
         return refused('engine.walkInsideTheWalls', 'move', factsForRefusal(
             `You are already in ${aRoomsOwnName(destination)}.`,
             `You are standing in ${destination.name} already.`,
@@ -349,8 +407,9 @@ export async function aWalkInsideTheWalls(
 
     // ── THE WALK ─────────────────────────────────────────────────────────
     game.repos.cultivators.update(cultivator.id, { location: destination.name });
+    if (privateRoom) game.repos.cultivators.standIn(cultivator.id, privateRoom.id);
     game.repos.runs.incrementTurn(run.id, 1);
-    const walked: Cultivator = { ...cultivator, location: destination.name, standingIn: null };
+    const walked: Cultivator = { ...cultivator, location: destination.name, standingIn: privateRoom?.id ?? null };
     const hours = LESSER_ACTION_DAYS.move * 24;
     const advanced = await passHours(game, run, walked, hours);
     if (!advanced.finished && advanced.spent) return advanced.spent;
@@ -363,7 +422,7 @@ export async function aWalkInsideTheWalls(
     const line = out
         ? `You walk out of ${aRoomsOwnName(here)} and back to the gate.`
         : `You walk from ${here.id === seat.id ? 'the gate' : aRoomsOwnName(here)} `
-          + `into ${aRoomsOwnName(destination)}.`;
+          + `into ${privateRoom?.name ?? aRoomsOwnName(destination)}.`;
     const facts = factsForToolResult(line, [
         line,
         people.length === 0

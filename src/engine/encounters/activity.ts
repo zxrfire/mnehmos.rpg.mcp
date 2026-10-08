@@ -300,6 +300,7 @@ export function reaches(
 ): boolean {
     const profile = activityProfile(activity);
     if (profile.exposure <= 0) return false;
+    if (entry.requiresSubstrate && place.substrate && entry.requiresSubstrate !== place.substrate) return false;
     if (profile.unreachableKinds.includes(entry.kind)) return false;
     for (const tag of entry.tags) {
         if (profile.unreachableTags.includes(tag)) return false;

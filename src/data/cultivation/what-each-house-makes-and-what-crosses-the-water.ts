@@ -57,6 +57,8 @@
 
 import { z } from 'zod';
 import { getRegionForFaction, SOUTH_REGION_ID } from './regions.js';
+import { HOME_REGION_ID, ADJACENT_REGION_ID, EAST_REGION_ID, NORTH_REGION_ID } from './regions/region-ids.js';
+import { MINOR_HEALING_PILL_ID } from './pills.js';
 import { PLACE } from './place-names.js';
 import type { SeaLane } from '../../engine/world/what-a-sea-crossing-costs.js';
 
@@ -66,6 +68,8 @@ import type { SeaLane } from '../../engine/world/what-a-sea-crossing-costs.js';
 
 export const HouseArtisansSchema = z.object({
     factionId: z.string(),
+    /** Catalog goods this workshop releases to a travelling counter. */
+    wares: z.array(z.string()).default([]),
     /** The trade, in the words the house itself uses for it. */
     craft: z.string().min(30),
     /** Who these people actually are inside the house, and what they are not. */
@@ -89,6 +93,7 @@ export type HouseArtisans = z.infer<typeof HouseArtisansSchema>;
 export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     {
         factionId: 'sect-ashen-forge-clan',
+        wares: [],
         craft: 'Reforging. The clan does not smelt - it takes broken metal with a history in it and makes it into something that works.',
         whoTheyAre: 'Two thirds of the clan roll, and the ranks are forge ranks rather than cultivation ranks, so a smith who never passes Foundation still rises. It is the only house in the catalog where the makers outnumber the fighters and nobody regards that as a decline.',
         makes: [
@@ -101,6 +106,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     },
     {
         factionId: 'sect-cinnabar-crucible-sect',
+        wares: [MINOR_HEALING_PILL_ID, 'pill-qi-gathering', 'pill-clear-meridian'],
         craft: 'Refining. Four furnaces, a fixed price list, and the only alchemy anybody in two provinces can buy over a counter.',
         whoTheyAre: 'The hall IS its artisans - there is no distinction here between a member and a maker, and a Hall rank is a furnace rank. Its cold branch at Moraine Gate is four furnaces and a price list and nothing else.',
         makes: [
@@ -113,6 +119,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     },
     {
         factionId: 'sect-verdant-spring-valley',
+        wares: ['herb-qi-grass', 'herb-nine-node-calamus', 'herb-cloudcap-mushroom'],
         craft: 'Growing and preparing. Nine warm springs, terraced beds, and physicians who prepare what they pick.',
         whoTheyAre: 'Gardeners and physicians, and the Hall does not rank them below its cultivators - it lives on its physicians, which is stated in its own territory line and is the reason a hall on ground with no vein worth the name is still standing.',
         makes: [
@@ -125,6 +132,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     },
     {
         factionId: 'sect-stone-marrow-hall',
+        wares: [],
         craft: 'Assay and cutting. Refining houses at the head of nine veins, and the standard everybody else\'s stones are cut to.',
         whoTheyAre: 'Assayers and cutters, and the Stone Marrow Hall is the rare house where the artisans set the policy: the rate is a technical judgement before it is a commercial one, and the cutters are the people who make it.',
         makes: [
@@ -137,6 +145,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     },
     {
         factionId: 'sect-fallen-grain-caravan',
+        wares: ['herb-grave-lily', 'herb-emberleaf'],
         craft: 'Not making - recovering. The Caravan is the one body here whose product was made by somebody who is dead.',
         whoTheyAre: 'Diggers and sorters. The barrow yard at Willow Village is a sorting floor rather than a workshop and the distinction is the whole of the Buddha Precipice: a province that cuts its qi out of stone does not have artisans in the ordinary sense, it has extractors.',
         makes: [
@@ -149,6 +158,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     },
     {
         factionId: 'sect-silver-island-market',
+        wares: [],
         craft: 'Making nothing, and that is the whole of the port. What the Hall produces is the transaction.',
         whoTheyAre: 'Coopers, ropewalkers, a cistern crew and eleven caulkers, and every one of them is maintenance rather than manufacture. The port makes barrels, cordage and repairs because a hull that cannot be repaired at Silver Island is a hull that stops coming.',
         makes: [
@@ -161,6 +171,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     },
     {
         factionId: 'sect-sand-well-caravan',
+        wares: [],
         craft: 'Carrying, and the only thing the shed makes is skins to carry in.',
         whoTheyAre: 'Sewers and pitchers, mostly people too broken to walk a string any more, working under the shed roof beside the tally boards. It is the one job at the Caravan that a person can hold after the sand has finished with them, and everybody there knows what being moved to it means.',
         makes: [
@@ -171,6 +182,21 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
         soldOutside: 'Nothing is sold. The skins go out full and come back empty and are restitched, and a carrier who loses one pays for it out of their share.'
     }
 ];
+
+/** Physical exports; services and private curricula do not become shelf goods. */
+const REGIONAL_WARES: Readonly<Record<string, readonly string[]>> = {
+    [HOME_REGION_ID]: [MINOR_HEALING_PILL_ID, 'pill-qi-gathering', 'pill-clear-meridian'],
+    [ADJACENT_REGION_ID]: ['herb-grave-lily', 'herb-emberleaf'],
+    [EAST_REGION_ID]: ['herb-blood-millet', 'herb-grave-lily'],
+    [NORTH_REGION_ID]: ['herb-bitter-frost-berry'],
+    [SOUTH_REGION_ID]: ['herb-clearwater-lotus-seed']
+};
+
+/** The artisan's own goods, otherwise the physical exports of its ground. */
+export function waresMadeBy(factionId: string): readonly string[] {
+    const artisan = HOUSE_ARTISANS.find(row => row.factionId === factionId);
+    return artisan ? artisan.wares : REGIONAL_WARES[getRegionForFaction(factionId)?.id ?? ''] ?? [];
+}
 
 const ARTISANS_BY_FACTION: ReadonlyMap<string, HouseArtisans> =
     new Map(HOUSE_ARTISANS.map(a => [a.factionId, a]));

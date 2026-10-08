@@ -45,6 +45,7 @@ import { WHAT_MAKES_THEM_THINK_BETTER_OF_IT } from '../../src/engine/encounters/
 import { theirHeight } from '../../src/engine/world/why-one-cultivator-kills-another.js';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo.js';
 import { setLocation } from '../../src/engine/world/npc-state.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 const WORLD = 'somebody-is-here-first';
 
@@ -66,7 +67,11 @@ async function groundSomebodyIsWorking(seed: string) {
 
     // Two of the world's people on it, at work and not going anywhere.
     const working = world.npcs
-        .filter(n => n.status === 'alive' && n.cultivation.realmOrdinal >= from.realmOrdinal)
+        // The played person's mirrored world row is deliberately omitted from
+        // the NPC area read.  They arrive afterwards; the two people already
+        // working this ground must therefore be two other living people.
+        .filter(n => n.id !== cultivator.id && n.status === 'alive'
+            && n.cultivation.realmOrdinal >= from.realmOrdinal)
         .slice(0, 2);
     if (working.length < 2) throw new Error('not two people in this world to work it');
     for (const npc of working) {
@@ -76,7 +81,9 @@ async function groundSomebodyIsWorking(seed: string) {
             activity: {
                 kind: 'out_with_a_party',
                 note: `Working ${ground.name}.`,
-                withIds: [],
+                // They are working this ground together. The same activity is
+                // the engine's ordinary reason that two people share an area.
+                withIds: working.filter(other => other.id !== npc.id).map(other => other.id),
                 sinceDay: today,
                 untilDay: today + 3650,
                 returnTo: null
@@ -100,7 +107,10 @@ async function groundSomebodyIsWorking(seed: string) {
 
 /** Standing on it, which is where the three answers are answered from. */
 function standOnIt(h: Awaited<ReturnType<typeof groundSomebodyIsWorking>>) {
+    const area = theAreasOf(h.world, h.ground).whereIs.get(h.working[0]!.id);
+    expect(area, 'the working pair has no area on this ground').toBeDefined();
     h.repos.cultivators.update(h.cultivator.id, { location: h.ground.name });
+    h.repos.cultivators.standIn(h.cultivator.id, area!);
     return h.repos.cultivators.getById(h.cultivator.id)!;
 }
 

@@ -1,4 +1,26 @@
+import { settleAgreedRides } from './an-offered-ride-is-an-agreement.js';
+import { transferActualSpiritStones } from './transferring-actual-spirit-stones.js';
+import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
+
+import { attemptWasAccepted } from '../engine/social-leverage/an-attempt-to-move-somebody.js';
+import { executionWithItsSpentSpan } from './an-execution-with-its-spent-span.js';
+import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
+import { spendOnOwnedPassage, ownedPassageClaim, ownedCarrierAt } from './an-owned-passage.js';
+import { recordedVoyage } from './a-ship-at-sea.js';
+import { thePaidCarriageClaim } from './a-paid-carriage-on-the-road.js';
+import { paidCarrierSource } from './an-actual-paid-passage.js';
+import { rationsHeld as readRationsHeld, drawFromPack as openRationsInThePack, putBackWhatWasNotEaten as returnUnopenedRations, setRationsHeld as writeRationsHeld } from './rations-in-the-actual-pack.js';
+import { spendAboardTheCarriage } from './an-actual-paid-passage.js';
+import { whatThisThingIs } from '../engine/world/what-a-house-gives-merit-for.js';
+import { exchangeOffers, tradeExchangeObject } from '../engine/world/wares-at-a-capital-exchange.js';
 import { reviewPlayerBeastContract } from '../engine/world/beast-cultivation-contracts.js';
+import { theOrdinaryRoleNamed, thePersonInThatOrdinaryRole } from './the-person-in-a-named-role.js';
+import { physicianIsWorking, whoDispensesAtTheHouse } from '../engine/world/who-is-actually-seeing-to-wounds.js';
+import { purposeOf } from '../engine/world/architecture.js';
+import { carePricesHere, PHYSICIAN_VISIT_PRICE, PHYSICIAN_COURSE_PRICE } from './what-care-costs-where-you-are.js';
+import { askingAboutCareHere } from './asking-about-the-care-actually-offered-here.js';
+import { locationOnNpcJourney } from '../engine/world/places-on-the-way.js';
+import { npcsWhereTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { cultivationAgreementSaid } from './cultivation-agreement-phrasings.js';
 import { aWillingFurnaceRite } from './a-willing-furnace-rite.js';
 import { aBeastCultivationAgreement } from './agreeing-to-share-cultivation-with-a-beast.js';
@@ -55,7 +77,8 @@ import {
     stillNeedsToEat,
     type ProvisioningAssessment
 } from '../engine/cultivation/survival.js';
-import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
+import { spendAnOrdinarySpanAtTheActualClock } from './spending-an-ordinary-span-at-the-actual-clock.js';
+import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-world.js';
 import { rollHerb } from '../data/cultivation/index.js';
 import { BEASTS, getBeastMaterial, type Beast } from '../data/cultivation/beasts.js';
 import { getBone } from '../data/cultivation/bones.js';
@@ -128,7 +151,7 @@ import {
     getPrice
 } from '../data/cultivation/mortal-world.js';
 import {
-    localPrice, regionIdOfPlace, requireRegion, REGIONS
+    localPrice, regionIdOfPlace, requireRegion, REGIONS, whatKindOfPlace
 } from '../data/cultivation/regions.js';
 import {
     createInjury,
@@ -156,7 +179,7 @@ import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getEncounter, getSect, getTechnique } from '../data/cultivation/index.js';
 import { NOT_REFINABLE_NOTES } from '../data/cultivation/pills.js';
-import { aLocalMechanicsQuestion } from './what-a-local-speaker-knows-of-the-mechanics.js';
+import { aLocalMechanicsQuestion, aWorkDirectionQuestion } from './what-a-local-speaker-knows-of-the-mechanics.js';
 import { WORKING_KNOWLEDGE_MARGIN } from '../engine/cultivation/who-has-heard-of-a-thing-past-the-counter.js';
 import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import {
@@ -201,12 +224,12 @@ import {
 } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
-import { routineOf } from '../engine/world/npc-routines.js';
+import { routineOf, routineTime } from '../engine/world/npc-routines.js';
 import { invitationsDue, waitForHour, passHours } from './routine-invitations.js';
 import { isDayLongAct, lesserActionDays, LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 import { perceivedDaylight } from './perceived-daylight.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { howItIsHad, transferPossession, ruin, type ObjectRecord } from '../engine/world/possessions.js';
+import { makeObject, howItIsHad, transferPossession, isRuined, ruin, type ObjectRecord } from '../engine/world/possessions.js';
 import { theRowsThatGoWithAStack } from './stack-and-its-row.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
@@ -292,7 +315,7 @@ import {
     handleConsumePill,
     handleInventory,
     handleListRecipes,
-    handleRefine
+    handleRefine, prepareRefine, isRefinePreparation
 } from '../server/consolidated/alchemy-manage.js';
 import { handleCultivate } from '../server/consolidated/cultivation-manage.js';
 import { handleMarket, handleWork, standingOf } from '../server/consolidated/cultivation-mortal.js';
@@ -377,7 +400,6 @@ import {
     type CultivationRepos
 } from '../server/consolidated/cultivation-support.js';
 import { getArtifact } from '../data/cultivation/artifacts.js';
-import { applyTimeSkip } from './apply.js';
 import { settleWhatTheyWereCarrying, type EstateOutcome } from './estate-settlement.js';
 import {
     commitOneTransition,
@@ -576,7 +598,7 @@ import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.j
 import { buyAVesselOffTheBoard } from './buying-a-vessel-off-the-board.js';
 import { whetherTheHousesCounterIsHere } from './a-house-counter-is-where-the-house-is.js';
 import { settleWhatWasPlacedWithAMaker } from './a-commission-placed-with-a-maker.js';
-import { intoTheRoomTheWorkIsDoneIn, theDoorsOffThisYard } from './walking-inside-the-walls.js';
+import { walkIntoTheRoomTheWorkIsDoneIn, theDoorsOffThisYard } from './walking-inside-the-walls.js';
 import {
     crossToWhoeverTheyNamed,
     namesALocalArea,
@@ -591,6 +613,7 @@ import {
     pillCashPrice
 } from '../engine/cultivation/buying-and-bartering-pills.js';
 import { askedAbout, whetherTheyHoldIt } from './asked.js';
+import { informationQuestionsOf } from './one-information-exchange.js';
 import {
     aCrowdIsAsked,
     asksTheWay,
@@ -602,7 +625,9 @@ import {
 import {
     isACourtesy,
     isAGreeting,
+    A_TOPIC_ABOUT_THEMSELVES,
     selfFactFromTopic,
+    whatIsBeingAskedAboutThem,
     whatTheySayAboutThemselves
 } from '../engine/social/what-somebody-knows-about-themselves.js';
 import { asksWhichHousesTheyKnow } from './which-houses-somebody-could-name.js';
@@ -623,6 +648,8 @@ import {
 import {
     offerHearing,
     othersPresent,
+    withPresenceReadScope,
+    routesForPresenceRead,
     recordHearing,
     type AnswerReach,
     type Hearing,
@@ -824,6 +851,7 @@ import {
 import {
     whatIsBeingOfferedHere,
     readWhatIsOnOfferHere,
+    learnTheSeller,
     linesForWhatWillNotMove
 } from './who-here-is-offering-something.js';
 import {
@@ -996,6 +1024,7 @@ import {
     factsForTreatment,
     factsForUnsupported,
     type Company,
+    type SomebodyWhoReplied,
     describeAmbientPerceived,
     factsForRefusal,
     factsForStatus,
@@ -1050,8 +1079,9 @@ import type { WhereTheyStandNow } from './prompt.js';
 // life it may spend lives in this module, not here; what `game.ts` owns is
 // running the steps in order against the live world. See `carryOutThePlan`.
 import {
+    explicitNameSpansIn,
+    hasClauseSeparators,
     foldTheCallsIntoOneTurn,
-    sayingWhatTheBoundCutOff,
     sayingWhereItStopped,
     stepsOfThePlan,
     theQuestionStillStands,
@@ -1060,7 +1090,6 @@ import {
     whatTheChoiceFoundNobody,
     whatTheChoiceLandedOn,
     whatTheChoiceLandedOnStructurally,
-    sayingWhatIsStillToCome,
     sayingWhatItCostTheRest,
     sayingWhatTheWorldCutOff,
     theClauseThisStepQuotes,
@@ -1071,8 +1100,6 @@ import {
     theRowForADroppedClause,
     theseWereThePlayersOwnWords,
     theRowForAStatedReason,
-    theRowForAStepOverTheBound,
-    theRowForSomethingStillToCome,
     theRowThatAsksWhichFirst,
     theRowForAResolvedPronoun,
     theRowThatOpensAStep,
@@ -1217,7 +1244,6 @@ import {
 } from './turn-constants.js';
 import {
     FLAG_LAST_ADDRESSED,
-    FLAG_RATIONS_HELD,
     FLAG_STEP_TAKEN,
     FLAG_YIELDING_TO_YOU
 } from './flag-keys.js';
@@ -1287,7 +1313,10 @@ import { isAPosting, postingVerbs, settleWhereYourHouseHasPostedYou } from './ho
 import { settleWhetherYourMasterHasCalledYou } from './a-master-calls-their-disciples-in.js';
 import { acceptANamedDisciple } from './accepting-a-named-disciple.js';
 import { enterThePublicCompetition } from './entering-the-public-competition.js';
+import { attendACapitalAuction, settleYourCapitalAuctions } from './attending-a-capital-auction.js';
+import { isAwayOnSomething } from '../engine/world/npc-state.js';
 import { settleOpenCompetitions } from '../engine/world/entering-an-open-competition.js';
+import { theBoardAsItIsCalledOut } from '../engine/world/how-an-entrant-is-announced.js';
 import { extinguishedLampsOpenInquiries } from '../engine/world/an-extinguished-lamp-opens-an-inquiry.js';
 import { whoCouldPutSomebodyOffTheRoll } from './who-could-put-somebody-off-the-roll.js';
 import { settleWhoIsAlreadyOnThisGround, theyAreToldNo } from './somebody-tells-you-to-get-off-this-ground.js';
@@ -1299,7 +1328,7 @@ import {
 import { stowVerbs, whatIsKeptInYourRoom, type StowIntent } from './leaving-a-thing-in-your-own-room.js';
 import { theWeatherTakesItsShare } from './where-the-nights-were-spent.js';
 import { AT_THE_INN, takeARoom, theCountersHere, whereTheyAreLodged } from './a-room-at-an-inn.js';
-import { theCounterThisKeeperKeeps, whoKeepsTheCounter } from './who-keeps-a-counter-here.js';
+import { theCounterThisKeeperKeeps, whoKeepsTheCounter, theCounterWorkersHere } from './who-keeps-a-counter-here.js';
 import { theBoothsHere, theCountersAsSeenHere } from './a-seat-on-a-ship-or-a-carriage.js';
 import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
@@ -2135,6 +2164,10 @@ export class GameService {
     private namesGivenThisTurn: string[] = [];
     /** Rulings from a name heard of being said aloud this turn. */
     private recognitionsThisTurn: string[] = [];
+    /** Engine-resolved replies whose immediate post-handler card has not been captured yet. */
+    private repliesAwaitingCapture = new Set<string>();
+    /** Their cards as the reply happened, before a lesser action advances the clock. */
+    private replyCardsThisTurn: SomebodyWhoReplied[] = [];
 
     /**
      * NAME A THING THIS TURN ACTUALLY PUT IN THEIR HANDS.
@@ -2779,6 +2812,8 @@ export class GameService {
         this.introducedThisTurn = false;
         this.namesGivenThisTurn = [];
         this.recognitionsThisTurn = [];
+        this.repliesAwaitingCapture.clear();
+        this.replyCardsThisTurn = [];
         this.namedOutOfThisTurn = null;
 
         // "KEEP AT IT" IS A VERB THE PLAYER ALREADY SAID
@@ -2800,6 +2835,19 @@ export class GameService {
             : null;
 
         // phase 1
+        const planningInput = inTheSpellingOfTheNamesTheyKnow(trimmed,
+            this.awarenessOf(cultivator).map(row => row.name));
+        // Literal name ranges protect punctuation only; they grant no knowledge or access.
+        // Avoid reading entity names at all when no lexical separator needs protection.
+        const planningNameSpans = hasClauseSeparators(planningInput) ? explicitNameSpansIn(planningInput, [
+            ...(this.atHand?.locations ?? []).map(row => row.name),
+            ...(this.atHand?.factions ?? []).map(row => row.name),
+            ...(this.atHand?.npcs ?? []).map(row => row.name),
+            ...(this.atHand?.objects ?? []).map(row => row.name),
+            ...this.repos.cultivators.list().map(row => row.name),
+            ...this.awarenessOf(cultivator).map(row => row.name),
+            ...this.knownTechniqueNames(cultivator)
+        ]) : [];
         const plan: PlanWithSteps = fightAnswer !== null
             ? {
                 // No model reads a sentence said inside a fight, and that is
@@ -2887,7 +2935,7 @@ export class GameService {
                 // Names they know, as spelled, wherever they typed them near enough: the model and
                 // the fallback table both read "Cao Nanshan" for "cao nansan". See
                 // `names-as-they-are-spelled.ts`.
-                inTheSpellingOfTheNamesTheyKnow(trimmed, this.awarenessOf(cultivator).map(row => row.name)),
+                planningInput,
                 composeStateSummary({
                     hour: this.atHand?.currentHour ?? 8,
                     cultivator: presenceForScene(this, cultivator),
@@ -2930,7 +2978,8 @@ export class GameService {
                         LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
                     )
                 }),
-                describeTheLastTurn(before)
+                describeTheLastTurn(before),
+                planningNameSpans
             );
 
         // AND "THAT ONE" MEANS ONE OF THE THINGS YOU WERE JUST SHOWN
@@ -3356,10 +3405,30 @@ export class GameService {
             const today = Math.floor(this.atHand.currentDay);
             const factsBefore = this.atHand.history.facts.length;
             extinguishedLampsOpenInquiries(this.atHand, today);
+            for (const line of settleYourCapitalAuctions(this, this.currentRun().cultivator)) {
+                sayThisWhateverTheNarratorDoes(execution.facts, line);
+            }
+            after.cultivator = this.currentRun().cultivator;
             const boardsJustSettled = settleOpenCompetitions(this.atHand, today, today, {
                 id: this.currentRun().cultivator.id,
                 locationId: this.worldPlaceOf(this.currentRun().cultivator)
             });
+            const selectedUpward = boardsJustSettled.find(f => f.data.feederSelection === true
+                && f.actors.some(a => a.id === cultivator.id));
+            if (selectedUpward) {
+                const from = String(selectedUpward.data.fromHouseId);
+                const to = String(selectedUpward.data.toHouseId);
+                if (this.repos.sects.getMembership(cultivator.id)?.sectId === from) {
+                    this.db.transaction(() => {
+                        if (!this.repos.sects.removeMember(from, cultivator.id)
+                            || !this.repos.sects.addMember(to, cultivator.id, 0, today)) {
+                            throw new Error('The selected disciple could not be entered on the receiving roll.');
+                        }
+                    })();
+                    after.cultivator = this.currentRun().cultivator;
+                }
+                sayThisWhateverTheNarratorDoes(execution.facts, selectedUpward.summary);
+            }
             for (const fact of boardsJustSettled.filter(f => f.actors.some(a => a.id === cultivator.id))) {
                 const learningDays = Number(fact.data.trainingDays ?? 0);
                 if (learningDays <= 0) continue;
@@ -3374,8 +3443,25 @@ export class GameService {
                 && f.data.result === true && f.day >= worldDayBeforeTheTurn && f.day <= today
                 && f.actors.some(a => a.id === this.currentRun().cultivator.id))) {
                 sayThisWhateverTheNarratorDoes(execution.facts, fact.summary);
+                if (typeof fact.data.place === 'number') {
+                    const board = this.atHand.history.facts.filter(f => f.data.openCompetition === true
+                        && f.data.result === true && f.data.hostId === fact.data.hostId
+                        && f.data.contestDay === fact.data.contestDay && f.data.venueId === fact.data.venueId
+                        && f.data.bracket === fact.data.bracket && typeof f.data.place === 'number')
+                        .sort((a, b) => Number(a.data.place) - Number(b.data.place));
+                    sayThisWhateverTheNarratorDoes(execution.facts, theBoardAsItIsCalledOut(board.map(f => {
+                        const entrant = this.atHand!.npcs.find(n => n.id === f.actors[0]?.id);
+                        return { place: Number(f.data.place), name: f.actors[0]!.name,
+                            houseName: this.atHand!.factions.find(h => h.id === entrant?.factionId)?.name ?? null };
+                    })));
+                }
             }
             if (this.atHand.history.facts.length > factsBefore) this.theWorldMoved();
+        }
+        const rides = settleAgreedRides(this, this.currentRun().cultivator);
+        if (rides) {
+            execution.facts.lines.push(...rides.lines); execution.facts.structure.push(...rides.structure);
+            execution.calls.push({ name: 'world.settleAgreedPassage', action: 'ride', ok: true, summary: rides.lines.join(' ') });
         }
         const commissioned = settleWhatWasPlacedWithAMaker(this, this.currentRun().cultivator);
         if (commissioned) {
@@ -3520,11 +3606,16 @@ export class GameService {
 
         const observing = presenceForScene(this, after.cultivator);
         const company = this.company(observing);
+        const justAddressed = this.replyCardsThisTurn.filter(reply =>
+            !company.named.some(person => person.id === reply.id));
+        const addressing = this.replyCardsThisTurn[0]?.name
+            ?? whoTheActWasPutTo(stepsOfThePlan(theTurnsPlan).map(step => step.action.target), company);
         const scene = {
             place: thePlaceAsTheSceneNamesIt(this, observing, placeName(observing)),
             ambient: this.ambientFor(observing, after.run),
             awareness: this.awarenessOf(after.cultivator),
             hearing: execution.hearing ?? null,
+            hearings: execution.hearings,
             // Asking turns on what was said, so the words reach phase 3. They
             // are shown to the narrator and never read back: no key matching,
             // no phrase table, no engine surface. The judgement is narration.
@@ -3536,6 +3627,8 @@ export class GameService {
             // and the air, a narrator opens on an empty square, because that is
             // the cheapest guess.
             company,
+            justAddressed,
+            failedAddress: execution.calls.some(call => call.name === 'engine.resolveParty' && !call.ok),
             // AND WHERE THE REST OF THEM ARE. The yard is not the compound: a
             // house's own people are read into its rooms, and a scene that names
             // only the square makes the house look empty to somebody standing
@@ -3543,9 +3636,7 @@ export class GameService {
             doorsFromHere: theDoorsOffThisYard(this, observing),
             // And the rest of the place: its people are read into areas of at most three.
             elsewhereHere: theRestOfThisPlace(this, observing),
-            addressing: whoTheActWasPutTo(
-                stepsOfThePlan(theTurnsPlan).map(step => step.action.target), company
-            ),
+            addressing,
             realmOrdinal: after.cultivator.realmOrdinal,
             // What they ARE and HOLD, whatever this turn did. See
             // `theStandingStateOf`: the model told somebody carrying a manual
@@ -4101,22 +4192,7 @@ export class GameService {
             );
         }
 
-        // Held by the budget, and said WHETHER OR NOT the turn also stopped -
-        // they are separate facts about separate steps, and an `else if` here
-        // meant a plan that stopped never mentioned what the player had queued.
-        if (fork === null && budget.heldForTheQuestion.length > 0) {
-            // THE PLAYER ALREADY SAID WHICH COMES FIRST, so nothing was asked -
-            // the first act ran and the rest is next turn's. Said once, as a
-            // fact about where they now stand rather than as a report about the
-            // executor, and on `required` because a player who is not told the
-            // second half is still owed will believe it happened.
-            sayThisWhateverTheNarratorDoes(
-                folded.facts, sayingWhatIsStillToCome(budget.heldForTheQuestion)
-            );
-            for (const step of budget.heldForTheQuestion) {
-                folded.calls.push(theRowForSomethingStillToCome(step));
-            }
-        } else if (fork !== null) {
+        if (fork !== null) {
             if (alreadySaid) {
                 // Already the whole of `prose`, so saying it again is the
                 // double-printed ruling a played turn caught. What it still needs
@@ -4162,9 +4238,7 @@ export class GameService {
             );
         }
 
-        for (const over of budget.overTheBound) {
-            folded.calls.push(theRowForAStepOverTheBound(over));
-        }
+
 
         // A CLAUSE THE READING LAYER DROPPED IS SAID TOO.
         if (plan.droppedClauses && plan.droppedClauses.length > 0) {
@@ -4189,11 +4263,7 @@ export class GameService {
                 );
             }
         }
-        if (budget.overTheBound.length > 0) {
-            sayThisWhateverTheNarratorDoes(
-                folded.facts, sayingWhatTheBoundCutOff(budget.overTheBound)
-            );
-        }
+
 
         return folded;
     }
@@ -4274,16 +4344,27 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
-        const done = await this.executeAction(action, run, cultivator, ambient, rawInput);
+        let done = await this.executeAction(action, run, cultivator, ambient, rawInput);
+        // A reply belongs to the moment its handler resolved it. Capture the card
+        // after that handler's immediate writes, while the person is still in the
+        // approached area, and before the generic lesser-action clock advance can
+        // redraw sparse placement or move a routine. Current company is rebuilt
+        // after the advance and remains the authority on who is here now.
+        this.captureReplyCardsBeforeTime(cultivator);
         const nowRun = this.repos.runs.getById(run.id)!;
         const approach = done.calls.some(call => call.name === 'engine.approachTime') ? LESSER_ACTION_DAYS.move : 0;
-        if (done.outcome !== 'refused' && !done.calls.some(call => !call.ok)
+        // Lesser time is a fallback only for an execution that did not state a
+        // time disposition. Facts are for the player and narrator, not a pricing
+        // protocol: a person may naturally say "no time passed" in a real reply.
+        if (done.outcome !== 'refused' && !done.cutShort && done.timeDisposition === undefined && !done.calls.some(call => !call.ok)
             && !done.calls.some(call => call.name === 'world.waitForHour')
             && Math.abs(nowRun.elapsedDays - run.elapsedDays - approach) < 1e-8) {
             const days = lesserActionDays(action);
             if (days > 0) {
-                const advanced = await passHours(this, nowRun, this.repos.cultivators.getById(cultivator.id) ?? cultivator, days * 24);
-                if (!advanced.finished && advanced.spent) return advanced.spent;
+                const advanced = await passHours(this, nowRun, this.repos.cultivators.getById(cultivator.id) ?? cultivator, days * 24, run.turn + 1);
+                if (advanced.spent) done = executionWithItsSpentSpan(done, advanced.spent,
+                    advanced.finished ? done : advanced.spent);
+                if (!advanced.finished) return done;
                 done.calls.push({ name: 'engine.lesserActionTime', action: action.action,
                     summary: `${days} day spent.`, ok: true });
             }
@@ -4294,6 +4375,7 @@ export class GameService {
     private async executeAction(
         action: PlannedAction, run: Run, cultivator: Cultivator, ambient: AmbientQi, rawInput: string
     ): Promise<Execution> {
+        const resolvesOnTurn = run.turn + 1;
         const carriedUp = enforceCarriedCeiling(this, run, cultivator);
         if (carriedUp) return carriedUp;
         trackElementalStay(this, cultivator, run);
@@ -4320,8 +4402,63 @@ export class GameService {
                 return foldTheCallsIntoOneTurn([leaving.done, moved], moved.facts.headline);
             }
         }
-        const crossed = crossToWhoeverTheyNamed(this, cultivator, action.target);
-        const actor = crossed?.cultivator ?? cultivator;
+        const crossed = crossToWhoeverTheyNamed(this, cultivator, action.target, false);
+        let approachCrossing = crossed;
+        let approachSpent: Execution | null = null;
+        let actor = cultivator;
+        if (crossed) {
+            // Movement aboard is read from the same accepted physical claim; a
+            // changing water/road place does not turn a deck approach ashore.
+            const carrierHere = () => {
+                const world = this.atHand, body = this.repos.cultivators.getById(cultivator.id);
+                if (!world || !body) return null;
+                const owned = ownedPassageClaim(this.db, body.id);
+                const road = thePaidCarriageClaim(this.db, body.id);
+                const sea = recordedVoyage(this.db, body.id);
+                const key = owned ? 'owned:' + owned.receiptId : road ? 'road:' + road.receiptId
+                    : sea?.receiptId ? 'sea:' + sea.receiptId : null;
+                const source = owned ? ownedCarrierAt(world, owned.receiptId, body, routineTime(world))
+                    : paidCarrierSource(this, body.id, road?.receiptId, sea ?? undefined);
+                const place = source?.locationId && world.locations.find(one => one.id === source.locationId);
+                return key && source && !source.unavailable && place && body.location === place.name ? key : null;
+            };
+            const acceptedCarrier = carrierHere();
+            const stillAtOrigin = () => {
+                const body = this.repos.cultivators.getById(cultivator.id);
+                return body?.location === cultivator.location && body.standingIn === cultivator.standingIn;
+            };
+            // Eligibility is a read. Until the actual walk finishes, encounters
+            // and body time still observe the original physical area.
+            const advanced = await passHours(this, run, cultivator, LESSER_ACTION_DAYS.move * 24,
+                resolvesOnTurn, false, acceptedCarrier ? undefined : () => stillAtOrigin() ? null
+                    : 'The actual observer left the approach area.');
+            approachSpent = advanced.spent;
+            const currentRun = this.repos.runs.getById(run.id)!;
+            const currentBody = this.repos.cultivators.getById(cultivator.id)!;
+            const sameCarrier = acceptedCarrier !== null && carrierHere() === acceptedCarrier;
+            const freshCrossing = advanced.finished && currentBody.alive && (sameCarrier || stillAtOrigin())
+                ? crossToWhoeverTheyNamed(this, currentBody, action.target, false) : null;
+            if (!advanced.finished || !freshCrossing || freshCrossing.personId !== crossed.personId
+                || (!sameCarrier && freshCrossing.areaId !== crossed.areaId)) {
+                const facts = factsForRefusal('The approach did not reach its listener.',
+                    'The actual crossing stopped or its reachable listener changed. The requested act was not carried out.',
+                    'approach: no destination area or handler committed; actual spent time and world consequences retained.');
+                const failed: Execution = { facts, events: [], timeSkip: null, breakthrough: null,
+                    outcome: 'refused', calls: [{ name: 'engine.approachUnfinished', action: action.action,
+                        summary: facts.headline, ok: false }] };
+                // A living interrupted action still uses the native completion
+                // once. Dead/closed rows remain under their existing authority.
+                if (currentBody.alive && currentRun.status === 'active')
+                    failed.calls.push(...this.freeAction(currentRun, action.action, facts,
+                        currentRun.turn < resolvesOnTurn).calls);
+                return approachSpent ? executionWithItsSpentSpan(approachSpent, failed, failed) : failed;
+            }
+            // Same actual person/area, and existing access has just been reread.
+            approachCrossing = crossToWhoeverTheyNamed(this, currentBody, action.target)!;
+            actor = approachCrossing.cultivator;
+            run = currentRun;
+            ambient = this.ambientFor(actor, run);
+        }
         const witnessBefore = { factsBefore: this.atHand?.history.facts.length ?? 0,
             objectsBefore: new Map((this.atHand?.objects ?? []).map(o => [o.id, o.provenance.length])),
             witnessIds: this.present(actor).map(n => n.id), rawInput };
@@ -4336,10 +4473,13 @@ export class GameService {
                 Math.floor(this.atHand.currentDay))) this.theWorldMoved();
         }
         if (crossed) {
-            await passHours(this, this.repos.runs.getById(run.id)!, this.repos.cultivators.getById(actor.id) ?? actor, LESSER_ACTION_DAYS.move * 24);
+            // The named local crossing is itself the `move`; only that action
+            // has no further lesser charge. A reply or search reached after
+            // crossing keeps its own action cost in `execute`.
+            if (action.action === 'move') done.timeDisposition = 'approach_only';
             done.calls.push({ name: 'engine.approachTime', action: 'move', summary: 'A quarter day spent crossing the place.', ok: true });
-            done.facts.lines.unshift(crossed.line);
-            done.facts.structure.push(crossed.structure);
+            done.facts.lines.unshift(approachCrossing!.line);
+            done.facts.structure.push(approachCrossing!.structure);
         }
         // The nights a span spent outdoors, for every verb that spends days.
         theWeatherTakesItsShare(
@@ -4351,9 +4491,14 @@ export class GameService {
         // act settles what the world DOES and settles nothing about what the
         // room heard. See `theWorldHeardYouSayIt`.
         if (done.outcome === 'refused') {
-            this.theWorldHeardYouSayIt(action, cultivator, done);
+            this.theWorldHeardYouSayIt(action, actor, done);
         }
-        return done;
+        if (approachSpent) {
+            const after = this.currentRun();
+            if (after.cultivator.alive && after.run.status === 'active' && after.run.turn < resolvesOnTurn)
+                done.calls.push(...this.freeAction(after.run, action.action, done.facts).calls);
+        }
+        return approachSpent ? executionWithItsSpentSpan(approachSpent, done, done) : done;
     }
 
     /**
@@ -4490,6 +4635,8 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
+        const auction = await attendACapitalAuction(this, run, cultivator, action, rawInput);
+        if (auction) return auction;
         if (action.action === 'project' || action.action === 'possess' || action.action === 'reconstruct') {
             return refused('world.separatedPresence', action.action, factsForRefusal(
                 'The attempt did not proceed.', 'There is no world record for this presence.', 'No world record.'));
@@ -4658,15 +4805,39 @@ export class GameService {
             }
         }
 
+        // Hour/dawn waits ask the existing resolver before a carrier can apply
+        // its default whole-day span. An inn request still asks its real counter.
+        const waitRequiresInn = action.action === 'wait' && AT_THE_INN.test(rawInput);
+        if (action.action === 'wait' && !waitRequiresInn) {
+            const hourly = await waitForHour(this, run, cultivator, rawInput);
+            if (hourly) return hourly;
+        }
+
+        // Every active actual carrier uses the same body/world span boundary adapter.
+        if (this.worldEnabled && !waitRequiresInn && (action.action === 'wait' || action.action === 'seclude'
+            || action.action === 'cultivate' && (action.target ?? '').trim().length < 2)) {
+            const untilPort = action.action === 'wait'
+                && /\b(?:arriv\w*|land\w*|port|dock\w*|ashore|reach\w*|get there|put in)\b/i.test(rawInput);
+            const days = untilPort ? Number.POSITIVE_INFINITY : action.days
+                ?? (action.action === 'seclude' ? DEFAULT_SECLUSION_DAYS
+                    : action.action === 'cultivate' ? DEFAULT_CULTIVATION_DAYS : SHORT_ACTION_DAYS);
+            const flying = await spendOnPersonalAirCourse(this, run, cultivator, days);
+            if (flying) return flying;
+            const owned = await spendOnOwnedPassage(this, run, cultivator, days, WAITING_FOCUS);
+            if (owned) return owned;
+            const road = await spendAboardTheCarriage(this, run, cultivator, days, WAITING_FOCUS);
+            if (road) return road;
+        }
+
         // ABOARD A SHIP AT SEA, days spent are days the ship sails. See `a-ship-at-sea.ts`.
-        const aboard = theVoyageUnderWay(this.db, cultivator);
+        const aboard = theVoyageUnderWay(this.db, cultivator, this.atHand);
         if (aboard && (action.action === 'seclude'
             || (action.action === 'cultivate' && (action.target ?? '').trim().length < 2))) {
             return aShipSailsOn(this, run, cultivator, aboard,
                 action.days ?? (action.action === 'seclude' ? DEFAULT_SECLUSION_DAYS : DEFAULT_CULTIVATION_DAYS),
                 'sitting');
         }
-        if (aboard && action.action === 'wait') {
+        if (aboard && action.action === 'wait' && !waitRequiresInn) {
             const untilPort = /\b(?:arriv\w*|land\w*|port|dock\w*|ashore|reach\w*|get there|put in)\b/i.test(rawInput);
             return aShipSailsOn(this, run, cultivator, aboard,
                 untilPort ? null : action.days ?? SHORT_ACTION_DAYS, 'waiting');
@@ -4773,7 +4944,7 @@ export class GameService {
             }
 
             case 'ride':
-                return this.ride(run, cultivator, action.target, action.topic);
+                return this.ride(run, cultivator, action.target, action.topic, rawInput);
 
             case 'fold':
                 return this.fold(run, cultivator, action.target);
@@ -5066,8 +5237,7 @@ export class GameService {
                 return this.hunt(run, cultivator, ambient, action.target, action.thrown);
 
             case 'wait': {
-                const hourly = await waitForHour(this, run, cultivator, rawInput);
-                if (hourly) return hourly;
+                const innRequired = AT_THE_INN.test(rawInput);
                 // ── WAITING UNTIL A THING THE WORLD HAS A DATE FOR ────────
                 //
                 // The span is read off the sentence one layer up and a named
@@ -5115,15 +5285,20 @@ export class GameService {
                     const lodged = whereTheyAreLodged(this, cultivator);
                     const covered = lodged ? lodged.paidThroughDay - Math.floor(run.elapsedDays) : 0;
                     if (covered < waitingDays) {
-                        room = takeARoom(this, run, cultivator, waitingDays, { andTheTurn: false });
-                        if (room.outcome === 'refused') return room;
+                        room = await takeARoom(this, run, cultivator, waitingDays, { andTheTurn: false });
+                        if (room.outcome === 'refused' || room.cutShort || !this.currentRun().cultivator.alive) return room;
                         waiter = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
                     }
                 }
+                const arrived = this.currentRun();
+                if (innRequired) {
+                    const hourly = await waitForHour(this, arrived.run, arrived.cultivator, rawInput);
+                    if (hourly) return room ? foldTheCallsIntoOneTurn([room, hourly], hourly.facts.headline) : hourly;
+                }
                 const waiting = await this.shortSkip(
-                    run, waiter, ambient, WAITING_FOCUS,
+                    arrived.run, arrived.cultivator, this.ambientFor(arrived.cultivator, arrived.run), WAITING_FOCUS,
                     // Under the inn's roof it is rest, and it is said as rest.
-                    room !== null || whereTheyAreLodged(this, waiter) !== null ? 'Rest at the inn' : 'Waiting',
+                    room !== null || (whereTheyAreLodged(this, waiter)?.paidThroughDay ?? 0) > Math.floor(arrived.run.elapsedDays) ? 'Rest at the inn' : 'Waiting',
                     waitingDays
                 );
                 if (room) {
@@ -5186,7 +5361,7 @@ ${noticedWaiting}`;
                 ));
                 if (aboard) {
                     sayWhereTheShipIs(sheet.facts, placeName(cultivator), aboard);
-                    const hull = theRationsAboard(this.db, cultivator);
+                    const hull = theRationsAboard(this.db, cultivator, this.atHand);
                     shownWithNoModelAfter(sheet.facts, hull > 0
                         ? `The hull's rations cover ${howMany(hull, 'more day')}.`
                         : "The hull's rations are gone; meals come out of the pack.");
@@ -5342,7 +5517,7 @@ ${noticedWaiting}`;
             // an unrecognised label falls through to the READ rather than to
             // the commitment. See the four DEFAULT_* constants in actions.ts.
             case 'petition':
-                return this.petition(run, cultivator, action.target, action.intent, action.topic);
+                return this.petition(run, cultivator, action.target, action.intent, action.topic, rawInput);
 
             case 'posture':
                 return this.posture(run, cultivator, action.target, action.intent);
@@ -5359,22 +5534,6 @@ ${noticedWaiting}`;
                 return this.descend(run, cultivator, ambient, action.target);
 
             case 'treat':
-                // NOT WHILE SOMEBODY IS SWINGING AT YOU. Read off the sheet,
-                // this answered "nothing anybody could charge you for" to
-                // somebody visibly bleeding; read off the standing body it
-                // spent a month and closed nothing, because a wound taken in a
-                // fight is held by the fight until it ends. Neither is true.
-                // What is true is that a physician is not an option here.
-                if (held !== null) {
-                    return refused('cultivation_manage.treat', 'treat', factsForRefusal(
-                        'Not here, and not now.',
-                        'Somebody is still swinging at you. Whatever is open stays open until '
-                        + 'this is finished one way or the other.',
-                        'Treatment refused while a fight is standing: wounds taken in one are '
-                        + 'held by the fight and written when it resolves. Nothing spent, no '
-                        + 'time passed.'
-                    ));
-                }
                 return this.treat(run, cultivator, ambient);
 
             case 'buy':
@@ -6780,7 +6939,14 @@ ${noticed}`;
                 `wait: "${said}" reached ${landed.couldHaveBeen.length} of ${dated.length} `
                 + 'dated thing(s). Nothing written, no time passed.'
             );
-        return { settled: null, refusal: this.freeAction(run, 'wait', facts) };
+        // This is a question about the dated facts already in front of the
+        // player, not the wait they were trying to begin.  `freeAction` only
+        // records that no handler spent a span; the executor needs this receipt
+        // to keep the generic lesser-action charge off the documented no-time
+        // refusal branches above.
+        const refusal = this.freeAction(run, 'wait', facts);
+        refusal.timeDisposition = 'free_read';
+        return { settled: null, refusal };
     }
 
     /**
@@ -6848,6 +7014,9 @@ ${noticed}`;
         scope: KnowledgeScope,
         pointedAt: RosterEntry | null = this.somebodyAtHand(query, cultivator)
     ): ResolvedEntity | null {
+        // A recognized ordinary role with no unique actual listener must not
+        // fall through to a fuzzy name or an unrelated person.
+        if (!pointedAt && theOrdinaryRoleNamed(query)) return null;
         return pointedAt
             ? resolveCultivator(
                 this.repos, pointedAt.name, cultivator.id, scope, cultivator.realmOrdinal
@@ -6928,7 +7097,10 @@ ${noticed}`;
             + `standing here it could have meant. ${here.length} `
             + `${here.length === 1 ? 'person is' : 'people are'} present and `
             + `${nameable.length} of them can be named. `
-            + `${this.knownNamesLine(cultivator, scope)}`
+            + `${this.knownNamesLine(cultivator, scope)}`,
+            look.offeredAName ? [] : [here.length === 0
+                ? `At this attempted ${action}, nobody is present in the player's current area. There is no listener, no reply, and no requested care or other action by an addressee. This is not somebody present declining or ignoring the request.`
+                : `At this attempted ${action}, the addressed person was not found among the people present. No reply or requested action by that addressee happened.`]
         ));
     }
 
@@ -7126,7 +7298,7 @@ ${noticed}`;
         if (query.length < 2 && topic && topic.length >= 2) {
             const atHand = this.present(cultivator);
             if (atHand.length > 0) {
-                return this.askAround(run, cultivator, atHand[atHand.length - 1], topic, scope);
+                return this.replyFrom(this.askAround(run, cultivator, atHand[atHand.length - 1], topic, scope), atHand[atHand.length - 1]!.id);
             }
         }
 
@@ -7164,10 +7336,9 @@ ${noticed}`;
 
         // Pointed at rather than named: whoever is at hand is who they meant.
         const pointedAt = this.somebodyAtHand(query, cultivator);
-        if (pointedAt && topic && topic.length >= 2) {
-            return this.askAround(run, cultivator, pointedAt, topic, scope);
-        }
-
+        // Bind that actual person through the ordinary encounter/name authority
+        // before the existing topic answer below. A pointer is not an exemption
+        // from introducing oneself on an ordinary greeting.
         const party = this.partyPutTo(cultivator, query, scope, pointedAt);
         // A DESCRIPTION is not a name. "The old woman" resolves to nobody in the
         // roster and should not be fuzzy-matched into one; what it does mean is
@@ -7176,16 +7347,25 @@ ${noticed}`;
         if (!party && topic && topic.length >= 2 && POINTING.test(query)) {
             const atHand = this.present(cultivator);
             if (atHand.length > 0) {
-                return this.askAround(run, cultivator, atHand[atHand.length - 1], topic, scope);
+                return this.replyFrom(this.askAround(run, cultivator, atHand[atHand.length - 1], topic, scope), atHand[atHand.length - 1]!.id);
             }
         }
         if (!party) {
             return this.nobodyByThatName(cultivator, query, scope, 'interact', intent, rawInput);
         }
 
+        // A remembered person is not a physical listener. Ordinary local approach
+        // has already used its native clock and rebuilt the actual current body.
+        // Institutional house acts keep their separate counter/message authority.
+        if (party.kind === 'cultivator' && !this.present(cultivator).some(row => row.id === party.id))
+            return this.nobodyByThatName(cultivator, query, scope, 'interact', intent, rawInput);
+
         // A NAME ONLY HEARD OF, read before the approach is filed over it.
         const onlyHeardOf = party.kind === 'cultivator' && this.aNameOnlyHeardOf(cultivator, party.id);
-        this.noteEncounter(
+        // A whole-house name supplies no physically witnessed listener/visit.
+        // Actual house entry has its own encounter authority; this resolver
+        // establishes a present body only for the cultivator branch.
+        if (party.kind === 'cultivator') this.noteEncounter(
             cultivator, run, party, 'witnessed', `Approached at ${placeName(cultivator)}.`
         );
         // SAID ALOUD, it lands as whatever they are known for.
@@ -7205,7 +7385,7 @@ ${noticed}`;
         // list and a policy note and called the player "this cultivator".
         if (topic && topic.length >= 2 && party.kind === 'cultivator') {
             const who = this.present(cultivator).find(row => row.id === party.id);
-            if (who) return this.askAround(run, cultivator, who, topic, scope);
+            if (who) return this.replyFrom(this.askAround(run, cultivator, who, topic, scope), party.id);
         }
 
         // They may say something they assume the player already knows. The engine
@@ -7330,7 +7510,7 @@ ${noticed}`;
                     ok: true
                 }
             ];
-            return putBack;
+            return this.replyFrom(putBack, party.id);
         }
 
         // The player gets the honest in-fiction shape of it - an approach made,
@@ -8091,8 +8271,26 @@ ${noticed}`;
         // `making-somebody-tell-you.ts`: it moves what somebody is WILLING to
         // say and can never move what they hold, and the guarantee for that is
         // where `askedAbout` reads the flag rather than anything written here.
-        compelled = false
+        compelled = false,
+        // Internal reads of one exchange retain their own answer authority but
+        // register only the outer conversation. All ordinary callers default on.
+        registerTurn = true
     ): Execution {
+        if (registerTurn) {
+            const questions = informationQuestionsOf(topic);
+            if (questions.length > 0) {
+                const answers = questions.map(question => {
+                    const own = whatIsBeingAskedAboutThem(question);
+                    return this.askAround(run, cultivator, asked,
+                        own === null ? question : A_TOPIC_ABOUT_THEMSELVES[own],
+                        scope, compelled, false);
+                });
+                const folded: Execution = foldTheCallsIntoOneTurn(answers);
+                return { ...this.freeAction(run, 'interact', folded.facts), ...folded };
+            }
+        }
+        const read = (facts: EngineFacts): Execution =>
+            this.freeAction(run, 'interact', facts, registerTurn);
         // What the question was about, resolved against the same catalogs
         // everything else uses. Unresolvable is a real outcome, not an error:
         // people are asked about things that do not exist all the time.
@@ -8103,29 +8301,48 @@ ${noticed}`;
         if (this.atHand && /\b(?:opportunities|ripening|openings)\b/i.test(topic)) {
             const lines = opportunitiesTheyCanTell(this.atHand, asked.id, cultivator.id);
             if (lines.length > 0) this.theWorldMoved();
-            return this.freeAction(run, 'interact', factsForToolResult(
+            return read(factsForToolResult(
                 'The schedules they know.', lines.length > 0 ? lines : ['They know of no coming opening.']
             ));
         }
         if (!compelled && asksWhichHousesTheyKnow(topic)) {
-            return this.theHousesTheyCouldName(run, cultivator, asked);
+            return this.theHousesTheyCouldName(run, cultivator, asked, registerTurn);
         }
         // The way somewhere, answered from what they know of the land.
         const wayTo = compelled ? null : theWayAskedFor(topic);
-        if (wayTo !== null) return theWayTo(this, run, cultivator, asked, wayTo);
+        if (wayTo !== null) return theWayTo(this, run, cultivator, asked, wayTo, false, registerTurn);
         // A courtesy asks nothing, so nothing is looked up or guessed at.
         if (isACourtesy(topic)) {
             const known = this.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
-            return this.freeAction(run, 'interact', factsForToolResult(
+            return read(factsForToolResult(
                 `${known ? asked.name : 'Somebody'}, ${topic.trim()}.`,
                 [`${known ? asked.name : 'The one nearest to hand'} hears it. A courtesy asks `
                     + 'nothing of them, and nothing is weighed.']
             ));
         }
+        const care = askingAboutCareHere(this, cultivator, asked.id, topic);
+        if (care) {
+            // One exchange may ask their name as well as their clinical offer.
+            // Let the ordinary self-knowledge answer own the introduction and
+            // its knowledge writes; append the read without another turn.
+            if (whatIsBeingAskedAboutThem(topic) === 'name') {
+                const introduction = this.askAround(run, cultivator, asked,
+                    A_TOPIC_ABOUT_THEMSELVES.name, scope, compelled, registerTurn);
+                const facts = factsForToolResult(care.headline,
+                    [...introduction.facts.lines, ...care.lines],
+                    `${introduction.facts.prose}\n${care.prose}`);
+                facts.structure.push(...introduction.facts.structure, ...care.structure);
+                if (introduction.facts.required) facts.required = [...introduction.facts.required];
+                return { ...introduction, facts };
+            }
+            return read(care);
+        }
         const ownFact = selfFactFromTopic(topic);
+        const workDirection = ownFact === null
+            ? aWorkDirectionQuestion(topic, asked, this.atHand) : null;
         const oldWorld = ownFact === null
             ? whatSomebodyKnowsOfTheOldWorld(topic, asked, oldWorldYear(this.atHand, run.elapsedDays)) : null;
-        const subject = oldWorld?.subject ?? (ownFact !== null ? null : aLocalMechanicsQuestion(
+        const subject = oldWorld?.subject ?? workDirection ?? (ownFact !== null ? null : aLocalMechanicsQuestion(
             topic, asked, this.atHand
         ) ?? resolveAnything(
             this.repos, topic, cultivator, scope,
@@ -8189,7 +8406,8 @@ ${noticed}`;
             rawTopic: topic,
             aboutThemselves,
             holdsIt: oldWorld?.holdsIt ?? whetherTheyHoldIt(this.knowledge, asked.id, subject),
-            publicRecord: oldWorld !== null && oldWorld.records.every(row => row.holders === undefined),
+            publicRecord: workDirection !== null
+                || (oldWorld !== null && oldWorld.records.every(row => row.holders === undefined)),
             priorDealings: this.dealingsWith(cultivator, asked.id),
             // What comes out when nothing about the question does. `asked.ts`
             // decides whether they get to use it.
@@ -8324,7 +8542,7 @@ ${noticed}`;
         facts.structure.push(...answer.structure);
         if (dropped) addHearing(facts, dropped);
 
-        const execution = this.freeAction(run, 'interact', facts);
+        const execution = read(facts);
         execution.hearing = dropped;
         execution.calls = [
             {
@@ -9392,9 +9610,18 @@ ${noticed}`;
             ? null
             : /^i$/i.test(named)
                 ? { id: cultivator.id, name: cultivator.name }
-                : (found => found && found.kind === 'cultivator'
-                    ? { id: found.id, name: found.name }
-                    : null)(this.partyPutTo(cultivator, named, scope));
+                : (() => {
+                    const found = this.partyPutTo(cultivator, named, scope);
+                    if (found?.kind === 'cultivator') return { id: found.id, name: found.name };
+                    // A telling names somebody; it does not approach them. A
+                    // world person met in another area is absent from the run
+                    // roster and this room, but their held name still points
+                    // at them. Use the same knowledge/name match as recall,
+                    // without reading their whereabouts or checking the claim.
+                    return this.knowledge.awareness(cultivator.id, 'cultivator')
+                        .filter(row => matchScore(named, row.name) >= MATCH_THRESHOLD)
+                        .sort((a, b) => matchScore(named, b.name) - matchScore(named, a.name))[0] ?? null;
+                })();
 
         const landedOn = whatATellingLandsOn({
             world: this.atHand,
@@ -10499,7 +10726,7 @@ ${noticed}`;
                 `${priced.id} at the ${regionId} multiplier: ${cash} cash = ${stones} stone(s). `
                 + 'Quoted, not bought - nothing spent and no time passed.'
             );
-            return this.freeAction(run, 'market', quoted);
+            return this.freeRead(run, 'market', quoted);
         }
 
         // ── AND A THING IN THE POUCH IS A PRICE QUESTION THE OTHER WAY ───
@@ -10562,7 +10789,7 @@ ${noticed}`;
                 + `${quote.offeredStones}. Quoted only - nothing removed from cultivator_pouch `
                 + 'and nothing paid.'
             );
-            return this.freeAction(run, 'market', appraised);
+            return this.freeRead(run, 'market', appraised);
         }
 
         // ── A BOOK ON THE STALL IS PRICED, AND THE BOARD READ SAID IT WAS NOT
@@ -10597,7 +10824,7 @@ ${noticed}`;
                     + 'Quoted, not bought - nothing spent and no time passed.'
                 );
                 this.nameWhatTheyGot(offered.name, offered.askStones, offered.sellerName);
-                return this.freeAction(run, 'market', asked);
+                return this.freeRead(run, 'market', asked);
             }
         }
         if (category === undefined && named.length >= 3) {
@@ -10619,7 +10846,7 @@ ${noticed}`;
                     + 'stone(s). Quoted, not bought - nothing spent and no time passed.'
                 );
                 this.nameWhatTheyGot(onTheStall.name, stones);
-                return this.freeAction(run, 'market', quoted);
+                return this.freeRead(run, 'market', quoted);
             }
         }
 
@@ -11019,37 +11246,40 @@ ${line}`;
             ));
         }
 
-        const result = await handleRefine({
-            action: 'refine',
+        const args = {
+            action: 'refine' as const,
             recipeId: recipe.id,
             cultivatorId: cultivator.id,
             supplements: []
-        });
+        };
+        const preparation = prepareRefine(args);
+        if (!isRefinePreparation(preparation))
+            return this.fromToolResult('alchemy_manage.refine', 'refine', preparation, recipe.name);
 
-        const refined = this.fromToolResult('alchemy_manage.refine', 'refine', result, recipe.name);
-        if (refined.outcome !== 'executed') return refined;
-
-        // ── AND THE DAYS AT THE CAULDRON ─────────────────────────────────
-        //
-        // Refining took no time at all. It takes what the grade of the pill asks
-        // of this hand, off `daysAtTheWork` - the one curve the bench and a
-        // commission read - spent through `shortSkip` after the cauldron has
-        // answered, because `handleRefine` owns the roll and the ingredients and
-        // a refusal there must spend nothing.
+        // Readiness, approach, work, then the existing authoritative roll/consumption.
+        // The handler rechecks the live pouch, body and ground after those days.
         const pill = getPill(getRecipe(recipe.id)?.producesPillId ?? '');
-        if (!pill) return refined;
-        // AT THE CAULDRON IN YOUR OWN HOUSE'S ROOM FOR IT, where you are inside it.
-        const wentTo = intoTheRoomTheWorkIsDoneIn(this, cultivator, 'medicine');
-        if (wentTo) {
+        if (!pill) return this.fromToolResult('alchemy_manage.refine', 'refine', await handleRefine(args), recipe.name);
+        const approach = await walkIntoTheRoomTheWorkIsDoneIn(this, run, cultivator, 'medicine');
+        if (approach) {
+            if (approach.outcome === 'refused' || approach.cutShort || !this.currentRun().cultivator.alive) return approach;
             cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
-            refined.facts.lines.unshift(wentTo);
+            run = this.repos.runs.getById(run.id) ?? run;
         }
         const days = daysAtTheWork(pill.grade, cultivator.realmOrdinal);
         const spent = await this.shortSkip(
             run, cultivator, this.ambientFor(cultivator, run), TRAVEL_FOCUS,
             `At the cauldron over ${recipe.name}`, days
         );
+        if (spent.cutShort || !this.currentRun().cultivator.alive || spent.timeSkip?.simulatedDays !== days) {
+            spent.facts.lines.push('The refinement stopped before its roll; no ingredients burned and no pill was made.');
+            spent.calls.unshift(...(approach?.calls ?? []));
+            spent.events.unshift(...(approach?.events ?? []));
+            return spent;
+        }
+        const refined = this.fromToolResult('alchemy_manage.refine', 'refine', await handleRefine(args), recipe.name);
         const line = `${days} day${days === 1 ? '' : 's'} at the cauldron.`;
+        if (approach) refined.facts.lines.unshift(...approach.facts.lines);
         refined.facts.lines.unshift(line);
         refined.facts.prose = `${line}\n\n${refined.facts.prose}`;
         refined.facts.structure.push(
@@ -11057,9 +11287,9 @@ ${line}`;
         );
         return {
             ...refined,
-            events: [...refined.events, ...spent.events],
+            events: [...(approach?.events ?? []), ...spent.events, ...refined.events],
             timeSkip: spent.timeSkip,
-            calls: [...refined.calls, ...spent.calls]
+            calls: [...(approach?.calls ?? []), ...spent.calls, ...refined.calls]
         };
     }
 
@@ -11155,6 +11385,11 @@ ${line}`;
         ambient: AmbientQi,
         target: string | undefined
     ): Promise<Execution> {
+        if (this.worldEnabled && (this.atHand ??= await this.loadWorld())?.npcs.some(n => n.activity?.retrievalRequestId)) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            run = this.repos.runs.getById(run.id) ?? run;
+        }
         // ── GROUND SOMEBODY HAS CLOSED IS CLOSED ─────────────────────────
         //
         // A house that closes its ground writes `STOPS_GATHERING` and says so
@@ -11179,7 +11414,7 @@ ${line}`;
         }
 
         const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(cultivator, GATHERING_DAYS, {
+        const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, cultivator, GATHERING_DAYS, {
             seed: run.seed,
             // The row id is a randomUUID; without this the run is not
             // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
@@ -11201,11 +11436,7 @@ ${line}`;
             randomEvents: true,
             hostility: ruinHostilityHere(this, cultivator),
             toll: tollConditionsFor(this.repos, cultivator)
-        });
-
-        this.putBackWhatWasNotEaten(cultivator, skip);
-        const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
-        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        }, 'pack');
 
         // A named herb narrows the draw to that herb if it is within reach;
         // otherwise the catalog's weighted table decides, which is the honest
@@ -11315,6 +11546,11 @@ ${line}`;
          */
         thrown?: HowTheBlowWasThrown
     ): Promise<Execution> {
+        if (this.worldEnabled && (this.atHand ??= await this.loadWorld())?.npcs.some(n => n.activity?.retrievalRequestId)) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            run = this.repos.runs.getById(run.id) ?? run;
+        }
         const startDay = Math.floor(run.elapsedDays);
         const ground = this.beastGroundFor(cultivator);
 
@@ -11350,7 +11586,7 @@ ${line}`;
             ? daysToFindTheOneHere(afterOne.species, afterOne.at, HUNTING_DAYS)
             : HUNTING_DAYS;
 
-        const skip = simulateTimeSkip(cultivator, days, {
+        const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, cultivator, days, {
             seed: run.seed,
             rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(cultivator),
@@ -11368,11 +11604,7 @@ ${line}`;
             randomEvents: true,
             hostility: ruinHostilityHere(this, cultivator),
             toll: tollConditionsFor(this.repos, cultivator)
-        });
-
-        this.putBackWhatWasNotEaten(cultivator, skip);
-        const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
-        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        }, 'pack');
         const me = applied.cultivator;
         const here = placeName(me);
         const today = Math.floor(applied.run.elapsedDays);
@@ -12770,7 +13002,7 @@ ${opened.text}` : receipt,
         const perRation = daysPerRation(cultivator.realmOrdinal, cultivator.injuries);
         const counted = Number.isFinite(perRation) && perRation > 0;
         const wanted = counted ? Math.max(1, Math.ceil((SATIETY_MAX - cultivator.satiety) * perRation / SATIETY_MAX)) : 1;
-        const taken = takeFromTheHull(this.db, cultivator, wanted);
+        const taken = takeFromTheHull(this.db, cultivator, wanted, this.atHand);
         const restored = Math.min(SATIETY_MAX - cultivator.satiety,
             counted ? Math.ceil(taken * SATIETY_MAX / perRation) : SATIETY_MAX);
         const after = this.db.transaction((): Cultivator => {
@@ -12782,7 +13014,7 @@ ${opened.text}` : receipt,
             this.repos.runs.incrementTurn(run.id, 1);
             return updated;
         })();
-        const left = theRationsAboard(this.db, after);
+        const left = theRationsAboard(this.db, after, this.atHand);
         const line = left > 0
             ? `You eat from the ship's rations, which now cover ${howMany(left, 'more day')} of the passage.`
             : "You eat from the ship's rations, and that was the last of them; the rest of the passage comes out of the pack.";
@@ -12847,8 +13079,8 @@ ${opened.text}` : receipt,
     /**
      * The two lines on the board that answer "I am hurt".
      */
-    private static readonly PRICE_PHYSICIAN_VISIT = 'price-doctor-visit';
-    private static readonly PRICE_COURSE_OF_CARE = 'price-splint-and-month';
+    private static readonly PRICE_PHYSICIAN_VISIT = PHYSICIAN_VISIT_PRICE;
+    private static readonly PRICE_COURSE_OF_CARE = PHYSICIAN_COURSE_PRICE;
 
     /**
      * WHAT THE WALL IS ASKING FOR, IN FIGURES.
@@ -12914,10 +13146,26 @@ ${opened.text}` : receipt,
      * Getting a wound seen to: the house's own medicine first, for a member at
      * its seat (`house-medicine-for-a-member.ts`), and a physician otherwise.
      */
-    private async treat(run: Run, cultivator: Cultivator, ambient: AmbientQi): Promise<Execution> {
-        const shelf = await seenToFromTheHouseShelf(this, run, cultivator);
+    async treat(run: Run, cultivator: Cultivator, ambient: AmbientQi, requestedProviderId?: string): Promise<Execution> {
+        // NOT WHILE SOMEBODY IS SWINGING AT YOU. Read off the sheet,
+        // this answered "nothing anybody could charge you for" to
+        // somebody visibly bleeding; read off the standing body it
+        // spent a month and closed nothing, because a wound taken in a
+        // fight is held by the fight until it ends. Neither is true.
+        // What is true is that a physician is not an option here.
+        if (theFightStillStands(this.fight, run.id, cultivator.id)) {
+            return refused('cultivation_manage.treat', 'treat', factsForRefusal(
+                'Not here, and not now.',
+                'Somebody is still swinging at you. Whatever is open stays open until '
+                + 'this is finished one way or the other.',
+                'Treatment refused while a fight is standing: wounds taken in one are '
+                + 'held by the fight and written when it resolves. Nothing spent, no '
+                + 'time passed.'
+            ));
+        }
+        const shelf = await seenToFromTheHouseShelf(this, run, cultivator, requestedProviderId);
         if (shelf !== null && 'given' in shelf) return shelf.given;
-        const atAPhysician = await this.treatAtAPhysician(run, cultivator, ambient);
+        const atAPhysician = await this.treatAtAPhysician(run, cultivator, ambient, requestedProviderId);
         if (shelf !== null) {
             atAPhysician.facts.lines.unshift(shelf.withheld.line);
             atAPhysician.facts.prose = `${shelf.withheld.line}\n\n${atAPhysician.facts.prose}`;
@@ -12926,20 +13174,28 @@ ${opened.text}` : receipt,
         return atAPhysician;
     }
 
-    private async treatAtAPhysician(run: Run, cultivator: Cultivator, ambient: AmbientQi): Promise<Execution> {
+    private async treatAtAPhysician(run: Run, cultivator: Cultivator, ambient: AmbientQi, requestedProviderId?: string): Promise<Execution> {
+        if (this.worldEnabled && (this.atHand ??= await this.loadWorld())?.npcs.some(n => n.activity?.retrievalRequestId)) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            run = this.repos.runs.getById(run.id) ?? run;
+        }
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const careWorld = this.atHand;
+        const carePlace = careWorld?.locations.find(place => place.id === this.worldPlaceOf(cultivator));
+        const physician = careWorld && carePlace
+            ? npcsWhereTheyStand(careWorld, carePlace, cultivator.standingIn, { id: cultivator.id })
+                .find(npc => (requestedProviderId === undefined || npc.id === requestedProviderId)
+                    && physicianIsWorking(careWorld, npc)) : undefined;
+        if (!physician) {
+            return refused('world.physicianIsWorking', 'treat', factsForRefusal(
+                'Nobody here is seeing to wounds.',
+                'Visit a town clinic while its physician is working, or your house\'s infirmary for its own medicine.',
+                'No living working physician beside the player. Nothing spent and no time passed.'
+            ));
+        }
         const hurt = untreatedInjuries(cultivator.injuries);
-        const visit = getPrice(GameService.PRICE_PHYSICIAN_VISIT)!;
-        const course = getPrice(GameService.PRICE_COURSE_OF_CARE)!;
-        const regionId = standingOf(cultivator, this.atHand).regionId;
-        // `buy` routes both of these two board rows straight into this method,
-        // so they have to be priced the way `buy` prices everything else or the
-        // same sentence reaches two different figures. Both rows are medicine,
-        // and a war has *everybody who can heal being paid too much*.
-        const groundHere = this.groundPriceMultiplier(cultivator, course.category);
-        const courseCash = Math.max(1, Math.round(localPrice(regionId, course.cash) * groundHere));
-        // Rounded UP to whole stones. The purse holds whole stones and a
-        // player must never be charged less than the board quoted.
-        const perWound = Math.max(1, Math.ceil(cashToStones(courseCash)));
+        const { visit, course, regionId, groundHere, courseCash, perWound, visitCash, restingPrice } = carePricesHere(this, cultivator);
 
         // WHAT A PHYSICIAN IS ACTUALLY FOR
         const battered = cultivator.hp < cultivator.maxHp;
@@ -13014,8 +13270,6 @@ ${opened.text}` : receipt,
         // A course of care closes a meridian; a visit sets what is ordinary
         // about a body, and somebody with no torn meridians is buying the
         // second one.
-        const visitCash = Math.max(1, Math.round(localPrice(regionId, visit.cash) * groundHere));
-        const restingPrice = Math.max(1, Math.ceil(cashToStones(visitCash)));
         // Priced on what can be REACHED, not on what is being carried: a wound
         // past mortal grade is not a course anybody is going to sell.
         const dueNow = reachable.length === 0 ? restingPrice : perWound;
@@ -13045,12 +13299,28 @@ ${opened.text}` : receipt,
         // is bought or it is not, and a cultivator who cannot pay for both can
         // still starve during the stay - through the survival layer, exactly
         // as they would anywhere else.
-        const provisioning = this.buyProvisions(cultivator, TREATMENT_DAYS);
-        const paid = this.repos.cultivators.applyDeltas(provisioning.cultivator.id, { spiritStones: -cost });
-        if (!paid) throw new GameError('Cultivator vanished on the physician\'s table.', 500);
+        // Reserve the validated fee before food is priced against this same
+        // purse. applyDeltas floors a negative purse at zero; provisioning
+        // first could therefore buy food with stones already owed for care.
+        const forCare = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -cost });
+        if (!forCare) throw new GameError('Cultivator vanished on the physician\'s table.', 500);
+        const provisioning = this.buyProvisions(forCare, TREATMENT_DAYS);
+        const paid = provisioning.cultivator;
+        // The service was bought from this actual person. It is their purse,
+        // not wealth removed from circulation by an imaginary counter.
+        physician.spiritStones += cost;
+        physician.updatedOnDay = careWorld!.currentDay;
+        const precedingWork = physician.activity;
+        // A paid course is actual work on the existing activity calendar.
+        // Ordinary meals are part of doing it; a death or a changed duty can
+        // still interrupt it, and is checked after the world advances.
+        const paidWork = { kind: 'the_work_of_their_rank' as const, note: 'Providing the paid course of care.', withIds: [],
+            sinceDay: careWorld!.currentDay, untilDay: careWorld!.currentDay + TREATMENT_DAYS };
+        physician.activity = paidWork;
+        this.theWorldMoved();
 
         const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(paid, TREATMENT_DAYS, {
+        const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, paid, TREATMENT_DAYS, {
             seed: run.seed,
             // The row id is a randomUUID; without this the run is not
             // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
@@ -13073,10 +13343,18 @@ ${opened.text}` : receipt,
             randomEvents: false,
             hostility: ruinHostilityHere(this, paid),
             toll: tollConditionsFor(this.repos, paid)
-        });
-
-        const applied = applyTimeSkip(this.repos, { before: paid, run, skip });
-        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        }, 'reserved');
+        const attending = this.atHand?.npcs.find(npc => npc.id === physician.id);
+        const ourCourse = attending !== undefined && JSON.stringify(attending.activity) === JSON.stringify(paidWork);
+        const stillServing = skip.simulatedDays >= TREATMENT_DAYS && ourCourse
+            && attending!.status === 'alive'
+            && locationOnNpcJourney(this.atHand!.locations, attending!, this.atHand!.currentDay) === carePlace?.id;
+        // Restore only our own course. A new engine-written duty, a journey or
+        // a conflict is somebody's actual state and must survive this return.
+        if (attending?.status === 'alive' && ourCourse) {
+            attending.activity = precedingWork;
+            this.theWorldMoved();
+        }
 
         // The month can kill: the bleed clock runs through it, and so does the
         // food clock. The survival layer has already written it and nothing
@@ -13097,6 +13375,21 @@ ${opened.text}` : receipt,
                 outcome: 'executed',
                 calls: [...skipCalls('treat', skip, provisioning.line), ...worldCalls(world)]
             };
+        }
+
+        if (!stillServing) {
+            const interrupted = factsForTimeSkip(paid, applied.cultivator, skip, ambient, 'Care interrupted');
+            interrupted.lines.unshift(provisioning.line);
+            const unfinishedCare = 'The physician is no longer seeing to patients here. The fee was paid up front; '
+                + 'the unfinished care closes no wounds and restores no HP of its own.';
+            interrupted.lines.push(unfinishedCare);
+            // The paid course failed even though the clock ran. The player needs
+            // that result in the receipt, including when the narrator falls back.
+            interrupted.required = [...(interrupted.required ?? []), unfinishedCare];
+            interrupted.lines.push(...world.lines);
+            interrupted.structure.push(...world.structure);
+            return { facts: interrupted, events: skip.events, timeSkip: skip, breakthrough: null,
+                outcome: 'executed', calls: [...skipCalls('treat', skip, provisioning.line), ...worldCalls(world)] };
         }
 
         // The engine's own triage decides which wounds, worst first. This layer
@@ -13141,7 +13434,7 @@ ${opened.text}` : receipt,
             treated: treated.map(injury => injury.description),
             stillUntreated: stillHurt,
             mended
-        });
+        }, applied.cultivator);
         facts.lines.unshift(provisioning.line);
 
         // WHAT THE STAY COULD NOT REACH, AND WHAT WOULD
@@ -13330,7 +13623,7 @@ ${opened.text}` : receipt,
         }
         // A bed on the board and "I take a room" are one room: `a-room-at-an-inn.ts`.
         if (price.id === 'price-inn-night' || price.id === 'price-month-lodging') {
-            return takeARoom(
+            return await takeARoom(
                 this, run, cultivator,
                 price.id === 'price-month-lodging' ? 30 : nightsAskedFor(rawInput) ?? 1,
                 { bed: price.id }
@@ -13709,7 +14002,7 @@ ${opened.text}` : receipt,
                 name: book.name,
                 stones: askingFor(book)
             })));
-            return this.freeAction(run, 'buy', facts);
+            return this.freeRead(run, 'buy', facts);
         }
 
         if (query.length < 3) return null;
@@ -13820,6 +14113,29 @@ ${opened.text}` : receipt,
         cultivator: Cultivator,
         offer: AnOfferStandingHere
     ): Promise<Execution | null> {
+        if (offer.objectId && this.atHand) {
+            const world = this.atHand;
+            const seller = world.npcs.find(n => n.id === offer.sellerId);
+            const buyerAt = world.npcs.findIndex(n => n.id === cultivator.id);
+            const object = world.objects.find(o => o.id === offer.objectId);
+            const thing = object ? whatThisThingIs(object) : null;
+            if (!seller || buyerAt < 0 || !object || !thing) return null;
+            world.npcs[buyerAt] = { ...world.npcs[buyerAt]!, spiritStones: cultivator.spiritStones };
+            const paid = tradeExchangeObject(world, seller, world.npcs[buyerAt]!, object.id,
+                Math.floor(world.currentDay), { id: cultivator.id, locationId: this.worldPlaceOf(cultivator) });
+            if (paid === null) return refused('world.tradeExchangeObject', 'buy', factsForRefusal(
+                'The purchase did not proceed.', `Price: ${offer.askStones} spirit stones. Your purse: ${cultivator.spiritStones}.`,
+                'The seller, stock, attendance and purse must still agree.'));
+            this.db.transaction(() => {
+                this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -paid });
+                addToPouch(this.db, cultivator.id, thing.kindId, object.kind === 'pill' ? 'pill' : 'herb', thing.quantity);
+            })();
+            this.theWorldMoved();
+            learnTheSeller(this.knowledge, cultivator, Math.floor(run.elapsedDays), offer);
+            const line = `${object.name} bought from ${seller.name} for ${paid} spirit stones.`;
+            return { ...this.freeAction(run, 'buy', factsForToolResult(line, [line])),
+                calls: [{ name: 'world.tradeExchangeObject', action: 'buy', summary: line, ok: true }] };
+        }
         if (cultivator.spiritStones < offer.askStones) return null;
         if (this.alreadyHasACopyOf(cultivator)(offer.thingId)) return null;
 
@@ -13935,20 +14251,8 @@ ${opened.text}` : receipt,
         if (!outcome.refused) {
             this.db.transaction(() => {
                 if (outcome.stones > 0) {
-                    this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -outcome.stones });
-                    // The recipient is a stored row or a world NPC, and both
-                    // have to be able to receive - the same split
-                    // `whatALiftTook` makes for the same reason.
-                    const stored = this.repos.cultivators.getById(party!.id);
-                    if (stored) {
-                        this.repos.cultivators.applyDeltas(party!.id, { spiritStones: outcome.stones });
-                    } else {
-                        const npc = (this.atHand?.npcs ?? []).find(row => row.id === party!.id);
-                        if (npc) {
-                            npc.spiritStones += outcome.stones;
-                            this.theWorldMoved();
-                        }
-                    }
+                    if (!transferActualSpiritStones(this, cultivator.id, party!.id, outcome.stones).ok)
+                        throw new Error('The actual gift purse changed before its transfer.');
                 }
                 if (outcome.lot) {
                     removeFromPouch(this.db, cultivator.id, outcome.lot.itemId, outcome.lot.quantity);
@@ -14011,6 +14315,45 @@ ${opened.text}` : receipt,
         // book and saying "I sell the manual" means the thing in their hand.
         // See `sellAVolumeYouAreHolding` for the played refusal that said there
         // was nothing in it.
+        if (this.atHand) {
+            const world = this.atHand;
+            const placeId = this.worldPlaceOf(cultivator);
+            const held = this.pouchEntryFor(listPouch(this.db, cultivator.id), target ?? '');
+            const lot = held ? this.lotFor(held) : null;
+            const buyer = world.npcs.find(n => n.id !== cultivator.id && n.status === 'alive' && n.locationId === placeId
+                && this.present(cultivator).some(p => p.id === n.id)
+                && (exchangeOffers(world, n).length > 0 || n.activity?.kind === 'stationed'));
+            const sellerAt = world.npcs.findIndex(n => n.id === cultivator.id);
+            if (lot && buyer && sellerAt >= 0 && world.locations.some(l => l.id === placeId && (l.tags.includes('city') || whatKindOfPlace(l.name) === 'provincial capital'))) {
+                let object = world.objects.find(o => o.possessorId === cultivator.id && o.ownerId === cultivator.id
+                    && !isRuined(o) && whatThisThingIs(o)?.kindId === lot.itemId && whatThisThingIs(o)?.quantity === 1);
+                // Counted pouch goods acquire a row when a named person takes this unit.
+                const newRow = !object;
+                object ??= makeObject({ id: `exchange-player:${cultivator.id}:${randomUUID()}`, name: lot.name,
+                    kind: lot.kind === 'pill' ? 'pill' : 'material', ownerId: cultivator.id, ownerName: cultivator.name,
+                    possessorId: cultivator.id, locationId: placeId, tags: ['exchange'],
+                    data: lot.kind === 'pill' ? { pillId: lot.itemId } : { materialId: lot.itemId } });
+                if (newRow) world.objects.push(object);
+                world.npcs[sellerAt] = { ...world.npcs[sellerAt]!, spiritStones: cultivator.spiritStones };
+                const paid = tradeExchangeObject(world, world.npcs[sellerAt]!, buyer, object.id,
+                    Math.floor(world.currentDay), { id: cultivator.id, locationId: placeId });
+                if (paid === null) {
+                    if (newRow) world.objects.splice(world.objects.findIndex(o => o.id === object!.id), 1);
+                    return refused('world.tradeExchangeObject', 'sell', factsForRefusal('The sale did not proceed.',
+                        `The buyer holds ${buyer.spiritStones} spirit stones.`, 'No object or money changed hands.'));
+                }
+                this.db.transaction(() => {
+                    if (!removeFromPouch(this.db, cultivator.id, lot.itemId, 1)) throw new GameError('The sold unit is missing from the pouch.', 500);
+                    this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: paid });
+                })();
+                this.theWorldMoved();
+                this.knowledge.learnIfNew({ holderId: cultivator.id, kind: 'cultivator', id: buyer.id, name: buyer.name,
+                    onDay: Math.floor(run.elapsedDays), sourceKind: 'told', stage: 'placed', statement: `${buyer.name} bought ${object.name} from you.` });
+                const line = `${object.name} sold to ${buyer.name} for ${paid} spirit stones.`;
+                return { ...this.freeAction(run, 'sell', factsForToolResult(line, [line])),
+                    calls: [{ name: 'world.tradeExchangeObject', action: 'sell', summary: line, ok: true }] };
+            }
+        }
         const asAVolume = await this.sellAVolumeYouAreHolding(run, cultivator, (target ?? '').trim());
         if (asAVolume) return asAVolume;
 
@@ -15192,11 +15535,20 @@ ${opened.text}` : receipt,
             ));
         }
 
+        const tracked = this.whatYouAreCarrying(cultivator).rows.find(o => o.kind === 'pill'
+            && o.data.pillId === chosen.itemId && !isRuined(o));
         const result = await handleConsumePill({
             action: 'consume_pill',
             pillId: chosen.itemId,
             cultivatorId: cultivator.id
         });
+        const left = listPouch(this.db, cultivator.id).find(row => row.itemId === chosen.itemId)?.quantity ?? 0;
+        if (tracked && this.atHand && left < chosen.quantity) {
+            const remaining = (whatThisThingIs(tracked)?.quantity ?? 1) - (chosen.quantity - left);
+            if (remaining > 0) tracked.data.quantity = remaining;
+            else Object.assign(tracked, ruin(tracked, { onDay: this.atHand.currentDay, source: 'Swallowed.' }));
+            this.theWorldMoved();
+        }
         return this.fromToolResult('alchemy_manage.consume_pill', 'consume_pill', result, name);
     }
 
@@ -17689,9 +18041,10 @@ ${fit.line}`;
             facts.structure.push(
                 `encounters.sectBoardFor: ${board.offers.length} offer(s), `
                 + `${board.refusals.length} withheld, membership=`
-                + `${board.membership ? `${board.membership.factionId}@${board.membership.rankIndex}` : 'none'}.`
+                + `${board.membership ? `${board.membership.factionId}@${board.membership.rankIndex}` : 'none'}. `
+                + 'Reading the wall, not taking off it: nothing spent, no time passed.'
             );
-            return this.freeAction(run, 'sect', facts);
+            return this.freeRead(run, 'sect', facts);
         }
 
         // a line, taken
@@ -18363,7 +18716,7 @@ ${fit.line}`;
     ): { calls: ToolCallRecord[]; wroteToTheLedger: boolean } {
         const calls: ToolCallRecord[] = [];
         let wroteToTheLedger = false;
-        const landed = result.outcome === 'taken' || result.outcome === 'turned';
+        const landed = attemptWasAccepted(result.outcome);
         const aWrongThatCameOff = wrong !== null && landed;
         for (const [which, mark] of [
             ['obligation', result.marks.obligation],
@@ -18452,7 +18805,7 @@ ${fit.line}`;
             });
         }
         // AND WHAT TURNING UP AGAIN PUTS RIGHT
-        if (!somethingWasAsked && (result.outcome === 'taken' || result.outcome === 'turned')) {
+        if (!somethingWasAsked && (attemptWasAccepted(result.outcome))) {
             for (const open of openLedgerBetween(this.repos, cultivator.id, party.id)) {
                 if (open.kind !== 'grudge') continue;
                 if (open.holderId !== party.id || open.subjectId !== cultivator.id) continue;
@@ -18504,7 +18857,7 @@ ${fit.line}`;
         costing: RequestCosting,
         meeting: { id: string; name: string; factionId: string | null; here: boolean } | null,
         /** The term and the destination, for the one ask that has them. */
-        along: { forDays: number; bound: string | null } = { forDays: 0, bound: null },
+        along: { forDays: number | null; bound: string | null; invitation?: boolean } = { forDays: 0, bound: null },
         ambient: AmbientQi = 'normal'
     ): Promise<{ lines: string[]; calls: ToolCallRecord[]; span?: Execution | null }> {
         const lines: string[] = [];
@@ -18520,7 +18873,7 @@ ${fit.line}`;
             const runNow = this.repos.runs.getById(run.id) ?? run;
             const span = await this.aSpanUnderTheirEye(
                 runNow, now, ambient, { id: party.id, name: party.name },
-                Math.max(1, Math.trunc(along.forDays)),
+                Math.max(1, Math.trunc(along.forDays ?? DEFAULT_CULTIVATION_DAYS)),
                 `${party.name} agreed to watch ${cultivator.name} sit`
             );
             return { lines, calls, span };
@@ -18537,7 +18890,7 @@ ${fit.line}`;
             // The term is days, and the day it is counted from is the world's -
             // see `theDayAPartyIsOn`, which is the only thing here that names a
             // day at all.
-            const forDays = Math.max(1, Math.trunc(along.forDays));
+            const forDays = along.forDays === null ? null : Math.max(1, Math.trunc(along.forDays));
             const leftOn = this.theDayAPartyIsOn();
             // AND WHOEVER HAD ALREADY SAID YES TO THEM. Read off the mustering
             // activity by `whereTheyAlreadyAre` - the world puts a person
@@ -18552,11 +18905,11 @@ ${fit.line}`;
                         ? `On the road with ${cultivator.name}.`
                         : `On the road with ${cultivator.name}, bound for ${along.bound}.`,
                     forDays,
-                    invitation: true,
+                    invitation: along.invitation ?? true,
                     visit: /\b(?:room|quarters)\b/i.test(along.bound ?? '')
                 }
             );
-            const until = this.atHand?.npcs.find(n => n.id === party.id)?.activity?.redirect?.until ?? null;
+            const until = this.whereTheyAlreadyAre(party.id).outWith?.untilDay ?? null;
             // A person the world holds no row for cannot be put on a road. The
             // ask still landed and the world has nowhere to record it, which is
             // a fact about the roster and not about the answer.
@@ -18581,9 +18934,10 @@ ${fit.line}`;
             lines.push(
                 `${came.length === 1 ? party.name : came.join(', ')} `
                 + `${came.length === 1 ? 'comes' : 'come'} with you for `
-                + 'the rest of the day'
+                + (along.invitation !== false ? 'the rest of the day'
+                    : forDays === null ? 'an ongoing journey with no stated end' : forDays + ' days')
                 + `${along.bound === null ? '' : `, bound for ${along.bound}`}`
-                + '. They return home at night.'
+                + (along.invitation !== false ? '. They return home at night.' : '. Company continues only while its agreement holds.')
             );
             calls.push({
                 name: 'world.takeThemWithYou',
@@ -19037,7 +19391,8 @@ ${fit.line}`;
             // its own input type that it wants everyone drawing, the asker
             // included, and this was the count that was wrong.
             occupantOrdinals: everybodyDrawingHere({
-                inTheWorld: npcsStandingIn(this.atHand, record.id),
+                inTheWorld: npcsStandingIn(this.atHand, record.id, undefined,
+                    routesForPresenceRead(this.atHand.locations)),
                 onRunSheets: [
                     cultivator,
                     ...this.repos.cultivators.roster().filter(row =>
@@ -19253,11 +19608,12 @@ ${fit.line}`;
     }
 
     /**
-     * Record facts without a span. The executor charges lesser acts from their
-     * plan; reads of the scene and one's own sheet remain free.
+     * Record facts without a span. The executor may still charge the plan's
+     * lesser action: this is not a time disposition. A resolved perceptual
+     * read must use `freeRead`; a successful no-op must set `no_op` itself.
      */
-    freeAction(run: Run, action: ActionName, facts: EngineFacts): Execution {
-        this.repos.runs.incrementTurn(run.id, 1);
+    freeAction(run: Run, action: ActionName, facts: EngineFacts, registerTurn = true): Execution {
+        if (registerTurn) this.repos.runs.incrementTurn(run.id, 1);
         return {
             facts,
             events: [],
@@ -19271,6 +19627,11 @@ ${fit.line}`;
                 ok: true
             }]
         };
+    }
+
+    /** A resolved read whose engine result, not its wording, establishes zero time. */
+    private freeRead(run: Run, action: ActionName, facts: EngineFacts): Execution {
+        return { ...this.freeAction(run, action, facts), timeDisposition: 'free_read' };
     }
 
 
@@ -19401,10 +19762,8 @@ ${fit.line}`;
     }
 
     /** Rations in the pack. Carried across turns, travel and changes of mind. */
-    private rationsHeld(cultivator: Pick<Cultivator, 'id'>): number {
-        const raw = readFlag(this.db, cultivator.id, FLAG_RATIONS_HELD);
-        const held = raw === null ? 0 : Number(raw);
-        return Number.isFinite(held) && held > 0 ? Math.floor(held) : 0;
+    rationsHeld(cultivator: Pick<Cultivator, 'id'>): number {
+        return readRationsHeld(this.db, cultivator);
     }
 
     /**
@@ -19465,12 +19824,7 @@ ${fit.line}`;
         cultivator: Pick<Cultivator, 'id' | 'realmOrdinal' | 'satiety' | 'injuries'>,
         days: number
     ): number {
-        const multiplier = satietyBurnMultiplier(cultivator.realmOrdinal, cultivator.injuries);
-        if (multiplier <= 0) return 0;
-        void days;
-        const held = this.rationsHeld(cultivator);
-        if (held > 0) this.setRationsHeld(cultivator, 0);
-        return held;
+        return openRationsInThePack(this.db, cultivator, days);
     }
 
     /**
@@ -19483,12 +19837,11 @@ ${fit.line}`;
         cultivator: Pick<Cultivator, 'id'>,
         skip: { endState: { rationsRemaining: number } }
     ): void {
-        const left = Math.max(0, Math.floor(skip.endState.rationsRemaining));
-        this.setRationsHeld(cultivator, this.rationsHeld(cultivator) + left);
+        returnUnopenedRations(this.db, cultivator, skip);
     }
 
     private setRationsHeld(cultivator: Pick<Cultivator, 'id'>, held: number): void {
-        writeFlag(this.db, cultivator.id, FLAG_RATIONS_HELD, String(Math.max(0, Math.floor(held))));
+        writeRationsHeld(this.db, cultivator, held);
     }
 
     /**
@@ -19654,7 +20007,8 @@ ${fit.line}`;
             gate: this.knowledge,
             holderId: cultivator.id,
             here: cultivator.location,
-            present: this.present(cultivator)
+            present: this.present(cultivator),
+            locations: this.atHand?.locations
         };
     }
 
@@ -19797,6 +20151,11 @@ ${fit.line}`;
             const keeper = whoKeepsTheCounter(this, cultivator, counter, countersHere);
             return keeper ? here.find(row => row.id === keeper.id) ?? null : null;
         }
+
+        // A visible ordinary worker may be addressed by their catalog role before
+        // they give their name. Absence and ambiguity remain actual refusals.
+        if (theOrdinaryRoleNamed(wanted))
+            return thePersonInThatOrdinaryRole(wanted, here, this.atHand ?? null);
 
         // A TARGET IS A DESCRIPTION, AND EVERY VERB THAT TAKES ONE GETS IT HERE.
         //
@@ -20474,6 +20833,44 @@ ${fit.line}`;
         });
     }
 
+    /**
+     * Record an engine-resolved person who actually answered this interaction.
+     *
+     * This is deliberately an id from the resolver, never a later match against
+     * the player's words. A refused branch cannot add a speaker, while a later
+     * failed step leaves an earlier successful reply intact for this turn.
+     */
+    private replyFrom(execution: Execution, personId: string): Execution {
+        if (execution.outcome === 'executed') {
+            this.repliesAwaitingCapture.add(personId);
+        }
+        return execution;
+    }
+
+    /** A present person's engine-resolved answer, including an actual spoken refusal. */
+    captureAnActualReplyBeforeTime(cultivator: Cultivator, personId: string): void {
+        if (!this.present(cultivator).some(person => person.id === personId)) return;
+        this.repliesAwaitingCapture.add(personId);
+        this.captureReplyCardsBeforeTime(cultivator);
+    }
+
+    /** Capture reply cards after their immediate writes and before lesser-action time advances. */
+    private captureReplyCardsBeforeTime(cultivator: Cultivator): void {
+        const awaiting = new Set(this.repliesAwaitingCapture);
+        if (awaiting.size === 0) return;
+        this.repliesAwaitingCapture.clear();
+        const now = presenceForScene(this, this.repos.cultivators.getById(cultivator.id) ?? cultivator);
+        for (const card of this.company(now).named) {
+            if (!card.id || !awaiting.has(card.id)) continue;
+            this.replyCardsThisTurn.push({ ...card, repliedAt: {
+                place: thePlaceAsTheSceneNamesIt(this, now, placeName(now)),
+                area: now.standingIn ?? null,
+                day: Math.floor(this.atHand?.currentDay ?? this.currentRun().run.elapsedDays),
+                hour: this.atHand?.currentHour ?? (this.currentRun().run.elapsedDays % 1) * 24
+            } });
+        }
+    }
+
     company(cultivator: Cultivator): Company {
         cultivator = presenceForScene(this, cultivator);
         let here = this.present(cultivator);
@@ -20501,6 +20898,34 @@ ${fit.line}`;
         // roll or to a person who will be standing in front of them.
         const houseIds = new Set((this.atHand?.factions ?? []).map(house => house.id));
         const nameOf = (id: string): string => byId.get(id)?.name ?? 'somebody';
+
+        // Placement gives ordinary work its current clinical duty. Read it once
+        // for this scene, without rewriting the person's stored rank-work note.
+        const clinicalWork = new Map<string, string>();
+        // Public counter duty is a derived visible role, never a name or a personal folding capability.
+        for (const [counter, worker] of theCounterWorkersHere(this, cultivator, here)) {
+            const work = counter === 'inn' ? 'keeping the inn counter'
+                : counter === 'landing' ? 'keeping the landing counter'
+                : counter === 'carriage_station' ? 'keeping the carriage station counter'
+                : 'keeping the folding counter and its public route board';
+            clinicalWork.set(worker.id, work);
+        }
+
+        const groundId = this.worldPlaceOf(cultivator);
+        const ground = this.atHand?.locations.find(place => place.id === groundId);
+        if (this.atHand && ground) {
+            if (purposeOf(ground) === 'infirmary' && ground.controllingFactionId) {
+                const dispenser = whoDispensesAtTheHouse(this.atHand, ground.controllingFactionId);
+                if (dispenser && here.some(person => person.id === dispenser.id))
+                    clinicalWork.set(dispenser.id, 'at the infirmary medicine shelf, ready to dispense the house\'s medicine');
+            } else if (ground.kind === 'settlement') {
+                for (const person of here) {
+                    const npc = byId.get(person.id);
+                    if (npc && physicianIsWorking(this.atHand, npc))
+                        clinicalWork.set(npc.id, 'at work in the physician\'s clinic, ready to examine a wound');
+                }
+            }
+        }
 
         // Somebody robbed of a thing they need acts on it when next seen. See
         // `somebody-robbed-of-something-they-need.ts`.
@@ -20557,6 +20982,7 @@ ${fit.line}`;
                     .filter(id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id))
                     .map(nameOf);
                 named.push({
+                    id: person.id,
                     name: person.name,
                     ordinal: person.realmOrdinal,
                     sex: person.sex ?? null,
@@ -20570,7 +20996,8 @@ ${fit.line}`;
                     whatTheyLost: this.atHand === null
                         ? null
                         : whatTheCardSaysOfALoss(this.atHand.objects, person.id, today),
-                    at: remote ? `A ${remote} presence is here.` : doing === null ? null : whatThatLooksLike(doing, alongside),
+                    at: remote ? `A ${remote} presence is here.`
+                        : clinicalWork.get(person.id) ?? (doing === null ? null : whatThatLooksLike(doing, alongside)),
                     // Whether the square would hand this person to somebody
                     // walking into it, and how sure they would be of it. Both
                     // fall out of what is already true of them - see
@@ -20611,6 +21038,11 @@ ${fit.line}`;
                         : null,
                     ownMind: {
                         ...whatSomebodyHoldsPrivately(person.id, person.sectId ?? null),
+                        ...(row?.factionId && doing && isAwayOnSomething(doing.kind) ? {
+                            knows: [whatSomebodyHoldsPrivately(person.id, person.sectId ?? null)?.knows,
+                                `House: ${this.atHand?.factions.find(h => h.id === row.factionId)?.name ?? 'their house'}. Assignment: ${doing.note} Term ends on day ${doing.untilDay}.`]
+                                .filter(Boolean).join(' ')
+                        } : {}),
                         knowsOfPlayer: [...new Set(account.known.map(record => {
                             const point = whichWayItPoints(record);
                             const kind = record.kind.replaceAll('_', ' ');
@@ -20648,7 +21080,8 @@ ${fit.line}`;
                 strangers.push({
                     ordinal: person.realmOrdinal,
                     sex: person.sex ?? null,
-                    at: remote ? `A ${remote} presence is here.` : doing === null ? null : whatThatLooksLike(doing, [])
+                    at: remote ? `A ${remote} presence is here.`
+                        : clinicalWork.get(person.id) ?? (doing === null ? null : whatThatLooksLike(doing, []))
                 });
             }
         }
@@ -20762,10 +21195,11 @@ ${fit.line}`;
     /**
      * Move the world the same span the cultivator just spent.
      */
-    async advanceWorld(days: number, cultivator: Cultivator, run: Run): Promise<WorldReport> {
+    async advanceWorld(days: number, cultivator: Cultivator, run: Run,
+        options: Parameters<typeof advanceWorldForCultivator>[3] = {}): Promise<WorldReport> {
         if (!this.worldEnabled || days <= 0) return { lines: [], structure: [] };
 
-        const advance = await advanceWorldForCultivator(run, cultivator, days);
+        const advance = await advanceWorldForCultivator(run, cultivator, days, options);
 
         // The half of the span nobody mentioned. It is not discarded: an
         // unheard consequence keeps its one lifetime chance of turning up on
@@ -21013,6 +21447,13 @@ ${fit.line}`;
      */
     worldPlaceOf(cultivator: Cultivator): string | null {
         if (!this.atHand) return null;
+        const body = this.repos.cultivators.getById(cultivator.id);
+        // A separated actual scene is not the body's unfinished road.
+        const throughPresence = body && presenceForScene(this, body);
+        const actualProxyScene = throughPresence && throughPresence !== body
+            && throughPresence.location === cultivator.location
+            && throughPresence.standingIn === cultivator.standingIn;
+        if (!actualProxyScene && betweenRoadEndpoints(this.repos.db, cultivator)) return null;
         return worldLocationFor(this.atHand, cultivator.location)?.id ?? null;
     }
 
@@ -21655,8 +22096,10 @@ ${fit.line}`;
         // player answered a question, this wrote "gave you their name" over the row that said she
         // raised them, and the next card handed her over as a stranger ("I am Duan Shuping, in case
         // you have forgotten").
-        const alreadyTheirs = this.knowledge.provenanceOf(cultivator.id, 'cultivator', person.id)
-            .some(row => row.sourceKind === 'witnessed' && !!row.statement && row.statement !== `${person.name} exists.`);
+        // A mere witnessed sighting is still an unnamed face. Ask the same
+        // reader as the card, over provenance so childhood is never replaced.
+        const alreadyTheirs = thePlayerIsSureItIsThem(person.name,
+            this.knowledge.provenanceOf(cultivator.id, 'cultivator', person.id));
         if (alreadyTheirs) return false;
         const where = placeName(cultivator);
         const learned = this.knowledge.learnIfNew({
@@ -21829,6 +22272,10 @@ ${fit.line}`;
     }
 
     private stateView(run: Run, cultivator: Cultivator): StateView {
+        return withPresenceReadScope(() => this.readStateView(run, cultivator));
+    }
+
+    private readStateView(run: Run, cultivator: Cultivator): StateView {
         return {
             run: runView(run),
             cultivator: {

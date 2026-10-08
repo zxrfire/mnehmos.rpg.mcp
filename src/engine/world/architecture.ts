@@ -1190,7 +1190,43 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     // compound makes for the rooms ahead of these are the draws it made.
     if (!out.includes('alchemy_hall')) out.push('alchemy_hall');
     out.push('artifact_refining_hall');
+    // Every inhabited house refines wound medicine. Specialist infirmaries keep
+    // their original position; append the ordinary dispensary without shifting old draws.
+    if (!out.includes('infirmary')) out.push('infirmary');
     return out;
+}
+
+type RoomConstructionInput = Pick<CompoundInput,
+    'factionId' | 'factionName' | 'powerOrdinal' | 'inherited'>
+    & Partial<Pick<CompoundInput, 'formationIntegrity' | 'alignment'>>;
+
+/** Add the ordinary dispensary to an existing compound without rebuilding its rooms. */
+export function addMissingInfirmary(
+    locations: LocationRecord[],
+    input: RoomConstructionInput,
+    opts: { seed: string }
+): LocationRecord | null {
+    if (locations.some(l => l.data.factionId === input.factionId && purposeOf(l) === 'infirmary')) return null;
+    const host = locations.find(l => l.data.factionId === input.factionId
+        && l.data.purpose === 'precinct' && Number(l.data.precinctIndex) === 0);
+    if (!host) return null;
+    const style = houseStyleFromTags(host);
+    if (!style) return null;
+    const precinct: Precinct = {
+        index: 0, rank: String(host.data.rank),
+        entryOrdinal: host.thresholds.operational, privacy: Number(host.data.privacy ?? 0)
+    };
+    // The outer court's capacity is the built unit (privacy zero). Read the
+    // existing construction rather than inventing catalog statistics for a founded house.
+    const unit = Number(host.data.capacity) / (1 - precinct.privacy * 0.8);
+    if (!Number.isFinite(unit) || unit <= 0) return null;
+    const room = buildRoom('infirmary', PURPOSE.infirmary, precinct, host, input, style, unit,
+        { styleId: style.id, styleTags: style.tags.join(' '), factionId: input.factionId },
+        forStream(opts.seed, 'compound-infirmary-upgrade', input.factionId));
+    if (locations.some(l => l.id === room.id)) return null;
+    locations.push(room);
+    linkLocations(host, room, 'gate', 0);
+    return room;
 }
 
 function buildRoom(
@@ -1198,7 +1234,7 @@ function buildRoom(
     spec: PurposeSpec,
     precinct: Precinct,
     host: LocationRecord,
-    input: CompoundInput,
+    input: RoomConstructionInput,
     style: HouseStyle,
     unit: number,
     styleData: Record<string, string>,
@@ -1235,7 +1271,7 @@ function buildRoom(
     const hazards = spec.hazards.slice();
     // A house whose arrays are dead has no live formations to be hurt by. The
     // hazard is the array WORKING; a dark compound is safer and worth less.
-    if (input.formationIntegrity < 0.3) {
+    if (input.formationIntegrity !== undefined && input.formationIntegrity < 0.3) {
         const at = hazards.indexOf('formation');
         if (at >= 0) hazards.splice(at, 1);
     }
@@ -1775,7 +1811,7 @@ function roomDescription(
     purpose: RoomPurpose,
     style: HouseStyle,
     precinct: Precinct,
-    input: CompoundInput
+    input: Pick<CompoundInput, 'factionName'>
 ): string {
     return `${roomName(purpose, style, precinct)}, in the ${precinct.rank.toLowerCase()} `
         + `precinct of ${input.factionName}.`;

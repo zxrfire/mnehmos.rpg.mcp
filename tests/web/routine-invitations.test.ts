@@ -4,6 +4,13 @@
  * night, dismissal or the host leaving the room, and then resume its routine.
  * Expiry applies to active people; it cannot move a body away from its death.
  * A scripted phase-one plan exercises the same company request as a model.
+ *
+ * After the native fractional clock was wired, the original six controls gave
+ * three failures: the return was still walking at night, booking after inviting
+ * spent the remaining daylight, and currentDay included the hour fraction.
+ * These fixtures now wait for the actual return deadline, book two paid nights
+ * before the next morning's visit, and compare the canonical clock. None of
+ * those changes lengthens an invitation or makes a journey instantaneous.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness';
@@ -11,18 +18,27 @@ import { parseIntent } from '../../src/web/actions';
 import { withTheAttemptLanding } from '../../src/server/consolidated/forcing-an-attempt-to-land';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { worldLocationFor } from '../../src/web/entities';
-import { routineOf } from '../../src/engine/world/npc-routines';
+import { routineOf, routineTime } from '../../src/engine/world/npc-routines';
 import { invitationsDue } from '../../src/web/routine-invitations';
 import { whereTheyAreStanding, whereCompoundsAre } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 
 async function arrange(visit = false, sect = false, dismiss = false) {
-    const provider = new ScriptedProvider({ plans: [JSON.stringify({ action: 'request', intent: 'company', target: 'her',
-        ...(visit ? { topic: 'my room' } : {}) }), ...(dismiss ? [JSON.stringify({action:'request', intent:'end_company',target:'her'})] : [...(sect ? [] : [JSON.stringify({ action: 'buy', target: 'a room at the inn' })]),
+    const provider = new ScriptedProvider({ plans: [...(visit ? [
+        JSON.stringify({ action: 'buy', target: 'a room at the inn', days: 2 }),
+        JSON.stringify({ action: 'wait' })
+    ] : []), JSON.stringify({ action: 'request', intent: 'company', target: 'her',
+        ...(visit ? { topic: 'my room' } : {}) }), ...(dismiss ? [JSON.stringify({action:'request', intent:'end_company',target:'her'})] : [...(sect || visit ? [] : [JSON.stringify({ action: 'buy', target: 'a room at the inn' })]),
         JSON.stringify({ action: 'move', target: 'my room' }), ...(visit ? [JSON.stringify({ action: 'look', intent: 'around' }),
-        JSON.stringify({ action: 'move', target: 'the street' })] : [JSON.stringify({ action: 'wait' })])])], narrations: ['The opening.', 'The answer.'] });
+        JSON.stringify({ action: 'move', target: 'the street' })] : [JSON.stringify({ action: 'wait' }),
+        ...(sect ? [JSON.stringify({ action: 'wait' })] : [])])])], narrations: ['The opening.', 'The answer.'] });
     const harness = await makeGameInWorld({ seed: 'routine-visit', worldSeed: 'road-world', provider });
     const { game, repos } = harness;
     const { cultivator } = await game.newRun('Visitor');
+    if (visit) {
+        const booking = await game.act('I take a room at the inn for two nights');
+        expect(booking.toolCalls.some(c => c.name === 'engine.takeARoom' && c.ok)).toBe(true);
+        await game.act('I wait until morning');
+    }
     const world = (await game.loadWorld())!;
     let place = worldLocationFor(world, cultivator.location)!;
     let read = theAreasOf(world, place);
@@ -70,12 +86,19 @@ describe('routines and invitations in play', () => {
         expect(game.present(repos.cultivators.getById(me.id)!).map(n => n.id)).toContain(sister.id);
         await game.act('I wait until night');
         expect(game.whoIsWithYouOnTheRoad(repos.cultivators.getById(me.id)!)).toHaveLength(0);
+        expect((await game.loadWorld())?.currentHour).toBeCloseTo(21);
+        const returning = game.atHand!.npcs.find(n => n.id === sister.id)!;
+        if (returning.activity?.kind === 'travelling') {
+            expect(returning.activity.untilDay).not.toBeNull();
+            const hours = (returning.activity.untilDay! - routineTime(game.atHand!)) * 24;
+            expect(hours).toBeGreaterThan(0);
+            await game.act(`I wait for ${hours} hours`);
+        }
         const npc = game.atHand!.npcs.find(n => n.id === sister.id)!;
         const home = whereTheyAreStanding(game.atHand!, whereCompoundsAre(game.atHand!), npc, new Set(game.atHand!.npcs.map(n => n.id)))!;
         const quarters = game.atHand!.locations.find(l => l.id === home)!;
         expect(['dormitory', 'residence']).toContain(quarters.data.purpose);
         expect(theAreasOf(game.atHand!, quarters).whereIs.get(sister.id)).toContain('#room#');
-        expect((await game.loadWorld())?.currentHour).toBeCloseTo(21);
     }, 180_000);
 
     it('dismissal ends the actual invitation addressed by a pronoun', async () => {
@@ -129,15 +152,13 @@ describe('routines and invitations in play', () => {
             scenes.push(game.present(game.state().cultivator).map(n=>n.id).sort().join(','));
         }
         expect(new Set(scenes).size).toBeGreaterThan(1);
-        expect(game.atHand!.currentDay).toBe(openingDay+2);
-        expect(game.atHand!.currentHour).toBe(21);
+        expect(routineTime(game.atHand!)).toBe(routineTime({ currentDay: openingDay + 2, currentHour: 21 }));
     },180_000);
 
     it('a private visit lasts in the room and ends when its host leaves', async () => {
         const { game, repos, sister } = await arrange(true);
         const ask = await withTheAttemptLanding('request', () => game.act('I invite her to my room'));
         expect(ask.result.toolCalls.some(c => c.name === 'world.takeThemWithYou' && c.ok)).toBe(true);
-        await game.act('I take a room at the inn');
         await game.act('I go to my room');
         const me = repos.cultivators.getById(game.state().cultivator.id)!;
         expect(game.present(me).map(n => n.id)).toContain(sister.id);

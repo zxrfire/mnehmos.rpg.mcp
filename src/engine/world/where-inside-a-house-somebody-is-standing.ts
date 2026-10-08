@@ -49,9 +49,10 @@ import {
 import { getPill } from '../../data/cultivation/pills.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { THE_COMMUNICATION_TALISMAN } from '../../data/cultivation/communication-talismans.js';
-import type { LocationRecord } from './locations.js';
+import type { LocationRecord, RouteQueries } from './locations.js';
 import { isActing, type NpcRecord } from './npc-state.js';
-import { npcsAt, type WorldState } from './world-state.js';
+import type { WorldState } from './world-state.js';
+import { whoDispensesAtTheHouse } from './who-is-actually-seeing-to-wounds.js';
 import { whoIsAtAClosedLesson } from './where-a-master-takes-their-own-disciples.js';
 import { routineOf } from './npc-routines.js';
 import { theLodgingsOfAHouse, whichRoomARungGets, type LodgingRoom } from './the-room-a-house-gives-you.js';
@@ -67,6 +68,7 @@ export interface ACompound {
     /** Who holds which office, read once and only when somebody needs it. */
     offices: APortfolio[] | null;
     lodgings?: LodgingRoom[];
+    dispenser?: { day: number; hour: number; id: string | null };
     /** Who is at a closed lesson here, to its room, read once a day when asked. */
     lessons?: { day: number; at: Map<string, string> } | null;
 }
@@ -152,9 +154,10 @@ export function whereTheyAreStanding(
     state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay' | 'seed' | 'currentHour'>,
     compounds: WhereCompoundsAre,
     npc: NpcRecord,
-    people: ReadonlySet<string>
+    people: ReadonlySet<string>,
+    routes?: RouteQueries
 ): string | null {
-    const routine = routineOf(state, npc);
+    const routine = routineOf(state, npc, routes);
     const stored = routine.locationId;
     if (stored === null) return null;
     const compound = compounds.bySeat.get(compounds.seatOf.get(stored) ?? stored);
@@ -182,6 +185,12 @@ export function whereTheyAreStanding(
     if (!stillAtIt({ activity: routine.activity }, day)) return stored;
     const doing = routine.activity!;
     if (doing.withIds.some(id => !people.has(id))) return stored;
+
+    const hour = state.currentHour ?? 8;
+    if (!compound.dispenser || compound.dispenser.day !== day || compound.dispenser.hour !== hour)
+        compound.dispenser = { day, hour,
+            id: whoDispensesAtTheHouse(state, compound.houseId)?.id ?? null };
+    if (compound.dispenser.id === npc.id) return compound.rooms.get('infirmary')?.id ?? stored;
 
     if (doing.kind === 'the_work_of_their_rank') {
         // MAKING A THING IS DONE WHERE THAT THING IS MADE, before the office:
@@ -263,24 +272,23 @@ export const A_SLIP_CUT_TO_ORDER = 'commission-slip-';
 export function npcsStandingIn(
     state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay' | 'seed' | 'currentHour'>,
     locationId: string,
-    compounds: WhereCompoundsAre = whereCompoundsAre(state)
+    compounds: WhereCompoundsAre = whereCompoundsAre(state),
+    routes?: RouteQueries
 ): NpcRecord[] {
     const seatId = compounds.seatOf.get(locationId);
     if (seatId === undefined) {
-        const ordinary = npcsAt(state, locationId).filter(n => !n.activity?.redirect);
-        const returning = state.npcs.filter(n => isActing(n.status) && n.activity?.redirect
-            && routineOf(state, n).locationId === locationId);
-        return [...ordinary, ...returning]
+        return state.npcs.filter(n => isActing(n.status)
+            && routineOf(state, n, routes).locationId === locationId)
             .sort((a, b) => a.id.localeCompare(b.id));
     }
     const compound = compounds.bySeat.get(seatId)!;
     const people = new Set(state.npcs.map(n => n.id));
     return state.npcs
         .filter(n => {
-            const at = n.activity?.redirect ? routineOf(state, n).locationId : n.locationId;
+            const at = routineOf(state, n, routes).locationId;
             return isActing(n.status) && at !== null && (at === seatId || compound.inside.has(at));
         })
-        .filter(n => whereTheyAreStanding(state, compounds, n, people) === locationId)
+        .filter(n => whereTheyAreStanding(state, compounds, n, people, routes) === locationId)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 }
 

@@ -48,12 +48,20 @@ the single most consequential thing that can happen to a promising cultivator - 
 why inter-sect competitions matter enormously to everyone except the people at the top,
 for whom they are recruitment.
 
-The live selection is `gatherings.ts`: the winning disciple goes upward when
-the receiving house is stronger and the home house answers to it. The former
+The live selection is `entering-an-open-competition.ts`: on a capital's open
+board, a realm winner may be taken up when the host is stronger and the
+winner's home house answers to it. A patron leaves its last ordinary roll
+vacancy open for this selection; the winner takes that real place. The former
 nine-person provincial intake and its fixed route shares were a second policy
 beside that selection and have been removed. Recommendation, grant quotas and
 purchase remain possible arrangements between people; they do not share a
 province-wide intake pool.
+Selection changes the roll at the board. A selected factor hands their old
+house's consignment to another factor actually present, or carries it home on
+the mission's return before travelling to the receiving grounds. The old
+house keeps ownership until its own factor brings the stock or proceeds back.
+The receiving house pays for the selected disciple's actual journey, using
+its craft or public ship berths where water separates the grounds.
 
 The detail that makes this land, and it must not be softened:
 
@@ -413,3 +421,22 @@ wants: a house with no vein and no levy that administers a wooded basin directly
 better than a wandering order and nothing like as well as anybody sitting on rock. Its
 four settlements together are still worth less than the weakest single vein anybody
 holds.
+
+
+## Where competitions are held, and why a capital has people in it
+
+Open competitions take place in the capitals and cities. Anyone may enter, including
+someone with no house. Closed competitions take place at a house's own grounds and
+admit only its members. Both hold separate boards by realm. Inner trials, disciple
+contests and conclave-seat tournaments are internal; standing outside a house's gate
+does not confer an entry. Each competition has a fixed calendar cadence.
+
+Houses send people to cities for reports, escort work, purchases, auctions and open
+boards, while keeping most of their members at home. Capital exchanges carry the
+wares those visiting factors bring from their houses. Stock belongs to its source
+until sold, proceeds return home, and a visit has an end. City residents remain part
+of the city; visitors do not replace them.
+
+A standing post is relieved. The incoming member arrives first, receives the outgoing
+member's accounts, and shares a handover day before the outgoing member departs.
+An auction or competition delegation ends without needing a replacement.

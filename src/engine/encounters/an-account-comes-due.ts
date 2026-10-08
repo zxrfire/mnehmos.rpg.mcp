@@ -213,6 +213,7 @@ export function attemptAnAccount(
             door: {
                 what: 'broke_in',
                 doorName: door.name,
+                ...(door.locationId ? { locationId: door.locationId } : {}),
                 doorStandsAt: door.standsAt,
                 theirStrength: strength,
                 arrivedOnDay: absoluteDay,
@@ -238,6 +239,7 @@ export function attemptAnAccount(
         door: {
             what: 'stopped',
             doorName: door.name,
+                ...(door.locationId ? { locationId: door.locationId } : {}),
             doorStandsAt: door.standsAt,
             theirStrength: strength,
             arrivedOnDay: absoluteDay,

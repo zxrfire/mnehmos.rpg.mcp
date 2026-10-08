@@ -4,7 +4,9 @@
  * `docs/world/houses/offices-and-succession.md` says conclave is held against
  * the pool and inner is for life; the design owner ruled that the comparison is
  * settled by a contest on each house's own cycle. See
- * `a-conclave-seat-is-won-in-a-tournament.ts`.
+ * `a-conclave-seat-is-won-in-a-tournament.ts`. The owner later ruled fixed
+ * catalog calendars: the measured 13/25/100/500-year periods remain, but
+ * changing a lifespan can no longer move a tournament. Only people at home enter.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -53,7 +55,7 @@ function nextContestYear(state: WorldState, from: number): number {
     throw new Error('no contest in six centuries');
 }
 
-describe('the schedule is the height it is contested at', () => {
+describe('the schedule is the catalog calendar', () => {
     it('runs on a cycle of years, and a taller conclave contests less often', () => {
         const foundation = yearsBetweenConclaveContestsIn(
             SECTS.find(s => s.id === 'sect-azure-cloud-pavilion')! as never);
@@ -61,7 +63,7 @@ describe('the schedule is the height it is contested at', () => {
             SECTS.find(s => s.id === 'sect-frostmirror-court')! as never);
         const top = yearsBetweenConclaveContestsIn(
             SECTS.find(s => s.id === 'sect-hollow-court')! as never);
-        // MEASURED on the shipped catalog. See the module header.
+        // Original shipped cycles, now explicit catalog choices.
         expect(foundation).toBe(13);
         expect(core).toBe(25);
         expect(top).toBe(500);

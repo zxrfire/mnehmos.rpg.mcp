@@ -228,8 +228,10 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         otherwise: 'cultivate'
     },
     make: {
-        says: 'getting or making a thing',
-        intents: { craft: 'craft', gather: 'gather', hunt: 'hunt', refine: 'refine' },
+        says: 'getting, making or deliberately breaking an actual thing; break includes physically '
+            + 'modeled doors and locks. People and coercion are fight, person seals are house, '
+            + 'cultivation breakthroughs are cultivate, and entering sealed ground is site',
+        intents: { craft: 'craft', gather: 'gather', hunt: 'hunt', refine: 'refine', break: 'destroy' },
         otherwise: 'craft'
     },
     sustain: {

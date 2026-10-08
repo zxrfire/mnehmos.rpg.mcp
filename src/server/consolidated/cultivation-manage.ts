@@ -1,4 +1,11 @@
+import { projectActualPassengers } from '../../web/passengers-at-the-actual-clock.js';
+import { routineTime } from '../../engine/world/npc-routines.js';
+import { spendMcpFractionAtItsCurrentChecks } from './a-native-mcp-fraction-at-its-current-checks.js';
+import { prepareWorldClockForPreciseSpan } from '../state/cultivation-world.js';
+import type { TimeSkipContext } from '../../engine/cultivation/time-skip.js';
 import { persistCrossingConsequence } from './cultivation-support.js';
+import { RATION_COST_STONES } from './what-a-ration-costs.js';
+export { RATION_COST_STONES } from './what-a-ration-costs.js';
 /**
  * Consolidated Cultivation Tool - `cultivation_manage`
  */
@@ -169,9 +176,6 @@ type FocusMode = keyof typeof FOCUS_MULTIPLIERS;
 
 /** Sect support per rank step: elder guidance, arrays, a stipend that feeds you. */
 export const SECT_BONUS_PER_RANK = 0.05;
-
-/** One ration fills the belly once, and a full belly covers 50 turn-actions. */
-export const RATION_COST_STONES = 2;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ACTION SCHEMAS
@@ -527,12 +531,13 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
     };
 }
 
-export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Promise<object> {
+export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
+    beforeProvisions?: (body: Cultivator) => void): Promise<object> {
     const repos = ensureCultivationDb();
     const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
     if (isGuidingErrorBody(resolved)) return resolved;
 
-    const { run } = resolved;
+    let { run } = resolved;
     let cultivator = resolved.cultivator;
 
     const days = totalDays(args);
@@ -542,30 +547,35 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         });
     }
 
+    let preciseWorld: Awaited<ReturnType<typeof worldForRun>> | null = null;
+    if (!Number.isInteger(days)) {
+        try {
+            preciseWorld = await prepareWorldClockForPreciseSpan(run, cultivator);
+        } catch (error) {
+            return guidingError('world_clock_unavailable', 'The actual world clock could not be prepared; this span did not begin.', {
+                reason: error instanceof Error ? error.message : String(error)
+            });
+        }
+        const fresh = repos.cultivators.getById(cultivator.id);
+        const freshRun = repos.runs.getById(run.id);
+        if (!fresh || !freshRun) throw new Error('A precise native span lost its actual body or run.');
+        cultivator = fresh; run = freshRun;
+        if (!cultivator.alive) return guidingError('cultivator_dead', 'The actual body died before this span could begin.');
+    }
+
     // ── Move first, if asked. Where you sit decides the ambient band. ──
     if (args.location && args.location !== cultivator.location) {
         repos.cultivators.update(cultivator.id, { location: args.location });
         cultivator = repos.cultivators.getById(cultivator.id)!;
     }
 
-    // ── Provisions are bought, not declared. ──
-    //
-    // Bought is `rations`. `carriedRations` is what a previous stretch paid for
-    // and did not eat, so it is added to the pack and charged for nothing.
-    const bought = args.rations ?? 0;
-    const carried = args.carriedRations ?? 0;
-    const rations = bought + carried;
-    const rationCost = bought * RATION_COST_STONES;
-    if (rationCost > cultivator.spiritStones) {
-        return guidingError(
-            'insufficient_stones',
-            `${bought} rations cost ${rationCost} spirit stones; ${cultivator.name} holds ${cultivator.spiritStones}.`,
-            { required: rationCost, held: cultivator.spiritStones }
-        );
-    }
-    if (rationCost > 0) {
-        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -rationCost });
-        cultivator = repos.cultivators.getById(cultivator.id)!;
+    // A named destination does not remove an actual passenger from its carrier.
+    // Fractional spans project canonical custody again after the legacy move input.
+    if (!Number.isInteger(days) && preciseWorld) {
+        projectActualPassengers(repos.db, preciseWorld, cultivator.id, routineTime(preciseWorld));
+        const projected = repos.cultivators.getById(cultivator.id);
+        if (!projected) throw new Error('The actual passenger body was lost before its span.');
+        cultivator = projected;
     }
 
     if (args.techniqueId && !repos.techniques.knows(cultivator.id, args.techniqueId)) {
@@ -576,7 +586,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         );
     }
 
-    const startDay = Math.floor(run.elapsedDays);
+    const startDay = Number.isInteger(days) ? Math.floor(run.elapsedDays) : run.elapsedDays;
     const focus = (args.focus ?? 'seclusion') as FocusMode;
     const { options, techniqueElement, techniqueName } = cultivationOptionsFor(
         repos, cultivator, focus, args.techniqueId
@@ -610,6 +620,35 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         });
     }
 
+    // Validate native admission before advancing or charging any provision money.
+    // This synchronous internal hook lets Work fund only a span ready to start.
+    if (beforeProvisions) {
+        beforeProvisions(cultivator);
+        const funded = repos.cultivators.getById(cultivator.id);
+        if (!funded) throw new Error('Native provision readiness lost its actual body.');
+        cultivator = funded;
+    }
+
+    // ── Provisions are bought, not declared. ──
+    //
+    // Bought is `rations`. `carriedRations` is what a previous stretch paid for
+    // and did not eat, so it is added to the pack and charged for nothing.
+    const bought = args.rations ?? 0;
+    const carried = args.carriedRations ?? 0;
+    const rations = bought + carried;
+    const rationCost = bought * RATION_COST_STONES;
+    if (rationCost > cultivator.spiritStones) {
+        return guidingError(
+            'insufficient_stones',
+            `${bought} rations cost ${rationCost} spirit stones; ${cultivator.name} holds ${cultivator.spiritStones}.`,
+            { required: rationCost, held: cultivator.spiritStones }
+        );
+    }
+    if (rationCost > 0) {
+        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -rationCost });
+        cultivator = repos.cultivators.getById(cultivator.id)!;
+    }
+
     // WHO REACHES THEM WHILE THE SPAN RUNS AND IT IS THE SAME SEQUENCE, NOT A
     // SECOND ONE
     const activity: EncounterActivity = focus === 'travelling'
@@ -627,11 +666,11 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     // world's own people - so it says "never heard of them" about everybody
     // alive. The played cultivator has no world row and is answered correctly
     // either way, which is what kept it invisible.
-    const worldHere = await worldForRun(run).catch(() => null);
+    const worldHere = preciseWorld ?? await worldForRun(run).catch(() => null);
     let arrivals: ReturnType<typeof encountersFor> | null = null;
     let lived = days;
     let arrivingCultivator = cultivator;
-    if (args.randomEvents ?? true) {
+    if (Number.isInteger(days) && (args.randomEvents ?? true)) {
         try {
             arrivals = encountersFor(
                 {
@@ -665,8 +704,9 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         }
     }
 
-    // ── THE SIMULATION. One call, however long the duration. ──
-    const result = simulateTimeSkip(arrivingCultivator, lived, {
+    // ── THE SIMULATION. Integral spans use one simulation; fractions use ──
+    // current-check portions below.
+    const context: TimeSkipContext = {
         seed: run.seed,
         // Judged rather than copied, because the field defaults to the row id and a
         // caller with a stable id should pass nothing.
@@ -690,9 +730,30 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         autoBreakthrough: args.autoBreakthrough ?? true,
         randomEvents: args.randomEvents ?? true,
         understanding: discovery.context
-    });
+    };
+    const fraction = !Number.isInteger(days) ? await spendMcpFractionAtItsCurrentChecks({
+        repos, run, body: cultivator, days, world: worldHere, context, activity,
+        randomEvents: args.randomEvents ?? true,
+        sceneFor: async (person, actualRun) => {
+            const standing = await groundStandingFor(actualRun, person);
+            return {
+                locationId: effectiveLocationId(repos.db, actualRun.id, person.location, actualRun.elapsedDays),
+                options: cultivationOptionsFor(repos, person, focus, args.techniqueId).options,
+                hostility: standing?.hostility ?? undefined,
+                toll: tollConditionsFor(repos, person),
+                ...daoHeartConditions(repos.db, person, actualRun.elapsedDays),
+                understanding: discoveryContextFor(repos, person, {
+                    runId: actualRun.id, practisingTechniqueId: args.techniqueId ?? null
+                }).context
+            };
+        }
+    }) : null;
+    const result = fraction?.skip ?? simulateTimeSkip(arrivingCultivator, lived, context);
+    if (fraction) { arrivals = fraction.roll; lived = result.simulatedDays; }
 
-    // ── PERSISTENCE. Everything the simulation decided, or nothing at all. ──
+    // ── INTEGRAL PERSISTENCE. One native application for this fast path. ──
+    // Fractional spans above commit actual portions at world boundaries before
+    // the final receipt is folded; already-lived portions are never rolled back.
     //
     // ONE WRITER. This was a second copy of `applyTimeSkip` - the same
     // transaction over the same repos - and the copies had drifted in four
@@ -703,7 +764,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     // bar, and `apply.ts`'s header has said since it was written that the two
     // must not disagree. They cannot now: there is one of them.
     const before = cultivator;
-    const applied = applyTimeSkip(repos, { before, run, skip: result });
+    const applied = fraction?.applied ?? applyTimeSkip(repos, { before, run, skip: result });
     const injuries = applied.injuries;
     const tollApplications = applied.tollApplications;
 
@@ -711,8 +772,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     const runAfter = applied.run;
 
     // STEP 4: what the arrivals left behind, AFTER the skip.
-    let arrivalsRecorded: ReturnType<typeof recordEncounters> | null = null;
-    if (arrivals) {
+    let arrivalsRecorded: ReturnType<typeof recordEncounters> | null = fraction?.recorded ?? null;
+    if (arrivals && !fraction) {
         const reached = cutTo(arrivals, startDay, result.simulatedDays);
         arrivalsRecorded = recordEncounters(
             new KnowledgeGate(repos.db, () => worldHere), after,
@@ -726,9 +787,10 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     // cultivator has a knowledge record for - so a faction they have never heard of
     // arrives as a closed road rather than as a named report.
     let world: Awaited<ReturnType<typeof advanceWorldForCultivator>> = null;
-    let worldError: string | null = null;
+    let worldError: string | null = fraction?.worldError ?? null;
     try {
-        world = await advanceWorldForCultivator(runAfter, after, result.simulatedDays);
+        world = fraction ? fraction.portions[fraction.portions.length - 1] ?? null
+            : await advanceWorldForCultivator(runAfter, after, result.simulatedDays);
     } catch (error) {
         worldError = error instanceof Error ? error.message : String(error);
     }
@@ -740,7 +802,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     );
 
     // WHAT WAS ASKED FOR, NOT WHAT THE ARRIVAL LEFT OF IT
-    const cutShortByAnArrival = lived < days;
+    const cutShortByAnArrival = lived < days && (!fraction || arrivals?.occurrences.some(row => row.interrupts) === true);
     // The one that stopped it. There is at most one, by construction: the
     // window is cut at its first interrupting occurrence.
     const interrupting = arrivals?.occurrences.find(o => o.interrupts) ?? null;
@@ -782,8 +844,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         simulatedYears: round2(result.simulatedDays / DAYS_PER_YEAR),
         stoppedEarly: result.interrupted,
         interruptReason: result.interruptReason,
-        died: result.died,
-        deathCause: result.deathCause,
+        died: result.died || (!!fraction && !after.alive),
+        deathCause: fraction && !after.alive ? after.deathCause : result.deathCause,
         rate: {
             perDay: round4(rate.perDay),
             base: rate.base,
@@ -840,7 +902,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             accessHeld: discovery.sources
         },
         // The world, over the same span, as it actually reached them.
-        worldDigest: world
+        worldDigest: fraction ? fraction.digest : world
             ? {
                 fromDay: world.result.digest?.fromDay ?? world.fromDay,
                 toDay: world.result.digest?.toDay ?? world.toDay,
@@ -1249,7 +1311,8 @@ const definitions: Record<CultivationAction, ActionDefinition> = {
     },
     cultivate: {
         schema: CultivateSchema,
-        handler: handleCultivate,
+        // Router context is not the internal Work readiness callback.
+        handler: (args: z.infer<typeof CultivateSchema>) => handleCultivate(args),
         aliases: ['seclusion', 'meditate', 'time_skip', 'skip'],
         description: 'Resolve a stretch of cultivation - days, months or years - in one deterministic pass'
     },
@@ -1313,9 +1376,10 @@ const definitions: Record<CultivationAction, ActionDefinition> = {
 /**
  * `work` runs the same span `cultivate` does, and adds a wage.
  */
-async function runCultivate(args: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function runCultivate(args: Record<string, unknown>,
+    beforeProvisions?: (body: Cultivator) => void): Promise<Record<string, unknown>> {
     const parsed = CultivateSchema.parse(args);
-    return (await handleCultivate(parsed)) as Record<string, unknown>;
+    return (await handleCultivate(parsed, beforeProvisions)) as Record<string, unknown>;
 }
 
 const router = createActionRouter({ actions: ACTIONS, definitions, threshold: 0.6 });

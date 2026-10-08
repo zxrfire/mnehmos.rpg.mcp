@@ -11,6 +11,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld, ScriptedProvider } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
+import { makeCultivator } from '../engine/cultivation/fixtures';
 import { parseIntent } from '../../src/web/actions';
 import {
     A_TOPIC_ABOUT_THE_HOUSES_THEY_KNOW,
@@ -60,6 +62,19 @@ describe('the words', () => {
 async function aCrowdedSquare(seed: string, provider?: ScriptedProvider) {
     const harness = await makeGameInWorld({ seed, worldSeed: 'road-world', ...(provider ? { provider } : {}) });
     const { cultivator } = await harness.game.newRun('Probe');
+    // People are now placed by the hour and sparsely (`npc-routines.ts`), so the
+    // starting area is no longer reliably the crowded one; stand where the
+    // crowd actually is before asking anything of it.
+    await standWhereThePeopleAre({ game: harness.game, repos: harness.repos }, cultivator.id);
+    // That still may not be enough bodies on its own, so two more are put
+    // right where the player ended up standing.
+    for (let i = 0; i < 2; i++) {
+        harness.repos.cultivators.create(makeCultivator({
+            id: `room-filler-${seed}-${i}`, kind: 'npc', name: `Room Filler ${i}`,
+            location: cultivator.location
+        }));
+        harness.repos.cultivators.standIn(`room-filler-${seed}-${i}`, cultivator.standingIn ?? null);
+    }
     expect(harness.game.present(cultivator).length).toBeGreaterThanOrEqual(2);
     return { ...harness, cultivator };
 }

@@ -41,11 +41,15 @@ import {
 } from './reaching-a-verb-the-pattern-table-has-no-line-for.js';
 import {
     anyClauseReadsAsThisVerb,
+    theClausesOf,
     theClausesNoStepAccountsFor,
     theWholeSentenceAsAPlan,
     spendsSomething,
     stepsInTheResponse,
     theClauseThisStepQuotes,
+    restoreExplicitNameTarget,
+    nameSpansWithin,
+    type ExplicitNameSpan,
     type PlanStep,
     type PlanWithSteps
 } from './a-sentence-can-be-more-than-one-call.js';
@@ -59,7 +63,7 @@ import { FOLDING_SPACE } from './verb-pattern-table.js';
 import { A_HOUSE_NAME_IS_SAID_HOWEVER_SHORT } from './what-a-house-is-called.js';
 import type { AwarenessRow } from './knowledge.js';
 import type { Hearing } from './hearsay.js';
-import type { Company, EngineFacts } from './facts.js';
+import type { Company, EngineFacts, SomebodyWhoReplied } from './facts.js';
 import { inTheCharactersThePatternsUse } from './sentence-parts.js';
 import { theSentenceIsNothingButAPointer } from './last-turn-memory.js';
 
@@ -91,10 +95,10 @@ interface DeterministicRead {
 /**
  * THE TIER STILL THROWS. THE TURN NO LONGER CARRIES THE THROW TO THE PLAYER.
  */
-async function readTheSentence(input: string): Promise<DeterministicRead> {
-    const fromTable = parseIntent(input);
+async function readTheSentence(input: string, nameSpans: readonly ExplicitNameSpan[] = []): Promise<DeterministicRead> {
+    const fromTable = restoreExplicitNameTarget(parseIntent(input), input, nameSpans);
     try {
-        return { action: await verbForASentenceThePatternsMissed(input, fromTable), tierFailure: null };
+        return { action: restoreExplicitNameTarget(await verbForASentenceThePatternsMissed(input, fromTable), input, nameSpans), tierFailure: null };
     } catch (err) {
         const why = err instanceof Error ? err.message : String(err);
         console.error(
@@ -102,6 +106,16 @@ async function readTheSentence(input: string): Promise<DeterministicRead> {
         );
         return { action: fromTable, tierFailure: `the sentence model did not answer (${why})` };
     }
+}
+
+/** Native fallback starts from an actual clause, not a compound misreading.
+ * The existing splitter owns conversational prefixes and exact literal names;
+ * the existing composer still puts every later independently requested act back.
+ */
+async function readFirstActualClause(input: string,
+    nameSpans: readonly ExplicitNameSpan[] = []): Promise<DeterministicRead> {
+    const first = theClausesOf(input, nameSpans)[0] ?? input;
+    return readTheSentence(first, first === input ? nameSpans : nameSpansWithin(input, nameSpans, first));
 }
 
 /**
@@ -232,11 +246,12 @@ function readsAsSpending(plan: PlannedAction): boolean {
 
 async function earningIsNotSpending(
     fromModel: PlannedAction,
-    input: string
+    input: string,
+    nameSpans: readonly ExplicitNameSpan[] = []
 ): Promise<ReadingCheck | null> {
     if (!readsAsSpending(fromModel)) return null;
 
-    const withoutAModel = await readTheSentence(input);
+    const withoutAModel = await readTheSentence(input, nameSpans);
     const table = withoutAModel.action;
     // The QUESTION, and never the taking. See the note above on the ninety days.
     if (table.action !== 'work' || table.intent !== 'board') return null;
@@ -259,7 +274,8 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     fromModel: PlannedAction,
     input: string,
     /** The turn before, where a "that town" or a "there" finds what it points at. */
-    lastTurn?: string | null
+    lastTurn?: string | null,
+    nameSpans: readonly ExplicitNameSpan[] = []
 ): Promise<ReadingCheck> {
     const takingFromThem = readsAsTaking(fromModel);
 
@@ -274,7 +290,7 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     const meantTheUnclear = theTableAnsweredItOnPurpose(fromModel, input);
     if (meantTheUnclear) return meantTheUnclear;
 
-    const spentInsteadOfEarned = await earningIsNotSpending(fromModel, input);
+    const spentInsteadOfEarned = await earningIsNotSpending(fromModel, input, nameSpans);
     if (spentInsteadOfEarned) return spentInsteadOfEarned;
 
     // The identity axis, asked with the other two and before the cheap exit,
@@ -285,7 +301,7 @@ async function theModelIsNotWhyThisTurnIsDangerous(
         return { action: fromModel, declined: null, tierFailure: null };
     }
 
-    const withoutAModel = await readTheSentence(input);
+    const withoutAModel = await readTheSentence(input, nameSpans);
 
     // A FOLD IS SAID, NEVER INFERRED. Played: "TAKE ME TO DRAGONVEIN, NOW",
     // said to a messenger, was read as `fold`, and asking somebody along spends
@@ -533,6 +549,7 @@ export interface NarratorScene {
      * A name the engine has decided somebody says in this scene, if any.
      */
     hearing?: Hearing | null;
+    hearings?: readonly Hearing[];
     /**
      * What the player literally typed.
      */
@@ -546,6 +563,13 @@ export interface NarratorScene {
      * narrator can play them - see `thePeopleHere`.
      */
     company?: Company | null;
+    /**
+     * People who answered during this turn, then left the current area while
+     * its time cost elapsed. They are deliberately outside current company.
+     */
+    justAddressed?: readonly SomebodyWhoReplied[];
+    /** An actual resolver refusal occurred in this turn's executed calls. */
+    failedAddress?: boolean;
     /**
      * The rooms of this compound the player could walk to from where they stand.
      *
@@ -627,7 +651,7 @@ export interface Narrator {
     /**
      * Phase 1. One verb, or several in the order the player said them.
      */
-    plan(input: string, stateSummary: string, lastTurn?: string | null): Promise<PlanWithSteps>;
+    plan(input: string, stateSummary: string, lastTurn?: string | null, nameSpans?: readonly ExplicitNameSpan[]): Promise<PlanWithSteps>;
     narrate(facts: EngineFacts, scene: NarratorScene): Promise<Narration>;
 }
 
@@ -1250,13 +1274,14 @@ export class DeterministicNarrator implements Narrator {
      * first is `whatThisTurnMayRun`'s question, and where the sentence does not
      * say, asking the player is the honest end of it.
      */
-    async plan(input: string): Promise<PlanWithSteps> {
-        const read = await readTheSentence(input);
+    async plan(input: string, _stateSummary?: string, _lastTurn?: string | null,
+        nameSpans: readonly ExplicitNameSpan[] = []): Promise<PlanWithSteps> {
+        const read = await readFirstActualClause(input, nameSpans);
         const note = read.tierFailure ? `${this.note}; ${read.tierFailure}` : this.note;
         const whole = await theWholeSentenceAsAPlan(
             input,
             [{ action: read.action }],
-            async clause => (await readTheSentence(clause)).action
+            async clause => (await readTheSentence(clause)).action, nameSpans
         );
 
         return whole.steps.length > 1
@@ -1379,9 +1404,10 @@ export class ProviderNarrator implements Narrator {
     async plan(
         input: string,
         stateSummary: string,
-        lastTurn?: string | null
+        lastTurn?: string | null,
+        nameSpans: readonly ExplicitNameSpan[] = []
     ): Promise<PlanWithSteps> {
-        const planned = await this.readThePlan(input, stateSummary, lastTurn);
+        const planned = await this.readThePlan(input, stateSummary, lastTurn, nameSpans);
         this.actsPlanned = (planned.steps ?? [planned]).map(step => step.action.action);
         return planned;
     }
@@ -1389,7 +1415,8 @@ export class ProviderNarrator implements Narrator {
     private async readThePlan(
         input: string,
         stateSummary: string,
-        lastTurn?: string | null
+        lastTurn?: string | null,
+        nameSpans: readonly ExplicitNameSpan[] = []
     ): Promise<PlanWithSteps> {
         let text: string;
         try {
@@ -1407,7 +1434,7 @@ export class ProviderNarrator implements Narrator {
         } catch (err) {
             return this.deterministically(
                 input,
-                `provider unavailable (${errorLabel(err)}); intent parsed deterministically`
+                `provider unavailable (${errorLabel(err)}); intent parsed deterministically`, nameSpans
             );
         }
 
@@ -1415,7 +1442,7 @@ export class ProviderNarrator implements Narrator {
         if (raw === null) {
             return this.deterministically(
                 input,
-                'model did not return a JSON object; intent parsed deterministically'
+                'model did not return a JSON object; intent parsed deterministically', nameSpans
             );
         }
 
@@ -1427,7 +1454,7 @@ export class ProviderNarrator implements Narrator {
         // code it reached before.
         const asSteps = stepsInTheResponse(raw, input);
         if (asSteps !== null && asSteps.length > 0) {
-            return await this.aPlanRatherThanAVerb(asSteps, input, lastTurn);
+            return await this.aPlanRatherThanAVerb(asSteps, input, lastTurn, nameSpans);
         }
 
         // The gate. An unknown action name, a `days` of 1e9, a `realmOrdinal`
@@ -1438,7 +1465,7 @@ export class ProviderNarrator implements Narrator {
         if (!validated.ok) {
             return this.deterministically(
                 input,
-                `model response rejected (${validated.reason}); intent parsed deterministically`
+                `model response rejected (${validated.reason}); intent parsed deterministically`, nameSpans
             );
         }
 
@@ -1448,7 +1475,7 @@ export class ProviderNarrator implements Narrator {
         // loses the leverage the social resolver reads, a count of rations
         // becomes a defaulted month - and the two modes stop being the same
         // game. See `carryWhatOnlyTheSentenceKnows` for the measurement.
-        const chosen = carryWhatOnlyTheSentenceKnows(validated.action, input, [], true);
+        const chosen = restoreExplicitNameTarget(carryWhatOnlyTheSentenceKnows(validated.action, input, [], true), input, nameSpans);
 
         // And the one thing the model's reading may not be: the reason this
         // turn can cost days, a wound, or the run. Degraded exactly the way
@@ -1456,7 +1483,7 @@ export class ProviderNarrator implements Narrator {
         // player would have got with no model at all - and never silently: the
         // note is the routing row, which is the row that exists to say where
         // the verb came from.
-        const checked = await theModelIsNotWhyThisTurnIsDangerous(chosen, input, lastTurn);
+        const checked = await theModelIsNotWhyThisTurnIsDangerous(chosen, input, lastTurn, nameSpans);
         if (checked.declined !== null) {
             return {
                 action: checked.action,
@@ -1473,11 +1500,12 @@ export class ProviderNarrator implements Narrator {
     private async aPlanRatherThanAVerb(
         fromTheReader: readonly PlanStep[],
         input: string,
-        lastTurn?: string | null
+        lastTurn?: string | null,
+        nameSpans: readonly ExplicitNameSpan[] = []
     ): Promise<PlanWithSteps> {
         // THE SENTENCE SAYS HOW MANY ACTS ARE IN IT
         const whole = await theWholeSentenceAsAPlan(
-            input, fromTheReader, async clause => (await readTheSentence(clause)).action
+            input, fromTheReader, async clause => (await readTheSentence(clause)).action, nameSpans
         );
         const steps = whole.steps;
 
@@ -1500,7 +1528,7 @@ export class ProviderNarrator implements Narrator {
 
             const quoted = theClauseThisStepQuotes(step, input);
             const verdict = await theModelIsNotWhyThisTurnIsDangerous(
-                step.action, quoted ?? input, lastTurn
+                step.action, quoted ?? input, lastTurn, quoted === null ? nameSpans : nameSpansWithin(input, nameSpans, quoted)
             );
             tierFailure = verdict.tierFailure ?? tierFailure;
 
@@ -1510,7 +1538,7 @@ export class ProviderNarrator implements Narrator {
             }
 
             if (quoted === null && await anyClauseReadsAsThisVerb(
-                input, step.action.action, async clause => (await readTheSentence(clause)).action.action
+                input, step.action.action, async clause => (await readTheSentence(clause)).action.action, nameSpans
             )) {
                 // The player's own words reach this verb somewhere in the
                 // sentence, so the model is not why the turn can cost them.
@@ -1570,7 +1598,7 @@ export class ProviderNarrator implements Narrator {
         // downstream could know it had existed. Checked against the player's own
         // text rather than against what the model said about it.
         dropped.push(...await theClausesNoStepAccountsFor(
-            input, checked, async clause => (await readTheSentence(clause)).action
+            input, checked, async clause => (await readTheSentence(clause)).action, nameSpans
         ));
 
         const costly = checked.filter(spendsSomething);
@@ -1616,12 +1644,12 @@ export class ProviderNarrator implements Narrator {
      * LAST clause's, so a model failure turned "I sit for a year and take work
      * for a season" into a season of work with the year silently gone.
      */
-    private async deterministically(input: string, note: string): Promise<PlanWithSteps> {
-        const read = await readTheSentence(input);
+    private async deterministically(input: string, note: string, nameSpans: readonly ExplicitNameSpan[] = []): Promise<PlanWithSteps> {
+        const read = await readFirstActualClause(input, nameSpans);
         const whole = await theWholeSentenceAsAPlan(
             input,
             [{ action: read.action }],
-            async clause => (await readTheSentence(clause)).action
+            async clause => (await readTheSentence(clause)).action, nameSpans
         );
         return {
             action: read.action,

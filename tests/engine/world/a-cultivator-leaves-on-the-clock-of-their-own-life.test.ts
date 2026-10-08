@@ -268,13 +268,20 @@ describe('somebody on no roll moves on', () => {
             && n.cultivation.realmOrdinal >= 13 && isTheWorldsToMove(n) && !n.tags.some(t => t.startsWith('catalog:')))!;
         const at = state.npcs.findIndex(n => n.id === row.id);
         state.npcs[at] = { ...row, locationId: ruin.id, activity: null, tags: [...row.tags, 'keeps-to:loc-region-low-fall'] };
-        let moved = false;
-        for (let year = 1; year < 80 && !moved; year++) {
+        // `aac6a17f` moved this pass onto `startNpcJourney`: setting out is a
+        // `travelling` term with a real walk behind it (dao-ground-stints'
+        // own road), not an instant relocation. So "moved" is read off the
+        // journey this pass hands them rather than off `locationId`, which
+        // only updates when a later pass walks the term out.
+        let setOut: NpcRecord['activity'] = null;
+        for (let year = 1; year < 80 && setOut === null; year++) {
             peopleWithNoHouseMoveOn(state, year, year * 365);
-            moved = state.npcs[at]!.locationId !== ruin.id;
+            const activity = state.npcs[at]!.activity;
+            if (activity && activity.kind === 'travelling') setOut = activity;
         }
-        expect(moved).toBe(true);
-        expect(regionOfLocation(state, state.npcs[at]!.locationId)).toBe('loc-region-low-fall');
+        expect(setOut).not.toBeNull();
+        expect(setOut!.returnTo).not.toBe(ruin.id);
+        expect(regionOfLocation(state, setOut!.returnTo ?? null)).toBe('loc-region-low-fall');
     }, 300_000);
 });
 

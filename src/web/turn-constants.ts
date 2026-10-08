@@ -19,6 +19,7 @@
  */
 import type { Wrong } from '../engine/social-leverage/index.js';
 import { PLACE } from '../data/cultivation/place-names.js';
+import { DAYS_PER_MONTH } from '../data/cultivation/mortal-world.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // CHARACTER CREATION
@@ -40,8 +41,7 @@ export const QI_PER_INSIGHT = 5;
 /** Spirit stones for one meal at `eat`. */
 export const MEAL_COST_STONES = 1;
 
-/** Days a `travel` or `wait` action consumes. */
-export const SHORT_ACTION_DAYS = 1;
+export { SHORT_ACTION_DAYS } from '../engine/world/short-action.js';
 /**
  * Days spent going into an inheritance ground.
  *
@@ -57,11 +57,10 @@ export const ENTERING_DAYS = 3;
  * A course of mortal care, in days.
  *
  * The catalog names it: `price-splint-and-month` is "Splint and a month of
- * care", and its note says it is the mortal alternative to a healing pill -
- * slower, cheaper, and it leaves you out of the fight for a season. The month
- * is the catalog's number; the season is what it feels like after two of them.
+ * care". Its course uses the catalog's in-world month; its note states the
+ * same span without describing a longer seasonal absence.
  */
-export const TREATMENT_DAYS = 30;
+export const TREATMENT_DAYS = DAYS_PER_MONTH;
 /** Focus multipliers for time spent on something other than sealed seclusion. */
 export const TRAVEL_FOCUS = 0.15;
 /**

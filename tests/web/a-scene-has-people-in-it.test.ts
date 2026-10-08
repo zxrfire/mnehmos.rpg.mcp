@@ -36,6 +36,9 @@ import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld, ScriptedProvider } from './harness';
 import { KnowledgeGate } from '../../src/web/knowledge';
+import { HELPLESS_REALM_GAP } from '../../src/engine/cultivation/combat';
+import { realmIndexOf } from '../../src/engine/cultivation/realms';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 const WORLD = 'people-channel-world';
 const RUN = 'people-channel';
@@ -59,15 +62,41 @@ function narrationsSince(provider: ScriptedProvider, from: number): string[] {
         .map(call => call.messages.find(m => m.role === 'user')?.content ?? '');
 }
 
+/**
+ * Somebody close enough in realm for a fight to have rounds in it at all.
+ *
+ * Seeded population now decides who is nameable here (`fix(population)`), and
+ * `nameable[0]` can land on somebody the `HELPLESS_REALM_GAP` resolves in one
+ * blow - no exchange, nobody with a moment to speak in it, and three of the
+ * tests below measuring exactly that moment. Picking the nearest realm instead
+ * keeps the fight the sections below are actually about.
+ */
+function closeEnoughToFight<T extends { realmOrdinal: number }>(
+    nameable: readonly T[],
+    realmOrdinal: number
+): T {
+    return nameable.find(row =>
+        Math.abs(realmIndexOf(row.realmOrdinal) - realmIndexOf(realmOrdinal)) < HELPLESS_REALM_GAP
+    ) ?? nameable[0];
+}
+
 async function openARun(provider?: ScriptedProvider) {
     const harness = await makeGameInWorld({ seed: RUN, worldSeed: WORLD, provider });
     const { cultivator } = await harness.game.newRun('Probe');
     const gate = new KnowledgeGate(harness.db);
-    // Somebody standing here whose face the player can place, so the channel's
-    // own gate is not what is being measured.
-    const nameable = harness.game.present(cultivator)
-        .filter(row => gate.isAwareOf(cultivator.id, 'cultivator', row.id));
-    return { ...harness, cultivator, nameable };
+    // Find somebody the player can actually name, then stand in that person's
+    // current capped area. The opening area is no longer promised a scene.
+    const known = harness.game.atHand!.npcs
+        .filter(row => gate.isAwareOf(cultivator.id, 'cultivator', row.id))
+        .map(row => ({ ...row, realmOrdinal: row.cultivation.realmOrdinal }));
+    expect(known, 'the pinned world gave the player no nameable person').not.toHaveLength(0);
+    const chosen = closeEnoughToFight(known, cultivator.realmOrdinal);
+    await standWhereThePeopleAre(harness, cultivator.id, new Set([chosen.id]));
+    const current = harness.game.currentRun().cultivator;
+    const nameable = harness.game.present(current)
+        .filter(row => gate.isAwareOf(current.id, 'cultivator', row.id));
+    expect(nameable.map(row => row.id), 'the chosen person was not in the arranged area').toContain(chosen.id);
+    return { ...harness, cultivator: current, nameable };
 }
 
 describe('a turn that happened to somebody', () => {
@@ -76,9 +105,9 @@ describe('a turn that happened to somebody', () => {
             plans: ['{"action":"attack"}'],
             narrations: ['(scripted)']
         });
-        const { game, nameable } = await openARun(provider);
+        const { game, cultivator, nameable } = await openARun(provider);
         expect(nameable.length).toBeGreaterThan(0);
-        const them = nameable[0].name;
+        const them = closeEnoughToFight(nameable, cultivator.realmOrdinal).name;
 
         const mark = provider.calls.length;
         await game.act(`I attack ${them}`);
@@ -96,8 +125,8 @@ describe('a turn that happened to somebody', () => {
             plans: ['{"action":"attack"}'],
             narrations: ['(scripted)']
         });
-        const { game, nameable } = await openARun(provider);
-        const them = nameable[0].name;
+        const { game, cultivator, nameable } = await openARun(provider);
+        const them = closeEnoughToFight(nameable, cultivator.realmOrdinal).name;
 
         const readings: string[] = [];
         for (let round = 0; round < 3; round++) {
@@ -172,8 +201,8 @@ describe('a gift and a robbery are the same kind of event', () => {
 
 describe('and both front doors say the same thing', () => {
     it('reaches the deterministic narrator, which has no model behind it', async () => {
-        const { game, nameable } = await openARun();
-        const them = nameable[0].name;
+        const { game, cultivator, nameable } = await openARun();
+        const them = closeEnoughToFight(nameable, cultivator.realmOrdinal).name;
 
         const result = await game.act(`I attack ${them}`) as { narration: string };
         expect(result.narration).toMatch(SAID_OR_DID_NOT);

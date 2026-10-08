@@ -409,7 +409,15 @@ apply. Each lamp opens one inquiry for that house.
 
 <!-- tier: 2 trigger="the narrator is about to name a place, house, or person" -->
 
-> **Never reference an entity the player has no knowledge record for.**
+> **Do not introduce an unsolicited name without a character-facing source.**
+
+**Owner ruling, 2026-10-03:** the earlier blanket knowledge-record requirement
+also refused informed requests from players who had learned on another run.
+That restriction is retired. Apply
+[`Player knowledge and character knowledge are different`](../../../AGENTS.md#player-knowledge-and-character-knowledge-are-different):
+an explicit ordinary name permits a question or attempt, while passive discovery,
+hidden information and actual access keep their own authorities. A named question
+does not create an introduction, a witnessed visit or remote observation.
 
 This is the enforcement the whole design depends on, and it is the easiest thing for a
 narrating model to break - it will cheerfully drop an ancient sect's name into a
@@ -417,8 +425,8 @@ description because the name is in its context and the sentence wants one.
 
 Concretely:
 
-- If the player has never heard of a faction, it may not be named in narration, not even
-  in passing, not even as colour.
+- If this character has never heard of a faction and the player has not supplied
+  its name, it may not be introduced in narration merely in passing or as colour.
 - It can still *act*. The consequence arrives without attribution: a road is closed, a
   price moves, a village is empty, a body is found. **The world may act on a player who
   cannot name what acted.**
@@ -432,13 +440,14 @@ believes, suspects, and what the public believes are separate. Awareness of *exi
 a knowledge record like any other. There is no new machinery here - only the discipline
 not to spend it.
 
-**And the perceptual channel does not soften this rule by one word.** A cultivator who can
+**The perceptual channel introduces no names of its own.** A cultivator who can
 see a compound from the air has seen a compound. They have not learned a name, and the
 narrator still may not supply one - not as colour, not in passing, not because the
 sentence wants it. What the engine hands over up there is a shape, a bearing and a
 distance, and the correct narration of it is a shape, a bearing and a distance. If a
-paragraph about something seen from height contains a proper noun, the rule has been
-broken in the one place it is easiest to break it and hardest to notice.
+paragraph about something seen from height assigns an unknown, unsupplied proper
+noun, the rule has been broken in the one place it is easiest to break it and
+hardest to notice.
 
 ## Why this is the payoff
 

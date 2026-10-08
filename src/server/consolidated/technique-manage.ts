@@ -1,3 +1,4 @@
+import { artUseReadiness } from '../../engine/cultivation/an-art-that-is-ready-to-use.js';
 /**
  * Consolidated Technique Tool - `technique_manage`
  */
@@ -902,6 +903,14 @@ export async function handlePractise(args: z.infer<typeof PractiseSchema>): Prom
 }
 
 export async function handleUse(args: z.infer<typeof UseSchema>): Promise<object> {
+    return useHeldTechnique(args);
+}
+
+/** The ordinary use authority also charges an art which launches a native physical span.
+ * The span owns completion; the art still marks its actual use on the original receipt turn.
+ * This internal option never enters the MCP schema or router's SessionContext argument. */
+export async function useHeldTechnique(args: z.infer<typeof UseSchema>,
+    completion?: { resolvesOnTurn: number; finishTurn: false }): Promise<object> {
     const repos = ensureCultivationDb();
     const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
     if (isGuidingErrorBody(resolved)) return resolved;
@@ -915,14 +924,15 @@ export async function handleUse(args: z.infer<typeof UseSchema>): Promise<object
             `${cultivator.name} does not know ${args.techniqueId}.`
         );
     }
-    if (known.cooldownRemaining > 0) {
+    const readiness = artUseReadiness(technique, known.cooldownRemaining, cultivator.qi);
+    if (readiness?.reason === 'on_cooldown') {
         return guidingError(
             'on_cooldown',
             `${technique.name} is not ready: ${known.cooldownRemaining} turns remain.`,
             { cooldownRemaining: known.cooldownRemaining }
         );
     }
-    if (cultivator.qi < technique.qiCost) {
+    if (readiness?.reason === 'insufficient_qi') {
         return guidingError(
             'insufficient_qi',
             `${technique.name} costs ${technique.qiCost} qi; ${cultivator.name} holds ${cultivator.qi}.`,
@@ -957,11 +967,11 @@ export async function handleUse(args: z.infer<typeof UseSchema>): Promise<object
         };
     }
 
-    const nextTurn = run.turn + 1;
+    const nextTurn = completion?.resolvesOnTurn ?? run.turn + 1;
     const persist = repos.db.transaction(() => {
         repos.cultivators.applyDeltas(cultivator.id, { qi: -technique.qiCost });
         repos.techniques.markUsed(cultivator.id, technique.id, nextTurn);
-        repos.runs.incrementTurn(run.id, 1);
+        if (completion?.finishTurn !== false) repos.runs.incrementTurn(run.id, 1);
     });
     persist();
 

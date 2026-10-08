@@ -192,12 +192,13 @@ describe('who is here is a look, not a new action', () => {
 
     it('costs nothing', async () => {
         const { db, game } = makeGame({ seed: 'freelook' });
-        const { cultivator } = await game.newRun('Ke Yan');
+        const { cultivator, run: fresh } = await game.newRun('Ke Yan');
         const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
 
         const result = await game.act('who is here');
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // A read, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 });
 

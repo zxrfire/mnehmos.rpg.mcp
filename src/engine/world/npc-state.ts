@@ -10,7 +10,8 @@ import {
     carriedAcross,
     clampOrdinal,
     lifespanForOrdinal,
-    maxHpForOrdinal
+    maxHpForOrdinal,
+    maxQiForOrdinal
 } from '../cultivation/realms.js';
 import {
     rollAttributes,
@@ -31,6 +32,7 @@ import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
 import {
     theSealStillHolds,
+    whatASealLeavesInThePool,
     type AQiSeal
 } from '../cultivation/a-qi-seal-is-put-on-a-person.js';
 import { HP_RECOVERY_FRACTION_PER_DAY, type Injury } from '../../schema/cultivation.js';
@@ -385,7 +387,26 @@ export type ActivityKind =
     | 'squeezing';
 
 export interface NpcActivity {
+    /** Original company agreement suspended once under an actual passage; never a passenger roster. */
+    passageCompany?: NpcActivity;
     kind: ActivityKind;
+    /** The actual accepted request behind ordinary physical store travel/work. */
+    retrievalRequestId?: string;
+    /** The one dispatch receipt behind this timed capital errand. */
+    capitalMissionId?: string;
+    /** Current leg of that receipt's outward, service and home itinerary. */
+    capitalMissionLeg?: number;
+    capitalMissionWaiting?: boolean;
+    /** Historic departure of a timed journey; its destination is returnTo. */
+    fromLocationId?: string | null;
+    /** Physical site referring to the same accepted air-course history, not a copied point. */
+    airCourseLocationId?: string;
+    /** The actual craft selected for an away journey; null means on foot. */
+    conveyanceId?: string | null;
+    conveyancePower?: number | null;
+      /** A booked passage or actual owned hull, never a second physical position. */
+      vesselId?: string | null;
+      seaLaneId?: string | null;
     /** A local invitation interrupts the ordinary activity until night or dismissal. */
     redirect?: {
         until: number;
@@ -451,6 +472,13 @@ export interface NpcActivity {
 }
 
 export interface NpcCultivation {
+    /** Actual remaining qi; missing only in legacy rows until the bounded saved-world upgrade.
+     * The ceiling derives from insight/rung. No elapsed-time read refills this balance. */
+    qi?: number;
+    /** Accumulated native pill toxicity; absent means this body has not taken a tracked dose. */
+    pillToxicity?: number;
+    /** Remaining catalog cooldowns from actual uses; no absolute elapsed-credit copy. */
+    techniqueCooldowns?: Record<string, number>;
     realmOrdinal: number;
     spiritRoot: SpiritRootKey;
     attributes: InnateAttributes;
@@ -870,6 +898,7 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         // already spent, and the pool is the one derivation rather than a
         // number chosen here.
         hp: maxHpForOrdinal(attributes.might, ordinal),
+        qi: maxQiForOrdinal(attributes.insight, ordinal),
         bodyOnDay: opts.onDay,
         seal: null,
         techniqueIds: [],
@@ -896,6 +925,11 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
             cultivation.realmOrdinal
         );
     }
+
+    cultivation.qi = opts.cultivation?.qi === undefined
+        ? maxQiForOrdinal(cultivation.attributes.insight, cultivation.realmOrdinal)
+        : Math.max(0, Math.min(opts.cultivation.qi,
+            maxQiForOrdinal(cultivation.attributes.insight, cultivation.realmOrdinal)));
 
     // WHO THEY ARE BEFORE WHAT THEY ARE CALLED.
     //
@@ -985,7 +1019,7 @@ export function isAwayOnSomething(kind: NpcActivity['kind']): boolean {
  * that stranded most of a house in settlements.
  */
 export function whereTheyGoBackTo(npc: Pick<NpcRecord, 'locationId' | 'activity'>): string | null {
-    const doing = npc.activity;
+    const doing = npc.activity?.passageCompany ?? npc.activity;
     if (doing && isAwayOnSomething(doing.kind) && doing.returnTo) {
         return doing.returnTo;
     }
@@ -1049,6 +1083,38 @@ export function bodyTaken(npc: NpcRecord, amount: number, onDay: number): NpcRec
     };
 }
 
+/** The native qi ceiling derives from the same insight/rung authority as a run sheet. */
+export function maxQiOf(npc: NpcRecord): number {
+    return maxQiForOrdinal(npc.cultivation.attributes.insight, npc.cultivation.realmOrdinal);
+}
+
+/** A legacy missing balance is not a free refill. The saved-world upgrade initializes it once. */
+export function qiStandingOn(npc: NpcRecord, onDay: number): number {
+    const ceiling = maxQiOf(npc);
+    const available = Math.max(0, Math.min(npc.cultivation.qi ?? 0, ceiling));
+    return theSealStillHolds(npc.cultivation.seal, onDay)
+        ? Math.min(available, whatASealLeavesInThePool(ceiling)) : available;
+}
+
+/** Charge the actual balance only; a seal restricts access without draining hidden qi. */
+export function spendNpcQi(npc: NpcRecord, amount: number, onDay: number): NpcRecord | null {
+    if (npc.status !== 'alive' || !Number.isFinite(amount) || amount < 0
+        || amount > qiStandingOn(npc, onDay)) return null;
+    return { ...npc, cultivation: { ...npc.cultivation, qi: (npc.cultivation.qi ?? 0) - amount },
+        updatedOnDay: onDay };
+}
+
+/** Upgrade absent legacy balances once. Existing spent values, including zero, remain authoritative. */
+export function initializeNpcQi(npcs: readonly NpcRecord[]): number {
+    let changed = 0;
+    for (const npc of npcs) {
+        if (npc.cultivation.qi !== undefined) continue;
+        npc.cultivation.qi = maxQiOf(npc);
+        changed++;
+    }
+    return changed;
+}
+
 /**
  * Move a cultivator up the ladder.
  */
@@ -1062,6 +1128,8 @@ export function setRealm(npc: NpcRecord, ordinal: number, onDay: number): NpcRec
             ...npc.cultivation,
             realmOrdinal,
             hp: carriedAcross(bodyStandingOn(npc, onDay), wasMax, nowMax),
+            qi: carriedAcross(npc.cultivation.qi ?? 0, maxQiOf(npc),
+                maxQiForOrdinal(npc.cultivation.attributes.insight, realmOrdinal)),
             bodyOnDay: onDay,
             // The rung moved and the body did not. `lifespanWithPhysique` is
             // read at every stamp rather than folded in once, so a physique

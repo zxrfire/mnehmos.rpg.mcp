@@ -52,6 +52,8 @@ export const EncounterEntrySchema = z.object({
     /** Every token appearing in the template, declared so the engine can fill it. */
     tokens: z.array(z.string()),
     tags: z.array(z.string()),
+    /** Physical substrate required by this literal site, not by its encounter kind. */
+    requiresSubstrate: z.enum(['land', 'water']).optional(),
     /**
      * The generic column.
      */
@@ -65,6 +67,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'enc-roadside-bandits',
+        requiresSubstrate: 'land',
         name: 'Roadside Bandits',
         kind: 'bandits',
         simEventKind: 'encounter',
@@ -80,6 +83,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-bandit-toll-post',
+        requiresSubstrate: 'land',
         name: 'Illegal Toll Post',
         kind: 'bandits',
         simEventKind: 'encounter',
@@ -110,6 +114,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-caravan-under-attack',
+        requiresSubstrate: 'land',
         name: 'Caravan Under Attack',
         kind: 'bandits',
         simEventKind: 'encounter',
@@ -301,6 +306,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-cave-bat-swarm',
+        requiresSubstrate: 'land',
         name: 'Qi-Draining Bat Swarm',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
@@ -536,6 +542,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'enc-abandoned-cave-dwelling',
+        requiresSubstrate: 'land',
         name: 'Abandoned Cave Dwelling',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -588,6 +595,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-sealed-tomb',
+        requiresSubstrate: 'land',
         name: 'Sealed Tomb Entrance',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -603,6 +611,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-spirit-vein-fissure',
+        requiresSubstrate: 'land',
         name: 'Exposed Spirit Vein Fissure',
         kind: 'opportunity',
         simEventKind: 'opportunity',
@@ -618,6 +627,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-ancient-battlefield-relics',
+        requiresSubstrate: 'land',
         name: 'Ancient Battlefield Relics',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -663,6 +673,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-fallen-star-crater',
+        requiresSubstrate: 'land',
         name: 'Fallen Star Crater',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -684,6 +695,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'enc-granary-against-a-wall',
+        requiresSubstrate: 'land',
         name: 'Granary Built Against an Older Wall',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -699,6 +711,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-ploughed-fragments',
+        requiresSubstrate: 'land',
         name: 'Fragments Turned Up by the Plough',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -729,6 +742,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-stone-seats-for-two-hundred',
+        requiresSubstrate: 'land',
         name: 'Seating for Two Hundred',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -744,6 +758,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-tomb-doorway-handprints',
+        requiresSubstrate: 'land',
         name: 'Doorway With Handprints',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -759,6 +774,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-tribulation-scar',
+        requiresSubstrate: 'land',
         name: 'Tribulation Scar',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -779,6 +795,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'enc-sealed-cave-mouth',
+        requiresSubstrate: 'land',
         name: 'Sealed Cave Mouth',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -794,6 +811,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-collapsed-sect-compound',
+        requiresSubstrate: 'land',
         name: 'Collapsed Sect Compound',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -839,6 +857,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-formation-locked-door',
+        requiresSubstrate: 'land',
         name: 'Formation-Locked Door',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -933,6 +952,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-recovered-recipe-fragment',
+        requiresSubstrate: 'land',
         name: 'Refining Method on a Wall',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -948,6 +968,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-old-formation-node-relit',
+        requiresSubstrate: 'land',
         name: 'A Node That Can Be Relit',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -978,6 +999,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-sealed-hall-of-a-dead-age',
+        requiresSubstrate: 'land',
         name: 'Sealed Hall of a Dead Age',
         kind: 'ruin',
         simEventKind: 'opportunity',
@@ -1580,6 +1602,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-robbed-in-seclusion',
+        requiresSubstrate: 'land',
         name: 'Robbed During Seclusion',
         kind: 'misfortune',
         simEventKind: 'resource_depleted',

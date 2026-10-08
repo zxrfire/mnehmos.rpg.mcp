@@ -1872,7 +1872,7 @@ export function totalDays(input: DurationInput): number {
     const days = safeNonNegative(input.days);
     const months = safeNonNegative(input.months);
     const years = safeNonNegative(input.years);
-    return Math.floor(days + months * DAYS_PER_MONTH + years * DAYS_PER_YEAR);
+    return days + months * DAYS_PER_MONTH + years * DAYS_PER_YEAR;
 }
 
 function safeNonNegative(n: number | undefined): number {

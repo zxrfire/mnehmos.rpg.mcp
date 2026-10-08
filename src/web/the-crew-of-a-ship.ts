@@ -23,110 +23,57 @@
  * shipmaster.
  */
 
-import { lifespanForOrdinal } from '../engine/cultivation/realms.js';
-import { forStream } from '../engine/cultivation/rng.js';
 import type { SeaLane } from '../engine/world/what-a-sea-crossing-costs.js';
 import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
-import { createNpc, markDead, setLocation, setRealm, type NpcRecord } from '../engine/world/npc-state.js';
-import { years } from '../engine/world/opportunities.js';
+import { markDead, type NpcRecord } from '../engine/world/npc-state.js';
+import { ensureShipCrew, bindShipCrewToPassage, placeShipCrew } from '../engine/world/ship-crew.js';
+import { shipIdForLane } from '../engine/world/the-ship-on-a-lane.js';
+import type { PublicPassageLeg } from '../engine/world/public-shipping.js';
+import { recordPublicPassage } from '../engine/world/public-shipping.js';
 import { worldLocationFor } from './entities.js';
 import type { GameService } from './turn-engine.js';
+import type { AVoyage } from './a-ship-at-sea.js';
 
-/** Who works a ship, by the ship's id. */
-const CREW_OF = 'crew-of:';
-
-const THE_SHIPMASTER = 'shipmaster';
-const A_HAND = 'sailor';
-
-function slug(name: string): string {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
-
-/** The ship that works a lane, the same whichever end it is boarded from. */
-function theShipOn(lane: SeaLane): string {
-    return [slug(lane.fromPlace), slug(lane.toPlace)].sort().join('--');
-}
-
-/**
- * The living crew of the ship on a lane, a shipmaster and two or three hands, taken on at `at` (a
- * row id) for every place nobody living holds. Empty where there is no world.
- */
 export function theCrewOfTheShip(game: GameService, lane: SeaLane, at: string, onDay: number): NpcRecord[] {
-    const world = game.atHand;
-    if (!world) return [];
-    const ship = theShipOn(lane);
-    const tag = `${CREW_OF}${ship}`;
-    const hands = forStream(world.seed, 'the-crew-of-a-ship', ship).int(2, 3);
-    const aboard = () => world.npcs.filter(npc => npc.status === 'alive' && npc.tags.includes(tag));
-    const wanted = [
-        ...(aboard().some(npc => npc.identity.occupation === THE_SHIPMASTER) ? [] : [THE_SHIPMASTER]),
-        ...Array.from({ length: Math.max(0, hands - aboard().filter(npc => npc.identity.occupation === A_HAND).length) },
-            () => A_HAND)
-    ];
-    const taken = new Set(world.npcs.map(npc => npc.name));
-    wanted.forEach((role, k) => {
-        const id = `npc-crew-${ship}-${role}-${onDay}-${k}`;
-        if (world.npcs.some(npc => npc.id === id)) return;
-        const draw = forStream(world.seed, 'the-crew-of-a-ship', id);
-        const ordinal = role === THE_SHIPMASTER ? draw.int(0, 4) : draw.int(0, 2);
-        const span = lifespanForOrdinal(ordinal);
-        const age = role === THE_SHIPMASTER
-            ? Math.round(Math.min(span * 0.8, 35 + draw.int(0, 25)))
-            : Math.round(Math.min(span * 0.6, 17 + draw.int(0, 25)));
-        let npc = createNpc(world.seed, {
-            id,
-            bornOnDay: onDay - years(age),
-            onDay,
-            locationId: at,
-            occupation: role,
-            takenNames: taken,
-            tags: [tag]
-        });
-        taken.add(npc.name);
-        npc = { ...setRealm(npc, ordinal, onDay), factionId: null, factionRankIndex: -1 };
-        world.npcs.push(npc);
-    });
-    if (wanted.length > 0) game.theWorldMoved();
-    return aboard().sort((a, b) =>
-        Number(b.identity.occupation === THE_SHIPMASTER) - Number(a.identity.occupation === THE_SHIPMASTER)
-        || (a.id < b.id ? -1 : 1));
+    if (!game.atHand) return [];
+    const before = game.atHand.npcs.length;
+    const crew = ensureShipCrew(game.atHand, lane, at, onDay);
+    if (game.atHand.npcs.length !== before) game.theWorldMoved();
+    return crew;
 }
 
-/**
- * The crew goes where the ship goes: put where it now is, working it together, and at sea the
- * passenger stood on the deck the shipmaster is on. Nothing where there is no world.
- */
-export function theCrewIsWhereTheShipIs(
-    game: GameService,
-    lane: SeaLane,
-    where: string,
-    passengerId: string,
-    onDay: number,
-    atSea: boolean
-): NpcRecord[] {
+function voyageLeg(game: GameService, voyage: AVoyage, onDay: number): PublicPassageLeg | undefined {
+    const world = game.atHand;
+    const from = world && worldLocationFor(world, voyage.from);
+    const to = world && worldLocationFor(world, voyage.bound);
+    if (!from || !to) return undefined;
+    return { lane: voyage.lane, vesselId: shipIdForLane(voyage.lane), fromId: from.id, toId: to.id,
+        departureDay: onDay - voyage.sailed, arrivalDay: onDay + voyage.days - voyage.sailed };
+}
+
+export function theCrewAreOnThisVoyage(game: GameService, voyage: AVoyage, onDay: number): void {
+    const leg = voyageLeg(game, voyage, onDay);
+    if (!game.atHand || !leg) return;
+    bindShipCrewToPassage(game.atHand, leg, onDay);
+    recordPublicPassage(game.atHand, leg, onDay, leg.fromId);
+    game.theWorldMoved();
+}
+
+export function theCrewIsWhereTheShipIs(game: GameService, lane: SeaLane, where: string,
+    passengerId: string, onDay: number, atSea: boolean, voyage?: AVoyage): NpcRecord[] {
     const world = game.atHand;
     const row = world ? worldLocationFor(world, where) : null;
     if (!world || !row) return [];
-    const crew = theCrewOfTheShip(game, lane, row.id, onDay);
-    const ids = crew.map(npc => npc.id);
-    for (const one of crew) {
-        const at = world.npcs.indexOf(one);
-        world.npcs[at] = {
-            ...setLocation(one, row.id, onDay),
-            activity: {
-                kind: 'the_work_of_their_rank',
-                note: one.identity.occupation === THE_SHIPMASTER ? 'Keeping the ship.' : 'Working the ship.',
-                withIds: ids.filter(id => id !== one.id),
-                sinceDay: onDay,
-                untilDay: null
-            }
-        };
+    const crew = placeShipCrew(world, lane, row.id, onDay, atSea && voyage ? voyageLeg(game, voyage, onDay) : undefined);
+    if (atSea && voyage) {
+        const leg = voyageLeg(game, voyage, onDay);
+        if (leg) recordPublicPassage(world, leg, onDay, row.id, crew.map(npc => npc.id));
     }
     game.theWorldMoved();
-    const master = crew.find(npc => npc.identity.occupation === THE_SHIPMASTER) ?? crew[0];
+    const master = crew.find(npc => npc.identity.occupation === 'shipmaster') ?? crew[0];
     const deck = master ? theAreasOf(world, row).whereIs.get(master.id) : undefined;
     if (atSea && deck) game.repos.cultivators.standIn(passengerId, deck);
-    return world.npcs.filter(npc => ids.includes(npc.id));
+    return crew;
 }
 
 /** The crew who fell defending the ship are dead, where and when they fell. */

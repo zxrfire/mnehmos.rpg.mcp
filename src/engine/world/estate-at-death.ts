@@ -587,10 +587,9 @@ function moveOneThing(
         description: thing.description ?? ''
     });
 
-    // Link one: it was on them. Ownership moves with it, because a thing
-    // somebody was carrying at their death is a thing the world will treat as
-    // having been theirs - and where it was not, the party who says otherwise
-    // has a claim, which `assertClaim` is for and this is not.
+    // Link one records physical custody. An existing world row already says
+    // whose it is; dying while carrying it cannot rewrite that title. Only a
+    // newly materialised pouch object needs its first owner established here.
     const onTheBody = transferPossession(base, {
         onDay: input.onDay,
         toHolderId: input.dead.id,
@@ -598,7 +597,7 @@ function moveOneThing(
         how: 'found',
         source: `carried by ${input.dead.name}`,
         note: 'On the body at the moment of death.',
-        transfersOwnership: true
+        transfersOwnership: thing.worldRow === undefined || thing.worldRow === null
     });
 
     // Link two: what the place did to it. Before it moves, because it happened

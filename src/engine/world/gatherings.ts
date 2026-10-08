@@ -4,7 +4,6 @@
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import {
-    REALM_TIERS,
     realmForOrdinal,
     realmIndexOf,
     type RealmKey
@@ -62,8 +61,8 @@ import { settleNpcDeath } from './time.js';
 import {
     whatAContestIsWorthToThePeopleInIt
 } from './what-a-contest-is-worth-to-the-people-in-it.js';
-import { theBoardAsItIsCalledOut } from './how-an-entrant-is-announced.js';
 import { getLocation, indexById, type FactionRecord, type WorldState } from './world-state.js';
+import { routineOf } from './npc-routines.js';
 import { isRuined, isSomethingYouWouldSwing } from './possessions.js';
 import { asCarried, breakIt, isBroken, whatAFightMarked, writeBackWhatAFightLeft } from './object-damage.js';
 import { whatItAddsInAFight } from './what-somebody-fights-with.js';
@@ -136,9 +135,9 @@ const SHOWING_SPREAD = 0.35;
 // SHAPE
 // ─────────────────────────────────────────────────────────────────────────
 
-export type GatheringKind = 'meeting' | 'challenge' | 'competition' | 'expedition';
+export type GatheringKind = 'meeting' | 'challenge' | 'expedition';
 
-/** How an expedition was scored. Null for the other three kinds. */
+/** How an expedition was scored. Null for the other two kinds. */
 export type ScoringMode = 'haul' | 'proof';
 
 export interface GatheringPlacing {
@@ -189,14 +188,12 @@ export interface Gathering {
     attendeeIds: string[];
     onDay: number;
     locationId: string | null;
-    /** Empty for a meeting; ordered, one per entrant, for the other three. */
+    /** Empty for a meeting; ordered, one per entrant, for the other two. */
     placings: GatheringPlacing[];
     /** Only set for an expedition. */
     scoring: ScoringMode | null;
     /** Every relationship row this gathering wrote or moved. */
     ties: GatheringTie[];
-    /** Somebody taken up into the host house. The feeder relationship firing. */
-    selectedUpwardId: string | null;
     fact: HistoricalFact;
 }
 
@@ -370,7 +367,6 @@ export function holdGathering(
     const ties: GatheringTie[] = [];
     const placings: GatheringPlacing[] = [];
     let scoring: ScoringMode | null = null;
-    let selectedUpwardId: string | null = null;
     let summary = '';
     const changes: string[] = [];
     if (seniors.length > 0) changes.push(`${seniors.length} came out of their own seats for it`);
@@ -394,12 +390,6 @@ export function holdGathering(
         case 'challenge':
             summary = runChallenge(state, circle, attendees, day, slot.id, rng, ties, placings);
             break;
-        case 'competition': {
-            const result = runCompetition(state, circle, attendees, day, slot.id, rng, ties, placings);
-            summary = result.summary;
-            selectedUpwardId = result.selectedUpwardId;
-            break;
-        }
         case 'expedition': {
             if (!site) return null;
             const result = runExpedition(state, attendees, site, day, slot.id, rng, ties, placings);
@@ -439,8 +429,7 @@ export function holdGathering(
             excludedFactionIds: excluded.map(f => f.id).join(','),
             placings: placings
                 .map(p => `${p.place}. ${p.name} (${p.factionId ?? 'unbacked'})`)
-                .join(' | '),
-            selectedUpwardId
+                .join(' | ')
         },
         consequences: fillConsequences({
             immediate: summary,
@@ -488,7 +477,6 @@ export function holdGathering(
         placings,
         scoring,
         ties,
-        selectedUpwardId,
         fact: stored
     };
 }
@@ -528,7 +516,7 @@ function pointTiesAt(
 }
 
 /**
- * Which of the four this circle can actually hold.
+ * Which informal gathering this circle can hold. Competitions use calendars.
  */
 function drawKind(
     state: WorldState,
@@ -538,14 +526,6 @@ function drawKind(
 ): GatheringKind {
     const table: { kind: GatheringKind; weight: number }[] = [{ kind: 'meeting', weight: 5 }];
     if (attendees.length >= 2) table.push({ kind: 'challenge', weight: 3 });
-    // A ranking needs a FIELD, and three is the smallest number that produces
-    // one - a first, a last, and somebody in the middle who is neither. Set at
-    // four it never fired at all across fifteen centuries of soak, because a
-    // circle is usually two houses and `chosenCount` gives a house one or two
-    // favourites; the threshold was measuring the size of the world rather than
-    // whether a competition was possible in it.
-    const houses = new Set(attendees.map(n => n.factionId));
-    if (attendees.length >= 3 && houses.size >= 2) table.push({ kind: 'competition', weight: 3 });
     if (reachableSite(state, circle) !== null) table.push({ kind: 'expedition', weight: 2 });
 
     const total = table.reduce((sum, t) => sum + t.weight, 0);
@@ -687,6 +667,7 @@ function runChallenge(
     // courtyard is everybody who came PLUS the household whose courtyard it is,
     // which is also the room that rules on it afterwards.
     const cameWith = new Set(attendees.map(n => n.id));
+    const observing = { ...state, currentDay: day };
     const inTheYard: NpcRecord[] = [
         ...attendees,
         ...state.npcs.filter(n =>
@@ -695,7 +676,7 @@ function runChallenge(
             // across postings and sendings, and somebody stationed in a city
             // four hundred li away did not see this and cannot hold it against
             // anybody. It also keeps the yard a room rather than a census.
-            && n.locationId === circle.host.seatLocationId
+            && routineOf(observing, n).locationId === circle.host.seatLocationId
             && !cameWith.has(n.id))
     ];
 
@@ -1070,123 +1051,6 @@ function applyWounds(
 // ─────────────────────────────────────────────────────────────────────────
 // 3. A MARTIAL COMPETITION
 // ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Ranked, public, with standing on the line.
- */
-function runCompetition(
-    state: WorldState,
-    circle: Circle,
-    attendees: readonly NpcRecord[],
-    day: number,
-    factId: string,
-    rng: CultivationRNG,
-    ties: GatheringTie[],
-    placings: GatheringPlacing[]
-): { summary: string; selectedUpwardId: string | null } {
-    const scored = rankAField(state, attendees, rng, placings);
-
-    // AND EVERYBODY WHO STOOD UP IS BETTER FOR IT, which is what a house holds
-    // one of these for. See `what-a-contest-is-worth-to-the-people-in-it.ts`.
-    creditWhatTheyLearned(state, placings, day);
-
-    // Prestige, which is what the placing was for. Positive at the top of the
-    // board, negative at the bottom, and the size of it scales with the field -
-    // coming last in a field of twelve says more than coming last in four.
-    // AGAINST THE BOARD THEY WERE ON, not against the room. Coming first in a
-    // field of two says less than coming first in a field of twelve, and a
-    // bracket with one person in it is not a win at all - it is somebody
-    // standing on a stage alone.
-    const boardSize = new Map<RealmKey, number>();
-    for (const p of placings) boardSize.set(p.bracket, (boardSize.get(p.bracket) ?? 0) + 1);
-    for (const p of placings) {
-        if (!p.factionId) continue;
-        const faction = state.factions.find(f => f.id === p.factionId);
-        if (!faction) continue;
-        const size = boardSize.get(p.bracket) ?? 1;
-        const share = size <= 1 ? 0 : 1 - 2 * ((p.place - 1) / (size - 1));
-        faction.resources.prestige = Number(faction.resources.prestige ?? 0) + share;
-    }
-
-    // Everybody who was ranked against everybody they were ranked against. The
-    // person immediately above you is the one you remember.
-    //
-    // THE GUARD IS "THE SAME HOUSE", AND TWO PEOPLE WITH NO HOUSE ARE NOT IN
-    // ONE. Written as a bare equality it folded every unaffiliated entrant into
-    // a single phantom house, so two rogues who placed next to each other wrote
-    // no tie at all - the one pair on the board with the most reason to
-    // remember each other, and the engine reading `null === null` as
-    // housemates. Dormant while every attendee came from `chosenOf` and every
-    // one of those has a house; live the moment a board is open to anybody.
-    for (let i = 1; i < scored.length && i < MAX_INTRODUCTIONS; i++) {
-        const below = scored[i].npc;
-        const above = scored[i - 1].npc;
-        if (below.factionId !== null && below.factionId === above.factionId) continue;
-        write(state, below, above, -0.2, `Placed ${i + 1} behind them.`, factId, day, ties);
-        write(state, above, below, 0.1, 'Came up right behind and will again.', factId, day, ties);
-    }
-
-    // And the winner goes up, if there is anywhere above them to go.
-    let selectedUpwardId: string | null = null;
-    const champion = scored[0]?.npc ?? null;
-    if (champion && champion.factionId !== null && champion.factionId !== circle.host.id) {
-        const home = state.factions.find(f => f.id === champion.factionId);
-        const answersTo = (home?.standing[circle.host.id] ?? 0) >= ALLIED_STANDING;
-        const higher = Number(circle.host.resources.power_ordinal ?? 0)
-            > Number(home?.resources.power_ordinal ?? 0);
-        if (home && answersTo && higher) {
-            const at = indexById(state.npcs, champion.id);
-            if (at >= 0) {
-                state.npcs[at] = {
-                    ...state.npcs[at],
-                    factionId: circle.host.id,
-                    // At the bottom, and it is supposed to feel like a demotion.
-                    factionRankIndex: 0,
-                    tags: state.npcs[at].tags.filter(t => t !== 'chosen'),
-                    updatedOnDay: day
-                };
-                selectedUpwardId = champion.id;
-            }
-        }
-    }
-
-    // ONE LINE PER BOARD, NAMED. Rendered flat, a bracketed field reads as a
-    // broken ranking - "1. Xiao Yaozhi, 2. Lu Rongwu, 1. Peng Kuanbo" is
-    // two winners and no way to see why. The realm is what makes it legible,
-    // and it is what a house is actually boasting about.
-    const boards = new Map<RealmKey, GatheringPlacing[]>();
-    for (const p of placings) {
-        const rows = boards.get(p.bracket);
-        if (rows) rows.push(p); else boards.set(p.bracket, [p]);
-    }
-    // AND EACH ONE IS CALLED OUT BY NAME AND BY WHO THEY ANSWER TO. A placing
-    // said as a bare name is a scoreboard; a placing said with the house on it
-    // is how a reputation is made in public in this genre, and it is the only
-    // way an entrant with no house means anything - see
-    // `how-an-entrant-is-announced.ts` for why both are said in one shape.
-    const houseNameOf = (factionId: string | null): string | null =>
-        factionId === null ? null : state.factions.find(f => f.id === factionId)?.name ?? null;
-    const board = [...boards.entries()]
-        // A bracket nobody could have lost to is not a result. It is still a
-        // placing on the record; it is just not worth saying out loud.
-        .filter(([, rows]) => rows.length > 1)
-        .map(([realm, rows]) => `${REALM_TIERS.find(t => t.key === realm)?.name ?? realm}: `
-            + theBoardAsItIsCalledOut(rows.slice(0, 3).map(p => ({
-                place: p.place,
-                name: p.name,
-                houseName: houseNameOf(p.factionId)
-            }))))
-        .join('. ');
-    return {
-        summary: `${circle.host.name} ranked ${placings.length} chosen of `
-            + `${new Set(attendees.map(n => n.factionId)).size} houses`
-            + (board.length > 0 ? `. ${board}.` : ', and no two of them at the same height.')
-            + (selectedUpwardId
-                ? ` ${champion?.name} was taken into the ${circle.host.name} at its lowest rank.`
-                : ''),
-        selectedUpwardId
-    };
-}
 
 /**
  * Rank a field, one board per realm, and push the placings.
@@ -1794,12 +1658,13 @@ export function aGrandGatheringOfPowers(
     if (Number(circle.host.resources.power_ordinal ?? 0) < A_GATHERING_OF_POWERS_STANDS_AT) return [];
 
     const went: NpcRecord[] = [];
+    const observing = { ...state, currentDay: day };
     for (const house of houses) {
         const seat = house.seatLocationId;
         if (seat === null || seat === locationId) continue;
         const atHome = state.npcs.filter(n =>
             n.status === 'alive' && isBelowTheLid(n) && n.factionId === house.id
-            && n.locationId === seat && n.activity === null && isTheWorldsToMove(n)
+            && routineOf(observing, n).locationId === seat && n.activity === null && isTheWorldsToMove(n)
             && isElderRank(n.factionRankIndex, house.ranks.length));
         if (atHome.length === 0) continue;
         const going = [...atHome].sort((a, b) => b.factionRankIndex - a.factionRankIndex

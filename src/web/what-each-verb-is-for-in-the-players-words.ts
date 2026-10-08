@@ -138,6 +138,7 @@ const EVERY_REQUEST_KIND: Record<RequestKind, true> = {
     a_trade: true,
     advancement: true,
     company: true,
+    passage: true,
     nothing: true,
     unstated: true
 };
@@ -466,12 +467,15 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     destroy: {
         takes: ['target'],
         says: `break something they are holding, or a thing of theirs standing where they are,
-            deliberately and for good. "target" names it. It is the other end of "craft" and
-            "refine": what this engine can make, it can unmake, and nothing else - a stall, an
-            inn and a village are not objects the engine models and the refusal says so rather
-            than pretending it could not read the sentence. A cheap thing is gone from the
-            pouch and the people standing there talk about it; a heaven-grade thing keeps its
-            row, ruined, and the news travels. Passes no time.`
+            deliberately; or attempt the physical door or lock of a known modeled
+            noncyclic house vault. "target" names the thing or the door of the room. A reference
+            such as "it" needs its actual prior referent. A vault attempt requires the actual
+            reachable outside ground and uses actual strength and held equipment against its lock;
+            naming it grants no approach, key, admission or goods. Other wards, hazards and
+            private permissions remain. A counted held thing is removed from the pouch; a rated
+            tracked thing keeps its grade and works at half, while an unrated row is ruined.
+            Whole stalls, inns and villages are not modeled objects
+            to destroy. Accepted destruction uses ordinary lesser-action time.`
     },
     stow: {
         takes: ['intent', 'target'],

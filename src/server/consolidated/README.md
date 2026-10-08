@@ -2,6 +2,17 @@
 
 # The MCP tool surface
 
+Provision pricing lives once in `what-a-ration-costs.ts`, a dependency leaf.
+`cultivation-manage` re-exports it for compatibility; `cultivation-mortal`
+reads the leaf directly. Native GameService import otherwise reached the eager
+action table before its WorkSchema dependency had initialized. Prices and
+provision effects are unchanged; direct native boot is required alongside tests.
+
+`alchemy-manage.prepareRefine` is the shared read-only readiness check. Played refining
+checks it before a paid approach and work span, then `handleRefine` checks the live body,
+ground and pouch again before its seeded roll and consumption. An interrupted work span
+makes no pill and burns no ingredients. Direct MCP refinement keeps its existing handler API.
+
 Perception's count of people standing with the player uses the same capped area
 roster as web play, including visiting sheets and separated presences.
 
@@ -119,3 +130,31 @@ the cultivator repository. A completed soul finishing requirement remains final.
   rather than implementing. It is the only tool that still does.
 
 `persistCrossingConsequence` writes boundary soul damage, continuity loss, foundation damage, and spent years inside the resolving transaction. It checks the resulting body for death. Both MCP and web attempts use it; time skips carry absolute soul fields through their common persistence path.
+
+Positive fractional cultivation and mortal-work spans use the same held native body
+iterator as ordinary play. The tool promotes its actual clock before context reads;
+its encounter calendar reads the committed current body, ground and roster at each
+check instead of pre-rolling the future. Unopened reserved provisions use the existing
+pack authority across world consequences. Each native world portion retains the
+knowledge-filtered digest it actually returned; the response joins those receipts.
+The whole-day tool path retains its existing simulation and event routing.
+
+Native Work funds its provision shortfall through an internal readiness callback
+to the existing cultivate runner. Native clock/body, technique and actual ground
+admission are checked before either the advance or provision debit. The callback
+reads the fresh purse after actual preparation effects; it is not a tool argument.
+A refused unstarted span leaves no advance or food charge. Once admitted, native
+provisions and actual simulatedDays/rationsRemaining retain their existing wage
+and board settlement, including interruptions and death. This does not roll back
+world/body effects or repair arbitrary later I/O failures as if nothing happened.
+
+The public technique-use handler retains its original argument boundary. Its
+internal native use function accepts a transient no-completion option for a
+physical flight launch: it still performs actual knowledge, cooldown, qi and
+seeded art-use checks and marks the use at the original resolves-on-turn. The
+held native body span owns completion once. This option is not a tool-schema
+field or an action-router SessionContext callback.
+
+The proposed pill-dose extraction preserves PC consume_pill stream names, draw order, grade consequences, poisoning, stock debit and repository effects. Only pure dose/toxicity/restoration reads move into an engine leaf. An NPC adapter must consume finite actual medicine and persist its actual body effects; creating a second SQL cultivator for it is not an adapter. Preparation not yet runtime verified.
+
+

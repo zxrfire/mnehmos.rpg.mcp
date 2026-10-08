@@ -15,6 +15,9 @@ import { worldLocationFor } from './entities.js';
 import { regionIdOfPlace } from '../data/cultivation/regions.js';
 import { regionOf } from '../engine/world/what-people-are-saying.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import { whereCompoundsAre } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+import { THE_ROOM_WORK_IS_POSTED_IN } from '../engine/encounters/what-a-house-has-on-its-board.js';
+import { aWorkTopic } from './the-gate-speaks-for-its-house.js';
 
 /** These are things a speaker can be asked about, never outcomes of an agreement. */
 export function aLocalMechanicsQuestion(
@@ -77,5 +80,31 @@ export function aLocalMechanicsQuestion(
         kind: 'lore', id: 'tradition-war', name: 'the war between the traditions',
         facts: [account],
         structure: ['A regional account, told by this speaker; the unpublished treaty is withheld.']
+    };
+}
+
+/**
+ * The ordinary public room where their house posts work, not an assignment.
+ * The rooms07 question lost this subject after asking a name. Direction uses
+ * the actual compound's canonical board purpose; it quotes no private posting,
+ * holder, stock, permission, wage or guaranteed work for the asker's rank.
+ */
+export function aWorkDirectionQuestion(
+    topic: string, speaker: RosterEntry, world: WorldState | null
+): ResolvedEntity | null {
+    if (!world || !speaker.sectId || !aWorkTopic(topic) || !/\bwhere\b/i.test(topic)) return null;
+    // Personal duty, staff whereabouts and private office work are not public
+    // mission-room directions. Their ordinary question readers remain in charge.
+    if (!/\b(?:(?:take|find|get|look for)\s+(?:work|missions?|jobs?|duties|tasks?)|(?:mission|notice|work)\s+(?:board|hall)|(?:work|missions?|jobs?)\s+(?:is|are)\s+posted)\b/i.test(topic)) return null;
+    const compound = [...whereCompoundsAre(world).bySeat.values()]
+        .find(house => house.houseId === speaker.sectId);
+    const room = compound?.rooms.get(THE_ROOM_WORK_IS_POSTED_IN);
+    const house = world.factions.find(row => row.id === speaker.sectId);
+    if (!room || !house || house.dissolvedOnDay !== null) return null;
+    return {
+        kind: 'lore', id: 'public-work-direction:' + room.id, name: room.name,
+        facts: [house.name + ' posts its work at ' + room.name + '.',
+            'Going there is not taking a mission. The actual wall and your standing decide what is put to you.'],
+        structure: ['Public ordinary facility direction, from their actual house and canonical mission-room purpose.']
     };
 }

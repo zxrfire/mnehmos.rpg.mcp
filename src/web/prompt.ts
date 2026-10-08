@@ -1,8 +1,10 @@
+import { theSeasonOn } from './the-season-on-a-day.js';
 /**
  * Narrator prompts - the one module to tune when the prose is wrong.
  */
 
 import { hourOnTheClock } from '../engine/world/npc-routines.js';
+import { executionResults } from './a-sentence-can-be-more-than-one-call.js';
 import { readFileSync } from 'node:fs';
 import { AN_AMBITION_IS_A_READ, LANE_NAMES, THE_LANES } from './the-lanes-a-sentence-can-go-down.js';
 import { fileURLToPath } from 'node:url';
@@ -24,7 +26,6 @@ import {
     costsTheAskerNothing,
     type ActionName
 } from './actions.js';
-import { MOST_CALLS_IN_ONE_TURN } from './a-sentence-can-be-more-than-one-call.js';
 import {
     composePlanSchemaFields
 } from './what-each-verb-is-for-in-the-players-words.js';
@@ -32,6 +33,7 @@ import {
     describeAmbientPerceived,
     placeName,
     type Company,
+    type SomebodyWhoReplied,
     type EngineFacts
 } from './facts.js';
 import type { AwarenessRow } from './knowledge.js';
@@ -43,6 +45,7 @@ import {
     WORKED_TURNS,
     howTheyReadToYou,
     thePeopleHere,
+    thePeopleJustAddressed,
     thePlayerIsSureItIsThem,
     whatTheyAreToYou,
     whoThePlayerNamed
@@ -70,8 +73,8 @@ inventory, currency, health, lifespan, death, world-state mutations, or event re
 If the engine has not said it, it has not happened, and "the record does not say" is a
 legitimate thing to narrate.
 
-**Only the acts the turn ran happened.** A turn spends at most one costly act, so a player's
-sentence often holds clauses that did not run. The turn names them: not run, declined,
+**Only the acts the turn ran happened.** The world can interrupt any act, so a player's
+sentence can hold clauses that did not run. The turn names them: not run, declined,
 refused. Do not narrate one as having happened. Say what did run and say what did not.
 
 **Every figure comes from a ruling.** A cost, a balance, a span of days, an amount gathered:
@@ -220,14 +223,15 @@ const LANE_GLOSSARY = LANE_NAMES.map(lane => {
 }).join('\n');
 
 /**
- * Which verbs cost the player something, composed rather than written down.
+ * Which verbs consume the turn's long-act budget, composed rather than written
+ * down.
  *
  * THREE LISTS, BECAUSE THERE ARE THREE ANSWERS. `interact` was the only verb
  * anybody had noticed sitting on both sides, and it is one of twelve: naming
  * no thing at a cauldron is the recipe list and naming a formula spends the
- * herbs, asking what a house teaches is free and joining it is not. A prompt
- * that puts those in the FREE column is telling the model that joining a sect
- * costs nothing.
+ * herbs, asking what a house teaches is a read and joining it is not. The
+ * distinction decides whether a question becomes an act; it does not replace
+ * the engine's lesser-action clock.
  */
 function whichVerbsSpendSomething(): string {
     const free: ActionName[] = [];
@@ -240,15 +244,18 @@ function whichVerbsSpendSomething(): string {
     }
     const pressing = [...PRESSING_SOMEBODY].sort().join(', ');
     return [
-        `FREE - these take no day, no stone and no risk, and you may chain as many as the`,
-        `sentence needs: ${free.join(', ')}.`,
-        `SPENDS - these take days, the purse or the body, and a turn does at most ONE:`,
-        `${spends.join(', ')}.`,
-        `BOTH, AND THE INTENT DECIDES - each of these has one read inside it that costs`,
-        `nothing and spends on everything else: ${both.join(', ')}. When the sentence is`,
-        `asking rather than doing, answer with the read.`,
-        `"interact" is the same shape: free on talk, trade, apologise and the like, and it`,
-        `SPENDS on ${pressing}.`
+        `READS OR LESSER ACTS - these do not consume the turn's one day-long slot and may`,
+        `chain where the sentence orders them: ${free.join(', ')}. A pure read takes no`,
+        `time; a lesser act can still take its engine-declared fraction of a day.`,
+        `COMMITTING ACTS - these can change the purse, body, or world: ${spends.join(', ')}.`,
+        `Only a day-long span prevents another day-long span in the same turn; the engine`,
+        `decides the exact time each successful act spends.`,
+        `BOTH, AND THE INTENT DECIDES - each has a read or lesser branch and a committing`,
+        `branch: ${both.join(', ')}. When the sentence is asking rather than doing, answer`,
+        `with the read rather than performing the committing branch.`,
+        `"interact" is a conversational reply: talk, trade, apologise and the like each take`,
+        `one eighth of a day but do not consume the day-long slot; ${pressing} press somebody`,
+        `and use that person's full attempt path.`
     ].join('\n');
 }
 
@@ -278,25 +285,33 @@ Rules, and they are enforced whatever you write:
 - CARRY OUT WHAT WAS SAID. Never add a step the player did not say. A theft does not imply
   fleeing, an approach does not imply an offer, and a fourth act you inferred is you
   deciding what somebody did with their life.
-- PREFER THE SMALLER ACT. Where a sentence could be one big verb or two small ones the
-  list already has, take the two. Small acts compose and big ones do not.
+- KEEP DISTINCT DECISIONS DISTINCT. Do not combine requested acts or subdivide one
+  conversation into separate greeting, background and question acts.
 - A FREE READ IS NEVER THE POINT OF A SENTENCE. If somebody says "I look at the stalls and
   buy the cheapest manual", the buying is what they came to do and the looking is the frame
   around it. Answering with the read alone and dropping the act is the worst thing you can
   do here: they get a browse they did not ask for and never find out the purchase was
   ignored. List BOTH, in order, and let the engine spend the turn on the act.
-- AT MOST ONE THAT SPENDS. Free reads chain; a turn does one costly act. If the sentence
-  genuinely contains two, still list both.
+- EVERY ACT CAN BE INTERRUPTED. List all requested acts; the engine applies each to the
+  current world and body and stops when a refusal, interruption or death prevents continuation.
 - LIST THEM IN THE ORDER THE SENTENCE PUT THEM, and do not reorder them to make them work.
   If the order cannot work, that is the engine's answer to give and not yours to predict:
   "I break through and then cultivate for a year" is run as written and comes back with the
   barrier's own refusal. Reordering it would hide a mistake the player wants to see.
 - EVERY CLAUSE THAT NAMES AN ACT GETS A STEP. Count the acts in the sentence before you
-  answer, and answer with that many. A sentence with three commas in it and two steps in
-  your reply has lost one, and the middle of a sentence is where it goes: measured, "I take
+  answer, and answer with that many. Count requested acts rather than punctuation: measured, "I take
   his purse, press it into her hand, and walk away" came back as the taking and the walking
   with the handover missing, which is the one clause the other two were for.
-- AT MOST ${MOST_CALLS_IN_ONE_TURN} STEPS.
+- CLAUSES WITHIN ONE CONVERSATION ARE ONE ACT. A greeting, background, introduction,
+  name question and care-information question addressed to the same person belong in one
+  interact(intent: talk) with the FULL utterance as topic and said. Do not split them into
+  greetings and disconnected topics. For example "I greet the physician. I have come from
+  Azure Dew Sect. May I ask your name and what care you offer travellers?" is one interact
+  with that entire topic:
+  {"action":"interact","target":"physician","intent":"talk","topic":"I greet the physician. I have come from Azure Dew Sect. May I ask your name and what care you offer travellers?"}
+  Asking about care does not request treatment or authorize payment.
+  Distinct treatment, purchase, payment, movement, report or threat acts still get their own
+  steps in order. A comma or conjunction alone does not make another decision.
 
 ${whichVerbsSpendSomething()}`;
 
@@ -328,6 +343,10 @@ than agonising over the label.
 ${LANE_GLOSSARY}
 
 Rules:
+- Ordinary greetings, conversational context and questions use interact. "I have come from
+  Azure Dew Sect; what care do you offer?" is conversational context with a question, not
+  an explanation of a witnessed deed. An explicit claim about one's identity or affiliation
+  offered as an account still uses tell; so does an explicit witnessed-deed account or report.
 - An explanation of a witnessed deed uses action: tell, target: the witness, topic: the player's words,
   and deedAccount: found, already_damaged, defence, denial, blame, permission, or admitted.
   These describe claims, never outcomes. For blame also give blamed: the person's name.
@@ -338,6 +357,9 @@ Rules:
 - If the player is broke, hungry, or asking how to get money or food, "work" and "market"
   are almost always what they meant. Never answer that with "cultivate": sitting still
   burns the food they do not have, and it is the one action that can kill them for asking.
+- Keep a destination's explicit personal qualifier in target: "I walk to my quarters"
+  means target: "my quarters", not a public dormitory's name from the scene. The engine
+  resolves the player's actual assigned room and its access; you never choose one for them.
 - "lane" MUST be one of the listed lanes. If the intent you want is not listed under it, say
   the nearest one and the engine will take the lane's ordinary reading - a right lane with a
   rough intent is answerable, and a wrong lane is not.
@@ -398,11 +420,13 @@ Rules:
   the guards" - is ONE step, and you pass it through in the player's own words. Do NOT
   expand it into a step per person. The engine expands a set itself, against who is actually
   present and who this cultivator has heard of, and it reports what the act did not reach.
-  Six attack steps for one sentence is read as six costly acts, and the turn stops to ask
-  which comes first - a question the player cannot answer, because they said one thing.
-- Never name somebody the square does not hold and HAS HEARD OF does not carry. A cultivator
-  standing here whose face this one cannot place has no name to give: point at them by
-  standing - "the one above me", "the nearest" - and the engine will resolve it.
+  Do not invent extra acts by expanding a collective target. Preserve the player's
+  explicitly ordered acts; their number is not a limit. Engine refusal, interruption
+  or death decides where an attempted sequence stops.
+- Preserve names the PLAYER supplied, even without a prior character encounter. The engine
+  resolves actual existence, presence and access; a name never supplies an absent listener.
+  Do not add names absent from the square and HAS HEARD OF. For an unnamed visible face,
+  use a pointing phrase such as "the nearest" and let the engine resolve it.
 - Never invent fields for game state. Realm, spirit stones, HP, injuries, progress and death are
   decided by the engine and any such field you emit is discarded.
 - Never answer with an outcome. You are choosing what is ATTEMPTED, not what happens. "I sneak
@@ -575,8 +599,8 @@ export function describeWhatIsWithinReach(reach: readonly ThingWithinReach[]): s
     return [
         '',
         'WITHIN REACH (what is here to be acted on, and the other names each one answers '
-            + 'to). THIS IS NOT A LIMIT ON WHAT MAY BE NAMED - anything the cultivator has '
-            + 'heard of can be named and the engine will answer for it. What is on this list '
+            + 'to). THIS IS NOT A LIMIT ON WHAT MAY BE NAMED - preserve a name the player '
+            + 'supplied and let the engine answer for it. What is on this list '
             + 'is what has a BODY here: a house is on it because somebody who answers to it '
             + 'is standing in this square, so naming that house is naming somebody present, '
             + 'and naming a house that is absent is talk:',
@@ -632,22 +656,7 @@ export interface WhereTheyStandNow {
     dead?: boolean;
 }
 
-/**
- * The season on a day of the run, which begins in early spring.
- *
- * The engine models no seasons and has no use for one, so this is the prompt layer's own
- * reading of the run's day. It exists because a model handed no season writes a different one
- * every time somebody arrives somewhere: summer heat at a gate, frost at the next look. The
- * start is fixed rather than drawn, since all it has to be is the same every turn of a life.
- */
-export function theSeasonOn(dayOfTheRun: number): string {
-    const SEASONS = [
-        'early spring', 'late spring', 'early summer', 'late summer',
-        'early autumn', 'late autumn', 'early winter', 'late winter'
-    ] as const;
-    const dayOfTheYear = ((Math.floor(dayOfTheRun) % 365) + 365) % 365;
-    return SEASONS[Math.min(SEASONS.length - 1, Math.floor(dayOfTheYear / (365 / SEASONS.length)))]!;
-}
+export { theSeasonOn } from './the-season-on-a-day.js';
 
 /**
  * What the player is and holds, as background to write FROM.
@@ -733,7 +742,7 @@ export function composeStateSummary(input: StateSummaryInput): string {
             + 'every other pointing phrase mean these people and nobody else):',
         ...describeWhoIsHere(input.present, cultivator.realmOrdinal),
         '',
-        'HAS HEARD OF (the whole of this cultivator\'s world; everything else is unheard of):',
+        'HAS HEARD OF (recorded character knowledge; player-supplied names may still be attempted):',
         ...describeAwareness(input.awareness ?? [], input.said ?? ''),
         ...describeWhatIsLive(input.liveHere ?? []),
         // AND WHAT HAS A BODY HERE TO ANSWER.
@@ -785,7 +794,6 @@ export function describeWhoIsHere(company: Company, yourOrdinal: number): string
         `  ${person.name} - ${rankName(person.ordinal)}`,
         howTheyStand(person.ordinal, yourOrdinal),
         person.sex,
-        Number.isFinite(person.age) ? `about ${Math.round(person.age)}` : null,
         person.rank
     ].filter((part): part is string =>
         typeof part === 'string' && part.length > 0).join(', '));
@@ -952,10 +960,14 @@ export function composeNarrationUser(
         awareness?: readonly AwarenessRow[];
         /** Names the engine has decided a present character says this scene. */
         hearing?: Hearing | null;
+        hearings?: readonly Hearing[];
         /** The player's literal words. Shown, never parsed for an outcome. */
         playerSaid?: string | null;
         /** Who is standing here, as the square reads them. See `thePeopleHere`. */
         company?: Company | null;
+        /** People who replied during this turn but are no longer in current company. */
+        justAddressed?: readonly SomebodyWhoReplied[];
+        failedAddress?: boolean;
         /** Rooms off this yard the player could walk to. See `theDoorsOffThisYard`. */
         doorsFromHere?: readonly string[];
         /** The other areas of the place the player is standing in. See `theRestOfThisPlace`. */
@@ -1014,7 +1026,11 @@ export function composeNarrationUser(
         .filter(person => !thePlayerIsSureItIsThem(person.name, scene.awareness ?? [], scene.playerSaid ?? null))
         .map(person => person.name));
     const nameable = nameableNames(scene.awareness ?? []).filter(name => !facesWithoutTheirNames.has(name));
-    const addressing = theOneSpokenTo(scene);
+    const spokenTo = theOneSpokenTo(scene);
+    // Conversation memory may concern somebody who replied earlier. Current
+    // scene instructions must use the supplied actual roster, when there is one.
+    const addressing = scene.company == null || scene.company.named.some(person => person.name === spokenTo)
+        ? spokenTo : null;
     const alone = scene.company?.total === 0;
     const somebodyToPlay = !alone && (scene.company?.named.length ?? 0) > 0;
     const arrived = told.arrived ?? told.ambientIsNews ?? true;
@@ -1041,9 +1057,9 @@ export function composeNarrationUser(
         // they could pass. Nothing said there was anywhere to walk to.
         ...(scene.doorsFromHere && scene.doorsFromHere.length > 0
             ? [
-                `Doors off this yard, each a walk and none of them shut to this cultivator: `
-                + `${scene.doorsFromHere.join(', ')}. They belong in the scene as what they are - a `
-                + 'door standing open, a lamp lit in one, somebody crossing to another. Nobody '
+                `Accessible destinations from here, each a walk and none of them shut to this cultivator: `
+                + `${scene.doorsFromHere.join(', ')}. These names describe routes, not observed people or current activity. `
+                + 'Describe doors and places only as the scene facts allow. Nobody '
                 + 'recites the list, and the player walks to one by saying so.'
             ]
             : []),
@@ -1064,6 +1080,12 @@ export function composeNarrationUser(
                 told.alreadyShown, told.wornOut, whoStaysOnThePage(facts, scene, addressing, told.acts),
                 scene.playerSaid ?? null
             )),
+        ...(opening || (scene.justAddressed?.length ?? 0) === 0 ? [] : [
+            '',
+            ...thePeopleJustAddressed(
+                scene.justAddressed ?? [], scene.realmOrdinal ?? 0, scene.awareness ?? [], scene.playerSaid ?? null
+            )
+        ]),
         '',
         ...whereTheyStandNow(scene.standing),
         '',
@@ -1073,7 +1095,7 @@ export function composeNarrationUser(
         nameable.length > 0
             ? nameable.join(', ')
             : '(none; this cultivator has heard of nobody and nowhere but where they stand)',
-        ...spokenBlock(scene.hearing ?? null),
+        ...executionResults(scene.hearing, scene.hearings).flatMap(heard => spokenBlock(heard)),
         ...theLifeBehindThemBlock(scene.theLifeBehindThem ?? []),
         ...heldByTheWorldBlock(scene.heldByTheWorldAndNotByThem),
         ...theWayItIsDoneHereBlock(scene.theWayItIsDoneHere),
@@ -1086,7 +1108,8 @@ export function composeNarrationUser(
         ...(scene.playerSaid
             ? [
                 `THE PLAYER SAID, WORD FOR WORD: "${scene.playerSaid}"`,
-                'An act they typed is DONE on the page, never said: NOT \'"I go to Moraine Gate," you say\' BUT the '
+                'An act the engine executed is DONE on the page, never said. A refused intention stays refused; '
+                + 'include only the attempt, refusal and any prior approach the rulings actually report. NOT \'"I go to Moraine Gate," you say\' BUT the '
                 + 'road under them. Words put to somebody, and questions, are theirs to say, in the story\'s own '
                 + 'voice: NOT \'"any of u guys know whats past here?"\' pasted in quotation marks BUT the question '
                 + 'asked the way the player would say it aloud, or reported - you ask whether anybody knows what '
@@ -1245,8 +1268,7 @@ function whoIsStandingHereOnTheFirstTurn(company: Company | null | undefined): s
     // place, and the owner's "you didn't say how you met" about all three of them.
     const people = named.map(person => {
         const sex = person.sex === 'female' ? 'a woman' : person.sex === 'male' ? 'a man' : null;
-        const age = Number.isFinite(person.age) ? `of about ${Math.round(person.age)}` : null;
-        const what = [[sex, age].filter(Boolean).join(' '), person.like].filter(Boolean).join('; ');
+        const what = [sex, person.like].filter(Boolean).join('; ');
         return what ? `${person.name} (${what})` : person.name;
     });
     return [`ALSO STANDING HERE, for where they are standing now and never a cast: ${people.join('; ')}.`];
@@ -1428,7 +1450,8 @@ function aLifeTurnsOnThisTurn(
 }
 
 function theTurnToWrite(
-    scene: { theLifeBehindThem?: readonly string[]; standing?: WhereTheyStandNow | null },
+    scene: { theLifeBehindThem?: readonly string[]; standing?: WhereTheyStandNow | null;
+        justAddressed?: readonly SomebodyWhoReplied[]; failedAddress?: boolean; company?: Company | null },
     addressing: string | null,
     alone: boolean,
     somebodyToPlay: boolean,
@@ -1487,6 +1510,8 @@ function theTurnToWrite(
             : alone
                 ? `${setting} Then the player's act and what it does, with the place and nobody else in it. `
                     + 'Whatever a ruling answers comes to them as what they already know or can see.'
+                : scene.failedAddress
+                    ? `${setting} The attempted address found no resolved listener: play only its ruled result and the actual current cast's own affairs. Nobody supplies an answer, refusal or care for that failed address.`
                 : somebodyToPlay
                     // The owner: "if i talk to the room, 2-3 people respond, the rest are background noise",
                     // then: "1 person CAN reply... for 'who am i' one person replying is good, cuz you don't
@@ -1502,9 +1527,28 @@ function theTurnToWrite(
     // LAST, BECAUSE THIS MODEL WEIGHTS WHAT IT READ LAST. Played on gemma4:31b, both of these held
     // as rules higher up and broke anyway: "neither of them speaks" on nearly half of all turns, and
     // a run the engine ruled went nowhere narrated as an escape from town.
-    return `NOW WRITE THE TURN. ${who}${firstSeen ? ` ${WHOEVER_IS_NEW_HERE_IS_SEEN_FIRST}` : ''} Present tense, "you" for the player. Keep every ruling - a `
+    const earlier = opening ? '' : (scene.justAddressed ?? []).map((person, index) =>
+        `${index === 0 ? 'First' : 'Next'} play the executed reply captured at ${person.repliedAt.place}, day ${person.repliedAt.day}, hour ${person.repliedAt.hour}, in its earlier scene. Its speaker's card is historical; give them only that ruled reply there.`
+    ).join(' ');
+    const failed = scene.failedAddress ? ' The failed address has no listener replying, refusing or providing care; earlier successful replies remain earlier.' : '';
+    // Model rooms09 ended a captured earlier reply with a new current task by
+    // its absent speaker. Reassert the actual endpoint after stylistic examples;
+    // no departure or reason for absence is inferred from the roster.
+    const finalMoment = opening ? '' : [
+        earlier && scene.company != null
+            ? ' FINAL MOMENT: after the captured earlier replies, only THE PEOPLE HERE supplies current actors. '
+                + (scene.company.total === 0 ? 'Nobody is physically here with the player now. ' : '')
+                + 'A historical speaker absent from that current roster has no new gesture, speech or resumed task at the end. Do not invent how or why they left.'
+            : '',
+        scene.failedAddress
+            ? ' The unresolved address has no answer, refusal, gesture or treatment from a listener; actual current people remain on their own ruled affairs.'
+            : ''
+    ].join('');
+    return `NOW WRITE THE TURN. ${earlier ? `${earlier} Then return to the actual current place and cast. ` : ''}${who}${failed}${firstSeen ? ` ${WHOEVER_IS_NEW_HERE_IS_SEEN_FIRST}` : ''} Present tense, "you" for the player. Keep every ruling - a `
         + 'blow in the rulings lands on the page, even on a turn the player spent looking or talking; '
-        + 'add no outcome; reuse none of the clerk\'s wording. If a ruling says the location is '
+        + 'add no outcome; reuse none of the clerk\'s wording. If ruled, state separately paid provisions in a quote; '
+        + 'retain completed charges and what each pays for. Keep the ruled duration and remaining condition, '
+        + 'without inventing its cause or permanence. If a ruling says the location is '
         + 'unchanged or no time passed, the player went nowhere. Write what people do, never what '
         // Measured over eight replays of four played turns: 0.81 negated acts per 100 words
         // without the pair, 0.42 with it (the genre runs 0.19-0.32). The same two pairs in the
@@ -1533,6 +1577,7 @@ function theTurnToWrite(
             ? ' NO TIME PASSED THIS TURN: whatever the player meant to spend time on did not begin. '
                 + 'Write them at the point of starting - a first step, settling, a first breath - and stop there.'
             : '')
+        + finalMoment
         + (scene.standing?.dead
             ? ' THE PLAYER DIED THIS TURN. Their death is the last thing that happens: write it plainly, '
                 + 'in the body, and end there, with whoever loved them breaking, not standing like stone. '

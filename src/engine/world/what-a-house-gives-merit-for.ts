@@ -150,8 +150,10 @@ export interface WhatTheHouseMakesOfIt {
     merit: number;
 }
 
-function alreadyHolds(state: WorldState, houseId: string, thing: WhatAThingIs, isABook: boolean): boolean {
+function alreadyHolds(state: WorldState, houseId: string, thing: WhatAThingIs, isABook: boolean,
+    heldKinds?: ReadonlyMap<string, ReadonlySet<string>>): boolean {
     if (isABook && shelfOf(state, houseId).some(m => m.id === thing.kindId)) return true;
+    if (heldKinds) return heldKinds.get(houseId)?.has(thing.kindId) ?? false;
     for (const row of state.objects) {
         if (row.ownerId !== houseId || isRuined(row)) continue;
         const held = whatThisThingIs(row);
@@ -242,7 +244,8 @@ export function aCopyIsForSaleTo(
 export function whatTheHouseMakesOf(
     state: WorldState,
     houseId: string,
-    object: Pick<ObjectRecord, 'id' | 'name' | 'kind' | 'data' | 'tags'>
+    object: Pick<ObjectRecord, 'id' | 'name' | 'kind' | 'data' | 'tags'>,
+    heldKinds?: ReadonlyMap<string, ReadonlySet<string>>
 ): WhatTheHouseMakesOfIt {
     const house = state.factions.find(f => f.id === houseId && f.dissolvedOnDay === null);
     if (house === undefined) return { wanted: false, why: 'no_such_house', merit: 0 };
@@ -263,7 +266,7 @@ export function whatTheHouseMakesOf(
     } else {
         return { wanted: false, why: 'it_buys_its_own', merit: 0 };
     }
-    if (alreadyHolds(state, houseId, thing, isABook)) return { wanted: false, why: 'it_already_has_one', merit: 0 };
+    if (alreadyHolds(state, houseId, thing, isABook, heldKinds)) return { wanted: false, why: 'it_already_has_one', merit: 0 };
     const merit = whatItIsWorthToAHouse(object, thing);
     return merit > 0 ? { wanted: true, why, merit } : { wanted: false, why: 'nothing_it_can_price', merit: 0 };
 }
@@ -284,16 +287,16 @@ export function turnItInToTheHouse(state: WorldState, input: {
      * share of - a book they read - for nothing. The want still decides.
      */
     forMerit?: boolean;
-}): number {
+}, batch?: { positions: ReadonlyMap<string, number>; heldKinds: Map<string, Set<string>> }): number {
     const at = state.npcs.findIndex(n => n.id === input.npcId);
-    const where = state.objects.findIndex(o => o.id === input.objectId);
+    const where = batch?.positions.get(input.objectId) ?? state.objects.findIndex(o => o.id === input.objectId);
     const npc: NpcRecord | undefined = state.npcs[at];
     const object = state.objects[where];
     if (npc === undefined || object === undefined || npc.factionId === null || npc.status !== 'alive') return 0;
     if (object.possessorId !== npc.id && object.ownerId !== npc.id) return 0;
     const house = state.factions.find(f => f.id === npc.factionId);
     if (house === undefined) return 0;
-    const made = whatTheHouseMakesOf(state, house.id, object);
+    const made = whatTheHouseMakesOf(state, house.id, object, batch?.heldKinds);
     if (!made.wanted) return 0;
 
     // Credited before the fact is written, which is the order it always ran in:
@@ -302,13 +305,21 @@ export function turnItInToTheHouse(state: WorldState, input: {
     if (input.forMerit !== false) {
         state.npcs[at] = { ...creditMerit(npc, made.merit), updatedOnDay: input.onDay };
     }
-    theHouseTakesItIn(state, {
+    const accepted = theHouseTakesItIn(state, {
         giver: { id: npc.id, name: npc.name },
         houseId: house.id,
         objectId: object.id,
         merit: input.forMerit === false ? 0 : made.merit,
         onDay: input.onDay
-    });
+    }, where);
+    if (accepted && batch) {
+        const kind = whatThisThingIs(object)?.kindId;
+        if (kind) {
+            const held = batch.heldKinds.get(house.id) ?? new Set<string>();
+            held.add(kind);
+            batch.heldKinds.set(house.id, held);
+        }
+    }
     return input.forMerit === false ? 0 : made.merit;
 }
 
@@ -328,8 +339,8 @@ export function theHouseTakesItIn(state: WorldState, input: {
     objectId: string;
     merit: number;
     onDay: number;
-}): boolean {
-    const where = state.objects.findIndex(o => o.id === input.objectId);
+}, objectPosition?: number): boolean {
+    const where = objectPosition ?? state.objects.findIndex(o => o.id === input.objectId);
     const object = state.objects[where];
     const house = state.factions.find(f => f.id === input.houseId);
     if (object === undefined || house === undefined) return false;
@@ -370,8 +381,10 @@ export function theHouseTakesItIn(state: WorldState, input: {
  */
 export function peopleTurnInWhatTheirHouseWants(state: WorldState, day: number): number {
     const byId = new Map(state.npcs.map(n => [n.id, n] as const));
+    const positions = new Map<string, number>();
     const handing: { npcId: string; objectId: string }[] = [];
-    for (const object of state.objects) {
+    for (let position = 0; position < state.objects.length; position++) {
+        const object = state.objects[position]!;
         if (object.possessorId === null || object.possessorId !== object.ownerId || object.power !== null) continue;
         if (object.kind !== 'manual' && object.kind !== 'material' && object.kind !== 'pill') continue;
         if (isRuined(object)) continue;
@@ -386,8 +399,20 @@ export function peopleTurnInWhatTheirHouseWants(state: WorldState, day: number):
                 && suitsRoot(npc.cultivation.spiritRoot, art.element ?? null)) continue;
         }
         handing.push({ npcId: npc.id, objectId: object.id });
+        positions.set(object.id, position);
+    }
+    if (!handing.length) return 0;
+    const houses = new Set(handing.map(hand => byId.get(hand.npcId)?.factionId));
+    const heldKinds = new Map<string, Set<string>>();
+    for (const object of state.objects) {
+        if (!object.ownerId || !houses.has(object.ownerId) || isRuined(object)) continue;
+        const kind = whatThisThingIs(object)?.kindId;
+        if (!kind) continue;
+        const kinds = heldKinds.get(object.ownerId) ?? new Set<string>();
+        kinds.add(kind);
+        heldKinds.set(object.ownerId, kinds);
     }
     let credited = 0;
-    for (const hand of handing) credited += turnItInToTheHouse(state, { ...hand, onDay: day });
+    for (const hand of handing) credited += turnItInToTheHouse(state, { ...hand, onDay: day }, { positions, heldKinds });
     return credited;
 }

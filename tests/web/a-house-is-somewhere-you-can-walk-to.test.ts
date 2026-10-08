@@ -80,6 +80,13 @@
  * reported where the sendings live. Written down here rather than left as a
  * silence, because the next person to see this arm go red should know what
  * else is in the neighbourhood.
+ *
+ * Sparse areas and three-hour routines changed the later arrangement: the
+ * seat roster is no longer the roster standing beside the guest. The guest
+ * arm now arranges a shared meeting at the gate with two people already at
+ * that seat and verifies their actual area. The junior still cannot host and
+ * the elder still must owe the guest; neither rank nor obligation is invented
+ * by the placement read.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -88,6 +95,8 @@ import { couldHostAGuest } from '../../src/engine/world/standing-at-the-gate-of-
 import { writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { createDebt } from '../../src/engine/social/grudges';
 import { npcsStandingIn } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 const WORLD = 'a-house-you-can-walk-to';
 
@@ -110,11 +119,12 @@ function everySeatedHouse(world: { locations: any[]; factions: any[] }) {
 }
 
 /**
- * Who of a house is standing at its own gate, alive, on a rung.
+ * Who of a house is at its own seat, alive, on a rung.
  *
- * Read the way the gate reads it, down to the room: somebody of the house at a
+ * Read down to the location: somebody of the house at a
  * talk is in the lecture hall and not at the gate, though their row names the
- * seat. See `where-inside-a-house-somebody-is-standing.ts`.
+ * seat. This does not yet place them in the guest's area; the shared meeting
+ * below does that. See `where-inside-a-house-somebody-is-standing.ts`.
  */
 function onTheGateOf(world: any, faction: any, seat: any) {
     return npcsStandingIn(world, seat.id).filter((n: any) =>
@@ -154,7 +164,7 @@ function aHouseWhoseGateIsStaffed(world: any) {
         const ranks: string[] = faction.ranks;
         const host = atTheGate.find(n => couldHostAGuest(n.factionRankIndex, ranks.length));
         const junior = [...atTheGate].sort(
-            (a, b) => a.factionRankIndex - b.factionRankIndex)[0];
+            (a, b) => a.factionRankIndex - b.factionRankIndex || a.id.localeCompare(b.id))[0];
         if (host && junior && junior.factionRankIndex === 0) {
             return { faction, seat, atTheGate, host, junior };
         }
@@ -252,12 +262,24 @@ describe('a house is somewhere you can walk to', () => {
         // WHO MAY HOST IS A RANK READING. Asked of the same function the gate
         // asks, so the test cannot disagree with the engine about which rung it
         // is - which is the ordering this repo has been bitten by before. And
-        // read off the people the house actually has AT its gate, so the test
-        // never has to move anybody and never disagrees with what the verb sees.
+        // read off the people the house actually has at its seat, before the
+        // meeting below puts them in one area the verb can see.
         const found = aHouseWhoseGateIsStaffed(world);
         expect(found, 'no house in this world has a staffed gate to be a guest at').toBeTruthy();
         const { faction, seat, host, junior } = found!;
         const ranks: string[] = faction.ranks;
+
+        // The seat roster no longer means one conversation: its people occupy
+        // different areas and move every three hours. Arrange the thing this
+        // arm measures, a host meeting a guest beside the junior on watch.
+        // Shared ordinary activity keeps them together through the local walk;
+        // no person is moved from another location or given another rank.
+        const today = Math.floor(world.currentDay);
+        for (const [person, other] of [[host, junior], [junior, host]]) {
+            person.activity = { kind: 'idle', note: 'Meeting a guest at the gate.',
+                withIds: [other.id], sinceDay: today, untilDay: today + 2 };
+        }
+        game.theWorldMoved();
 
         // THE CONTROL IS THE BOTTOM RUNG, picked by its rung and not by the
         // rule, so widening the rule cannot quietly delete the control. The
@@ -272,6 +294,11 @@ describe('a house is somewhere you can walk to', () => {
 
         const day = 0;
         repos.cultivators.update(cultivator.id, { location: seat.name });
+        await standWhereThePeopleAre({ game, repos }, cultivator.id, new Set([host.id, junior.id]));
+        const meeting = theAreasOf(world, seat);
+        expect(meeting.areas.find(a => a.id === meeting.whereIs.get(junior.id))?.for).toBe('gate');
+        expect(game.present(repos.cultivators.getById(cultivator.id)!).map(n => n.id))
+            .toEqual(expect.arrayContaining([host.id, junior.id]));
 
         // ── THE CONTROL. The one who cannot host owes you, and it changes
         // nothing: a favour buys a request upward, not a door.
@@ -316,6 +343,8 @@ describe('a house is somewhere you can walk to', () => {
             onDay: day,
             description: 'A debt owed by somebody who can open a door.'
         }));
+        await standWhereThePeopleAre({ game, repos }, cultivator.id, new Set([host.id]));
+        expect(game.present(repos.cultivators.getById(cultivator.id)!).some(n => n.id === host.id)).toBe(true);
         const turn = await game.act(`I travel to the ${faction.name} grounds`);
         const prose = turn.narration ?? '';
         expect(

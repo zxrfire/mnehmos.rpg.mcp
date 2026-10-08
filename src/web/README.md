@@ -2,17 +2,182 @@
 
 # The Web Front Door
 
+Named requests for ordinary tracked, durable house objects reach
+`whetherItLeavesTheStore` through petition or a request to an actual member.
+Collection requires the object's accessible current storage room, its actual
+area, a present working member who holds or staffs that room, and physical
+carrying capacity. Approval moves the existing row through ordinary loan or
+gift possession; it creates no stock, contribution charge, price or debt.
+Personal property, counted consumables and immortal forms keep their existing
+paths. The authority answer does not fabricate dialogue from absent deciders.
+Walking, room looks and collection derive door key ids from actual unruined
+held key objects through the shared access assembly. Opening keys are actual marked house-owned rows; their associated room names
+are engraved, and their canonical office custodians physically carry them.
+An empty office leaves its key stored in that room. An actual present working
+custodian can hand over carried durable house property through the same store
+decision, even after office responsibility changes. Keys are not recreated by
+succession or a missing-row scan; existing saved worlds are not retrofitted.
+Juniors outside a sealed store can ask an actual present member to fetch approved
+stock through real keyed access, ordinary carrying and the world clock. Delivery
+requires the recipient at the accepted precinct before its real deadline; an
+absent carrier, key, path, object or recipient does not manufacture a substitute.
+Remote requests still do not collect inaccessible stock directly.
+
+Movement facts name the actual accepted private area when a walk enters it,
+rather than describing a lodging building as its own destination. A private
+invitation refusal reports the unchanged area and clock through narrator facts;
+permission does not imply a physical lock. Typed intentions become completed
+acts only where the engine executed them. Narration retains any actual prior
+approach, without inventing another walk on a refused movement. These facts
+and prompt boundaries still require actual model acceptance.
+
+Planning retains explicit personal destination qualifiers: "my quarters" names
+the player's assigned room, not a public lodging chosen from context. The
+existing strict target grounding and actual room/access authority remain the
+gates. Accessible destination names are route facts; they do not establish
+observed traffic, lit lamps or exterior occupants. Narration describes those
+only when actual scene observations supply them. Prompt controls alone do not
+prove model compliance.
+
+Anonymous ordinary workers may be addressed by the readable catalog profession
+name or its existing job-id words. The shared person resolver derives these
+words from the catalog and reads the actual capped roster and sole identity
+occupation. A unique ordinary public role can receive an act
+before introduction; missing and ambiguous roles refuse rather
+than selecting another person. This read gives no free name or knowledge.
+Counter keepers retain their existing authority. Hidden identities and unrelated
+occupations are not another source of visible role aliases.
+
+Failed addressing carries the actual attempt's presence facts into narration:
+an empty area supplies no listener, reply or requested care. Successful replies
+captured before their clock cost retain transient place, area and clock metadata
+in execution order. Their historical cards say "At reply time"; current company
+is still rebuilt from actual presence and never from those earlier cards.
+The final narration instruction follows that same distinction: it plays earlier
+executed replies in their captured order before returning to current company.
+An actual failed resolver call suppresses a new generic answer from the room;
+conversation-memory selection still retains the historical addressee. Omitted
+company remains unspecified, rather than asserting absence. The final endpoint
+reasserts that only actual current company can act after captured earlier
+replies; an absent historical speaker cannot resume a task or gesture there.
+No departure or cause of absence is invented. Failed addressing receives no
+listener's answer or gesture. These prompt boundaries still require actual
+model acceptance; deterministic prompt tests prove only the supplied facts.
+
+Folded executions keep transient ordered projections of all span, breakthrough
+and hearing results. Legacy scalars still return their first result; nothing is
+persisted beside the authoritative body, knowledge or world. Actual span and
+attempt fact blocks retain each occurrence, while static catalog/gate-only
+answers still deduplicate. Narration receives every hearing's dialogue mode and
+its advancement audit counts grants from every executed result. Nested folds
+flatten existing projections without counting their legacy scalar twice.
+
+Architectural affordances and the actual room look share one live viewer/access
+assembly in `what-is-built-where-you-are-standing.ts`. `theBuiltArchitectureUnder`
+reads only the existing engine's buildings and enclosures; the affordance panel
+does not survey stock or count people it never displays. `theBuiltGroundUnder`
+keeps the actual look's visible people and finite, private-area stock. Place
+resolution happens once before searching rows. These are fresh observation reads,
+not a cache retained across movement, promotion, death or possession changes.
+
+Live duty facts use `theWallWhereTheyStand`: the generated mission hall and the seat's board area expose their house board; infirmaries and quarters do not acquire one from membership. Inspecting current quarters or what is stored here resolves the physical lodging before the rank title inside its name. That read uses `theThingsVisibleInThisRoom`, including the observer's private-area boundary and actual stock; it spends no time and moves or takes nothing. A rank question still resolves as a rank.
+
+A personal clinical request delegates to the same treatment act after resolving
+its actual listener. That provider id remains in both physician and house-shelf
+gates; another nearby clinician cannot fulfill a request aimed elsewhere.
+Questions remain information, and the standing-fight guard applies to both routes.
+No second fee, medicine, stock, healing or duration calculation exists.
+
+Clinical care fees pay for care; ordinary provisioning is separately charged
+from the remaining purse. Quotes disclose separately paid provisions; completed
+transactions retain the actual charges and their purposes without requiring
+ledger prose. Narration preserves the ruled duration and remaining condition,
+without inventing its cause or permanence. The month-care span reads the
+catalog's `DAYS_PER_MONTH` through `TREATMENT_DAYS`. The quote identifies the provider's medicine grade,
+not an uninspected clinic inventory. Weather cover reads the actual resolved
+clinic area or existing enclosing ground, never the profession or the outer
+request label. A physician outside offers no roof or available clinical course;
+an empty physical clinic still has its cover. No bed or free food is created.
+
+Care requires its physical provider before any payment or healing. Mortal care
+is bought beside an actual working physician in a clinic; its existing medicine
+grade, price and month remain, and the fee enters that physician's purse. Member
+medicine is dispensed beside the working attendant in the house's infirmary,
+through `whatTheShelfGivesAMember` with its finite stock and contribution cost.
+A provider sleeping, eating, absent or dead cannot sell care from elsewhere.
+Clinical information questions use that same present provider. The shared web
+price read owns the physician's existing local fee arithmetic for both quote and
+treatment; the house answer reads its finite shelf and pure member-allocation
+quote. Reading the offer moves no medicine, contribution, health or wealth and
+does not start a course or promise that it will finish. The conversation retains
+its ordinary clock cost. Clinical readiness on a card does
+not assert extra patients or an unrecorded transaction.
+The scene card reads that same current clinical duty: a member dispensing in the
+infirmary is seen ready to dispense medicine, even when their stored ordinary rank work
+concerns an array. This reading is local to the actual present roster and leaves
+the stored activity alone. Observer cards and direct observations do not disclose
+chronological ages; the body and private mechanics keep their authoritative age.
+
 `peopleInThisPlace` combines world people, run sheets and separated presences in
 the engine's capped area placement. Presence, scene cards, named walks and offers
 read it together. Compound entry counts the arrival area; local teachers, gate
 hosts, trespass witnesses and overheard speakers come from the same roster.
 Other rooms and decks remain part of their place, without becoming talk targets.
+Each `peopleInThisPlace` observation computes active proxies by owner once, using
+the same surviving-object predicate as `whereYouCanActFrom` and preserving its
+first-match order. This transient index is discarded after the read; no position
+or active flag is stored, and a later observation reads the clock and objects anew.
+`stateView` enters `withPresenceReadScope` only for its synchronous read. Exact
+repository, observer, world and place object identities share computed placement
+and capped rosters; the scope is removed in `finally`, including on failure.
+Its route context shares graph paths while each person's activity and body stay
+live inputs. It never spans an action or clock advance. Full-ground crowding
+remains separate from the three-person visible roster. Live narration does not
+enter this scope. Default entrance selection reuses the existing read's areas;
+an arbitrary invalid standing marker retains the ordinary unobserved-area fallback.
+The owner's places ruling (2026-10-03) applies to the playable routes: a junior can name
+the mission hall or training grounds, reach their assigned quarters, and leave any compound
+room for the town below the gate. The generated house style supplies the visible room names;
+ordinary aliases point to their existing purposes. Elder offices, treasury and craft rooms
+are those already generated, with their existing holders, stock, equipment and access chains.
+`pill refining room` names the alchemy hall, and `cultivation rooms` names the meditation
+cells. Every house's infirmary is shared medical ground; these names
+pass through the same knowledge, precinct and door checks as the generated room names.
+`my quarters` reaches the actual rank-assigned dormitory/residence and the person's holder
+area there, rather than creating another room at the sect seat. Party consent is the source
+of company in a private area; naming somebody or their door grants no invitation.
+Public city destinations remain discoverable when empty, including the auction house at
+the existing exchange, inn, teahouse and market rows. Local area walks preserve the city
+location/calendar identity. A route never creates free stock, grants a vault key, or declares
+an NPC present who is in another area. Local walks spend 1/4 day; routine activity reads the
+arrival hour, with at most three NPCs in any area and usually one or two.
+Prepared bench work pays that same walk before its work days. Failed preparation never
+moves the maker, and an inaccessible work room refuses before materials are consumed.
+Public ship boards and crew wrappers read the engine's shared public shipping
+and crew authorities. Generated dock lines retain their existing fare/calendar
+and route price. Buying a seat checks the actual hull's finite bookings, while
+accepted boarding and a changed course leave immutable passage facts. Current
+boards and booking read the world's season; a new run's day zero does not reset it.
+The weather stream retains its existing run-day seed component.
 The offer list has four item slots (`OFFERS_SHOWN`), drawn from at most three
 local sellers. Its former name, `SELLERS_SHOWN`, described the wrong count.
 
 `lesser-action-costs.ts` covers every action. Existing day spans retain their costs;
 otherwise each reply, meal and quick trade takes 1/8 day, local walks take 1/4,
 and a thorough investigation takes 1/2. Scene and sheet reads stay free.
+Visible ground and buildings use `investigation-targets.ts` for the same free
+read regardless of the parsed verb. This dependency-free classifier is shared
+by investigation and action pricing; pricing does not import verb handlers.
+Resolved visible-person/self investigations and the generic look branch set
+`Execution.timeDisposition = 'free_read'`. The charge wrapper honors this internal
+read disposition without undoing approach time. A `freeAction` receipt alone
+does not declare a free read: replies and thorough investigations retain their costs.
+Successful no-ops such as an already-paid room set `timeDisposition = 'no_op'`.
+Neither disposition is inferred from a fact or narration line, including the words
+"no time passed".
+When a named person is in another area of this same place, the crossing itself is
+the `move` and carries `approach_only`; a reply or search after that crossing still
+adds its ordinary lesser-action cost.
 Fractional acts add within a plan; only spans of a day or more compete for its long act.
 `routine-invitations.ts` persists fractions on `run.elapsedDays`, then passes them through
 `theseDaysPassedInTheWorldToo` after commit. Midnight advances the world with the player
@@ -21,7 +186,14 @@ Named times and hour spans use `wait`. `perceived-daylight.ts` supplies light th
 existing area sensory facts, withholding it under rock, behind seals and in windowless rooms.
 Each played combat exchange uses the same 1/8-day cost before resolving its blows.
 Company requests, including follow/join/room invitations, use the ordinary consent resolver
-and party activity. Night, explicit dismissal or leaving a visited private room ends the
+and party activity. An invitation put to an actual present person is an ordinary request
+exchange, including an answered refusal. Its roll, fee, favour, tie and ledger stay the
+resolver's, but generic social-weight campaign days do not silently become days of local
+conversation. Agreement and its historical reply are recorded before native fractional
+time advances; expiry during that exchange is real and cannot restart the invitation for
+next night. Nonlocal requests and sustained persuasion/service spans retain their existing
+clock. The source audit observed a local thirteen-hour invitation preceded by three
+unrequested days solely from `ASK_DAYS.a_real_favour`. Night, explicit dismissal or leaving a visited private room ends the
 redirect. A return across location rows uses the existing walking distance; an interrupted
 activity resumes on arrival. Presence and narrator activity cards read the same routine.
 
@@ -58,12 +230,24 @@ artifacts in both carried stores, including during a fight, before spending anot
 Medicine prizes transfer singular objects; swallowing a golden pill spends its row
 through the existing realm-boundary resolver. The live register reads current possessions.
 
-`I enter the public competition` records an entrant at the host and reports the
+`I look at the auction lots` reads persisted lots only from the actual auction-house area.
+City-level calendar questions remain free information without reading hidden lots.
+Outside inspection, bids and attendance refuse with the existing named movement route;
+remote actors use their actual proxy area and never move the physical body;
+`I bid 900 spirit stones on Lot 1` submits the same presence and purse check as
+an NPC bid. Closing credits the seller and transfers the tracked object before
+the result is narrated. A visitor's house and assignment enter their addressed
+private card; observing their activity does not reveal those private facts.
+
+`I enter the public competition` records an entrant on the open city board or their own house's internal board and reports the
 persisted board when due. Attendance comes from the player's sheet, because the
 world's player projection deliberately stands nowhere. Lessons credit the sheet
 once; reading the board never rerolls or repays it. `I accept Qiu Fen as my
 disciple` resolves the named person in the current area, asks consent, and writes
 the existing mutual bond and lifelong obligations. It does not run house intake.
+When an open board selects the player upward, the world result moves the member
+and the player’s exclusive sect roll is entered at the receiving house’s bottom
+rank. Their earlier contribution stays with the house they left.
 Interior knowledge uses the membership's game-day join date against the world
 clock; learning a hidden room never grants permission to enter it.
 
@@ -101,6 +285,14 @@ uses `speakableFor` with the speaker's house and preserves the metadata used to 
 what they say. Local production reads each touching lane's `cargoOnLane`; the Register
 reads deep-road teacher capacity through `teachersAtDepth`. Wound advice uses the
 cheapest qualifying pill when it needs the medicine that reaches every rung.
+
+A successful reply keeps its responder's card from after the handler's immediate writes
+and before the reply's lesser-action time advances. Phase three then computes physical
+`THE PEOPLE HERE` afresh and puts a departed responder only in the separate
+`THE PERSON JUST ADDRESSED` prompt block. Those headings and card annotations are
+internal facts, never narration: the narrator writes the person's reply in their own
+voice and never treats that earlier card as current presence, a later action, or a licence
+to disclose private knowledge to anyone else.
 
 The Register's material section includes `BONES`, with their catalog grades,
 values and tracked body provenance alongside herbs and beast materials.
@@ -707,13 +899,30 @@ That is the same defect from the worse end: when the second thing is dropped the
 player at least watches the first one happen and can guess, and when the first is
 dropped the expensive thing vanishes and a cheap read runs in its place.
 
-One turn is still one action, and
-[`the-part-of-the-sentence-that-was-not-run.ts`](the-part-of-the-sentence-that-was-not-run.ts)
-does not change that. It is not command chaining, and it must not become it: the
-game's character is that you say what you mean in your own words and the engine
-prices it, and two verbs can legitimately cost two spans. What it does is report
-the clause, in the player's own words, with the sentence that would work beside
-it - into `facts.prose`, `facts.lines`, `facts.structure` and the inspector.
+The earlier one-action interpretation is retired by the owner's agency ruling.
+A sentence may contain any coherent ordered acts; each runs against the world left
+by the previous act. No six-call truncation or first-costly-act partition remains.
+A genuine refusal, interruption, death or lifespan limit still stops execution,
+and unreached clauses are reported. The fallback may ask about order it cannot
+resolve; a model's ordered plan or explicit player order is already an answer.
+
+An information exchange is one conversation: greeting, origin and questions to
+one person reach one full-topic interact. `one-information-exchange.ts` supplies
+the shared bounded read and the ordered questions; an explicit
+purchase, treatment, payment or movement remains a separate requested act. The
+model must preserve every decision without treating punctuation as another action.
+The shared sentence-field merge restores this full topic after model
+validation, including a single-action answer whose topic was normalized as a
+short label. A comma before a conjunction contributes no extra clause. The
+rooms07 model probe supplied a complete name/work question, but normalization
+clipped it to its greeting and discarded the questions. The earlier clinical
+repair therefore applies to ordinary information exchanges as well.
+Owner ruling, 2026-10-03: player learning survives across runs. An explicit
+ordinary local facility request (including "cultivation rooms") identifies its
+destination even before this character's discovery reader places it. This creates
+no encounter or knowledge record and does not change unsolicited room views.
+Actual gates, route and room access still decide whether the walk succeeds.
+Hidden-room aliases stay local and receive the honest discovery refusal.
 
 **One rule, and it was settled by measurement rather than by taste:**
 
@@ -2679,6 +2888,12 @@ refusal the catch-all for `interact/talk` reaching nothing. Telling somebody a w
 done to them used to land here for exactly that reason, and now has [its own
 verb](telling-a-wrong.ts).
 
+A telling's listener must be present. The person named in its claim need not
+be: `tellSomebody` can resolve that name from the teller's own knowledge rows,
+using the same name match as `recall`, when the run roster and current company
+contain no person answering it. This supplies only the held id and name; it
+does not discover anybody, state their whereabouts, or verify the accusation.
+
 **Who asks is gated. What they offer is not, and must not be.** The answer itself is now
 written by [`what-somebody-here-would-ask.ts`](what-somebody-here-would-ask.ts), and the
 two halves sit on opposite sides of the knowledge gate for different reasons. The paragraph
@@ -2823,3 +3038,553 @@ Local paths shorter than a day are walks and do not enter the whole-day span eng
 Establishing an existing residence reports its ground without moving the holder or creating another road. Leaving an inheritance surrenders the giver's ownership; another owner's claim survives. Its ceiling cannot exceed the giver's rung, and its survival floor is the start of that realm.
 
 The turn's witness hook records new eyes on bodies and on goods whose ownership the onlooker can recognise. A player can account for that evidence to a person in the same area, report a witnessed deed to a known post, or boast of a real price on their own head to somebody present.
+
+
+Capital exchange offers enter `who-here-is-offering-something.ts` beside ordinary
+local sellers. A bought pill retains its provenance and its counted pouch unit;
+swallowing retires the tracked unit, and handing it in removes its counted unit.
+Buy and sell move the exact object and both purses through
+`tradeExchangeObject`; counted pouch units gain a row when a named buyer takes them.
+Auction winners receive their counted medicines/materials in that same pouch.
+Posting acceptance reserves the duty; physical arrival starts the handover. A served
+standing post completes after replacement and its shared day, with ordinary duty merit.
+
+Inn bookings use the existing present-counter assignment, not a separate innkeeper roster. A new booking approaches the inn via the actual quarter-day local walk, then reads the arrival clock, provider, price and pouch again. The purchase keeps its separate eighth-day cost. The exact present person's repository purse (or actual world-NPC purse when there is no repository person) receives the debit. Already-paid coverage needs no approach, provider or payment. Refused or interrupted rental retains any real approach and never starts the requested sleep; inn-targeted dawn/morning waits resolve only after successful coverage. Ordinary hourly waits retain their existing path.
+
+The 2026-10-06 route ruling distinguishes a remembered name from a way there.
+An explicit real remote destination still needs existing `canPointAtLocation`
+knowledge before a journey starts. A refused unknown route changes no body,
+clock or knowledge; it names asking somebody present for directions. The
+existing `theWayTo` read teaches a route only when the actual speaker can place
+it. An ignorant or name-only speaker does not supply that knowledge. Ordinary
+local facility routing retains its physical access rules and runs before the
+remote journey gate. Named questions remain available without prior awareness;
+recognition alone grants no route. Transport keeps its existing route, body,
+booking, fare and access authorities after this knowledge check.
+
+Explicit full, unique house/place names supplied by the player resolve real rows
+without requiring a prior character encounter. This grants no discovery list,
+knowledge record, physical presence or permission. Stored house names remain
+authoritative over their catalog id; ambiguous names and unknown fuzzy matches
+still refuse. The current world supplies place names through the existing scope
+read. A remote named information read returns existing exterior/catalog facts,
+without filing a witnessed visit or reading current stock, occupancy or status.
+Exact place resolution retains its current row id and full display name;
+unknown internal place keys do not disclose an unsupplied interior name.
+A whole-house interaction name also supplies no witnessed person or visit.
+Actual local investigation and door, admission, provider and distance checks remain.
+
+The questions in one information exchange are answered in order through the
+existing single-question authorities and folded by `foldTheCallsIntoOneTurn`.
+Only the outer conversation registers a turn and bears the ordinary lesser
+conversation cost; no question is replayed to assemble its facts. Knowledge,
+hearing, perception, calls and results from each actual answer are retained.
+An ordinary public direction to their house's actual mission room uses existing
+public-record authority. It grants no posting, mission, wage, private-office
+direction, stock or admission. Other private answers retain their existing limits.
+
+The canonical destroy action description includes physically modeled vault
+doors and locks, retaining ordinary object destruction and refusing unmodeled
+whole buildings. Generic door/lock nouns reach that same handler. An explicit
+“break it down” uses the existing last-turn reference authority; absent or
+ambiguous referents give no named target, and never select an arbitrary vault.
+Questions, cultivation breakthroughs, person seals and wards retain their
+existing routes. The generated verb reference carries the same action text.
+
+Explicit destruction of a known actual noncyclic generated vault lock reaches
+the same force reader used by NPC door attempts. The player must physically
+stand at the accessible actual outside parent; naming a room gives no approach
+or admission. The own-lock rating is the vault's actual entry threshold, with
+its actual recorded reinforcement taking precedence. A successful native
+`canUnmake` attempt records factual history and removes only that physical
+lock's `sealed` and own-lock entry bar. Other gates, cycles, hazards, private
+permissions, work thresholds and goods retain their own authorities. This is
+the narrow vault binding of AGENTS.md's locked-door ruling. Monetary damage
+settlement and private-area door damage remain explicit gaps; neither is
+fabricated by this physical breach.
+
+Topics carry the whole named thing or question, including punctuation and
+Unicode. Phase1 preserves their full text with the existing lowercase/trim
+convention; it does not treat them as short intent labels. Native retrieval
+diagnostic78343 observed a printed artifact-furnace name clipped by the old
+40-character topic normalizer, despite valid stock, permission and staff. The
+separate 120-character topic schema cap is also retired. Closed acts, player-word
+grounding, knowledge, physical presence and each native resolver retain their
+own authority; preserving a name grants neither matching a prefix nor an
+approved outcome. Intent-label normalization remains separate.
+
+Ordinary fractional action time uses native `shortSkip` encounters, provisions,
+hostility, body simulation and the actual-world boundary iterator. Transport
+routing remains first: actual owned/paid carriers retain their existing authority.
+The enclosing action supplies its completion turn; a clock advance completes it
+once, including when an earlier free reply already registered that turn.
+Consent precedes this elapsed time. Its accepted/refused answer is historical;
+a subsequent real interruption or invitation expiry remains its own outcome.
+
+The active phase1 lane table exposes deliberate destruction as make/break,
+expanding to the existing destroy action. Its generated classifier glossary
+includes physically modeled doors and locks. The supplied actual target remains
+subject to ordinary reach, native force grade and object/door authority; the lane
+grants no breach, movement, key or admission. Person combat/coercion, person seals,
+cultivation breakthroughs and entering sealed sites keep their existing routes.
+Craft, gather, hunt and refine retain their existing make intents.
+
+Treatment facts distinguish bodily HP from actual meridian injury rows. The
+pre-triage sheet, the native treated rows and the resulting sheet establish
+whether wounds needed treatment, closed or remain untreated. Zero wounds do
+not imply a healed or damaged meridian history. The body fact reports the
+care-specific HP restoration and actual remaining HP without diagnosing its
+cause or permanence or attributing separate ambient recovery to care.
+An offer price and its separately paid provisioning condition stay adjacent
+in one fact from the existing price read; asking still purchases nothing.
+Live model care17 supplied zero wounds and HP1 to25 of30 but narrated raw
+meridians and residual damage after receiving misleading zero-wound facts.
+These factual repairs require later actual model acceptance; mechanics and
+source=model alone do not establish it.
+
+An accepted private passage reads its departure, intermediate ground and landfall
+through the same canonical route projection as ordinary NPC journeys. The
+intermediate-only place reader is not an arrival authority. Flying craft keep
+the accepted geographic route, including a real land approach before water.
+
+Phase-one composition receives optional literal name ranges derived from actual
+world, repository and knowledge names explicitly supplied in this sentence.
+Longest exact ranges preserve internal conjunctions and punctuation, while
+separators outside them retain every requested act in order. A meaningful
+target cut directly before such an internal separator can regain its unique
+full literal name within that clause. Missing and ambiguous targets keep their
+existing meaning. These lexical reads grant no discovery, presence or access,
+and add no unmentioned name to the model prompt or knowledge. All model and
+deterministic paths use the same ranges; old callers may omit the context.
+
+Accepted passage encounter checks use the same deferred engine cadence and fresh
+`encounterInputFor` scene authority after actual passenger projection. Occasion
+results are applied at departure before any elapsed body portion. No later phase
+replays an earlier occurrence (including repeated catalog IDs on distinct days).
+A real zero-time interruption retains the requested span in its execution receipt;
+it does not manufacture a minimum travel day or a successful arrival.
+
+Streamed `recordEncounters` calls supply the actual current run-relative hearing
+day explicitly. A summons retains its original full-window occurrence offset
+but is heard now, without adding that offset again. Legacy callers keep their
+old timestamp rule; the existing endpoint double-offset risk is not silently
+redefined by this migration.
+
+
+#### One completion for the enclosing passenger action
+
+A held transport span accepts the enclosing action's transient completion turn,
+derived from that action's original run turn. A reply already recorded through
+freeAction does not acquire another turn when its passenger clock finishes.
+An actual living departure interruption completes through the same existing
+zero-time authority if still needed; an already closed/dead run does not receive
+a body application. cutShort prevents the executor's lesser-time fallback from
+charging an unasked span. Native fight outcomes retain their existing resolver
+and event stamps. This draft does not yet establish same-crossing departure
+replay safety or the played zero-time/death acceptance cases.
+
+
+#### Accepted boarding and continuation cadence (review draft)
+
+The successful boarding caller supplies a transient departureOccasion intent.
+Resuming an existing receipt, waiting, or replying aboard does not create another
+departure occasion. Original accepted departure comes from the actual leg;
+changed public ship courses retain the original boardedOnDay through history
+causes. Future checks stay on the original native calendar grid, and checks at
+or before an already committed moment do not roll again. No stored seen set,
+new RNG key, free time charge, or copied passage position is introduced.
+
+This controls check chronology, not a claim of whole-crossing state across all
+commands: the native per-command occurrence limit and anAccountCame latch still
+apply within each iterator, as before. Retrospective arrival candidates remain
+the legacy final merge. The played initial boarding, living/dead zero stop,
+standing versus settled fight, and phase/cast acceptance are not yet verified.
+
+
+Accepted player boarding captures its actual run ID and elapsed moment once in
+the existing immutable passage event. Subsequent course facts derive that moment
+through same-vessel causes; they keep no second clock or passenger position.
+An independently advancing run can move the world while this body's elapsed
+clock stays unchanged. Continuation therefore skips past checks from the captured
+moment and actual shared world now, never from a reconstructed past SQL clock.
+Legacy events without that moment retain a departure-suppressed fresh window;
+their original-grid equivalence is unknown and no historic moment is fabricated.
+Ordinary NPC bookings retain their world-only journey authority.
+Named account arrivals use the native comesAtYou/theyCameAtYou resolver after
+their existing contact/knowledge recording. Standing versus gap-settled fights,
+death and native completion remain resolver-owned.
+
+Root union06 native controls passed: the combined retrieval/ordinary-fraction/
+consent batch24, the paired arrival green13 after its baseline3 failures, and
+transport focused22 across six files. These bounded checks do not prove full
+scope or live-model acceptance. The independent oracle
+compares original native windows in the same invocation; actual zero-departure
+controls use real public carriage bodies, accounts, duties and combat with only
+rare eligible arrival samples controlled. Per-window limits and the account latch
+remain native; this is not a new crossing-wide seen store. Mid-edge destination
+change distance, discarded approach receipts and private-hull deck grouping
+remain separate documented gaps. Current encounter scenes now project physical
+water through the existing world `isWater` authority; explicitly land-bound
+catalog sites are ineligible there. This is not a whole-kind ban on ruins,
+graves, contacts or commerce and does not prove every habitat/venue prerequisite.
+
+A physical store retrieval returning to the accepted precinct still needs actual
+local co-location. A carrier in another area uses the ordinary finite move cost
+and the existing capped redirect placement to approach the accepted meeting
+area. The recipient must still occupy the exact accepted ground and area at
+arrival; current approval, stock and carrying capacity are read again. A missing
+or full area or a moved recipient causes a physical return through admitted
+edges, never a remote transfer or an extra invitation permission. The ordinary
+journey holds the finite deadline; no second current position or retrieval phase
+is stored.
+
+A partial foot journey keeps its historic origin and admitted directed edge/fraction
+inside the existing SQLite `road_stopped` JSON only. Changed destinations price
+both legal endpoint continuations through canonical route steps; continuing the
+same target retains admitted orientation. Each committed native body portion
+updates that sole cursor before world callbacks. Endpoint rooms, people, food
+sales and roofs require an actual reached vertex, not the coarse displayed
+corridor. Actual timed NPCs use the same guarded route projection before area
+caps; matched followers derive the leader's position. Engine-only readers with
+no played SQL leader position cannot assert an exact endpoint for those followers.
+Legacy cursors lacking origin cannot reconstruct a changed-target distance;
+they retain only their original continuation and conservative physical reach.
+Reopening reads the same flag, and actual relocation invalidates its old marker.
+
+Native foot checks suspend the existing encounter cadence at actual check dates.
+The sole stopped-road cursor is projected before fresh encounterInputFor reads
+company. A new admitted course captures its actual historical run/world moment
+once in that same flag; same-target continuation retains it, whereas a newly
+chosen course has its own actual departure occasion. Unknown old moments are
+not reconstructed. The held native body/pack iterator commits portions before
+world consequences, then the existing occurrence/account/fight authorities
+resolve that check. Departure zero spends no body time or food and completes a
+living action only through the native turn authority. Delivered occurrence
+receipts are merged once; no future departure cast is kept as current company.
+
+The final foot arrival tail rereads the actual SQL body and sole cursor after the
+last world/check boundary. Actual relocation or a replacement course retains its
+own authority; neither a partial nor a full body span rewrites the former course
+or grants its old destination. A real final-place encounter keeps physical arrival
+and its interruption receipt, so later requested acts do not silently continue.
+Public boards and accepted seat/hire actions read the same unfinished-edge guard
+before selecting endpoint counters, learning board destinations, quoting/debiting
+fare or realising a carrier. A real reached vertex, including an ordinary advertised
+wayside service, follows the original counter rules. Matched moving people remain
+in the actual road scene; meeting one does not supply an unreached station.
+
+A stop-only final held-body checkpoint commits native completion and reconciled
+body results without reapplying the departed course ground. Actual boundary
+relocation, purse and wounds remain authoritative. A partial edge whose display
+label matches its target still resumes the admitted road, rather than taking a
+local walk at that unreached endpoint.
+
+Explicit destruction of an actual residence door uses the same named-door
+grammar as a vault lock, fresh living SQLite body and native held force. The
+actor must physically reach the actual residence or its admitted outside parent;
+an unfinished road edge cannot use its coarse endpoint name. Success records
+the native destruction deed with perceivable `brokeWhat` and the single residence
+damage datum through normal world persistence. It grants no entry permission or
+loot. A closed-door NPC breach commits only at the selected, cut-to-happened
+arrival, after rereading the living sender, sitter, actual ground and material,
+before combat or death/estate resolution. Future rolls do not damage doors.
+These bindings cover actual residence slabs and existing vault locks; private
+holder areas and inn physical slots remain separate unimplemented barriers.
+
+Reinforcement first refuses a residence whose actual slab is broken, before
+reading or spending beast parts. Raising reinforcement grade is not a repair
+action and cannot silently restore the absent slab or clear its damage datum.
+
+The shared `whatTheyCouldBreakADoorWith` reads the body's rung and actually
+possessed finite graded objects, excluding ended rows through canonical
+`isRuined`. The same selector serves public door attempts and account senders.
+A transfer changes physical force without changing legal title; a ruined row
+cannot supply force from stale old power/custody columns. Native broken/holed
+material remains governed by existing damage rules, not a new ruined synonym.
+
+`craft` owns its existing target field in model plans. The full named bill or
+reinforcement material reaches the existing native handler; absent a target,
+the ordinary bench read remains untargeted. No door-only raw sentence parser
+is added to compensate for losing a model's actual noun.
+
+A named local approach reads its destination eligibility before spending native
+movement time. Until that real span completes the observer stays in the original
+area; fresh body, current listener and access are checked before area arrival and
+the requested handler. An actual relocation or death ends the approach. Moving
+carrier continuity derives from the same accepted physical passage claim. The
+preparatory span defers native turn completion to the enclosing action, without
+a second turn counter. Its actual receipt survives a later refusal or reply;
+subsequent lesser-time results are folded in execution order.
+
+The held ordinary-span service accepts only the structural reads and native writes it
+uses; callers do not need to construct a game to borrow its body iterator.
+`rations-in-the-actual-pack.ts` holds the existing flag-backed pack arithmetic;
+GameService delegates to it. The existing suspended-span exposure and reclaim
+protocol remains the only answer for unopened provisions across world boundaries.
+This extraction alone does not add fractional MCP play: that entry path must also
+prepare the actual clock, deliver checks at their committed current scene, and
+preserve every native world receipt before it can remove its duration truncation.
+
+Explicit local entry into a known noncompound cave asks `reachThrough` with
+actual held keys and the canonical current moment before approaching and at
+actual arrival. The native movement span keeps the body at its outside parent
+until admitted; changed ground, death or a newly shut door retain actual elapsed
+time and prevent entry. Ruin geographic arrival remains outside its separate
+`ruin_inside` authority. No material slab damage grants private/title permission,
+removes a qi seal or opens an opening cycle.
+
+Hour and named-time waits use the existing `waitForHour` resolver before active
+carrier defaults read `action.days`. An inn-targeted wait still reaches the actual
+room/counter path first; the carrier cannot supply a room by consuming a span.
+
+An actual quoted public carriage or ship can carry a passenger who cannot yet
+place its destination. A remembered ticket request grants no self-navigation
+route merely by naming it or boarding. Existing actual-arrival learning remains.
+The public board files placed route knowledge only for the canonical lines it
+actually displays; an omitted line count supplies no undisclosed destination.
+Unavailable actual carriers and unfinished counter approaches retain their
+existing honest refusals. Counter speech still requires a real speaker; this
+change does not invent a keeper or require one for native guided transport.
+
+Fractional time in narrator facts uses the same humanDays reader as ordinary
+whole spans. Event offsets remain their actual elapsed duration: only a real
+zero is the outset, and an exact full-day offset retains the next-day wording.
+A three-hour span or interruption is not reported as zero days. This is a fact
+formatting change; native body/world durations, rates and receipts are unchanged.
+
+Ordinary waiting reads inn payment coverage from the fresh arrived run clock
+before the waiting span. A retained lodging address whose `paidThroughDay` is
+already reached cannot label those unpaid narrator facts "Rest at the inn".
+The actual label enters `factsForTimeSkip` lines and prose; the general span
+headline deliberately omits it. Existing night exposure and meal accounting
+still read their own coverage authority; this label check computes no exposure.
+Renewed booking keeps its ordinary paid-rest facts. Expiry removes no remembered
+room identity, moves no occupant, transfers no belongings, and establishes no
+physical lock or eviction. Holder areas do not constitute inn bed inventory.
+Accepted foot and public carriage ground journeys supply exact intermediate
+vertex moments from the already priced canonical route to the existing clock
+boundary reader. A quiet span reaches each vertex before its onward portion;
+this adds no encounter rolls, mandatory player actions or stored position.
+Foot projection still uses its sole SQL cursor and carriage projection its
+actual dated driver. Real interruption retains that reached ground and the
+existing remaining-course authority. Airborne direct geometry/innate flight
+remain separate unresolved scope: a ground vertex chain is not an air route.
+
+A validated partial stopped-road cursor admits move continuation to that same
+existing target without granting route knowledge. A supplied new destination
+still asks the ordinary navigation reader. Legacy cursors lacking historical
+geometry can continue their known remainder but cannot invent another origin.
+
+
+Public travel venues derive from the same public route profile used by ticket
+menus. A landing, carriage station or folding counter has a local area only
+where the existing native offering or surveyed counter exists. Ordinary locals
+know its public existence and advertised routes without travelling first.
+An actual question may teach the advertised carrier route; passive boarding
+does not automatically grant walking knowledge. Directions reuse native
+walking, carriage and paid-span quotes without booking or payment. Paid-span
+passengers need no personal spatial fix. No private service or universal map
+is inferred. Public availability remains the native quote and timetable answer.
+The existing current-person counter reader remains responsible for a listener;
+a public venue alone does not establish a staffed counter or invent a worker.
+
+Boarding public carriage or an owned craft retains the existing actual party
+agreement through the world activity overlay. Course cancellation restores a
+still-valid agreement at the actual stop, without sending companions home.
+Sharing a craft supplies fellow passengers through physical presence, not
+party consent. Local room invitations retain their night and home semantics.
+
+Current carrier scenes derive from existing accepted public or owned passage
+receipts and the actual dated operator/body source. Company and passenger
+projection use the same pre-cap hull selection and offered areas. SQL
+`standingIn` remains the chosen area; a geographical crossing carries its local
+deck suffix only when the same current accepted hull still offers that area.
+Local offered deck movement runs the existing quarter-day native span before
+committing the destination area, then rechecks the fresh hull/course. It does
+not change the passage destination, charge another fare, invent cabins, or
+recruit ordinary passengers into a party. Function-only carrier/presence module
+imports do not read a world at module initialization. Separated presence needs
+its own actual vessel-area reach; coarse region equality is insufficient.
+Active carrier local names and destinations are limited to its actual offered
+areas before remembered inn or assigned shore-room fallback. Shore entitlement
+does not fabricate a cabin; ordinary shore fallback remains unchanged.
+Captain course requests and authored hull room/door layouts remain separate
+unbuilt requirements, not narration permission.
+
+Native verification, Oct7: Deck04 native84364 passed the large owned boat
+local-deck/greeting and actual unrelated-hull exclusion controls. Deck05
+native92877 passed ordinary public passenger name-giving/dialogue, chosen-deck
+preservation and shore-room refusal, with all runtime-module/hash coverage.
+These verify mechanics; repaired ship model narration remains to be played.
+Authored hull rooms and captain course requests are still separate pending work.
+
+The surveyed span crossing retains its catalog hour in the counter quote,
+alongside the existing timetable wait and passenger recovery. The former
+whole-day quote omitted the hour and the web arrival rounded it to a day.
+Paid span passage now uses the existing ordinary held body/world iterator
+with exact quoted days; unrelated legacy arrival callers retain their costs.
+This corrects duration only; separate crossing/recovery ground phases remain
+a required physical-travel follow-up rather than a completion claim.
+
+
+Public counter staff are actual local working people selected by one derived
+read shared by area placement, anonymous keeper resolution and current-work
+scene facts. A worker sleeping, eating, away, in company or doing a concrete
+task keeps that circumstance; an incompatible existing profession or an
+explicit other area is not reassigned to a counter. No staff roster, new
+profession or guaranteed attendance is stored. An empty counter has no
+listener. Surveyed folding passage remains the existing institution's
+terminal/courier service; its ordinary attendant is not asserted to have a
+personal spatial cultivation ability. Institutional passage authority is
+independent of whether a clerk is available for dialogue.
+
+Repository-only counter people remain actual listeners. Canonical complete place
+and stored-area presence feed the same structural worker deal as world routines;
+no NPC record or invented working activity is made for a repository body. No-world
+scenes retain their existing actual local listener authority. A world body remains
+subject to its own living status and current routine, even if SQL also holds it.
+
+An explicit request to join the party, travel together or continue travelling
+uses the ordinary actual-person consent resolver. A stated span is retained;
+unstated ongoing company has no invented night deadline. A proposed renewed
+term asks for consent again. During a physical passage that updates only the
+suspended company agreement, never its hull, course or clock. Explicit ending
+removes the agreement at the current actual ground. Local room/day invitations
+retain their separate night, host-leave and walking-home behavior.
+
+Native consent diagnostic13 reached two actual accepted ongoing agreements, both with a turned outcome, while their request tool and execution incorrectly reported refusal. Generic request and interaction reporting now read the resolver's accepted-outcome predicate, also used by existing deed and acceptance guards. This changes no draw, chance of turning, counter-obligation, cost or record.
+
+The ordinary named sentence "I part company with <name>" reaches the existing end-company request through the deterministic intent floor as well as the model route. The intent safety check remains intact. This closes the measured dismissal route gap; it does not change actual company selection, ledger, cost or home-invitation behavior.
+
+A new privately held craft departure reads actual living bodies before price,
+fuel, custody or booking. Existing party membership does not summon an absent
+member or rebook someone already travelling on another accepted course. The
+ordinary group ride refuses truthfully before cost and preserves membership;
+ongoing course continuation and turn-back retain their existing authority.
+Direct native acceptance checks the same available bodies and held ownership
+before writing a receipt. Sharing another public craft is not party consent.
+
+Public seat purchases select the existing agreed party once and use the same physical-body availability reader as owned boarding. An absent or independently travelling member refuses the together booking before payment. Selected actual bodies determine native head count, seat fare and carriage capacity; ordinary fellow passengers remain outside the party. Accepted public ship activities use the existing sponsored-passage writer, while carriage acceptance uses its native passenger writer. Both preserve the original agreement and the real finite course; no passenger roster is stored separately.
+
+Public carriage quotes and numbered capacity refusals share one pure native assessment. The existing quote API derives its nullable quote from that assessment; callers do not recount seats. The same actual reservation set and native head count include the driver, while a refusal reports remaining passenger places against requested bodies. Other unavailable source/custody/course refusals stay distinct; neither refusal commits a booking, cost or clock.
+
+
+The measured span counter and its NPC directions read their published day from
+`theDayAPartyIsOn`, the existing persistent-world date authority. CalendarAudit01
+measured world365000.333 and local run.333: the run-day board advertised an open
+span, while the authored phase0 four-in-nine world timetable was shut until365004.
+Board, purchase and directions had agreed with one another but used the wrong
+calendar. New lives do not restart the world's span timetable. The authored
+schedule, fare, crossing hour and recovery remain the existing quote's decisions.
+
+
+
+Surveyed counter passage uses its quoted wait plus crossing as a physical
+boundary in the same held native iterator. The player remains at the origin
+until that boundary and recovers at the actual destination afterwards. Fresh
+ground rates and world reads follow that location. Death or an actual world
+relocation retains the reached ground; arrival facts read final custody rather
+than approximating interrupted recovery as a road. Independent party courses
+are not moved. Agreed passenger availability remains a separate shared boarding
+authority dependency; this player-phase draft does not prove companion phases.
+
+Paid agreed companions cross at that same actual hour boundary, before world
+consequences are processed. The ephemeral paid IDs are re-read against their
+living, unexpired agreement and actual origin body through the shared boarding
+authority. Existing location changes move only those companions; their original
+return, redirect and term remain authoritative during recovery. New members and
+independent courses are not transported, and no final recovery teleport repeats
+the crossing. The returned crossing fact names its actual earlier world moment.
+
+A surveyed counter's precise span exposes both its actual published departure and crossing as native world boundaries. Departure is read from the same quoted total minus settling and the existing SPAN_CROSSING_DAYS, never a new cadence or second crossing calculation. Waiting advances at the origin before the already-paid companion bodies are freshly checked for the actual crossing; death, expiry and an independent course during that wait cannot be erased by paid membership. Native Phase04 observed 5 PASS/4 FAIL because no other appointment split the waiting portion. The Phase06 departure boundary awaits native acceptance.
+
+Actual finite-course landfall is written once per living body and accepted physical course in ordinary world history, after actual destination location commits and before the original activity or played carrier pointer is forgotten. `a-body-that-actually-arrived` retains immutable course/cause provenance and deduplicates identical arrivals. Current party membership, a ticket, a scheduled deadline or unrelated bodies meeting at a destination do not prove delivery. Player carriage, held craft and public ship projectors require their actual live arrival authority; unavailable carriers and dead bodies do not write an arrival. NPCs record their finite leg only when the native arrival path actually commits destination ground. A pending sending that did not move is not credited. No new clock, roster or payment system is stored. A common-course proof reads individual arrival facts and current living co-location; distinct tickets for the same exact hull/course can share a journey. Played foot travel still lacks an accepted per-body finite course and is not silently supplied equivalent proof.
+
+
+### Offered rides and real exchange
+
+An offered free/cash/tracked-goods ride is an ordinary person request. The actual
+resolver decides consent. The accepted terms live once on the existing oath: the
+real driver, real rider, real destination and actual payment named in the utterance.
+It neither boards somebody nor grants party membership. Explicit owned boarding
+selects the agreed riders through the same physical-availability and native
+capacity authority as existing company; the existing party remains distinct.
+
+The generic individual native arrival facts prove the completed shared finite
+course, and current living bodies must actually be at the destination. Only then
+does exchange settle that oath once. Cash uses the ordinary two-row transfer also
+used by gifts/lifts without adding their favour/theft effects. Tracked goods must
+still be genuinely owned and held, transfer through ordinary traded provenance,
+and enter actual carrying/custody rules. Missing funds/goods leave the agreement
+open. Booking, party membership or unrelated meetings prove no delivery.
+
+Offered passage reads ordinary free, spirit-stone or actual named-goods terms
+from the player's words, including taking somebody in exchange for those terms.
+A real currently owned and held craft must exist; the always available walking
+entry cannot satisfy an offer. Received exchanged goods use the existing bought
+acquisition mode and ordinary possession transfer, never a new trade ledger.
+
+Physical first-leg selection may name agreed party members and accepted riders,
+or explicitly travel alone, without ending existing company. Actual held-craft
+boarding uses the existing journey capacity quote and refuses an overfull leg
+before fuel, time, receipt or body transfer, reporting places and requested heads.
+A return and a later load are separately played, charged finite courses. The
+engine does not deliver everybody through an unplayed sequence of return trips.
+
+Native model targets retain the actual emitted name without an arbitrary character cap. The shared sentence span reader and planned-action schema retain finite positive fractional days. Native body/lifespan, course, provisions, world interruptions and actual clock boundaries still determine what can happen; a grammar/schema does not silently round or refuse an otherwise coherent span.
+
+Personal flight and actual owned aerial craft use an accepted physical course
+and the existing current-scene held body/world clock. Innate launch uses its
+explicit catalog qi term; a held sword/cloud art goes through native art use,
+with its actual cooldown and a deferred completion owned by the span. Flight
+requires exterior launch/landing ground: inherited room coordinates do not
+waive a wall, ordinary exit, key, seal or private invitation. The existing
+physical enclosure/area read refuses before launch debit or receipt.
+
+The source-review prototype includes scripted native front-door controls; it
+has not been compiled, run, or accepted with a live model. Shared-hull death,
+complete NPC air resource/mission integration and shuttle-flight capacity
+remain separate required work.
+
+The incremental owned-air voyage records each already-executed native fuel
+debit as a caused payment fact. The existing causal history index exposes
+its actual covered-through clock; no pilot purse, inherited obligation or
+second fuel-rate table is created. A living pilot and valid custody are
+independent requirements from committed fuel. Owner death stops an unfunded
+remaining course at its paid reached point, even when a living pilot retains
+custody. A genuinely paid full native quote can support independent steering
+through that same payment seam. NPC mission acceptance has not yet been
+wired to this new physical course; the component control arranges and debits
+an actual actor explicitly and does not claim that path is complete.
+
+A remembered personal name resolves a subject, not a present listener. Personal
+interaction reads the actual current physical roster before witnessing an
+approach, introduction or reply. Native local approaches keep their own time
+and fresh area/body projection; house institutional counter/message paths are
+separate. People sharing a real hull remain reachable through that same roster.
+The new scripted controls are unrun and do not establish live-model acceptance.
+
+Literal name spans already grounded from actual world/catalog names protect question topics as well as addressed targets. Restoration preserves the topic prefix and only a uniquely matching exact literal name cut at its own lexical separator; it grants no knowledge or entry. Genuine subsequent decisions remain separate clauses.
+
+The deterministic offered-passage phrase reader lives in `ride-offer-phrasings.ts`, a pure dependency leaf. The action table reads this leaf directly; the offered-ride runtime adapter re-exports it for compatibility and reads the same function. Native Road09 module boot failed before any case with `ACTION_NAMES is not iterable`: the parser's runtime-adapter import reached passage, air-course lodging, prompt and planned-action initialization before the action table finished loading. Moving the exact phrase reader removes that eager runtime back-edge; consent, boarding, payment, settlement and phrase semantics remain unchanged.
+
+Native Boot01 proved that the phrase leaf alone did not repair cold narrator initialization: its red and green each executed one case and failed with `ACTION_NAMES is not iterable`. Existing parser dependencies also reach air presence and the exposure reader. That reader imported the pure season read from the eager prompt module. `the-season-on-a-day.ts` now holds the exact existing season function; prompt imports and re-exports it, and exposure reads the leaf directly. This removes the exposure-to-prompt back-edge without changing seasons, exposure, clocks or narration. The cold-boot inverse restores only that import, with the phrase leaf present in both arms.
+
+Native deterministic planning starts with the first actual clause returned by `theClausesOf`, using its rebased exact-name spans, before the existing whole-sentence composer accounts for later decisions. Provider failure uses the same native read. Road11 measured a compound directions request followed by a half-day wait: the initial whole-sentence reader produced an unclaimed request/weigh step whose topic included the later wait, suppressing that wait during composition. The first-clause read removes this duplicate mistaken head without changing the model composer, clause policy, one-clause reading, order, clock or execution authority.
+
+The world-owned air-pilot pass distinguishes a native world body from a SQL player mirror through `isTheWorldsToMove`. A present tagged mirror is not a world-owned operator. Actual Retained04 recorded a living self-piloted SQL body stopped before its finite arrival with the hull-operator/custody reason because the old guard tested only row presence. SQL held-body callers retain their actual life, custody, rung and committed-fuel checks; genuine world self-pilots and distinct NPC pilots retain existing world rules. This changes no air distance, calendar, fuel, death or payment authority.
+
+Both ordinary and physical held spans forward their actual previous/cumulative elapsed receipt to world advancement. NPC cooldowns use that native interval; the PC cooldown arithmetic and independent fractional-action behavior remain unchanged.
+
+Actual reached travelling contact selects its local area through `peopleInThisPlace`
+with the fresh SQL observer and current world, the same accepted-hull or unfinished-road
+read used by the next scene. General hourly town placement cannot select the deck
+for a passenger whose exact accepted course has its own stable area placement.
+This contact read changes only the observer's chosen area: no traveller relocation,
+new passenger roster, presence widening, extra time or fare follows from it.
+
+Spoken land directions import the same pure actual-person profile used by canonical NPC place knowledge. Moving that projection does not alter its current location, realm, rank, upbringing or occupation reads; raised-player family facts remain the existing separate spoken source.
+
+A surviving native factual receipt or testimony keeps its existing historical references through the witness index during mortal forgetting. Reference closure follows only actual indexed fact IDs reachable from surviving rows; an orphan dead-only cycle is still forgotten. Bodies, live presence and forgotten actor fields are still pruned. This preserves original published notice terms referenced by an actual payment receipt without a second name/terms catalog, resurrection, payment or private-scene grant. Pricing05 measured an already-paid same-day repeated claim losing its original notice after its only mortal actor was pruned.
+
+Newly retained referenced archival evidence keeps its original historical participant identity and data terms. The mortal NPC body still disappears; no current body, listener, position, custody or permission is synthesized. Other surviving mixed testimony retains existing forgotten-body sanitation. The reference closure is transient and stored nowhere.

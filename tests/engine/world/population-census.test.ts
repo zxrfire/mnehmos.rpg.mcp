@@ -2,7 +2,7 @@
  * Census seed area-occupancy-census-2026-10-01 exposed a 93-death tenth year
  * and villages draining from 10.9 to 1.9 people per place over 500 years.
  * The owner retained the early cohort: its unchanged lifespan cap is spread
- * only 0–4 years, and its ordinary advancement is observed, never forced.
+ * only 0-4 years, and its ordinary advancement is observed, never forced.
  * The paired control on this checkout had 235 old-age deaths in thirty years,
  * 90 in year ten. The bands retain that cohort without retaining the spike.
  * The first repair had 216 old-age deaths, maximum 25 in a year; villages
@@ -12,9 +12,9 @@
  * could keep producing births after local vacancies were filled.
  * Capacity-bound intake and replacement now give villages 9.4/8.3, towns
  * 19.1/19.1 and house grounds 10.6/12.6 people at years 100/500. Living
- * population stays at 1669–1794 from year 100 onward, against 2810–2886
+ * population stays at 1669-1794 from year 100 onward, against 2810-2886
  * over the control's last two centuries. Both source arms ran in one command.
- * The 0–40 yearly band rejects
+ * The 0-40 yearly band rejects
  * the original spike; the century ratios reject ongoing drain or growth.
  * Annual membership censuses count entries and exits separately; a round trip
  * between censuses is not counted. The paired probe runs both source arms in

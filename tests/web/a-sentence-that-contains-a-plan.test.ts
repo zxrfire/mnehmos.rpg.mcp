@@ -1,15 +1,23 @@
 /**
  * Played: a sentence that contains a plan, driven through the real service.
  *
+ * 2026-10-03 agency ruling: the earlier one-costly-act cap is retired. Ordered
+ * acts all run against fresh state until an actual refusal, interruption or death.
+ * Tests formerly asserting engine.stillToCome now assert no artificial hold.
+ *
  * The law is unit-tested next door. This file asserts the things only a real
  * run can say - that several engine calls actually happen in one turn, in the
  * order the player said them, against the world each previous step left; that
- * two costly acts produce a question and spend nothing; and that the answer to
+ * unresolved fallback ordering produces a question and spends nothing; and that the answer to
  * that question runs the act the player picked.
  *
  * `worldEnabled: true` throughout, because `AGENTS.md` is explicit that hand-
  * playing with the world off is playing a configuration where every guard that
  * needs a world to check against is skipped by design.
+ *
+ * A run now opens at 08:00, a third of a day already on the clock before any
+ * act (`turn-engine.ts`'s `newRun`), so an assertion that a question "spends
+ * nothing" reads the run's clock against that baseline, not against zero.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -19,6 +27,11 @@ import type { LLMProvider } from '../../src/agent/provider/types.js';
 import { whatThisTurnMayRun } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 import { theSentenceSaysItsOwnOrder } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 import { stepsInTheResponse } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
+import { peopleInThisPlace } from '../../src/web/hearsay.js';
+import { thePlayerIsSureItIsThem } from '../../src/web/the-narrator-plays-the-world.js';
+import { routeQueriesFor } from '../../src/engine/world/locations.js';
+import { journeyNeedsWater } from '../../src/engine/world/places-on-the-way.js';
+import { FALSE_IMMORTAL_ORDINAL, maxHpForOrdinal } from '../../src/engine/cultivation/realms.js';
 
 /** A provider whose phase-1 answers are the plans below, one per turn. */
 function planning(plans: string[]): LLMProvider {
@@ -166,31 +179,27 @@ describe('whose order it is', () => {
         const turn = await game.act('I go to Moraine Gate and gather herbs');
 
         expect(turn.narration).not.toContain('Which comes first?');
-        expect(turn.narration).toContain('still ahead of you');
+        expect(turn.toolCalls.some(row => row.name === 'engine.stillToCome')).toBe(false);
     });
 
-    /**
-     * AND THE BOUND IS STILL THE BOUND. Not asking is not a licence to run
-     * everything: the exposure has to be the same as typing the first clause
-     * on its own, and it is - that sentence spends its own act with no question
-     * either.
-     */
-    it('still spends only one costly act', async () => {
+    it('spends both requested spans in an ordered plan', async () => {
         const { game } = await playing([
             STEPS(
-                { action: 'work', days: 90, said: 'take work for a season' },
-                { action: 'gather', said: 'gather herbs' }
+                { action: 'wait', days: 1, said: 'I wait for one day' },
+                { action: 'wait', days: 2, said: 'wait for two days' }
             )
         ]);
         await game.newRun('Probe');
-        const ran = (await game.act('I take work for a season and gather herbs'))
-            .toolCalls.filter(row => row.name === 'engine.step');
-        expect(ran).toHaveLength(1);
+        const before = game.state().run.elapsedDays;
+        const turn = await game.act('I wait for one day and then wait for two days');
+        expect(turn.toolCalls.filter(row => row.name === 'engine.step').map(row => row.action)).toEqual(['wait', 'wait']);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(3);
+        expect(turn.toolCalls.some(row => row.name === 'engine.stillToCome')).toBe(false);
     });
 });
 
 
-describe('a turn spends at most one costly act', () => {
+describe('fallback unresolved ordering', () => {
     it('two costly acts ask which comes first, and spend nothing', async () => {
         const { game } = await askedRatherThanReasoned(['(scripted)']);
         await game.newRun('Probe');
@@ -230,7 +239,7 @@ describe('a turn spends at most one costly act', () => {
 
         const turn = await game.act('I sit for a year and take work for a season');
         expect(turn.narration).toContain('Which comes first?');
-        expect(game.state().run.elapsedDays).toBe(0);
+        expect(game.state().run.elapsedDays).toBeCloseTo(1 / 3);
     });
 
     it('the free read before the question still runs, so the question is informed', async () => {
@@ -301,7 +310,7 @@ describe('a turn spends at most one costly act', () => {
  * the claim is about sequencing rather than about how one verb is read.
  */
 describe('where the player said the order, the turn takes it and asks nothing', () => {
-    it('runs the first act, holds the rest, and files exactly one ruling', async () => {
+    it('uses the supplied order without an artificial hold', async () => {
         const { game } = await playing([
             STEPS(
                 { action: 'move', target: 'Cloud Gate', said: 'I go to Cloud Gate' },
@@ -317,11 +326,11 @@ describe('where the player said the order, the turn takes it and asks nothing', 
         expect(turn.toolCalls.filter(row => row.name === 'engine.whichComesFirst')).toHaveLength(0);
         expect(turn.toolCalls.filter(row => row.name === 'engine.parseIntent')).toHaveLength(0);
 
-        // The first act ran and the second is named as still ahead.
+        // Any unreached act must be stopped by the actual world, never by a one-act budget.
         expect(game.state().run.elapsedDays).toBeGreaterThan(before);
         expect(turn.toolCalls.filter(row => row.name === 'engine.stillToCome').map(r => r.action))
-            .toEqual(['cultivate']);
-        expect(turn.narration).toContain('still ahead of you');
+            .toEqual([]);
+        expect(turn.toolCalls.some(row => row.name === 'engine.stillToCome')).toBe(false);
     });
 });
 
@@ -331,33 +340,99 @@ describe('where the player said the order, the turn takes it and asks nothing', 
  *   > I rob Cao Antao and then run away to Cloud Gate
  *
  * The theft landed - `taken`, a reprisal, a serious wound - and lifted nothing,
- * because the man had nothing. The journey was never this turn's: the player
- * wrote "and then", so the budget held it for the next one.
+ * because the man had nothing. Previously the journey was held by a one-act
+ * budget. The agency ruling removes that hold; real refusal/interruption still stops it.
  *
  * Reported wrongly it said the approach "did not come off" and that the journey
  * "depended on it having done" - two false sentences about one true turn, and
  * the first of them teaches the player something false about themselves.
  */
 describe('a step that landed is not reported as a step that failed', () => {
-    it('says the journey is still ahead, not that it was collateral of a failure', async () => {
-        const { game } = await playing([
-            STEPS(
-                { action: 'interact', target: 'Bai Zhenru', intent: 'steal', said: 'rob Bai Zhenru' },
-                { action: 'move', target: 'Cloud Gate', said: 'run away to Cloud Gate' }
-            )
-        ]);
-        await game.newRun('Probe');
+    /**
+     * 2026-10-03 fixture correction: Bai Zhenru was neither placed in this
+     * observer's area nor known to them. That legitimate refusal stopped the
+     * plan, and checking only the absence of stillToCome proved no landed act.
+     *
+     * Use an actual seeded mortal through the canonical current placement and
+     * presence reads. The fixture arranges the player's strong mortal-world
+     * body and an already exchanged name through the existing encounter/name
+     * authority; it does not claim to test introduction or travel to the setup.
+     * No person/stock/transfer is invented, no roll is forced, and the fixed
+     * run/world seeds stay unchanged. The real resolver must accept the theft
+     * and spend time before the second act can prove the old cap is absent.
+     * A genuine refused attempt must fail this case's landed precondition;
+     * the next test separately preserves the legitimate refusal contract.
+     */
+    it('never holds the journey merely because the theft spent time', async () => {
+        const plans: string[] = [];
+        const { game, repos } = await playing(plans);
+        const { cultivator } = await game.newRun('Probe');
+        const world = (await game.loadWorld())!;
+        const prepared = repos.cultivators.update(cultivator.id, {
+            realmOrdinal: FALSE_IMMORTAL_ORDINAL,
+            hp: maxHpForOrdinal(cultivator.attributes.might, FALSE_IMMORTAL_ORDINAL),
+            maxHp: maxHpForOrdinal(cultivator.attributes.might, FALSE_IMMORTAL_ORDINAL)
+        })!;
+        // Placement is the authority on actual routines/journeys and area caps.
+        // Stop at the first real public settlement containing a mortal; there
+        // is no seeded name, row id, copied routine or artificial crowd here.
+        const setting = (() => {
+            for (const place of world.locations) {
+                if (place.kind !== 'settlement') continue;
+                const read = peopleInThisPlace(repos, prepared, world, place);
+                const target = read.people.find(person => person.realmOrdinal === 0
+                    && world.npcs.some(npc => npc.id === person.id && npc.status === 'alive')
+                    && read.whereIs.has(person.id));
+                if (target) return { place, read, target };
+            }
+            return undefined;
+        })();
+        expect(setting, 'no actual mortal in a settlement to arrange this landed case').toBeDefined();
+        const target = setting!.target;
+        repos.cultivators.update(cultivator.id, { location: setting!.place.name });
+        repos.cultivators.standIn(cultivator.id, setting!.read.whereIs.get(target.id)!);
+        const me = game.state().cultivator;
+        expect(game.present(me).map(person => person.id)).toContain(target.id);
+        game.noteEncounter(me, game.currentRun().run,
+            { kind: 'cultivator', id: target.id, name: target.name }, 'witnessed',
+            'Fixture: already met this actual person at the arranged settlement.');
+        game.theyGaveTheirName(me, game.currentRun().run, target);
+        expect(thePlayerIsSureItIsThem(target.name, game.knowledge.awareness(me.id))).toBe(true);
 
-        const turn = await game.act('I rob Bai Zhenru and then run away to Cloud Gate');
-
-        // The theft is the turn's one costly act; the journey was sequenced for
-        // later by the player's own "and then" and is named as such.
-        expect(turn.toolCalls.filter(row => row.name === 'engine.stillToCome').map(r => r.action))
-            .toEqual(['move']);
-        expect(turn.narration).toContain('still ahead of you');
-
-        // And whatever the theft did, the journey is never described as having
-        // depended on it - that is the sentence that inverted the lesson.
+        const routes = routeQueriesFor(world.locations);
+        const distances = routes.treeFrom(setting!.place.id).days;
+        const destination = world.locations.filter(place => place.kind === 'settlement'
+            && place.id !== setting!.place.id && Number.isFinite(distances.get(place.id))
+            && !journeyNeedsWater(world.locations, setting!.place.id, place.id, routes))
+            .sort((a, b) => distances.get(a.id)! - distances.get(b.id)!)[0];
+        expect(destination, 'no actual dry-land settlement journey from the arranged scene').toBeDefined();
+        game.noteEncounter(me, game.currentRun().run,
+            { kind: 'place', id: destination!.name, name: destination!.name }, 'told',
+            'Fixture: the actual road destination was already described.');
+        expect(game.canPointAtLocation(me, destination!)).toBe(true);
+        plans.push(STEPS(
+            { action: 'interact', target: target.name, intent: 'steal', said: `rob ${target.name}` },
+            { action: 'move', target: destination!.name, said: `run away to ${destination!.name}` }
+        ));
+        const before = game.state().run.elapsedDays;
+        const turn = await game.act(`I rob ${target.name} and then run away to ${destination!.name}`);
+        const receipts = JSON.stringify(turn.toolCalls);
+        const theft = turn.toolCalls.find(row => row.name === 'engine.resolveAttempt'
+            && row.action === 'interact');
+        expect(theft, receipts).toBeDefined();
+        expect(theft!.ok, receipts).toBe(true);
+        const theftStep = turn.toolCalls.findIndex(row => row.name === 'engine.step' && row.action === 'interact');
+        const moveStep = turn.toolCalls.findIndex(row => row.name === 'engine.step' && row.action === 'move');
+        expect(theftStep, receipts).toBeGreaterThanOrEqual(0);
+        expect(moveStep, receipts).toBeGreaterThan(theftStep);
+        const firstAct = turn.toolCalls.slice(theftStep + 1, moveStep);
+        expect(firstAct.some(row => row.name === 'engine.simulateTimeSkip'
+            && /^[1-9]\d*(?:\.\d+)? of /.test(row.summary)), receipts).toBe(true);
+        expect(turn.toolCalls.slice(moveStep + 1).some(row => row.name === 'engine.simulateTimeSkip'
+            && /^[1-9]\d*(?:\.\d+)? of /.test(row.summary)), receipts).toBe(true);
+        expect(game.state().run.elapsedDays).toBeGreaterThan(before);
+        expect(turn.toolCalls.some(row => row.name === 'engine.planStopped'), receipts).toBe(false);
+        expect(turn.toolCalls.some(row => row.name === 'engine.stillToCome'), receipts).toBe(false);
         expect(turn.narration).not.toContain('depended on it having done');
     });
 });
@@ -579,24 +654,26 @@ describe("the owner's acceptance sentence", () => {
         await game.newRun('Probe');
         const turn = await game.act(SAID);
 
-        // The theft is the turn's one costly act and it is NOT missing - which
+        // The requested theft is NOT missing - which
         // is what the danger check was eating before it compared against the
         // player's own clauses.
         const steps = turn.toolCalls.filter(row => row.name === 'engine.step');
         expect(steps.some(row => row.action === 'interact')).toBe(true);
         expect(turn.toolCalls.filter(row => row.name === 'engine.stepNotRun')).toHaveLength(0);
 
-        // The order was never in question - "it" chains the second clause to the
-        // first - so nothing is asked, and the rest is named as still ahead.
+        // The back-reference fixes the order. No count or cost taxonomy holds
+        // the departure; a genuine world/body interruption still can.
         expect(turn.toolCalls.filter(row => row.name === 'engine.whichComesFirst')).toHaveLength(0);
         expect(turn.toolCalls.filter(row => row.name === 'engine.stillToCome').map(r => r.action))
-            .toEqual(['give', 'move']);
+            .toEqual([]);
     });
 
     it('a back-reference settles the order as firmly as "then" does', () => {
+        // The back-reference must order the taking before the handover.
         const chained = [
             { action: { action: 'interact' as const, target: 'Cao Antao', intent: 'steal' } },
-            { action: { action: 'give' as const, target: 'Shen Liefeng', topic: 'it' } }
+            { action: { action: 'give' as const, target: 'Shen Liefeng', topic: 'it' } },
+            { action: { action: 'move' as const, target: 'away' } }
         ];
         // No sequencing word anywhere, and nothing to ask: the pressing cannot
         // precede the taking, because "it" is the purse.

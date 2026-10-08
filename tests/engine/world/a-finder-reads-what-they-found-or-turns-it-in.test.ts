@@ -11,6 +11,8 @@
  * book is worth to that house; a rogue has no house to turn anything in to; a
  * house that already holds a thing wants no second; and a ruin's goods follow
  * what the ruin was, with the house taking the ones it cannot buy for itself.
+ * The annual hand-in uses the same rule even when two members carry the same
+ * kind: the first fills the want, and the second keeps theirs.
  *
  * Red-checked: carrying every find to the house unread (the old behaviour) fails
  * the read, turn-in, second-copy and goods assertions, five of the six.
@@ -33,7 +35,7 @@ import {
     theBooksBehindTheirDoor,
     theGoodsLeftIn
 } from '../../../src/engine/world/what-a-ruin-has-on-its-shelves.js';
-import { whatTheHouseMakesOf } from '../../../src/engine/world/what-a-house-gives-merit-for.js';
+import { peopleTurnInWhatTheirHouseWants, whatTheHouseMakesOf } from '../../../src/engine/world/what-a-house-gives-merit-for.js';
 
 /** A heaven-grade road nothing teaches: three reads, opens at 22, carries to 25, no element. */
 const HEAVEN_BOOK = 'karmic-thread-reading-art';
@@ -168,6 +170,21 @@ describe('a book somebody on a roll finds', () => {
 });
 
 describe('the goods a ruin was left holding', () => {
+    it('takes only the first of two identical kinds in one annual hand-in', () => {
+        const state = world('finders-one-kind');
+        state.factions.find(h => h.id === HOUSE_ID)!.resources.spirit_stones = 0;
+        const first = person(state, 'first-kind', 8, HOUSE_ID);
+        const second = person(state, 'second-kind', 8, HOUSE_ID);
+        for (const giver of [first, second]) state.objects.push(makeObject({
+            id: `found-${giver.id}`, name: 'Qi Grass', kind: 'material',
+            ownerId: giver.id, ownerName: giver.name, possessorId: giver.id,
+            data: { materialId: 'herb-qi-grass', quantity: 100 }
+        }));
+        expect(peopleTurnInWhatTheirHouseWants(state, 500)).toBeGreaterThan(0);
+        expect(state.objects.filter(o => o.id.startsWith('found-finder-') && o.ownerId === HOUSE_ID)).toHaveLength(1);
+        expect(peopleTurnInWhatTheirHouseWants(state, 501)).toBe(0);
+    });
+
     it('follow what the ruin was, and the house takes what it cannot buy', () => {
         const state = world('finders-goods');
         const vault = ground('loc-vault', 40);

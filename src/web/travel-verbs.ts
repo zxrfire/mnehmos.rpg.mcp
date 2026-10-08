@@ -1,9 +1,26 @@
+import { acceptedRidersForBoarding, companySelectedForBoarding } from './an-offered-ride-is-an-agreement.js';
+import { quoteAnAirJourney } from '../engine/world/what-an-air-journey-takes.js';
+import { witnessIndexFor } from '../engine/world/witness-reaction-index.js';
+import { personalAirCourseClaim, personalFlightArt, launchPersonalAirJourney, spendOnPersonalAirCourse, airExteriorReadiness } from './an-actual-personal-air-course.js';
+import { canFlyByTheirOwnBody } from '../engine/world/what-an-air-journey-takes.js';
+
+import { whereTheRoadEndsIn as thePublicRoadEndsIn } from '../engine/world/public-transport-at-a-place.js';
+import { enteringAnActualLocalCave } from './entering-an-actual-local-cave.js';
+import { spendFootJourneyAtItsChecks } from './a-foot-journey-at-its-checks.js';
+import { stoppedRoadFor, betweenRoadEndpoints, FLAG_ROAD_STOPPED, type StoppedRoad } from './a-road-stopped-partway.js';
+import { roadContinuationTo, roadContinuationAhead, positionOnRoad, positionAfterRoadContinuation, sameRoadPosition, roadVertexMoments } from '../engine/world/road-course.js';
+import { acceptOwnedPassage, continueOwnedPassage, spendOnOwnedPassage, peopleUnavailableForOwnedBoarding } from './an-owned-passage.js';
+import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-world.js';
+import { executeActualPaidPassage } from './an-actual-paid-passage.js';
+import { spendAnOrdinarySpanAtTheActualClock } from './spending-an-ordinary-span-at-the-actual-clock.js';
 /**
  * Getting somewhere: on foot, on something, by folding, or on somebody's span.
  */
 
 import { A_SPIRIT_BOAT_ANSWERS_TO, isWithThem, itWantsAPilot, takeItAlong } from '../engine/world/a-vehicle.js';
 import { rankName } from '../engine/cultivation/realms.js';
+import { firstTravellerOnTheWay, firstTravellerOnTheWater, journeyTimeHasReached, placePartwayAlong, ROUTE_STOP } from '../engine/world/places-on-the-way.js';
+import { shipIdForLane } from '../engine/world/the-ship-on-a-lane.js';
 import { resolveSect } from './entities.js';
 import { readTheWall } from './what-is-posted-on-the-wall-here.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
@@ -24,11 +41,12 @@ import {
     kindOfCraft,
     requireConveyance
 } from '../data/cultivation/what-a-house-moves-its-people-on.js';
-import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
+import { simulateTimeSkip, type TimeSkipContext } from '../engine/cultivation/time-skip.js';
 import { brokenStatusesOn } from '../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { stageRank } from '../engine/social/discovery.js';
 import {
     boardAt,
+    SPAN_CROSSING_DAYS,
     quotePassageAtACounter
 } from '../engine/world/buying-passage-at-a-measured-span-counter.js';
 import { grantsHeldWith } from '../engine/world/capability.js';
@@ -49,7 +67,7 @@ import type { NpcRecord } from '../engine/world/npc-state.js';
 import { invitationEndsAt, routineTime } from '../engine/world/npc-routines.js';
 import { passHours, invitationsDue } from './routine-invitations.js';
 import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
-import { walkingDaysFrom } from '../engine/world/locations.js';
+import { walkingDaysFrom, walkingRouteFrom } from '../engine/world/locations.js';
 import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import {
     namesOf,
@@ -120,13 +138,14 @@ import {
     type AHouseYouCouldWalkTo
 } from './walking-up-to-a-house.js';
 import { aWalkInsideTheWalls } from './walking-inside-the-walls.js';
-import { aWalkAcrossThePlace, standThemIn, theAreaTheyAreIn, theGateLetsThemIn, theWatchAtTheGate } from './walking-across-a-place.js';
+import { theSeatOfTheCompound, whereCompoundsAre } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+import { actualCarrierScene } from './the-actual-carrier-scene.js';
+import { namesALocalArea, aWalkAcrossThePlace, standThemIn, thePlaceAsTheSceneNamesIt, theAreaTheyAreIn, theGateLetsThemIn, theWatchAtTheGate } from './walking-across-a-place.js';
 import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
 import { theQuartersThisCultivatorHas } from './leaving-a-thing-in-your-own-room.js';
 import { abodeLocationId } from '../engine/world/immortal-world.js';
 import { getLocation, getNpc, type WorldState } from '../engine/world/world-state.js';
-import { populationWeightOf, type LocationRecord } from '../engine/world/locations.js';
-import { pathTo } from '../engine/world/architecture.js';
+import { type LocationRecord } from '../engine/world/locations.js';
 import { layerOf, type LayerKey } from '../engine/world/layers.js';
 import { factsForMove, factsForRefusal, factsForTimeSkip, factsForToolResult, humanDays, placeName, sayThisFirstWhateverTheNarratorDoes, shownWithNoModelAfter } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
@@ -164,9 +183,12 @@ import {
     type AVoyage
 } from './a-ship-at-sea.js';
 import { goingByShipInstead, theWayThereIsByShip } from './the-way-there-is-by-ship.js';
-import { theCrewIsWhereTheShipIs, theCrewOfTheShip, theCrewWhoFell } from './the-crew-of-a-ship.js';
+import { theCrewAreOnThisVoyage, theCrewIsWhereTheShipIs, theCrewOfTheShip, theCrewWhoFell } from './the-crew-of-a-ship.js';
 import { theRestOfTheFight } from './when-somebody-comes-at-you.js';
 import { everythingInThePouch } from '../server/consolidated/cultivation-support.js';
+import { peopleInThisPlace } from './hearsay.js';
+import { publicCarriagePassage, stopPublicCarriage } from '../engine/world/public-carriages.js';
+import { continueThePaidCarriage, leaveThePaidCarriage } from './a-paid-carriage-on-the-road.js';
 import { SATIETY_MAX } from '../schema/cultivation.js';
 
 /**
@@ -180,7 +202,6 @@ const MUSTERING = 'mustering';
  * was walked. It waits for as long as the player stands where it stopped -
  * dealing with whatever stopped the road does not undo the days walked.
  */
-const FLAG_ROAD_STOPPED = 'road_stopped';
 
 /** A box on wheels or a hull is a roof for the nights of a journey; a saddle, a blade and the road are not. */
 const A_ROOF_ON_THE_ROAD: ReadonlySet<string> = new Set([
@@ -192,11 +213,14 @@ const OF_THEIR_OWN: Readonly<Record<AService, ReadonlySet<string>>> = {
     carriage: new Set(['conv-carriage-mortal', 'conv-carriage-earth', 'conv-carriage-heaven']),
     ship: new Set(['conv-spirit-boat'])
 };
-interface StoppedRoad {
-    readonly to: string;
-    readonly from: string;
-    readonly road: number;
-    readonly walked: number;
+
+
+/** Co-located contact means the same ordinary area, including an overflow area. */
+function standWithTheTraveller(game: GameService, playerId: string, personId: string, place: LocationRecord): void {
+    const body = game.repos.cultivators.getById(playerId);
+    if (!body?.alive || !game.atHand) return;
+    const area = peopleInThisPlace(game.repos, body, game.atHand, place).whereIs.get(personId);
+    if (area) game.repos.cultivators.standIn(playerId, area);
 }
 
 /** Names for a set of ids, so a line can say who rather than how many. */
@@ -594,19 +618,27 @@ export function whereHomeIs(
  * The most populous place inside a province that somebody could be standing in,
  * or null where it holds none. See `whereTheRoadEndsIn` for why.
  */
-export function theMostPeopledPlaceIn(
-    world: Pick<WorldState, 'locations'>,
-    provinceId: string
-): LocationRecord | null {
-    let best: LocationRecord | null = null;
-    for (const place of world.locations) {
-        if (place.kind !== 'settlement' || place.sealed) continue;
-        if (place.thresholds.entry > 0 || place.thresholds.survival > 0) continue;
-        if (populationWeightOf(place) <= 0) continue;
-        if (!pathTo(world.locations, place.id).some(step => step.id === provinceId)) continue;
-        if (best === null || populationWeightOf(place) > populationWeightOf(best)) best = place;
-    }
-    return best;
+export { theMostPeopledPlaceIn } from '../engine/world/public-transport-at-a-place.js';
+
+/** A supplied real name identifies a destination, not a route the body knows. */
+function routeTheyHaveNotLearned(engine: GameService, cultivator: Cultivator,
+    destination: string, action: ActionName): Execution | null {
+    if (!engine.atHand) return null;
+    const place = worldLocationFor(engine.atHand, destination);
+    // This is the same admitted road, not a newly supplied destination or route.
+    // Legacy geometry may continue its measured remainder, never infer another origin.
+    const held = action === 'move' ? stoppedRoadFor(engine.repos.db, cultivator) : null;
+    if (place && held && held.walked > 0 && held.walked < held.road
+        && worldLocationFor(engine.atHand, held.to)?.id === place.id) return null;
+    if (!place || (!betweenRoadEndpoints(engine.repos.db, cultivator)
+        && worldLocationFor(engine.atHand, cultivator.location)?.id === place.id)
+        || engine.canPointAtLocation(cultivator, place)) return null;
+    return refused('knowledge.canPointAt', action, factsForRefusal(
+        'You do not know the way there.',
+        'You can ask somebody here for directions to ' + place.name + '.',
+        'The supplied destination is real, but this cultivator cannot place its route. '
+        + 'Location unchanged, no time passed, and no route knowledge granted.'
+    ));
 }
 
 export const travelVerbs = {
@@ -629,6 +661,18 @@ export const travelVerbs = {
         // abode on the other side of the Lid, which is not walked to.
         let said = target;
         this.atHand ??= await this.loadWorld();
+        const startedBetweenEndpoints = betweenRoadEndpoints(this.repos.db, cultivator);
+        // Local offered hull areas use the native finite approach before any geographic
+        // continuation. Asking for the foredeck is not changing the destination.
+        const carrierHere = this.atHand && actualCarrierScene(this.repos, cultivator, this.atHand, routineTime(this.atHand));
+        if (carrierHere && namesALocalArea(this, cultivator, said)) {
+            const local = await aWalkAcrossThePlace(this, run, cultivator, said);
+            if (local) return local;
+        }
+        const paidRoad = await continueThePaidCarriage(this, run, cultivator, said, 'move', /\b(?:on foot|walk|walking)\b/i.test(intent));
+        if (paidRoad) return paidRoad;
+        const ownedOnward = await continueOwnedPassage(this, run, cultivator, said);
+        if (ownedOnward) return ownedOnward;
         // CARRYING ON IS THE ROAD THAT STOPPED. "keep going" names nowhere, and
         // with a road stopped where they stand there is only one way it means.
         if ((said ?? '').trim().length === 0) {
@@ -637,8 +681,13 @@ export const travelVerbs = {
         }
         // A ROOM PAID FOR HERE IS UPSTAIRS, NOT HOME: "my room" to a lodger is the inn's.
         if (HOME_RATHER_THAN_A_PLACE_NAME.test((target ?? '').trim())) {
-            const upstairs = await aWalkAcrossThePlace(this, run, cultivator, target);
+            const upstairs = startedBetweenEndpoints ? null : await aWalkAcrossThePlace(this, run, cultivator, target);
             if (upstairs) return upstairs;
+            const currentSeat = this.atHand && theSeatOfTheCompound(this.atHand, this.worldPlaceOf(cultivator), whereCompoundsAre(this.atHand));
+            if (!startedBetweenEndpoints && currentSeat && currentSeat.controllingFactionId === cultivator.sectId) {
+                const quarters = await aWalkInsideTheWalls(this, run, cultivator, target);
+                if (quarters) return quarters;
+            }
         }
         if (HOME_RATHER_THAN_A_PLACE_NAME.test((target ?? '').trim())) {
             this.atHand = this.atHand ?? await this.loadWorld();
@@ -664,6 +713,21 @@ export const travelVerbs = {
                     + 'unchanged, no time passed.'
                 ));
             }
+            // Home is reached through the ordinary journey and then its actual lodging door.
+            if (home.kind === 'quarters') {
+                const reached = await this.move(run, cultivator, ambient, home.name, intent);
+                if (reached.outcome === 'refused' || reached.cutShort) return reached;
+                const after = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+                const into = await aWalkInsideTheWalls(this, this.repos.runs.getById(run.id) ?? run, after, 'my quarters');
+                if (!into) return reached;
+                into.calls.unshift(...reached.calls);
+                into.facts.lines.unshift(...reached.facts.lines);
+                into.facts.structure.unshift(...reached.facts.structure);
+                into.events.unshift(...reached.events);
+                into.timeSkip ??= reached.timeSkip;
+                into.breakthrough ??= reached.breakthrough;
+                return into;
+            }
             said = home.name;
         }
         // ── A ROOM IS WALKED TO FROM INSIDE ITS OWN WALLS ────────────────
@@ -676,13 +740,15 @@ export const travelVerbs = {
         const underfoot = this.atHand?.locations.find(row => row.id === this.worldPlaceOf(cultivator));
         if (underfoot?.tags.includes('gate_town') && /^(?:the\s+)?gate$/i.test(said ?? '')) {
             said = this.atHand?.locations.find(row => row.id === underfoot.data.gateId)?.name ?? said;
-        } else if (underfoot?.kind === 'sect_seat' && /^(?:the\s+)?town$/i.test(said ?? '')) {
-            said = this.atHand?.locations.find(row => row.data.gateId === underfoot.id)?.name ?? said;
+        } else if (underfoot && this.atHand && /^(?:the\s+)?(?:town|city)$/i.test(said ?? '')) {
+            const seat = theSeatOfTheCompound(this.atHand, underfoot.id, whereCompoundsAre(this.atHand));
+            if (seat) said = this.atHand.locations.find(row => row.data.gateId === seat.id)?.name ?? said;
         }
-        const acrossThePlace = await aWalkAcrossThePlace(this, run, cultivator, said);
+        const onAnEdge = betweenRoadEndpoints(this.repos.db, cultivator);
+        const acrossThePlace = onAnEdge ? null : await aWalkAcrossThePlace(this, run, cultivator, said);
         if (acrossThePlace) return acrossThePlace;
         // ABOARD A SHIP AT SEA the one way is where it is bound, and going there is sailing on.
-        const voyage = theVoyageUnderWay(this.repos.db, cultivator);
+        const voyage = theVoyageUnderWay(this.repos.db, cultivator, this.atHand);
         if (voyage) {
             const bound = (said ?? '').trim();
             return bound.length === 0 || loosePlaceKey(bound) === loosePlaceKey(voyage.bound)
@@ -690,7 +756,7 @@ export const travelVerbs = {
                 ? aShipSailsOn(this, run, cultivator, voyage, null, 'carrying_on')
                 : stillAtSea(voyage, 'move');
         }
-        const insideTheWalls = await aWalkInsideTheWalls(this, run, cultivator, said);
+        const insideTheWalls = onAnEdge ? null : await aWalkInsideTheWalls(this, run, cultivator, said);
         if (insideTheWalls) return insideTheWalls;
         const sightingNumber = /^(?:the\s+)?sighting\s+(\d+)$/i.exec((said ?? '').trim());
         const sightings = readJsonFlag<{ id: string; description: string }[]>(this.db, cultivator.id, 'located_places') ?? [];
@@ -737,7 +803,7 @@ export const travelVerbs = {
         // it. It is a walk out of the area they are in - down from a room to the inn,
         // or out to where a road arrives - or they are already there. Never a day.
         // A house's own seat is the gate's to answer: standing outside it, going to it is going in.
-        if (place && !house && loosePlaceKey(place.name) === loosePlaceKey(placeName(cultivator))) {
+        if (!onAnEdge && place && !house && loosePlaceKey(place.name) === loosePlaceKey(placeName(cultivator))) {
             const inRoom = theAreaTheyAreIn(this.atHand, cultivator)?.area.for === 'room';
             const out = await aWalkAcrossThePlace(this, run, cultivator, inRoom ? 'downstairs' : 'street');
             if (out) return out;
@@ -802,6 +868,8 @@ export const travelVerbs = {
         // driver off, places in this engine are documented free text and
         // there is nothing that could say a name is wrong; refusing then
         // would make travel impossible rather than safe.
+        const unknownRoute = routeTheyHaveNotLearned(this, cultivator, place.name, 'move');
+        if (unknownRoute) return unknownRoute;
         if (this.atHand && !this.somewhereReal(place.name, cultivator)) {
             // ── SOMEBODY STANDING HERE IS NOT A JOURNEY ──────────────
             //
@@ -942,6 +1010,10 @@ export const travelVerbs = {
         // AND A PROVINCE IS NOT SOMEWHERE ANYBODY STANDS. See `whereTheRoadEndsIn`.
         const roadEnds = this.whereTheRoadEndsIn(worldRow?.name ?? asProvince?.name ?? place.name);
         const arrivedAt = roadEnds.name;
+        if (worldRow) {
+            const entered = await enteringAnActualLocalCave(this, run, cultivator, worldRow, intent);
+            if (entered) return entered;
+        }
 
         // A JOURNEY WITH AN END ON OPEN WATER IS SAILED, so it goes to the landing, or at the
         // landing says what the seat costs. See `the-way-there-is-by-ship.ts`.
@@ -964,8 +1036,34 @@ export const travelVerbs = {
         // places of one province. Inventing a number where it states none is
         // the fabricated-zero mistake `whereCouldTheyGo` records having made
         // once already, so an unpriced journey still costs the flat day.
-        const onTheRoad = this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
-        if (onTheRoad < 1 && worldRow) {
+        if (this.atHand && worldRow) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            run = this.repos.runs.getById(run.id) ?? run;
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+        }
+        const held = stoppedRoadFor(this.repos.db, cultivator);
+        const resuming = held !== null && held.to === arrivedAt && held.from === placeName(cultivator)
+            && held.walked >= 0 && held.walked < held.road;
+        const fromHere = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
+        const toThere = this.atHand && worldLocationFor(this.atHand, arrivedAt);
+        const heldHere = held?.from === placeName(cultivator) ? held : null;
+        if (heldHere && !heldHere.position && heldHere.to !== arrivedAt) return refused(
+            'engine.roadOriginUnknown', 'move', factsForRefusal(
+                'The stopped road has no recorded departure.',
+                'Its remaining original journey can continue, but this old record cannot price a different destination from the actual partial edge.',
+                'move: legacy stopped-road history absent; no location or time changed.'));
+        const freshRoute = !heldHere && this.atHand && fromHere && toThere
+            ? walkingRouteFrom(this.atHand.locations, fromHere.id, toThere.id) : null;
+        const position = heldHere?.position ?? (freshRoute ? positionOnRoad(freshRoute, 0) : null);
+        const course = position && this.atHand && toThere
+            ? (resuming ? roadContinuationAhead : roadContinuationTo)(this.atHand.locations, position, toThere.id) : null;
+        if (position && !course) return refused('engine.roadClosed', 'move', factsForRefusal(
+            'No admitted endpoint continuation reaches that destination.',
+            'The actual directed road must reach a legal endpoint before another route can begin.',
+            'move: actual partial edge has no lawful requested continuation; no time or movement.'));
+        const onTheRoad = course ? (resuming ? held!.walked : 0) + course.days
+            : resuming ? held.road : this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
+        if (!course && onTheRoad < 1 && worldRow) {
             const walked = this.repos.cultivators.update(cultivator.id, { location: arrivedAt })!;
             const advanced = await passHours(this, run, walked, LESSER_ACTION_DAYS.move * 24);
             if (!advanced.finished && advanced.spent) return advanced.spent;
@@ -988,18 +1086,89 @@ export const travelVerbs = {
         // stood there - the fight with whoever stopped them - leaves it; setting
         // out anywhere else, or being somewhere else, walks the road from its
         // start.
-        const held = readJsonFlag<StoppedRoad>(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED);
         if (held !== null) clearFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED);
-        const alreadyWalked = held !== null
-            && held.to === arrivedAt
-            && held.from === placeName(cultivator)
-            && held.road === onTheRoad
-            && held.walked > 0 && held.walked < onTheRoad
-            ? held.walked
-            : 0;
-        const leg = onTheRoad - alreadyWalked;
+        const alreadyWalked = resuming ? held.walked : 0;
+        const leg = course?.days ?? onTheRoad - alreadyWalked;
 
-        const startDay = Math.floor(run.elapsedDays);
+        const departure = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
+        const destination = this.atHand && worldLocationFor(this.atHand, arrivedAt);
+        const meeting = this.atHand && departure && destination ? firstTravellerOnTheWay({
+            locations: this.atHand.locations, npcs: this.atHand.npcs,
+            fromId: departure.id, toId: destination.id,
+            onDay: routineTime(this.atHand), days: leg,
+            ...(course ? { route: [
+                ...(course.position.kind === 'edge' ? [{ locationId: course.position.fromId, days: 0 }] : []),
+                ...course.route.map(stop => ({ ...stop, days: stop.days + course.partialDays }))
+            ] } : {}),
+            exceptIds: new Set([cultivator.id, ...whoIsOnTheRoadWith(this.atHand.npcs,
+                cultivator.id, this.atHand.currentDay).map(npc => npc.id)])
+        }) : null;
+        const plannedLeg = meeting?.afterDays ?? leg;
+
+        const startDay = course ? run.elapsedDays : Math.floor(run.elapsedDays);
+        const acceptedMoment = course ? (resuming ? held?.acceptedMoment : {
+            runId: run.id, elapsedDays: run.elapsedDays, boardedOnDay: routineTime(this.atHand!) }) : undefined;
+        const contextFor = (body: Cultivator, actualRun: Run, rations: number): TimeSkipContext => ({
+            seed: actualRun.seed,
+            // The row id is a randomUUID; without this the actualRun is not
+            // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
+            rollIdentity: PLAYER_ROLL_IDENTITY,
+            locationId: placeName(body),
+            turn: actualRun.turn,
+            startDay: course ? actualRun.elapsedDays : startDay,
+            options: {
+                focusMultiplier: TRAVEL_FOCUS,
+                ...this.rateTermsFor(body),
+                ground: this.groundFor(body)
+            },
+            understanding: this.understandingFor(actualRun, body),
+            rations,
+            grainAbstinence: false,
+            autoBreakthrough: false,
+            randomEvents: true,
+            // On its feet, so the sentences written for a cave are not used.
+            spanIsASitting: false,
+            ...daoHeartConditions(this.repos.db, body, Math.floor(actualRun.elapsedDays)),
+            toll: tollConditionsFor(this.repos, body)
+        });
+
+        const courseDeparture = this.atHand ? routineTime(this.atHand) : run.elapsedDays;
+        let committed = 0;
+        const groundAt = (elapsed: number): string | undefined => {
+            if (!course || !this.atHand) return undefined;
+            const point = positionAfterRoadContinuation(course, elapsed, courseDeparture);
+            const id = point.kind === 'place' ? point.locationId
+                : this.atHand.locations.find(row => row.id === point.toId)?.tags.includes(ROUTE_STOP)
+                    ? point.toId : point.fromId;
+            return this.atHand.locations.find(row => row.id === id)?.name;
+        };
+        const checkpoint = (portion: number): void => {
+            if (!course) return;
+            committed += portion;
+            const body = this.repos.cultivators.getById(cultivator.id)!;
+            writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify({
+                to: arrivedAt, from: placeName(body), road: onTheRoad,
+                walked: alreadyWalked + committed,
+                acceptedMoment,
+                position: positionAfterRoadContinuation(course, committed, courseDeparture)
+            } satisfies StoppedRoad));
+            this.theyArrivedWithYou(body, placeName(body));
+        };
+        const occupiesCourse = (cursor: StoppedRoad | null): boolean => !!course && !!cursor
+            && cursor.to === arrivedAt && cursor.road === onTheRoad
+            && journeyTimeHasReached(cursor.walked, alreadyWalked + committed)
+            && journeyTimeHasReached(alreadyWalked + committed, cursor.walked)
+            && cursor.acceptedMoment?.runId === acceptedMoment?.runId
+            && cursor.acceptedMoment?.elapsedDays === acceptedMoment?.elapsedDays
+            && cursor.acceptedMoment?.boardedOnDay === acceptedMoment?.boardedOnDay
+            && sameRoadPosition(cursor.position ?? null, positionAfterRoadContinuation(course, committed, courseDeparture));
+        if (course) checkpoint(0);
+        const footChecks = course ? await spendFootJourneyAtItsChecks(this, run, cultivator, leg, {
+            moment: acceptedMoment ?? null, newlyAccepted: !resuming, resolvesOnTurn: run.turn + 1,
+            checkpoint, groundAt, contextFor, meeting, occupiesCourse,
+            vertexDates: roadVertexMoments(course.route, courseDeparture, course.days, course.partialDays)
+        }) : null;
+        if (footChecks?.early) return footChecks.early;
 
         // ── THE ROAD HAS THINGS ON IT ────────────────────────────────────
         //
@@ -1016,12 +1185,12 @@ export const travelVerbs = {
         // alone called the time-skip directly and skipped it. The time-skip's
         // own check runs on a ninety-day grid that suits a decade in a cave
         // and that an eleven-day road almost never reaches.
-        const enc = encountersFor(
+        const enc = footChecks?.roll ?? encountersFor(
             { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
             {
                 seed: run.seed,
                 startDay,
-                days: leg,
+                days: plannedLeg,
                 activity: 'travel',
                 cultivator,
                 // The row id is a randomUUID. See PLAYER_ROLL_IDENTITY.
@@ -1037,54 +1206,42 @@ export const travelVerbs = {
         // true of every broken sitting - so a journey stopped on day four has
         // spent four days and arrived nowhere, and the rest of the road is
         // still ahead.
-        const lived = daysActuallySpent(enc, startDay, leg);
-        const setOut = withEncounterDeltas(cultivator, enc);
+        const lived = footChecks?.spent?.skip.simulatedDays ?? daysActuallySpent(enc, startDay, plannedLeg);
+        const setOut = footChecks ? cultivator : withEncounterDeltas(cultivator, enc);
         // What is in the pack feeds them here too. Only seclusion tops the pack
         // up from the purse; this eats what is already carried.
-        const carried = this.drawFromPack(cultivator, lived);
+        const carried = footChecks?.carried ?? this.drawFromPack(cultivator, lived);
         const packShort = whetherThePackCoversTheRoad(cultivator, carried, leg);
-        const skip = simulateTimeSkip(setOut, lived, {
-            seed: run.seed,
-            // The row id is a randomUUID; without this the run is not
-            // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
-            rollIdentity: PLAYER_ROLL_IDENTITY,
-            locationId: placeName(cultivator),
-            turn: run.turn,
-            startDay,
-            options: {
-                focusMultiplier: TRAVEL_FOCUS,
-                ...this.rateTermsFor(cultivator),
-                ground: this.groundFor(cultivator)
-            },
-            understanding: this.understandingFor(run, cultivator),
-            rations: carried,
-            grainAbstinence: false,
-            autoBreakthrough: false,
-            randomEvents: true,
-            // On its feet, so the sentences written for a cave are not used.
-            spanIsASitting: false,
-            ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
-            toll: tollConditionsFor(this.repos, cultivator)
-        });
 
-        this.putBackWhatWasNotEaten(cultivator, skip);
-        const stopped = !skip.died && skip.simulatedDays < leg;
-        const applied = applyTimeSkip(this.repos, {
-            before: setOut, run, skip, ...(stopped ? {} : { location: arrivedAt })
+        const context = contextFor(setOut, run, carried);
+        const spent = footChecks?.spent ?? null;
+        const skip = spent?.skip ?? simulateTimeSkip(setOut, lived, context);
+        if (!spent) this.putBackWhatWasNotEaten(cultivator, skip);
+        const incomplete = !journeyTimeHasReached(skip.simulatedDays, leg);
+        const stopped = !skip.died && incomplete;
+        const actualRoadGround = spent && this.atHand
+            ? worldLocationFor(this.atHand, spent.applied.cultivator.location) : null;
+        const roadGround = incomplete && actualRoadGround ? actualRoadGround
+            : incomplete && this.atHand && departure && destination
+            ? meeting && journeyTimeHasReached(skip.simulatedDays, meeting.afterDays) ? meeting.place
+                : placePartwayAlong(this.atHand.locations, departure.id, destination.id, skip.simulatedDays, leg)
+            : null;
+        const applied = spent?.applied ?? applyTimeSkip(this.repos, {
+            before: setOut, run, skip, ...(incomplete ? roadGround ? { location: roadGround.name } : {} : { location: arrivedAt })
         });
-        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const world = spent?.world ?? await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
         // What the road actually put in front of them, cut to the days walked:
         // an occurrence past the day they stopped did not happen.
-        const happened = cutTo(enc, startDay, skip.simulatedDays);
-        this.handBackWhatNeverHappened(applied.cultivator, enc, happened);
-        const onTheWay = recordEncounters(
+        const happened = footChecks?.roll ?? cutTo(enc, startDay, skip.simulatedDays);
+        if (!footChecks) this.handBackWhatNeverHappened(applied.cultivator, enc, happened);
+        const onTheWay = footChecks?.recorded ?? recordEncounters(
             this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos
         );
 
         // THE ROAD'S NIGHTS AND ITS MEALS. Charged here rather than after the
         // turn, because whoever stopped the road fights the body the nights left.
-        const nights = skip.died ? [] : Array.from({ length: skip.simulatedDays }, (_, i) => startDay + i);
+        const nights = footChecks || skip.died ? [] : Array.from({ length: skip.simulatedDays }, (_, i) => startDay + i);
         const charged = nights.length > 0 ? chargeTheNightsInTheOpen(this, run, applied.cultivator, nights) : null;
         const walker = this.repos.cultivators.getById(cultivator.id) ?? applied.cultivator;
         const whatWasEaten = skip.died ? null : whatTheRoadAte(walker, carried, skip.endState.rationsRemaining);
@@ -1094,40 +1251,84 @@ export const travelVerbs = {
             facts.prose = [packShort, facts.prose, whatWasEaten].filter(Boolean).join('\n\n');
         };
 
-        if (stopped) {
+        // A committed world boundary can actually remove the body from this
+        // course. Its old target never wins over that fresh physical authority.
+        const currentRoad = course ? stoppedRoadFor(this.repos.db, walker) : null;
+        const stillOnThisCourse = !course || occupiesCourse(currentRoad)
+            && journeyTimeHasReached(committed, skip.simulatedDays)
+            && journeyTimeHasReached(skip.simulatedDays, committed);
+        if (walker.alive && !stillOnThisCourse) {
+            const facts = factsForTimeSkip(cultivator, walker, skip, ambient, 'Travel', leg);
+            const line = 'The actual body left this admitted road before its arrival was resolved.';
+            facts.lines.unshift(line);
+            facts.required = [...(facts.required ?? []), line];
+            facts.lines.push(...onTheWay.lines, ...world.lines);
+            facts.structure.push(...onTheWay.structure, ...world.structure,
+                'move: fresh SQL body/cursor no longer matches the committed course; no old target arrival or cursor rewrite.');
+            const interrupted: Execution = { facts, events: [...skip.events, ...onTheWay.events],
+                timeSkip: skip, breakthrough: null, outcome: 'executed', nights: 'charged',
+                cutShort: footChecks?.cutShort ?? { askedDays: leg, livedDays: skip.simulatedDays,
+                    cause: 'the_world', what: line },
+                calls: [{ name: 'engine.encounterWindow', action: 'move', ok: true,
+                    summary: 'Actual relocation or replacement course ended this road; actual body and replacement cursor retained.' }] };
+            sayTheRoadsFood(interrupted.facts);
+            return footChecks?.fight ? foldTheFightIn(interrupted, footChecks.fight) : interrupted;
+        }
+
+        if (stopped && walker.alive) {
+            if (roadGround) {
+                this.theyArrivedWithYou(walker, roadGround.name);
+                if (!course || positionAfterRoadContinuation(course, skip.simulatedDays, courseDeparture).kind === 'place')
+                    this.noteEncounter(walker, run,
+                        { kind: 'place', id: roadGround.name, name: roadGround.name }, 'witnessed', 'Reached on the road.');
+            }
             const walked = alreadyWalked + skip.simulatedDays;
             const remaining = onTheRoad - walked;
             const stoppedRoad: StoppedRoad = {
                 to: arrivedAt,
-                from: placeName(applied.cultivator),
+                from: placeName(walker),
                 road: onTheRoad,
-                walked
+                walked,
+                ...(course ? { acceptedMoment, position: positionAfterRoadContinuation(course, skip.simulatedDays, courseDeparture) } : {})
             };
-            writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify(stoppedRoad));
+            if (!course) writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify(stoppedRoad));
             const cut = whatCutTheSpanShort({
                 asked: leg, lived, skip, arrival: enc, startDay, world: null
             });
-            const facts = factsForTimeSkip(cultivator, applied.cultivator, skip, ambient, 'Travel', leg);
+            const facts = factsForTimeSkip(cultivator, walker, skip, ambient, 'Travel', leg);
             const line = `The road to ${arrivedAt} stopped short. `
                 + (cut ? sayingWhatEndedTheSpan(cut, humanDays) : `${humanDays(skip.simulatedDays)} were spent on it.`)
                 + ` You are not there. The rest of the road is still ahead of you, ${humanDays(remaining)} of it`
                 + ` - say it again and you walk only that.`;
             facts.lines.unshift(line);
+            if (roadGround) facts.lines.push(thePlaceAsTheSceneNamesIt(this, walker, roadGround.name) + '.');
+            if (!footChecks && meeting && roadGround?.id === meeting.place.id && journeyTimeHasReached(skip.simulatedDays, meeting.afterDays)) {
+                standWithTheTraveller(this, cultivator.id, meeting.npc.id, roadGround);
+                facts.lines.push('Another traveller is here on the road.');
+                (facts.required ??= []).push('Another traveller is here on the road.');
+                facts.structure.push(`road-contact: real person ${meeting.npc.id}; activity travelling; `
+                    + `departure ${meeting.npc.activity?.fromLocationId ?? meeting.npc.locationId}; `
+                    + `destination ${meeting.npc.activity?.returnTo}; arrival day ${meeting.npc.activity?.untilDay}. `
+                    + 'Destination and purpose are private facts for the traveller to speak about.');
+            }
             facts.required = [...(facts.required ?? []), line];
             facts.lines.push(...onTheWay.lines, ...world.lines);
             facts.structure.push(...onTheWay.structure, ...world.structure,
-                `move: stopped on day ${walked} of ${onTheRoad} for ${arrivedAt}; location unchanged.`);
+                `move: stopped on day ${walked} of ${onTheRoad} for ${arrivedAt}; location ${walker.location}.`);
             const halted: Execution = {
                 facts,
-                events: skip.events,
+                events: [...skip.events, ...onTheWay.events],
                 timeSkip: skip,
                 breakthrough: null,
                 outcome: 'executed',
+                cutShort: footChecks?.cutShort ?? cut ?? (meeting && journeyTimeHasReached(skip.simulatedDays, meeting.afterDays)
+                    ? { askedDays: leg, livedDays: skip.simulatedDays, cause: 'the_world' as const,
+                        what: 'An actual traveller met you on this route.' } : null),
                 calls: [{
                     name: 'engine.encounterWindow',
                     action: 'move',
                     summary: `The road to ${arrivedAt} was stopped on day ${walked} of `
-                        + `${onTheRoad}. Location unchanged; ${remaining} day(s) of road remain.`,
+                        + `${onTheRoad}. At ${walker.location}; ${remaining} day(s) of road remain.`,
                     ok: true
                 }],
                 nights: 'charged'
@@ -1135,24 +1336,37 @@ export const travelVerbs = {
             sayTheRoadsFood(halted.facts);
             if (charged) sayWhatTheNightsCost(halted, charged);
             // AND WHOEVER STOPPED IT MAY HAVE COME AT THEM, which is a fight.
-            const cameAt = theyCameAtYou(this, applied.run, walker, ambient, happened);
+            const cameAt = footChecks ? footChecks.fight : theyCameAtYou(this, applied.run, walker, ambient, happened);
             return cameAt ? foldTheFightIn(halted, cameAt) : halted;
         }
 
+        if (skip.died || !walker.alive) {
+            const facts = factsForTimeSkip(cultivator, walker, skip, ambient, 'Travel', leg);
+            facts.lines.push(...onTheWay.lines, ...world.lines);
+            facts.structure.push(...onTheWay.structure, ...world.structure);
+            const ended: Execution = { facts, events: [...skip.events, ...onTheWay.events], timeSkip: skip, breakthrough: null,
+                outcome: 'executed', calls: [{ name: 'engine.encounterWindow', action: 'move', ok: true,
+                    summary: 'The road ended with the actual body; no destination arrival was resolved.' }],
+                nights: 'charged', cutShort: footChecks?.cutShort ?? whatCutTheSpanShort({
+                    asked: leg, lived, skip, arrival: enc, startDay, world: null }) };
+            sayTheRoadsFood(ended.facts);
+            return footChecks?.fight ? foldTheFightIn(ended, footChecks.fight) : ended;
+        }
+        if (course) clearFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED);
         // Standing somewhere is how a place stops being a rumour. Recorded with
         // its source so a place walked to and a place read about stay different
         // facts.
         this.noteEncounter(
-            applied.cultivator, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
+            walker, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
             'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
         );
 
         // AND WHOSE GROUND IT IS. The place and its holder are one arrival.
-        noteWhoseGroundThisIs(this, applied.cultivator, run, arrivedAt);
+        noteWhoseGroundThisIs(this, walker, run, arrivedAt);
 
-        const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
+        const ambientAfter = this.ambientFor(walker, applied.run);
         const facts = factsForMove(
-            cultivator, applied.cultivator, arrivedAt, intent, skip, ambient, ambientAfter
+            cultivator, walker, arrivedAt, intent, skip, ambient, ambientAfter
         );
         // WHAT WAS MET ON THE ROAD, on a road that was walked to its end.
         facts.lines.push(...onTheWay.lines);
@@ -1182,7 +1396,7 @@ export const travelVerbs = {
         //
         // `the-people-you-serve-with.ts` holds the rule and why it needs both
         // the roll AND the room. See {@link whatArrivingIntroduces}.
-        const introduced = whatArrivingIntroduces(this, applied.cultivator);
+        const introduced = whatArrivingIntroduces(this, walker);
         const perceived = introduced.perceived;
         facts.structure.push(...introduced.structure);
         // THE GATE IS ON `lines` AND IS NOT REQUIRED, which is the same ruling
@@ -1201,7 +1415,7 @@ export const travelVerbs = {
 
         // AND THE PEOPLE WHO CAME WITH YOU. A road has no capacity: everybody
         // walks, and a party on foot costs what one person costs.
-        const came = this.theyArrivedWithYou(applied.cultivator, arrivedAt);
+        const came = this.theyArrivedWithYou(walker, arrivedAt);
         if (came) {
             facts.lines.push(came.line);
             facts.required = [...(facts.required ?? []), came.line];
@@ -1210,7 +1424,7 @@ export const travelVerbs = {
 
         const arrived: Execution = {
             facts,
-            events: skip.events,
+            events: [...skip.events, ...onTheWay.events],
             timeSkip: skip,
             breakthrough: null,
             outcome: 'executed',
@@ -1226,10 +1440,11 @@ export const travelVerbs = {
                 ...worldCalls(world)
             ],
             perceived,
-            nights: 'charged'
+            nights: 'charged',
+            cutShort: footChecks?.cutShort ?? null
         };
         if (charged) sayWhatTheNightsCost(arrived, charged);
-        return arrived;
+        return footChecks?.fight ? foldTheFightIn(arrived, footChecks.fight) : arrived;
     },
 
     // ─────────────────────────────────────────────────────────────────────
@@ -1272,6 +1487,14 @@ export const travelVerbs = {
      */
     daysOnTheRoadTo(this: GameService, cultivator: Cultivator, destination: string): number | null {
         const bare = (name: string) => name.replace(/^the\s+/i, '').trim().toLowerCase();
+        const road = stoppedRoadFor(this.repos.db, cultivator);
+        const targetRow = this.atHand && worldLocationFor(this.atHand, destination);
+        if (road?.position && this.atHand && targetRow) return (road.to === destination
+            ? roadContinuationAhead : roadContinuationTo)(this.atHand.locations, road.position, targetRow.id)?.days ?? null;
+        if (road && !road.position && road.to !== destination) return null;
+        if (road && bare(road.to) === bare(destination) && road.from === placeName(cultivator)) {
+            return Math.max(0, road.road - road.walked);
+        }
         const from = requireRegion(standingOf(cultivator, this.atHand).regionId);
         // A place only the world names - a house's grounds, a site - is in a
         // province too, and the world's own row knows which.
@@ -1287,6 +1510,10 @@ export const travelVerbs = {
         if (nextDoor !== null) return nextDoor;
         const start = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
         const end = this.atHand && worldLocationFor(this.atHand, destination);
+        if (start && end && this.atHand) {
+            const days = walkingDaysFrom(this.atHand.locations, start.id).get(end.id);
+            if (days !== undefined) return days;
+        }
         const linked = start && end && start.links.find(link => link.toLocationId === end.id && link.open && !link.requiresKeyId);
         if (linked) return linked.travelDays;
 
@@ -1305,8 +1532,8 @@ export const travelVerbs = {
     whatTheyCouldRide(
         this: GameService,
         cultivator: Cultivator
-    ): Array<{ conveyance: Conveyance; power: number | null; rowId?: string }> {
-        const available: Array<{ conveyance: Conveyance; power: number | null; rowId?: string }> = [
+    ): Array<{ conveyance: Conveyance; power: number | null; rowId?: string; artId?: string }> {
+        const available: Array<{ conveyance: Conveyance; power: number | null; rowId?: string; artId?: string }> = [
             { conveyance: requireConveyance('conv-on-foot'), power: null }
         ];
 
@@ -1326,11 +1553,11 @@ export const travelVerbs = {
             // this is `primaryRoadOf` - the road the row is written under.
             .map(t => ({ ...t, subject: primaryRoadOf(t) }));
 
-        const carriesThem = held
+        const carryingArt = held
             .filter(art => art.category === 'movement')
             // Deepest first, so the strongest thing they hold decides it.
             .sort((a, b) => b.requiredOrdinal - a.requiredOrdinal)
-            .some(art => couldFlyOnTheirOwnBlade({
+            .find(art => couldFlyOnTheirOwnBlade({
                 realmOrdinal: cultivator.realmOrdinal,
                 known: held.map(t => ({ id: t.id, subject: t.subject })),
                 flightArt: {
@@ -1340,9 +1567,12 @@ export const travelVerbs = {
                 }
             }).can);
 
-        if (carriesThem) {
-            available.push({ conveyance: requireConveyance('conv-sword-flight'), power: null });
+        if (carryingArt) {
+            available.push({ conveyance: { ...requireConveyance('conv-sword-flight'),
+                name: carryingArt.name, grade: carryingArt.grade }, power: null, artId: carryingArt.id });
         }
+        if (canFlyByTheirOwnBody(cultivator.realmOrdinal, brokenStatusesOn(cultivator.injuries)))
+            available.push({ conveyance: requireConveyance('conv-body-flight'), power: null });
 
         const here = this.worldPlaceOf(cultivator);
         for (const row of this.atHand?.objects ?? []) {
@@ -1401,11 +1631,31 @@ export const travelVerbs = {
         run: Run,
         cultivator: Cultivator,
         days: number,
-        arrivedAt: string
+        arrivedAt: string,
+        meetTravellers = false,
+        overWater = false,
+        preciseDays = false,
+        arrivalAfterDays = days,
+        onWorldArrival?: (onDay: number) => void,
+        departureAfterDays?: number
     ) {
-        const spent = Math.max(1, Math.ceil(days));
-        const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(cultivator, spent, {
+        if (preciseDays) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            run = this.repos.runs.getById(run.id) ?? run;
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+        }
+        const spent = preciseDays ? days : Math.max(1, Math.ceil(days));
+        const startDay = preciseDays ? run.elapsedDays : Math.floor(run.elapsedDays);
+        const from = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
+        const to = this.atHand && worldLocationFor(this.atHand, arrivedAt);
+        const meeting = meetTravellers && this.atHand && from && to ? firstTravellerOnTheWay({
+            locations: this.atHand.locations, npcs: this.atHand.npcs, fromId: from.id, toId: to.id,
+            onDay: this.atHand.currentDay, days: spent, overWater,
+            exceptIds: new Set([cultivator.id, ...whoIsOnTheRoadWith(this.atHand.npcs,
+                cultivator.id, this.atHand.currentDay).map(npc => npc.id)])
+        }) : null;
+        const actualDays = meeting?.afterDays ?? spent;
+        const context: TimeSkipContext = {
             seed: run.seed,
             rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(cultivator),
@@ -1417,29 +1667,70 @@ export const travelVerbs = {
                 ground: this.groundFor(cultivator)
             },
             understanding: this.understandingFor(run, cultivator),
-            rations: this.drawFromPack(cultivator, spent),
+            rations: this.drawFromPack(cultivator, actualDays),
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
             ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, cultivator)
-        });
+        };
+        const origin = placeName(cultivator);
+        let committedElapsed = 0;
+        let crossed = false;
+        const passageStartedOn = this.atHand ? routineTime(this.atHand) : run.elapsedDays;
+        const preciseGround = (elapsed: number): string =>
+            journeyTimeHasReached(elapsed, arrivalAfterDays) ? arrivedAt : origin;
+        const precise = preciseDays
+            ? await spendAnOrdinarySpanAtTheActualClock(this, run, cultivator, actualDays, context,
+                'pack', () => {
+                    const body = this.repos.cultivators.getById(cultivator.id);
+                    if (!crossed && journeyTimeHasReached(committedElapsed, arrivalAfterDays)
+                        && body?.alive && placeName(body) === arrivedAt) {
+                        crossed = true;
+                        onWorldArrival?.(passageStartedOn + committedElapsed);
+                    }
+                }, run.turn + 1, elapsed => {
+                    committedElapsed = elapsed;
+                    return preciseGround(elapsed);
+                }, {
+                    dates: [
+                        ...(departureAfterDays !== undefined && departureAfterDays > 0
+                            ? [passageStartedOn + departureAfterDays] : []),
+                        passageStartedOn + arrivalAfterDays
+                    ],
+                    afterBoundary: () => {},
+                    stop: () => {
+                        const body = this.repos.cultivators.getById(cultivator.id);
+                        return body?.alive && placeName(body) !== preciseGround(committedElapsed)
+                            ? 'The actual body left this passage at a world boundary.' : null;
+                    }
+                })
+            : null;
+        const skip = precise?.skip ?? simulateTimeSkip(cultivator, actualDays, context);
 
-        this.putBackWhatWasNotEaten(cultivator, skip);
-        const applied = applyTimeSkip(this.repos, {
-            before: cultivator, run, skip, location: arrivedAt
+        if (!precise) this.putBackWhatWasNotEaten(cultivator, skip);
+        const reached = precise ? placeName(precise.applied.cultivator)
+            : meeting && journeyTimeHasReached(skip.simulatedDays, meeting.afterDays) ? meeting.place.name
+            : journeyTimeHasReached(skip.simulatedDays, spent) ? arrivedAt
+            : this.atHand && from && to
+                ? placePartwayAlong(this.atHand.locations, from.id, to.id, skip.simulatedDays, spent, overWater)?.name
+                    ?? placeName(cultivator)
+                : placeName(cultivator);
+        const applied = precise?.applied ?? applyTimeSkip(this.repos, {
+            before: cultivator, run, skip, location: reached
         });
-        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const world = precise?.world ?? await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        if (meeting && reached === meeting.place.name) standWithTheTraveller(this, cultivator.id, meeting.npc.id, meeting.place);
 
         // Standing somewhere is how a place stops being a rumour, and it is
         // also the only thing that gives a later fold a `stood` fix.
         this.noteEncounter(
-            applied.cultivator, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
+            applied.cultivator, run, { kind: 'place', id: reached, name: reached },
             'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
         );
 
         // AND WHOSE GROUND IT IS. The place and its holder are one arrival.
-        noteWhoseGroundThisIs(this, applied.cultivator, run, arrivedAt);
+        noteWhoseGroundThisIs(this, applied.cultivator, run, reached);
 
         // AND WHO OF YOUR OWN IS STANDING ON IT. The third fact of an arrival,
         // which used to live only in `move` - so the same ground reached by
@@ -1447,7 +1738,7 @@ export const travelVerbs = {
         // reached by fold, boat or passage introduced them to nobody.
         const introduced = whatArrivingIntroduces(this, applied.cultivator);
 
-        return { skip, applied, world, ...introduced };
+        return { skip, applied, world, meeting, ...introduced };
     },
 
     /**
@@ -1477,6 +1768,8 @@ export const travelVerbs = {
                 'No destination named; location unchanged and no time passed.'
             ));
         }
+        const unknownRoute = routeTheyHaveNotLearned(this, cultivator, place.name, action);
+        if (unknownRoute) return unknownRoute;
         if (this.atHand && !this.somewhereReal(place.name, cultivator)) {
             return refused('engine.resolvePlace', action, factsForRefusal(
                 'No road goes there.',
@@ -1553,7 +1846,7 @@ export const travelVerbs = {
         this: GameService,
         cultivator: Cultivator,
         party: readonly { id: string; name: string }[],
-        input: { note: string; forDays: number; invitation?: boolean; visit?: boolean }
+        input: { note: string; forDays: number | null; invitation?: boolean; visit?: boolean }
     ): string[] {
         const world = this.atHand;
         const today = this.theDayAPartyIsOn();
@@ -1563,7 +1856,7 @@ export const travelVerbs = {
             leaderId: cultivator.id,
             note: input.note,
             onDay: today,
-            untilDay: today + Math.max(1, Math.trunc(input.forDays))
+            untilDay: input.forDays === null ? null : today + Math.max(1, Math.trunc(input.forDays)), preservePassage: !input.invitation
         });
         if (changed.length === 0) return [];
         for (const row of changed) {
@@ -1739,12 +2032,7 @@ export const travelVerbs = {
      * `theWorldsNameFor` unchanged.
      */
     whereTheRoadEndsIn(this: GameService, place: string): { name: string; provinceName: string | null } {
-        const name = this.theWorldsNameFor(place);
-        const world = this.atHand;
-        const row = world ? worldLocationFor(world, name) : null;
-        if (!world || !row || row.kind !== 'region') return { name, provinceName: null };
-        const town = theMostPeopledPlaceIn(world, row.id);
-        return town ? { name: town.name, provinceName: row.name } : { name, provinceName: null };
+        return thePublicRoadEndsIn(this.atHand, place);
     },
 
     /** The world's own name for somewhere, which is what gets stored. */
@@ -1765,9 +2053,29 @@ export const travelVerbs = {
         run: Run,
         cultivator: Cultivator,
         target: string | undefined,
-        wanted: string | undefined
+        wanted: string | undefined,
+        rawInput = ''
     ): Promise<Execution> {
-        const voyage = theVoyageUnderWay(this.repos.db, cultivator);
+        if (this.worldEnabled) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            run = this.repos.runs.getById(run.id) ?? run;
+        }
+        const currentAir = personalAirCourseClaim(this.db, cultivator.id);
+        const airSite = currentAir && this.atHand?.locations.find(place => place.id === currentAir.locationId);
+        const airFact = airSite && this.atHand && typeof airSite.data.airCourseId === 'string'
+            ? witnessIndexFor(this.atHand).byId.get(airSite.data.airCourseId) : null;
+        const airDestination = airFact && this.atHand?.locations.find(place => place.id === airFact.data.toLocationId);
+        if (currentAir && (!target || airDestination && loosePlaceKey(airDestination.name) === loosePlaceKey(target))) {
+            const continued = await spendOnPersonalAirCourse(this, run, cultivator);
+            if (continued) return continued;
+        }
+        const ownedOnward = await continueOwnedPassage(this, run, cultivator, target);
+        if (ownedOnward) return ownedOnward;
+        const paidRoad = await continueThePaidCarriage(this, run, cultivator, target, 'ride',
+            !!wanted?.trim() && (theServiceNamed(wanted) !== 'carriage' || /\b(?:my|own)\b/i.test(wanted)));
+        if (paidRoad) return paidRoad;
+        const voyage = theVoyageUnderWay(this.repos.db, cultivator, this.atHand);
         if (voyage) return stillAtSea(voyage, 'ride');
         // A CARRIAGE OR A BOAT THAT IS NOT THEIRS is a seat at the counter here,
         // where one runs. A boat of their own is a spirit boat; a boat they do
@@ -1783,6 +2091,33 @@ export const travelVerbs = {
         if ('facts' in going) return going;
 
         const arrivedAt = this.whereTheRoadEndsIn(going.name).name;
+        if (/\b(?:body|bodily|flight|flying|air)\b/i.test(wanted ?? '')
+            && !/\b(?:boat|craft|hull|sword|blade|cloud)\b/i.test(wanted ?? '')) {
+            const flight = await launchPersonalAirJourney(this, run, cultivator, arrivedAt, null);
+            if (this.repos.cultivators.getById(cultivator.id)?.alive
+                && this.repos.cultivators.getById(cultivator.id)?.location === arrivedAt) {
+                const introduced = whatArrivingIntroduces(this, this.repos.cultivators.getById(cultivator.id)!);
+                flight.facts.lines.push(...introduced.lines); flight.facts.structure.push(...introduced.structure);
+                flight.perceived = introduced.perceived;
+            }
+            return flight;
+        }
+        if (/\b(?:sword|blade|cloud)\b/i.test(wanted ?? '')) {
+            const art = personalFlightArt(cultivator, /\bcloud\b/i.test(wanted ?? '') ? 'cloud' : 'sword');
+            if (!art) return refused('engine.personalFlightArt', 'ride', factsForRefusal(
+                'No actual held flight art permits this launch.',
+                'The held art, its required rung and its school must permit the requested flight.',
+                'No qi, course, craft or time spent.'));
+            const flight = await launchPersonalAirJourney(this, run, cultivator, arrivedAt, art.id);
+            if (this.repos.cultivators.getById(cultivator.id)?.alive
+                && this.repos.cultivators.getById(cultivator.id)?.location === arrivedAt) {
+                const introduced = whatArrivingIntroduces(this, this.repos.cultivators.getById(cultivator.id)!);
+                flight.facts.lines.push(...introduced.lines); flight.facts.structure.push(...introduced.structure);
+                flight.perceived = introduced.perceived;
+            }
+            return flight;
+        }
+
         const road = this.daysOnTheRoadTo(cultivator, going.name);
         const walkingDays = road ?? SHORT_ACTION_DAYS;
         const available = this.whatTheyCouldRide(cultivator);
@@ -1799,7 +2134,27 @@ export const travelVerbs = {
         // EVERYBODY WHO IS GOING, and `priceJourney` turns that into trips
         // against the conveyance's own capacity. Read before the journey,
         // because a party is what decides which conveyance is the right one.
-        const withYou = this.whoIsWithYouOnTheRoad(cultivator);
+        const selectedRiders = acceptedRidersForBoarding(this, cultivator,
+            this.atHand ? worldLocationFor(this.atHand, arrivedAt)?.id ?? '' : '', rawInput);
+        if (selectedRiders.missing.length > 0) return refused('world.availableForOwnedBoarding', 'ride', factsForRefusal(
+            'The agreed riders cannot board here.', selectedRiders.missing.join(', ') + '. Nothing spent.',
+            'Actual accepted terms and current bodies are required; no absent rider or stranger was boarded.'));
+        const withYou = [...new Map([...companySelectedForBoarding(this.whoIsWithYouOnTheRoad(cultivator), rawInput), ...selectedRiders.riders]
+            .map(person => [person.id, person])).values()];
+        const actualDeparture = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
+        const unavailable = this.atHand && actualDeparture
+            ? peopleUnavailableForOwnedBoarding(this.atHand, withYou.map(person => person.id),
+                actualDeparture.id, routineTime(this.atHand)) : [];
+        if (unavailable.length > 0) {
+            const names = withYou.filter(person => unavailable.includes(person.id)).map(person => person.name);
+            return refused('world.availableForOwnedBoarding', 'ride', factsForRefusal(
+                'The party is not here to board.',
+                names.join(', ') + ' cannot board this craft here. Their agreement continues, '
+                + 'but a body elsewhere or on another actual course cannot be brought aboard by it. '
+                + 'Nothing is spent and this craft does not depart.',
+                'Owned boarding reads current bodies before pilot, price, fuel, custody or booking; '
+                + 'all existing agreements and accepted courses remain unchanged.'));
+        }
         const heads = 1 + withYou.length;
 
         // A SPIRIT BOAT ANSWERS ONLY TO ITS DRIVER. The owner: the rank is "specifically the DRIVER",
@@ -1824,10 +2179,20 @@ export const travelVerbs = {
         }
         const flyable = available.filter(a => driver !== null || !itWantsAPilot(a.conveyance));
 
+        const bestOnThisRoad = bestForThisRoad(flyable, walkingDays, heads);
         const chosen = (asked && flyable.some(a => a.conveyance.id === asked.id)
             ? flyable.find(a => a.conveyance.id === asked.id)!
-            : bestForThisRoad(flyable, walkingDays, heads))
+            : flyable.find(option => option === bestOnThisRoad))
             ?? flyable[0] ?? available[0];
+        if (chosen.conveyance.id === 'conv-body-flight' || chosen.artId) {
+            const flight = await launchPersonalAirJourney(this, run, cultivator, arrivedAt, chosen.artId ?? null);
+            const actual = this.repos.cultivators.getById(cultivator.id);
+            if (flight.outcome === 'executed' && actual?.alive && actual.location === arrivedAt) {
+                const introduced = whatArrivingIntroduces(this, actual);
+                flight.facts.lines.push(...introduced.lines);
+            }
+            return flight;
+        }
         // NOTHING THAT GOES ON GROUND GOES OVER WATER: a mount or a cart to open water is a ship
         // from the landing, as walking is. See `the-way-there-is-by-ship.ts`.
         if (!chosen.conveyance.crossesGroundThatCannotBeWalked) {
@@ -1838,12 +2203,32 @@ export const travelVerbs = {
             }
         }
 
-        const journey = priceJourney({
-            walkingDays,
-            conveyance: chosen.conveyance,
-            power: chosen.power,
-            heads
-        });
+        if (chosen.conveyance.crossesGroundThatCannotBeWalked) {
+            const exterior = airExteriorReadiness(this, cultivator, target ?? arrivedAt);
+            if (exterior) return exterior;
+        }
+        const flightEndpoints = this.atHand && {
+            from: worldLocationFor(this.atHand, cultivator.location),
+            to: worldLocationFor(this.atHand, arrivedAt)
+        };
+        const journey = chosen.conveyance.crossesGroundThatCannotBeWalked
+            ? flightEndpoints?.from && flightEndpoints.to && this.atHand
+                ? quoteAnAirJourney(this.atHand.locations, flightEndpoints.from.id, flightEndpoints.to.id,
+                    chosen.conveyance, chosen.power, heads,
+                    { facts: witnessIndexFor(this.atHand).byId, onDay: routineTime(this.atHand) }) : null
+            : priceJourney({ walkingDays, conveyance: chosen.conveyance, power: chosen.power, heads });
+        if (!journey) return refused('engine.airJourney', 'ride', factsForRefusal(
+            'This actual air course cannot depart.', 'The actual endpoints have no metric air quote.',
+            'No fuel, craft, passenger or time was moved.'));
+        if (journey.trips > 1 && available.some(row => row.rowId && row.conveyance.id === chosen.conveyance.id && row.power === chosen.power)) return refused('engine.priceJourney', 'ride', factsForRefusal(
+            'The requested riders do not fit on one actual leg.',
+            `${chosen.conveyance.name} carries ${chosen.conveyance.heads} people per leg, including its driver; ${heads} were requested and need ${journey.trips} actual legs. Choose who boards the first leg. Nothing spent.`,
+            'A promise does not replace capacity or grant unplayed return legs. No booking, fuel or money changed.'));
+        if (chosen.conveyance.crossesGroundThatCannotBeWalked && journey.trips !== 1)
+            return refused('engine.airJourney', 'ride', factsForRefusal('This actual air course cannot depart.',
+                'The selected craft cannot carry this party in one physical trip.',
+                'No fuel, craft, passenger or time was moved. Multiple shuttle flights remain unbuilt.'));
+
         // THE CHEST BURNS SPIRIT STONES, and they are the rider's. The owner: "you burn spirit
         // stones as fuel". Priced here all along (`whatTheChestBurns`) and never taken, so a spirit
         // boat flew for nothing.
@@ -1859,31 +2244,65 @@ export const travelVerbs = {
         const rowId = available.find(a => a.conveyance.id === chosen.conveyance.id && a.power === chosen.power)?.rowId;
         const ridden = rowId ? this.atHand?.objects.find(o => o.id === rowId) : undefined;
         if (ridden && this.atHand) takeItAlong(this.atHand.objects, ridden, cultivator.id);
+        if (ridden && this.atHand && this.worldEnabled && journey.trips === 1) {
+            const origin = worldLocationFor(this.atHand, placeName(cultivator));
+            const destination = worldLocationFor(this.atHand, arrivedAt);
+            const pilot = driver?.name === 'You' || !itWantsAPilot(chosen.conveyance) ? cultivator.id
+                : withYou.find(person => person.name === driver?.name)?.id;
+            if (origin && destination && pilot) {
+                acceptOwnedPassage(this, run, cultivator, { vesselId: ridden.id, pilotId: pilot,
+                    fromId: origin.id, toId: destination.id, walkingDays, days: journey.daysOneWay,
+                    conveyanceId: chosen.conveyance.id, power: chosen.power ?? null,
+                    companions: withYou.map(person => person.id),
+                    air: chosen.conveyance.crossesGroundThatCannotBeWalked });
+                const sailed = await spendOnOwnedPassage(this, run, cultivator, journey.daysOneWay, undefined, run.turn + 1, true);
+                if (sailed) {
+                    sailed.calls.push({ name: 'engine.priceJourney', action: 'ride', ok: true,
+                        summary: chosen.conveyance.name + ': actual owned passage, ' + journey.daysOneWay + ' days.' });
+                    if (this.repos.cultivators.getById(cultivator.id)?.location === arrivedAt) {
+                        const introduced = whatArrivingIntroduces(this, this.repos.cultivators.getById(cultivator.id)!);
+                        sailed.facts.lines.push(...introduced.lines); sailed.facts.structure.push(...introduced.structure);
+                        sailed.perceived = introduced.perceived;
+                    }
+                    return sailed;
+                }
+            }
+        }
 
-        const { skip, applied, world, perceived, structure: introducedBy, lines: atTheGate } =
+        const { skip, applied, world, meeting, perceived, structure: introducedBy, lines: atTheGate } =
             await this.arriveAfterSpending(
-                run, cultivator, journey.daysOneWay, arrivedAt
+                run, cultivator, journey.daysOneWay, arrivedAt, true, chosen.conveyance.crossesGroundThatCannotBeWalked
             );
+        const reached = placeName(applied.cultivator);
+        if (meeting && reached === meeting.place.name) {
+            writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify({
+                to: arrivedAt, from: reached, road: walkingDays,
+                walked: walkingDays * skip.simulatedDays / journey.daysOneWay
+            } satisfies StoppedRoad));
+        } else clearFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED);
+        const fuel = meeting ? priceJourney({ walkingDays: walkingDays * skip.simulatedDays / journey.daysOneWay,
+            conveyance: chosen.conveyance, power: chosen.power, heads }).stonesBurned : journey.stonesBurned;
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
         const nights = A_ROOF_ON_THE_ROAD.has(chosen.conveyance.id) ? 'under_a_roof' as const : 'in_the_open' as const;
         // Taken as a delta once the days are spent, so nothing the road wrote is undone by it.
-        const burned = journey.stonesBurned > 0
-            ? this.repos.cultivators.applyDeltas(applied.cultivator.id, { spiritStones: -journey.stonesBurned })
+        const burned = fuel > 0
+            ? this.repos.cultivators.applyDeltas(applied.cultivator.id, { spiritStones: -fuel })
             : null;
 
         const lines: string[] = [
             `${chosen.conveyance.name}, from ${placeName(cultivator)} to ${arrivedAt}.`,
             ...(burned
-                ? [`${journey.stonesBurned} spirit stones burned in its chest on the way; ${burned.spiritStones} left in the purse.`]
+                ? [`${fuel} spirit stones burned in its chest on the way; ${burned.spiritStones} left in the purse.`]
                 : []),
             road === null
                 ? 'Nothing in the catalog prices a road inside one province, so this is the '
                     + 'short journey everything else in the game is: a day, and the day is spent.'
+                : meeting ? `${skip.simulatedDays} days spent on the road; ${arrivedAt} is still ahead.`
                 : `${road} days of road, covered in ${journey.daysOneWay}.`
                     + (journey.daysSavedAgainstWalking > 0
                         ? ` ${journey.daysSavedAgainstWalking} saved against walking it.`
                         : ' Nothing saved: this is what walking costs.'),
-            journey.arrivalReads
+            ...(meeting ? ['Another traveller is here on the road.'] : [journey.arrivalReads])
         ];
         if (driver && itWantsAPilot(chosen.conveyance)) {
             lines.push(driver.name === 'You'
@@ -1912,12 +2331,12 @@ export const travelVerbs = {
         }
         lines.push(...applied.tollLines, ...world.lines);
 
-        const came = this.theyArrivedWithYou(applied.cultivator, arrivedAt);
+        const came = this.theyArrivedWithYou(applied.cultivator, reached);
         if (came) lines.push(came.line);
 
         lines.push(...atTheGate);
         const facts = factsForToolResult(
-            `${arrivedAt}, on ${chosen.conveyance.name.toLowerCase()}.`, lines
+            `${reached}, on ${chosen.conveyance.name.toLowerCase()}.`, lines
         );
         if (came) facts.required = [...(facts.required ?? []), came.line];
         // ── WHAT ARRIVING SOMEWHERE MAKES THE PLAYER READ VERBATIM ───────
@@ -1958,7 +2377,7 @@ export const travelVerbs = {
                     summary:
                         `${chosen.conveyance.name} over ${walkingDays} walking day(s): `
                         + `${journey.daysOneWay} day(s), ${journey.daysSavedAgainstWalking} saved. `
-                        + `Ambient qi at ${arrivedAt} is ${ambientAfter}.`,
+                        + `Ambient qi at ${reached} is ${ambientAfter}.`,
                     ok: true
                 },
                 ...skipCalls('ride', skip, null),
@@ -2142,8 +2561,11 @@ export const travelVerbs = {
         /** Which counter, where the sentence named a ship or a carriage. */
         topic?: string
     ): Promise<Execution> {
+        const paidRoad = await continueThePaidCarriage(this, run, cultivator, target, 'passage',
+            theServiceNamed(topic) !== null && theServiceNamed(topic) !== 'carriage');
+        if (paidRoad) return paidRoad;
         // Aboard, a seat to where the ship is bound is the ship sailing on; see `a-ship-at-sea.ts`.
-        const voyage = theVoyageUnderWay(this.repos.db, cultivator);
+        const voyage = theVoyageUnderWay(this.repos.db, cultivator, this.atHand);
         if (voyage) {
             return (target ?? '').trim().length === 0 || loosePlaceKey(target ?? '') === loosePlaceKey(voyage.bound)
                 ? aShipSailsOn(this, run, cultivator, voyage, null, 'carrying_on')
@@ -2151,7 +2573,9 @@ export const travelVerbs = {
         }
         const here = standingOf(cultivator, this.atHand);
         const counter = counterPlaceNameAt(placeName(cultivator));
-        const today = Math.floor(run.elapsedDays);
+        // Published spans share the persistent world calendar, like actual company.
+        const today = counter === null ? Math.floor(run.elapsedDays)
+            : this.theDayAPartyIsOn() ?? Math.floor(run.elapsedDays);
         const rate = localPrice(here.regionId, SPAN_CASH_PER_WALKED_DAY);
 
         // A SHIP OR A CARRIAGE is bought at its own counter: whenever the sentence
@@ -2249,6 +2673,15 @@ export const travelVerbs = {
         // on*. Nothing here decides either; this only stops asserting that the
         // player is travelling alone.
         const withYou = this.whoIsWithYouOnTheRoad(cultivator);
+        const origin = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
+        const companionIds = withYou.map(person => person.id);
+        const unavailable = this.atHand && origin
+            ? peopleUnavailableForOwnedBoarding(this.atHand, companionIds, origin.id, routineTime(this.atHand))
+            : companionIds;
+        if (unavailable.length > 0) return refused('engine.actualPartyBoarding', 'passage', factsForRefusal(
+            'Your agreed company cannot cross here together.',
+            'An agreed traveller is absent, no longer alive, or already on another actual passage. Nothing spent.',
+            'Party membership does not recall a body or replace its accepted course.'));
         const quote = quotePassageAtACounter(route, {
             heads: 1 + withYou.length,
             worstPassengerOrdinal: theSlowestOfThem(cultivator.realmOrdinal, withYou),
@@ -2261,8 +2694,8 @@ export const travelVerbs = {
             return refused('engine.quotePassageAtACounter', 'passage', factsForRefusal(
                 'The fare is the fare.',
                 `${route.toPlace} is ${quote.fareCash} cash, which is ${stones} spirit stones, `
-                + `and you are carrying ${cultivator.spiritStones}. The clerk does not argue `
-                + 'and does not offer a second figure. What the house sells is priced by true '
+                + `and you are carrying ${cultivator.spiritStones}. The published fare supplies no alternate figure. `
+                + 'What the house sells is priced by true '
                 + 'distance off a table nobody outside it can check, and it is the same figure '
                 + 'for everybody standing at this counter.',
                 `quotePassageAtACounter: ${route.id} at ${quote.fareCash} cash (${stones} stones) `
@@ -2274,9 +2707,28 @@ export const travelVerbs = {
         const paid = this.repos.cultivators.getById(cultivator.id)!;
         const arrivedAt = this.whereTheRoadEndsIn(route.toPlace).name;
 
+        let crossedNames: string[] = [];
+        let crossedOn: number | null = null;
         const { skip, applied, world, perceived, structure: introducedBy, lines: atTheGate } =
             await this.arriveAfterSpending(
-                run, paid, Math.max(1, quote.daysSpent), arrivedAt
+                run, paid, quote.daysSpent, arrivedAt, false, false, true,
+                quote.daysSpent - quote.settlingDays, onDay => {
+                    const world = this.atHand;
+                    const target = world && worldLocationFor(world, arrivedAt);
+                    if (!world || !target || !origin) return;
+                    const missing = new Set(peopleUnavailableForOwnedBoarding(world, companionIds, origin.id, onDay));
+                    const eligible = world.npcs.filter(person => companionIds.includes(person.id) && !missing.has(person.id));
+                    const moved = theyComeWithYou(eligible, { leaderId: cultivator.id, arrivedAt: target.id, onDay });
+                    for (const person of moved) {
+                        const index = world.npcs.findIndex(row => row.id === person.id);
+                        if (index >= 0) world.npcs[index] = person;
+                    }
+                    if (moved.length > 0) {
+                        crossedNames = namesOf(moved);
+                        crossedOn = onDay;
+                        this.theWorldMoved();
+                    }
+                }, quote.daysSpent - quote.settlingDays - SPAN_CROSSING_DAYS
             );
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
 
@@ -2295,7 +2747,7 @@ export const travelVerbs = {
             + `${route.walkedDaysItReplaces} on the road.`,
             quote.notCovered,
             ...(withYou.length > 0
-                ? [`${howMany(quote.heads, 'place')} bought, not one. The clerk counts heads and `
+                ? [`${howMany(quote.heads, 'place')} bought, not one. The fare counts every passenger and `
                     + `the fare is ${quote.fareCash} cash for the lot of you.`]
                 : []),
             ...learned,
@@ -2303,7 +2755,11 @@ export const travelVerbs = {
             ...world.lines
         ];
 
-        const came = this.theyArrivedWithYou(applied.cultivator, arrivedAt);
+        // This is the actual earlier crossing, not a second relocation after recovery.
+        const came = crossedNames.length > 0 ? {
+            line: crossedNames.join(', ') + ' crossed with you on day ' + crossedOn + '.',
+            structure: crossedNames.length + ' paid agreed companions crossed at the actual quoted boundary ' + crossedOn + '.'
+        } : null;
         if (came) lines.push(came.line);
 
         lines.push(...atTheGate);
@@ -2390,11 +2846,31 @@ export const travelVerbs = {
             bought: string;
             /** A ship's voyage, as it stood when these days began. */
             sea?: AVoyage;
+            /** The already accepted road passage; never a new fare or a new carrier. */
+            roadReceiptId?: string;
             /** How much of the days goes to cultivation; travel by default. */
             focus?: number;
+            /** New accepted boarding only; continuation reads the same historical origin. */
+            departureOccasion?: boolean;
         }
     ): Promise<Execution> {
+        if (this.worldEnabled && this.atHand && (trip.roadReceiptId || trip.sea?.receiptId)) {
+            return executeActualPaidPassage(this, run, cultivator, trip, (body, afterRun, execution) => {
+                noteWhoseGroundThisIs(this, body, afterRun, trip.to);
+                const introduced = whatArrivingIntroduces(this, body);
+                execution.facts.lines.push(...introduced.lines);
+                execution.facts.structure.push(...introduced.structure);
+                execution.perceived = introduced.perceived;
+                const came = this.theyArrivedWithYou(body, trip.to);
+                if (came) execution.facts.lines.push(came.line);
+            });
+        }
         const voyage = trip.sea ?? null;
+        const road = trip.roadReceiptId && this.atHand
+            ? publicCarriagePassage(this.atHand, trip.roadReceiptId, cultivator.id, routineTime(this.atHand)) : null;
+        if (trip.roadReceiptId && !road) return refused('engine.thePaidCarriage', 'passage', factsForRefusal(
+            'The accepted carriage is no longer carrying this passage.',
+            'No fare was charged and no replacement driver was recalled.', 'Actual paid carrier unavailable.'));
         const paid = trip.stones > 0
             ? this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -trip.stones }) ?? cultivator
             : cultivator;
@@ -2404,14 +2880,30 @@ export const travelVerbs = {
         // A SHIP IS DEFENDED BY ITS CREW, the named people aboard it. See `the-crew-of-a-ship.ts`.
         const worldDay = Math.floor(this.atHand?.currentDay ?? startDay);
         const boardedAt = this.atHand ? worldLocationFor(this.atHand, placeName(paid)) : null;
-        const crew = voyage && boardedAt ? theCrewOfTheShip(this, voyage.lane, boardedAt.id, worldDay) : null;
-        const escort = crew ? crew.length : trip.escort;
+        const crew = voyage && boardedAt ? theCrewOfTheShip(this, voyage.lane, boardedAt.id, worldDay)
+            : road ? [road.driver] : [];
+        if (voyage) theCrewAreOnThisVoyage(this, voyage, worldDay);
+        const escort = crew.length;
+        const fromRow = this.atHand && worldLocationFor(this.atHand, placeName(paid));
+        const toRow = this.atHand && worldLocationFor(this.atHand, trip.to);
+        const exceptIds = new Set([paid.id, ...(crew ?? []).map(npc => npc.id),
+            ...whoIsOnTheRoadWith(this.atHand?.npcs ?? [], paid.id, worldDay).map(npc => npc.id)]);
+        const water = voyage ? theWaterUnder({ ...voyage, sailed: voyage.days }) : null;
+        const waterRow = water && this.atHand ? worldLocationFor(this.atHand, water) : null;
+        const meeting = this.atHand && voyage && waterRow && voyage.sailed === 0
+            ? firstTravellerOnTheWater({ locations: this.atHand.locations, npcs: this.atHand.npcs,
+                waterId: waterRow.id, vesselId: shipIdForLane(voyage.lane), onDay: worldDay, days: trip.days, exceptIds })
+            : !voyage && this.atHand && fromRow && toRow ? firstTravellerOnTheWay({
+                locations: this.atHand.locations, npcs: this.atHand.npcs,
+                fromId: fromRow.id, toId: toRow.id, onDay: worldDay, days: trip.days, exceptIds
+            }) : null;
+        const plannedDays = meeting?.afterDays ?? trip.days;
         const rolled = encountersFor(
             { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
             {
                 seed: run.seed,
                 startDay,
-                days: trip.days,
+                days: plannedDays,
                 activity: 'travel',
                 cultivator: paid,
                 rollIdentity: PLAYER_ROLL_IDENTITY,
@@ -2432,10 +2924,20 @@ export const travelVerbs = {
             theCrewWhoFell(this, theRest.fallen, worldDay + Math.max(0, attacking!.absoluteDay - startDay),
                 `on ${thePassageOf(voyage.lane)}`);
         }
+        if (theRest && road) {
+            const fellOn = routineTime(this.atHand!) + Math.max(0, attacking!.absoluteDay - startDay);
+            if (theRest.fallen.includes(road.driver.id)) stopPublicCarriage(this.atHand!, road.leg, fellOn);
+            theCrewWhoFell(this, theRest.fallen, fellOn, 'on the carriage road');
+        }
         const stoppedBy = attacking && (theyFightYou || !theRest!.escortHeld) ? attacking : null;
         const lived = stoppedBy
             ? Math.max(1, Math.min(trip.days, stoppedBy.absoluteDay - startDay))
-            : trip.days;
+            : plannedDays;
+        if (road && theRest && !theRest.escortHeld) {
+            stopPublicCarriage(this.atHand!, road.leg, routineTime(this.atHand!) + lived);
+            leaveThePaidCarriage(this.db, cultivator.id);
+            this.theWorldMoved();
+        }
         const happened = cutTo(met.roll, startDay, lived);
         // THE HULL FEEDS THE DAYS IT WAS LOADED FOR, counted from the quay, and
         // the pack the rest: its share goes into the belly day for day, so a
@@ -2471,14 +2973,19 @@ export const travelVerbs = {
         const packLeft = Math.min(packRations, skip.endState.rationsRemaining);
         if (voyage) this.putBackWhatWasNotEaten(paid, { endState: { rationsRemaining: packLeft } });
         const sailed = (voyage?.sailed ?? 0) + skip.simulatedDays;
-        const arrived = !skip.died && stoppedBy === null && skip.simulatedDays >= lived
-            && (voyage === null || sailed >= voyage.days);
+        const arrived = !skip.died && stoppedBy === null && meeting === null && journeyTimeHasReached(skip.simulatedDays, lived)
+            && (voyage === null || journeyTimeHasReached(sailed, voyage.days))
+            && (road === null || journeyTimeHasReached(routineTime(this.atHand!) + skip.simulatedDays, road.leg.arrivalDay));
         // SHORT OF PORT IS AT SEA. See `a-ship-at-sea.ts`.
         const crewLost = theRest !== null && !theRest.escortHeld;
         const onward = voyage && !skip.died && !arrived ? theVoyageAfter(voyage, sailed, crewLost) : null;
-        const atSea = onward ? theWaterUnder(onward.voyage) : null;
+        const atSea = onward ? theWaterUnder(onward.voyage)
+            : voyage && !arrived && sailed > 0 ? theWaterUnder({ ...voyage, sailed }) : null;
+        const stoppedGround = !voyage && !arrived && this.atHand && fromRow && toRow
+            ? placePartwayAlong(this.atHand.locations, fromRow.id, toRow.id, skip.simulatedDays, trip.days) : null;
         const applied = applyTimeSkip(this.repos, {
-            before: setOut, run, skip, ...(arrived ? { location: trip.to } : atSea ? { location: atSea } : {})
+            before: setOut, run, skip, ...(arrived ? { location: trip.to } : atSea ? { location: atSea }
+                : stoppedGround ? { location: stoppedGround.name } : {})
         });
         if (onward && atSea) writeTheVoyage(this.repos.db, cultivator.id, onward.voyage);
         else if (voyage) endTheVoyage(this.repos.db, cultivator.id);
@@ -2489,10 +2996,15 @@ export const travelVerbs = {
                 starvationTurns: -applied.cultivator.starvationTurns
             }) ?? applied.cultivator;
         const world = await this.advanceWorld(skip.simulatedDays, fed, applied.run);
+        if (meeting && !voyage && stoppedGround) standWithTheTraveller(this, cultivator.id, meeting.npc.id, stoppedGround);
         // THE CREW GO WHERE THE SHIP GOES, after the world's days so nothing moves them off it.
         if (voyage && !skip.died && (arrived || atSea)) {
             theCrewIsWhereTheShipIs(this, voyage.lane, arrived ? trip.to : atSea!, cultivator.id,
-                Math.floor(this.atHand?.currentDay ?? applied.run.elapsedDays), !arrived);
+                Math.floor(this.atHand?.currentDay ?? applied.run.elapsedDays), !arrived, onward?.voyage ?? voyage);
+        }
+        if (meeting && voyage && atSea && this.atHand && journeyTimeHasReached(skip.simulatedDays, meeting.afterDays)) {
+            const ground = worldLocationFor(this.atHand, atSea);
+            if (ground) standWithTheTraveller(this, cultivator.id, meeting.npc.id, ground);
         }
         const onTheWay = recordEncounters(this.knowledge, fed, applied.run.elapsedDays, happened, this.repos);
         const rationsLeft = everythingInThePouch(this.db, fed.id)
@@ -2502,6 +3014,9 @@ export const travelVerbs = {
             : whatWasEatenOnBoard(fed, rationsLeft);
 
         const lines: string[] = [trip.bought];
+        if (meeting && journeyTimeHasReached(skip.simulatedDays, meeting.afterDays)) {
+            lines.push(voyage ? 'A fellow passenger is aboard on passage.' : 'Another traveller is here on the road.');
+        }
         for (const band of met.withdrew) {
             if (band.absoluteDay > startDay + skip.simulatedDays) continue;
             lines.push(`A band of ${band.confrontation?.count ?? 1} on the road watched the ${vehicle} and its `
@@ -2523,6 +3038,7 @@ export const travelVerbs = {
         }, ...skipCalls('passage', skip, null), ...tollCalls(applied.tollLines), ...worldCalls(world)];
 
         if (arrived) {
+            if (road) leaveThePaidCarriage(this.db, cultivator.id);
             this.noteEncounter(
                 fed, run, { kind: 'place', id: trip.to, name: trip.to },
                 'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
@@ -2584,21 +3100,26 @@ export const travelVerbs = {
             facts.structure.push(`takeTheSeat: at sea, ${sailed} of ${onward.voyage.days} day(s) sailed, `
                 + `bound for ${onward.voyage.bound}, crew ${onward.voyage.crew}.`);
         }
-        if (!stoppedBy || skip.died) return halted;
+        if (skip.died) return halted;
 
-        if (!voyage) {
+        if (road && !crewLost && !skip.died) {
+            sayThisFirstWhateverTheNarratorDoes(facts,
+                `The carriage passage to ${trip.to} remains paid. Its actual driver is carrying you onward.`);
+        } else if (!voyage) {
+            if (road) leaveThePaidCarriage(this.db, cultivator.id);
             // A CARRIAGE STOPPED ON THE ROAD leaves the road to walk.
             const walked = Math.min(trip.walkingDays - 1,
                 Math.max(1, Math.round(skip.simulatedDays * trip.walkingDays / trip.days)));
             if (trip.walkingDays > 1) {
                 writeFlag(this.repos.db, cultivator.id, FLAG_ROAD_STOPPED, JSON.stringify({
-                    to: trip.to, from, road: trip.walkingDays, walked
+                    to: trip.to, from: placeName(fed), road: trip.walkingDays, walked
                 } satisfies StoppedRoad));
             }
             sayThisFirstWhateverTheNarratorDoes(facts, `The ${vehicle} to ${trip.to} stopped on day `
                 + `${skip.simulatedDays} of ${trip.days}. You are not there`
                 + `; the rest of the road is ${humanDays(trip.walkingDays - walked)} on foot.`);
         }
+        if (!stoppedBy) return halted;
         if (!theyFightYou) return halted;
         const cameAt = theyCameAtYou(this, applied.run, fed, ambient, {
             ...happened, occurrences: [stoppedBy], firstInterruptDay: stoppedBy.absoluteDay

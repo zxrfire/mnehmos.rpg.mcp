@@ -69,6 +69,8 @@ export interface EncounterPlace {
     name: string;
     /** `LocationKind` as a string, so this module does not import the world layer. */
     kind: string;
+    /** Actual physical substrate when the caller has a world record; absent in legacy pure inputs. */
+    substrate?: 'land' | 'water' | 'air';
     /** 0..1. Multiplies how often anything happens here at all. */
     danger?: number;
     /** 1..100 geology. Only used to gate qi-specific entries. */
@@ -342,6 +344,8 @@ export interface EncounterOccurrence {
  * against the day the sitting actually ended.
  */
 export interface AtASealedDoor {
+    /** Physical residence identified by the actual door read, not a current position. */
+    locationId?: string;
     what: 'broke_in' | 'stopped';
     doorName: string;
     doorStandsAt: number;

@@ -11,10 +11,13 @@
  * fraction for one commit - "a full month restores a body completely" - which
  * made the entire pill ladder pointless: nobody buys a 1,200-potency Undying
  * Flesh Pill when a month and a few stones does more.
+ * Care now requires a real working physician. Its fixtures stand beside one
+ * in a pinned world; the fixed-amount ladder assertions remain unchanged.
  */
 
 import { describe, it, expect } from 'vitest';
 import { makeGame, engineCalls } from './harness';
+import { atAWorkingPhysician } from './at-a-working-physician.js';
 import { PILLS } from '../../src/data/cultivation/pills';
 
 const HEAL = PILLS.filter(pill => pill.effect === 'heal_hp');
@@ -34,8 +37,7 @@ const HEAL = PILLS.filter(pill => pill.effect === 'heal_hp');
  * usual reason: a reworded sentence is not a balance change.
  */
 async function monthOfCare(seed: string, ordinal: number, maxHp: number) {
-    const { db, game } = makeGame({ seed });
-    const { cultivator } = await game.newRun('Hurt');
+    const { db, game, cultivator } = await atAWorkingPhysician(seed);
     db.prepare(
         'UPDATE cultivators SET realm_ordinal = ?, max_hp = ?, hp = 1, spirit_stones = 5000 WHERE id = ?'
     ).run(ordinal, maxHp, cultivator.id);
@@ -64,8 +66,7 @@ describe('a month of care restores a fixed amount, not a share of the wound', ()
     });
 
     it('never exceeds what the body is actually missing', async () => {
-        const { db, game } = makeGame({ seed: 'care-guard-cap' });
-        const { cultivator } = await game.newRun('Grazed');
+        const { db, game, cultivator } = await atAWorkingPhysician('care-guard-cap');
         db.prepare(
             'UPDATE cultivators SET max_hp = 40, hp = 38, spirit_stones = 5000 WHERE id = ?'
         ).run(cultivator.id);

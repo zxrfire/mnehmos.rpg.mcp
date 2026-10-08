@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import { PLACE } from '../../src/data/cultivation/place-names.js';
 import { stageRank } from '../../src/engine/social/discovery.js';
+import { createNpc } from '../../src/engine/world/npc-state.js';
 import {
     PROVINCIAL_CAPITALS,
     howFarTheirKnowledgeReaches,
@@ -18,8 +19,51 @@ import {
     whoAmongThemKnowsTheWayToAPlace,
     type WhoTheyAre
 } from '../../src/engine/world/what-somebody-knows-of-the-land.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { parseIntent } from '../../src/web/actions.js';
 import { makeGameInWorld } from './harness.js';
+
+/**
+ * Put the player in the current area of a concrete person who knows this road.
+ * A crowd is an area, not every body with the same location id. The capital's
+ * ordinary guide is a real world row whose land knowledge comes from the same
+ * location/standing rule every person uses, not a test-only answer.
+ */
+function standWithGuide(game: Awaited<ReturnType<typeof makeGameInWorld>>['game'], target: string) {
+    const world = game.atHand!;
+    const cultivator = game.currentRun().cultivator;
+    const place = world.locations.find(row => row.name === PLACE.IRON_GATE)!;
+    let guide = world.npcs.find(npc => npc.locationId === place.id
+        && whatSomebodyKnowsOfTheLand(world, {
+            id: npc.id,
+            from: place.name,
+            ordinal: npc.cultivation.realmOrdinal,
+            ...(npc.factionId === null ? {} : { house: { id: npc.factionId, rankIndex: npc.factionRankIndex } })
+        }).places.some(known => known.name === target && known.stage === 'placed'));
+    if (!guide) {
+        const id = `land-guide-${target.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+        guide = createNpc(world.seed, {
+            id,
+            name: `Guide to ${target}`,
+            locationId: place.id,
+            bornOnDay: world.currentDay - 35 * 365,
+            onDay: world.currentDay
+        });
+        // A road guide is a concrete person in this capital, not a synthetic
+        // answer. Their travelled life and standing are the ordinary facts the
+        // land reader uses to make the far road findable.
+        guide.identity.occupation = 'caravan guide';
+        guide.cultivation.realmOrdinal = 36;
+        world.npcs.push(guide);
+        expect(whatSomebodyKnowsOfTheLand(world, {
+            id: guide.id, from: place.name, ordinal: guide.cultivation.realmOrdinal, travelled: 2
+        }).places.some(known => known.name === target && known.stage === 'placed'),
+        `${place.name}'s ordinary guide does not know the road to ${target}`).toBe(true);
+        game.theWorldMoved();
+    }
+    game.repos.cultivators.update(cultivator.id, { location: place.name });
+    game.repos.cultivators.standIn(cultivator.id, theAreasOf(world, place).whereIs.get(guide!.id)!);
+}
 
 describe('what kind of place it is', () => {
     it('reads a village, a town, a city and a provincial capital', () => {
@@ -135,13 +179,16 @@ describe('what somebody knows of the land', () => {
     }, 180_000);
 
     it('answers the way when the crowd is asked, with the provinces the road crosses', async () => {
-        const { game, repos } = await makeGameInWorld({ seed: 'the-land-asked', worldSeed: 'a-xianxia-run' });
+        const { game } = await makeGameInWorld({ seed: 'the-land-asked', worldSeed: 'a-xianxia-run' });
         const { cultivator } = await game.newRun('Ke Yan');
-        repos.cultivators.update(cultivator.id, { location: PLACE.IRON_GATE });
+        // The old fixture changed only `location`, which no longer makes a
+        // location-wide crowd after sparse area placement.
+        standWithGuide(game, 'The White Stair');
         const turn = await game.act('anyone know the way to the white stairs?');
         expect(turn.narration).toMatch(/gives the way to The White Stair: .*days on the road through The Jade Gorge/);
         expect(stageRank(game.knowledge.stageOf(cultivator.id, 'place', 'The White Stair'))).toBeGreaterThanOrEqual(stageRank('placed'));
         // Inside one province the answer is the walk itself, in days.
+        standWithGuide(game, 'Willow Village');
         const near = await game.act('does anybody know how to get to willow village');
         expect(near.narration).toMatch(/gives the way to Willow Village: in this province, \d+ days? on the road/);
     }, 180_000);

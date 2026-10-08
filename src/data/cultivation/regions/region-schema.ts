@@ -256,7 +256,13 @@ export const RegionPlaceConnectionSchema = z.object({
 });
 export type RegionPlaceConnection = z.infer<typeof RegionPlaceConnectionSchema>;
 
+export const MetricPointSchema = z.object({ xLi: z.number().finite(), yLi: z.number().finite() });
+export type MetricPoint = z.infer<typeof MetricPointSchema>;
+export const MetricRegionSchema = MetricPointSchema.extend({ extentLi: z.number().positive() });
+
 export const RegionPlaceSchema = z.object({
+    /** Authored physical position, independent of road costs; interiors inherit. */
+    metric: MetricPointSchema.optional(),
     name: z.string().min(1),
     kind: z.enum(['hamlet', 'village', 'market_town', 'sect_town', 'city', 'waystation', 'site']),
     ambient: AmbientQiSchema,
@@ -333,6 +339,8 @@ export const RegionCustomsSchema = z.object({
 export type RegionCustoms = z.infer<typeof RegionCustomsSchema>;
 
 export const RegionSchema = z.object({
+    /** Physical centre and the bounded extent sampled by independent generated ground. */
+    metric: MetricRegionSchema.optional(),
     id: z.string(),
     name: z.string().min(1),
     role: z.enum(['home', 'adjacent']),

@@ -195,6 +195,9 @@ describe('the world\'s own intake', () => {
  * member of a bloodline house came onto its roll, against 12 and 8 of 174 and
  * 185 born to a member of a sect, who went through its door like anybody else.
  * Red-checked by dropping the kinship branch in `applyDemography`: this goes red.
+ * House-own raised disciples are not demographic births. A visitor at their
+ * grounds once supplied a bloodline parent to another house's raised member.
+ * Any background child later selected upward needs a written transfer.
  */
 describe('a child of a family house', () => {
     it('writes no lineage for a background child beyond a full family roll', () => {
@@ -227,13 +230,19 @@ describe('a child of a family house', () => {
             const parentOf = new Map<string, string>();
             for (const l of state.lineages) for (const e of l.edges) parentOf.set(e.childId, e.parentId);
             for (const child of state.npcs) {
-                if (known.has(child.id) || child.tags.includes('fostered')) continue;
+                if (known.has(child.id) || child.tags.includes('fostered')
+                    || child.tags.some(tag => tag.startsWith('raised:'))) continue;
                 const parent = parentOf.get(child.id);
                 const family = parent === undefined ? null : houseOf.get(parent) ?? null;
                 if (family === null || !bloodline.has(family)) continue;
                 if (!state.factions.some(f => f.id === family && f.dissolvedOnDay === null)) continue;
                 seen++;
-                expect(child.factionId, `${child.name}, born to the ${family}`).toBe(family);
+                if (child.factionId !== family) {
+                    const transfer = state.history.facts.find(f => f.data.feederSelection === true
+                        && f.data.fromHouseId === family && f.data.toHouseId === child.factionId
+                        && f.actors.some(a => a.id === child.id));
+                    expect(transfer, `${child.name}, born to the ${family}`).toBeTruthy();
+                }
             }
         }
         expect(seen, 'no child was born to a family house in 25 years').toBeGreaterThan(0);

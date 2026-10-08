@@ -1,3 +1,4 @@
+import { companyAgreement } from './company-during-a-passage.js';
 /**
  * Who is on the road with somebody, and what happens to them when that somebody
  * goes anywhere.
@@ -87,8 +88,8 @@ export function whoIsOnTheRoadWith(
 ): readonly NpcRecord[] {
     return npcs.filter(npc => {
         if (npc.status !== 'alive') return false;
-        const doing = npc.activity;
-        if (!doing || doing.kind !== ON_THE_ROAD) return false;
+        const doing = companyAgreement(npc.activity, today);
+        if (!doing) return false;
         if (!doing.withIds.includes(leaderId)) return false;
         if (doing.redirect && today >= doing.redirect.until) return false;
         const until = doing.untilDay;
@@ -114,8 +115,9 @@ export function whoTheyAreOutWith(
     npc: NpcRecord,
     today: number
 ): { withIds: readonly string[]; untilDay: number | null; note: string } | null {
-    const doing = npc.activity;
-    if (!doing || doing.kind !== ON_THE_ROAD) return null;
+    if (npc.status !== 'alive') return null;
+    const doing = companyAgreement(npc.activity, today);
+    if (!doing) return null;
     if (doing.redirect && today >= doing.redirect.until) return null;
     const until = doing.untilDay ?? null;
     if (until !== null && today >= until) return null;
@@ -137,10 +139,10 @@ export function whatThePartyIs(
     if (party.length === 0) return null;
 
     const terms = party
-        .map(npc => npc.activity?.untilDay ?? null)
+        .map(npc => companyAgreement(npc.activity, today)?.untilDay ?? null)
         .filter((day): day is number => day !== null);
     const ends = terms.length === 0 ? null : Math.min(...terms);
-    const notes = [...new Set(party.map(npc => npc.activity?.note ?? '').filter(n => n.length > 0))];
+    const notes = [...new Set(party.map(npc => companyAgreement(npc.activity, today)?.note ?? '').filter(n => n.length > 0))];
 
     const who = namesOf(party).join(', ');
     const left = ends === null ? null : Math.max(0, ends - today);
@@ -151,8 +153,8 @@ export function whatThePartyIs(
                 ? ', on no term anybody has stated'
                 : `, for ${left} more day${left === 1 ? '' : 's'}`}`
             + `${notes.length === 0 ? '.' : `: ${notes.join(' ')}`}`
-            + ` ${party.length === 1 ? 'They go' : 'They go'} where you go until the term runs out, `
-            + `and then back to where each of them set out from.`,
+            + (ends === null ? ' They travel with you while the agreement continues.'
+                : ' They go where you go until the term runs out, and then back to where each of them set out from.'),
         structure:
             `who-is-on-the-road-with-you: ${party.length} read off their own out_with_a_party `
             + `activity on day ${today}`
@@ -171,7 +173,9 @@ export interface TakingThemWithYou {
     note: string;
     onDay: number;
     /** The day the term ends. The world brings them home on it. */
-    untilDay: number;
+    untilDay: number | null;
+    /** Renewing actual company aboard retains its physical course. Local invitations retain their separate redirect path. */
+    preservePassage?: boolean;
 }
 
 /**
@@ -192,9 +196,7 @@ export function takeThemWithYou(
     const changed: NpcRecord[] = [];
     for (const npc of npcs) {
         if (!going.has(npc.id) || npc.status !== 'alive') continue;
-        changed.push({
-            ...npc,
-            activity: {
+        const agreement: NonNullable<NpcRecord['activity']> = {
                 kind: ON_THE_ROAD,
                 note: input.note,
                 // Everybody in it names everybody else, and names the person
@@ -206,8 +208,9 @@ export function takeThemWithYou(
                 sinceDay: input.onDay,
                 untilDay: input.untilDay,
                 returnTo: whereTheyGoBackTo(npc)
-            }
-        });
+        };
+        changed.push({ ...npc, activity: input.preservePassage && npc.activity?.kind === 'travelling'
+            ? { ...npc.activity, passageCompany: agreement } : agreement });
     }
     return changed;
 }
@@ -224,6 +227,8 @@ export function theyComeWithYou(
     input: { leaderId: string; arrivedAt: string; onDay: number }
 ): NpcRecord[] {
     return whoIsOnTheRoadWith(npcs, input.leaderId, input.onDay)
+        // An independent physical course owns its body, even while party membership persists.
+        .filter(npc => npc.activity?.kind !== 'travelling')
         .filter(npc => npc.locationId !== input.arrivedAt)
         .map(npc => setLocation(npc, input.arrivedAt, input.onDay));
 }

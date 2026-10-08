@@ -226,7 +226,9 @@ describe('GET /api/state', () => {
         expect(res.body.tolls).toEqual([]);
         expect(res.body.derived.lifespanRemaining).toBe(100 - STARTING_AGE);
 
-        expect(res.body.run).toMatchObject({ status: 'active', turn: 0, elapsedDays: 0, peakOrdinal: 0 });
+        // A run now opens at 08:00 (`turn-engine.ts`'s `newRun`), a third of a day
+        // already spent before any act.
+        expect(res.body.run).toMatchObject({ status: 'active', turn: 0, elapsedDays: 1 / 3, peakOrdinal: 0 });
         // The seed is never sent to the browser; nothing there can use it.
         expect(res.body.run.seed).toBeUndefined();
 
@@ -327,7 +329,9 @@ describe('POST /api/cultivate', () => {
             'age', 'cultivationProgress', 'hp', 'injuriesGained',
             'qi', 'realmOrdinal', 'satiety', 'spiritStones'
         ]);
-        expect(res.body.state.run.elapsedDays).toBe(res.body.timeSkip.simulatedDays);
+        // A run opens with a third of a day already spent (`turn-engine.ts`'s
+        // `newRun`), so the run clock runs that far ahead of the simulated span.
+        expect(res.body.state.run.elapsedDays).toBeCloseTo(res.body.timeSkip.simulatedDays + 1 / 3);
     });
 
     it('rejects a non-numeric or zero duration', async () => {

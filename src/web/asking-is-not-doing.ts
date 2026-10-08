@@ -22,7 +22,13 @@ export const PRESSING_SOMEBODY: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Whether this PLAN takes nothing from the player.
+ * Whether this PLAN is a read or lesser reply rather than a committing act.
+ *
+ * The legacy name is deliberately narrower than the clock: a conversational
+ * reply now advances time by an eighth of a day, but it neither presses its
+ * listener nor consumes the turn's day-long-act slot. Callers use this split
+ * for plan composition, reference reporting, and whether a refusal was a
+ * public assertion; they must not treat it as an elapsed-time predicate.
  *
  * ASKED OF THE PLAN AND NOT OF THE VERB, and for eleven verbs besides
  * `interact` that is the whole of the answer. See

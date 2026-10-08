@@ -1,3 +1,4 @@
+import { betweenRoadEndpoints, stoppedRoadFor } from './a-road-stopped-partway.js';
 /**
  * Walking from one area of a place to another: the street to the inn, the gate to the forecourt.
  *
@@ -34,13 +35,22 @@ import type { GameService } from './turn-engine.js';
 import { theHouseWhoseGateThisIs, whatTheGateOfThisHouseSays } from './walking-up-to-a-house.js';
 import { whereTheyAreLodged } from './a-room-at-an-inn.js';
 import { peopleInThisPlace } from './hearsay.js';
+import { actualCarrierScene } from './the-actual-carrier-scene.js';
+import { walkOnTheActualCarrier } from './walking-on-the-actual-carrier.js';
 import { passHours } from './routine-invitations.js';
 import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
+import { theQuartersThisCultivatorHas } from './leaving-a-thing-in-your-own-room.js';
+import { routineOf, routineTime } from '../engine/world/npc-routines.js';
 
 /** The words for a kind of area, where a place has no area by that exact name. */
 const A_WORD_FOR: ReadonlyArray<[RegExp, WhatAnAreaIsFor]> = [
     [/^(?:street|streets|square|out|outside)$/, 'street'],
+    [/^(?:landing|dock|harbour|harbor|ferry landing)$/, 'landing'],
+    [/^(?:carriage station|carriage yard|carters yard|carter's yard)$/, 'carriage_station'],
+    [/^(?:folding counter|paid folding counter|folding station|portal|teleportation counter)$/, 'span_counter'],
     [/^(?:market|markets|marketplace|market place|stalls?|stall row|row)$/, 'market'],
+    [/^(?:exchange|exchange hall)$/, 'exchange'],
+    [/^(?:clinic|physician|physicians|doctor|doctors|physician's clinic)$/, 'clinic'],
     [/^(?:inn|teahouse|tea house|tavern|wine shop|wineshop|eating house|restaurant|downstairs|common room)$/, 'table'],
     [/^(?:gate|gates|outside the gate|out|outside)$/, 'gate'],
     [/^(?:forecourt|courtyard|yard|in|inside)$/, 'forecourt'],
@@ -64,12 +74,22 @@ function asAnAreaIsNamed(said: string): string {
 }
 
 function ownName(area: AnAreaOfAPlace): string {
-    return area.name.replace(/^the\s+/, '');
+    return area.name.toLowerCase().replace(/^the\s+/, '');
+}
+
+/** A private door is reachable by its holder or by an actual invitation, never by a name alone. */
+function canEnterArea(game: GameService, cultivator: Cultivator, area: AnAreaOfAPlace): boolean {
+    if (area.for !== 'room') return true;
+    const holder = area.id.slice(area.id.indexOf('#room#') + '#room#'.length);
+    if (holder === cultivator.id) return true;
+    const host = game.atHand?.npcs.find(npc => npc.id === holder);
+    return !!host && !!game.atHand && routineOf(game.atHand, host).activity?.withIds.includes(cultivator.id) === true;
 }
 
 /** The area of this place a sentence names, or null where it names none. */
-function theAreaNamed(areas: readonly AnAreaOfAPlace[], wanted: string): AnAreaOfAPlace | null {
+export function theAreaNamed(areas: readonly AnAreaOfAPlace[], wanted: string): AnAreaOfAPlace | null {
     if (wanted.length === 0) return null;
+    if (/^(?:auction|auction hall)$/.test(wanted)) return areas.find(area => ownName(area) === 'auction house') ?? null;
     const exact = areas.find(area => ownName(area) === wanted)
         ?? areas.find(area => wanted.length >= 4 && ownName(area).endsWith(` ${wanted}`));
     if (exact) return exact;
@@ -83,11 +103,14 @@ function theAreaNamed(areas: readonly AnAreaOfAPlace[], wanted: string): AnAreaO
 
 /** The same local area names used by walking also price a plan's movement. */
 export function namesALocalArea(game: GameService, cultivator: Cultivator, target: string | undefined): boolean {
+    if (betweenRoadEndpoints(game.repos.db, cultivator)) return false;
     const here = theAreaTheyAreIn(game.atHand, cultivator);
     if (!here || !game.atHand || !target) return false;
-    return A_ROOM_OF_THEIR_OWN.test(target)
-        || theAreaNamed(peopleInThisPlace(game.repos, cultivator, game.atHand, here.place).areas,
-            asAnAreaIsNamed(target)) !== null;
+    const offered = theAreaNamed(peopleInThisPlace(game.repos, cultivator, game.atHand, here.place).areas,
+        asAnAreaIsNamed(target));
+    // Remembered shore lodging does not supply a room aboard an accepted hull.
+    if (actualCarrierScene(game.repos, cultivator, game.atHand, routineTime(game.atHand))) return offered !== null;
+    return A_ROOM_OF_THEIR_OWN.test(target) || offered !== null;
 }
 
 /** The place this player is standing in and the area of it, or null where the world has neither. */
@@ -103,17 +126,17 @@ export function theAreaTheyAreIn(
 
 /**
  * The other areas of the place this player is standing in, by name, for the scene: every one
- * somebody is in, and the first of each kind.
+ * public destination, even empty. Sleeping residents' doors are private.
  */
 export function theRestOfThisPlace(game: GameService, cultivator: Cultivator): string[] {
+    if (betweenRoadEndpoints(game.repos.db, cultivator)) return [];
     const here = theAreaTheyAreIn(game.atHand, cultivator);
     if (!game.atHand || !here) return [];
-    const { areas, whereIs } = peopleInThisPlace(game.repos, cultivator, game.atHand, here.place);
+    const { areas } = peopleInThisPlace(game.repos, cultivator, game.atHand, here.place);
     const current = areas.find(area => area.id === cultivator.standingIn) ?? here.area;
-    const occupied = new Set(whereIs.values());
-    const firsts = new Set(areas.filter((area, i) => areas.findIndex(one => one.for === area.for) === i).map(a => a.id));
     return areas
-        .filter(area => area.id !== current.id && (occupied.has(area.id) || firsts.has(area.id)))
+        .filter(area => area.id !== current.id && canEnterArea(game, cultivator, area))
+        .filter(area => !['forecourt', 'board'].includes(area.for) || theGateBetweenThemAndIt(game, cultivator) === null)
         .map(area => area.name);
 }
 
@@ -123,6 +146,13 @@ export function theRestOfThisPlace(game: GameService, cultivator: Cultivator): s
  * turned away inside the grounds.
  */
 export function thePlaceAsTheSceneNamesIt(game: GameService, cultivator: Cultivator, place: string): string {
+    const position = stoppedRoadFor(game.repos.db, cultivator)?.position;
+    if (position?.kind === 'edge' && game.atHand) {
+        const from = game.atHand.locations.find(row => row.id === position.fromId)?.name;
+        const to = game.atHand.locations.find(row => row.id === position.toId)?.name;
+        return from && to ? 'On the road from ' + from + ' toward ' + to : 'On the unfinished road';
+    }
+    if (betweenRoadEndpoints(game.repos.db, cultivator)) return 'On the unfinished road';
     const here = theAreaTheyAreIn(game.atHand, cultivator);
     if (!here || !game.atHand) return place;
     const read = peopleInThisPlace(game.repos, cultivator, game.atHand, here.place);
@@ -143,7 +173,7 @@ export function openAmongThePeopleOfTheirPlace(game: GameService, cultivator: Cu
         const ids = [...whereIs.entries()].filter(([, at]) => at === areaId).map(([id]) => id);
         return [ids.filter(id => game.knowledge.isAwareOf(cultivator.id, 'cultivator', id)).length, ids.length];
     };
-    const best = areas.map(area => ({ area, by: score(area.id) }))
+    const best = areas.filter(area => area.for !== 'room').map(area => ({ area, by: score(area.id) }))
         .reduce((top, one) => (one.by[0] > top.by[0] || (one.by[0] === top.by[0] && one.by[1] > top.by[1]) ? one : top));
     game.repos.cultivators.standIn(cultivator.id, best.area.id);
     return game.repos.cultivators.getById(cultivator.id) ?? cultivator;
@@ -189,7 +219,7 @@ export async function aWalkAcrossThePlace(
     target: string | undefined
 ): Promise<Execution | null> {
     const said = (target ?? '').trim();
-    if (said.length === 0) return null;
+    if (said.length === 0 || betweenRoadEndpoints(game.repos.db, cultivator)) return null;
     game.atHand = game.atHand ?? await game.loadWorld();
     const world = game.atHand;
     const here = theAreaTheyAreIn(world, cultivator);
@@ -200,16 +230,27 @@ export async function aWalkAcrossThePlace(
     // THE ROOM THEY PAID FOR, alone but for whoever is with them. Played: "head up to my room"
     // reached a house's interior room somewhere else and was refused. See `aRoomOfTheirOwn`.
     // A ROOM OF THEIR OWN, which the owner puts "at an inn (or in your sect, or a cave)": the room
-    // paid for at the inn here, or their quarters at their own house's seat once past its gate. A
+    // paid for at the inn here, or their corner of the lodging their house assigns. A
     // cave that is theirs is the whole place. Anywhere else "my room" is the home read's to answer.
+    const carrier = actualCarrierScene(game.repos, cultivator, world, routineTime(world));
     const aRoomIsMeant = A_ROOM_OF_THEIR_OWN.test(said);
-    const atTheirOwnSeat = aRoomIsMeant && cultivator.sectId !== null
-        && theHouseWhoseGateThisIs(world, here.place.name)?.factionId === cultivator.sectId
-        && theGateBetweenThemAndIt(game, cultivator) === null;
-    const theirs = aRoomIsMeant && (whereTheyAreLodged(game, cultivator) !== null || atTheirOwnSeat);
+    if (carrier && aRoomIsMeant && !theAreaNamed(read.areas, asAnAreaIsNamed(said)))
+        return refused('engine.walkAcrossThePlace', 'move', factsForRefusal(
+            'No such room is offered aboard this hull.',
+            'The remembered shore room does not place you inside this vessel.',
+            'The current accepted hull offers no such local area. Nothing spent.'));
+    const quarters = aRoomIsMeant && !carrier ? theQuartersThisCultivatorHas(game, world, cultivator) : null;
+    const inTheirAssignedLodging = quarters?.quarters.locationId === here.place.id;
+    const theirs = !carrier && aRoomIsMeant && (whereTheyAreLodged(game, cultivator) !== null || inTheirAssignedLodging);
     let destination = theirs ? aRoomOfTheirOwn(here.place, cultivator.id) : null;
     destination ??= theAreaNamed(read.areas, asAnAreaIsNamed(said));
     if (destination === null) return null;
+
+    if (!canEnterArea(game, cultivator, destination)) return refused('engine.walkAcrossThePlace', 'move', factsForRefusal(
+        'That is somebody else\'s private room.',
+        `Nobody has invited you through that door. You remain in ${here.area.name}; no time passes.`,
+        `walkAcrossThePlace: ${destination.id} is a private room without its holder's invitation. Nothing spent.`
+    ));
 
     if (destination.id === here.area.id) {
         // "Out" from where a road arrives is out of the place, which is the road's to answer.
@@ -234,6 +275,7 @@ export async function aWalkAcrossThePlace(
     }
 
     // ── THE WALK ─────────────────────────────────────────────────────────
+    if (carrier) return walkOnTheActualCarrier(game, run, cultivator, carrier, here.area, destination);
     game.repos.cultivators.standIn(cultivator.id, destination.id);
     const advanced = await passHours(game, run, { ...cultivator, standingIn: destination.id }, LESSER_ACTION_DAYS.move * 24);
     if (!advanced.finished && advanced.spent) return advanced.spent;
@@ -277,9 +319,11 @@ export async function aWalkAcrossThePlace(
 export function crossToWhoeverTheyNamed(
     game: GameService,
     cultivator: Cultivator,
-    target: string | undefined
-): { cultivator: Cultivator; line: string; structure: string } | null {
+    target: string | undefined,
+    commit = true
+): { cultivator: Cultivator; line: string; structure: string; personId: string; areaId: string } | null {
     const wanted = (target ?? '').trim().toLowerCase();
+    if (betweenRoadEndpoints(game.repos.db, cultivator)) return null;
     const here = theAreaTheyAreIn(game.atHand, cultivator);
     if (wanted.length === 0 || !game.atHand || !here) return null;
     const { areas, whereIs, people } = peopleInThisPlace(game.repos, cultivator, game.atHand, here.place);
@@ -291,12 +335,14 @@ export function crossToWhoeverTheyNamed(
         .sort((a, b) => b.name.length - a.name.length)[0];
     const theirs = named ? areas.find(area => area.id === whereIs.get(named.id)) : undefined;
     if (!named || !theirs || theirs.id === here.area.id) return null;
+    if (!canEnterArea(game, cultivator, theirs)) return null;
     if ((theirs.for === 'forecourt' || theirs.for === 'board') && theGateBetweenThemAndIt(game, cultivator)) return null;
-    game.repos.cultivators.standIn(cultivator.id, theirs.id);
+    if (commit) game.repos.cultivators.standIn(cultivator.id, theirs.id);
     return {
+        personId: named.id, areaId: theirs.id,
         cultivator: game.repos.cultivators.getById(cultivator.id) ?? cultivator,
         line: `You cross to ${theirs.name}, where ${named.name} is.`,
-        structure: `crossToWhoeverTheyNamed: ${here.area.id} to ${theirs.id} for ${named.id}. A quarter day passed.`
+        structure: `${cultivator.name} crossed to ${theirs.name} to reach ${named.name}. A quarter day passed.`
     };
 }
 

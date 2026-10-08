@@ -50,10 +50,10 @@ import {
 } from '../../src/web/what-is-posted-on-the-wall-here.js';
 import { noticesOnTheWall } from '../../src/engine/world/houses-that-have-to-advertise-for-disciples.js';
 import { A_NOTICE_GOES_UP_DAYS } from '../../src/engine/world/a-competition-anybody-may-enter.js';
-import { REGIONS } from '../../src/data/cultivation/regions.js';
+import { REGIONS, whatKindOfPlace } from '../../src/data/cultivation/regions.js';
 
 /** Every city on the map. Which houses reach which wall is a province question. */
-const CITIES = REGIONS.flatMap(r => r.places).filter(p => p.kind === 'city').map(p => p.name);
+const CITIES = REGIONS.flatMap(r => r.places).filter(p => ['city', 'provincial capital'].includes(whatKindOfPlace(p.name) ?? '')).map(p => p.name);
 
 const SEED = 'competition-wall';
 
@@ -103,19 +103,11 @@ describe('a competition is announced before it happens', () => {
         expect(new Set(found.map(f => f.place)).size).toBeGreaterThan(1);
     });
 
-    /**
-     * A player travelling through meets one. The figure is what
-     * `AN_OPEN_COMPETITION_EVERY_YEARS` is FOR, and a dial with no measurement
-     * beside it is a number the next person assumes is arbitrary.
-     *
-     * MEASURED, four cities across three years: a competition was pending on
-     * 36% of days, and all four cities carried one inside the first year. The
-     * first cut of the dial gave 70%, which is a wall that nearly always has a
-     * competition coming and therefore teaches a player to stop reading it.
-     *
-     * The assertion is a floor rather than the figure, because the figure is a
-     * property of how many houses a PROVINCE holds - ten calendars pooled - and
-     * that is content another agent may legitimately change this afternoon.
+    /** Previously four cities carried notices on 36% of days by pooling house
+     * calendars. The owner moved open boards to fixed three-year city calendars;
+     * a ninety-day notice occupies about 8% of its own cycle. Walls also carry
+     * reachable houses' notices for other cities: the four-city sweep measured
+     * 41.2%. Iron Gate is also a capital despite its market-town catalog kind.
      */
     it('is up often enough for somebody living in a province to meet one', () => {
         const days = 365 * 3;
@@ -132,7 +124,8 @@ describe('a competition is announced before it happens', () => {
         const share = [...byPlace.values()].reduce((n, s) => n + s.size, 0)
             / (CITIES.length * days);
         expect(share, `a competition was on a city wall on ${(share * 100).toFixed(1)}% of days`)
-            .toBeGreaterThan(0.02);
+            .toBeGreaterThan(0.2);
+        expect(share).toBeLessThan(0.5);
     });
 
     it('says a day, and it is in the future and inside the stated horizon', () => {

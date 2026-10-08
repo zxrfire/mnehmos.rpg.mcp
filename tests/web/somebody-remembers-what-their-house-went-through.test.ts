@@ -17,6 +17,7 @@ import { isTheWorldsToMove, markDead, type NpcRecord } from '../../src/engine/wo
 import { whatADeathIsWorth } from '../../src/engine/world/what-a-death-at-this-height-is-worth';
 import { appendWorldFact } from '../../src/engine/world/who-was-there-when-it-happened';
 import type { WorldState } from '../../src/engine/world/world-state';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { thePeopleHere, whatTheyRememberOnTheirCard } from '../../src/web/the-narrator-plays-the-world';
 import type { Company } from '../../src/web/facts';
 import { makeGameInWorld, ScriptedProvider } from './harness';
@@ -43,15 +44,19 @@ class TalkingToOnePerson extends ScriptedProvider {
     }
 }
 
-/** The card of the one spoken to, from the narration prompt. */
+/** The card of the one spoken to, whether they remain here or moved during the paid reply. */
 function theirCard(prompt: string, name: string): string {
-    const from = prompt.indexOf('THE PEOPLE HERE');
-    const block = prompt.slice(from, prompt.indexOf('\n\n', from));
-    const at = block.split('\n').findIndex(line => line.startsWith('- ') && line.includes(name));
-    if (at < 0) return '';
-    const rest = block.split('\n').slice(at + 1);
-    const end = rest.findIndex(line => line.startsWith('- '));
-    return [block.split('\n')[at]!, ...(end < 0 ? rest : rest.slice(0, end))].join('\n');
+    for (const label of ['THE PEOPLE HERE', 'THE PERSON JUST ADDRESSED']) {
+        const from = prompt.indexOf(label);
+        if (from < 0) continue;
+        const block = prompt.slice(from, prompt.indexOf('\n\n', from));
+        const at = block.split('\n').findIndex(line => line.startsWith('- ') && line.includes(name));
+        if (at < 0) continue;
+        const rest = block.split('\n').slice(at + 1);
+        const end = rest.findIndex(line => line.startsWith('- '));
+        return [block.split('\n')[at]!, ...(end < 0 ? rest : rest.slice(0, end))].join('\n');
+    }
+    return '';
 }
 
 async function aHouseThatLostItsHead() {
@@ -73,6 +78,10 @@ async function aHouseThatLostItsHead() {
         await h.game.act(`I travel to ${empty.name}`);
     }
     const world = (await h.game.loadWorld())!;
+    // Every edit below lands on this object, not on whatever `act()` reloads
+    // on its own; every other played test that edits a loaded world assigns
+    // it back.
+    h.game.atHand = world;
     expect(world.currentDay, 'the road passed no days').toBeGreaterThan(opened);
 
     // A house with a head, an elder on its roll, and somebody of another house.
@@ -114,11 +123,35 @@ async function aHouseThatLostItsHead() {
     for (const row of world.npcs) if (row.locationId === empty.id) row.locationId = null;
     h.game.theWorldMoved();
 
-    /** Put this one person, and nobody else, where the player is standing. */
+    /**
+     * Put this one person, and nobody else, where the player is standing.
+     *
+     * `empty` is a plain ground, and `theAreasOf` reads even a plain ground
+     * into up to four named corners - the same table a town's streets come
+     * from - drawn by an hourly bucket. Each conversation this file plays
+     * costs its own eighth day. `passHours` reloads the world at that boundary,
+     * so each arrangement starts with `atHand`, not the fixture's superseded
+     * snapshot. The person is put on the world's existing temporary-presence
+     * activity, rather than an ordinary routine which is correctly re-read
+     * somewhere else when that eighth day advances.
+     */
     const standHere = (person: NpcRecord): void => {
-        for (const row of world.npcs) if (row.locationId === empty.id) row.locationId = null;
-        const i = world.npcs.findIndex(row => row.id === person.id);
-        world.npcs[i] = { ...world.npcs[i]!, locationId: empty.id, activity: null };
+        const live = h.game.atHand ?? world;
+        for (const row of live.npcs) if (row.locationId === empty.id) row.locationId = null;
+        const i = live.npcs.findIndex(row => row.id === person.id);
+        const was = live.npcs[i]!;
+        const today = Math.floor(live.currentDay);
+        live.npcs[i] = {
+            ...was,
+            locationId: empty.id,
+            activity: {
+                kind: 'out_with_a_party', note: 'Here for the conversation.', withIds: [],
+                sinceDay: today, untilDay: today + 1, returnTo: was.locationId
+            }
+        };
+        const place = live.locations.find(row => row.id === empty.id)!;
+        const theirArea = theAreasOf(live, place).whereIs.get(person.id);
+        h.game.repos.cultivators.standIn(cultivator.id, theirArea ?? null);
     };
 
     /** Put this one person in front of the player, known by name, and ask about their house. */
@@ -149,11 +182,31 @@ describe('somebody remembers what their house went through', () => {
         const newcomer = await at.talkTo(at.newcomer);
         expect(newcomer).toMatch(
             /told it by their house, 2 years ago, before they were on the roll: The head of their house died; their span ran out\./);
+        expect(at.provider.lastNarrationPrompt()).toContain('THE PERSON JUST ADDRESSED');
+        expect(at.provider.lastNarrationPrompt()).toContain(
+            `${at.newcomer.name} (THE PLAYER SPOKE TO THEM THIS TURN; THEY MAY HAVE MOVED)`);
+        expect(at.provider.lastNarrationPrompt()).toContain('THE PEOPLE HERE: nobody');
 
         const stranger = await at.talkTo(at.stranger);
-        expect(stranger).toContain('(THE PLAYER IS SPEAKING TO THEM)');
+        expect(stranger).toContain('(THE PLAYER SPOKE TO THEM THIS TURN; THEY MAY HAVE MOVED)');
         expect(stranger).not.toMatch(/head of (their|another) house died/);
         expect(stranger).not.toContain(at.head.name);
+    }, 300_000);
+
+    /** A reply card comes only from a successful resolved conversation, never a look or an unrelated refusal. */
+    it('does not give a reply card to a look or a refused named interaction', async () => {
+        const at = await aHouseThatLostItsHead();
+        at.standHere(at.stranger);
+
+        at.provider.plan = JSON.stringify({ action: 'look' });
+        await at.game.act('I look around');
+        expect(at.provider.lastNarrationPrompt()).not.toContain('THE PERSON JUST ADDRESSED');
+
+        at.provider.plan = JSON.stringify({ action: 'interact', intent: 'talk', target: 'Nobody', topic: 'your house' });
+        await at.game.act('Nobody, tell me about your house');
+        const refused = at.provider.lastNarrationPrompt();
+        expect(refused).not.toContain('THE PERSON JUST ADDRESSED');
+        expect(theirCard(refused, at.stranger.name)).not.toContain('What they remember');
     }, 300_000);
 
     /** It runs both ways: what the player did in front of somebody, they remember. */

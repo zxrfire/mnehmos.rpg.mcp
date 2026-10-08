@@ -16,6 +16,10 @@ shared ordinal band; a placement claim never changes somebody's rung.
 exists to stop: a place is identified by its display string, and every lookup over it fails
 OPEN, so a mismatch answers with the wrong province rather than throwing.
 
+`the-map.ts` holds the provincial-capital register and settlement-tier reader,
+moved from the knowledge reader so calendars, missions and knowledge ask the
+same question. Iron Crest is a capital with a market-town catalog kind.
+
 | file | what it is |
 |---|---|
 | [`arterials.ts`](./arterials.ts) | The four arterials: one per Surveyor, and the administrative spine under the Jade Gorge's grant book. |
@@ -63,3 +67,19 @@ The grant covers the working ground; it does not grant a strait or a city above 
 A place may declare a nested `interior` with an inscription, comprehension key and threshold, gate ordinal, and document stock. Seeding resolves its parent into the ordinary location tree and puts its documents in the object store. Truce Spring, Ochre Cliff and Painted Scroll Grotto use this shape; only the spring rock is fixed, while the surrounding shows remain moving and unheld.
 
 Place paths accept fractional walking days and a plain description; a stair need not take a whole day or forty characters to describe.
+
+Physical map coordinates are authored in each region/place row as li, independently
+of roads. Province centres follow their existing bearings. Interior sites inherit
+their exterior parent's point. These new metric data are not a reconstruction of
+road travel durations; short paths and all seeded ground steps are independently
+checked against physical separation. Existing road and sea durations remain intact.
+
+The foundation02 native graph audit found four directed midpoint subedges between
+Buddha Precipice and Burial Sands at 171.026 li against 160 li. The new authored
+Sands centre is (60,-90), with its local points translated by thirty li west;
+its southeast bearing remains. The same native half edges are now 156.605 li.
+No road duration changed. This arithmetic is a constraint on new physical data,
+not a road-derived distance rule; the full actual seeded graph still needs its
+sequential native rerun.
+
+

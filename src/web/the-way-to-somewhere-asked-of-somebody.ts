@@ -1,3 +1,12 @@
+import { quotePublicPassage } from '../engine/world/public-shipping.js';
+import { whatRunsFromHere, stonesFor } from './a-seat-on-a-ship-or-a-carriage.js';
+import { quotePublicCarriage } from '../engine/world/public-carriages.js';
+import { boardAt, quotePassageAtACounter } from '../engine/world/buying-passage-at-a-measured-span-counter.js';
+import { SPAN_ROUTES, SPAN_CASH_PER_WALKED_DAY, counterPlaceNameAt } from '../engine/world/where-the-measured-span-still-answers.js';
+import { humanDays } from '../engine/encounters/how-a-task-is-worded.js';
+import { routineTime } from '../engine/world/npc-routines.js';
+import { worldLocationFor } from './entities.js';
+import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
 /**
  * "Where would I find X?" put to a person is answered with the way there, from
  * what THEY know: `placed` gives the gate and the road, `named` gives the name
@@ -14,22 +23,20 @@ import type { GameService } from './turn-engine.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import { factsForToolResult, placeName } from './facts.js';
 import { loosePlaceKey } from './knowledge.js';
-import { placeRoadBetween, placeRoadDays, REGIONS, theRoadBetweenProvinces } from '../data/cultivation/regions.js';
+import { placeRoadBetween, localPrice, REGIONS, theRoadBetweenProvinces } from '../data/cultivation/regions.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import {
     A_HOUSE_HEARD_OF_AT_HOME,
     A_HOUSE_SEEN_GROWING_UP,
-    howMuchOfTheRoadALifeHasSeen,
-    theRoadAnUpbringingSaw,
     whatSomebodyKnowsOfTheLand,
     whoAmongThemKnowsTheWay,
     whoAmongThemKnowsTheWayToAPlace,
     PROVINCIAL_CAPITALS,
-    type WhatTheyKnowOfTheLand,
-    type WhoTheyAre
+    type WhatTheyKnowOfTheLand
 } from '../engine/world/what-somebody-knows-of-the-land.js';
 import { theHouseNamed } from './asking-to-be-let-in-at-a-gate.js';
+import { whoTheyAreOf } from '../engine/world/who-knows-the-land.js';
 export { aCrowdIsAsked, asksTheWay, THE_WAY_TO, theWayAskedFor } from './asking-the-way.js';
 
 /** The province a world row stands in, off its parents, as a catalog region id. */
@@ -51,7 +58,7 @@ function howFar(
     fromRegionId: string,
     toRegionId: string | null,
     isTheProvince = false,
-    /** The walk inside one province, off the catalog's own roads, where it has one. */
+    /** The actual walking distance when the canonical route reader can price it. */
     daysInside: number | null = null
 ): string {
     if (toRegionId === null) return 'somewhere they cannot put a province to';
@@ -61,7 +68,7 @@ function howFar(
     const through = (road?.through ?? []).map(id => REGIONS.find(region => region.id === id)?.name)
         .filter((name): name is string => !!name);
     return `${isTheProvince ? '' : `in ${to?.name ?? 'another province'}, `}${to?.bearing ? `to the ${to.bearing}, ` : ''}`
-        + (road ? `${road.days} days on the road${through.length > 0 ? ` through ${through.join(' and ')}` : ''}`
+        + (road ? `${daysInside ?? road.days} days on the road${through.length > 0 ? ` through ${through.join(' and ')}` : ''}`
             : 'with no road they can put days to');
 }
 
@@ -103,24 +110,6 @@ export function whatThisPersonKnowsOfTheLand(
     return { ...land, houses: [...land.houses, ...heardAtHome] };
 }
 
-/** Who somebody standing here is, as far as what they know of the land goes. */
-function whoTheyAreOf(world: Pick<WorldState, 'locations' | 'npcs'>, asked: RosterEntry): WhoTheyAre {
-    const them = world.npcs.find(row => row.id === asked.id) ?? null;
-    return {
-        id: asked.id,
-        from: world.locations.find(row => row.id === (them?.locationId ?? null))?.name ?? asked.location,
-        ordinal: asked.realmOrdinal,
-        house: asked.sectId ? { id: asked.sectId, rankIndex: them?.factionRankIndex ?? 0 } : null,
-        ...(them
-            ? {
-                travelled: Math.max(
-                    theRoadAnUpbringingSaw(them.identity.origin),
-                    howMuchOfTheRoadALifeHasSeen(them.identity.occupation)
-                )
-            }
-            : {})
-    };
-}
 
 /**
  * The way somewhere, put to everybody standing here: whoever of them knows it answers, and past
@@ -172,7 +161,8 @@ export function theWayTo(
     asked: RosterEntry,
     where: string,
     /** Asked of a crowd, and somebody in it has been: see `theWayAskedOfTheCrowd`. */
-    somebodyHereHasBeen = false
+    somebodyHereHasBeen = false,
+    registerTurn = true
 ): Execution {
     const world = game.atHand;
     const knownAlready = game.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
@@ -195,6 +185,22 @@ export function theWayTo(
                     : land?.places.find(row => row.name === place.name)?.stage ?? null)
                 : null;
 
+    // A local public venue is common knowledge even to somebody who never rode.
+    // Asking its way does not silently disclose every advertised destination.
+    const hereName = standingOf(cultivator).placeName ?? cultivator.location;
+    const bareHub = (word: string) => word.trim().toLowerCase().replace(/^the\s+/, '');
+    const localHub = !place && land?.publicHubs?.find(hub => hub.place === hereName
+        && bareHub(hub.name) === bareHub(where));
+    if (localHub) {
+        const facts = factsForToolResult('The local public counter.', [
+            `${who} gives the way to ${localHub.name}, here at ${hereName}.`
+        ]);
+        const answer = game.freeAction(run, 'interact', facts, registerTurn);
+        answer.calls = [{ name: 'engine.theWayTo', action: 'talk', ok: true,
+            summary: `Asked ${asked.name} for ${localHub.name}: public local venue, no travel-experience requirement.` }];
+        return answer;
+    }
+
     const calls: ToolCallRecord[] = [{
         name: 'engine.theWayTo',
         action: 'talk',
@@ -203,15 +209,52 @@ export function theWayTo(
         ok: true
     }];
     const lines: string[] = [];
-    if (stage === 'placed' && place) {
+    const localOffering = !betweenRoadEndpoints(game.db, cultivator) && !!place
+        && land?.publicHubs?.some(hub => hub.place === hereName && hub.destinations.includes(place.name)) === true;
+    if ((stage === 'placed' || localOffering) && place) {
         const standing = standingOf(cultivator);
         const here = standing.regionId;
-        const inside = placeRoadDays(standing.placeName ?? cultivator.location, place.name);
+        const inside = game.daysOnTheRoadTo(cultivator, place.name);
         const direct = placeRoadBetween(standing.placeName ?? cultivator.location, place.name);
         lines.push(house
             ? `${who} gives the way to ${called}: its gate is at ${place.name}, `
                 + `${howFar(here, provinceOf(game, place.id), false, inside)}.`
             : `${who} gives the way to ${name}: ${howFar(here, provinceOf(game, place.id), place.kind === 'region', inside)}.`);
+        if (inside !== null) lines.push(`On foot from here: ${humanDays(inside)}.`);
+        if (localOffering && world && hereName) {
+            const from = worldLocationFor(world, hereName);
+            const line = whatRunsFromHere(game, cultivator, world.currentDay)
+                .find(row => row.service === 'carriage' && row.to === place.name);
+            const roadQuote = from && line ? quotePublicCarriage(world, {
+                fromId: from.id, toId: place.id, day: routineTime(world),
+                conveyanceId: 'conv-carriage-mortal', passengerIds: [cultivator.id],
+                fareStones: stonesFor(line.cashPerSeat), hired: false,
+                playedPassenger: { id: cultivator.id, locationId: from.id, alive: cultivator.alive }
+            }) : null;
+            if (line && roadQuote) lines.push(`The carriage station offers ${place.name}: ${humanDays(line.days)}, ${roadQuote.fareStones} spirit stones a seat.`);
+            else if (line) lines.push(`The advertised carriage to ${place.name} cannot take a booking now.`);
+            const ship = whatRunsFromHere(game, cultivator, world.currentDay)
+                .find(row => row.service === 'ship' && row.to === place.name);
+            const shipQuote = from && ship ? quotePublicPassage(world, from.id, place.id,
+                world.currentDay, 1, [], `${run.seed}:${Math.floor(run.elapsedDays)}`) : null;
+            if (ship && shipQuote) lines.push(`The landing offers ${place.name}: about ${humanDays(ship.days)} at sea, ${shipQuote.fareStones} spirit stones a seat. Weather determines the actual crossing.`);
+            else if (ship) lines.push(ship.runsFromDay !== null
+                ? `The advertised ship to ${place.name} is next worked on day ${ship.runsFromDay}.`
+                : `The advertised ship to ${place.name} cannot take a booking here now.`);
+            const counter = counterPlaceNameAt(hereName);
+            const rate = localPrice(standing.regionId, SPAN_CASH_PER_WALKED_DAY);
+            const today = game.theDayAPartyIsOn() ?? Math.floor(run.elapsedDays);
+            const listed = counter ? boardAt(counter, SPAN_ROUTES, rate, today).lines.find(row => row.toPlace === place.name) : null;
+            const route = listed ? SPAN_ROUTES.find(row => row.id === listed.routeId) : null;
+            if (counter && route) {
+                const quote = quotePassageAtACounter(route, { heads: 1,
+                    worstPassengerOrdinal: cultivator.realmOrdinal, cashPerWalkedDayReplaced: rate, onDay: today });
+                lines.push(`The folding counter at ${counter} offers ${place.name}: ${quote.fareCash} cash for one passenger; the crossing itself is an hour.`);
+                lines.push(quote.openToday ? 'The published span runs today.' : `The next published departure is day ${quote.nextDepartureDay}.`);
+                lines.push(`Settling afterwards at your rung: ${humanDays(quote.settlingDays)}.`);
+                lines.push(quote.notCovered);
+            }
+        }
         if (direct) lines.push(`${who} describes the way: ${direct.description}`);
         if (house && game.noteEncounter(cultivator, run,
             { kind: 'sect', id: house.factionId, name: house.factionName }, 'told',
@@ -231,7 +274,7 @@ export function theWayTo(
     }
 
     const facts = factsForToolResult(`${knownAlready ? asked.name : 'Somebody'}, asked the way to ${name}.`, lines);
-    const execution = game.freeAction(run, 'interact', facts);
+    const execution = game.freeAction(run, 'interact', facts, registerTurn);
     execution.calls = calls;
     return execution;
 }

@@ -1,3 +1,4 @@
+import { attemptWasAccepted } from '../engine/social-leverage/an-attempt-to-move-somebody.js';
 /**
  * Engine outcomes, rendered as English.
  */
@@ -959,11 +960,11 @@ function theDeathSentence(name: string, cause: DeathCause | null | undefined, or
  * date: nobody sitting a year in a cave thinks of the hundred and thirty-third
  * day, they think of four months in. So it is a distance now.
  *
- * Day nought is the exception and gets its own words, because "0 days in" is
- * the form field all over again.
+ * Actual zero is the exception and gets its own words. A positive fraction
+ * is elapsed time, never the outset; humanDays states its hours and minutes.
  */
 function howFarIn(dayOffset: number): string {
-    const day = Math.max(0, Math.round(dayOffset));
+    const day = Math.max(0, dayOffset);
     if (day === 0) return 'At the outset';
     if (day === 1) return 'The next day';
     return `${humanDays(day)} in`;
@@ -1450,7 +1451,18 @@ export function factsForHowTheyCarryYou(
  * Every field is one the description resolver reads back, and nothing here is
  * anything a person in the square could not see for themselves.
  */
+/** A successful reply's transient observation, captured before its clock cost. */
+export interface SomebodyWhoReplied extends SomebodyInTheSquare {
+    repliedAt: { place: string; area: string | null; day: number; hour: number };
+}
+
 export interface SomebodyInTheSquare {
+    /**
+     * Engine-only identity of this card's person. It is never rendered, but keeps a
+     * reply that was resolved to somebody from being re-matched by their name after
+     * the clock advances.
+     */
+    id?: string;
     name: string;
     ordinal: number;
     sex: string | null;
@@ -2269,8 +2281,8 @@ export function factsForEat(
 /**
  * An action that did not happen.
  */
-export function factsForRefusal(headline: string, scene: string, mechanical?: string): EngineFacts {
-    return observable(headline, [scene], scene, mechanical ? [mechanical] : []);
+export function factsForRefusal(headline: string, scene: string, mechanical?: string, observed: readonly string[] = []): EngineFacts {
+    return observable(headline, [scene, ...observed], scene, mechanical ? [mechanical] : []);
 }
 
 /**
@@ -2786,7 +2798,8 @@ export function factsForTreatment(
         stillUntreated: number;
         /** HP the stay put back. Zero is legal and says so. */
         mended?: number;
-    }
+    },
+    before: Cultivator
 ): EngineFacts {
     const lines = [
         // "0 courses of Splint" is not a sentence anybody would say. A stay
@@ -2794,8 +2807,8 @@ export function factsForTreatment(
         // battered rather than torn is actually buying.
         course.treated.length === 0
             ? `You paid ${course.stonesSpent} spirit `
-              + `stone${course.stonesSpent === 1 ? '' : 's'} to be kept, fed and looked at for a `
-              + `month. ${after.spiritStones} left in the purse.`
+              + `stone${course.stonesSpent === 1 ? '' : 's'} for a `
+              + `month of care. Food is provisioned separately from the remaining purse. ${after.spiritStones} left in the purse.`
             : `You paid for ${course.treated.length === 1 ? 'a course' : `${course.treated.length} courses`} `
               + `of ${course.what}: ${course.cashEach} cash each, which is ${course.stonesEach} spirit `
               + `stone${course.stonesEach === 1 ? '' : 's'}, ${course.stonesSpent} in all. `
@@ -2807,15 +2820,17 @@ export function factsForTreatment(
     // The body, which is a different thing from a meridian. A wound does not
     // mend on its own and a body does, under care - see the long note in
     // `GameService.treat` for why that is a decision rather than a constant.
-    if (course.mended !== undefined && course.mended > 0) {
+    if (course.mended !== undefined) {
         lines.push(
-            `${course.mended} of what the body was missing came back. `
-            + `${after.hp} of ${after.maxHp} now, and a month of being kept is the whole of why.`
+            `${course.mended} HP was restored by the care itself. `
+            + `${after.hp} of ${after.maxHp} HP now; ${after.maxHp - after.hp} HP remains missing.`
         );
     }
 
     if (course.treated.length === 0) {
-        lines.push('Nothing closed. The month was spent and the meridians are where they were.');
+        lines.push(untreatedInjuryCount(before.injuries) === 0 && course.stillUntreated === 0
+            ? 'No meridian wounds needed treatment.'
+            : 'No meridian wound was closed by this course.');
     } else {
         // THE SAME WOUND, DESCRIBED ONCE.
         const counted = new Map<string, number>();
@@ -2847,7 +2862,7 @@ export function factsForTreatment(
 
     lines.push(
         course.stillUntreated === 0
-            ? 'Nothing is still open. Whatever else is wrong, it is not a wound any more.'
+            ? 'No untreated meridian wounds remain.'
             : `${course.stillUntreated} still untreated, and nothing heals those on its own either.`
     );
 
@@ -3275,7 +3290,7 @@ export function factsForAttempt(
     priorTries = 0
 ): EngineFacts {
     const taking = wrong !== null;
-    const landed = result.outcome === 'taken' || result.outcome === 'turned';
+    const landed = attemptWasAccepted(result.outcome);
 
     // AND IT IS THE PLAYER'S OWN TURN, IN THE PLAYER'S OWN PERSON
     const opening = taking
@@ -3378,6 +3393,7 @@ function whatWasAsked(kind: string, named: string): string {
         case 'discipleship': return 'to be taken on';
         case 'company':
             return named.length >= 2 ? `to come as far as ${named}` : 'to come along';
+        case 'passage': return `to accept passage to ${named}`;
         case 'introduction':
             return named.length >= 2 ? `to be introduced to ${named}` : 'for an introduction';
         // Reads as a clause after the actor's name rather than after "asks",
@@ -3418,7 +3434,7 @@ export function factsForRequest(
     // The odds the engine actually used, which is the one thing the player was
     // never told and the one thing that would have stopped eighteen identical
     // replies reading as a broken verb. See `howItHasBeenGoing`.
-    const landed = result.outcome === 'taken' || result.outcome === 'turned';
+    const landed = attemptWasAccepted(result.outcome);
     const courtesy = kind === 'nothing';
     const lines: string[] = [
         courtesy
@@ -3437,7 +3453,7 @@ export function factsForRequest(
     // A COURTESY HAS ITS OWN OUTCOMES.
     if (courtesy) {
         lines.push(
-            result.outcome === 'taken' || result.outcome === 'turned'
+            attemptWasAccepted(result.outcome)
                 ? `${subject} takes it, and the afternoon goes somewhere. You are not a stranger `
                   + 'to them any more.'
                 : `${subject} is civil about it and it goes nowhere. Nothing was asked, so there `

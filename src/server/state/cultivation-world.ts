@@ -1,7 +1,13 @@
+import type { AnArtUseInterval } from '../../engine/cultivation/an-art-that-is-ready-to-use.js';
+import { initializeNpcQi } from '../../engine/world/npc-state.js';
+import { initializeMetricGround } from '../../engine/world/the-metric-ground-under-a-journey.js';
+import { afterPassengersRetrievalBoundaryForDatabase } from './a-store-retrieval-at-the-actual-clock.js';
 /**
  * The world the runs happen inside. One implementation, for every caller.
  */
 
+import { routineTime } from '../../engine/world/npc-routines.js';
+import { projectActualPassengers } from '../../web/passengers-at-the-actual-clock.js';
 import { randomUUID } from 'crypto';
 import type Database from 'better-sqlite3';
 import { getDb } from '../../storage/index.js';
@@ -34,6 +40,8 @@ import type { Cultivator, Run } from '../../schema/cultivation.js';
 import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
 import { worldLocationFor } from '../../web/entities.js';
 import { whereInThisPlaceTheyStand } from '../../engine/world/where-in-a-place-somebody-is-standing.js';
+import { addPlacesOnTheWay } from '../../engine/world/places-on-the-way.js';
+import { addMissingInfirmary } from '../../engine/world/architecture.js';
 
 /**
  * Living NPCs a new world keeps records for.
@@ -212,6 +220,24 @@ async function open(worldId: string): Promise<WorldHandle | null> {
     const store = repo();
     const state = store.loadWorld(worldId);
     if (state) {
+        const before = state.locations.length;
+        addPlacesOnTheWay(state.locations);
+        for (const house of state.factions) {
+            if (house.dissolvedOnDay !== null) continue;
+            const rooms = state.locations.filter(place => place.data.factionId === house.id);
+            const outer = rooms.find(place => place.data.purpose === 'precinct'
+                && Number(place.data.precinctIndex) === 0);
+            if (!outer || outer.controllingFactionId !== house.id) continue;
+            addMissingInfirmary(state.locations, {
+                factionId: house.id, factionName: house.name,
+                powerOrdinal: Number(house.resources.power_ordinal ?? outer.thresholds.mastery),
+                inherited: rooms.some(place => Number(place.data.builtFor ?? 0) > 0)
+            }, { seed: state.seed });
+        }
+        const geometryCatalog = await cultivationCatalog();
+        const geometryAdded = initializeMetricGround(state.locations, state.seed, geometryCatalog.regions, geometryCatalog.factions);
+        const qiAdded = initializeNpcQi(state.npcs);
+        if (state.locations.length !== before || geometryAdded > 0 || qiAdded > 0) store.saveWorld(state);
         return hold({ id: state.id, seed: state.seed, state });
     }
 
@@ -358,7 +384,13 @@ async function worldHandleFor(run: Run): Promise<WorldHandle> {
 export async function worldForRun(run: Run): Promise<WorldState> {
     const handle = await worldHandleFor(run);
     catchUp(handle, run, 0);
-    handle.state.currentHour = (run.elapsedDays - Math.floor(run.elapsedDays)) * 24;
+    const record = handle.state.runs.find(one => one.id === run.id);
+    const realFraction = handle.state.currentDay - Math.floor(handle.state.currentDay);
+    // A precise passage or independent world advance may be ahead of this old
+    // run-origin expression. Do not replace actual midnight with a run fraction.
+    handle.state.currentHour = realFraction > 0 || record
+        && handle.state.currentDay >= record.startedOnDay + run.elapsedDays
+        ? realFraction * 24 : (run.elapsedDays - Math.floor(run.elapsedDays)) * 24;
     return handle.state;
 }
 
@@ -453,6 +485,43 @@ export interface WorldAdvance {
     worldId: string;
 }
 
+export interface ActualWorldSpanOptions {
+    /** Actual previous/cumulative elapsed receipt of one held native body. */
+    artUseInterval?: AnArtUseInterval;
+    limit?: number;
+    preciseDays?: boolean;
+    passageDates?: readonly number[];
+    /** Passenger projection precedes a caller's fresh recipient authority read. */
+    atWorldBoundary?: (world: WorldState, onDay: number) => void;
+}
+
+/**
+ * Promote already displayed legacy fractional time through actual world effects
+ * BEFORE accepting a physical leg or simulating its body. This never rewrites a
+ * run's historic start or charges the player an invented additional action.
+ * Migration semantics still require root review and persistence controls.
+ */
+export async function prepareWorldClockForPreciseSpan(run: Run, cultivator: Cultivator,
+    boundary?: (world: WorldState, onDay: number) => void): Promise<WorldState> {
+    const handle = await worldHandleFor(run);
+    if (!handle.state.runs.some(one => one.id === run.id)) await beginRunInWorld(run, cultivator);
+    catchUp(handle, run, 0);
+    const now = handle.state.currentDay % 1 !== 0 ? handle.state.currentDay
+        : Math.max(handle.state.currentDay, routineTime(handle.state));
+    if (now > handle.state.currentDay) {
+        advanceWorldForPlay(handle.state, { days: now - handle.state.currentDay,
+            preciseDays: true, stopOnInterrupt: false,
+            atWorldBoundary: (world, onDay) => {
+                projectActualPassengers(getDb(), world, cultivator.id, onDay);
+                afterPassengersRetrievalBoundaryForDatabase(getDb(), onDay === now ? cultivator.id : null)(world, onDay);
+                boundary?.(world, onDay);
+            } });
+        repo().appendWorld(handle.state);
+    }
+    handle.state.currentHour = (handle.state.currentDay - Math.floor(handle.state.currentDay)) * 24;
+    return handle.state;
+}
+
 /**
  * Advance the world alongside the cultivator, and report what reached them.
  */
@@ -460,10 +529,11 @@ export async function advanceWorldForCultivator(
     run: Run,
     cultivator: Cultivator,
     days: number,
-    options: { limit?: number } = {}
+    options: ActualWorldSpanOptions = {}
 ): Promise<WorldAdvance | null> {
     if (days <= 0) return null;
-    const span = Math.floor(run.elapsedDays) - Math.floor(run.elapsedDays - days);
+    const span = options.preciseDays ? days
+        : Math.floor(run.elapsedDays) - Math.floor(run.elapsedDays - days);
 
     const handle = await worldHandleFor(run);
     // The run may not have been recorded yet - a cultivator created before this
@@ -475,7 +545,8 @@ export async function advanceWorldForCultivator(
     // Fold in anything the run clock already knows about but the world does
     // not, so the span below is genuinely this call's span.
     catchUp(handle, run, days);
-    handle.state.currentHour = (run.elapsedDays - Math.floor(run.elapsedDays)) * 24;
+    if (!options.preciseDays && handle.state.currentDay === Math.floor(handle.state.currentDay))
+        handle.state.currentHour = (run.elapsedDays - Math.floor(run.elapsedDays)) * 24;
     if (span <= 0) return null;
 
     const fromDay = handle.state.currentDay;
@@ -483,6 +554,14 @@ export async function advanceWorldForCultivator(
     const person = handle.state.npcs.find(n => n.id === cultivator.id);
     const result = advanceWorldForPlay(handle.state, {
         days: span,
+        preciseDays: options.preciseDays,
+        artUseInterval: options.artUseInterval,
+        passageDates: options.passageDates,
+        atWorldBoundary: options.preciseDays ? (world, onDay) => {
+            projectActualPassengers(getDb(), world, cultivator.id, onDay);
+            afterPassengersRetrievalBoundaryForDatabase(getDb(), cultivator.id)(world, onDay);
+            options.atWorldBoundary?.(world, onDay);
+        } : undefined,
         access: accessForCultivator(cultivator),
         observer: observerFor(cultivator, handle),
         stopOnInterrupt: false,

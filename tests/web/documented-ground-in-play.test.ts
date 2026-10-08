@@ -26,6 +26,7 @@ import { HERBS } from '../../src/data/cultivation/herbs.js';
 import { FLAG_RATIONS_HELD } from '../../src/web/flag-keys.js';
 import { theyOweTheHouseAReport, doesTheHouseExpect } from '../../src/engine/world/a-house-expects-somebody-it-took-on.js';
 import { countedHoldingKey } from '../../src/data/cultivation/what-a-house-moves-its-people-on.js';
+import { standWhereThePeopleAre } from './standing-where-the-people-are.js';
 
 async function arrange(seed: string, ordinal = 25) {
     const harness = await makeGameInWorld({ seed, worldSeed: 'documented-ground-world' });
@@ -55,6 +56,7 @@ describe('documented ground reached in play', () => {
         repos.cultivators.update(cultivator.id, { location: gate.name });
         const arrived = await game.act('I travel to the town');
         expect(game.state().cultivator.location, arrived.narration).toBe(town.name);
+        await standWhereThePeopleAre({ game, repos }, cultivator.id);
         const company = await game.act('who is here');
         expect(company.toolCalls.some(call => call.ok)).toBe(true);
         expect(game.present(game.state().cultivator).length, JSON.stringify({

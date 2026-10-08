@@ -36,6 +36,24 @@
  * the pooling rule: a threshold on a varied outcome asserted at one seed
  * reports the world moving as the world breaking.
  *
+ * ── RE-MEASURED AFTER `268d494c` GATED FOSTERING ON ROLL VACANCIES ────────
+ *
+ * Fostering now passes `rollVacancies` to `placeAChildTheirHouseWillNotKeep`,
+ * which skips a candidate whose house has no open place
+ * (`a-house-takes-in-one-of-its-own.ts`'s `vacanciesOnTheRolls`). Houses with
+ * a seeded roll already at or above what their catalog entry is worth modelling
+ * answer every candidate with "no room", which the direct-admission half of
+ * demography is gated the same way for. Re-measured on the same four seeds at
+ * 400 years, with the stranding fixes in `when-somebody-does-not-come-back.ts`
+ * and `the-world-changing-on-its-own.ts` landed (which change population
+ * survival, not fostering, but shift the pooled draw downstream of it):
+ *
+ *     7 fosterings, 11 skipped-bar facts, 1 shamed, both reasons seen,
+ *     6 receiving houses, 2 sending houses
+ *
+ * The bars below are moved down to stay under that, per the same pooling rule -
+ * low enough that a reader should not read them as the old figures.
+ *
  * ── AND ONE THING THAT DOES NOT HAPPEN, WRITTEN DOWN RATHER THAN HIDDEN ──
  *
  * The Empyrean Court's own terms - the only terms in the catalog - were reached
@@ -338,23 +356,26 @@ describe('somebody in a running world does this', () => {
             }
         }
 
-        // Pooled. Measured at 229 over six seeds at 500 years; this is four
-        // seeds at 400 and the bar is set to catch the mechanic going dead
-        // rather than to pin a figure.
-        expect(fostered).toBeGreaterThanOrEqual(20);
+        // Pooled. Measured at 229 over six seeds at 500 years, when written;
+        // 7 over four seeds at 400 years now that `268d494c` gates fostering
+        // on roll vacancies (see the file header). The bar is still set to
+        // catch the mechanic going dead rather than to pin a figure.
+        expect(fostered).toBeGreaterThanOrEqual(5);
         // Every single placement went past an admission ordinal the child did
         // not meet. That is what the favour buys and there is no other route in.
-        expect(skippedABar).toBeGreaterThanOrEqual(20);
+        expect(skippedABar).toBeGreaterThanOrEqual(5);
         // Both drivers fire. If either of these ever empties, half the mechanic
         // has quietly stopped.
         expect(reasons.has('the birth')).toBe(true);
         expect(reasons.has('the bar')).toBe(true);
         expect(shamed).toBeGreaterThan(0);
         // The thing the four hardcoded sects could never have said: children go
-        // to many different houses, out of many different houses, because the
-        // destination comes off the parent rather than off a list.
-        expect(receiving.size).toBeGreaterThanOrEqual(8);
-        expect(sending.size).toBeGreaterThanOrEqual(8);
+        // to more than one house, out of more than one house, because the
+        // destination comes off the parent rather than off a list. Lowered with
+        // the rest of this bar - 6 receiving and 2 sending measured now - but
+        // kept above 1 so a draw collapsed onto a single house still reads red.
+        expect(receiving.size).toBeGreaterThanOrEqual(3);
+        expect(sending.size).toBeGreaterThanOrEqual(2);
     }, 240_000);
 
     it('leaves the child on the bloodline and off the parent\'s roll of children', async () => {

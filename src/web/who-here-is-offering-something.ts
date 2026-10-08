@@ -33,6 +33,7 @@
  * carrying" does not put X in `action.target`.
  */
 
+import { exchangeOffers } from '../engine/world/wares-at-a-capital-exchange.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
 import { getSect } from '../data/cultivation/sects.js';
@@ -245,6 +246,11 @@ export function readWhatIsOnOfferHere(
         // doing. `whetherTheyWouldLookUp` is the world's existing answer to
         // which of the two somebody is at, so a man losing a fight with
         // something out of the rocks is not also selling firewood.
+        const consigned = exchangeOffers(world, npc);
+        if (consigned.length) {
+            read.push({ who, offers: consigned, withheld: [] });
+            continue;
+        }
         read.push(whatTheyDealIn(who) === 'the_mortal_board'
             ? whatThisPersonWouldSellOverACounter(
                 who,
@@ -362,7 +368,7 @@ export function learnTheSeller(
     // WHAT ACTUALLY CHANGES HANDS. A book is written out and a sack of salt is
     // handed over, and "a copy of Salt" is the engine saying the wrong word
     // about half the square.
-    const what = offer.fromTheMortalBoard ? offer.name : `a copy of ${offer.name}`;
+    const what = offer.fromTheMortalBoard || offer.objectId ? offer.name : `a copy of ${offer.name}`;
     return knowledge.learnIfNew({
         holderId: cultivator.id,
         kind: 'cultivator',

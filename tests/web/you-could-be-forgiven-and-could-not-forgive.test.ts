@@ -111,12 +111,13 @@ describe('what the verb says when there is nothing to give up', () => {
         await game.newRun('Shen Yuan');
         await game.act('ADMIN spawn_encounter ordinal=2 name=Wei Ciyi');
 
+        const before = (await game.state()).run!.elapsedDays;
         const said = await game.act('i forgive Wei Ciyi the debt');
         // Asserted on the PROSE, which is what a player reads: a refusal's
         // headline goes to the operator channel and never into the account.
         expect(said.narration).toMatch(/square with you|not yours to give up|some things are answered/i);
         // And nothing was spent finding that out.
-        expect((await game.state()).run!.elapsedDays).toBe(0);
+        expect((await game.state()).run!.elapsedDays).toBe(before);
     }, 120_000);
 
     /**
@@ -128,9 +129,10 @@ describe('what the verb says when there is nothing to give up', () => {
         const { game } = makeGame({ adminMode: true, seed: 'forgive-alone' });
         await game.newRun('Shen Yuan');
 
+        const before = (await game.state()).run!.elapsedDays;
         const said = await game.act('i forgive the debt');
         expect(said.narration).toMatch(/forgiving is done to somebody|names nobody who is here/i);
-        expect((await game.state()).run!.elapsedDays).toBe(0);
+        expect((await game.state()).run!.elapsedDays).toBe(before);
     }, 120_000);
 });
 
@@ -165,6 +167,7 @@ describe('letting somebody off closes the row', () => {
             .all(cultivator.id, them.id) as { status: string }[];
         expect(open().map(r => r.status)).toEqual(['open']);
 
+        const before = (await game.state()).run!.elapsedDays;
         const said = await game.act('i forgive Wei Ciyi the favour');
 
         // The ROW, not the prose: what was open is closed.
@@ -172,7 +175,8 @@ describe('letting somebody off closes the row', () => {
         // And the account says what was given up rather than what was gained.
         expect(said.narration).toMatch(/Wei Ciyi/);
         expect(said.narration.toLowerCase()).toMatch(/nothing was taken|asked for nothing|forgiven/);
-        // Free, like every other reading of this verb.
-        expect((await game.state()).run!.elapsedDays).toBe(0);
+        // Closing a real account is a successful lesser action, so it takes the
+        // same eighth of a day as another reply without changing what was settled.
+        expect((await game.state()).run!.elapsedDays).toBe(before + 0.125);
     }, 120_000);
 });

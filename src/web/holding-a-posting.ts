@@ -44,6 +44,7 @@
  * extend.
  */
 
+import { applyPostings } from '../engine/world/the-world-changing-on-its-own.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 import type { Duty } from '../engine/encounters/types.js';
 import { postureFor } from '../engine/encounters/duties.js';
@@ -366,6 +367,25 @@ function heldToThePost(
             theHouseCanFillItAgain(game, world, cultivator, clocks, out);
             return;
         }
+        if (inside === null) {
+            const since = posting.incurredOnDay + clocks.worldDay - today;
+            let relief = world.history.facts.find(f => f.data.postRelief === true && f.data.outgoingId === cultivator.id && f.day >= since);
+            if (!relief) {
+                const at = world.npcs.findIndex(n => n.id === cultivator.id);
+                const npc = world.npcs[at];
+                if (npc?.activity?.kind === 'stationed') {
+                    world.npcs[at] = { ...npc, activity: { ...npc.activity, untilDay: clocks.worldDay } };
+                    applyPostings(world, Math.floor(clocks.worldDay / DAYS_PER_YEAR), clocks.worldDay);
+                    relief = world.history.facts.find(f => f.data.postRelief === true && f.data.outgoingId === cultivator.id && f.day >= since);
+                    game.theWorldMoved();
+                }
+            }
+            if (!relief || clocks.worldDay <= relief.day) {
+                out.lines.push(relief ? `Your replacement is at ${townName}. The handover ends tomorrow.`
+                    : `Your tour at ${townName} is served. The house has not yet sent your replacement.`);
+                return;
+            }
+        }
         const credit = Math.round(whatServiceIsWorth(cultivator.realmOrdinal, due - posting.incurredOnDay));
         game.repos.db.transaction(() => {
             writeOneObligation(db, settleObligation(posting, {
@@ -385,6 +405,19 @@ function heldToThePost(
     // ── GETTING THERE ────────────────────────────────────────────────────
     if (arrived === null) {
         if (!atThePost) return;
+        if (here !== townId && inside === null) return;
+        if (posting.subjectId && theOneBeingPlayedStandsAtThisPost(world, {
+            playerId: cultivator.id, townId, houseId: posting.subjectId,
+            sinceDay: clocks.worldDay, untilDay: clocks.worldDay + due - today
+        })) {
+            const relieved = world.npcs.find(n => n.id !== cultivator.id && n.factionId === posting.subjectId
+                && n.activity?.kind === 'stationed' && n.locationId === townId);
+            if (relieved && theyAreRelieved(world, { relievedId: relieved.id, townId,
+                today: clocks.worldDay, replacementId: cultivator.id })) {
+                out.lines.push(`${relieved.name} is handing the post over to you; they leave tomorrow.`);
+            }
+            game.theWorldMoved();
+        }
         writeOneObligation(db, { ...posting, tags: [...posting.tags, `${ARRIVED}${today}`] });
         out.lines.push(`You are at your posting at ${townName}, for ${houseName}, until day ${due}.`);
         out.structure.push(`posting ${posting.id}: arrived on day ${today}.`);
@@ -441,8 +474,8 @@ function heldToThePost(
 
 export const postingVerbs = {
     /**
-     * Saying yes to a posting: the word is given, the one relieved goes home,
-     * and the player is told where they are expected and until when. Nothing
+     * Saying yes to a posting gives the word and its destination and term.
+     * Relief waits for arrival and a shared handover day. Nothing
      * moves the player; getting there is theirs to do.
      */
     async takeUpAPosting(
@@ -478,29 +511,8 @@ export const postingVerbs = {
         ];
         const structure = [`encounters.acceptDuty: ${sworn.id} for ${pending.entryId}, due ${today + duty.days}.`];
         if (world && duty.factionId) {
-            const relieved = world.npcs.find(n => n.activity?.kind === 'stationed' && n.locationId === townId
-                && n.factionId === duty.factionId && n.id !== cultivator.id);
-            if (relieved && theyAreRelieved(world, { relievedId: relieved.id, townId, today: worldToday })) {
-                lines.push(`${relieved.name}, who held it, is relieved and goes home.`);
-                structure.push(`theyAreRelieved: ${relieved.id} tour ends world day ${worldToday}.`);
-            }
-            // ── AND THE WORLD IS TOLD THE POST IS HELD ───────────────────
-            //
-            // `applyPostings` fills the posts nobody is standing at, off the
-            // whole roll and the player's row with it. Without this the house
-            // posts one of its own people to the town the player just took and
-            // pays for two: the stamp is the one thing the world has to know
-            // about where the player is, and it is cleared the moment the tour
-            // ends or they walk off it.
-            if (theOneBeingPlayedStandsAtThisPost(world, {
-                playerId: cultivator.id, townId, houseId: duty.factionId,
-                sinceDay: worldToday, untilDay: worldToday + duty.days
-            })) {
-                structure.push(
-                    `theOneBeingPlayedStandsAtThisPost: ${cultivator.id} stationed at ${townId} `
-                    + `from world day ${worldToday} to ${worldToday + duty.days}.`
-                );
-            }
+            // The sheet must arrive before it relieves a real person.
+            structure.push(`Posting accepted for ${townId}; handover waits for arrival.`);
             const carrying = theCommunicationTalismansOnYou(this.db, cultivator.id)
                 .find(s => s.houseId === duty.factionId)?.count ?? 0;
             const pairs = pairsCutForThem(world, {

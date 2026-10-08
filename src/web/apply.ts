@@ -1,3 +1,4 @@
+import { effectiveArtCooldownDays } from '../engine/cultivation/an-art-that-is-ready-to-use.js';
 /**
  * Writing a time-skip to the database.
  *
@@ -69,6 +70,12 @@ export interface ApplySkipInput {
     skip: TimeSkipResult;
     /** Location to record afterwards, when the action moved the cultivator. */
     location?: string;
+    /** Held span portions resolve on the original action's turn. */
+    resolvesOnTurn?: number;
+    /** Only the final portion advances the action turn; ordinary calls do. */
+    finishTurn?: boolean;
+    /** Derived cumulative whole cooldown days consumed by this portion. */
+    cooldownDays?: number;
 }
 
 export interface ApplySkipResult {
@@ -107,7 +114,7 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
     // wound.
     const injuries = skip.injuriesSustained;
     const ranksGained = Math.max(0, end.realmOrdinal - before.realmOrdinal);
-    const nextTurn = run.turn + 1;
+    const nextTurn = input.resolvesOnTurn ?? run.turn + 1;
     const tollLines: string[] = [];
     const tollApplications: TollApplication[] = [];
     let understanding = { insights: 0, achievements: 0 };
@@ -230,13 +237,13 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
             repos.cultivators.update(before.id, { location: input.location });
         }
 
-        repos.techniques.tickCooldowns(before.id, Math.floor(skip.simulatedDays));
+        repos.techniques.tickCooldowns(before.id, input.cooldownDays ?? effectiveArtCooldownDays(skip.simulatedDays));
 
         // The clock is advanced BEFORE the run is closed: advanceDays and
         // incrementTurn only touch active runs, and a death stops the clock at
         // the day it happened rather than the day that was asked for.
         repos.runs.advanceDays(run.id, skip.simulatedDays);
-        repos.runs.incrementTurn(run.id, 1);
+        if (input.finishTurn !== false) repos.runs.incrementTurn(run.id, 1);
 
         // The peak survives the decline, and the death. Stamped at the moment
         // the rank is reached, which is here.

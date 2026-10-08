@@ -12,7 +12,8 @@
  * there. Unresolved destination 'He Xuxue'"*.
  *
  * Going back to somebody you are already standing with is crossing a room. It
- * is not a road and it costs no day. It is also the sentence people open a
+ * is not a road: it costs the ordinary quarter-day local walk, not a day on
+ * the road. It is also the sentence people open a
  * parting or an apology with, which is why it is worth a beat rather than a
  * refusal.
  *
@@ -50,8 +51,11 @@ describe('going back to somebody standing here', () => {
         expect(said(done), said(done)).not.toMatch(/No road goes there/i);
         expect(said(done)).not.toMatch(/Unresolved destination/i);
         expect(said(done)).toMatch(/He Xuxue/);
-        // Crossing a room is not a journey.
-        expect(game.state().run.elapsedDays).toBe(before);
+        // Crossing a room is the one local walk: it must not receive a second
+        // lesser `move` charge after `engine.approachTime` has already paid it.
+        expect(done.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(true);
+        expect(done.toolCalls.some(call => call.name === 'engine.lesserActionTime')).toBe(false);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.25);
     }, 120_000);
 
     /**
@@ -67,11 +71,12 @@ describe('going back to somebody standing here', () => {
         await game.newRun('Shen Wuyou');
         await game.act('I look around');
 
+        const before = game.state().run.elapsedDays;
         const done = await game.act('I go back to Ruan Qifeng of the Ninth Abyss');
         // The refusal has several wordings depending on whether the square is
         // empty and whether the name is one this cultivator has heard of, so
         // what is asserted is that nobody was crossed to and no day was spent.
         expect(said(done)).not.toMatch(/cross to/i);
-        expect(game.state().run.elapsedDays).toBe(0);
+        expect(game.state().run.elapsedDays - before).toBe(0);
     }, 120_000);
 });

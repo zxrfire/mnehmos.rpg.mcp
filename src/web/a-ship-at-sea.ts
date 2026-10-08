@@ -1,3 +1,5 @@
+import type { WorldState } from '../engine/world/world-state.js';
+import { shipPassengerAt } from '../engine/world/passenger-on-a-vessel.js';
 /**
  * A ship at sea between two ports: where it is, how far on, and sailing the rest of the way.
  *
@@ -19,8 +21,8 @@
  * only when a stop costs it the crew before the commit point (`canTurnBack`).
  */
 
-import { REGIONS, regionIdOfPlace } from '../data/cultivation/regions.js';
-import { canTurnBack, commitDayOf, type SeaLane } from '../engine/world/what-a-sea-crossing-costs.js';
+import { canTurnBack, type SeaLane } from '../engine/world/what-a-sea-crossing-costs.js';
+import { waterUnderSeaPassage } from '../engine/world/the-water-under-a-passage.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { readJsonFlag, writeFlag, clearFlag } from '../server/consolidated/cultivation-support.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
@@ -32,6 +34,8 @@ import type { Execution } from './turn-wire-shapes.js';
 import { WAITING_FOCUS } from './turn-constants.js';
 
 export interface AVoyage {
+    /** Existing accepted course authority; other fields remain legacy/debug projections. */
+    receiptId?: string;
     /** The port it sailed from. */
     from: string;
     /** Where it is bound, which is the port it sailed from once it has turned back. */
@@ -58,19 +62,34 @@ const A_VOYAGE_UNDER_WAY = 'a_voyage_under_way';
  * otherwise the open-water province at one of its ends.
  */
 export function theWaterUnder(voyage: Pick<AVoyage, 'from' | 'bound' | 'lane' | 'sailed'>): string | null {
-    if (voyage.lane.water && voyage.sailed >= commitDayOf(voyage.lane)) return voyage.lane.water;
-    const ends = [regionIdOfPlace(voyage.from), regionIdOfPlace(voyage.bound)];
-    const water = REGIONS.find(region => region.openWater === true && ends.includes(region.id))
-        ?? REGIONS.find(region => region.openWater === true);
-    return water?.name ?? null;
+    return waterUnderSeaPassage(voyage);
 }
 
 /** The voyage they are on, or null where they are not aboard a ship at sea. */
-export function theVoyageUnderWay(db: Db, cultivator: Cultivator): AVoyage | null {
-    const voyage = readJsonFlag<AVoyage>(db, cultivator.id, A_VOYAGE_UNDER_WAY);
+export function theVoyageUnderWay(db: Db, cultivator: Cultivator, world?: WorldState | null): AVoyage | null {
+    let voyage = readJsonFlag<AVoyage>(db, cultivator.id, A_VOYAGE_UNDER_WAY);
     if (voyage === null) return null;
+    if (voyage.receiptId && world) {
+        const actual = shipPassengerAt(world, voyage.receiptId, world.currentDay);
+        if (actual) {
+            if (actual.arrived) return null;
+            const bound = world.locations.find(place => place.id === actual.toId)?.name;
+            voyage = { ...voyage, ...(bound ? { bound } : {}), sailed: actual.sailed,
+                days: actual.arrivalDay - actual.departureDay, crew: actual.crew.length };
+        }
+    }
+    if (voyage.receiptId && world) {
+        const actual = shipPassengerAt(world, voyage.receiptId, world.currentDay);
+        const at = actual?.locationId && world.locations.find(place => place.id === actual.locationId)?.name;
+        return at && loosePlaceKey(placeName(cultivator)) === loosePlaceKey(at) ? voyage : null;
+    }
     const water = theWaterUnder(voyage);
     return water !== null && loosePlaceKey(placeName(cultivator)) === loosePlaceKey(water) ? voyage : null;
+}
+
+/** Raw entitlement/resource claim; its current physical course is read from the world. */
+export function recordedVoyage(db: Db, playerId: string): AVoyage | null {
+    return readJsonFlag<AVoyage>(db, playerId, A_VOYAGE_UNDER_WAY);
 }
 
 export function writeTheVoyage(db: Db, cultivatorId: string, voyage: AVoyage): void {
@@ -85,8 +104,8 @@ export function endTheVoyage(db: Db, cultivatorId: string): void {
  * Days of the hull's rations left for somebody aboard a ship at sea, counted from the quay; 0
  * ashore. What eating aboard draws on before the pack.
  */
-export function theRationsAboard(db: Db, cultivator: Cultivator): number {
-    const voyage = theVoyageUnderWay(db, cultivator);
+export function theRationsAboard(db: Db, cultivator: Cultivator, world?: WorldState | null): number {
+    const voyage = theVoyageUnderWay(db, cultivator, world);
     return voyage ? Math.max(0, voyage.hullRationDays - voyage.sailed) : 0;
 }
 
@@ -95,8 +114,8 @@ export function theRationsAboard(db: Db, cultivator: Cultivator): number {
  * hull covers are counted from the quay, so the passage runs out of them that much sooner. The
  * days actually taken, which is fewer where the hull has fewer left, and 0 ashore.
  */
-export function takeFromTheHull(db: Db, cultivator: Cultivator, days: number): number {
-    const voyage = theVoyageUnderWay(db, cultivator);
+export function takeFromTheHull(db: Db, cultivator: Cultivator, days: number, world?: WorldState | null): number {
+    const voyage = theVoyageUnderWay(db, cultivator, world);
     if (!voyage) return 0;
     const taken = Math.max(0, Math.min(Math.floor(days), voyage.hullRationDays - voyage.sailed));
     if (taken > 0) writeTheVoyage(db, cultivator.id, { ...voyage, hullRationDays: voyage.hullRationDays - taken });
@@ -171,8 +190,15 @@ export async function aShipSailsOn(
     asked: number | null,
     how: HowTheDaysAboardGo
 ): Promise<Execution> {
-    const left = Math.max(1, voyage.days - voyage.sailed);
-    const days = asked === null ? left : Math.max(1, Math.min(left, Math.floor(asked)));
+    const left = Math.max(0, voyage.days - voyage.sailed);
+    if (voyage.receiptId && game.atHand) {
+        const actual = shipPassengerAt(game.atHand, voyage.receiptId, game.atHand.currentDay);
+        if (!actual || actual.unavailable) return refused('engine.actualShipPassage', 'passage', factsForRefusal(
+            'The accepted ship cannot carry on.', actual?.unavailable ?? 'Its actual crew is no longer carrying this course.',
+            'No source crew was recreated and no time was spent.'));
+    }
+    const days = asked === null ? left : voyage.receiptId ? Number.isFinite(asked) ? Math.max(0, asked) : left
+        : Math.max(1, Math.min(left, Math.floor(asked)));
     const sailed = await game.takeTheSeat(run, cultivator, {
         service: 'ship',
         to: voyage.bound,
@@ -184,7 +210,7 @@ export async function aShipSailsOn(
         sea: voyage,
         ...(how === 'waiting' ? { focus: WAITING_FOCUS } : how === 'sitting' ? { focus: 1 } : {})
     });
-    if (asked !== null && asked > left && sailed.outcome === 'executed'
+    if (!voyage.receiptId && asked !== null && asked > left && sailed.outcome === 'executed'
         && loosePlaceKey(placeName(game.repos.cultivators.getById(cultivator.id) ?? cultivator))
             === loosePlaceKey(voyage.bound)) {
         shownWithNoModelAfter(sailed.facts, `${howMany(Math.floor(asked), 'day')} were asked for; the ship `

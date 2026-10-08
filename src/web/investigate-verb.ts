@@ -3,10 +3,10 @@
  *
  * `investigate` is the widest target resolver in the package - a place, a
  * record, an object, a person, a ruin, the ground itself - and it is the verb
- * where the discovery gate does the most work. What comes back is filtered
- * through what this cultivator has a record for, so a close look can never be
- * the thing that hands over a name, and a name that resolves to nothing gets a
- * refusal that lists what IS on record nearby rather than a blank.
+ * where observation and named information must stay distinct. Player-supplied
+ * real names permit questions without a prior encounter; they never supply a
+ * witnessed visit or remote stock/status. Unsolicited facts remain scoped to
+ * this cultivator's knowledge and actual local perception.
  *
  * ── HOW THIS IS ATTACHED ─────────────────────────────────────────────────
  *
@@ -30,6 +30,7 @@ import { gradeForOrdinal } from '../data/cultivation/techniques.js';
 import { isBelowTheLid } from '../engine/world/layers.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import { routineOf } from '../engine/world/npc-routines.js';
 import { READS_A_VEIN } from './what-you-can-tell-about-the-ground.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import {
@@ -37,47 +38,33 @@ import {
     type ResolvedEntity,
     matchScore,
     resolveAnything,
+    resolveTheRoomTheyStandIn,
     resolveCultivator,
     worldLocationFor
 } from './entities.js';
-import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
+import { theBuiltGroundUnder, theThingsVisibleInThisRoom } from './what-is-built-where-you-are-standing.js';
+import { purposeOf } from '../engine/world/architecture.js';
+import { whereInThisPlaceTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { whatTheStoneworkOfARuinSays } from './ruin-stonework.js';
 import { ruinChamberHere } from './ruin-delving.js';
 import { theRuinThisPlaceIs } from './walking-up-to-a-door-that-closes.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
-import { factsForInvestigation, factsForLook, factsForRefusal, placeName } from './facts.js';
+import { factsForInvestigation, factsForLook, factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused, structureCalls } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { HERBS, isExtinct } from '../data/cultivation/herbs.js';
 import { WORKING_KNOWLEDGE_MARGIN } from './hearsay.js';
+import { loosePlaceKey } from './knowledge.js';
 import { assessCapability, makeRequirements, makeSubject } from '../engine/world/capability.js';
 import { capabilityActorFor } from '../server/consolidated/cultivation-perception.js';
+import { THE_GROUND_ITSELF, WHAT_SOMEBODY_BUILT } from './investigation-targets.js';
 /**
  * A word that is a pointer rather than a name. See the refusal it produces.
  */
 const A_WORD_THAT_NAMES_NOTHING_BY_ITSELF =
     /^(?:the\s+)?(?:it|that|this|them|those|these|one|same|other)(?:\s+one)?$/i;
-
-/**
- * The words for the ground itself, which `groundAtHand` also owns.
- *
- * Repeated here on purpose: the two reads answer the same sentence, and where
- * something IS built the one below has more in it, so it has to be asked first
- * or the better answer is never reached. Where nothing is built these fall
- * through and `groundAtHand` answers exactly as it always did.
- */
-const THE_GROUND_ITSELF =
-    /^(?:the |this |these |round |around )?(?:here|place|ground|town|village|city|province|region|district|land|area|settlement|surroundings)$/i;
-
-/**
- * The words for what somebody put up on it.
- *
- * These reached nothing at all before, in a compound or out of one.
- */
-const WHAT_SOMEBODY_BUILT =
-    /^(?:the |this |these |round |around )?(?:compound|buildings?|walls?|courts?|yards?|gates?|halls?|architecture|stonework|masonry)$/i;
 
 /**
  * What is built where this cultivator is standing, as a thing to examine.
@@ -185,10 +172,26 @@ export const investigateVerb = {
     ): Execution {
         const query = (target ?? '').trim();
         if (query.length < 2) {
-            return this.freeAction(
+            const read = this.freeAction(
                 run, 'investigate',
                 factsForLook(cultivator, ambient, this.company(cultivator))
             );
+            read.timeDisposition = 'free_read';
+            return read;
+        }
+
+        // Resolve the current physical lodging before its rank title can win.
+        const room = resolveTheRoomTheyStandIn(query, cultivator);
+        const here = room && this.atHand
+            ? worldLocationFor(this.atHand, cultivator.location) : null;
+        const area = here && this.atHand
+            ? whereInThisPlaceTheyStand(this.atHand, here, cultivator.standingIn, cultivator.sectId) : null;
+        if (room && here && (area?.for === 'room' || ['dormitory', 'residence'].includes(purposeOf(here) ?? ''))) {
+            const stock = theThingsVisibleInThisRoom(this, cultivator);
+            const read = this.freeAction(run, 'investigate', factsForInvestigation(cultivator, ambient,
+                room.name, stock.length ? stock : ['No stored belongings are visible here.']));
+            read.timeDisposition = 'free_read';
+            return read;
         }
 
         // ── AND THE THINGS, WHICH NOTHING HAD EVER PUT IN A SCOPE ────────
@@ -430,6 +433,27 @@ export const investigateVerb = {
             ));
         }
 
+        // A supplied remote name permits a question, not remote observation.
+        // Do not file a witnessed visit or read current stock/status from here.
+        const namedGround = subject.kind === 'place' && this.atHand
+            ? worldLocationFor(this.atHand, subject.name) : null;
+        const remoteGround = subject.kind === 'place' && (namedGround !== null
+            ? namedGround.id !== this.worldPlaceOf(cultivator)
+            : loosePlaceKey(subject.name) !== loosePlaceKey(cultivator.location ?? ''));
+        const newlyNamedHouse = subject.kind === 'sect'
+            && !this.knowledge.isAwareOf(cultivator.id, 'sect', subject.id);
+        if (remoteGround || newlyNamedHouse) {
+            const facts = factsForToolResult(subject.name, [
+                ...subject.facts,
+                'This is an account of the name, not a look at what is there now.'
+            ]);
+            facts.structure.push(...subject.structure,
+                'Named information only: no witnessed encounter, remote stock, occupancy or current status read.');
+            const read = this.freeAction(run, 'investigate', facts);
+            read.timeDisposition = 'free_read';
+            return read;
+        }
+
         // ── WHAT THE READER ALREADY HAD, READ BEFORE LOOKING CHANGES IT ──
         //
         // Taken here and not below, because `noteEncounter` writes a
@@ -560,6 +584,13 @@ export const investigateVerb = {
         }
 
         const execution = this.freeAction(run, 'investigate', facts);
+        // This is the person's visible body/capability read, not a search.
+        // Resolution and actual presence decide it; a name in the sentence
+        // cannot declare a free read of somebody elsewhere.
+        if (subject.kind === 'self' || (subject.kind === 'cultivator'
+            && this.present(cultivator).some(person => person.id === subject.id))) {
+            execution.timeDisposition = 'free_read';
+        }
         execution.calls = [
             {
                 name: 'engine.readState',
@@ -602,7 +633,7 @@ export function howManyThisGroundCarries(
     const grade = gradeForOrdinal(readerOrdinal);
     const carries = Math.floor(peopleThisGroundCanCarry(place, grade));
     const working = whoWorksEachBand(world.npcs
-        .filter(npc => npc.status === 'alive' && npc.locationId === place.id && isBelowTheLid(npc))
+        .filter(npc => npc.status === 'alive' && routineOf(world, npc).locationId === place.id && isBelowTheLid(npc))
         .map(npc => npc.cultivation.realmOrdinal)).get(grade) ?? 0;
     const work = working === 1 ? '1 person works it' : `${working} people work it`;
     return carries < 1

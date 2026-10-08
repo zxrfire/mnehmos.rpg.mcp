@@ -1,4 +1,5 @@
 /**
+ * Relief now waits for physical arrival; both people share the handover day.
  * A house puts the player on a posting, expects them there, looks in on them,
  * and counts the tour when it is served.
  *
@@ -15,7 +16,7 @@
  *   the house puts a post to the player the way it puts any ask: a summons,
  *   answered with the ordinary words. A post is relieved, never invented - the
  *   town is one somebody of the house is stationed in
- *   saying yes writes the word and relieves the holder, and does NOT move the
+ *   saying yes writes the word; arrival relieves the holder, and does NOT move the
  *   player: getting there is theirs
  *   being in the post's province is being at the post; leaving it before the
  *   term is out is a stated consequence - the word renounced and a row the house
@@ -31,6 +32,8 @@
  * cadences are arranged by writing the day on the word, which is where they are
  * read from.
  * The setup advances the world's annual pass before the player takes a post.
+ * That 400-day world is shared through the source-keyed soaked-world cache;
+ * each played case still gets a separate copy before its own run begins.
  * An interrupted or fatal wait is not a fixture for an annual posting.
  * Replacement also needs a spare member. The relieved holder's errand ends
  * before the next posting pass; a house with everybody occupied cannot refill it.
@@ -50,13 +53,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness.js';
+import { soakedWorld } from '../support/soaked-world.js';
+import { loadCultivationCatalog } from '../../src/engine/world/catalog.js';
+import { WorldStateRepository } from '../../src/storage/repos/world-state.repo.js';
+import { resetCultivationWorlds, WORLD_POPULATION } from '../../src/server/state/cultivation-world.js';
+import { journeyNeedsWater } from '../../src/engine/world/places-on-the-way.js';
 import { aPostTheHouseWouldSendThemTo } from '../../src/engine/world/a-house-posts-the-one-being-played.js';
+import { theRoomsThisHouseHas } from '../../src/engine/social-leverage/authority-for-an-order.js';
+import { whoIsInChargeOfWhat } from '../../src/engine/social-leverage/what-an-elder-is-in-charge-of.js';
 import { addToTheStack } from '../../src/engine/world/a-communication-talisman-carries-word-home.js';
 import { whoCutsPairsAtTheSeat, A_POSTING_IS_LOOKED_IN_ON_EVERY_YEARS } from '../../src/engine/world/what-a-house-hears-from-its-people-away.js';
 import { theProvinceAround } from '../../src/engine/world/ground-holder.js';
 import { whatServiceIsWorth } from '../../src/engine/world/what-a-house-counts-in-somebodys-favour.js';
-import { writeFlag } from '../../src/server/consolidated/cultivation-support.js';
-import { FLAG_RATIONS_HELD } from '../../src/web/flag-keys.js';
 import { readPendingSummons } from '../../src/web/pending-summons.js';
 import { isAPosting, theirOpenPosting, theTownOf } from '../../src/web/holding-a-posting.js';
 import { ledgerAbout, writeOneObligation } from '../../src/storage/repos/obligation.repo.js';
@@ -67,10 +75,11 @@ const WORLD = 'a-posting-for-the-player';
 /** A member of a house whose own draw would post them, standing at its seat. */
 async function aMemberTheHouseWouldPost(seed: string) {
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD });
+    new WorldStateRepository(harness.db).saveWorld(await soakedWorld(WORLD, { days: 400 },
+        { catalog: await loadCultivationCatalog(), population: WORLD_POPULATION }));
+    resetCultivationWorlds();
     const { cultivator } = await harness.game.newRun('Posted');
-    // Posts are made by the annual pass, rather than written into the fixture.
-    await harness.game.advanceWorld(400, cultivator, harness.game.currentRun().run);
-    harness.game.atHand = await harness.game.loadWorld();
+    harness.game.atHand = harness.game.atHand ?? await harness.game.loadWorld();
     const world = harness.game.atHand!;
     const today = Math.floor(world.currentDay);
     const houses = world.factions
@@ -79,12 +88,22 @@ async function aMemberTheHouseWouldPost(seed: string) {
     for (const house of houses) {
         const members = world.npcs.filter(n => n.factionId === house.id);
         if (whoCutsPairsAtTheSeat(world, members, house.seatLocationId!) === null) continue;
+        const rooms = whoIsInChargeOfWhat({ rooms: theRoomsThisHouseHas(world.locations, house.id),
+            roll: members.filter(n => n.status === 'alive').map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
+            rankCount: house.ranks.length });
+        const officeHolders = new Set(rooms.map(room => room.holderId));
+        const spare = members.some(n => n.status === 'alive' && n.locationId === house.seatLocationId
+            && n.factionRankIndex < house.ranks.length - 1 && !officeHolders.has(n.id)
+            && (n.activity === null || n.activity.kind === 'idle' || n.activity.kind === 'their_practice')
+            && (n.activity?.withIds.length ?? 0) === 0);
+        if (!spare) continue;
         for (const stationed of members.filter(n => n.status === 'alive' && n.activity?.kind === 'stationed' && n.locationId)) {
             for (let offset = 20; offset <= 360; offset += 20) {
                 const at = world.npcs.findIndex(n => n.id === stationed.id);
                 world.npcs[at] = { ...world.npcs[at]!, activity: { ...world.npcs[at]!.activity!, untilDay: today + offset } };
                 const post = aPostTheHouseWouldSendThemTo(world, { houseId: house.id, playerId: cultivator.id, rankIndex: 0, ordinal: 0, today });
                 if (post?.relievedId !== stationed.id) continue;
+                if (journeyNeedsWater(world.locations, house.seatLocationId!, post.townId)) continue;
                 harness.repos.sects.addMember(house.id, cultivator.id, 0);
                 const seat = world.locations.find(l => l.id === house.seatLocationId)!;
                 harness.repos.cultivators.update(cultivator.id, { location: seat.name });
@@ -120,7 +139,7 @@ describe('being posted', () => {
         expect(turn.narration).toContain(h.post.townName);
     });
 
-    it('taken up, writes the word and relieves the holder, and does not move the player', async () => {
+    it('accepted, writes the word and waits for arrival before relieving the holder', async () => {
         const h = await aMemberTheHouseWouldPost('posted-accepted');
         await h.game.act('I look around');
         const standing = h.repos.cultivators.getById(h.cultivator.id)!.location;
@@ -132,7 +151,12 @@ describe('being posted', () => {
         expect(h.repos.cultivators.getById(h.cultivator.id)!.location).toBe(standing);
         expect(readPendingSummons(h.repos, h.cultivator.id)).toBeNull();
         const relieved = h.game.atHand!.npcs.find(n => n.id === h.post.relievedId)!;
-        expect(relieved.activity?.untilDay).toBe(Math.floor(h.game.atHand!.currentDay));
+        expect(relieved.activity?.untilDay).toBeGreaterThan(Math.floor(h.game.atHand!.currentDay));
+        h.repos.cultivators.update(h.cultivator.id, { location: h.post.townName });
+        await h.game.act('I look around');
+        const handover = h.game.atHand!.history.facts.find(f => f.data.postRelief === true
+            && f.data.outgoingId === relieved.id && f.data.replacementId === h.cultivator.id);
+        expect(handover, 'arrival makes a real handover').toBeTruthy();
         expect(turn.narration).toContain(h.post.townName);
     });
 
@@ -203,19 +227,22 @@ describe('holding the post', () => {
         expect(stamped?.activity?.kind, 'the world was not told').toBe('stationed');
         expect(stamped?.locationId).toBe(h.post.townId);
         const took = Math.floor(h.game.atHand!.currentDay);
+        // Seeding now fills posts at opening. Arrange an ongoing tour so a year's
+        // wait cannot legitimately reach this test's end-of-tour branch.
+        const word = theirOpenPosting(h.game, h.cultivator.id)!;
+        const due = Math.floor(h.game.currentRun().run.elapsedDays) + 10 * 365;
+        writeOneObligation(h.db as never, { ...word, dueOnDay: due });
+        stamped!.activity!.untilDay = took + 10 * 365;
+        h.game.theWorldMoved();
 
-        // A WHOLE YEAR OF THE WORLD'S, played rather than advanced, because it
-        // is the world's own posting pass this is about and that runs once a
-        // year. A wait is cut short by whatever the world does in it, so it is
-        // asked again until the year has actually turned.
+
+        // A whole year of the world's own posting passes. The player entered
+        // and later leaves through play; this interval tests the world's pass.
         const aYearOfIt = async (): Promise<void> => {
-            // Fed, because a year of waiting is a year of eating and this test
-            // is about the house's posts rather than about the pack.
-            writeFlag(h.db, h.cultivator.id, FLAG_RATIONS_HELD, '900');
             const from = Math.floor(h.game.atHand!.currentDay);
-            for (let turn = 0; turn < 12 && Math.floor(h.game.atHand!.currentDay) - from < 400; turn++) {
-                await h.game.act('I wait for 200 days');
-            }
+            await h.game.advanceWorld(400, h.repos.cultivators.getById(h.cultivator.id)!, h.game.currentRun().run);
+            h.game.atHand = await h.game.loadWorld();
+            expect(Math.floor(h.game.atHand!.currentDay) - from, 'the annual pass ran').toBe(400);
         };
         await aYearOfIt();
 
@@ -267,8 +294,16 @@ describe('holding the post', () => {
         const before = h.repos.sects.getMembership(h.cultivator.id)!.contribution;
         const ordinal = h.repos.cultivators.getById(h.cultivator.id)!.realmOrdinal;
 
-        await h.game.act('I wait for three days');
-
+        // The replacement leaves the seat when the term comes due, then walks
+        // the real road. A wait may be interrupted before either event.
+        let relief = h.game.atHand!.history.facts.find(f => f.data.postRelief === true && f.data.outgoingId === h.cultivator.id);
+        for (let turn = 0; turn < 12 && !relief; turn++) {
+            await h.game.act('I wait for ten days');
+            relief = h.game.atHand!.history.facts.find(f => f.data.postRelief === true && f.data.outgoingId === h.cultivator.id);
+        }
+        expect(relief, 'a replacement arrives before completion').toBeTruthy();
+        for (let turn = 0; turn < 3 && theirOpenPosting(h.game, h.cultivator.id); turn++)
+            await h.game.act('I wait for two days');
         expect(theirOpenPosting(h.game, h.cultivator.id)).toBeNull();
         const credited = h.repos.sects.getMembership(h.cultivator.id)!.contribution - before;
         const rate = Math.round(whatServiceIsWorth(ordinal, 401));

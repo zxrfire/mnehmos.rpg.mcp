@@ -32,13 +32,15 @@ describe('one span, both clocks', () => {
         const { cultivator } = await game.newRun('Wen Shu');
         db.prepare('UPDATE cultivators SET spirit_stones = 900 WHERE id = ?').run(cultivator.id);
 
+        const openedAt = game.state().run.elapsedDays;
         const before = (await worldForRun(game.state().run as never)).currentDay;
         const { timeSkip, state } = await game.cultivate(20 * 365, { anyway: true });
         const after = (await worldForRun(game.state().run as never)).currentDay;
 
         // Not the days requested. A seclusion broken in year three does not get
         // seventeen more years of world.
-        expect(state.run.elapsedDays).toBe(timeSkip.simulatedDays);
+        // The run starts at 08:00; the spent span still reaches both clocks exactly.
+        expect(state.run.elapsedDays - openedAt).toBe(timeSkip.simulatedDays);
         expect(timeSkip.simulatedDays).toBeGreaterThan(0);
         expect(after - before).toBe(timeSkip.simulatedDays);
     }, 60_000);

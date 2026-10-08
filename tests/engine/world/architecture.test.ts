@@ -4,6 +4,7 @@ import {
     ELEMENTAL_IDIOM_FLOOR,
     ELEMENTAL_TRIM_FLOOR,
     attributionField,
+    addMissingInfirmary,
     compoundCapacityUnit,
     describeRoom,
     elementalIntensityOf,
@@ -23,7 +24,9 @@ import {
     A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER,
     type CompoundInput
 } from '../../../src/engine/world/architecture.js';
-import { makeLocation, type LocationRecord } from '../../../src/engine/world/locations.js';
+import { makeLocation, linkLocations, type LocationRecord } from '../../../src/engine/world/locations.js';
+import { createNpc } from '../../../src/engine/world/npc-state.js';
+import { npcsStandingIn, whereCompoundsAre, whereTheyAreStanding } from '../../../src/engine/world/where-inside-a-house-somebody-is-standing.js';
 import { SECTS } from '../../../src/data/cultivation/sects.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -81,6 +84,60 @@ function narrowHouse(over: Partial<CompoundInput> = {}): CompoundInput {
 // ─────────────────────────────────────────────────────────────────────────
 // ELEMENTAL INTENSITY - INTAKE IS A CEILING ON THE CURRICULUM
 // ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Saved compounds predate the universal dispensary. Opening one may append its
+ * missing ordinary room, but must preserve its old rooms, keys, stock and offices.
+ * The upgrade reads the built outer court, including for a player-founded house
+ * absent from the catalog, and a second opening adds nothing.
+ */
+describe('an existing compound and the bodies on its ground', () => {
+    /** A dispatched row names its destination, but its body still starts at home. */
+    it('keeps a newly dispatched traveller physically at the compound until they leave', () => {
+        const input = broadHouse();
+        const home = seat();
+        home.controllingFactionId = input.factionId;
+        home.data.factionId = input.factionId;
+        const built = growCompound(home, input, { seed: 'dispatch-ground', presentDay: 0 });
+        const destination = makeLocation({ id: 'posted-town', name: 'The posted town', kind: 'settlement' });
+        linkLocations(home, destination, 'road', 20);
+        const traveller = createNpc('dispatch-ground', { id: 'dispatched', bornOnDay: -7300,
+            onDay: 0, factionId: input.factionId, locationId: destination.id });
+        traveller.activity = { kind: 'travelling', note: 'Going to the posted town', withIds: [],
+            sinceDay: 0, untilDay: 20, fromLocationId: home.id, returnTo: destination.id };
+        const state = { seed: 'dispatch-ground', currentDay: 0, currentHour: 0,
+            locations: [home, ...built.locations, destination], npcs: [traveller], factions: [] };
+        const compounds = whereCompoundsAre(state);
+        expect(whereTheyAreStanding(state, compounds, traveller, new Set([traveller.id]))).toBe(home.id);
+        expect(npcsStandingIn(state, home.id, compounds).map(n => n.id)).toContain(traveller.id);
+        expect(traveller.locationId).toBe(destination.id);
+        state.currentDay = 20;
+        expect(npcsStandingIn(state, home.id, whereCompoundsAre(state))).toHaveLength(0);
+        expect(npcsStandingIn(state, destination.id, whereCompoundsAre(state)).map(n => n.id)).toContain(traveller.id);
+    });
+
+    it.each([true, false])('preserves the existing construction (inherited=%s)', inherited => {
+        const input = broadHouse({ inherited });
+        const built = growCompound(seat(), input, { seed: 'saved-house', presentDay: 1000 });
+        const locations = built.locations.filter(l => purposeOf(l) !== 'infirmary');
+        const oldInfirmary = built.locations.find(l => purposeOf(l) === 'infirmary')!;
+        for (const l of locations) l.links = l.links.filter(c => c.toLocationId !== oldInfirmary.id);
+        const host = locations.find(l => l.data.purpose === 'precinct' && l.data.precinctIndex === 0)!;
+        const unchanged = locations.filter(l => l !== host).map(l => JSON.stringify(l));
+        const hostBefore = JSON.stringify({ ...host, links: [] });
+        const narrowInput = { factionId: input.factionId, factionName: input.factionName,
+            powerOrdinal: input.powerOrdinal, inherited };
+        const added = addMissingInfirmary(locations, narrowInput, { seed: 'saved-house' });
+        expect(added).not.toBeNull();
+        expect(added!.parentId).toBe(host.id);
+        expect(added!.sealed).toBe(false);
+        expect(added!.data.precinctIndex).toBe(0);
+        expect(locations.filter(l => l !== host && l !== added).map(l => JSON.stringify(l))).toEqual(unchanged);
+        expect(JSON.stringify({ ...host, links: [] })).toBe(hostBefore);
+        expect(host.links.some(c => c.toLocationId === added!.id)).toBe(true);
+        expect(addMissingInfirmary(locations, narrowInput, { seed: 'saved-house' })).toBeNull();
+    });
+});
 
 describe('elementalIntensityOf', () => {
     it('scores a house that takes every root at zero however narrow its library', () => {

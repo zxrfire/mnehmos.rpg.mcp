@@ -11,6 +11,16 @@
 
 # Cultivation Content Catalogs
 
+The month-care price names a month of lying still, not a seasonal absence.
+Its web treatment duration derives from this catalog's `DAYS_PER_MONTH`; the
+note supplies no second duration or recovery rule.
+
+`competition-calendars.ts` holds fixed city open-board, house internal-board and
+conclave cadences. Engine scheduling and public notices read the same rows; these
+calendar periods are independent of a life span. `what-each-house-makes-and-what-crosses-the-water.ts`
+links workshop and regional goods to ordinary pill/material catalog ids for finite
+capital exchange consignments.
+
 Structural repair medicine states `recoveryDays`: Second Casting and Soul-Seating
 take nine days, Core-Knitting takes 365, and Unbroken Pattern takes one. The latter
 two previously unspecified spans are now explicit catalog facts, read by player
@@ -389,6 +399,11 @@ understand, resource-hungry, politically unsupported. And potentially exceptiona
   fills with resolved numbers. The runtime agent turns the resulting fact line into
   narration; it never invents the facts. See
   [`../../web/README.md`](../../web/README.md) for the same rule at the narrator seam.
+- **Declare a literal site's physical prerequisite.** Encounter `requiresSubstrate`
+  constrains that row to its actual land or water scene. A cave mouth, exposed
+  tomb entrance, ploughed field, erected roadblock or attacked caravan requires
+  land; a corpse, portable manual or travelling trader does not inherit a land requirement from its kind or tags.
+  This is a content prerequisite, not a change to encounter cadence or odds.
 - **Use the authoring helpers.** They resolve provenance and mastery so the invariants
   cannot be forgotten on a new entry.
 - **Reference by id, never by name.** Recipes name herb ids; if a herb is not in the
@@ -498,3 +513,10 @@ The scale table is read by house claims and discovery news, not merely by lore t
 Both spring houses have bottom-rung admission, a wall of deceased keepers and
 unbacked governance records. Their fixed holdings carry no surveyed vein or
 confirmed living grantor; the claimed western-road succession remains unconfirmed.
+
+Body flight is a distinct Void-Tribulation capability. Its conveyance row is a
+non-property description, with one initial authored 25-qi launch term, not upkeep
+or a folding charge. Existing sword/cloud arts keep their native per-use charges.
+The precise air quote still reads the one conveyance speed/fuel authority.
+
+

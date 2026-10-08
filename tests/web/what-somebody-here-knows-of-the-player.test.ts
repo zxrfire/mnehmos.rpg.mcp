@@ -29,10 +29,15 @@ describe('what a character knows of the player', () => {
         world.locations.push(place);
         world.npcs.push(observer);
         game.atHand = world;
-        const here = { ...cultivator, standingIn: theAreasOf(world, place).whereIs.get(observer.id)! };
+        const heldWorld = game.atHand!;
+        expect(heldWorld, 'the card reader uses the world held by this run').toBe(world);
+        // A card is local to an area. Put the live sheet where the observer is,
+        // then read it back rather than supplying a stale made-up presence.
+        repos.cultivators.standIn(cultivator.id, theAreasOf(heldWorld, place).whereIs.get(observer.id)!);
+        const here = repos.cultivators.getById(cultivator.id)!;
         game.knowledge.learnIfNew({
             holderId: cultivator.id, kind: 'cultivator', id: observer.id, name: observer.name,
-            onDay: 0, sourceKind: 'told', stage: 'placed', statement: 'They introduced themselves.'
+            onDay: 0, sourceKind: 'told', stage: 'known', statement: 'They introduced themselves.'
         });
         const grudge = createGrudge({
             holderId: 'victim', subjectId: cultivator.id, cause: 'robbery', severity: 'serious',
@@ -43,22 +48,38 @@ describe('what a character knows of the player', () => {
 
         const house = SECTS.find(s => s.ranks.length > 0)!;
         repos.sects.addMember(house.id, cultivator.id);
-        world.npcs[0] = { ...observer, factionId: house.id };
-        const company = game.company(here);
+        const observerAt = heldWorld.npcs.findIndex(person => person.id === observer.id);
+        heldWorld.npcs[observerAt] = { ...observer, factionId: house.id };
+        // Their house routine changes which public area they are working in.
+        // Move the live sheet through the flag writer too; an `update` field
+        // cannot stand the player with someone.
+        const observerArea = theAreasOf(heldWorld, place).whereIs.get(observer.id)!;
+        repos.cultivators.standIn(cultivator.id, observerArea);
+        // Membership changed the stored player sheet. Read it afresh rather
+        // than presenting the pre-membership snapshot to the area reader.
+        let current = repos.cultivators.getById(cultivator.id)!;
+        expect(game.atHand, 'company reads the held world, not a pre-mutation alias').toBe(heldWorld);
+        expect(current.standingIn).toBe(observerArea);
+        const company = game.company(current);
+        expect(company.named.map(person => person.id)).toContain(observer.id);
         expect(company.named[0]!.ownMind?.knowsOfPlayer?.join(' ')).toContain('robbery');
         const awareness = game.knowledge.awareness(cultivator.id);
         expect(thePeopleHere(company, here.realmOrdinal, awareness, observer.name).join('\n')).toContain('knows of the player:');
         expect(thePeopleHere(company, here.realmOrdinal, awareness, null).join('\n')).not.toContain('knows of the player:');
 
-        world.npcs[0] = observer;
+        heldWorld.npcs[observerAt] = observer;
+        // Restoring their original routine returns them to the market area;
+        // the player must be placed there again before the private-card read.
+        repos.cultivators.standIn(cultivator.id, theAreasOf(heldWorld, place).whereIs.get(observer.id)!);
+        current = repos.cultivators.getById(cultivator.id)!;
         writeOneObligation(db, { ...grudge, participants: [observer.id] });
-        expect(game.company(here).named[0]!.ownMind?.knowsOfPlayer?.join(' ')).toContain('robbery');
+        expect(game.company(current).named[0]!.ownMind?.knowsOfPlayer?.join(' ')).toContain('robbery');
 
         writeOneObligation(db, createFavor({
             holderId: cultivator.id, subjectId: observer.id, cause: 'sheltered', severity: 'serious',
             onDay: 0, description: 'The traveller sheltered the reader.'
         }));
-        const facts = game.company(here).named[0]!.ownMind!.knowsOfPlayer!.join(' ');
+        const facts = game.company(current).named[0]!.ownMind!.knowsOfPlayer!.join(' ');
         expect(facts).toContain('grudge is held against you');
         expect(facts).toContain('favor is owed to you');
     });

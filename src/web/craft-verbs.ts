@@ -66,7 +66,7 @@ import { forStream } from '../engine/cultivation/rng.js';
 import { aVehicleOf } from '../engine/world/a-vehicle.js';
 import { addToPouch } from '../server/consolidated/cultivation-support.js';
 import { daysAtTheWork } from '../engine/social-leverage/commissioning-a-craft.js';
-import { intoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
+import { walkIntoTheRoomTheWorkIsDoneIn } from './walking-inside-the-walls.js';
 import { aBenchCouldMakeThat } from './what-somebody-was-asked-to-make.js';
 import { whatIsBeingCut } from './communication-talisman-phrasings.js';
 import { REINFORCING_A_DOOR, reinforcingYourDoor } from './seclusion-door.js';
@@ -394,8 +394,13 @@ export const craftVerbs = {
         // ── IN THE ROOM IT IS DONE IN, inside your own house ─────────────
         // A slip is cut wherever you are sitting; anything else made at a bench
         // is worked where the house works ore. See `intoTheRoomTheWorkIsDoneIn`.
-        const wentTo = intoTheRoomTheWorkIsDoneIn(this, cultivator, plan.ask!.slip ? null : 'an_artifact');
-        if (wentTo) cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+        const approach = await walkIntoTheRoomTheWorkIsDoneIn(this, run, cultivator, plan.ask!.slip ? null : 'an_artifact');
+        if (approach) {
+            if (approach.outcome === 'refused' || approach.cutShort || !this.currentRun().cultivator.alive) return approach;
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            run = this.repos.runs.getById(run.id) ?? run;
+        }
+        const wentTo = approach?.facts.headline ?? null;
 
         // ── THE DAYS AT IT ───────────────────────────────────────────────
         const days = daysAtTheWork(plan.ask!.grade, cultivator.realmOrdinal, { aSlip: Boolean(plan.ask!.slip) });
@@ -414,7 +419,8 @@ export const craftVerbs = {
                 `craft at a bench: ${lived} of ${days} day(s) at ${plan.ask!.grade}-grade work, stopped. `
                 + 'The materials are untouched; a made thing is whole or not at all.'
             );
-            return { facts, events: spent.events, timeSkip: spent.timeSkip, breakthrough: null, outcome: 'executed', calls: spent.calls };
+            return { facts, events: [...(approach?.events ?? []), ...spent.events], timeSkip: spent.timeSkip,
+                breakthrough: null, outcome: 'executed', calls: [...(approach?.calls ?? []), ...spent.calls] };
         }
         const finishedOn = Math.floor(this.repos.runs.getById(run.id)?.elapsedDays ?? today + days);
         // THE WORLD AS THE DAYS LEFT IT. The span advances the world and may hand
@@ -460,11 +466,12 @@ export const craftVerbs = {
 
         return {
             facts,
-            events: spent.events,
+            events: [...(approach?.events ?? []), ...spent.events],
             timeSkip: spent.timeSkip,
             breakthrough: null,
             outcome: 'executed',
             calls: [
+                ...(approach?.calls ?? []),
                 ...spent.calls,
                 ...made.calls.map(call => ({
                     name: call.name,

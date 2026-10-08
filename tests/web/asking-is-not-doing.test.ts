@@ -52,7 +52,14 @@
 
 import { describe, it, expect } from 'vitest';
 import type Database from 'better-sqlite3';
-import { aRecruiterOfTheHouseIsHere, makeGame, makeGameInWorld, cultivatorRow, type Harness } from './harness';
+import {
+    aRecruiterOfTheHouseIsHere,
+    makeGame,
+    makeGameInWorld,
+    cultivatorRow,
+    ScriptedProvider,
+    type Harness
+} from './harness';
 import {
     ACTION_NAMES,
     CHANGES_WHAT_IS_ON_YOU_AND_SPENDS_NOTHING,
@@ -73,7 +80,11 @@ import {
 // Read down to the room, the way the verbs read who is standing here: a house's
 // own people at a room's work are in that room and not at its seat. See
 // `where-inside-a-house-somebody-is-standing.ts`.
-import { npcsStandingIn as npcsAt } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
+import {
+    npcsStandingIn as npcsAt,
+    whereCompoundsAre
+} from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 
 const PRIMER = 'lesser-qi-gathering-manual';
@@ -289,30 +300,64 @@ describe('asking whether somebody could be moved does not move them', () => {
      * commanding halves below are the proof that it is: if nobody resolved,
      * nothing would spend and those tests would go red rather than green.
      */
-    async function inTheBusiestSquare(seed: string): Promise<{
+    async function inTheBusiestSquare(seed: string, provider?: ScriptedProvider): Promise<{
         db: Database.Database;
         game: Harness['game'];
         people: string[];
+        approach: {
+            id: string;
+            name: string;
+            targetArea: string;
+            departureArea: string;
+        };
         /** Who is standing here NOW. See the note below on why this exists. */
         stillHere: () => Promise<string[]>;
     }> {
         resetCultivationWorlds();
-        const { db, game } = await makeGameInWorld({ seed, worldSeed: `world-${seed}` });
+        const { db, game } = await makeGameInWorld({
+            seed,
+            worldSeed: `world-${seed}`,
+            ...(provider ? { provider } : {})
+        });
         const { cultivator } = await game.newRun('Lin Baoqing');
 
         const world = (await game.loadWorld())!;
+        // `npcsStandingIn` and `theAreasOf` are the canonical sparse-placement
+        // reads. Keep their one compound snapshot through this fixture's
+        // location scan rather than rebuilding and validating it once per row.
+        const compounds = whereCompoundsAre(world);
         const square = world.locations
-            .map(l => ({ location: l, people: npcsAt(world, l.id) }))
+            .map(l => ({ location: l, people: npcsAt(world, l.id, compounds) }))
             .filter(x => x.people.length >= 12)
             .sort((a, b) => b.people.length - a.people.length)[0];
         expect(square, 'the pinned world has no square with people in it').toBeDefined();
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(square.location.name, cultivator.id);
+        // A settlement is not one conversation. Put the player in the same
+        // actual area as one person, then ask the game which faces are in
+        // front of them; `npcsAt` above was only for finding a crowded place.
+        const areas = theAreasOf(world, square.location, compounds);
+        const approachTarget = square.people
+            .map(person => ({ person, area: areas.whereIs.get(person.id) }))
+            .find(({ area }) => area !== undefined
+                && !['forecourt', 'board'].includes(areas.areas.find(row => row.id === area)?.for ?? ''));
+        expect(approachTarget, 'the crowded place has no person in an open area').toBeDefined();
+        const departureArea = areas.areas.find(row => row.id !== approachTarget!.area
+            && !['forecourt', 'board'].includes(row.for ?? ''));
+        expect(departureArea, 'the crowded place has no second open area').toBeDefined();
+        game.repos.cultivators.standIn(cultivator.id, approachTarget!.area!);
+        const present = () => game.present(game.currentRun().cultivator);
         return {
             db,
             game,
-            people: square.people.map(p => p.name),
+            people: present().map(p => p.name),
+            approach: {
+                id: approachTarget!.person.id,
+                name: approachTarget!.person.name,
+                targetArea: approachTarget!.area!,
+                departureArea: departureArea!.id
+            },
             // ── A CROWD IS NOT A FIXTURE ─────────────────────────────────
             //
             // `people` is a snapshot taken on day zero, and it is fine for the
@@ -331,47 +376,231 @@ describe('asking whether somebody could be moved does not move them', () => {
             // So a test that names somebody and then lets days pass has to ask
             // again who is there. This is the honest version of the fixture, and
             // it is worth having gone red to get it.
-            stillHere: async () => {
-                const now = (await game.loadWorld())!;
-                return npcsAt(now, square.location.id).map(p => p.name);
-            }
+            stillHere: async () => present().map(p => p.name)
         };
     }
 
     /** The question forms, one per intent that presses somebody. */
-    const asking = (who: string) => [
-        `can I bribe ${who} with 10 spirit stones`,
-        `could I threaten ${who}`,
-        `should I seduce ${who}`,
-        `is it possible to deceive ${who}`,
-        `what would it cost to bribe ${who} with 5 spirit stones`,
-        `how do I bribe ${who} with 5 spirit stones`,
-        `can I interrogate ${who}`,
-        `could I recruit ${who}`,
-        `can I negotiate with ${who}`,
+    const asking = [
+        (who: string) => `can I bribe ${who} with 10 spirit stones`,
+        (who: string) => `could I threaten ${who}`,
+        (who: string) => `should I seduce ${who}`,
+        (who: string) => `is it possible to deceive ${who}`,
+        (who: string) => `what would it cost to bribe ${who} with 5 spirit stones`,
+        (who: string) => `how do I bribe ${who} with 5 spirit stones`,
+        (who: string) => `can I interrogate ${who}`,
+        (who: string) => `could I recruit ${who}`,
+        (who: string) => `can I negotiate with ${who}`,
         // Not an interrogative and not an `interact` either - it reaches
         // `unclear`, which is inert. Kept because it was reported alongside the
         // others and a sentence asserted to cost nothing should be asserted to
         // cost nothing wherever it lands.
-        `how do I get ${who} to help me`
+        (who: string) => `how do I get ${who} to help me`
     ];
 
-    it('spends no stones and no days when asked whether one could', async () => {
-        const { db, game, people } = await inTheBusiestSquare('asked-to-bribe');
+    it('spends neither stones nor time when asked whether one could [actual-pure-read-zero]', async () => {
+        const { db, game, stillHere } = await inTheBusiestSquare('asked-to-bribe');
         const cultivator = game.state().cultivator;
-        const who = people[0];
 
         const purse = Number(cultivatorRow(db, cultivator.id).spirit_stones);
-        const day = game.state().run.elapsedDays;
         expect(purse, 'a bribe nobody could afford proves nothing').toBeGreaterThan(10);
 
-        for (const question of asking(who)) {
-            await game.act(question);
+        for (const form of asking) {
+            // A name from the opening crowd becomes a lie as soon as a clock
+            // moves. Choose a person actually in this area immediately before
+            // this question, so a refusal cannot pass as a no-cost read.
+            const who = (await stillHere())[0];
+            expect(who, 'the current area has nobody to read').toBeTruthy();
+            const question = form(who!);
+            const day = game.state().run.elapsedDays;
+            const turn = await game.act(question);
             expect(Number(cultivatorRow(db, cultivator.id).spirit_stones), `"${question}" spent stones`)
                 .toBe(purse);
-            expect(game.state().run.elapsedDays, `"${question}" spent days`).toBe(day);
+            const routed = turn.toolCalls.find(call => call.name === 'narrator.plan')!;
+
+            if (routed.action === 'unclear') {
+                // This last form was deliberately reported alongside the
+                // questions, but it names no action the reader understands.
+                // It must remain inert rather than being turned into a search.
+                expect(turn.toolCalls.some(call => call.name === 'engine.readState')).toBe(false);
+            } else {
+                // A person standing in front of the player is a resolved,
+                // visible subject. The question asks for that person's
+                // capability, so it reaches the existing read; it is neither
+                // a walk to them nor a pressure attempt.
+                expect(routed.action, `"${question}" was not read`).toBe('investigate');
+                expect(turn.toolCalls.some(call => call.name === 'engine.readState'
+                    && call.action === 'investigate' && call.ok)).toBe(true);
+                expect(turn.toolCalls.some(call => !call.ok && !call.name.startsWith('narrator.')),
+                    `"${question}" was refused instead of reading the person`).toBe(false);
+                expect(turn.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(false);
+                expect(turn.toolCalls.some(call => call.action === 'interact')).toBe(false);
+            }
+            expect(turn.toolCalls.some(call => call.name === 'engine.lesserActionTime')).toBe(false);
+            expect(game.state().run.elapsedDays - day, `"${question}" charged a read`).toBe(0);
         }
     }, 180_000);
+
+    /**
+     * The marker frees the read, not the feet. A face one can name across the
+     * same settlement is still in another actual area, and `crossToWhoeverTheyNamed`
+     * moves the actor before the read. This uses that real placement, rather
+     * than inserting an approach receipt, so the one quarter-day charge proves
+     * the marker cannot erase an already-completed walk.
+     */
+    it('keeps the quarter-day approach to a known person in another area', async () => {
+        const { game, approach } = await inTheBusiestSquare('read-across-a-place');
+        const me = game.currentRun().cultivator;
+        expect(game.present(me).some(person => person.id === approach.id),
+            'the target was not initially in the actor’s actual area').toBe(true);
+
+        // First resolve the person while they are visible. The next question
+        // names somebody the player has actually looked at, not a fabricated
+        // target or an unrecorded person elsewhere.
+        const beforeVisibleRead = game.state().run.elapsedDays;
+        const first = await game.act(`can I bribe ${approach.name} with 1 spirit stone`);
+        expect(first.toolCalls.some(call => call.name === 'engine.readState'
+            && call.action === 'investigate' && call.ok)).toBe(true);
+        expect(game.state().run.elapsedDays - beforeVisibleRead,
+            'the visible capability read charged time').toBe(0);
+
+        game.repos.cultivators.standIn(me.id, approach.departureArea);
+        expect(game.present(game.currentRun().cultivator).some(person => person.id === approach.id),
+            'the actor was not actually placed away from the target').toBe(false);
+        const before = game.state().run.elapsedDays;
+        const crossed = await game.act(`can I bribe ${approach.name} with 1 spirit stone`);
+
+        expect(crossed.toolCalls.some(call => call.name === 'engine.readState'
+            && call.action === 'investigate' && call.ok)).toBe(true);
+        expect(crossed.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(true);
+        expect(crossed.toolCalls.some(call => call.name === 'engine.lesserActionTime')).toBe(false);
+        expect(game.currentRun().cultivator.standingIn).toBe(approach.targetArea);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.25);
+    }, 120_000);
+
+    /**
+     * A crossing does not turn the action reached at its end into a read. The
+     * same actual-area setup proves that an ordinary reply is additive: the
+     * quarter-day walk reaches the person and the reply still takes its eighth.
+     */
+    it('adds the conversational reply after crossing to a known person [crossing-reply-additive]', async () => {
+        const { game, approach } = await inTheBusiestSquare('reply-across-a-place');
+        const me = game.currentRun().cultivator;
+
+        await game.act(`can I bribe ${approach.name} with 1 spirit stone`);
+        game.repos.cultivators.standIn(me.id, approach.departureArea);
+        const before = game.state().run.elapsedDays;
+        const turn = await game.act(`I talk to ${approach.name}`);
+
+        expect(turn.toolCalls.find(call => call.name === 'narrator.plan')?.action).toBe('interact');
+        expect(turn.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(true);
+        expect(turn.toolCalls.some(call => call.name === 'engine.lesserActionTime'
+            && call.action === 'interact')).toBe(true);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.375);
+    }, 120_000);
+
+    /**
+     * Facts are not a timing channel. The deterministic fallback correctly
+     * calls this unusual sentence unclear, so this uses a validated model plan
+     * for the ordinary reply that a model can understand. The test-only person
+     * below is given a literal trigger name in the world's own roster, so the
+     * completed reply's ENGINE FACTS, not only player input, contain it. The
+     * completed interaction, not those words, decides the eighth-day cost. The
+     * neighbouring visible-read and already-paid-room checks retain the two
+     * genuine zero-time outcomes, each through explicit execution metadata.
+     */
+    it('charges a real reply even when its words contain no time passed [quote-no-time-passed]', async () => {
+        const plans: string[] = [];
+        const provider = new ScriptedProvider({ plans, narrations: ['(scripted)'] });
+        const { game } = await inTheBusiestSquare('reply-is-not-a-pricing-string', provider);
+        // Keep the parser control honest: one actual person is alone in this
+        // canonical area, so `someone` names them without a backend name. The
+        // synthetic name is test-only, never catalog lore, and is written to
+        // the one world row from which present people and their facts derive.
+        const worldBeforeIntroduction = game.atHand ?? await game.loadWorld();
+        const playerBeforeIntroduction = game.currentRun().cultivator;
+        const placeBeforeIntroduction = worldBeforeIntroduction?.locations.find(place =>
+            place.id === game.worldPlaceOf(playerBeforeIntroduction));
+        expect(placeBeforeIntroduction, 'the player has no current place before the introduction').toBeDefined();
+        const areasBeforeIntroduction = worldBeforeIntroduction && placeBeforeIntroduction
+            ? theAreasOf(worldBeforeIntroduction, placeBeforeIntroduction)
+            : undefined;
+        const alone = [...(areasBeforeIntroduction?.whereIs ?? new Map<string, string>()).entries()]
+            .find(([, area]) => [...areasBeforeIntroduction!.whereIs.values()]
+                .filter(other => other === area).length === 1);
+        expect(alone, 'the pinned crowded place has no one-person actual area').toBeDefined();
+        const at = worldBeforeIntroduction!.npcs.findIndex(person => person.id === alone![0]);
+        expect(at, 'the sparse-area person has no world roster row').toBeGreaterThanOrEqual(0);
+        const triggerName = 'Witness No Time Passed';
+        worldBeforeIntroduction!.npcs[at] = { ...worldBeforeIntroduction!.npcs[at]!, name: triggerName };
+        game.theWorldMoved();
+        game.repos.cultivators.standIn(playerBeforeIntroduction.id, alone![1]);
+        expect(game.present(game.currentRun().cultivator).map(person => person.id)).toEqual([alone![0]]);
+        // A face is not a name. Introduce one through the actual pointed-person
+        // resolver, then take the name from the engine's knowledge receipt
+        // instead of from the fixture's backend roster.
+        plans.push(JSON.stringify({
+            action: 'interact', intent: 'talk', target: 'someone', topic: 'your name'
+        }));
+        const introduction = await game.act('I ask someone their name');
+        expect(introduction.toolCalls.some(call => call.name === 'engine.askedAbout' && call.ok)).toBe(true);
+        const nameGiven = introduction.toolCalls.find(call =>
+            call.name === 'knowledge.learn' && call.action === 'name_given' && call.ok
+        );
+        expect(nameGiven, 'the pointed person did not give a usable name').toBeDefined();
+        const who = /^(.+?) recorded as believed,/.exec(nameGiven!.summary)?.[1];
+        expect(who, 'the knowledge receipt did not name the person introduced').toBeTruthy();
+        expect(who, 'the introduction did not carry the test-only engine-held trigger name').toBe(triggerName);
+        // The eighth-day introduction advances routines, so the person may no
+        // longer be in this first area. Read their current place and area from
+        // the world now, then use the same fixture placement writer used
+        // elsewhere to stand with the named person before timing the reply.
+        const worldNow = game.atHand ?? await game.loadWorld();
+        const introduced = worldNow?.npcs.find(person => person.status === 'alive' && person.name === who);
+        expect(introduced, 'the name receipt has no living person in the current world').toBeDefined();
+        const currentPlace = worldNow?.locations.find(place => place.id === introduced!.locationId);
+        expect(currentPlace, 'the introduced person has no current place').toBeDefined();
+        const currentArea = worldNow && currentPlace
+            ? theAreasOf(worldNow, currentPlace).whereIs.get(introduced!.id)
+            : undefined;
+        expect(currentArea, 'the current sparse-area read did not place the introduced person').toBeTruthy();
+        game.repos.cultivators.update(game.currentRun().cultivator.id, { location: currentPlace!.name });
+        game.repos.cultivators.standIn(game.currentRun().cultivator.id, currentArea!);
+        expect(game.present(game.currentRun().cultivator).some(person => person.id === introduced!.id),
+            'fixture placement did not put the actor with the introduced person').toBe(true);
+        plans.push(JSON.stringify({
+            action: 'interact', intent: 'talk', target: who, topic: 'why no time passed'
+        }));
+        const before = game.state().run.elapsedDays;
+
+        const turn = await game.act(`I talk to ${who} about why no time passed`);
+
+        expect(turn.toolCalls.find(call => call.name === 'narrator.plan')?.action).toBe('interact');
+        expect(turn.toolCalls.find(call => call.name === 'narrator.plan')?.source).toBe('model');
+        // `askAround`, not a generic read, is the resolver for a question put
+        // to the person the engine just introduced.
+        expect(turn.toolCalls.some(call => call.name === 'engine.askedAbout'
+            && call.action === 'talk' && call.ok)).toBe(true);
+        expect(turn.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(false);
+        expect(turn.toolCalls.some(call => call.name === 'engine.lesserActionTime'
+            && call.action === 'interact')).toBe(true);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.125);
+        const routerInput = provider.calls.filter(call => call.messages.some(message =>
+            message.role === 'system' && message.content.startsWith('You are the intent router')
+        )).at(-1)?.messages.find(message => message.role === 'user')?.content;
+        expect(routerInput).toContain('no time passed');
+        // The old charge guard read `done.facts.lines`, not player input. This
+        // normal answer names the test-only person the engine holds, so the
+        // phrase is present in WHAT THE ENGINE RULED as well. Restoring that
+        // regex would skip `engine.lesserActionTime` and make the .125 assertion
+        // above red; the narrator is only a witness to the already-filed fact.
+        const narrationInput = provider.calls.filter(call => call.messages.some(message =>
+            message.role === 'system' && message.content.startsWith('YOU ARE THE STORYTELLER')
+        )).at(-1)?.messages.find(message => message.role === 'user')?.content;
+        const ruled = narrationInput?.split('WHAT THE ENGINE RULED.')[1]
+            ?.split('\n\nWhere a ruling answers what the player asked')[0];
+        expect(ruled, 'the resolved fact sent to phase 3').toMatch(/no time passed/i);
+    }, 120_000);
 
     /**
      * And the sentence that DECIDES still decides, at the honest price. Never a
@@ -462,11 +691,18 @@ describe('asking whether somebody could be moved does not move them', () => {
 
             const before = game.state().run.elapsedDays;
             await game.act(sentence);
-            const spent = game.state().run.elapsedDays > before;
+            const spentDays = game.state().run.elapsedDays - before;
+            // Every `interact` now spends at least the conversational-reply
+            // eighth of a day (`lesser-action-costs.ts`), pressing or not, plus
+            // a further quarter day if it had to approach whoever it reached
+            // (`engine.approachTime`) - so an ordinary reply can cost as much as
+            // 0.375. `ASK_DAYS` floors a pressing attempt at a full day, which
+            // is the gap the threshold below actually reads.
+            const pressed = spentDays > 0.5;
 
-            expect(spent, spent
-                ? `"${sentence}" spent days and ${intent} is not on PRESSING_SOMEBODY`
-                : `"${sentence}" spent nothing and ${intent} is on PRESSING_SOMEBODY`)
+            expect(pressed, pressed
+                ? `"${sentence}" spent more than a reply and ${intent} is not on PRESSING_SOMEBODY`
+                : `"${sentence}" spent only a reply's worth and ${intent} is on PRESSING_SOMEBODY`)
                 .toBe(PRESSING_SOMEBODY.has(intent));
         }
     }, 300_000);
@@ -509,9 +745,9 @@ describe('asking whether somebody could be moved does not move them', () => {
     /**
      * And a question that named a SUBJECT keeps it.
      *
-     * A topic put to a person is already the free read - `askAround`, which
+     * A topic put to a person is already the non-pressing reply - `askAround`, which
      * `GameService.interact` reaches before the pressure model - so downgrading
-     * this one to a bare read of the person would have cost nothing and
+     * this one to a bare read of the person would have dropped the topic and
      * answered a narrower question than the one asked. Only the intent is
      * dropped, and it is dropped rather than left alone because `askAround`
      * needs the person to be standing here: somebody known of but elsewhere
@@ -534,7 +770,8 @@ describe('asking whether somebody could be moved does not move them', () => {
      *
      * Narrowing to the intents that press is the rule `AGENTS.md` states as
      * fixing the gap that was demonstrated: "can I talk to the gate steward" is
-     * a question about an act that settles nothing and costs nothing, and the
+     * a question about an act that settles nothing and does not consume a
+     * day-long act. A reply still takes its ordinary eighth of a day; the
      * honest answer to it is the approach itself.
      */
     it('leaves the approaches that settle nothing where they were', () => {
@@ -550,21 +787,23 @@ describe('asking whether somebody could be moved does not move them', () => {
     });
 
     /**
-     * The classification asked of the PLAN, which is the question every
-     * consumer actually has.
+     * The classification asked of the PLAN: whether it commits the player to a
+     * long act or merely speaks with somebody. It is not the clock: the latter
+     * now takes the ordinary eighth-day conversational reply, and keeps that
+     * time without becoming a pressure attempt.
      *
-     * `READ_ONLY_ACTIONS` is a statement about verbs and the cost of this one
-     * is a fact about the sentence, so `costsTheAskerNothing` is the authority
-     * and the list is not. That distinction is not decoration: it was found by
-     * the reclassification breaking a guard in a different file.
+     * `READ_ONLY_ACTIONS` is a statement about verbs and whether this one
+     * commits is a fact about the sentence, so `costsTheAskerNothing` is the
+     * authority and the list is not. That distinction is not decoration: it
+     * was found by the reclassification breaking a guard in a different file.
      * `the-part-of-the-sentence-that-was-not-run.ts` reports a dropped clause
-     * only when the clause would have COST something, was written while
+     * only when the clause would have CONSUMED A LONG ACT, was written while
      * `interact` was on the free list, and began falsely reporting "tell me
      * about the market and the prices" - a sentence its own header names as a
      * false report it must not make - the moment the list told the truth. It
      * asks this function now, and its corpus test is green again.
      */
-    it('answers what a plan costs off the intent, not off the verb', () => {
+    it('answers whether a plan commits off the intent, not off the verb', () => {
         for (const intent of INTERACT_INTENTS) {
             expect(
                 costsTheAskerNothing({ action: 'interact', intent, target: 'Bai Jinglu' }),
@@ -717,10 +956,11 @@ describe('a manual costs what a manual costs', () => {
      * refused with the look people give somebody asking for a thing that is
      * not sold, and then listed millet, inns and ferry crossings.
      */
-    it('answers "buy a manual" with what the stall has, and charges nothing to look', async () => {
+    it('answers "buy a manual" with what the stall has, and charges nothing to look [manual-stall-read-zero]', async () => {
         const { db, game } = makeGame({ seed: 'stall-listing', worldEnabled: true });
         const { cultivator } = await game.newRun('Lin Baoqing');
         const before = cultivatorRow(db, cultivator.id);
+        const daysBefore = game.state().run.elapsedDays;
 
         const result = await game.act('buy a manual');
 
@@ -728,6 +968,8 @@ describe('a manual costs what a manual costs', () => {
             .not.toMatch(/thing that is not sold/i);
         expect(result.narration).toMatch(/Lesser Qi-Gathering Manual/);
         expect(cultivatorRow(db, cultivator.id).spirit_stones).toBe(before.spirit_stones);
+        expect(result.toolCalls.some(call => call.name === 'engine.lesserActionTime')).toBe(false);
+        expect(game.state().run.elapsedDays - daysBefore).toBe(0);
     }, 120_000);
 
     /** The purchase itself: stones out, copy held, and the road then open. */

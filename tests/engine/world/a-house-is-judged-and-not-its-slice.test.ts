@@ -124,6 +124,21 @@ describe('a house takes in one of its own', () => {
         expect(raised[0]!.locationId).toBe(`seat-${CATALOG.id}`);
     });
 
+    it('draws the raised member from its own household while another house visits', () => {
+        const { state, house } = world({ id: CATALOG.id, members: 1, stones: 250_000 });
+        state.lineages = [];
+        const seat = house.seatLocationId!;
+        state.npcs[0] = { ...state.npcs[0]!, locationId: seat,
+            identity: { ...state.npcs[0]!.identity, bornOnDay: state.currentDay - 45 * 365, sex: 'female' } };
+        const visitor = createNpc(state.seed, { id: 'visitor', locationId: seat,
+            bornOnDay: state.currentDay - 45 * 365, onDay: state.currentDay, sex: 'female' });
+        state.npcs.push({ ...visitor, factionId: 'another-house' });
+        expect(theHousesTakeInTheirOwn(state, 1000, state.currentDay)).toBe(1);
+        const raised = state.npcs.find(n => n.tags.includes(`raised:${house.id}`))!;
+        expect(raised.relationships.some(r => r.kind === 'parent' && r.targetId === state.npcs[0]!.id)).toBe(true);
+        expect(raised.relationships.some(r => r.kind === 'parent' && r.targetId === visitor.id)).toBe(false);
+    });
+
     it('brings nobody into a house with no compound, a ruined one, or a full roll', () => {
         const none = world({ id: CATALOG.id, members: 1, stones: 250_000, seat: null });
         expect(theHousesTakeInTheirOwn(none.state, 1000, none.state.currentDay)).toBe(0);

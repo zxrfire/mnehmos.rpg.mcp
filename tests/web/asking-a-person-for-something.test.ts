@@ -401,6 +401,7 @@ async function somebodyWorthAsking(harness: Harness): Promise<string> {
             confidence: 1
         });
     harness.repos.cultivators.update(me, { location: squares.get(teacher.locationId!)! });
+    await standWithWhoTheyKnow(harness);
     const found = await anybodyNameable(harness);
     expect(found, 'the roster question will not name somebody it has been told about')
         .not.toBeNull();

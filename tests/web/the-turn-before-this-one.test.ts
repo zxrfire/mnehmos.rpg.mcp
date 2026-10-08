@@ -210,8 +210,10 @@ describe('carrying on with what you were just doing', () => {
 
     it('has nothing to carry on with on the first turn of a run', async () => {
         const { game } = await opening('carry-on-first');
+        // A new run opens at 08:00; this refusal is still a free read.
+        const before = game.state().run.elapsedDays;
         const turn = await game.act('keep at it');
-        expect(turn.state.run.elapsedDays).toBe(0);
+        expect(turn.state.run.elapsedDays).toBe(before);
         expect(turn.narration).toContain('nothing to carry on with');
     }, 180000);
 });

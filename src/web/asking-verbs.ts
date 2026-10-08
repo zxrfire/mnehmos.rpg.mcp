@@ -1,11 +1,17 @@
+import { prepareRideOffer, bindAgreedRide } from './an-offered-ride-is-an-agreement.js';
+import { transferActualSpiritStones } from './transferring-actual-spirit-stones.js';
+import { attemptWasAccepted } from '../engine/social-leverage/an-attempt-to-move-somebody.js';
+import { ASKING_FOR_SUSTAINED_COMPANY } from './what-a-request-asks-and-of-whom.js';
 /**
  * Asking somebody for something, and what saying yes would cost them.
  */
 
 import { whatSomebodyKnowsOfTheOldWorld, oldWorldYear } from './what-somebody-knows-of-the-old-world.js';
+import { executionResults } from './a-sentence-can-be-more-than-one-call.js';
 
 
 import { askingYourHouseForARepairDose } from './asking-your-house-for-a-repair-dose.js';
+import { askingYourHouseForAStoredObject } from './asking-your-house-for-a-stored-object.js';
 import { aLocalMechanicsQuestion } from './what-a-local-speaker-knows-of-the-mechanics.js';
 import { getSect } from '../data/cultivation/index.js';
 import {
@@ -120,7 +126,8 @@ import {
 import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import { theRollLands } from '../server/consolidated/forcing-an-attempt-to-land.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
-import type { ActionName } from './actions.js';
+import { parseIntent, type ActionName } from './actions.js';
+import { asksAboutClinicalCare } from './asking-about-clinical-care.js';
 import { askedAbout, whetherTheyHoldIt } from './asked.js';
 import { theHousesTheyWouldName, whatTheySaidOfTheHouses } from './which-houses-somebody-could-name.js';
 import { whatThisPersonKnowsOfTheLand } from './the-way-to-somewhere-asked-of-somebody.js';
@@ -177,7 +184,9 @@ import { howCloseTheyStandToTheirWall } from './standing-guard.js';
 import { theDescriptionThisIs } from './a-target-can-be-a-description.js';
 import { DEFAULT_CULTIVATION_DAYS } from './verb-day-costs.js';
 import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { dismissCompany } from './routine-invitations.js';
+import { dismissCompany, passHours } from './routine-invitations.js';
+import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
+import { foldTheCallsIntoOneTurn } from './a-sentence-can-be-more-than-one-call.js';
 import {
     isTeachingToday,
     whatTheyCannotPutDown,
@@ -258,7 +267,7 @@ const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
     // being asked. It goes down the ordinary request road - one costing, one
     // roll, one record - and what it leaves behind is a term written onto their
     // own activity rather than a roster.
-    'company',
+    'company', 'passage',
     // Their hands for a season, which is not the same ask as a thing they are
     // already holding and does not end in the same place.
     'a_making',
@@ -342,7 +351,8 @@ export const askingVerbs = {
         this: GameService,
         run: Run,
         cultivator: Cultivator,
-        asked: RosterEntry
+        asked: RosterEntry,
+        registerTurn = true
     ): Execution {
         const knownAlready = this.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
         const who = knownAlready ? asked.name : 'The one nearest to hand';
@@ -404,7 +414,7 @@ export const askingVerbs = {
             `${knownAlready ? asked.name : 'Somebody'}, asked which houses they know.`,
             whatTheySaidOfTheHouses(who, named)
         );
-        const execution = this.freeAction(run, 'interact', facts);
+        const execution = this.freeAction(run, 'interact', facts, registerTurn);
         execution.calls = calls;
         return execution;
     },
@@ -724,7 +734,7 @@ export const askingVerbs = {
                 true,
                 // A theft that came away with something is not a thing that
                 // was said, and nothing about how they read it applies.
-                result.outcome === 'taken' || result.outcome === 'turned'
+                attemptWasAccepted(result.outcome)
             )
             : WRONG_BEHIND_INTENT[intent] ?? null;
 
@@ -734,7 +744,7 @@ export const askingVerbs = {
         // downstream is priced off what it cost them: the reprisal, the weight
         // of the grudge, and whether their house ends up carrying it.
         const lifted = wrong === 'robbed'
-            && (result.outcome === 'taken' || result.outcome === 'turned')
+            && (attemptWasAccepted(result.outcome))
             ? this.whatALiftTook(
                 cultivator, party, named ?? '', Math.floor(run.elapsedDays)
             )
@@ -779,7 +789,7 @@ export const askingVerbs = {
             // and it has to read as one here, or the reprisal weighs the deed
             // as merely attempted while `recordWhatTheAskLeft` withholds the
             // arrangement records for a deed that came off.
-            result.outcome === 'taken' || result.outcome === 'turned',
+            attemptWasAccepted(result.outcome),
             them.realmOrdinal, theirSect?.alignment ?? null, facts, lifted
         );
         if (spoken) addHearing(facts, spoken);
@@ -794,7 +804,7 @@ export const askingVerbs = {
             // out of the answer, the stranger who introduced themselves by
             // replying - so a compelled answer deposits exactly what a
             // volunteered one does and by exactly the same route.
-            const carried = result.outcome === 'taken' || result.outcome === 'turned';
+            const carried = attemptWasAccepted(result.outcome);
             const answered = this.askAround(
                 run, cultivator, demand.who, demand.topic, demand.scope, carried
             );
@@ -881,7 +891,7 @@ ${unnamed}`;
         const execution: Execution = {
             ...spent,
             facts,
-            outcome: result.outcome === 'taken' ? 'executed' : 'refused'
+            outcome: attemptWasAccepted(result.outcome) ? 'executed' : 'refused'
         };
         execution.hearing = spoken;
         execution.calls = [
@@ -905,7 +915,7 @@ ${unnamed}`;
                     priorAsks: priorTries,
                     reachedTheHouse: result.marks.reachedTheHouse
                 }),
-                ok: result.outcome === 'taken'
+                ok: attemptWasAccepted(result.outcome)
             },
             ...structureCalls(party.structure),
             ...spent.calls,
@@ -998,19 +1008,8 @@ ${unnamed}`;
         const taken = Math.min(hadBefore, loose);
 
         if (taken > 0) {
-            if (stored) {
-                this.db.transaction(() => {
-                    this.repos.cultivators.applyDeltas(party.id, { spiritStones: -taken });
-                    this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: taken });
-                })();
-            } else {
-                npc!.spiritStones = hadBefore - taken;
-                // The turn wrapper writes the world when this is set, so a
-                // restart cannot find the stones back in the pocket they came
-                // out of.
-                this.theWorldMoved();
-                this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: taken });
-            }
+            if (!transferActualSpiritStones(this, party.id, cultivator.id, taken).ok)
+                throw new Error('The actual purse changed before its already-resolved transfer.');
         }
         return { taken, hadBefore, loose, thing: null };
     },
@@ -1386,6 +1385,21 @@ ${unnamed}`;
         }
         if (!party) return this.nobodyByThatName(cultivator, query, scope, 'request');
 
+        // A requested clinical act keeps its resolved listener. The ordinary
+        // care path owns all physical-provider, fight, grade, price and stock gates.
+        if (!weighing && party.kind === 'cultivator') {
+            if (asksAboutClinicalCare(said))
+                return this.interact(run, cultivator, ambient, query, 'talk', said, leverage, rawInput);
+            if (parseIntent(said).action === 'treat')
+                return this.treat(run, cultivator, ambient, party.id);
+        }
+
+        if (kind === 'a_thing' && party.kind === 'cultivator') {
+            const stored = await askingYourHouseForAStoredObject(this, run, cultivator,
+                query, named, rawInput, party.id);
+            if (stored) return stored;
+        }
+
         // A HOUSE IS NOT A PERSON
         if (party.kind !== 'cultivator' || !party.party) {
             return this.interact(
@@ -1423,6 +1437,9 @@ ${unnamed}`;
                 + `kind ${kind}. It goes where it is sent.`
             ));
         }
+
+        const rideOffer = kind === 'passage' ? prepareRideOffer(this, cultivator, party, rawInput) : null;
+        if (rideOffer && 'facts' in rideOffer) return rideOffer;
 
         // ── ENDING A BOND, WHICH ASKS FOR NOTHING ────────────────────────
         //
@@ -1583,8 +1600,16 @@ ${unnamed}`;
         // THE TERM, WHICH IS A FACT ABOUT THE ASK AND NOT ABOUT THE ROLL. Read
         // once here so the costing line, the refusal and the activity written
         // on a yes all name the same number.
+        // Existing company reads describe a local rest-of-day invitation.
+        // Only consent put to an actual person here is a local exchange; other
+        // requests retain the sustained social attempt's existing span.
+        const sustainedCompany = shape === 'company' && (days !== undefined
+            || ASKING_FOR_SUSTAINED_COMPANY.test(named + ' ' + rawInput));
+        const localCompanyConsent = (shape === 'company' || shape === 'passage')
+            && this.present(cultivator).some(row => row.id === party.id);
         const term = shape === 'company'
-            ? (this.atHand ? invitationEndsAt(this.atHand) - routineTime(this.atHand) : 1)
+            ? (sustainedCompany ? (days === undefined ? null : Math.max(1, Math.trunc(days)))
+                : (this.atHand ? invitationEndsAt(this.atHand) - routineTime(this.atHand) : 1))
             // What a bare "I cultivate" spends, so asking to be watched for no
             // stated span spends what sitting for no stated span does.
             : shape === 'guidance'
@@ -1637,7 +1662,7 @@ ${unnamed}`;
             : null;
 
         const costing = whatItWouldCostThem({
-            kind: shape as 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company' | 'guidance',
+            kind: shape as 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company' | 'passage' | 'guidance',
             asking,
             asked,
             techniqueId: asArt?.id ?? null,
@@ -1648,7 +1673,7 @@ ${unnamed}`;
                 ? {
                     where: this.whereTheyAlreadyAre(party.id),
                     bound,
-                    forDays: term
+                    forDays: term, reviseCompany: sustainedCompany
                 }
                 : {}),
             ...(attention ? { attention, forDays: term } : {})
@@ -1663,7 +1688,7 @@ ${unnamed}`;
                 ));
             }
             const done = await this.whatTheyAgreedTo(
-                run, cultivator, party, 'company', costing, null, { forDays: term, bound }, ambient
+                run, cultivator, party, 'company', costing, null, { forDays: term, bound, invitation: !sustainedCompany }, ambient
             );
             const went = this.freeAction(run, 'request', factsForToolResult(
                 `${party.name} comes with you.`, done.lines
@@ -1717,7 +1742,7 @@ ${unnamed}`;
         if (shape === 'guidance' && attention && !weighing
             && theirRow && isTeachingToday(theirRow, today)
             && !whoTheyAreTeaching(theirRow, today).includes(cultivator.id)) {
-            return this.sitInOn(run, cultivator, ambient, party.name, term, rawInput);
+            return this.sitInOn(run, cultivator, ambient, party.name, term ?? DEFAULT_CULTIVATION_DAYS, rawInput);
         }
 
         const offered = leverage === 'coin' ? stonesNamedIn(rawInput) : null;
@@ -1874,15 +1899,20 @@ ${unnamed}`;
             return weighing;
         }
 
-        const result = resolveAttempt({ ...attempt, theAttemptLands: theRollLands('an_approach_to_somebody') });
+        const resolved = resolveAttempt({ ...attempt, theAttemptLands: theRollLands('an_approach_to_somebody') });
+        // Same outcome, odds, stream, money and marks. The actual exchange
+        // clock is not the resolver's generic campaign-duration estimate.
+        const result = localCompanyConsent ? { ...resolved, days: LESSER_ACTION_DAYS.request } : resolved;
 
         if (result.stonesSpent > 0) {
             this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -result.stonesSpent });
         }
 
-        const spent = await this.shortSkip(
-            run, cultivator, ambient, TRAVEL_FOCUS, `Asking ${party.name}`, result.days
-        );
+        const spent = localCompanyConsent
+            ? this.freeAction(run, 'request', factsForToolResult('The request was put.', []), false)
+            : await this.shortSkip(
+                run, cultivator, ambient, TRAVEL_FOCUS, `Asking ${party.name}`, result.days
+            );
 
         writeFlag(this.db, cultivator.id, askedKey, String(priorAsks + 1));
 
@@ -1893,7 +1923,7 @@ ${unnamed}`;
                 // Composed after the records are written, below, because one
                 // clause of it is a claim about the ledger.
                 summary: '',
-                ok: result.outcome === 'taken'
+                ok: attemptWasAccepted(result.outcome)
             },
             ...structureCalls(party.structure),
             ...costing.structure.map(line => ({
@@ -1966,7 +1996,7 @@ ${unnamed}`;
         }
 
         // A REFUSAL THAT NAMES A TRADE IS NOT A REBUFF
-        if (result.outcome !== 'taken' && theirTopWant !== null) {
+        if (!attemptWasAccepted(result.outcome) && theirTopWant !== null) {
             alsoSaid.push(
                 `It is not a door closing. ${party.name} is carrying something of their own - `
                 + `${theirTopWant.text} - and somebody who turns up holding part of that is not `
@@ -2007,12 +2037,12 @@ ${alsoSaid.join(' ')}`;
         const execution: Execution = {
             ...spent,
             facts,
-            outcome: result.outcome === 'taken' ? 'executed' : 'refused'
+            outcome: attemptWasAccepted(result.outcome) ? 'executed' : 'refused'
         };
         execution.calls = calls;
 
         // ── AND THE THING ACTUALLY HAPPENS ───────────────────────────────
-        if (result.outcome === 'taken' || result.outcome === 'turned') {
+        if (attemptWasAccepted(result.outcome)) {
             // A SPAN DOES NOT BEGIN AFTER THE ASKING DID NOT END. Whatever cut
             // the asking short - or ended the life doing it - is also what the
             // lesson would have started in the middle of.
@@ -2027,9 +2057,11 @@ ${alsoSaid.join(' ')}`;
 ${line}`;
                 return execution;
             }
-            const done = await this.whatTheyAgreedTo(
-                run, cultivator, party, shape, costing, meeting, { forDays: term, bound }, ambient
-            );
+            const done = shape === 'passage' && rideOffer && 'terms' in rideOffer
+                ? bindAgreedRide(this, cultivator, party, rideOffer.terms, rideOffer.destinationName)
+                : await this.whatTheyAgreedTo(
+                    run, cultivator, party, shape, costing, meeting, { forDays: term, bound, invitation: !sustainedCompany }, ambient
+                );
             facts.lines.push(...done.lines);
             if (done.lines.length > 0) {
                 facts.prose = `${facts.prose}
@@ -2052,6 +2084,12 @@ ${done.span.facts.prose}`;
                     (facts.required ??= []).push(...done.span.facts.required);
                 }
                 execution.events = [...execution.events, ...done.span.events];
+                execution.timeSkips = [...executionResults(execution.timeSkip, execution.timeSkips),
+                    ...executionResults(done.span.timeSkip, done.span.timeSkips)];
+                execution.breakthroughs = [...executionResults(execution.breakthrough, execution.breakthroughs),
+                    ...executionResults(done.span.breakthrough, done.span.breakthroughs)];
+                execution.hearings = [...executionResults(execution.hearing, execution.hearings),
+                    ...executionResults(done.span.hearing, done.span.hearings)];
                 execution.timeSkip = done.span.timeSkip ?? execution.timeSkip;
                 execution.breakthrough = done.span.breakthrough ?? execution.breakthrough;
                 execution.cutShort = done.span.cutShort ?? execution.cutShort ?? null;
@@ -2059,6 +2097,23 @@ ${done.span.facts.prose}`;
             }
         }
 
+        if (localCompanyConsent) {
+            // Agreement/refusal belongs to the observed reply time. Commit the
+            // actual party first, then let night, host departure and the world
+            // act during the exchange; never recreate an expired invitation.
+            this.captureAnActualReplyBeforeTime(cultivator, party.id);
+            const currentRun = this.repos.runs.getById(run.id)!;
+            const currentBody = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            const advanced = await passHours(this, currentRun, currentBody, result.days * 24);
+            const timed = advanced.spent
+                ? foldTheCallsIntoOneTurn([execution, advanced.spent], execution.facts.headline)
+                : execution;
+            if (advanced.finished) timed.calls.push({ name: 'engine.lesserActionTime', action: 'request',
+                summary: `${result.days} day spent on the local consent exchange.`, ok: true });
+                // The answer already happened. A later native interruption
+                // must not retrospectively change actual consent into refusal.
+                return { ...timed, outcome: advanced.finished ? execution.outcome : (advanced.spent?.outcome ?? execution.outcome) };
+        }
         return execution;
     },
 
@@ -2760,7 +2815,7 @@ ${done.span.facts.prose}`;
             landed.line
         ];
 
-        const took = result.outcome === 'taken' || result.outcome === 'turned';
+        const took = attemptWasAccepted(result.outcome);
         // Whether the thing is now ON them, which is derived off the row rather
         // than assumed. See the transfer below.
         let inHand = true;

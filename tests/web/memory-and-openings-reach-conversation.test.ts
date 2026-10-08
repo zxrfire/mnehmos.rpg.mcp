@@ -16,7 +16,6 @@ import { MAX_ORDINAL } from '../../src/engine/cultivation/realms';
 import { makeRequirements } from '../../src/engine/world/capability';
 import { makeObject } from '../../src/engine/world/possessions';
 import { upsertRelationship } from '../../src/engine/world/npc-state';
-import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { worldLocationFor } from '../../src/web/entities';
 import { engineCalls, makeGameInWorld, ScriptedProvider } from './harness';
 
@@ -46,8 +45,30 @@ it('tells local schedules and carries witnessed history and private channel fact
     const speaker = world.npcs.find(n => n.status === 'alive' && n.id !== cultivator.id && n.cultivation.realmOrdinal < 10)!;
     for (const n of world.npcs) if (n.locationId === ground.id && n.id !== cultivator.id) n.locationId = null;
     speaker.locationId = ground.id;
-    speaker.activity = null;
-    h.game.repos.cultivators.standIn(cultivator.id, theAreasOf(world, ground).whereIs.get(speaker.id)!);
+    // `loadWorld()` always reads a fresh copy from storage rather than
+    // handing back the engine's own cached one, so every mutation below was
+    // landing on an orphaned object unless assigned back: `theWorldMoved()`
+    // and `act()` read `atHand`, not this local `world`. Every other played
+    // test that edits a loaded world directly assigns it back; this one
+    // never did.
+    h.game.atHand = world;
+    // `theAreasOf` reads a settlement into areas of at most three by drawing a
+    // bin per three-hour bucket of `currentHour` - fine for an unscripted
+    // crowd, but this turn's own conversational cost moves the clock by one
+    // such bucket between this setup and the moment `company()` builds the
+    // scene for narration, which redraws the speaker into a DIFFERENT named
+    // area than the one `standIn` below would have locked the player into.
+    // A `redirect.standingIn` is read verbatim instead of drawn - the same
+    // mechanism an ordinary local invitation uses to hold somebody still -
+    // and a bare `place#kind` key (not a specific drawn area id) resolves
+    // through `areaTheyStandIn`'s own fallback to the first area of that
+    // kind, which is equally stable whichever of the two reads it first.
+    const marketKey = `${ground.id}#market`;
+    speaker.activity = {
+        kind: 'idle', note: 'trading', withIds: [], sinceDay: world.currentDay, untilDay: null,
+        redirect: { until: world.currentDay + 5, previous: null, standingIn: marketKey }
+    };
+    h.game.repos.cultivators.standIn(cultivator.id, marketKey);
     h.game.knowledge.learnIfNew({
         holderId: cultivator.id, kind: 'cultivator', id: speaker.id, name: speaker.name,
         onDay: world.currentDay, sourceKind: 'witnessed', stage: 'encountered'

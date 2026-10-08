@@ -31,10 +31,12 @@ import {
     whatBeingWatchedIsWorth,
     whatWinningIsWorth
 } from '../../../src/engine/world/what-a-face-is-worth.js';
-import { makeLocation } from '../../../src/engine/world/locations.js';
+import { makeLocation, linkLocations } from '../../../src/engine/world/locations.js';
 import { makeObject } from '../../../src/engine/world/possessions.js';
 import { createNpc, setRealm, upsertRelationship, type NpcRecord } from '../../../src/engine/world/npc-state.js';
 import { createWorld, makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
+import { howManyThisGroundCarries } from '../../../src/web/investigate-verb.js';
+import { READS_A_VEIN } from '../../../src/web/what-you-can-tell-about-the-ground.js';
 
 const HOUSE = SECTS.find(s => s.id === 'sect-azure-cloud-pavilion')!;
 const DAY = 600 * 365;
@@ -87,6 +89,35 @@ describe('what face is worth', () => {
 });
 
 describe('a challenge, answered or not', () => {
+    /**
+     * A travelling body's durable location names its endpoint. That person must
+     * neither witness a duel there nor count as working its vein before arrival.
+     * Event-day reads must also work before the world pass advances currentDay.
+     */
+    it('does not count a traveller at their destination as a witness or worker', () => {
+        const traveller = person('en-route', READS_A_VEIN, {
+            activity: { kind: 'travelling', sinceDay: DAY - 2, untilDay: DAY + 18,
+                note: 'Walking to the yard', withIds: [],
+                fromLocationId: 'origin', returnTo: 'room-duelling_ground' }
+        });
+        const state = world([person('asker', 16), person('asked', 16), traveller]);
+        const origin = makeLocation({ id: 'origin', name: 'The departure ground', kind: 'settlement' });
+        state.locations.push(origin);
+        const yard = state.locations.find(l => l.id === 'room-duelling_ground')!;
+        linkLocations(origin, yard, 'road', 20);
+        state.currentDay = DAY - 10;
+        const bout = holdADuel(state, { challenger: state.npcs[0]!, challenged: state.npcs[1]!,
+            terms: 'to_yield', where: yard, day: DAY });
+        expect(bout.fought).toBe(true);
+        expect(bout.witnesses).toBe(0);
+        // Survey the same destination independently, without the two fighters.
+        const survey = world([traveller]);
+        survey.locations.push(origin);
+        const surveyedYard = survey.locations.find(l => l.id === yard.id)!;
+        linkLocations(origin, surveyedYard, 'road', 20);
+        expect(howManyThisGroundCarries(survey, surveyedYard, READS_A_VEIN)).toContain('0 people work it');
+    });
+
     it('is answered when an equal asks, and the answer is worth face', () => {
         const state = world([
             person('asker', 16),

@@ -270,7 +270,36 @@ describe('whose body it came off goes with the bone', () => {
         const { game } = at.harness;
         await game.act('I take the bones');
         const bone = getBone(boneItemId(gradeOfWhatABodyYields(20)!))!;
-        const recipient = game.present(game.repos.cultivators.getById(at.playerId)!)[0]!;
+        // Taking the bones costs a whole day, and a day's own background pass
+        // can empty a square that was arranged for the turn before it - this
+        // file arranges people directly rather than playing to find one, and
+        // the gift needs a recipient the same way. Put a living body here,
+        // in the area the player now stands in, rather than trusting whoever
+        // the day left nearby. `passHours` reloads the game world at the day
+        // boundary, so arrange the live `atHand` state rather than the old
+        // global handle that preceded the harvest.
+        const me = game.repos.cultivators.getById(at.playerId)!;
+        const world = game.atHand!;
+        const here = game.worldPlaceOf(me)!;
+        const place = world.locations.find(l => l.id === here)!;
+        const recipientRow = world.npcs.find(n => n.status === 'alive' && n.id !== at.playerId
+            && !n.tags.includes('the-player'))!;
+        const at_ = world.npcs.findIndex(n => n.id === recipientRow.id);
+        const today = Math.floor(world.currentDay);
+        world.npcs[at_] = {
+            ...recipientRow,
+            locationId: here,
+            activity: {
+                kind: 'out_with_a_party', note: 'Here for the handover.', withIds: [],
+                sinceDay: today, untilDay: today + 1, returnTo: recipientRow.locationId
+            }
+        };
+        const area = theAreasOf(world, place).whereIs.get(recipientRow.id);
+        game.repos.cultivators.standIn(at.playerId, area ?? null);
+        game.theWorldMoved();
+        const recipient = game.present(game.repos.cultivators.getById(at.playerId)!)
+            .find(row => row.id === recipientRow.id)!;
+        expect(recipient, 'the arranged recipient is not standing with the player').toBeTruthy();
         await game.act(`I give the ${bone.name} to ${recipient.name}`);
         const row = (await activeWorld()).state.objects
             .find(o => o.data.materialId === bone.id && o.data.deadId === at.bodyId);

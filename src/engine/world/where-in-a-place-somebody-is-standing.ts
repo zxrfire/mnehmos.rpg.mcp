@@ -1,3 +1,5 @@
+import { workersAtPublicCounters } from './who-is-working-at-a-public-counter.js';
+import { publicCountersAt, publicTransportHubsAt, type PublicCounterKind } from './public-transport-at-a-place.js';
 /**
  * Which area of a place somebody is standing in, and no area holds more than three.
  *
@@ -39,11 +41,14 @@
 
 import { forStream } from '../cultivation/rng.js';
 import { isOpenWater } from '../../data/cultivation/regions.js';
+import { whatKindOfPlace } from './what-somebody-knows-of-the-land.js';
 import { SEA_LANES } from '../../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
 import { isAwayOnSomething, isActing, PLAYER_ROW_TAG, type ActivityKind, type NpcRecord } from './npc-state.js';
-import type { LocationRecord } from './locations.js';
+import type { LocationRecord, RouteQueries } from './locations.js';
 import type { WorldState } from './world-state.js';
-import { routineOf } from './npc-routines.js';
+import { routineOf, routineTime } from './npc-routines.js';
+import { theLodgingsOfAHouse, whichRoomARungGets } from './the-room-a-house-gives-you.js';
+import { townHasAClinic, physicianIsWorking } from './who-is-actually-seeing-to-wounds.js';
 import {
     npcsStandingIn,
     npcsWithin,
@@ -55,7 +60,7 @@ import {
 export const AT_MOST_IN_AN_AREA = 3;
 
 /** What an area of a place is for. */
-export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'board' | 'here' | 'room' | 'deck';
+export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'board' | 'here' | 'room' | 'deck' | 'exchange' | 'clinic' | 'landing' | 'carriage_station' | 'span_counter';
 
 export interface AnAreaOfAPlace {
     /** `<place id>#<kind>#<slug>`. */
@@ -66,7 +71,8 @@ export interface AnAreaOfAPlace {
     for: WhatAnAreaIsFor;
 }
 
-type State = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour' | 'locations' | 'npcs' | 'factions'>;
+type State = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour' | 'locations' | 'npcs' | 'factions'>
+    & Partial<Pick<WorldState, 'objects'>>;
 
 interface StandingWith {
     id: string;
@@ -74,6 +80,9 @@ interface StandingWith {
     sectId?: string | null;
     /** People held outside the world roster, with their own area when known. */
     others?: readonly { id: string; standingIn?: string | null }[];
+    physical?: { accepts: (npc: NpcRecord) => boolean; betweenEndpoints: boolean;
+        /** Supplied by an accepted physical carrier read, never a stored passenger roster. */
+        hull?: { key: string; operatorId: string; areaKind: 'deck' | 'here' } }; 
 }
 
 const MARK = '#';
@@ -158,8 +167,13 @@ function isOpenWaterRow(place: Pick<LocationRecord, 'kind' | 'data' | 'name'>): 
 }
 
 /** The kinds of area a place has, the one a road arrives in first. */
-function theKindsOf(place: Pick<LocationRecord, 'kind' | 'data' | 'controllingFactionId' | 'name'>): WhatAnAreaIsFor[] {
-    if (isATown(place)) return ['street', 'market', 'table'];
+function theKindsOf(place: Pick<LocationRecord, 'kind' | 'data' | 'controllingFactionId' | 'name' | 'tags'>): WhatAnAreaIsFor[] {
+    if (isATown(place)) {
+        const kinds: WhatAnAreaIsFor[] = place.tags.includes('city') || whatKindOfPlace(place.name) === 'provincial capital'
+            ? ['street', 'market', 'exchange', 'table'] : ['street', 'market', 'table'];
+        if (townHasAClinic(place)) kinds.push('clinic');
+        return kinds;
+    }
     if (isOpenWaterRow(place)) return ['deck'];
     if (theHouseOfTheSeat(place) !== null) return ['gate', 'forecourt', 'board'];
     return ['here'];
@@ -177,6 +191,11 @@ function theNamesFor(place: Pick<LocationRecord, 'name' | 'tags'>, what: WhatAnA
     switch (what) {
         case 'street': return THE_STREETS;
         case 'market': return town.market;
+        case 'exchange': return ['the exchange', 'the exchange counters', 'the exchange courtyard', 'the exchange galleries', 'the auction house'];
+        case 'landing': return ['the landing'];
+        case 'carriage_station': return ['the carriage station'];
+        case 'span_counter': return ['the folding counter'];
+        case 'clinic': return ["the physician's clinic"];
         case 'table': return town.table;
         case 'gate': return OUTSIDE_THE_GATE;
         case 'forecourt': return THE_FORECOURT;
@@ -211,10 +230,11 @@ function anArea(place: Pick<LocationRecord, 'id'>, what: WhatAnAreaIsFor, name: 
  * sleep ... in the room is just yourself (unless ur with a party)". Its id carries the holder,
  * so two lodgers are never in each other's room. Null for any other id.
  */
-export function aRoomOfTheirOwn(place: Pick<LocationRecord, 'id' | 'kind'>, holderId: string): AnAreaOfAPlace {
+export function aRoomOfTheirOwn(place: Pick<LocationRecord, 'id' | 'kind'> & Partial<Pick<LocationRecord, 'data'>>, holderId: string): AnAreaOfAPlace {
     // The owner: a room is an area "at an inn (or in your sect, or a cave)". A cave
     // of their own is the whole place and needs no area inside it.
-    const name = place.kind === 'sect_seat' ? 'your quarters' : 'your room at the inn';
+    const name = place.kind === 'sect_seat' || ['dormitory', 'residence'].includes(String(place.data?.purpose))
+        ? 'your quarters' : 'your room at the inn';
     return { id: `${place.id}${MARK}room${MARK}${holderId}`, placeId: place.id, name, for: 'room' };
 }
 
@@ -225,12 +245,13 @@ export function aRoomOfTheirOwn(place: Pick<LocationRecord, 'id' | 'kind'>, hold
 export function theOneOnWatchAtTheGate(
     state: State,
     seat: Pick<LocationRecord, 'id' | 'kind' | 'data' | 'controllingFactionId'>,
-    compounds: WhereCompoundsAre = whereCompoundsAre(state)
+    compounds: WhereCompoundsAre = whereCompoundsAre(state),
+    routes?: RouteQueries
 ): NpcRecord | null {
     const house = theHouseOfTheSeat(seat);
     if (house === null) return null;
-    return npcsStandingIn(state, seat.id, compounds)
-        .filter(n => n.factionId === house && !routineOf(state, n).home
+    return npcsStandingIn(state, seat.id, compounds, routes)
+        .filter(n => n.factionId === house && !routineOf(state, n, routes).home
             && !(n.activity !== null && isAwayOnSomething(n.activity.kind)))
         .sort((a, b) => a.factionRankIndex - b.factionRankIndex || (a.id < b.id ? -1 : 1))[0] ?? null;
 }
@@ -268,16 +289,37 @@ export function theAreasOf(
     state: State,
     place: LocationRecord,
     compounds: WhereCompoundsAre = whereCompoundsAre(state),
-    standingWith?: StandingWith
+    standingWith?: StandingWith,
+    routes?: RouteQueries
 ): APlaceReadIntoAreas {
     const day = Math.floor(state.currentDay);
-    const people = npcsStandingIn(state, place.id, compounds)
-        .filter(n => !n.tags.includes(PLAYER_ROW_TAG) && n.id !== standingWith?.id);
+    const people = npcsStandingIn(state, place.id, compounds, routes)
+        .filter(n => !n.tags.includes(PLAYER_ROW_TAG) && n.id !== standingWith?.id
+            && (!standingWith?.physical || standingWith.physical.accepts(n)));
+    const betweenEndpoints = standingWith?.physical?.betweenEndpoints === true;
     const here = new Map(people.map(n => [n.id, n]));
-    const routines = new Map(people.map(n => [n.id, routineOf(state, n)]));
+    const routines = new Map(people.map(n => [n.id, routineOf(state, n, routes)]));
     const house = theHouseOfTheSeat(place);
-    const watch = house === null ? null : theOneOnWatchAtTheGate(state, place, compounds);
-    const aboard = isOpenWaterRow(place);
+    const watch = betweenEndpoints || house === null ? null : theOneOnWatchAtTheGate(state, place, compounds, routes);
+    const aboard = isOpenWaterRow(place) || standingWith?.physical?.hull?.areaKind === 'deck';
+    const now = routineTime(state);
+    const hullOf = new Map<string, string>();
+    if (standingWith?.physical?.hull) {
+        for (const npc of people) hullOf.set(npc.id, standingWith.physical.hull.key);
+    } else if (aboard) for (const npc of people) {
+        const routine = routines.get(npc.id)!;
+        const trip = routine.activity;
+        if (trip?.kind !== 'travelling' || routine.standingIn || !trip.vesselId || !trip.seaLaneId
+            || !trip.fromLocationId || !trip.returnTo || trip.untilDay == null
+            || !Number.isFinite(trip.sinceDay) || !Number.isFinite(trip.untilDay)
+            || now < trip.sinceDay || now >= trip.untilDay) continue;
+        hullOf.set(npc.id, JSON.stringify([trip.vesselId, trip.seaLaneId, trip.fromLocationId, trip.returnTo]));
+    }
+    const hullmates = new Map<string, NpcRecord[]>();
+    for (const npc of people) {
+        const hull = hullOf.get(npc.id);
+        if (hull) hullmates.set(hull, [...(hullmates.get(hull) ?? []), npc]);
+    }
 
     // ONE SCENE, ONE AREA: people in an activity together, joined over everybody standing here.
     const groupOf = new Map<string, NpcRecord[]>();
@@ -290,22 +332,47 @@ export function theAreasOf(
             if (groupOf.has(one.id)) continue;
             groupOf.set(one.id, group);
             group.push(one);
+            const hull = hullOf.get(one.id);
+            if (hull) {
+                for (const other of hullmates.get(hull) ?? []) if (!groupOf.has(other.id)) queue.push(other);
+                continue;
+            }
             const activity = routines.get(one.id)!.activity;
             if (!activity) continue;
             for (const id of activity.withIds) {
                 const other = here.get(id);
-                if (other && !groupOf.has(other.id)) queue.push(other);
+                if (other && !hullOf.has(other.id) && !groupOf.has(other.id)) queue.push(other);
             }
         }
     }
-    const groups = [...new Set(groupOf.values())].map(group => group.sort((a, b) => (a.id < b.id ? -1 : 1)));
+    const deckOrder = (npc: NpcRecord): number => npc.id === standingWith?.physical?.hull?.operatorId || npc.identity.occupation === 'shipmaster' ? 0
+        : npc.tags.some(tag => tag.startsWith('crew-of:')) ? 2 : 1;
+    const groups = [...new Set(groupOf.values())].map(group => group.sort((a, b) =>
+        (hullOf.has(a.id) ? deckOrder(a) - deckOrder(b) : 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)));
 
+    const exchangeHands = new Set<string>();
+    if (place.tags.includes('city') || whatKindOfPlace(place.name) === 'provincial capital') for (const object of state.objects ?? []) {
+        if (!object.tags.includes('exchange')) continue;
+        for (const entry of object.provenance) {
+            const person = entry.holderId ? here.get(entry.holderId) : undefined;
+            if (entry.how === 'lent' && person?.activity && entry.onDay >= person.activity.sinceDay)
+                exchangeHands.add(person.id);
+        }
+    }
+    const workers = betweenEndpoints ? new Map<PublicCounterKind, NpcRecord>() : workersAtPublicCounters(state, place.name, people, publicCountersAt(state, place.name, state.currentDay), routes);
+    const countersByPerson = new Map([...workers].map(([counter, person]) => [person.id, counter]));
     const kindOf = (group: NpcRecord[]): WhatAnAreaIsFor => {
+        if (standingWith?.physical?.hull) return standingWith.physical.hull.areaKind;
+        if (betweenEndpoints) return 'here';
         if (routines.get(group[0]!.id)!.home) return 'room';
+        const counter = countersByPerson.get(group[0]!.id);
+        if (counter) return counter === 'inn' ? 'table' : counter;
         if (house !== null) {
             return group.some(n => n.id === watch?.id) || group.every(n => n.factionId !== house) ? 'gate' : 'forecourt';
         }
         if (!isATown(place)) return aboard ? 'deck' : 'here';
+        if (group.some(n => physicianIsWorking(state, n))) return 'clinic';
+        if (group.some(n => exchangeHands.has(n.id))) return 'exchange';
         const anchor = group[0]!;
         const kind = routines.get(anchor.id)!.activity?.kind;
         return (kind === undefined ? undefined : WHERE_A_THING_IS_DONE_IN_A_TOWN[kind]) ?? 'street';
@@ -322,16 +389,33 @@ export function theAreasOf(
     const areas: AnAreaOfAPlace[] = [];
     const whereIs = new Map<string, string>();
     const whereBodiesAre = new Map<string, string>();
+    // Quarters belong to the whole living roll, even while their holders are working or away.
+    // The lodging building is shared; the holder's door and storage are separate.
+    if (!betweenEndpoints && !standingWith?.physical?.hull && ['dormitory', 'residence'].includes(String(place.data.purpose)) && place.controllingFactionId) {
+        const lodgings = theLodgingsOfAHouse(state, place.controllingFactionId);
+        const quartered = state.npcs.filter(npc => isActing(npc.status) && npc.factionId === place.controllingFactionId
+            && whichRoomARungGets(lodgings, npc.factionRankIndex)?.locationId === place.id)
+            .sort((a, b) => a.id.localeCompare(b.id));
+        for (const npc of quartered) {
+            const room = aRoomOfTheirOwn(place, npc.id);
+            room.name = `private quarters at door ${areas.length + 1}`;
+            areas.push(room);
+        }
+    }
     for (const group of groups.filter(group => kindOf(group) === 'room')) {
         for (const npc of group) {
-            const room = aRoomOfTheirOwn(place, npc.id);
-            room.name = (place.kind === 'sect_seat' || ['dormitory', 'residence'].includes(String(place.data.purpose)))
-                ? `private quarters at door ${areas.length + 1}` : `a home at door ${areas.length + 1}`;
-            areas.push(room);
+            const existing = areas.find(area => area.id === aRoomOfTheirOwn(place, npc.id).id);
+            const room = existing ?? aRoomOfTheirOwn(place, npc.id);
+            if (!existing) {
+                room.name = (place.kind === 'sect_seat' || ['dormitory', 'residence'].includes(String(place.data.purpose)))
+                    ? `private quarters at door ${areas.length + 1}` : `a home at door ${areas.length + 1}`;
+                areas.push(room);
+            }
             whereIs.set(npc.id, room.id);
         }
     }
-    for (const what of theKindsOf(place)) {
+    for (const what of (standingWith?.physical?.hull ? [standingWith.physical.hull.areaKind] : betweenEndpoints ? ['here' as const] : [...theKindsOf(place),
+        ...publicTransportHubsAt(state, place.name, now).map(hub => hub.kind)])) {
         // Anybody bigger than an area is taken three at a time; then in the order of a draw per
         // person on its own stream, the one on watch first so the gate a road reaches has them.
         const pieces = groups.filter(group => kindOf(group) === what)
@@ -339,30 +423,53 @@ export function theAreasOf(
                 (_, i) => group.slice(i * AT_MOST_IN_AN_AREA, (i + 1) * AT_MOST_IN_AN_AREA)))
             .map(piece => ({
                 piece,
+                hull: hullOf.get(piece[0]!.id),
                 first: piece.some(n => n.id === watch?.id),
-                draw: forStream(state.seed, 'which-area-of-a-place', place.id, piece[0]!.id,
-                    day, Math.floor((state.currentHour ?? 8) / 3)).next()
+                // The same selected worker belongs at the actual service, not a random table.
+                // Explicit rooms, company and accepted carriers retain their physical claim.
+                counter: !betweenEndpoints && !standingWith?.physical?.hull && piece.length === 1
+                    && groupOf.get(piece[0]!.id)!.length === 1
+                    && !routines.get(piece[0]!.id)!.standingIn
+                    ? countersByPerson.get(piece[0]!.id) : undefined,
+                draw: standingWith?.physical?.hull
+                    // An accepted hull has the same decks between conversational clock checks.
+                    // Town routines may shuffle hourly; that does not move these passengers.
+                    ? forStream(state.seed, 'which-area-of-a-place', standingWith.physical.hull.key, piece[0]!.id).next()
+                    : forStream(state.seed, 'which-area-of-a-place', place.id, piece[0]!.id,
+                        day, Math.floor((state.currentHour ?? 8) / 3)).next()
             }))
-            .sort((a, b) => Number(b.first) - Number(a.first) || a.draw - b.draw);
+            .sort((a, b) => Number(b.counter !== undefined) - Number(a.counter !== undefined)
+                || Number(b.first) - Number(a.first) || a.draw - b.draw);
         const total = pieces.reduce((n, p) => n + p.piece.length, 0);
         const names = theNamesFor(place, what);
         // Spare space is physical room, not a quota to fill. Fallen bodies still take space.
         const fallen = state.npcs.filter(n => !isActing(n.status) && n.locationId === place.id
+            && (!standingWith?.physical || standingWith.physical.accepts(n))
             && fallenKind(n) === what).sort((a, b) => a.id.localeCompare(b.id));
         const bins: NpcRecord[][] = Array.from(
             { length: Math.max(names.length, Math.ceil((total + fallen.length) / 1.5)) }, () => []);
-        for (const { piece, first, draw } of pieces) {
-            const from = first ? 0 : Math.floor(draw * bins.length);
+        const heldByAHull = new Set<number>();
+        for (const { piece, first, draw, hull, counter } of pieces) {
+            // These candidates already share the observer's exact unfinished edge.
+            // Its coarse endpoint label cannot scatter that one contact point
+            // among the endpoint's ordinary named areas. Keep the existing cap.
+            // Existing area catalogs put the service's primary venue first.
+            const serviceBin = counter === undefined ? -1 : 0;
+            const from = serviceBin >= 0 ? serviceBin
+                : first || betweenEndpoints ? 0 : Math.floor(draw * bins.length);
             const at = Array.from({ length: bins.length }, (_, k) => (from + k) % bins.length)
-                .find(i => bins[i]!.length + piece.length <= AT_MOST_IN_AN_AREA);
+                .find(i => !heldByAHull.has(i) && (hull ? bins[i]!.length === 0
+                    : bins[i]!.length + piece.length <= AT_MOST_IN_AN_AREA));
+            const chosen = at ?? bins.length;
             if (at !== undefined) bins[at]!.push(...piece);
             else bins.push([...piece]);
+            if (hull) heldByAHull.add(chosen);
         }
         const fallenIn = Array.from({ length: bins.length }, () => [] as NpcRecord[]);
         for (const npc of fallen) {
             const from = forStream(state.seed, 'where-a-body-fell', place.id, npc.id).int(0, bins.length - 1);
             const at = Array.from({ length: bins.length }, (_, k) => (from + k) % bins.length)
-                .find(i => bins[i]!.length + fallenIn[i]!.length < AT_MOST_IN_AN_AREA);
+                .find(i => !heldByAHull.has(i) && bins[i]!.length + fallenIn[i]!.length < AT_MOST_IN_AN_AREA);
             if (at !== undefined) fallenIn[at]!.push(npc);
             else { bins.push([]); fallenIn.push([npc]); }
         }
@@ -376,8 +483,11 @@ export function theAreasOf(
     // A visit names an area explicitly; overflow stays in a public area of the same place.
     for (const npc of people) {
         const desired = routines.get(npc.id)!.standingIn;
-        if (!desired) continue;
-        const area = areaTheyStandIn(place, areas, desired, npc.factionId);
+        if (!desired || betweenEndpoints) continue;
+        const area = standingWith?.physical?.hull
+            ? areas.find(one => one.id === desired && one.for === standingWith.physical!.hull!.areaKind)
+            : areaTheyStandIn(place, areas, desired, npc.factionId);
+        if (!area) continue;
         if (!areas.some(one => one.id === area.id)) areas.push(area);
         if ([...whereIs.values(), ...whereBodiesAre.values()].filter(id => id === area.id).length < AT_MOST_IN_AN_AREA) {
             whereIs.set(npc.id, area.id);
@@ -396,14 +506,23 @@ export function theAreasOf(
         // Visitors are placed before the observer moves, so walking to them keeps them there.
         for (const other of standingWith.others ?? []) {
             if (other.id === standingWith.id) continue;
-            const desired = areaTheyStandIn(place, areas, other.standingIn, null);
+            const desired = standingWith.physical?.hull
+                ? areas.find(one => one.id === other.standingIn && one.for === standingWith.physical!.hull!.areaKind)
+                    ?? areas.find(one => one.for === standingWith.physical!.hull!.areaKind)!
+                : areaTheyStandIn(place, areas, other.standingIn, null);
             if (!areas.some(area => area.id === desired.id)) areas.push(desired);
             whereIs.delete(other.id);
             whereIs.set(other.id, (count(desired.id) < AT_MOST_IN_AN_AREA ? desired : elsewhere(desired)).id);
         }
-        const at = areaTheyStandIn(place, areas, standingWith.standingIn, standingWith.sectId ?? null);
+        const at = standingWith.physical?.hull
+            ? areas.find(one => one.id === standingWith.standingIn && one.for === standingWith.physical!.hull!.areaKind)
+                ?? areas.find(one => one.for === standingWith.physical!.hull!.areaKind)!
+            : areaTheyStandIn(place, areas, standingWith.standingIn, standingWith.sectId ?? null);
         if (!areas.some(area => area.id === at.id)) areas.push(at);
         const companions = people.filter(n => routines.get(n.id)!.activity?.withIds.includes(standingWith.id))
+            // Following a leader cannot override this person's actual chosen hull area.
+            .filter(n => !standingWith.physical?.hull || !areas.some(area =>
+                area.id === routines.get(n.id)!.standingIn && area.for === standingWith.physical!.hull!.areaKind))
             .sort((a, b) => a.id.localeCompare(b.id));
         // Companions use free space; they cannot displace the person being approached.
         for (const companion of companions) {
@@ -411,6 +530,8 @@ export function theAreasOf(
             whereIs.set(companion.id, at.id);
         }
     }
+    // A road arrives at the public entrance at every hour, including when residents sleep.
+    areas.sort((a, b) => Number(a.for === 'room') - Number(b.for === 'room'));
     return { areas, whereIs, whereBodiesAre };
 }
 
@@ -437,9 +558,10 @@ export function whereInThisPlaceTheyStand(
     state: State,
     place: LocationRecord,
     standingIn: string | null | undefined,
-    ofTheHouse: string | null
+    ofTheHouse: string | null,
+    readAreas?: readonly AnAreaOfAPlace[]
 ): AnAreaOfAPlace {
-    const { areas } = theAreasOf(state, place);
+    const areas = readAreas ?? theAreasOf(state, place).areas;
     return areaTheyStandIn(place, areas, standingIn, ofTheHouse);
 }
 
@@ -458,7 +580,8 @@ function areaTheyStandIn(
     if (sameKind) return sameKind;
     const house = theHouseOfTheSeat(place);
     if (house !== null) return areas.find(area => area.for === (ofTheHouse === house ? 'forecourt' : 'gate'))!;
-    return areas[0]!;
+    // Sleeping residents are private doors, never the entrance reached by a road.
+    return areas.find(area => area.for !== 'room')!;
 }
 
 /**

@@ -1,15 +1,14 @@
 /**
- * The discovery rule.
+ * The discovery rule, and the owner ruling that narrowed it on 2026-10-03.
+ * Historically these checks also refused a full real name supplied by the
+ * player unless this character held a knowledge row. Player knowledge across
+ * runs now guides a named attempt; encounter awareness cannot erase it.
  *
- * docs/world/houses/discovery.md: never reference an entity the player has no
- * knowledge record for. A Qi Condensation cultivator in a village does not know
- * the ancient sects exist, and that is the accurate state of almost everyone.
- *
- * These tests are about the enforcement rather than the instruction. Telling a
- * model not to name what it has not been given is necessary and not sufficient;
- * what these check is that it is never given the names in the first place -
- * not in the state summary, not in an entity resolution, and not leaking out
- * through a refusal message.
+ * Passive summaries still withhold unsolicited names, ranks and private facts.
+ * A supplied house name may resolve and answer a named information question,
+ * but neither that question nor an unresolved whole-house approach is a
+ * witnessed visit. Real entry, listeners, admission and refusal still decide
+ * what an attempted act reaches. The original passive-disclosure tests remain.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -53,13 +52,6 @@ const HOME_REGION = REGIONS.find(region =>
  * headcount that would have to be edited every time the roster moved.
  */
 const LOCAL_SECTS = SECTS.filter(sect => HOME_REGION.factionIds.includes(sect.id));
-
-/**
- * A house the player demonstrably has not been told about: one the county does
- * not hold. Derived from the same rule as `LOCAL_SECTS`, so the two cannot
- * disagree about what "local" means.
- */
-const UNHEARD_SECT = SECTS.find(sect => !HOME_REGION.factionIds.includes(sect.id))!;
 
 /** True where a house is one the county would have named. */
 const isLocal = (id: string) => LOCAL_SECTS.some(sect => sect.id === id);
@@ -245,30 +237,39 @@ describe('a new cultivator starts knowing almost nothing', () => {
     });
 });
 
-describe('an unheard-of entity does not resolve', () => {
-    it('refuses to describe a sect the player has never heard named', async () => {
-        const { game } = makeGame();
-        await game.newRun('Villager');
-
-        const result = await game.act(`I examine ${UNHEARD_SECT.name}.`);
-        const refusal = refusedCall(result);
-
-        expect(refusal).not.toBeNull();
-        // And the refusal does not leak the thing it is refusing to describe:
-        // "you have never heard of it" and "it is not there" look the same from
-        // inside, or the error message becomes the answer key.
-        expect(refusal!.summary).not.toContain(UNHEARD_SECT.description);
-        expect(refusal!.summary).toMatch(/has heard of|know of|no knowledge/i);
+describe('a supplied name resolves without granting an encounter', () => {
+    it('answers a named unheard house without recording a visit', async () => {
+        const { db, game } = makeGame();
+        const { cultivator } = await game.newRun('Villager');
+        const gate = new KnowledgeGate(db);
+        const house = SECTS.find(h => !gate.isAwareOf(cultivator.id, 'sect', h.id))!;
+        expect(house).toBeDefined();
+        const before = game.state();
+        const awareness = gate.awareness(cultivator.id, 'sect');
+        const result = await game.act(`I examine ${house.name}.`);
+        expect(refusedCall(result)).toBeNull();
+        expect(result.narration).toContain(house.name);
+        expect(game.state().cultivator.location).toBe(before.cultivator.location);
+        expect(game.state().run.elapsedDays).toBe(before.run.elapsedDays);
+        expect(gate.awareness(cultivator.id, 'sect')).toEqual(awareness);
+        expect(result.toolCalls.some(c => c.name === 'knowledge.learn')).toBe(false);
     });
 
-    it('refuses to approach a faction the player has never heard named', async () => {
-        const { game } = makeGame();
-        await game.newRun('Villager');
-
-        const result = await game.act(`I negotiate with ${UNHEARD_SECT.name}.`);
+    it('resolves a supplied house but retains the real unresolved negotiation refusal and no witnessed visit', async () => {
+        const { db, game } = makeGame();
+        const { cultivator } = await game.newRun('Villager');
+        const gate = new KnowledgeGate(db);
+        const house = SECTS.find(h => !gate.isAwareOf(cultivator.id, 'sect', h.id))!;
+        expect(house).toBeDefined();
+        const before = game.state();
+        const result = await game.act(`I negotiate with ${house.name}.`);
         expect(planned(result).action).toBe('interact');
-        expect(refusedCall(result)).not.toBeNull();
-        expect(engineCalls(result).some(c => c.name === 'engine.resolveInteraction')).toBe(false);
+        expect(engineCalls(result).some(c => c.name === 'engine.resolveParty' && c.ok)).toBe(true);
+        expect(refusedCall(result)?.name).toBe('engine.resolveInteraction');
+        expect(game.state().cultivator.location).toBe(before.cultivator.location);
+        expect(game.state().run.elapsedDays).toBe(before.run.elapsedDays);
+        expect(gate.provenanceOf(cultivator.id, 'sect', house.id)
+            .some(row => row.sourceKind === 'witnessed')).toBe(false);
     });
 
     it('resolves a sect the player has actually heard of', async () => {

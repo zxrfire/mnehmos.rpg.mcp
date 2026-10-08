@@ -77,6 +77,25 @@ function aSquareHolding(carrying: readonly (readonly string[])[]): WorldState {
 
 const standingThere = makeCultivator({ location: 'square' });
 
+/**
+ * This fixture's sellers, as the "present" this module takes to mean standing
+ * right there - the fairness rule under test, not the area draw.
+ *
+ * People are now placed by the hour (`npc-routines.ts`'s `routineOf`, wired into
+ * `theAreasOf`), so four sellers with no activity of their own no longer land in
+ * one area together the way a bare `standingIn: null` used to put everybody:
+ * they read as trading and are drawn across up to `AT_MOST_IN_AN_AREA` areas
+ * same as any other crowd would be. That draw is its own subject
+ * (`where-in-a-place-somebody-is-standing.ts`) and not what this suite measures,
+ * so `readWhatIsOnOfferHere`'s own `present` override is used to say directly who
+ * is standing with the player - at most `AT_MOST_IN_AN_AREA` of them, same as the
+ * cap an area actually holds, which is the "fourth is across the square" the
+ * first test's comment was always about.
+ */
+function presentHere(state: WorldState): readonly { id: string }[] {
+    return state.npcs.slice(0, AT_MOST_IN_AN_AREA);
+}
+
 describe('a square shows every local seller before a second offer', () => {
     it('gives every seller a place before any seller gets a second', () => {
         // ONE MAN HOLDING FOUR, AND THREE MEN HOLDING ONE EACH. Sorted purely
@@ -89,7 +108,7 @@ describe('a square shows every local seller before a second offer', () => {
             [SELLABLE[6]]
         ]);
 
-        const { offers } = readWhatIsOnOfferHere(standingThere, state);
+        const { offers } = readWhatIsOnOfferHere(standingThere, state, undefined, presentHere(state));
         const sellers = new Set(offers.map(o => o.sellerId));
 
         expect(offers.length, 'the board is not full').toBe(OFFERS_SHOWN);
@@ -106,7 +125,7 @@ describe('a square shows every local seller before a second offer', () => {
         // what he has, not one thing and three blanks.
         const state = aSquareHolding([SELLABLE.slice(0, 6)]);
 
-        const { offers } = readWhatIsOnOfferHere(standingThere, state);
+        const { offers } = readWhatIsOnOfferHere(standingThere, state, undefined, presentHere(state));
 
         expect(offers.length).toBe(OFFERS_SHOWN);
         expect(new Set(offers.map(o => o.sellerId)).size).toBe(1);
@@ -118,7 +137,7 @@ describe('a square shows every local seller before a second offer', () => {
         // kept.
         const state = aSquareHolding([SELLABLE.slice(0, 3), SELLABLE.slice(3, 6)]);
 
-        const { offers, read } = readWhatIsOnOfferHere(standingThere, state);
+        const { offers, read } = readWhatIsOnOfferHere(standingThere, state, undefined, presentHere(state));
 
         for (const seller of read) {
             const shown = offers.filter(o => o.sellerId === seller.who.id);

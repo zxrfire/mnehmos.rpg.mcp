@@ -1,10 +1,13 @@
 /** Daily activity, read from the hour rather than stepped through the calendar. */
 import { forStream } from '../cultivation/rng.js';
+import { ordinaryProfessionOf } from './the-work-an-ordinary-mortal-does.js';
 import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
 import { isAwayOnSomething, type NpcActivity, type NpcRecord } from './npc-state.js';
+import type { RouteQueries } from './locations.js';
 import type { WorldState } from './world-state.js';
+import { locationOnNpcJourney, npcIsTravellingOnDay } from './places-on-the-way.js';
 
-type Clock = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour'>;
+type Clock = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour'> & Partial<Pick<WorldState, 'locations'>>;
 
 const samples = new WeakMap<Clock, { seed: string; day: number; stable: Map<string, number>; daily: Map<string, number> }>();
 
@@ -37,7 +40,8 @@ export function hourOnTheClock(hour: number): string {
 
 /** The same timestamp is used for invitation expiry and routine reads. */
 export function routineTime(state: Pick<Clock, 'currentDay' | 'currentHour'>): number {
-    return Math.floor(state.currentDay) + (state.currentHour ?? 8) / 24;
+    return state.currentDay % 1 !== 0 ? state.currentDay
+        : state.currentDay + (state.currentHour ?? 8) / 24;
 }
 
 /** The next night ends an ordinary invitation, including one made after nightfall. */
@@ -46,7 +50,7 @@ export function invitationEndsAt(state: Pick<Clock, 'currentDay' | 'currentHour'
 }
 
 /** A person's ordinary activity remains the source of their work and trade. */
-export function routineOf(state: Clock, npc: NpcRecord): {
+export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries): {
     activity: NpcActivity | null; home: boolean; standingIn: string | null; locationId: string | null;
 } {
     const now = routineTime(state);
@@ -55,16 +59,19 @@ export function routineOf(state: Clock, npc: NpcRecord): {
         return { activity: npc.activity, home: false, standingIn: redirect.standingIn ?? null, locationId: npc.locationId };
     }
     const ordinary = redirect ? redirect.previous : npc.activity;
+    const journeyActivity = ordinary && state.locations && npcIsTravellingOnDay(state.locations, npc, now, routes)
+        ? { ...ordinary, kind: 'travelling' as const } : ordinary;
     if (redirect && (redirect.returnDays === null || now < redirect.until + (redirect.returnDays ?? 0))) {
         return { activity: { kind: 'travelling', note: 'walking home', withIds: [],
             sinceDay: redirect.until, untilDay: redirect.returnDays === null ? null : redirect.until + (redirect.returnDays ?? 0),
             returnTo: npc.activity?.returnTo }, home: false, standingIn: null, locationId: npc.locationId };
     }
-    const locationId = redirect ? npc.activity?.returnTo ?? npc.locationId : npc.locationId;
+    const locationId = redirect ? npc.activity?.returnTo ?? npc.locationId
+        : state.locations ? locationOnNpcJourney(state.locations, npc, now, routes) : npc.locationId;
     const result = (activity: NpcActivity | null, home = false) => ({ activity, home, standingIn: null, locationId });
     // An errand, a posting and a timed seclusion already have their own calendar.
     if (!redirect && ordinary && (isAwayOnSomething(ordinary.kind)
-        || (ordinary.untilDay != null && ordinary.untilDay >= Math.floor(state.currentDay)))) return result(ordinary);
+        || (ordinary.untilDay != null && ordinary.untilDay >= Math.floor(state.currentDay)))) return result(journeyActivity);
     if (npc.tags.includes('spirit-beast') || npc.tags.some(tag => tag.startsWith('present-as:'))) return result(ordinary);
     const hour = state.currentHour ?? 8;
     const day = Math.floor(state.currentDay);
@@ -95,5 +102,7 @@ export function routineOf(state: Clock, npc: NpcRecord): {
     }
     if (ordinary && ordinary.kind !== 'idle' && ordinary.kind !== 'at_a_table') return result(ordinary);
     if (npc.factionId) return doing('the_work_of_their_rank', 'doing the work of their rank');
+    const profession = ordinaryProfessionOf(npc);
+    if (profession) return doing('the_work_of_their_rank', `Working as ${profession.name}.`);
     return doing('trade', 'trading');
 }

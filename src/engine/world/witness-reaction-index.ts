@@ -22,6 +22,11 @@ export interface WitnessIndex {
     reportedGround: Map<string, Map<string, Set<string>>>;
     byData: Map<string, HistoricalFact[]>;
     byDataValue: Map<string, Map<string | number | boolean | null, Set<HistoricalFact>>>;
+    sortedDataValues: Map<string, Map<string | number | boolean | null, readonly HistoricalFact[]>>;
+    auctionLots: Map<string, HistoricalFact>;
+    auctionResults: Map<string, Set<string>>;
+    openAuctionLots: Set<HistoricalFact>;
+    openAuctionLotsByPlace: Map<string, Set<HistoricalFact>>;
     rumoured: Set<HistoricalFact>;
     competitions: Map<string, { closed: boolean; entries: HistoricalFact[]; resultIds: Set<string> }>;
     pendingCompetitions: Set<string>;
@@ -43,8 +48,20 @@ export interface WitnessIndex {
     warnings: Set<string>;
 }
 
+/** City boards need their venue; house boards keep the legacy seat key. */
+export function competitionBoardKey(hostId: string, day: number, venueId?: string | null,
+    capital = false): string {
+    return `${hostId}|${day}${capital && venueId ? `|${venueId}` : ''}`;
+}
+
+function boardKeyOf(fact: HistoricalFact): string {
+    return competitionBoardKey(String(fact.data.hostId), Number(fact.data.contestDay),
+        typeof fact.data.venueId === 'string' ? fact.data.venueId : null,
+        fact.data.capitalCompetition === true);
+}
+
 const INDEXES = new WeakMap<WorldState, WitnessIndex>();
-function referenceKeys(fact: HistoricalFact): string[] {
+export function referenceKeys(fact: HistoricalFact): string[] {
     return [...fact.actors.map(actor => actor.id), ...fact.witnessIds, ...fact.causes,
         ...Object.values(fact.data).filter((value): value is string => typeof value === 'string'),
         ...(fact.consequences?.beneficiaries.map(actor => actor.id) ?? []),
@@ -102,6 +119,15 @@ function pendingKeys(index: WitnessIndex, fact: HistoricalFact, add: boolean): v
     }
 }
 
+function setAuctionLotOpen(index: WitnessIndex, lot: HistoricalFact, open: boolean): void {
+    if (open) index.openAuctionLots.add(lot); else index.openAuctionLots.delete(lot);
+    if (lot.locationId === null) return;
+    const held = index.openAuctionLotsByPlace.get(lot.locationId) ?? new Set<HistoricalFact>();
+    if (open) held.add(lot); else held.delete(lot);
+    if (held.size) index.openAuctionLotsByPlace.set(lot.locationId, held);
+    else index.openAuctionLotsByPlace.delete(lot.locationId);
+}
+
 function addFact(index: WitnessIndex, fact: HistoricalFact, arrays = true): void {
     index.byId.set(fact.id, fact);
     rememberReferences(index, fact);
@@ -111,6 +137,18 @@ function addFact(index: WitnessIndex, fact: HistoricalFact, arrays = true): void
         if (value === undefined) continue;
         const rows = values.get(value) ?? new Set();
         rows.add(fact); values.set(value, rows);
+        index.sortedDataValues.get(key)?.delete(value);
+    }
+    if (fact.data.auctionLot === true) {
+        index.auctionLots.set(fact.id, fact);
+        if (!index.auctionResults.get(fact.id)?.size) setAuctionLotOpen(index, fact, true);
+    }
+    if (fact.data.auctionResult === true && typeof fact.data.lotId === 'string') {
+        const results = index.auctionResults.get(fact.data.lotId) ?? new Set<string>();
+        results.add(fact.id);
+        index.auctionResults.set(fact.data.lotId, results);
+        const lot = index.auctionLots.get(fact.data.lotId);
+        if (lot) setAuctionLotOpen(index, lot, false);
     }
     const push = <K>(map: Map<K, HistoricalFact[]>, key: K): void => {
         const rows = map.get(key) ?? [];
@@ -125,7 +163,7 @@ function addFact(index: WitnessIndex, fact: HistoricalFact, arrays = true): void
         }
     }
     if (fact.data.openCompetition === true) {
-        const key = `${fact.data.hostId}|${fact.data.contestDay}`;
+        const key = boardKeyOf(fact);
         const board = index.competitions.get(key) ?? { closed: false, entries: [], resultIds: new Set<string>() };
         if (fact.data.result === true) board.resultIds.add(fact.id);
         board.closed = board.resultIds.size > 0;
@@ -209,6 +247,20 @@ function removeFact(index: WitnessIndex, fact: HistoricalFact, dropped: boolean,
         const rows = values.get(fact.data[key]!);
         rows?.delete(fact);
         if (rows?.size === 0) values.delete(fact.data[key]!);
+        index.sortedDataValues.get(key)?.delete(fact.data[key]!);
+    }
+    if (fact.data.auctionLot === true) {
+        index.auctionLots.delete(fact.id);
+        setAuctionLotOpen(index, fact, false);
+    }
+    if (fact.data.auctionResult === true && typeof fact.data.lotId === 'string') {
+        const results = index.auctionResults.get(fact.data.lotId);
+        results?.delete(fact.id);
+        if (results?.size === 0) {
+            index.auctionResults.delete(fact.data.lotId);
+            const lot = index.auctionLots.get(fact.data.lotId);
+            if (lot) setAuctionLotOpen(index, lot, true);
+        }
     }
     if (fact.kind === 'grudge_settled' && typeof fact.data.priceFactId === 'string') {
         const rows = index.paidPrices.get(fact.data.priceFactId);
@@ -279,7 +331,9 @@ export function witnessIndexFor(world: WorldState): WitnessIndex {
             nextPosition: 0, inserted: previous?.inserted ?? [], introduced: previous?.introduced ?? new Set(),
             byId: new Map(), order: new Map(), byYear: new Map(), byActor: new Map(), observed: new Set(),
             byKind: new Map(), byPlace: new Map(), stoodOn: new Map(), reportedGround: new Map(),
-            byData: new Map(), byDataValue: new Map(), rumoured: new Set(),
+            byData: new Map(), byDataValue: new Map(), sortedDataValues: new Map(),
+            auctionLots: new Map(), auctionResults: new Map(), openAuctionLots: new Set(),
+            openAuctionLotsByPlace: new Map(), rumoured: new Set(),
             competitions: new Map(),
             pendingCompetitions: new Set(),
             pricesByYear: new Map(), longestPriceSpan: 0, paidPrices: new Map(),
@@ -330,7 +384,7 @@ export function factsInSpan(world: WorldState, fromDay: number, toDay: number): 
 
 /** A receipt or report keyed by the subject recorded in its sparse column. */
 export function factsWithDataValue(world: WorldState, key: string,
-    value: string | number | boolean | null): HistoricalFact[] {
+    value: string | number | boolean | null): readonly HistoricalFact[] {
     const index = witnessIndexFor(world);
     let values = index.byDataValue.get(key);
     if (!values) {
@@ -341,7 +395,21 @@ export function factsWithDataValue(world: WorldState, key: string,
         }
         index.byDataValue.set(key, values);
     }
-    return [...values.get(value) ?? []].sort((a, b) => index.order.get(a.id)! - index.order.get(b.id)!);
+    let sorted = index.sortedDataValues.get(key);
+    if (!sorted) { sorted = new Map(); index.sortedDataValues.set(key, sorted); }
+    let result = sorted.get(value);
+    if (!result) {
+        result = [...values.get(value) ?? []].sort((a, b) => index.order.get(a.id)! - index.order.get(b.id)!);
+        sorted.set(value, result);
+    }
+    return result;
+}
+
+/** Open lots derive from consignment and settlement facts in the ledger. */
+export function pendingAuctionLots(world: WorldState, venueId?: string): readonly HistoricalFact[] {
+    const index = witnessIndexFor(world);
+    const rows = venueId === undefined ? index.openAuctionLots : index.openAuctionLotsByPlace.get(venueId);
+    return [...rows ?? []].sort((a, b) => index.order.get(a.id)! - index.order.get(b.id)!);
 }
 
 export function recordWitnessObservations(world: WorldState, fact: HistoricalFact,
@@ -420,8 +488,9 @@ export function witnessHistoryWasPruned(world: WorldState,
     update(index.factsByPerson, changed.flatMap(fact => fact.actors.map(actor => actor.id)),
         (fact, id) => fact.actors.some(actor => actor.id === id));
     for (const key of new Set(changed.filter(fact => fact.data.openCompetition === true)
-        .map(fact => `${fact.data.hostId}|${fact.data.contestDay}`))) {
-        const board = index.competitions.get(key)!;
+        .map(boardKeyOf))) {
+        const board = index.competitions.get(key);
+        if (!board) continue;
         board.entries = board.entries.filter(row => !dropped.has(row.id)).map(row => replacements.get(row.id) ?? row);
         for (const id of dropped) board.resultIds.delete(id);
         board.closed = board.resultIds.size > 0;

@@ -114,12 +114,19 @@ describe('the wall', () => {
             return said.slice(at).split('\n').slice(1).filter(line => /^\s+\S.*: /.test(line))
                 .map(line => line.trim());
         };
+        // A run now opens standing somewhere at a given hour rather than at
+        // a flat day zero, so `elapsedDays` is not 0 the moment `newRun`
+        // returns - measured on this seed at 1/3 of a day. The claim this
+        // test pins is that reading the wall, either way of asking, spends
+        // none of its OWN time, so it is read relative to whatever the run
+        // already stood at rather than against an absolute zero.
+        const daysBeforeReading = game.state().run.elapsedDays;
         const looked = contractsIn((await game.act('let me go check out that wall with the contracts')).narration ?? '');
         const asked = contractsIn((await game.act('is there work')).narration ?? '');
         expect(looked.length).toBeGreaterThan(0);
         expect(looked).toEqual(asked);
         for (const line of looked) expect(line).toContain(` ${A_MARKET_TOWN} `);
-        expect(game.state().run.elapsedDays).toBe(0);
+        expect(game.state().run.elapsedDays).toBe(daysBeforeReading);
     }, 120_000);
 });
 

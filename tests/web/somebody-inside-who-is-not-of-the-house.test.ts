@@ -54,6 +54,7 @@ import {
     npcsStandingIn,
     whereCompoundsAre
 } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 const WORLD = 'a-xianxia-run';
 
@@ -174,6 +175,11 @@ async function insideAHouse(seed: string, opts: { large?: boolean } = {}) {
     await harness.game.act('I buy the Lesser Qi-Gathering Manual');
     await harness.game.act('I learn Lesser Qi-Gathering Manual');
     const world = (await harness.game.loadWorld())!;
+    // `loadWorld()` reads a fresh copy from storage rather than handing back
+    // the engine's own cached one, so the activities set directly on `world`
+    // below were never visible to `present()`, which reads `atHand`. Every
+    // other played test that edits a loaded world assigns it back.
+    harness.game.atHand = world;
     const me = harness.game.currentRun().cultivator;
 
     let found: {
@@ -225,8 +231,17 @@ async function insideAHouse(seed: string, opts: { large?: boolean } = {}) {
         .find(id => npcsStandingIn(world, id, compounds).some(npc => npc.id === found!.teacherId))!;
     const room = world.locations.find(place => place.id === roomId)!;
     harness.repos.cultivators.update(me.id, { location: room.name });
+    // THE ROOM IS NOT ONE SQUARE EITHER. `theNamesFor('here')` gives a plain
+    // room four named corners the same way a town gets several streets, so
+    // setting only `location` leaves `standingIn` stale (or null) and the
+    // fallback in `areaTheyStandIn` - "the first area of this kind" - is a
+    // coin flip against whichever of the four corners the teacher's own
+    // group actually drew. Stand the player where the teacher really is,
+    // the way the game's own walk-to-a-room code does.
     const teacher = world.npcs.find(npc => npc.id === found!.teacherId)!;
     const listener = world.npcs.find(npc => npc.id === found!.listenerId)!;
+    const theirArea = theAreasOf(world, room, compounds).whereIs.get(teacher.id)!;
+    harness.repos.cultivators.standIn(me.id, theirArea);
     const here = harness.game.present(harness.game.currentRun().cultivator).map(row => row.id);
     expect(here, 'moving the player did not put the teacher in front of them').toContain(teacher.id);
 

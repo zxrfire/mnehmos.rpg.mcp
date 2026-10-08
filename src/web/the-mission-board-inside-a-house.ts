@@ -27,6 +27,7 @@ import {
 import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { theSeatOfTheCompound } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
 import type { LocationRecord } from '../engine/world/locations.js';
+import { purposeOf } from '../engine/world/architecture.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { DutyCandidate } from '../engine/encounters/duties.js';
@@ -66,7 +67,9 @@ function theSeatTheyAreInside(world: WorldState, cultivator: Cultivator): Locati
 export function theBoardTheyStandAt(world: WorldState | null, cultivator: Cultivator): LocationRecord | null {
     if (!world) return null;
     const here = theAreaTheyAreIn(world, cultivator);
-    return here && here.place.kind === 'sect_seat' && here.area.for === 'board' ? here.place : null;
+    if (!here) return null;
+    if (purposeOf(here.place) === 'mission_hall') return theSeatOfTheCompound(world, here.place.id);
+    return here.place.kind === 'sect_seat' && here.area.for === 'board' ? here.place : null;
 }
 
 /**
@@ -117,6 +120,9 @@ export function theWallWhereTheyStand(
 ): TheWallWhereTheyStand {
     const world = game.atHand;
     const seat = theBoardTheyStandAt(world, cultivator);
+    // House commissions and sendings hang with missions, not in every room.
+    if (world && seat === null && theSeatTheyAreInside(world, cultivator) !== null)
+        return { ...board, offers: [], refusals: [] };
     const houseId = seat === null ? null : theHouseOf(seat);
     const house = world?.factions.find(f => f.id === houseId) ?? null;
     const held = positionIn(game.repos, cultivator.id);

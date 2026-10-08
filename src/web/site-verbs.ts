@@ -3,6 +3,7 @@
  */
 
 import { oldWorldArchive, keepOldWorldKnowledge, oldWorldYear } from './what-somebody-knows-of-the-old-world.js';
+import { executionResults } from './a-sentence-can-be-more-than-one-call.js';
 import { purposeOf } from '../engine/world/architecture.js';
 import { takeGraveMedicine } from '../engine/world/immortal-medicine.js';
 import { theHeightAHouseWorksAt } from '../engine/world/where-the-pills-actually-are.js';
@@ -28,7 +29,8 @@ import {
     evaluateDeathConditions,
     stagnationRemaining
 } from '../engine/cultivation/survival.js';
-import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
+import { spendAnOrdinarySpanAtTheActualClock } from './spending-an-ordinary-span-at-the-actual-clock.js';
+import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-world.js';
 import { type Severity, createGrudge } from '../engine/social/grudges.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { locationHistory } from '../engine/world/locations.js';
@@ -50,7 +52,6 @@ import {
     SITE_INTENTS,
     type SiteIntent
 } from './actions.js';
-import { applyTimeSkip } from './apply.js';
 // The move verb's own call, so a room of this compound is answered by the walk
 // rather than by a refusal that says the room does not exist.
 import { aWalkInsideTheWalls } from './walking-inside-the-walls.js';
@@ -320,6 +321,11 @@ export const siteVerbs = {
         rawInput: string,
         days: number | undefined
     ): Promise<Execution> {
+        if (this.worldEnabled && (this.atHand ??= await this.loadWorld())?.npcs.some(n => n.activity?.retrievalRequestId)) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            run = this.repos.runs.getById(run.id) ?? run;
+        }
         const label = (intent ?? '').trim().toLowerCase() as LegacyIntent;
         const chosen: LegacyIntent =
             LEGACY_INTENTS.includes(label) ? label : DEFAULT_LEGACY_INTENT;
@@ -383,7 +389,7 @@ export const siteVerbs = {
         // stones, came out of the week holding 30.
         const afterGoods = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
 
-        const skip = simulateTimeSkip(afterGoods, outcome.daysSpent, {
+        const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, afterGoods, outcome.daysSpent, {
             seed: run.seed,
             rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(afterGoods),
@@ -398,10 +404,7 @@ export const siteVerbs = {
             ...daoHeartConditions(this.repos.db, afterGoods, Math.floor(run.elapsedDays)),
             hostility: ruinHostilityHere(this, afterGoods),
             toll: tollConditionsFor(this.repos, afterGoods)
-        });
-        this.putBackWhatWasNotEaten(afterGoods, skip);
-        const applied = applyTimeSkip(this.repos, { before: afterGoods, run, skip });
-        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        }, 'pack');
 
         return {
             facts: outcome.facts,
@@ -605,8 +608,13 @@ export const siteVerbs = {
         ambient: AmbientQi,
         site: Site
     ): Promise<Execution> {
+        if (this.worldEnabled && (this.atHand ??= await this.loadWorld())?.npcs.some(n => n.activity?.retrievalRequestId)) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            run = this.repos.runs.getById(run.id) ?? run;
+        }
         const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(cultivator, ENTERING_DAYS, {
+        const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, cultivator, ENTERING_DAYS, {
             seed: run.seed,
             // The row id is a randomUUID; without this the run is not
             // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
@@ -627,11 +635,7 @@ export const siteVerbs = {
             ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
             hostility: ruinHostilityHere(this, cultivator),
             toll: tollConditionsFor(this.repos, cultivator)
-        });
-
-        this.putBackWhatWasNotEaten(cultivator, skip);
-        const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
-        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        }, 'pack');
         const spentLine =
             `${humanDays(skip.simulatedDays)} went on getting in and being in there, and they came `
             + 'off the same clock everything else comes off.';
@@ -1131,9 +1135,11 @@ export const siteVerbs = {
         ranAs?: string
     ): FiledOutcome {
         return {
-            ranksGained: Math.max(0, execution.timeSkip?.deltas.realmOrdinal ?? 0)
-                + (execution.breakthrough?.outcome === 'success' ? 1 : 0),
-            breakthroughAttempted: execution.breakthrough !== null,
+            ranksGained: executionResults(execution.timeSkip, execution.timeSkips)
+                .reduce((total, skip) => total + Math.max(0, skip.deltas.realmOrdinal ?? 0), 0)
+                + executionResults(execution.breakthrough, execution.breakthroughs)
+                    .filter(result => result.outcome === 'success').length,
+            breakthroughAttempted: executionResults(execution.breakthrough, execution.breakthroughs).length > 0,
             // Read off the row rather than off anybody's sentence, which is the
             // whole point of this object.
             who: this.currentRun().cultivator.name,

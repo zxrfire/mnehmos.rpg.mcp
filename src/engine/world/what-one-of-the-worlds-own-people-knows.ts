@@ -53,6 +53,9 @@ import {
 } from '../social/discovery.js';
 import type { HistoricalFact } from './history.js';
 import { getFaction, getLocation, type WorldState } from './world-state.js';
+import { isTheWorldsToMove } from './npc-state.js';
+import { whoTheyAreOf } from './who-knows-the-land.js';
+import { whatSomebodyKnowsOfTheLand } from './what-somebody-knows-of-the-land.js';
 import type { NpcRecord } from './npc-state.js';
 import { isInTheAirFor, regionOf, whereThisPersonIsStanding } from './what-people-are-saying.js';
 import {
@@ -146,12 +149,16 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
     const byFactId = index.byId;
     const presentAt = index.presentAt;
     const tellingsOf = new Map<string, HistoricalFact[]>();
-    for (const fact of factsWithData(state, 'toldOfWitnessedFact')) {
-        const toldOf = fact.data.toldOfWitnessedFact;
-        if (typeof toldOf !== 'string') continue;
-        const rows = tellingsOf.get(toldOf) ?? [];
-        rows.push(fact);
-        tellingsOf.set(toldOf, rows);
+    for (const fact of [...new Set([...factsWithData(state, 'toldOfWitnessedFact'),
+        ...factsWithData(state, 'postingHandover')])]) {
+        const toldOf = typeof fact.data.toldOfWitnessedFact === 'string' ? [fact.data.toldOfWitnessedFact]
+            : fact.data.postingHandover === true ? fact.causes : [];
+        for (const id of toldOf) {
+            if (typeof id !== 'string') continue;
+            const rows = tellingsOf.get(id) ?? [];
+            rows.push(fact);
+            tellingsOf.set(id, rows);
+        }
     }
 
     const saidHere = (holder: NpcRecord, facts: readonly HistoricalFact[]): boolean =>
@@ -226,6 +233,20 @@ function ofThePlace(
     if (holder.factionId) stage = highestStage(stage, errands(holder.factionId, locationId));
     if (containersOf(state, holder.locationId).has(locationId)) {
         stage = highestStage(stage, BEING_TOLD);
+    }
+
+    // The ordinary shared land seed and actual historical knowledge compose.
+    // Mirrored player rows are not seeded NPCs and receive no common-land grant.
+    const place = getLocation(state, locationId);
+    if (place && isTheWorldsToMove(holder)) {
+        const land = whatSomebodyKnowsOfTheLand(state, whoTheyAreOf(state, {
+            id: holder.id,
+            location: getLocation(state, holder.locationId ?? '')?.name ?? null,
+            realmOrdinal: holder.cultivation.realmOrdinal,
+            sectId: holder.factionId
+        }));
+        const common = land.places.find(row => row.name === place.name)?.stage;
+        if (common) stage = highestStage(stage, common);
     }
 
     // Their own house's seat and the ground it holds. Somebody on the roll can

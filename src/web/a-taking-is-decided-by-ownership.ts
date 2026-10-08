@@ -369,7 +369,7 @@ export const takingVerbs = {
                 `You reach for ${theArticleIsAlreadyOnIt(what)} and find it where you left `
                 + 'it, which is on you.',
                 `Taking refused as a no-op: the row's possessor is already ${cultivator.id}. `
-                + 'Nothing moved, no day passed, and no account opened.'
+                + 'Nothing moved, no time passed, and no account opened.'
             ));
         }
 

@@ -9,7 +9,7 @@ import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { makeFact, reserveFactSlot } from '../../../src/engine/world/history.js';
 import { appendWorldFact } from '../../../src/engine/world/who-was-there-when-it-happened.js';
-import { factsAddedSince, factsInSpan, factsWithData, factsWithDataValue, witnessIndexFor } from '../../../src/engine/world/witness-reaction-index.js';
+import { factsAddedSince, factsInSpan, factsWithData, factsWithDataValue, pendingAuctionLots, witnessIndexFor } from '../../../src/engine/world/witness-reaction-index.js';
 import { cloneWorld, theWorldForgetsTheMortalDead, type WorldState } from '../../../src/engine/world/world-state.js';
 import { whatStandingOnItGives, whatAHousesOwnErrandsBringBack } from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import { reactToWitnessedFact, observationOf } from '../../../src/engine/world/witness-reactions.js';
@@ -64,8 +64,12 @@ it('reads appended, recurring and pruned facts from the surviving ledger', () =>
         data: { openCompetition: true, result: true, hostId: 'host', contestDay: state.currentDay } }), { bystanders: false });
     const board = `host|${state.currentDay}`;
     expect(witnessIndexFor(state).competitions.get(board)?.closed).toBe(true);
+    expect(factsWithDataValue(state, 'visitorId', first.id).map(fact => fact.id)).toContain(
+        state.history.facts.find(fact => fact.summary === deed.summary)!.id);
     state.npcs = state.npcs.map(n => n.id === first.id ? { ...n, status: 'physically_dead', diedOnDay: state.currentDay } : n);
     theWorldForgetsTheMortalDead(state);
+    expect(factsWithDataValue(state, 'visitorId', first.id).map(fact => fact.id)).toEqual(state.history.facts
+        .filter(fact => fact.data.visitorId === first.id).map(fact => fact.id));
     agrees(state);
     expect(witnessIndexFor(state).competitions.get(board)?.closed).toBe(false);
     expect(witnessIndexFor(state).pendingCompetitions.has(board)).toBe(true);
@@ -76,11 +80,22 @@ it('reads appended, recurring and pruned facts from the surviving ledger', () =>
     expect(repeated.id).toBe(sameDeed.id);
     const cursor = witnessIndexFor(state).nextOrder;
     const slot = reserveFactSlot(state.history);
+    expect(factsWithDataValue(state, 'auctionLot', true)).toEqual([]);
     const following = appendWorldFact(state, makeFact({ day: state.currentDay, kind: 'said_in_public',
-        summary: 'The following deed.' }), { bystanders: false });
+        summary: 'The following deed.', data: { auctionLot: true, objectId: 'later', closesOnDay: state.currentDay + 7 } }), { bystanders: false });
+    expect(factsWithDataValue(state, 'auctionLot', true).map(fact => fact.id)).toEqual([following.id]);
+    expect(pendingAuctionLots(state).map(fact => fact.id)).toEqual([following.id]);
     witnessIndexFor(state);
     const reserved = appendWorldFact(state, makeFact({ day: state.currentDay, kind: 'gathering',
-        summary: 'The gathering before its deeds.' }), { bystanders: false, reserved: slot });
+        summary: 'The gathering before its deeds.', data: { auctionLot: true, objectId: 'earlier', closesOnDay: state.currentDay + 7 } }), { bystanders: false, reserved: slot });
     expect(factsAddedSince(state, cursor).map(fact => fact.id)).toEqual([reserved.id, following.id]);
+    expect(factsWithDataValue(state, 'auctionLot', true).map(fact => fact.id)).toEqual([reserved.id, following.id]);
+    expect(pendingAuctionLots(state).map(fact => fact.id)).toEqual([reserved.id, following.id]);
+    appendWorldFact(state, makeFact({ day: state.currentDay, kind: 'gathering',
+        summary: 'The earlier lot settled.', data: { auctionResult: true, lotId: reserved.id } }), { bystanders: false });
+    expect(pendingAuctionLots(state).map(fact => fact.id)).toEqual([following.id]);
+    expect(pendingAuctionLots(cloneWorld(state)).map(fact => fact.id)).toEqual([following.id]);
+    state.history.facts = state.history.facts.filter(fact => fact.data.auctionResult !== true);
+    expect(pendingAuctionLots(state).map(fact => fact.id)).toEqual([reserved.id, following.id]);
     agrees(state);
 });

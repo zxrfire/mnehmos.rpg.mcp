@@ -18,6 +18,7 @@ import { PRESENT_YEAR, THE_CALENDAR_OFFSET, CALENDARS } from '../../src/data/cul
 import { FALSE_IMMORTAL_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import { purposeOf } from '../../src/engine/world/architecture.js';
 import { makeGame, makeGameInWorld, ScriptedProvider } from './harness.js';
+import { LESSER_ACTION_DAYS } from '../../src/web/lesser-action-costs.js';
 
 const philosopher = { realmOrdinal: FALSE_IMMORTAL_ORDINAL, sectId: null };
 const reading = (topic: string, sectId: string | null = null) =>
@@ -222,7 +223,10 @@ describe('asking, remembering and reading in play', () => {
             }
             expect(game.currentRun().cultivator.realmOrdinal).toBe(before.cultivator.realmOrdinal);
             expect(game.currentRun().cultivator.spiritStones).toBe(before.cultivator.spiritStones);
-            expect(game.currentRun().run.elapsedDays).toBe(before.run.elapsedDays);
+            // Cultivation and coin are untouched, but each of the five asked
+            // replies is a conversational exchange now and spends its own
+            // eighth day; the recall that follows each one stays free.
+            expect(game.currentRun().run.elapsedDays).toBe(before.run.elapsedDays + 5 * LESSER_ACTION_DAYS.interact);
         } finally { db.close(); }
     });
 });

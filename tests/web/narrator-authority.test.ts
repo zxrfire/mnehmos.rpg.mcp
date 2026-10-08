@@ -78,7 +78,11 @@ describe('a hallucinating model cannot mutate state', () => {
         //    which assertion 1 has already checked byte for byte.
         const calls = engineCalls(result).map(c => c.name);
         expect(calls.filter(name => name !== 'knowledge.learn')).toEqual(['engine.readState']);
-        expect(engineCalls(result)[0].summary).toContain('no time passed');
+        // `freeAction`'s own summary wording, since lesser acts started
+        // spending time: reads stay free and say so by naming the executor
+        // as where any charge would come from, not by claiming no time
+        // passed outright.
+        expect(engineCalls(result)[0].summary).toContain('Facts read; any act is charged by the executor.');
 
         // 5. The prose was still shown - decoratively. It is in the log as a
         //    narrator line, sitting next to the engine line that contradicts it.

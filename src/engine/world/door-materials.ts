@@ -75,6 +75,8 @@ export const A_PRECINCT_OF_DOOR = 2;
 
 /** The door, as the rest of the engine reads it. */
 export interface TheDoor {
+    /** Optional actual residence target, derived once for a transient door read. */
+    readonly locationId?: string;
     readonly material: DoorMaterial;
     readonly name: string;
     readonly standsAt: number;

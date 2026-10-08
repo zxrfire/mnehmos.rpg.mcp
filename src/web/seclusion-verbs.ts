@@ -14,7 +14,8 @@ import { techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { insightName, integrateInsight } from '../engine/cultivation/understanding.js';
 import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
 import { rankName } from '../engine/cultivation/realms.js';
-import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
+import { spendAnOrdinarySpanAtTheActualClock } from './spending-an-ordinary-span-at-the-actual-clock.js';
+import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-world.js';
 import {
     type EncounterActivity,
     concealmentScale,
@@ -53,7 +54,6 @@ import {
 } from '../server/consolidated/cultivation-support.js';
 import { copyNamesHeldBy, handleListAvailable } from '../server/consolidated/technique-manage.js';
 import type { ActionName } from './actions.js';
-import { applyTimeSkip } from './apply.js';
 import {
     type SeclusionCrossroads,
     type WhoIsClose,
@@ -312,6 +312,11 @@ export const seclusionVerbs = {
             };
         } = {}
     ): Promise<Execution> {
+        if (this.worldEnabled && (this.atHand ??= await this.loadWorld())?.npcs.some(n => n.activity?.retrievalRequestId)) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            run = this.repos.runs.getById(run.id) ?? run;
+        }
         const sealed = options.sealed ?? false;
         // WHO CAN SEE YOU SIT DOWN.
         //
@@ -408,7 +413,8 @@ export const seclusionVerbs = {
         // a player reads and the number the engine used cannot disagree.
         const terms = this.rateTermsFor(provisioned);
 
-        const skip = simulateTimeSkip(provisioned, lived, {
+        const worldDayAtStart = Math.floor(this.atHand?.currentDay ?? 0);
+        const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, provisioned, lived, {
             seed: run.seed,
             // The row id is a randomUUID; without this the run is not
             // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
@@ -477,20 +483,13 @@ export const seclusionVerbs = {
                 preparation: prepared ? (sealed ? SEALED_PREPARATION : PROVISIONED_PREPARATION) : 0,
                 hurried: lived < HURRIED_BELOW_DAYS
             }
+        }, 'reserved', portionDays => {
+            if (this.atHand) {
+                shareBeastCultivation(this.atHand, cultivator.id, wall.multiplier > 0 ? portionDays : 0);
+                this.theWorldMoved();
+            }
         });
 
-        const applied = applyTimeSkip(this.repos, { before: provisioned, run, skip });
-        if (this.atHand) {
-            shareBeastCultivation(this.atHand, cultivator.id, wall.multiplier > 0 ? skip.simulatedDays : 0);
-            this.theWorldMoved();
-        }
-        // Held before the advance, because a crossing inside the stretch happened
-        // on the day it happened and not on the day the sitting ended.
-        const worldDayAtStart = Math.floor(this.atHand?.currentDay ?? 0);
-        // The world spends exactly the days the cultivator spent. Not the days
-        // that were asked for: a skip cut short by a wound stops the world at
-        // the same hour it stopped the cultivator.
-        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
         const crossings = this.atHand
             ? anyWallCrossedInHereIsNews(this.atHand, skip, worldDayAtStart, {
                 id: cultivator.id,
@@ -1038,9 +1037,19 @@ export const seclusionVerbs = {
         focus: number,
         label: string,
         days = SHORT_ACTION_DAYS,
-        activity: EncounterActivity = activityForVerb(label)
+        activity: EncounterActivity = activityForVerb(label),
+        resolvesOnTurn = run.turn + 1,
+        finishTurn = true,
+        whileApproaching?: () => string | null
     ): Promise<Execution> {
-        const startDay = Math.floor(run.elapsedDays);
+        const precise = !Number.isInteger(days)
+            || (this.worldEnabled && (this.atHand ??= await this.loadWorld())?.npcs.some(n => n.activity?.retrievalRequestId));
+        if (this.worldEnabled && precise) {
+            this.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
+            cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+            run = this.repos.runs.getById(run.id) ?? run;
+        }
+        const startDay = precise ? run.elapsedDays : Math.floor(run.elapsedDays);
 
         const enc = encountersFor(
             { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
@@ -1067,7 +1076,7 @@ export const seclusionVerbs = {
         const lived = Math.min(daysActuallySpent(enc, startDay, days), worldCut?.days ?? days);
         const before = withEncounterDeltas(cultivator, enc);
 
-        const skip = simulateTimeSkip(before, lived, {
+        const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, before, lived, {
             seed: run.seed,
             // The row id is a randomUUID; without this the run is not
             // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
@@ -1095,13 +1104,8 @@ export const seclusionVerbs = {
             spanIsASitting: activity === 'seclusion' || activity === 'sealed',
             ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, cultivator)
-        });
-
-        // The pack goes out with them and the remainder comes back. See
-        // `drawFromPack`.
-        this.putBackWhatWasNotEaten(cultivator, skip);
-        const applied = applyTimeSkip(this.repos, { before, run, skip });
-        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        }, 'pack', undefined, resolvesOnTurn, undefined, whileApproaching
+            ? { dates: [], afterBoundary() {}, stop: whileApproaching } : undefined, finishTurn);
 
         // The same cut the long path takes, and for the same reason: a short
         // action can still be stopped early by the skip, and an occurrence past
@@ -1126,7 +1130,7 @@ export const seclusionVerbs = {
 
         // The same three causes and the same one sentence. See `longSkip`.
         const cutShort = whatCutTheSpanShort({
-            asked: days, lived, skip, arrival: enc, startDay,
+            preciseDays: precise, asked: days, lived, skip, arrival: enc, startDay,
             world: worldCut ? { inDays: worldCut.days, summary: worldCut.interrupt.summary } : null
         });
         if (cutShort !== null) {

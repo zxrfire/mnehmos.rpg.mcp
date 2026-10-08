@@ -78,6 +78,8 @@ export type RequestKind =
      * road with you is ordinary in this genre; buying a rung is not.
      */
     | 'company'
+    /** Consenting to a particular offered ride; preserves existing party affiliation. */
+    | 'passage'
     /**
      * ASKING WHAT IT WOULD TAKE, WHICH IS NOT ASKING FOR IT.
      */
@@ -134,6 +136,7 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
         // (`DISPOSITION_REACH` is 1 at this rung and below 0.4 at every other),
         // so who would come is a fact about people rather than about a table.
         case 'company':
+        case 'passage':
             return 'a_real_favour';
         // A rung off the house's own ladder, given to somebody who has not
         // earned it. The weight is not a judgement: `PURSE_REACH` at
@@ -762,6 +765,9 @@ const ASKING_TO_BE_RAISED =
  * `join me` carries a lookahead because "join me for a drink" is the courtesy
  * that asks for nothing and has its own reader two hundred lines up.
  */
+/** Explicit continuing company is distinct from a local room/day invitation. */
+export const ASKING_FOR_SUSTAINED_COMPANY = /\b(?:join (?:my|our) party|(?:travel|travelling|journey) with (?:me|us)|(?:keep|continue) (?:travelling|traveling|journeying)|travel together)\b/i;
+
 export const ASKING_THEM_TO_COME =
     /\b(?:come (?:with|along with) (?:me|us)|come along\b|travel(?:ling)? with (?:me|us)|ride with (?:me|us)|(?:walk|ride|travel|go) (?:the )?(?:road|way) with (?:me|us)|walk with (?:me|us)|go with (?:me|us)|journey with (?:me|us)|join (?:me|us)(?!\s+(?:for|at)\b)|follow (?:me|us)|join (?:my|our) party|accompany (?:me|us)|escort (?:me|us)|take me with (?:you|him|her|them)|on the road with (?:me|us)|at my side|(?:be|as) my (?:companion|escort|guard on the road)|(?:take|lead|guide|bring|show) (?:me|us)(?: the way)?(?=\s+to\b(?!\s+(?:meet|see)\b)))\b/i;
 
@@ -852,7 +858,7 @@ function classify(clause: string): { kind: RequestKind; object?: string } {
         return { kind: 'teaching', object: objectAfter(clause, AFTER_THE_TEACHING_VERB) };
     }
     if (ASKING_TO_BE_RAISED.test(clause)) return { kind: 'advancement' };
-    if (ASKING_THEM_TO_COME.test(clause)) {
+    if (ASKING_THEM_TO_COME.test(clause) || ASKING_FOR_SUSTAINED_COMPANY.test(clause)) {
         return { kind: 'company', object: whereACompanyAskIsBound(clause) };
     }
     if (ASKING_FOR_AN_INTRODUCTION.test(clause)) {

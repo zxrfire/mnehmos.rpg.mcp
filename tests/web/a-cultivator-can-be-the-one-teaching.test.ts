@@ -57,6 +57,9 @@
  * a mortal-grade art from 0 to full mastery in one turn. Both are asserted
  * rather than assumed, so a route that stops being playable fails here instead
  * of quietly measuring nothing.
+ * Practice and provisioning now move the hour and the crowd. Before teaching,
+ * stand in the live area of an eligible student; neither an empty arrival area
+ * nor the opening crowd is a teaching precondition.
  */
 
 import { makeGameInWorld } from './harness';
@@ -119,6 +122,9 @@ async function holdingIt(years: number) {
     }
     const me = harness.game.state().cultivator;
     const known = harness.repos.techniques.getKnown(me.id, ITS_ID);
+    const world = await harness.game.loadWorld();
+    await standWhereThePeopleAre(harness, me.id, new Set(world!.npcs
+        .filter(n => !n.cultivation.techniqueIds.includes(ITS_ID)).map(n => n.id)));
     return { ...harness, me, mastery: known?.mastery ?? null };
 }
 
@@ -221,6 +227,8 @@ describe('a cultivator holding the whole of an art', () => {
         await at.game.act(`I practise ${AN_ART_A_BEGINNER_CAN_HOLD} for 3 years`);
 
         const world = await at.game.loadWorld();
+        await standWhereThePeopleAre(at, at.game.state().cultivator.id, new Set(world!.npcs
+            .filter(n => !n.cultivation.techniqueIds.includes(ITS_ID)).map(n => n.id)));
         const student = aStudentHere(at as never, world!);
         const turn = await at.game.act(`I teach ${student!.name} ${AN_ART_A_BEGINNER_CAN_HOLD}`);
 
@@ -292,7 +300,7 @@ describe('handing on an art that belongs to a house', () => {
         await standWhereThePeopleAre(harness, harness.game.state().cultivator.id, new Set(
             (place ? npcsAt(world!, place.id) : []).filter(fits).map(npc => npc.id)));
         const me = harness.game.state().cultivator;
-        const student = harness.game.present(me)
+        const student = harness.game.present(harness.game.state().cultivator)
             .filter(row => row.id !== me.id)
             .find(row => {
                 const npc = world!.npcs.find(other => other.id === row.id);
@@ -365,7 +373,11 @@ describe('teaching somebody who is already yours', () => {
 
         const world = await harness.game.loadWorld();
         const me = harness.game.state().cultivator;
-        const student = harness.game.present(me)
+        await standWhereThePeopleAre(harness, me.id, new Set(world!.npcs.filter(n =>
+            !n.cultivation.techniqueIds.includes(ITS_ID)
+            && me.realmOrdinal - n.cultivation.realmOrdinal >= A_MASTER_STANDS_THIS_FAR_ABOVE
+        ).map(n => n.id)));
+        const student = harness.game.present(harness.game.state().cultivator)
             .filter(row => row.id !== me.id)
             .find(row => {
                 const npc = world!.npcs.find(other => other.id === row.id);

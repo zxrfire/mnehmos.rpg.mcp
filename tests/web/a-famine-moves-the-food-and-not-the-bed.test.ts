@@ -24,12 +24,18 @@
  *
  * Control arms throughout, and they are the strong kind: the SAME run, the SAME
  * day, the SAME sentence, with only the status pushed onto the ground between
- * the two readings. Nothing here re-seeds, re-rolls or advances anything, so
+ * the two readings. Originally these quote-only controls advanced nothing, so
  * there is no second world for a difference to have come from.
  *
  * The world seed is pinned because `makeGameInWorld` is the only way a played
  * test pins an outcome rather than a coincidence - but nothing below depends on
- * what this world contains. The status is pushed by hand, which is deliberate:
+ * a specific town/actor: lodging now selects a real occupied inn from canonical
+ * area/counter reads. The old quote-only lodging arm advanced nothing; actual
+ * booking now pays time and the real keeper, so those arms wait forward to a
+ * freshly verified ordinary counter on the SAME ground. No clock rewind,
+ * provider exemption or invented innkeeper preserves a quote. The status remains
+ * active across that real time; price arithmetic is still the controlled claim.
+ * The status is pushed by hand, which is deliberate:
  * `what-goes-wrong-with-a-place-and-what-ends-it.test.ts` owns the question of
  * what the world's own famine is written with, and this file owns what a famine
  * DOES to somebody standing in one.
@@ -48,6 +54,12 @@ import {
 import { worldLocationFor } from '../../src/web/entities';
 import { cashToStones, getPrice } from '../../src/data/cultivation/mortal-world';
 import { localPrice } from '../../src/data/cultivation/regions';
+import { anInnIsKeptHere, theCountersHere } from '../../src/web/a-room-at-an-inn';
+import { whoKeepsTheCounter } from '../../src/web/who-keeps-a-counter-here';
+import { theAreaNamed } from '../../src/web/walking-across-a-place';
+import { peopleInThisPlace } from '../../src/web/hearsay';
+import { passHours } from '../../src/web/routine-invitations';
+import { daysOfLifeRemaining } from '../../src/engine/cultivation/survival';
 import { standingOf } from '../../src/server/consolidated/where-a-cultivator-is-standing';
 
 const WORLD = 'famine-on-the-board';
@@ -57,12 +69,40 @@ const A_CULTIVATORS_MEAL = 'I buy spirit-beast meat';
 const A_MONTH_INDOORS = "I buy a month's lodging";
 const THE_CHEAP_PILL = 'I buy a lesser healing pill';
 
-async function standingSomewhereOrdinary() {
+async function standingSomewhereOrdinary(withAnActualInn = false) {
     const h = await makeGameInWorld({ seed: 'probe-famine', worldSeed: WORLD });
     const { cultivator } = await h.game.newRun('Probe');
     const run = h.repos.runs.getActiveRun(cultivator.id)!;
     const world = await worldForRun(run);
-    const place = worldLocationFor(world, cultivator.location)!;
+    let place = worldLocationFor(world, cultivator.location)!;
+    if (withAnActualInn) {
+        // Select only existing people/areas and a catalog-eligible actual place.
+        // Initial hour/location are operator arrangement, not a fabricated keeper.
+        let chosen: { place: typeof place; hour: number; areaId: string } | undefined;
+        for (const town of world.locations) {
+            const visitor = { ...cultivator, location: town.name, standingIn: null };
+            if (!anInnIsKeptHere(visitor)) continue;
+            for (let hour = 0; hour < 24; hour++) {
+                world.currentHour = hour;
+                const areas = peopleInThisPlace(h.repos, visitor, world, town).areas;
+                const inn = theAreaNamed(areas, 'inn');
+                if (!inn) continue;
+                const atCounter = { ...visitor, standingIn: inn.id };
+                if (whoKeepsTheCounter(h.game, atCounter, 'inn', theCountersHere(atCounter))) {
+                    chosen = { place: town, hour, areaId: inn.id };
+                    break;
+                }
+            }
+            if (chosen) break;
+        }
+        expect(chosen, 'an existing occupied ordinary inn at a real routine hour').toBeDefined();
+        place = chosen!.place;
+        h.repos.cultivators.update(cultivator.id, { location: place.name });
+        h.repos.cultivators.standIn(cultivator.id, chosen!.areaId);
+        h.db.prepare('UPDATE runs SET elapsed_days = ? WHERE id = ?').run(Math.floor(run.elapsedDays) + chosen!.hour / 24, run.id);
+        h.game.theWorldMoved();
+        await h.game.act('I look around');
+    }
 
     // Deep enough to buy the pill at three times its price, so the charged case
     // below is a purchase and not a refusal. Arranging a precondition.
@@ -73,13 +113,37 @@ async function standingSomewhereOrdinary() {
         run,
         world,
         place,
-        regionId: standingOf(cultivator).regionId,
+        regionId: standingOf(h.repos.cultivators.getById(cultivator.id)!).regionId,
         day: Math.floor(world.currentDay),
         cultivatorId: cultivator.id,
         purse: () => (h.db
             .prepare('SELECT spirit_stones AS s FROM cultivators WHERE id = ?')
             .get(cultivator.id) as { s: number }).s
     };
+}
+
+/** Recheck the real counter after prior purchases spent their own time. */
+async function buyAMonthAtTheActualCounter(at: Awaited<ReturnType<typeof standingSomewhereOrdinary>>) {
+    for (;;) {
+        const current = at.game.currentRun();
+        const body = at.repos.cultivators.getById(at.cultivatorId)!;
+        const daysLeft = daysOfLifeRemaining(body);
+        if (!body.alive || !(daysLeft > 0)) throw new Error(`No actual inn keeper before the body could wait further: ${body.id}, age ${body.age}, realm ${body.realmOrdinal}, ${daysLeft} days left, ${body.location}, run day ${current.run.elapsedDays}.`);
+        const world = at.game.atHand!;
+        const areas = peopleInThisPlace(at.repos, body, world, at.place).areas;
+        const inn = theAreaNamed(areas, 'inn');
+        expect(inn, 'the same settlement retains its actual inn area').not.toBeNull();
+        // Standing arrangement is explicit; this pricing case is not a walking test.
+        at.repos.cultivators.standIn(body.id, inn!.id);
+        const atCounter = at.repos.cultivators.getById(body.id)!;
+        at.game.theWorldMoved();
+        if (whoKeepsTheCounter(at.game, atCounter, 'inn', theCountersHere(atCounter)))
+            return at.game.act(A_MONTH_INDOORS);
+        // Advance, never rewind or freeze a provider. Re-read after actual time.
+        const waited = await passHours(at.game, current.run, atCounter, Math.min(1, daysLeft * 24));
+        if (!waited.finished) throw new Error(`No inn keeper before actual waiting refusal/interruption: ${waited.spent?.facts.headline ?? 'unfinished'}, ${body.location}, run day ${at.game.currentRun().run.elapsedDays}.`);
+        expect(at.game.currentRun().run.elapsedDays, 'ordinary waiting must progress rather than polling the same clock').toBeGreaterThan(current.run.elapsedDays);
+    }
 }
 
 /**
@@ -150,10 +214,10 @@ describe('a famine moves the food and does not move the bed the same way', () =>
      * value it could have been set to.
      */
     it('raises what a meal is quoted at and lowers what a month indoors is quoted at', async () => {
-        const at = await standingSomewhereOrdinary();
+        const at = await standingSomewhereOrdinary(true);
 
         const mealBefore = quoted(await at.game.act(A_CULTIVATORS_MEAL));
-        const bedBefore = quoted(await at.game.act(A_MONTH_INDOORS));
+        const bedBefore = quoted(await buyAMonthAtTheActualCounter(at));
         // A month's lodging rents the room; let it go, so the second quote is a quote again.
         clearFlag((at.game as unknown as { db: Database.Database }).db, at.cultivatorId, 'lodged_at');
 
@@ -163,7 +227,7 @@ describe('a famine moves the food and does not move the bed the same way', () =>
         );
 
         const mealAfter = quoted(await at.game.act(A_CULTIVATORS_MEAL));
-        const bedAfter = quoted(await at.game.act(A_MONTH_INDOORS));
+        const bedAfter = quoted(await buyAMonthAtTheActualCounter(at));
 
         // Measured on this world: 8 -> 29 stones and 3 -> 2. Asserted as the
         // arithmetic rather than as the figures, so a catalog or a province
@@ -204,8 +268,9 @@ describe('a famine moves the food and does not move the bed the same way', () =>
      * AND IT COMES OUT OF THE PURSE.
      *
      * The two cases above read a QUOTE, because nothing food-shaped or
-     * bed-shaped has a row in this engine to hold - `buy` prices those, says so,
-     * and charges nothing. A dial that moved only the sentence and never the
+     * bed-shaped has a row in this engine to hold. This was originally a
+     * quote-only control; lodging now actually pays the finite real counter.
+     * The unchanged medicine case still checks its own actual handed-over row. A dial that moved only the sentence and never the
      * balance would pass both of them. So this one is on a good the engine
      * really hands over, under a status shaped like the world's own war: *once
      * two sects fight, you probably want to pay more*, and here everybody who
@@ -280,9 +345,9 @@ describe('a famine moves the food and does not move the bed the same way', () =>
      * being broken. It is not the board; it is the ground.
      */
     it('says why the bed got cheap rather than letting the figure stand there alone', async () => {
-        const at = await standingSomewhereOrdinary();
+        const at = await standingSomewhereOrdinary(true);
 
-        expect(saidBy(await at.game.act(A_MONTH_INDOORS))).not.toMatch(/quiet ground/);
+        expect(saidBy(await buyAMonthAtTheActualCounter(at))).not.toMatch(/quiet ground/);
         clearFlag((at.game as unknown as { db: Database.Database }).db, at.cultivatorId, 'lodged_at');
 
         somethingBecomesTrueHere(
@@ -290,7 +355,7 @@ describe('a famine moves the food and does not move the bed the same way', () =>
             { food: 4, lodging: 0.5 }
         );
 
-        const bed = saidBy(await at.game.act(A_MONTH_INDOORS));
+        const bed = saidBy(await buyAMonthAtTheActualCounter(at));
         expect(bed).toMatch(/less than lodging goes for on quiet ground/);
         const meal = saidBy(await at.game.act(A_CULTIVATORS_MEAL));
         expect(meal).toMatch(/more than food goes for on quiet ground/);

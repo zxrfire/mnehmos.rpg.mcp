@@ -19,12 +19,12 @@ import {
     INTENT_ACTIONS
 } from './action-set.js';
 import {
-    LONGER_THAN_ANY_LIFE,
     DEFAULT_CULTIVATION_DAYS,
     DEFAULT_SECLUSION_DAYS,
     DEFAULT_WORK_DAYS
 } from './verb-day-costs.js';
 import { parseIntent } from './actions.js';
+import { isOneInformationExchange } from './one-information-exchange.js';
 import { nightsAskedFor, parseDuration } from './sentence-parts.js';
 
 /**
@@ -51,7 +51,7 @@ export const PlannedActionSchema = z.object({
     blamed: z.string().trim().min(1).max(80).optional(),
     proxy: z.enum(['sword', 'clone', 'soul', 'recall', 'prepare']).optional(),
     /**
-     * Duration for `cultivate`, in days.
+     * Duration for a timed native act, in days; a coherent span may be fractional.
      *
      * ── WHY THE CEILING HERE IS ABSURDLY HIGH, AND HAS TO BE ─────────────
      *
@@ -62,20 +62,20 @@ export const PlannedActionSchema = z.object({
      * which path read the sentence, and neither path told the player anything.
      *
      * A Zod schema is static. It cannot know whose body is asking, so it cannot
-     * hold the real bound - which is the life left in that body. Its job shrinks
-     * to rejecting what is not a span at all, and the bound moves to a runtime
+     * hold the real bound - which is the life left in that body. Finite positive
+     * fractional spans are spans too; the bound moves to a runtime
      * check where the cultivator is: `aSpanPastTheEndOfThisLife`.
      */
-    days: z.number().int().min(1).max(LONGER_THAN_ANY_LIFE).optional(),
+    days: z.number().finite().positive().optional(),
     /**
-     * Free text: a destination for `travel`, a person for `talk`, a thing for
+     * Free text with no sentence-length gate: a destination for `travel`, a person for `talk`, a thing for
      * `investigate` or `search`, an art for `train_technique`, a formula for
      * `refine`. Never a number, never a stat, never persisted anywhere the engine
      * reasons about - `Cultivator.location` is explicitly a name the engine stores
      * and lists but never computes with, and everything else is matched against a
      * catalog before it can reach a repository.
      */
-    target: z.string().trim().min(1).max(80).optional(),
+    target: z.string().trim().min(1).optional(),
     /**
      * What the player was trying to do: `negotiate`, `deceive`, `flee`,
      * `interrogate`, anything. An open string, and it is only safe as an open
@@ -158,7 +158,7 @@ export const PlannedActionSchema = z.object({
     /**
      * What an approach is ABOUT, when the player asked about something.
      */
-    topic: z.string().trim().min(1).max(120).optional(),
+    topic: z.string().trim().min(1).optional(),
     /** The model's one-line justification. Logged for transparency, never executed. */
     reason: z.string().trim().max(200).optional()
 });
@@ -354,7 +354,9 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // here as well as in the deterministic parser, or a model-planned theft
     // would silently lose its pace and run for one month at the default.
     if (topic && TOPIC_ACTIONS.includes(name)) {
-        action.topic = topic.toLowerCase().replace(/[^a-z0-9 _-]/g, '').trim().slice(0, 40) || undefined;
+        // A topic is the actual named thing or full question, not an intent label.
+        // Lowercase preserves existing label readers; no character/word is discarded.
+        action.topic = topic.toLowerCase().trim() || undefined;
     }
     // AND THE TWO THAT READ A SPAN WITHOUT BEING TIMED: how long somebody was
     // asked to come or to watch, and how long a talk runs. Not in
@@ -432,6 +434,16 @@ export function carryWhatOnlyTheSentenceKnows(
     }
 
     if (fromSentence.action !== action.action) return merged;
+
+    // An information exchange carries the player's whole question,
+    // not the normalized forty-character topic label used by other verbs.
+    // Restore it at this shared seam for single and multiple model plans and
+    // execution; an independently requested treatment or departure fails this
+    // same bounded conversation read and remains an ordinary separate act.
+    if (merged.action === 'interact' && (merged.intent === undefined || merged.intent === 'talk')
+        && isOneInformationExchange(input)) {
+        merged.topic = fromSentence.topic;
+    }
 
     // ── AND THE THING THEY NAMED, WHICH NOTHING PUT BACK ─────────────────
     //

@@ -63,7 +63,7 @@ import {
     aBreakingEntersTheWorld,
     type TheThingIsGone
 } from '../engine/world/a-thing-somebody-ended-is-a-fact.js';
-import { type NpcRecord, bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
+import { type NpcRecord, bodyStandingOn, isActing, maxBodyOf } from '../engine/world/npc-state.js';
 import { npcsInFaction } from '../engine/world/world-state.js';
 import { whoHereRecognisesIt } from '../engine/world/artifact-recognition.js';
 import {
@@ -1565,6 +1565,15 @@ export const combatVerbs = {
      * PRESENCE rather than a timer, and a second copy of that rule would
      * disagree with this one, so `situated-reads` asks here rather than reading
      * the flag again beside it.
+     *
+     * Presence here is the GROUND, not `present()`'s own area within it.
+     * `present()` reads a square's crowd into areas of at most three off an
+     * hourly draw, and a lesser act now spends real hours - so a sentence
+     * that forces a kneel and a sentence that lets them go, one straight
+     * after the other, can cross an hour bucket and redraw who the square
+     * hands to which corner. Somebody kneeling under a hand is not wandering
+     * the square between those two sentences; they are exactly where they
+     * were put.
      */
     whoHasYieldedToYou(
         this: GameService,
@@ -1573,8 +1582,9 @@ export const combatVerbs = {
         const noted = readFlag(this.db, cultivator.id, FLAG_YIELDING_TO_YOU);
         if (!noted) return null;
         const who = noted.split(':')[0];
-        const here = this.present(cultivator).find(row => row.id === who);
-        return here ? { id: here.id, name: here.name } : null;
+        const row = this.atHand?.npcs.find(npc => npc.id === who);
+        if (!row || !isActing(row.status) || row.locationId !== this.worldPlaceOf(cultivator)) return null;
+        return { id: row.id, name: row.name };
     },
 
     /**
@@ -1646,10 +1656,13 @@ export const combatVerbs = {
         // on the account being made into a thing opened: freeing somebody is
         // stopping, not restitution. Nor is it a sparing - there is nobody
         // left in them to owe the favour one writes.
-        const heldByMe = this.present(cultivator).filter(person => {
-            const row = this.atHand?.npcs.find(npc => npc.id === person.id);
-            return row !== undefined && whoseHandThisBodyIsUnder(row.tags) === cultivator.id;
-        });
+        //
+        // Ground presence, not `present()`'s own area within it - see
+        // `whoHasYieldedToYou` above for why.
+        const ground = this.worldPlaceOf(cultivator);
+        const heldByMe = (this.atHand?.npcs ?? []).filter(row =>
+            isActing(row.status) && row.locationId === ground && whoseHandThisBodyIsUnder(row.tags) === cultivator.id
+        ).map(row => ({ id: row.id, name: row.name }));
         const named = target ? this.somebodyAtHand(target, cultivator) : null;
         const toLetGo = target
             ? heldByMe.find(person => person.id === named?.id) ?? null

@@ -224,6 +224,8 @@ export interface TimeSkipContext {
     techniqueElement?: Element | null;
     /** Days of provisions carried. Each ration refills satiety to full. */
     rations?: number;
+    /** Existing passage provision covers actual action-day meals until this absolute clock. */
+    providedFoodUntilDay?: number;
 /**
  * The cultivator is on grain abstinence (辟穀) and does not eat. Note that this
  * scales the THRESHOLD and never skips a draw: every sample is taken
@@ -341,12 +343,50 @@ export interface TimeSkipContext {
  * Returns a `TimeSkipResult`: how many days were actually simulated, whether
  * something interrupted, the chronological event digest, and the net deltas.
  */
+/** A real world deadline, expressed in elapsed days of this one simulation. */
+export interface TimeSkipBoundaries {
+    nextBoundary(elapsed: number, requestedDays: number): number | null;
+    /** Fractional passage remainders only; ordinary callers retain whole days. */
+    preciseDays?: boolean;
+}
+
+export type TimeSkipScene = Pick<TimeSkipContext, 'locationId' | 'locationDensity'
+    | 'anUnopenedPocket' | 'options' | 'hostility' | 'understanding' | 'roadsWithinReach'
+    | 'daoHeart' | 'daoHeartOpen' | 'toll' | 'providedFoodUntilDay'>;
+export interface TimeSkipContinuation {
+    stop?: string;
+    scene?: Partial<TimeSkipScene>;
+    /** Fresh authoritative sheet AFTER the committed portion and world effects. */
+    body?: Cultivator;
+    /** Fresh edible stock, not the original pack copied at span opening. */
+    rations?: number;
+}
+
+/** Legacy callers drain the same simulation without externally imposed pauses. */
 export function simulateTimeSkip(
     cultivator: Cultivator,
     days: number,
     ctx: TimeSkipContext
 ): TimeSkipResult {
-    const requestedDays = Number.isFinite(days) ? Math.max(0, Math.floor(days)) : 0;
+    const parts = simulateTimeSkipParts(cultivator, days, ctx);
+    let next = parts.next();
+    while (!next.done) next = parts.next();
+    return next.value;
+}
+
+/**
+ * One held simulation, suspended at actual world boundaries. Food, wound recovery,
+ * announcement state, absolute-day grids and every stream remain in this frame.
+ * Checkpoints are cumulative results; they are never a second stored body.
+ */
+export function* simulateTimeSkipParts(
+    cultivator: Cultivator,
+    days: number,
+    ctx: TimeSkipContext,
+    boundaries?: TimeSkipBoundaries
+): Generator<TimeSkipResult, TimeSkipResult, TimeSkipContinuation | undefined> {
+    const requestedDays = Number.isFinite(days)
+        ? Math.max(0, boundaries?.preciseDays ? days : Math.floor(days)) : 0;
     const turn = Math.max(0, Math.floor(ctx.turn ?? 0));
     /**
      * The turn this whole stretch resolves on.
@@ -356,7 +396,7 @@ export function simulateTimeSkip(
     /**
      * Roads the world has put in reach, in the shape the dao gate reads.
      */
-    const roadsWithinReach: readonly RoadWithinReach[] =
+    let roadsWithinReach: readonly RoadWithinReach[] =
         ctx.roadsWithinReach
         ?? (ctx.understanding?.daoGrounds ?? []).map(ground => ({
             domain: ground.domain,
@@ -365,7 +405,8 @@ export function simulateTimeSkip(
             sourceName: ground.label,
             how: ground.how ?? 'ground_open'
         }));
-    const startDay = Math.max(0, Math.floor(ctx.startDay ?? 0));
+    const startDay = Math.max(0, boundaries?.preciseDays
+        ? ctx.startDay ?? 0 : Math.floor(ctx.startDay ?? 0));
     const autoBreakthrough = ctx.autoBreakthrough ?? true;
     // Every per-cultivator stream in this file keys on THIS, never on the row
     // id directly. See `TimeSkipContext.rollIdentity`.
@@ -381,7 +422,7 @@ export function simulateTimeSkip(
     // order and a sentence that is true of where the cultivator actually is.
     const sitting = ctx.spanIsASitting !== false;
     const grainAbstinence = ctx.grainAbstinence ?? false;
-    const hostility = ctx.hostility;
+    let hostility = ctx.hostility;
 
     /**
      * Whether this span is spent DRAWING QI, which is the act qi deviation is the
@@ -390,7 +431,8 @@ export function simulateTimeSkip(
     const drawingQi = (ctx.options?.focusMultiplier ?? 1) > 0;
 
     // Working state. A shallow copy; the input is never touched.
-    const startAge = cultivator.age;
+    let startAge = cultivator.age;
+    let resumedAge = cultivator.age;
     let burnedYears = 0;
     let soulState = cultivator.soulState;
     let identityContinuity = cultivator.identityContinuity;
@@ -399,7 +441,7 @@ export function simulateTimeSkip(
     let ordinal = cultivator.realmOrdinal;
     let progress = cultivator.cultivationProgress;
     let hp = cultivator.hp;
-    const qi = cultivator.qi;
+    let qi = cultivator.qi;
     let satiety = cultivator.satiety;
     let starvationTurns = cultivator.starvationTurns;
     let bleedingTurns = cultivator.bleedingTurns;
@@ -423,6 +465,11 @@ export function simulateTimeSkip(
      *  so a thousand chunks introduce no float drift. */
     let elapsed = 0;
     let daysSinceAdvance = 0;
+    /** External pauses do not restart the original body's arithmetic chunk. */
+    let naturalChunkEnd = 0;
+    let exposureWindowEnd = 0;
+    let hostileExposure = 0;
+    let chargedExposure = 0;
     /** Years-at-realm at the last advance; reset to 0 when a rank is gained. */
     let realmClockBase = startYearsAtRealm;
 
@@ -464,7 +511,7 @@ export function simulateTimeSkip(
      * would hand the thinnest ground in the world the best rate in it. Whether
      * a pocket is open is a separate ruling and does not ride in on this one.
      */
-    const groundDensity = ctx.locationDensity
+    let groundDensity = ctx.locationDensity
         ?? ctx.options?.ground?.density
         ?? impliedDensityFor(ctx.seed, ctx.locationId);
 
@@ -647,7 +694,58 @@ export function simulateTimeSkip(
         );
     };
 
+    // Quantities produced by THIS simulator. External grants are not breakthroughs.
+    let committedDeltas = { cultivationProgress: 0, realmOrdinal: 0, hp: 0, qi: 0,
+        satiety: 0, spiritStones: 0, age: 0 };
+    let priorFoundation: FoundationQuality | null = null;
+    let priorImmortal: ImmortalStatus | null = null;
+    let stoppedByWorld = false;
     let iterations = 0;
+    const result = (): TimeSkipResult => {
+        const finalAge = currentAge();
+    
+        return {
+            requestedDays,
+            simulatedDays: elapsed,
+            interrupted,
+            interruptReason,
+            events,
+            deltas: {
+                cultivationProgress: committedDeltas.cultivationProgress + progress - cultivator.cultivationProgress,
+                realmOrdinal: committedDeltas.realmOrdinal + ordinal - cultivator.realmOrdinal,
+                hp: committedDeltas.hp + hp - cultivator.hp,
+                qi: committedDeltas.qi + qi - cultivator.qi,
+                satiety: committedDeltas.satiety + satiety - cultivator.satiety,
+                spiritStones: committedDeltas.spiritStones + spiritStones - cultivator.spiritStones,
+                age: roundYears(committedDeltas.age + finalAge - resumedAge),
+                // Derived, never tracked separately, so the count and the records
+                // cannot drift apart.
+                injuriesGained: sustained.length
+            },
+            died,
+            deathCause,
+            injuriesSustained: sustained,
+            tolls,
+            endState: {
+                soulState, identityContinuity,
+                starvationTurns,
+                bleedingTurns,
+                yearsAtCurrentRealm: currentYearsAtRealm(),
+                // What the pack still holds. Reported, never acted on here - see
+                // the field's own note in the schema for the one caller that needs
+                // it and why a resumed sitting would otherwise buy its food twice.
+                rationsRemaining: rations
+            },
+            foundationEstablished:
+                foundation === (cultivator.foundationQuality ?? 'none') ? priorFoundation : foundation,
+            immortalStatusGained:
+                immortalStatus === (cultivator.immortalStatus ?? 'none') ? priorImmortal : immortalStatus,
+            achievements,
+            insightsGained,
+            visions
+        };
+    };
+
     while (elapsed < requestedDays && !interrupted) {
         if (++iterations > MAX_ITERATIONS) {
             interrupted = true;
@@ -658,8 +756,9 @@ export function simulateTimeSkip(
         const absDay = startDay + elapsed;
 
         // 1. Breakthrough, if the accumulated progress permits one.
-        if (ranksOnDayFor !== absDay) {
-            ranksOnDayFor = absDay;
+        const rankDay = Math.floor(absDay);
+        if (ranksOnDayFor !== rankDay) {
+            ranksOnDayFor = rankDay;
             ranksOnDay = 0;
         }
         const ambient = ambientForBlock(ctx.seed, ctx.locationId, absDay, {
@@ -980,7 +1079,11 @@ export function simulateTimeSkip(
             );
         }
 
-        const chunk = Math.min(
+        const boundary = boundaries?.nextBoundary(elapsed, requestedDays) ?? null;
+        if (boundary !== null && (!Number.isFinite(boundary) || boundary <= elapsed)) {
+            throw new Error('A time-skip boundary must be a finite future elapsed time.');
+        }
+        const naturalChunk = Math.min(
             hostility?.safeDays !== undefined
                 ? Math.max(1, hostility.safeDays - elapsed)
                 : Infinity,
@@ -1003,8 +1106,12 @@ export function simulateTimeSkip(
             // status a crossing inside this skip may have granted, and the
             // body - so the chunk boundary is the same ceiling the death gate
             // enforces rather than a second answer derived from the rung.
-            lifespanDays: daysUntilYear(lifespanCeilingFor(snapshot()), rawAge()),
-            stagnationDays: daysUntilYear(stagnationYearsForOrdinal(ordinal), rawYearsAtRealm()),
+            lifespanDays: boundaries?.preciseDays
+                ? (lifespanCeilingFor(snapshot()) - rawAge()) * DAYS_PER_YEAR
+                : daysUntilYear(lifespanCeilingFor(snapshot()), rawAge()),
+            stagnationDays: boundaries?.preciseDays
+                ? (stagnationYearsForOrdinal(ordinal) - rawYearsAtRealm()) * DAYS_PER_YEAR
+                : daysUntilYear(stagnationYearsForOrdinal(ordinal), rawYearsAtRealm()),
             starvationDays:
                 grainAbstinence || rations > 0
                     ? Infinity
@@ -1013,8 +1120,21 @@ export function simulateTimeSkip(
                 grainAbstinence || rations > 0
                     ? Infinity
                     : Math.floor(satiety / SATIETY_COST_PER_ACTION),
-            randomEvents
+            randomEvents,
+            preciseDays: boundaries?.preciseDays
         }));
+
+        if (!boundaries || elapsed >= naturalChunkEnd) {
+            naturalChunkEnd = Math.min(requestedDays, elapsed + naturalChunk);
+        }
+        if (boundaries && elapsed >= exposureWindowEnd) {
+            exposureWindowEnd = naturalChunkEnd;
+            hostileExposure = 0;
+            chargedExposure = 0;
+        }
+        const chunk = boundaries ? Math.min(naturalChunkEnd - elapsed,
+            requestedDays - elapsed, boundary === null ? Infinity : boundary - elapsed) : naturalChunk;
+        const elapsedBefore = elapsed;
 
         // 3. Apply the chunk.
         //
@@ -1025,16 +1145,27 @@ export function simulateTimeSkip(
         progress += (hostility?.inert ? 0 : rate.perDay) * chunk;
         elapsed += chunk;
         daysSinceAdvance += chunk;
+        // Hunger and the open-channel counter count whole actions. A real .5-day
+        // world appointment cannot discard half of the next whole body's day.
+        const actionDays = boundaries
+            ? Math.floor(startDay + elapsed) - Math.floor(startDay + elapsedBefore) : chunk;
 
         // What the place itself takes. Applied on the same days everything else
         // is, before the food and bleed clocks resolve, so a chunk that ends in
         // death ends in death from the first cause that reaches zero.
         if (hostility && hostility.dailyHpFraction > 0 && hp > 0
             && (hostility.safeDays === undefined || elapsed > hostility.safeDays)) {
-            const taken = Math.min(
-                hp,
-                Math.max(1, Math.round(cultivator.maxHp * hostility.dailyHpFraction * chunk))
-            );
+            // A scheduler pause is not another minimum wound. Exact exposure
+            // accumulates with the actual cap/rate; the original natural chunk
+            // receives its one minimum only when that chunk is really complete.
+            const exposure = cultivator.maxHp * hostility.dailyHpFraction * chunk;
+            hostileExposure += exposure;
+            const due = elapsed >= exposureWindowEnd
+                ? Math.max(1, Math.round(hostileExposure)) : Math.round(hostileExposure);
+            const taken = Math.min(hp, boundaries ? Math.max(0, due - chargedExposure)
+                : Math.max(1, Math.round(exposure)));
+            chargedExposure += taken;
+            if (taken > 0) {
             hp -= taken;
             interrupted = true;
             interruptReason = 'hostile_ground';
@@ -1046,6 +1177,7 @@ export function simulateTimeSkip(
                 { environmental: true, damage: taken, hpRemaining: hp }
             );
             if (hp <= 0) break;
+            }
         }
 
         // How long the channels have been open advances on the same days
@@ -1062,7 +1194,7 @@ export function simulateTimeSkip(
         // checks below and those land on chunk boundaries.
         bleedingTurns = bleedOut(
             { untreatedInjuries: untreatedInjuryCount(injuries), bleedingTurns },
-            chunk
+            actionDays
         ).bleedingTurns;
 
         // THE BODY MENDS
@@ -1138,8 +1270,19 @@ export function simulateTimeSkip(
             // `satietyBurnMultiplier`. It has to be the CURRENT list rather
             // than the entry one, since a crossing inside this skip is exactly
             // where such a wound is minted.
+            const suppliedDays = ctx.providedFoodUntilDay === undefined ? 0
+                : Math.max(0, Math.min(Math.floor(startDay + elapsed), Math.floor(ctx.providedFoodUntilDay))
+                    - Math.floor(startDay + elapsedBefore));
+            if (suppliedDays > 0) {
+                // Provision is days of meals, as the passage quote states. Reuse
+                // the same eat/burn rule; unopened supplied meals are not pack stock.
+                const burn = SATIETY_COST_PER_ACTION * satietyBurnMultiplier(cultivator.realmOrdinal, injuries);
+                const supplied = consumeFood(suppliedDays, { satiety, starvationTurns,
+                    rations: Math.ceil(suppliedDays * burn / SATIETY_MAX) + 1 }, cultivator.realmOrdinal, injuries);
+                satiety = supplied.satiety; starvationTurns = supplied.starvationTurns;
+            }
             const fed = consumeFood(
-                chunk, { satiety, starvationTurns, rations }, cultivator.realmOrdinal, injuries
+                actionDays - suppliedDays, { satiety, starvationTurns, rations }, cultivator.realmOrdinal, injuries
             );
             satiety = fed.satiety;
             starvationTurns = fed.starvationTurns;
@@ -1612,60 +1755,80 @@ export function simulateTimeSkip(
 
         // 7. Did any of that kill us?
         if (checkDeath()) break;
+        if (boundary !== null && (elapsed >= boundary
+            || boundary - elapsed <= Number.EPSILON * Math.max(1, Math.abs(elapsed), Math.abs(boundary)) * 4)) {
+            const continuation = yield structuredClone(result());
+            {
+                if (continuation?.body) {
+                    // The already committed engine quantities remain cumulative;
+                    // the fresh body's differences are world effects, not ours.
+                    const ageRemainder = rawAge() - currentAge();
+                    const realmRemainder = rawYearsAtRealm() - currentYearsAtRealm();
+                    const spent = result();
+                    committedDeltas = { ...spent.deltas };
+                    priorFoundation = spent.foundationEstablished;
+                    priorImmortal = spent.immortalStatusGained;
+                    const fresh = continuation.body;
+                    const changedRealm = fresh.realmOrdinal !== ordinal;
+                    cultivator = { ...fresh };
+                    ordinal = fresh.realmOrdinal;
+                    progress = fresh.cultivationProgress;
+                    hp = fresh.hp;
+                    qi = fresh.qi;
+                    satiety = fresh.satiety;
+                    starvationTurns = fresh.starvationTurns;
+                    bleedingTurns = fresh.bleedingTurns;
+                    injuries = [...fresh.injuries];
+                    spiritStones = fresh.spiritStones;
+                    foundation = fresh.foundationQuality ?? 'none';
+                    immortalStatus = fresh.immortalStatus ?? 'none';
+                    soulState = fresh.soulState;
+                    identityContinuity = fresh.identityContinuity;
+                    insights = [...(fresh.insights ?? [])];
+                    resumedAge = fresh.age;
+                    startAge = fresh.age + ageRemainder - burnedYears - elapsed / DAYS_PER_YEAR;
+                    if (changedRealm) daysSinceAdvance = 0;
+                    realmClockBase = fresh.yearsAtCurrentRealm + (changedRealm ? 0 : realmRemainder)
+                        - daysSinceAdvance / DAYS_PER_YEAR;
+                    hpDepletedBy = null;
+                    naturalChunkEnd = elapsed;
+                }
+                if (continuation?.rations !== undefined) rations = Math.max(0, Math.floor(continuation.rations));
+                if (continuation?.stop) {
+                    stoppedByWorld = true;
+                    interrupted = true;
+                    interruptReason = continuation.stop;
+                } else if (continuation?.scene) {
+                // Only perception/rate inputs refresh. This held simulation's
+                // seed, original clocks, turn, food and stream grids do not reset.
+                ctx = { ...ctx, ...continuation.scene };
+                hostility = ctx.hostility;
+                groundDensity = ctx.locationDensity ?? ctx.options?.ground?.density
+                    ?? impliedDensityFor(ctx.seed, ctx.locationId);
+                roadsWithinReach = ctx.roadsWithinReach
+                    ?? (ctx.understanding?.daoGrounds ?? []).map(ground => ({
+                        domain: ground.domain, subject: ground.subject,
+                        sourceId: ground.id ?? ground.label, sourceName: ground.label,
+                        how: ground.how ?? 'ground_open'
+                    }));
+                naturalChunkEnd = elapsed;
+                }
+            }
+        }
     }
 
     // A minor encounter or deviation can take HP to zero without any later
     // check running, so make one final pass. `checkDeath` is idempotent.
-    if (!died) checkDeath();
+    if (!died && !stoppedByWorld) checkDeath();
 
-    const finalAge = currentAge();
-
-    return {
-        requestedDays,
-        simulatedDays: elapsed,
-        interrupted,
-        interruptReason,
-        events,
-        deltas: {
-            cultivationProgress: progress - cultivator.cultivationProgress,
-            realmOrdinal: ordinal - cultivator.realmOrdinal,
-            hp: hp - cultivator.hp,
-            qi: qi - cultivator.qi,
-            satiety: satiety - cultivator.satiety,
-            spiritStones: spiritStones - cultivator.spiritStones,
-            age: roundYears(finalAge - startAge),
-            // Derived, never tracked separately, so the count and the records
-            // cannot drift apart.
-            injuriesGained: sustained.length
-        },
-        died,
-        deathCause,
-        injuriesSustained: sustained,
-        tolls,
-        endState: {
-            soulState, identityContinuity,
-            starvationTurns,
-            bleedingTurns,
-            yearsAtCurrentRealm: currentYearsAtRealm(),
-            // What the pack still holds. Reported, never acted on here - see
-            // the field's own note in the schema for the one caller that needs
-            // it and why a resumed sitting would otherwise buy its food twice.
-            rationsRemaining: rations
-        },
-        foundationEstablished:
-            foundation === (cultivator.foundationQuality ?? 'none') ? null : foundation,
-        immortalStatusGained:
-            immortalStatus === (cultivator.immortalStatus ?? 'none') ? null : immortalStatus,
-        achievements,
-        insightsGained,
-        visions
-    };
+    return result();
 }
 
 // CHUNKING
 // The whole optimisation, and the whole determinism argument, lives here.
 
 interface ChunkInputs {
+    preciseDays?: boolean;
     elapsed: number;
     absDay: number;
     requestedDays: number;
@@ -1711,7 +1874,8 @@ function nextChunk(input: ChunkInputs): number {
     }
 
     const chunk = Math.min(...candidates);
-    return Math.max(1, Math.min(chunk, input.requestedDays - input.elapsed));
+    return input.preciseDays ? Math.min(chunk, input.requestedDays - input.elapsed)
+        : Math.max(1, Math.min(chunk, input.requestedDays - input.elapsed));
 }
 
 /**

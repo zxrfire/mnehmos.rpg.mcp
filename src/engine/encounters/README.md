@@ -647,3 +647,58 @@ and it never touches damage, a resolution, or a capability gap.
 - [`../../web/README.md`](../../web/README.md) - `web/encounters.ts`,
   `web/what-is-posted-on-the-wall-here.ts` and `web/what-is-live-for-you-here.ts` are how any
   of this reaches a player.
+
+## Current scene at a moving check
+
+`encountersAtChecks` suspends the existing occasion/span cadence before each
+check, then accepts its current encounter input. A departure occasion is due
+at departure, before any body/world portion. A later check asks the same scene
+builder after actual passenger projection. No departure cast or place is retained
+for future checks; the cadence still retains the original window/account/limit
+and stream identity. `rollEncounters` drains this iterator against its original
+input, preserving its original final arrival merge, sort, cut and limit.
+
+The actual paid/owned passage caller currently supplies no retrospective
+`arrivable` candidates; native pending world arrivals keep their existing resolver.
+This streaming adapter does not claim to resolve retrospective arrival candidates
+chronologically.
+
+Literal catalog sites can declare `requiresSubstrate`; `reaches` compares it
+with the supplied current scene substrate before the ordinary weighted draw.
+The web adapter derives water from the existing world `isWater` reader, never
+from encounter kinds or names. A known water scene excludes the explicitly
+land-bound cave/tomb/courtyard/field/road-infrastructure rows, while mobile
+contacts, corpse finds
+and travelling commerce retain their ordinary eligibility. Legacy pure inputs
+without a physical substrate keep their prior behavior and cannot prove a
+world site's eligibility. No check grid, RNG stream or occurrence cap changes.
+Direct MCP cultivation
+already uses the same encountersFor/placeFor adapter with its actual world
+and body; the pure time-skip body iterator does not select catalog site rows.
+
+This bounded gate does not complete habitat or venue requirements: an entry
+with no declared prerequisite still uses its existing activity/tag/ordinal
+authorities. Shore exploration, underwater site entry, private-hull deck grouping
+and retrospective arrivals remain separate questions.
+
+An account encounter may carry the actual residence location ID as transient
+target identity alongside its native material receipt. Pure rolling, including
+a future `broke_in`, never changes a location. The played adapter commits the
+physical breach only after the roll is cut to the lived span and that arrival
+is selected for resolution, with fresh actual sender/sitter/material reads.
+Damage persists on the residence location rather than on the sitter or receipt;
+qi seals and opening cycles remain independent. This supplies no private-slot
+or inn-door damage state and invents no monetary property-damage account.
+
+The existing humanDays reader retains positive fractional spans as hours/minutes
+(and seconds where needed), beside its unchanged whole-day/month/year wording.
+It formats a receipt; it never rounds the actual body/world duration. Posted whole
+terms continue using that same reader, without a second duration authority.
+
+An accepted airborne physical site supplies an air substrate and no reachable
+ground qi. Existing literal land-site requirements remain ineligible there;
+water and ordinary ground retain their existing authorities. This does not
+prove that every portable hostile actor has an airborne approach. Actual
+actor mobility/source validation remains required prototype work.
+
+

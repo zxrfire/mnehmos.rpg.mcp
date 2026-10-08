@@ -85,6 +85,8 @@ export const OCCUPATION_REGARD_SPAN = 1.2;
  */
 export const MORTAL_ECONOMY_REGARD = { gate: 0, span: OCCUPATION_REGARD_SPAN } as const;
 
+export const MORTAL_PHYSICIAN_JOB = 'job-mortal-doctor';
+
 const OCCUPATION_DATA: readonly Occupation[] = [
     // ── mortal work, which is most work ───────────────────────────────
     { id: 'job-farmhand', name: 'Farmhand', kind: 'mortal', minOrdinal: 0, cashPerMonth: 180, settlements: ['hamlet', 'village'], risk: 'low', note: 'Board and a corner to sleep in are usually included, which is most of the pay. A cultivator who takes this is either hiding or finished.' },
@@ -92,7 +94,7 @@ const OCCUPATION_DATA: readonly Occupation[] = [
     { id: 'job-ferryman', name: 'Ferryman', kind: 'either', minOrdinal: 0, cashPerMonth: 300, settlements: ['village', 'market_town'], risk: 'low', note: 'Clear River Alliance work in the Jade Gorge. Steady, and the Alliance pays partly in crossings owed rather than cash.' },
     { id: 'job-charcoal-burner', name: 'Charcoal burner', kind: 'mortal', minOrdinal: 0, cashPerMonth: 200, settlements: ['hamlet', 'village'], risk: 'moderate', note: 'Solitary, filthy and out in the woods for weeks, which makes it the standard cover for anyone who does not want to be found.' },
     { id: 'job-scribe', name: 'Scribe', kind: 'either', minOrdinal: 0, cashPerMonth: 400, settlements: ['market_town', 'sect_town', 'city'], risk: 'none', note: 'Requires literacy, which is rare. Lantern Hall and the Ninefold Karma Palace both hire, and both read what you wrote before paying.' },
-    { id: 'job-mortal-doctor', name: 'Physician (mortal)', kind: 'mortal', minOrdinal: 0, cashPerMonth: 700, settlements: ['market_town', 'sect_town', 'city'], risk: 'none', note: 'Sets bones and delivers babies. Cannot treat a torn meridian and will say so, which is the difference between a doctor and a cultivator healer.' },
+    { id: MORTAL_PHYSICIAN_JOB, name: 'Physician (mortal)', kind: 'mortal', minOrdinal: 0, cashPerMonth: 700, settlements: ['market_town', 'sect_town', 'city'], risk: 'none', note: 'Sets bones and delivers babies. A month of care closes wounds mortal medicine reaches; crippling damage and bodies beyond that grade need stronger medicine.' },
     { id: 'job-innkeeper', name: 'Innkeeper', kind: 'mortal', minOrdinal: 0, cashPerMonth: 900, settlements: ['village', 'market_town', 'sect_town', 'city'], risk: 'low', note: 'Owns rather than earns. An inn near a sect gate is a small fortune and is usually held by a family with a sect connection.' },
     { id: 'job-miner', name: 'Miner', kind: 'mortal', minOrdinal: 0, cashPerMonth: 260, settlements: ['hamlet', 'village'], risk: 'high', note: 'Ore, not qi. Miners resent the assumption that they are quarrying spirit stones and will explain the difference at length.' },
     { id: 'job-caravan-guard', name: 'Caravan guard (mortal)', kind: 'mortal', minOrdinal: 0, cashPerMonth: 320, settlements: ['market_town', 'city'], risk: 'moderate', note: 'Spears and numbers. Hired alongside a cultivator escort rather than instead of one, and paid a tenth as much.' },
@@ -238,7 +240,7 @@ export const PRICES: readonly Price[] = [
     // `medicineNeededFor` - crippling damage, or an ordinary tear on a body far
     // enough up the ladder - and the prose yields to the measurement.
     { id: 'price-doctor-visit', name: 'Mortal physician, one visit', category: 'medicine', cash: 40, unit: 'visit', note: 'Sets a bone, stitches a cut, and puts a body that has been battered back on its feet. An ordinary torn meridian closes under the month of care on the line below; crippling damage does not, and neither does anything on a body the village has no medicine for.', gives: { kind: 'care' } },
-    { id: 'price-splint-and-month', name: 'Splint and a month of care', category: 'medicine', cash: 500, unit: 'course', note: 'The mortal alternative to a healing pill: slower, cheaper, and it leaves you out of the fight for a season.', gives: { kind: 'care' } },
+    { id: 'price-splint-and-month', name: 'Splint and a month of care', category: 'medicine', cash: 500, unit: 'course', note: 'The mortal alternative to a healing pill: slower, cheaper, and requires lying still for a month.', gives: { kind: 'care' } },
     { id: 'price-lesser-healing-pill', name: 'Lesser Healing Pill', category: 'medicine', cash: 2_000, unit: 'each', note: 'Twenty stones. Every run starts with exactly one, and it is worth a mule and a half.', gives: { kind: 'pill', pillId: 'pill-minor-healing' } },
     { id: 'price-qi-gathering-pill', name: 'Qi-Gathering Pill', category: 'medicine', cash: 1_800, unit: 'each', note: 'Eighteen stones. Cheap by cultivator standards and a year of a farmhand\'s savings.', gives: { kind: 'pill', pillId: 'pill-qi-gathering' } },
     { id: 'price-clear-meridian-pill', name: 'Clear Meridian Pill', category: 'medicine', cash: 6_000, unit: 'each', note: 'Sixty stones, and unobtainable in the Buddha Precipice at any price because alchemy will not hold there.', gives: { kind: 'pill', pillId: 'pill-clear-meridian' } },

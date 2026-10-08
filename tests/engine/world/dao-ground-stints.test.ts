@@ -5,8 +5,8 @@
  * 1, 5, 10, 20; the open-ground peak is 76. Population repairs and priced
  * routes changed that curve to 21, 60, 78, 35. Capping house intake gives
  * 21, 60, 78, 40, with a peak of 79 and 103 distinct arrivals. Bands retain bounded stock
- * and turnover without pinning those individual counts: peak 50–100, final
- * stock 10–60 and below three quarters of the peak. Disabling the stint pass
+ * and turnover without pinning those individual counts: peak 50-100, final
+ * stock 10-60 and below three quarters of the peak. Disabling the stint pass
  * leaves 79 at year twenty and fails the late-stock band. A visit must end when
  * its forty years have been paid, when its fixed personal patience runs out,
  * or when the ordinary world has called the visitor elsewhere. The check pins

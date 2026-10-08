@@ -35,6 +35,7 @@
  * owes the thing.
 */
 import { theirFaceMoves, whatBeingWatchedIsWorth } from '../engine/world/what-a-face-is-worth.js';
+import { routineOf } from '../engine/world/npc-routines.js';
 
 import { isAWorkedGrade, whatItIsMadeOf } from '../data/cultivation/what-an-artifact-is-made-of.js';
 import { forStream } from '../engine/cultivation/rng.js';
@@ -337,8 +338,12 @@ export function settleWhatWasPlacedWithAMaker(game: GameService, cultivator: Cul
             continue;
         }
         // ── A PAIR OF JADE IS TWO HALVES, made by the jade module's own maker ──
+        const observing = { ...world, currentDay: one.dueOnDay };
+        const physicalPlaces = new Map(world.npcs.map(n => [n.id, routineOf(observing, n).locationId]));
         theirFaceMoves(world, maker.id, whatBeingWatchedIsWorth(
-            world.npcs.filter(n => n.status === 'alive' && n.locationId === maker.locationId && n.id !== maker.id).length), one.dueOnDay);
+            world.npcs.filter(n => n.status === 'alive' && n.id !== maker.id
+                && physicalPlaces.get(maker.id) != null
+                && physicalPlaces.get(n.id) === physicalPlaces.get(maker.id)).length), one.dueOnDay);
         if (asksForAPairOfJade(one.ask.named)) {
             const twin = one.twin ?? null;
             const pair = aPairOfCommunicationJade({

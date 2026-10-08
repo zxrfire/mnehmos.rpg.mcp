@@ -81,6 +81,7 @@ import {
 import { isWorn, makeObject, WORN_TAG, type ObjectRecord } from './possessions.js';
 import { handBackTheirSlips } from './a-communication-talisman-carries-word-home.js';
 import type { WorldState } from './world-state.js';
+import { keepTheirQuartersInOrder, handBackVacatedQuarters } from './what-somebody-keeps-in-their-quarters.js';
 import {
     deliverWhatTheyOweTheHouse,
     theHouseStopsExpecting,
@@ -140,9 +141,12 @@ export function aUniformFor(input: {
     houseId: string;
     houseName: string;
     onDay: number;
+    /** A change of clothes left folded in the allotment, rather than put on. */
+    spare?: boolean;
 }): ObjectRecord {
     return makeObject({
-        id: uniformIdFor(input.memberId, input.houseId, input.onDay),
+        id: input.spare ? `uniform-change-${input.houseId}-${input.memberId}`
+            : uniformIdFor(input.memberId, input.houseId, input.onDay),
         name: `${input.houseName} robes`,
         kind: 'other',
         significance: 'mundane',
@@ -151,7 +155,8 @@ export function aUniformFor(input: {
         ownerId: input.houseId,
         ownerName: input.houseName,
         // Handed over to be put on, and put on.
-        tags: ['uniform', 'issued', `house:${input.houseId}`, `member:${input.memberId}`, WORN_TAG],
+        tags: ['uniform', 'issued', `house:${input.houseId}`, `member:${input.memberId}`,
+            ...(input.spare ? [] : [WORN_TAG])],
         data: { memberId: input.memberId, issuedOnDay: input.onDay }
     });
 }
@@ -363,6 +368,7 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
         const roll = rolls.get(npc.factionId);
         if (roll) roll.push(i); else rolls.set(npc.factionId, [i]);
     }
+    handBackVacatedQuarters(state);
     if (rolls.size === 0) return done;
 
     const objectAt = new Map<string, number>();
@@ -539,6 +545,7 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
             theHouseStopsExpecting(state, house.id, expected.personId);
         }
     }
+    keepTheirQuartersInOrder(state, day);
     return done;
 }
 

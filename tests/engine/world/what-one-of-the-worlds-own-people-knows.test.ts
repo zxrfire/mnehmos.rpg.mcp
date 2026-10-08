@@ -1,3 +1,8 @@
+/** The retained synthetic person fixture omitted required NpcRecord.tags.
+ * The added common seed calls existing isTheWorldsToMove(tags.includes), so
+ * the malformed fixture would throw instead of testing its historical rules.
+ * Both arms supply tags:[]; no person status/location/history or assertion
+ * changes, and no production fallback for absent fields is introduced. */
 /**
  * What one of the world's own people knows is a reading, and it answers.
  *
@@ -57,6 +62,7 @@ function person(id: string, init: Record<string, unknown> = {}) {
         factionRankIndex: -1,
         cultivation: { realmOrdinal: 5 },
         relationships: [],
+        tags: [],
         activity: null,
         identity: { bornOnDay: 0 },
         ...init

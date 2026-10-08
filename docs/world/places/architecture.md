@@ -18,6 +18,29 @@ was actually measured, twice:
 Everything below is aimed at (2). The machinery for (1) was already in `locations.ts` and
 had been for a long time.
 
+The owner's ruling, 2026-10-03: **give the player places to go, and make the place feel
+alive through more granular areas.** A sect's mission hall, quarters, training grounds and
+exit into town must be usable. So must the city's auction house, inns, teahouses and markets.
+Existing elder offices, treasury, alchemy hall and artifact refining hall are part of that
+same layout, with the real people and objects their mechanisms already assign. A name alone
+does not build a place, and a place without its existing operation is a defect.
+
+Shared daily rooms sit in the outer precinct. Inner precincts and their doors still enforce
+rank, realm and keys. The house's style decides whether a practice yard is a yard or a
+practice floor; `training grounds` reaches either, without renaming the world into a menu.
+The dormitory and residence are the lodging buildings. Every living member of the roll has
+their own assigned holder area within the building their rank reaches, and their stored
+things belong to that holder; working elsewhere does not erase their assignment. An outer
+disciple's corner is not a separate free suite. Worn and carried belongings remain carried.
+The player's `my quarters` uses the same assignment as their belongings and NPC sleep.
+
+Town districts are areas of the existing town, not extra places that births and roads count
+twice. Public destinations persist when empty. The auction house remains inside the city
+whose calendar and lots hold the auction. Private sleeping doors are not public destinations,
+and knowing a door or a person's name does not give consent to enter it. Being in one room
+does not put its other rooms' people in your conversation. The clock, sparse routines and
+three-NPC area ceiling are the same rules throughout.
+
 ## Sections
 
 <!-- tier: 3 -->
@@ -114,7 +137,7 @@ that six people have been inside.
 | `tributeStonesPerYear` | Something owed needs somewhere it is counted before it leaves |
 | `holdsVein` | A house on a vein has a chamber over it, an ore hall to work what comes off it, and a vault. Authored on the parentage record: this read `Boolean(holds)` over a required sentence, so every house in the world had all three |
 | `reliableOrdinal` | What rung the house turns out cuts its own stone, so it decides how square the masonry is. It replaced a 0..1 `production` that was 0.5 for all 38 houses, which made every compound `fitted` and gave none of them a workshop |
-| `specialities` | A physician house gets an infirmary; an alchemical one gets a furnace floor |
+| `specialities` | Every house has an infirmary for its existing wound medicine; a medical speciality changes care and stock. An alchemical house also gets a furnace floor |
 | `sealedCeilingOrdinal` | A house with something asleep has somewhere to keep it |
 | `powerOrdinal`, `inherited` | How big the rooms are, against how many people are in them |
 
@@ -291,6 +314,21 @@ special rule for a break-in; it is a different path through the same function.
 
 > **Knowledge follows engagement, not altitude.**
 
+**Owner ruling, 2026-10-03: the player is not the character.** This discovery
+reader governs what the world volunteers and what the character can testify to.
+It is not a universal prerequisite for acting on what the human learned in a
+previous run. A first-time player learns about cultivation rooms through play;
+a returning player who asks for the local cultivation rooms can go there without
+repeating that introduction. Ordinary local facility requests identify a destination
+without creating an encounter or knowledge record. The actual gate, route, locks
+and access remain authoritative. Hidden rooms and private facts keep their discovery
+requirements. This supersedes treating every unplaced room as an unknowable request.
+
+The owner's Hollow Court example fixes the other side of this distinction:
+knowing a remote house's name does not supply the rung or the journey needed
+to enter it. See the clarification in
+[`Player knowledge and character knowledge are different`](../../../AGENTS.md#player-knowledge-and-character-knowledge-are-different).
+
 A house engages with its own compound and an outsider does not, however senior. So
 `roomStageFor(room, viewer)` takes a viewer and returns a `KnowingStage` from the social
 layer's existing ladder - there is no second discovery model here and none may be added.
@@ -324,14 +362,11 @@ not express that at all.
 Absences shape a system as much as rules do, and an unwritten absence gets mistaken for an
 oversight.
 
-- **No hour-of-day room state.** This engine's clock runs in days and years - the normal
-  player move is "I enter seclusion for two years", and the drift audit walks five
-  centuries. A room that differs at 8am and midnight is state nothing will ever read. What
-  *does* vary is the day, and `OpeningCycle` already expresses it: a house that hears
-  petitions three days in thirty is `{ periodDays: 30, openDays: 3 }`, not a note.
-- **No NPC schedules.** The world already simulates people at scale. Rooms **read** where
-  NPCs are. A second scheduler in the location layer would drift from the real one, which
-  is the "second combat system in the prose layer" mistake wearing different clothes.
+- **No stored hour-of-day room state or second scheduler.** `npc-routines.ts` reads
+  work, meals, practice and sleep from the world day and derived hour. Rooms read that
+  same activity; the annual world driver does not simulate every hour. Fractional acts
+  and local walks advance the existing clock. `OpeningCycle` still expresses a door
+  that opens three days in thirty as `{ periodDays: 30, openDays: 3 }`.
 - **No dimensions, with one exception.** Nothing reads a room's length. Something reads
   `capacity`, because *a practice yard cut for six hundred that holds ninety* is one of the
   strongest facts in the sect catalog and it is capacity against occupancy. Capacity is

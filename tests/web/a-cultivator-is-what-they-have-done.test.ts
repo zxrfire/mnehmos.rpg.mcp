@@ -21,6 +21,9 @@
  * but it allows me to test outcomes.* Nothing here forces an outcome the engine
  * did not then write for itself - the records asserted on are the ones the
  * ordinary `interact` path wrote.
+ * Each wrong now spends time and may change daily placement. The test meets
+ * each previously named target in their current area before the next wrong;
+ * it still requires every distinct deed to be written to the same ledger.
  */
 
 // Load the played entry point before reading the catalogs it initializes.
@@ -37,6 +40,7 @@ import { whatTheWorldHoldsAbout } from '../../src/web/personal-record';
 import type { GameService } from '../../src/web/game';
 import { worldLocationFor } from '../../src/web/entities';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 /** High enough to be seen and dealt with, before anybody is stood level with. */
 const IN_PLAIN_SIGHT = 12;
@@ -235,6 +239,13 @@ describe('becoming something by acting', () => {
 
         for (const who of neighbours) {
             for (const verb of WHAT_THEY_DID) {
+                const world = (await game.loadWorld())!;
+                const target = world.npcs.find(n => n.name === who)!;
+                const place = world.locations.find(l => l.id === target.locationId)!;
+                game.repos.cultivators.update(cultivator.id, { location: place.name });
+                await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, new Set([target.id]));
+                expect(game.present(game.repos.cultivators.getById(cultivator.id)!).some(p => p.id === target.id),
+                    'the next wrong requires its named target to be present').toBe(true);
                 await game.act(`ADMIN interact I ${verb} ${who}`);
                 // The reprisals cost the body, and a dead cultivator cannot go
                 // on being anything. Arranging, not deciding.

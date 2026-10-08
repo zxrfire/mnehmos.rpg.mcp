@@ -141,6 +141,14 @@ describe('a beast cultivation agreement is lived after the conversation', () => 
         at.other.tags.push(`beast:${BEASTS[0]!.id}`);
         at.other.cultivation.realmOrdinal = 29;
         at.other.locationId = at.service.worldPlaceOf(at.player);
+        // The oath needs a THIRD party, present besides the beast and the
+        // player, to witness it - `agreeing-to-share-cultivation-with-a-beast.ts`
+        // refuses outright with nobody else here. People are now placed by the
+        // hour and sparsely (`npc-routines.ts`), so this seed's square no
+        // longer reliably has one; put one here directly.
+        at.repos.cultivators.create({ ...at.player, id: 'beast-contract-witness',
+            name: 'A Witness', kind: 'npc', runId: undefined });
+        at.repos.cultivators.standIn('beast-contract-witness', at.player.standingIn ?? null);
         at.consent('beast-contract-consent', 0.65);
         const agreed = await at.game.act(`I make a beast cultivation contract with ${at.other.name} sharing 25% of my qi`);
         expect(engineCalls(agreed).some(call => call.name === 'beast.agreeContract' && call.ok), agreed.narration + JSON.stringify(engineCalls(agreed))).toBe(true);

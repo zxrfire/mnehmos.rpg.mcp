@@ -6,6 +6,9 @@
  * another province, with no house tie, does not. The fact is deliberately a
  * low-rung one, so the distance gate rather than an exceptional achievement
  * decides the negative arm.
+ * Arrival is not conversation: daily routines and capped areas place the
+ * witness elsewhere on the ground. Stand in that witness's current area before
+ * asking locally, retaining the distant arm and the heard-news assertions.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -18,15 +21,17 @@ import { regionOf } from '../../src/engine/world/what-people-are-saying.js';
 import { WorldStateRepository } from '../../src/storage/repos/world-state.repo.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
 import { makeGameInWorld } from './harness.js';
+import { standWhereThePeopleAre } from './standing-where-the-people-are.js';
 
 const STEPS = PLACES_THAT_TEACH_A_DAO.find(place => place.id === 'dao-ground-drowning-steps')!;
 const STEPS_ID = daoGroundLocationId(STEPS);
 
 describe('a dao-ground comprehension reaches play as ordinary news', () => {
     it('is heard at the ground after its years, but not in an unrelated province', async () => {
-        const { db, game } = await makeGameInWorld({
+        const harness = await makeGameInWorld({
             seed: 'dao-comprehension-news-run', worldSeed: 'dao-comprehension-news-world'
         });
+        const { db, game } = harness;
         const { cultivator } = await game.newRun('Listener');
         const world = (await game.loadWorld())!;
         const day = Math.floor(world.currentDay);
@@ -73,6 +78,7 @@ describe('a dao-ground comprehension reaches play as ordinary news', () => {
         expect(distant.narration).not.toContain('life-and-death dao');
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?').run(steps.name, cultivator.id);
+        await standWhereThePeopleAre(harness, cultivator.id, new Set([world.npcs[witnessAt]!.id]));
         const near = await game.act('what are people saying');
         expect(near.narration).toContain(visitor.name);
         expect(near.narration).toContain('comprehended');

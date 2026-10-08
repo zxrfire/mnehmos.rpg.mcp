@@ -1,25 +1,27 @@
-/**
- * Who stands behind a counter here - the inn, the landing, the carriage station - read off the people already in the place.
- *
- * Nobody is seeded for it. A counter is kept by somebody standing in the place,
- * the way a hall's staff is read off the roll in `who-works-in-an-elders-hall.ts`:
- * whoever is here at `trade` first, then the lowest rung, with ties settled on a
- * stream of the counter's own so nothing else shifts. A counter in a place with
- * nobody in it is kept by nobody the player can name.
+/** Actual public counter keepers share the world's working-person deal with
+ * physical venue placement. A listener must be present in the player's actual
+ * area. There is no employee store, attendance guarantee or name disclosure;
+ * ordinary current routines, concrete work and physical custody remain real.
  */
 
-import { forStream } from '../engine/cultivation/rng.js';
+import { workingWorldCounterFacts, counterWorkerIds, type CounterWorkerFacts } from '../engine/world/who-is-working-at-a-public-counter.js';
+import { publicCountersAt, type PublicCounterKind } from '../engine/world/public-transport-at-a-place.js';
+import { npcsStandingIn } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+import { worldLocationFor } from '../engine/world/place-lookup.js';
+import { peopleInThisPlace } from './hearsay.js';
+import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
 import { thePlayerIsSureItIsThem } from './the-narrator-plays-the-world.js';
-import { placeSeedKey } from '../data/cultivation/place-names.js';
 
-export type ACounter = 'inn' | 'landing' | 'carriage_station';
+
+export type ACounter = PublicCounterKind;
 
 /** The words a player calls the keeper of each counter by. */
 const WHAT_THEY_ARE_CALLED: Readonly<Record<ACounter, RegExp>> = {
     inn: /\b(?:inn-?keepers?|landlord|landlady|host of the inn|keeper of the inn)\b/i,
     landing: /\b(?:boatman|boatmen|ferryman|ferrymen|landing clerk|harbour ?master|shipmaster)\b/i,
+    span_counter: /\b(?:folding clerk|span clerk|folding attendant|counter attendant|portal attendant)\b/i,
     carriage_station: /\b(?:carters?|coachman|coachmen|drivers?|station clerk|carriage clerk)\b/i
 };
 
@@ -31,14 +33,14 @@ export interface AKeeper {
     name: string;
 }
 
-/** The order counters are kept in, so one person keeps one counter where there are people enough. */
-const IN_THIS_ORDER: readonly ACounter[] = ['inn', 'landing', 'carriage_station'];
+
+
 
 /**
  * The person keeping this counter here, or null where nobody is standing in the place.
  *
  * `countersHere` is every counter the place keeps: each is dealt a keeper in
- * {@link IN_THIS_ORDER}, passing over whoever already keeps one, so the inn and
+ * the shared canonical counter order, passing over whoever already keeps one, so the inn and
  * the station are two people wherever two people are standing.
  */
 export function whoKeepsTheCounter(
@@ -47,36 +49,15 @@ export function whoKeepsTheCounter(
     counter: ACounter,
     countersHere: readonly ACounter[]
 ): AKeeper | null {
-    const place = placeSeedKey((cultivator.location ?? '').trim()).toLowerCase();
-    const seed = game.atHand?.seed ?? 'no-world';
-    const atTrade = new Set(
-        (game.atHand?.npcs ?? []).filter(npc => npc.activity?.kind === 'trade').map(npc => npc.id)
-    );
-    const here = game.present(cultivator);
-    const taken = new Set<string>();
-    for (const each of IN_THIS_ORDER.filter(one => one === counter || countersHere.includes(one))) {
-        const ranked = here
-            .filter(row => !taken.has(row.id))
-            .map(row => ({
-                row,
-                trading: atTrade.has(row.id) ? 0 : 1,
-                tie: forStream(seed, 'who-keeps-the-counter', each, place, row.id).next()
-            }))
-            .sort((a, b) => a.trading - b.trading
-                || a.row.realmOrdinal - b.row.realmOrdinal
-                || a.tie - b.tie);
-        const kept = ranked[0]?.row;
-        if (each === counter) return kept ? { id: kept.id, name: kept.name } : null;
-        if (kept) taken.add(kept.id);
-    }
-    return null;
+    return countersHere.includes(counter) ? theCounterWorkersHere(game, cultivator,undefined,countersHere).get(counter) ?? null : null;
 }
 
 /** What each counter's keeper is called by somebody who has no name for them. */
 const THE_KEEPER_UNNAMED: Readonly<Record<ACounter, string>> = {
     inn: 'the innkeeper',
     landing: 'the landing clerk',
-    carriage_station: 'the station clerk'
+    carriage_station: 'the station clerk',
+    span_counter: 'the folding attendant'
 };
 
 /**
@@ -109,4 +90,39 @@ export function theCounterThisKeeperKeeps(
     }
     if (!A_TICKET_CLERK.test(said)) return null;
     return countersHere.find(counter => counter !== 'inn') ?? null;
+}
+
+/** The canonical deal filtered to actual listeners in this observer's area. */
+export function theCounterWorkersHere(game: GameService, cultivator: Cultivator, observed?: readonly AKeeper[], available?:readonly ACounter[]): Map<ACounter, AKeeper> {
+    const world=game.atHand,result=new Map<ACounter,AKeeper>();
+    if(betweenRoadEndpoints(game.db,cultivator))return result;
+    const present=new Map((observed??game.present(cultivator)).map(person=>[person.id,person]));
+    const place=world?worldLocationFor(world,cultivator.location??''):null;
+    const counters=available??(world&&place?publicCountersAt(world,place.name,world.currentDay):[]);
+    const facts:CounterWorkerFacts[]=world&&place
+        ? workingWorldCounterFacts(world,npcsStandingIn(world,place.id),counters):[];
+    const inWorld=new Set(world?.npcs.map(person=>person.id)??[]);
+    // Canonical uncapped physical placement retains repository-only bodies.
+    // A world row's own current routine keeps authority; SQL cannot bypass it.
+    if(world&&place){
+        const reading=peopleInThisPlace(game.repos,cultivator,world,place);
+        for(const person of reading.people){
+            if(person.id===cultivator.id||!person.alive||inWorld.has(person.id))continue;
+            const area=reading.areas.find(area=>area.id===reading.whereIs.get(person.id));
+            const at=counters.filter(counter=>area?.for===(counter==='inn'?'table':counter));
+            if(at.length>0)facts.push({id:person.id,realmOrdinal:person.realmOrdinal,trading:false,counters:at});
+        }
+    }else{
+        // No-world scenes have no area/routine facts: preserve their existing
+        // real local listener deal, using the complete alive repository crowd.
+        const here=(cultivator.location??'').trim().toLowerCase();
+        for(const person of game.repos.cultivators.roster()){
+            if(person.id!==cultivator.id&&person.alive&&(person.location??'').trim().toLowerCase()===here)
+                facts.push({id:person.id,realmOrdinal:person.realmOrdinal,trading:false,counters});
+        }
+    }
+    for(const [counter,id] of counterWorkerIds(world?.seed??'no-world',place?.name??cultivator.location??'',facts,counters)){
+        const actual=present.get(id);if(actual)result.set(counter,{id:actual.id,name:actual.name});
+    }
+    return result;
 }

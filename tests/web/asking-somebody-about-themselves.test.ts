@@ -44,6 +44,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { makeGameInWorld } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { parseIntent } from '../../src/web/actions';
 import {
     A_TOPIC_ABOUT_THEMSELVES,
@@ -162,9 +163,12 @@ describe('what they say, and what the engine is willing to vouch for', () => {
 
 describe('played', () => {
     it('answers a plain question about somebody standing there', async () => {
-        const { game } = await makeGameInWorld({ seed: 'self-play', worldSeed: WORLD });
-        await game.newRun('Lin Baoqing');
+        const { game, repos } = await makeGameInWorld({ seed: 'self-play', worldSeed: WORLD });
+        const { cultivator } = await game.newRun('Lin Baoqing');
         await game.act('I look around');
+        await standWhereThePeopleAre({ game, repos }, cultivator.id);
+        expect(game.present(game.currentRun().cultivator).length,
+            'the question needs somebody in the current area').toBeGreaterThan(0);
 
         const sex = await game.act('are you a girl?');
         expect(sex.narration).toMatch(/says they are (a woman|a man)/);

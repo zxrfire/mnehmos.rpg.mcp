@@ -11,11 +11,16 @@
  * square with no room, then the same span with one. Exposure alone stops at a
  * quarter of the body (`EXPOSURE_FLOOR_FRACTION`), so a year outdoors is sore and
  * not fatal.
+ * Runs now open at 08:00. The recovered 2026-10-03 counter audit requires
+ * a real quarter-day approach from the square and an eighth-day purchase,
+ * without spending the prepaid nights. Measure spans from that clock. A named dawn or morning
+ * ends at its hour the following day, rather than silently adding 24 hours.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { EXPOSURE_FLOOR_FRACTION } from '../../src/engine/cultivation/a-night-in-the-open';
+import { LESSER_ACTION_DAYS } from '../../src/web/lesser-action-costs';
 import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
 
@@ -38,6 +43,7 @@ describe('a night outdoors costs the body', () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Lu Qingmo');
         const before = game.state().cultivator;
+        const openedAt = game.state().run.elapsedDays;
 
         const done = await game.act('I stay at the inn for thirty nights');
         const after = game.state().cultivator;
@@ -46,17 +52,18 @@ describe('a night outdoors costs the body', () => {
         expect(after.spiritStones).toBeLessThan(before.spiritStones);
         expect(done.narration).toMatch(/room at the inn/i);
         expect(done.narration).not.toMatch(/in the open (?:has|have) worn the body/);
-        expect(game.state().run.elapsedDays).toBe(30);
+        expect(game.state().run.elapsedDays - openedAt).toBeCloseTo(30 + LESSER_ACTION_DAYS.move + LESSER_ACTION_DAYS.buy);
     }, 120_000);
 
     it('takes a room without spending the nights, and the nights waited after are roofed', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Lu Qingmo');
         const before = game.state().cultivator;
+        const openedAt = game.state().run.elapsedDays;
 
         const took = await game.act('I take a room at the inn for ten nights');
         expect(took.narration).toMatch(/10 nights/);
-        expect(game.state().run.elapsedDays).toBe(0);
+        expect(game.state().run.elapsedDays - openedAt).toBeCloseTo(LESSER_ACTION_DAYS.move + LESSER_ACTION_DAYS.buy);
 
         await game.act('I wait ten days');
         expect(game.state().cultivator.hp).toBe(before.hp);
@@ -97,10 +104,18 @@ describe('a night outdoors costs the body', () => {
         await game.newRun('Lu Qingmo');
         await game.act('I take a room at the inn');
         const before = game.state().run.elapsedDays;
+        const dayBefore = Math.floor(game.atHand!.currentDay);
 
         const slept = await game.act(said);
         expect(slept.narration).not.toMatch(/did not say which|nothing for the waiting to end on/);
-        expect(game.state().run.elapsedDays - before).toBe(1);
+        if (/morning|dawn/i.test(said)) {
+            expect(Math.floor(game.atHand!.currentDay)).toBe(dayBefore + 1);
+            expect(game.atHand!.currentHour).toBeCloseTo(/dawn/i.test(said) ? 6 : 8);
+            expect(game.state().run.elapsedDays - before).toBeGreaterThan(0);
+            expect(game.state().run.elapsedDays - before).toBeLessThanOrEqual(1);
+        } else {
+            expect(game.state().run.elapsedDays - before).toBe(1);
+        }
     }, 120_000);
 
     /** Played: "is there like an inn or somewhere i can crash tonight" was a look that never mentioned one. */

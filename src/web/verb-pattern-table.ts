@@ -1,3 +1,5 @@
+import { rideOfferSaid } from './ride-offer-phrasings.js';
+import { isOneInformationExchange } from './one-information-exchange.js';
 import { cultivationAgreementSaid } from './cultivation-agreement-phrasings.js';
 /**
  * The pattern table: which verb a sentence reaches, with no model running.
@@ -1247,7 +1249,7 @@ export const BREAKING_SUBJECT_VERBS =
  * which holds the honest refusal.
  */
 export const A_THING_THAT_CAN_BE_BROKEN =
-    /\b(?:pills?|elixirs?|medicines?|tablets?|pellets?|talismans?|manuals?|scrolls?|books?|swords?|blades?|sabres?|sabers?|spears?|staffs?|staves?|bows?|boats?|ships?|barges?|skiffs?|hulls?|carriages?|carts?|wagons?|waggons?|coaches?|cauldrons?|furnaces?|tokens?|pendants?|rings?|robes?|armour|armor|stalls?|inns?|taverns?|shops?|huts?|buildings?|villages?|towns?|walls?|gates?|formations?|arrays?|wards?)\b/;
+    /\b(?:pills?|elixirs?|medicines?|tablets?|pellets?|talismans?|manuals?|scrolls?|books?|swords?|blades?|sabres?|sabers?|spears?|staffs?|staves?|bows?|boats?|ships?|barges?|skiffs?|hulls?|carriages?|carts?|wagons?|waggons?|coaches?|cauldrons?|furnaces?|tokens?|pendants?|rings?|robes?|armour|armor|stalls?|inns?|taverns?|shops?|huts?|buildings?|villages?|towns?|walls?|gates?|doors?|locks?|formations?|arrays?|wards?)\b/;
 
 /**
  * Sentences that share a breaking verb and are about something else entirely.
@@ -2866,6 +2868,7 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
  * Putting something under you for the journey.
  */
 export const RIDING = new RegExp([
+    '\\b(?:fly|flies|flying|flew)\\s+(?:directly\\s+)?(?:to|towards?)\\b',
     '\\b(?:ride|rides|riding|rode|ridden)\\b',
     '\\b(?:saddle|saddles|saddling|saddled)\\b',
     '\\b(?:take|takes|taking|took|hire|hires|hiring|hired|board|boards|boarding)\\s+'
@@ -4627,6 +4630,11 @@ export function parseIntent(rawInput: string): PlannedAction {
 
 /** One full pass of the table, mood included. Run twice: as typed, then respelt. */
 function readTheSentence(input: string): PlannedAction {
+    if (isOneInformationExchange(input)) {
+        return { action: 'interact', intent: 'talk', topic: input.trim(),
+            ...(input.match(/\b(?:physician|doctor|healer)\b/i) ? { target: input.match(/\b(?:physician|doctor|healer)\b/i)![0] } : {}) };
+    }
+
     if (/\b(?:boast|brag)\b[^.?!]*\b(?:price|bounty)\b/i.test(input)
         || /\b(?:tell|say|announce)\b[^.?!]*\b(?:price|bounty)\b[^.?!]*\bon my head\b/i.test(input)) {
         const named = /\b(?:boast|brag|tell)\s+to\s+(.+?)\s+about\b/i.exec(input)?.[1]?.trim();
@@ -4827,6 +4835,8 @@ function whatIsSaidToTheirFace(said: string): PlannedAction | null {
 const A_DELIVERY_HANDED_OVER = /\b(?:deliver|delivers|hand over|hands over|hand in|hands in|hand off|turn over|drop off|drops off|return|returns|give back|gives back|bring back|brings back|take back|takes back)\b[^.!?]*\b(?:goods|crates?|consignment|delivery|cargo|casket|strongbox|bales?|sacks?|pelts?|grain|ore|load|shipment)\b|^\s*(?:i\s+)?(?:deliver|make (?:the|my) delivery)\b/;
 
 function planIntent(input: string): PlannedAction {
+    const offeredRide = rideOfferSaid(input);
+    if (offeredRide) return { action: 'request', intent: 'passage', target: offeredRide.person, topic: offeredRide.destination };
     const remoteSword = /^(?:i\s+)?send (?:my|the) sword to (.+?)[.!]?$/i.exec(input);
     if (remoteSword) return { action: 'project', proxy: 'sword', target: remoteSword[1] };
     const clone = /^(?:i\s+)?split off a clone(?: (?:to|at) (.+?))?[.!]?$/i.exec(input);
@@ -5207,12 +5217,15 @@ function planIntent(input: string): PlannedAction {
     //
     // It needs a breaking verb and a thing-noun together, which is what keeps
     // it off every sentence about a crossing, an oath or a throat.
+    // A bare demonstrative is bound by the existing last-turn reference read,
+    // never by choosing a door from the world or assuming the lock was reached.
+    const breakingReferent = /^(?:i\s+)?break\s+it\s+down[.!?]*$/.test(text);
     if (usedAsVerb(text, BREAKING_VERBS)
-        && A_THING_THAT_CAN_BE_BROKEN.test(text)
+        && (A_THING_THAT_CAN_BE_BROKEN.test(text) || breakingReferent)
         && !NOT_A_BREAKING_AT_ALL.test(text)) {
         return {
             action: 'destroy',
-            target: extractSubject(input, BREAKING_SUBJECT_VERBS)
+            target: breakingReferent ? 'it' : extractSubject(input, BREAKING_SUBJECT_VERBS)
         };
     }
 
@@ -5801,7 +5814,8 @@ function planIntent(input: string): PlannedAction {
 
     {
         const alongside = input.trim();
-        const dismissed = /^(?:i\s+)?dismiss(?:\s+(.+?))?\s+from (?:my|our) party[.!]?$/i.exec(alongside);
+        const dismissed = /^(?:i\s+)?dismiss(?:\s+(.+?))?\s+from (?:my|our) party[.!]?$/i.exec(alongside)
+            ?? /^(?:i\s+)?part\s+company(?:\s+with\s+(.+?))?[.!]?$/i.exec(alongside);
         if (dismissed) return { action: 'request', intent: 'end_company', ...(dismissed[1] ? { target: dismissed[1] } : {}) };
         const asksNobodyInParticular =
             /^\s*(?:(?:will|would|can|could)\s+you\s+|please\s+)?(?:come(?:\s+along)?|travel|ride|walk|journey)\s+with\s+(?:me|us)\b/i.test(alongside)
@@ -6926,7 +6940,8 @@ function planIntent(input: string): PlannedAction {
             action: 'ride',
             target: extractDestination(withoutTheMount)
                 ?? extractSubject(withoutTheMount, MOVE_SUBJECT_VERBS),
-            ...(mount ? { topic: mount[1].trim().toLowerCase() } : {})
+            ...(mount ? { topic: mount[1].trim().toLowerCase() }
+                : /\b(?:fly|flies|flying|flew)\b/i.test(text) ? { topic: 'body flight' } : {})
         };
     }
 

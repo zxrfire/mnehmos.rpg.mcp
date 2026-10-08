@@ -3,6 +3,7 @@
  */
 
 import { SpatialEngine } from '../../../engine/spatial/engine.js';
+import { PLACE } from '../place-names.js';
 import type { AmbientQi } from '../../../schema/cultivation.js';
 import type { HerbBiome } from '../herbs.js';
 import type {
@@ -299,3 +300,28 @@ export const REGIONS: readonly Region[] = (() => {
     });
     return [...spine, THE_BLOWN_GROUND_AS_REGION];
 })();
+
+/** Provincial capitals are the existing geography register, irrespective of settlement kind. */
+export const PROVINCIAL_CAPITALS: Readonly<Record<string, string>> = {
+    'region-low-fall': PLACE.GREEN_FALL,
+    'region-quiet-marches': PLACE.IRON_GATE,
+    'region-wide-field': PLACE.CLOUD_GATE,
+    'region-drowned-reach': PLACE.SILVER_ISLE
+};
+
+export type ASettlementTier = 'hamlet' | 'village' | 'waystation' | 'town' | 'city' | 'provincial capital';
+
+/** A capital's register takes precedence over its market-town catalog kind. */
+export function whatKindOfPlace(name: string | null | undefined): ASettlementTier | null {
+    if (!name) return null;
+    if (Object.values(PROVINCIAL_CAPITALS).includes(name)) return 'provincial capital';
+    switch (REGIONS.flatMap(r => r.places).find(p => p.name === name)?.kind) {
+        case 'hamlet': return 'hamlet';
+        case 'village': return 'village';
+        case 'waystation': return 'waystation';
+        case 'market_town':
+        case 'sect_town': return 'town';
+        case 'city': return 'city';
+        default: return null;
+    }
+}

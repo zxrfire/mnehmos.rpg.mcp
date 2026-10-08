@@ -1,17 +1,22 @@
 /**
- * A member seen to out of their own house's medicine, at its seat.
+ * A member seen to beside its infirmary attendant, out of its finite medicine.
  *
  * The same shelf the yearly pass spends on the house's own people, under the
  * same allotment and at the house's own price (`house-wound-medicine.ts`):
  * `whatTheShelfGivesAMember` decides, and this file only writes what it decided.
  * No days pass: a dose is swallowed, not a stay.
  *
- * Null wherever the shelf has nothing to say - no roll, not at the seat, nothing
+ * Null wherever the shelf has nothing to say - no roll, not at the house, nothing
  * on it that closes one of their wounds - and `treat` goes on to a physician
  * exactly as it did before this existed.
+ * The room and working attendant are checked before the shelf is asked; standing
+ * anywhere in the compound cannot buy care from an imaginary dispenser.
  */
 
 import { theSeatOfTheCompound } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+import { purposeOf } from '../engine/world/architecture.js';
+import { whoDispensesAtTheHouse } from '../engine/world/who-is-actually-seeing-to-wounds.js';
+import { npcsWhereTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { takeOffTheShelf, whatTheShelfGivesAMember } from '../engine/world/house-wound-medicine.js';
 import { pillStockKey } from '../engine/world/where-the-pills-actually-are.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
@@ -30,7 +35,8 @@ export type FromTheHouseShelf =
 export async function seenToFromTheHouseShelf(
     game: GameService,
     run: Run,
-    cultivator: Cultivator
+    cultivator: Cultivator,
+    requestedProviderId?: string
 ): Promise<FromTheHouseShelf> {
     const position = positionIn(game.repos, cultivator.id);
     if (!position) return null;
@@ -39,6 +45,15 @@ export async function seenToFromTheHouseShelf(
     const house = world?.factions.find(f => f.id === position.sectId && f.dissolvedOnDay === null) ?? null;
     if (!world || !house || house.seatLocationId === null) return null;
     if (theSeatOfTheCompound(world, game.worldPlaceOf(cultivator))?.id !== house.seatLocationId) return null;
+    const here = world.locations.find(place => place.id === game.worldPlaceOf(cultivator));
+    const dispenser = whoDispensesAtTheHouse(world, house.id);
+    if (!here || purposeOf(here) !== 'infirmary' || !dispenser
+        || (requestedProviderId !== undefined && dispenser.id !== requestedProviderId)
+        || !npcsWhereTheyStand(world, here, cultivator.standingIn,
+            { id: cultivator.id, sectId: house.id }).some(n => n.id === dispenser.id)) {
+        return { withheld: { line: `Ask at ${house.name}'s infirmary when a member is dispensing medicine there.`,
+            structure: 'No medicine dispensed: member is not beside a working attendant in the infirmary.' } };
+    }
 
     const offer = whatTheShelfGivesAMember(world, {
         houseId: house.id,

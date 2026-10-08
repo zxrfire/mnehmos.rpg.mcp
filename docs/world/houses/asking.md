@@ -186,6 +186,16 @@ parse.
 
 **This is where the player, rather than the character, improves.**
 
+**Owner ruling, 2026-10-03:** do not erase that improvement with encounter
+checks. A first-time player waits for the world to introduce cultivation rooms;
+a returning player can ask for the ordinary local facility without making a new
+character repeat the introduction. Player-supplied knowledge can guide a request
+or attempt without becoming a fabricated character memory. Ordinary services,
+items and practices do not universally require an earlier encounter to be sought.
+Unsolicited descriptions remain situated in the character's perception and learning;
+hidden locations/private facts require a discoverable route, and actual access,
+distance, ownership, resources and bodily limits still decide the result.
+
 Every run starts in the same ignorance. But the person playing has learned who is worth
 asking, what makes someone talk, and what a deflection looks like. Nothing carries on the
 character. Everything carries in the player.

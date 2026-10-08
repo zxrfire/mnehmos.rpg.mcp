@@ -47,6 +47,7 @@ import {
     whoTheHouseHasLostTrackOf
 } from './who-a-house-has-lost-track-of.js';
 import { whoHasALampBurningIn } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
+import { handBackWhatTheyNoLongerBelongTo } from './a-recruit-is-given-their-lamp-at-the-house.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RATES
@@ -571,6 +572,18 @@ export function whatHousesLearnOfTheirOwn(state: WorldState, onDay: number): Wha
             } else {
                 row = { ...setFaction(row, null, -1, since), activity: null };
                 learned.wentTheirOwnWay++;
+                // HANDED BACK HERE, NOT LEFT TO THE NEXT LAMP PASS. A house
+                // that re-admits this same person before `enterWhoeverHasReachedTheHouse`
+                // next runs (it can, the same year: `applyRecruitment` reads
+                // the roll before that pass does) would otherwise find them
+                // still wearing this house's robes - never handed back
+                // because the gap off the roll never outlasted a scan - and
+                // read them as a standing member owed nothing but a possible
+                // token trip, stranding them wherever they went missing for
+                // good. Measured on `town-a`/`town-b` at 200 years: three
+                // people this happened to, all still on the house they went
+                // missing from, none ever sent home.
+                handBackWhatTheyNoLongerBelongTo(state.objects, id => (id === npc.id ? null : undefined), since);
             }
         }
         // AND THE ROW THE FACT WAS JUST LINKED ONTO IS THE ONE THAT SURVIVES.

@@ -312,10 +312,11 @@ describe('a manual on no road in particular is extended by whatever road you hav
             'derive-no-road-read', { manual: ON_NO_ROAD, road: 'fire' }
         );
 
+        const beforeRead = game.state().run.elapsedDays;
         const read = await game.act('how do I get further');
         const option = engineCalls(read).find(c => c.name === 'encounters.extensionOption');
         expect(option?.summary).not.toMatch(/wrong_dao/);
-        expect(read.state.run.elapsedDays).toBe(0);
+        expect(read.state.run.elapsedDays).toBe(beforeRead);
 
         // And the act says the same thing the read did, which is the property
         // the `extensionOption` wiring exists for.
@@ -383,6 +384,7 @@ describe('and a refusal says what would change it', () => {
         // runs `extensionOption`, which is the same check the verb runs.
         const { game } = await standingAtTheCap('derive-read-agrees', { degree: 3 });
 
+        const beforeRead = game.state().run.elapsedDays;
         const read = await game.act('how do I get further');
         // The gate's own words, which only reach the read through
         // `extensionOption`. Asserted on the REASON rather than on open/not
@@ -392,7 +394,7 @@ describe('and a refusal says what would change it', () => {
         expect(engineCalls(read).find(c => c.name === 'encounters.extensionOption')?.summary)
             .toMatch(/leaning_only/);
         // And it costs nothing to find out, which is the whole point of the read.
-        expect(read.state.run.elapsedDays).toBe(0);
+        expect(read.state.run.elapsedDays).toBe(beforeRead);
 
         const act = await game.act(SAYING_IT);
         expect(engineCalls(act).find(c => c.name === 'engine.writeNextStage')?.ok).toBe(false);
@@ -407,9 +409,10 @@ describe('and a refusal says what would change it', () => {
             .prepare('UPDATE cultivators SET known_techniques = ? WHERE id = ?')
             .run('[]', harness.game.state().cultivator.id);
 
+        const before = harness.game.state().run.elapsedDays;
         const result = await harness.game.act(SAYING_IT);
 
         expect(result.narration).toMatch(/no book to carry further|nothing to continue/i);
-        expect(result.state.run.elapsedDays).toBe(0);
+        expect(result.state.run.elapsedDays).toBe(before);
     }, 60_000);
 });

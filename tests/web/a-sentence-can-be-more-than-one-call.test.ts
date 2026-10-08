@@ -1,16 +1,19 @@
 /**
  * The law that lets one sentence make several engine calls.
  *
+ * 2026-10-03: the agency ruling retires the six-call and one-costly-act caps.
+ * Earlier tests pinned those limits; ordered acts now all reach the current
+ * world, which can refuse or interrupt each. Fallback unresolved ordering remains a question.
+ *
  * Read as a law rather than as a behaviour: every case here is a claim about
  * what a turn may spend and in what order, and none of them needs a database.
  * The played half - that a plan actually reaches the engine, in order, and that
- * two costly acts produce a question - is in
+ * unresolved fallback ordering asks a question - is in
  * `tests/web/a-sentence-that-contains-a-plan.test.ts`.
  */
 
 import { describe, expect, it } from 'vitest';
 import {
-    MOST_CALLS_IN_ONE_TURN,
     foldTheCallsIntoOneTurn,
     howTheStepWent,
     sayingWhatIsStillToCome,
@@ -98,8 +101,8 @@ describe('the budget', () => {
     });
 
     /** Local departure formerly counted as a whole-day journey. The owner's
-     * fractional-clock ruling makes it a quarter-day walk; only day-long acts
-     * count against this budget, so the framing sentence now runs in order. */
+     * fractional-clock ruling makes it a quarter-day walk. The later agency
+     * ruling also retires the costly-act budget, so each ordered act can run. */
     it('runs the framing sentence with its fractional departure', () => {
         const budget = whatThisTurnMayRun([THEFT, HANDOFF, WALK]);
         expect(budget.toRun.map(s => s.action.action)).toEqual(['interact', 'interact', 'move']);
@@ -118,11 +121,10 @@ describe('the budget', () => {
         expect(budget.toRun.map(s => s.action.action)).toEqual(['look']);
     });
 
-    it('names what it cut off rather than dropping it', () => {
-        const many = Array.from({ length: MOST_CALLS_IN_ONE_TURN + 2 }, () => LOOK);
-        const budget = whatThisTurnMayRun(many);
-        expect(budget.toRun).toHaveLength(MOST_CALLS_IN_ONE_TURN);
-        expect(budget.overTheBound).toHaveLength(2);
+    it('keeps all requested reads beyond the retired six-call cap', () => {
+        const many = Array.from({ length: 14 }, (_, at) => step('look', {}, `look at place ${at}`));
+        expect(whatThisTurnMayRun(many).toRun).toEqual(many);
+        expect(stepsInTheResponse({ steps: many.map(s => ({ ...s.action, said: s.said })) }, many.map(s => s.said).join('; '))).toHaveLength(many.length);
     });
 });
 
@@ -216,14 +218,14 @@ describe('where the sentence gives its own order, the turn takes it', () => {
     const JOURNEY = step('move', { target: 'Cloud Gate' }, 'go to Cloud Gate');
     const SITTING = step('cultivate', { days: 365 }, 'sit down and cultivate for a year');
 
-    it('runs the first act and asks nothing', () => {
+    it('runs both ordered acts and asks nothing', () => {
         const budget = whatThisTurnMayRun(
             [JOURNEY, SITTING], 'I go to Cloud Gate and then sit down and cultivate for a year'
         );
         expect(budget.askAbout).toHaveLength(0);
         expect(budget.theOrderWasGiven).toBe(true);
-        expect(budget.toRun.map(s => s.action.action)).toEqual(['move']);
-        expect(budget.heldForTheQuestion.map(s => s.action.action)).toEqual(['cultivate']);
+        expect(budget.toRun.map(s => s.action.action)).toEqual(['move', 'cultivate']);
+        expect(budget.heldForTheQuestion).toHaveLength(0);
     });
 
     it('still asks where the sentence gives no order', () => {
@@ -235,7 +237,7 @@ describe('where the sentence gives its own order, the turn takes it', () => {
         expect(budget.toRun).toHaveLength(0);
     });
 
-    it('reads as what is still ahead, never as a report about the executor', () => {
+    it('names the acts still awaiting an unresolved-order answer', () => {
         const said = sayingWhatIsStillToCome([SITTING]);
         expect(said).toContain('Sit down and cultivate for a year');
         expect(said).toContain('still ahead of you');
@@ -1082,8 +1084,8 @@ describe('the sentence composes without a model', () => {
         );
         expect(composed.theOrderWasGiven).toBe(true);
         expect(composed.askAbout).toHaveLength(0);
-        expect(composed.toRun).toHaveLength(1);
-        expect(composed.heldForTheQuestion).toHaveLength(1);
+        expect(composed.toRun).toHaveLength(2);
+        expect(composed.heldForTheQuestion).toHaveLength(0);
     });
 });
 

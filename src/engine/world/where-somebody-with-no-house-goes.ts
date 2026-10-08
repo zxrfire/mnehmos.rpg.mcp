@@ -44,6 +44,7 @@ import type { LocationRecord } from './locations.js';
 import { populationWeightOf } from './locations.js';
 import { isAwayOnSomething, isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { startNpcJourney } from './dao-ground-stints.js';
+import { commitNpcPublicPassage } from './ship-crew.js';
 import { regionOf } from './what-people-are-saying.js';
 import { whereTheyWouldGo, type SomewhereWorthGoing } from './why-somebody-walks-out-of-a-compound.js';
 import type { WorldState } from './world-state.js';
@@ -115,7 +116,8 @@ export function peopleWithNoHouseMoveOn(state: WorldState, year: number, day: nu
     const byId = new Map(state.locations.map(l => [l.id, l] as const));
 
     let moved = 0;
-    for (let i = 0; i < state.npcs.length; i++) {
+    const peopleBeforeDepartures = state.npcs.length;
+    for (let i = 0; i < peopleBeforeDepartures; i++) {
         const npc = state.npcs[i]!;
         if (!aRogueWhoMovesOn(npc)) continue;
         if (!forStream(state.seed, 'moves-on', npc.id, year).chance(1 / HOW_OFTEN_SOMEBODY_ON_NO_ROLL_WEIGHS_IT)) continue;
@@ -158,6 +160,7 @@ export function peopleWithNoHouseMoveOn(state: WorldState, year: number, day: nu
         if (to === null) continue;
 
         state.npcs[i] = startNpcJourney(state, npc, to.locationId, day, `Travelling. ${to.why}`);
+        if (state.npcs[i] !== npc) commitNpcPublicPassage(state, state.npcs[i]!);
         moved++;
     }
     return moved;

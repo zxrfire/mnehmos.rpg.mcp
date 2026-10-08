@@ -93,16 +93,41 @@ function fortuneOf(fortune: number): number {
  * the same stream.
  */
 export function rollEncounters(input: EncounterRollInput): EncounterRoll {
+    const held = encountersAtChecks(input);
+    let next = held.next();
+    while (!next.done) next = held.next(input);
+    return next.value;
+}
+
+/** Existing cadence, suspended only before a check's actual scene is read. */
+export type EncounterCheckPhase =
+    | { kind: 'check'; absoluteDay: number; dayOffset: number; stage: 'occasion' | 'span' }
+    | { kind: 'resolved'; occurrences: readonly EncounterOccurrence[]; roll: EncounterRoll };
+
+/** Read-only continuation bounds, expressed in this accepted window's original frame. */
+export interface EncounterCadence {
+    /** Only an actually newly accepted boarding has its departure occasion. */
+    departureOccasion?: boolean;
+    /** Actual already committed check moment; equal/past checks do not happen again. */
+    afterDay?: number;
+    /** Actual requested endpoint; future checks retain their native calendar grid. */
+    throughDay?: number;
+}
+
+export function* encountersAtChecks(initial: EncounterRollInput, cadence: EncounterCadence = {}):
+    Generator<EncounterCheckPhase, EncounterRoll, EncounterRollInput | undefined> {
+    let input = initial;
     const startDay = Math.max(0, Math.floor(input.startDay));
     const days = Math.max(0, Math.floor(input.days));
     const profile = activityProfile(input.activity);
-    const pool = encounterPool({
+    let pool = encounterPool({
         ordinal: input.cultivator.realmOrdinal,
         activity: input.activity,
         place: input.place,
         locatability: input.locatability
     });
 
+    const initialPoolSize = pool.length;
     const arrivable = [...(input.arrivable ?? [])];
     const empty: EncounterRoll = {
         occurrences: [],
@@ -113,13 +138,19 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
     if (profile.exposure <= 0 && arrivalExposure(input.activity) <= 0) return empty;
 
     const limit = Math.max(1, Math.min(input.limit ?? MAX_OCCURRENCES_PER_WINDOW, 32));
-    const placeRate = placeRateMultiplier(input.place);
+    let placeRate = placeRateMultiplier(input.place);
     const occurrences: EncounterOccurrence[] = [];
     let checks = 0;
 
+    let anAccountCame = false;
+    if (cadence.departureOccasion !== false) {
     // the occasion
     // Day zero of the window, so a one-day turn has exactly one chance and a
     // long span is not charged twice for its first fortnight.
+    input = (yield { kind: 'check', absoluteDay: startDay, dayOffset: 0, stage: 'occasion' }) ?? input;
+    pool = encounterPool({ ordinal: input.cultivator.realmOrdinal, activity: input.activity,
+        place: input.place, locatability: input.locatability });
+    placeRate = placeRateMultiplier(input.place);
     const occasionChance = TURN_ENCOUNTER_CHANCE * profile.exposure * placeRate;
     checks++;
     // Somebody coming for them is not a coincidence, so they are asked first.
@@ -127,7 +158,7 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
     // (`at-a-sealed-door.ts`) does not interrupt, and does not come twice.
     const owed = attemptAnAccount(input, startDay, 0, 1, 'occasion');
     if (owed) occurrences.push(owed);
-    let anAccountCame = owed !== null;
+    anAccountCame = owed !== null;
     const occasion = owed?.interrupts ? null : attempt(input, pool, startDay, 0, occasionChance, 'occasion');
     if (occasion) occurrences.push(occasion);
 
@@ -151,27 +182,38 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
         if (met) occurrences.push(met);
     }
 
+    yield { kind: 'resolved', occurrences: atThisCheck(occurrences, 0, limit),
+        roll: resultOfChecks(occurrences, checks, pool.length, limit) };
+    }
+
     // the span
     if (!interruptedIn(occurrences)) {
-        const spanChance = SPAN_ENCOUNTER_CHANCE * profile.exposure * placeRate;
         const grid = profile.gridDays ?? ENCOUNTER_GRID_DAYS;
-        const firstGrid = nextGridDay(startDay, grid);
+        const firstGrid = nextGridDay(Math.max(startDay, cadence.afterDay ?? startDay), grid);
 
-        for (let day = firstGrid; day <= startDay + days; day += grid) {
+        for (let day = firstGrid; day <= (cadence.throughDay ?? startDay + days); day += grid) {
             if (occurrences.length >= limit) break;
+            input = (yield { kind: 'check', absoluteDay: day, dayOffset: day - startDay, stage: 'span' }) ?? input;
+            pool = encounterPool({ ordinal: input.cultivator.realmOrdinal, activity: input.activity,
+                place: input.place, locatability: input.locatability });
+            placeRate = placeRateMultiplier(input.place);
+            const spanChance = SPAN_ENCOUNTER_CHANCE * profile.exposure * placeRate;
+            const atCheck = occurrences.length;
             checks++;
 
             const due = anAccountCame ? null : attemptAnAccount(input, day, day - startDay, grid, 'span');
             if (due) {
                 occurrences.push(due);
                 anAccountCame = true;
-                if (due.interrupts) break;
+                if (due.interrupts) { yield { kind: 'resolved', occurrences: atThisCheck(occurrences, atCheck, limit),
+                    roll: resultOfChecks(occurrences, checks, pool.length, limit) }; break; }
             }
 
             const drawn = attempt(input, pool, day, day - startDay, spanChance, 'span');
             if (drawn) {
                 occurrences.push(drawn);
-                if (drawn.interrupts) break;
+                if (drawn.interrupts) { yield { kind: 'resolved', occurrences: atThisCheck(occurrences, atCheck, limit),
+                    roll: resultOfChecks(occurrences, checks, pool.length, limit) }; break; }
             }
 
             const sent = attemptSummons(
@@ -181,6 +223,8 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
             );
             if (sent) {
                 occurrences.push(sent);
+                yield { kind: 'resolved', occurrences: atThisCheck(occurrences, atCheck, limit),
+                    roll: resultOfChecks(occurrences, checks, pool.length, limit) };
                 if (sent.interrupts) break;
                 continue;
             }
@@ -188,8 +232,11 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
             const met = attemptContact(input, day, day - startDay, CONTACT_SPAN_CHANCE * placeRate);
             if (met) {
                 occurrences.push(met);
-                if (met.interrupts) break;
+                if (met.interrupts) { yield { kind: 'resolved', occurrences: atThisCheck(occurrences, atCheck, limit),
+                    roll: resultOfChecks(occurrences, checks, pool.length, limit) }; break; }
             }
+            yield { kind: 'resolved', occurrences: atThisCheck(occurrences, atCheck, limit),
+                    roll: resultOfChecks(occurrences, checks, pool.length, limit) };
         }
     }
 
@@ -199,21 +246,28 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
     // anybody. Merged after the grid loop and re-cut below, because an arrival
     // in year two invalidates a catalog draw in year nine and the truncation
     // has to be taken from the earliest interruption of either kind.
-    for (const arrived of rollArrivals(input, arrivable, startDay, days)) {
+    for (const arrived of rollArrivals(initial, arrivable, startDay, days)) {
         occurrences.push(arrived);
     }
 
-    occurrences.sort((a, b) => a.dayOffset - b.dayOffset || (a.id < b.id ? -1 : 1));
-    const cut = occurrences.findIndex(o => o.interrupts);
-    const kept = cut === -1 ? occurrences : occurrences.slice(0, cut + 1);
-    const interrupt = cut === -1 ? null : kept[kept.length - 1];
+    return resultOfChecks(occurrences, checks, initialPoolSize, limit);
+}
 
-    return {
-        occurrences: kept.slice(0, limit),
-        firstInterruptDay: interrupt ? interrupt.absoluteDay : null,
-        checks,
-        poolSize: pool.length
-    };
+/** Transient result projection, using the original final sort/cut/limit rule. */
+function resultOfChecks(occurrences: readonly EncounterOccurrence[], checks: number,
+    poolSize: number, limit: number): EncounterRoll {
+    const ordered = [...occurrences].sort((a, b) => a.dayOffset - b.dayOffset || (a.id < b.id ? -1 : 1));
+    const cut = ordered.findIndex(o => o.interrupts);
+    const kept = cut === -1 ? ordered : ordered.slice(0, cut + 1);
+    const interrupt = cut === -1 ? null : kept[kept.length - 1];
+    return { occurrences: kept.slice(0, limit), firstInterruptDay: interrupt ? interrupt.absoluteDay : null,
+        checks, poolSize };
+}
+
+function atThisCheck(occurrences: readonly EncounterOccurrence[], from: number, limit: number): EncounterOccurrence[] {
+    const accepted = new Set(resultOfChecks(occurrences, 0, 0, limit).occurrences);
+    return occurrences.slice(from).filter(one => accepted.has(one))
+        .sort((a, b) => a.dayOffset - b.dayOffset || (a.id < b.id ? -1 : 1));
 }
 
 function interruptedIn(occurrences: readonly EncounterOccurrence[]): boolean {

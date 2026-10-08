@@ -70,6 +70,7 @@ import { holdsACopyOf } from '../server/consolidated/technique-manage.js';
 import { stillStands } from './choosing-what-to-do-when-a-seclusion-is-broken.js';
 import type { ADatedThing } from './what-there-is-to-wait-for.js';
 import { openOathsHeldBy, rosterFor, sectBoardFor } from './encounters.js';
+import { theWallWhereTheyStand } from './the-mission-board-inside-a-house.js';
 import {
     MATCH_THRESHOLD,
     matchScore,
@@ -139,7 +140,7 @@ import {
     type RootAtTheDoor,
     whatTheirDoorAsks
 } from './would-that-house-take-you.js';
-import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
+import { theBuiltArchitectureUnder } from './what-is-built-where-you-are-standing.js';
 import { positionIn } from './standing.js';
 import { type Destination, whereCouldTheyGo } from './where-this-cultivator-could-go.js';
 import { readWhatIsOnOfferHere } from './who-here-is-offering-something.js';
@@ -1017,10 +1018,10 @@ export const situatedReads = {
         const roster = this.present(cultivator);
         // One board read, split two ways: what is being put to them, and what
         // is on the same wall and is not.
-        const theWall = sectBoardFor(
+        const theWall = theWallWhereTheyStand(this, cultivator, sectBoardFor(
             { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
             cultivator
-        );
+        ));
 
         return {
             satiety: cultivator.satiety,
@@ -1166,11 +1167,11 @@ export const situatedReads = {
             // The same construction the verb that answers this uses, so the
             // panel cannot offer a look that the look then declines to give.
             builtHere: (() => {
-                const built = theBuiltGroundUnder(this, cultivator);
+                const built = theBuiltArchitectureUnder(this, cultivator);
                 if (built === null) return null;
                 return {
-                    unreadable: built.reading.seen.length - built.reading.named,
-                    courtsClosed: built.reading.enclosuresSeen - built.reading.enclosuresOpen
+                    unreadable: built.seen.length - built.named,
+                    courtsClosed: built.enclosuresSeen - built.enclosuresOpen
                 };
             })(),
             roadUnderfoot: this.groundTheyCanPointAt(cultivator)

@@ -951,3 +951,5 @@ spending; `resolveAttempt` is still the only thing that moves a person.
 A binding settlement preserves the account's severity and links the oath to the closed account. Its facts state the agreement, without asserting coercion or satisfaction. The live match action invokes it for an explicitly offered settlement after acceptance; leaving can reopen the linked account.
 
 The witness account reader weighs the doer's words against what the witness saw, the ties on both sides, and the visible evidence. Reporting can carry a witnessed service to one's own house as well as a grievance; debts and knowledge of a real recipient still govern whether it travels.
+
+`attemptWasAccepted` beside `AttemptOutcome` is the common acceptance read: taken and turned both mean the thing was done. A turned acceptance retains the counter-obligation and the complete original result. Tool success, execution status, actual deed and acceptance guards read that authority; countered, refused and reported remain unaccepted.

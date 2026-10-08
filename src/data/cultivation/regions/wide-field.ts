@@ -29,6 +29,7 @@ export const THE_WIDE_FIELD: Region = {
     name: REGION_NAME.YELLOW_PLAIN,
     role: 'adjacent',
     bearing: 'east',
+    metric: { xLi: 240, yLi: 0, extentLi: 30 },
     traditionId: 'tradition-drawn',
     summary:
         'The eastern plain: nine walled cities on flat ground over granted shallow veins, two thousand years of engagements fought across it, and city halls rented from mortal landlords. The workings are held on apex grants, the rooms are rented, and the ground is rich because of what has died on it.',
@@ -116,7 +117,7 @@ export const THE_WIDE_FIELD: Region = {
     ],
     places: [
         {
-            name: PLACE.CLOUD_GATE,
+            name: PLACE.CLOUD_GATE, metric: { xLi: 237, yLi: 3 },
             // A vein grant does not grant the city above it; its halls are leased.
             heldByFactionId: null,
             kind: 'city', ambient: 'normal', note: 'The largest of the nine, and the city the whole province sets its clocks by. Every hall in it is leased and the leases are public.',
@@ -151,7 +152,7 @@ export const THE_WIDE_FIELD: Region = {
             ]
         },
         {
-            name: PLACE.THREE_WALLS,
+            name: PLACE.THREE_WALLS, metric: { xLi: 253, yLi: 9 },
             heldByFactionId: null,
             kind: 'city', ambient: 'thin', note: 'Walled three times in two thousand years, each wall further out, all three still standing. A third of the city lives between walls nobody defends.',
             connections: [
@@ -165,7 +166,7 @@ export const THE_WIDE_FIELD: Region = {
             ]
         },
         {
-            name: PLACE.AUTUMN_GATE,
+            name: PLACE.AUTUMN_GATE, metric: { xLi: 244, yLi: -12 },
             heldByFactionId: null,
             kind: 'market_town', ambient: 'normal', note: 'Where the crop off the old ground is sold, and where nobody at the counter asks what the field grew before it grew this.',
             connections: [
@@ -178,8 +179,8 @@ export const THE_WIDE_FIELD: Region = {
                 }
             ]
         },
-        { name: PLACE.GRAIN_RAIN, kind: 'site', ambient: 'dense', grounds: ['battlefield'], note: 'Twelve thousand died here in one afternoon a hundred and forty years ago, and the ground has been fruiting ever since. The name is what that season was called before it happened.' },
-        { name: PLACE.OLD_RIVER, heldByFactionId: null, kind: 'village', ambient: 'thin', grounds: ['riverbank', 'farmland'], note: 'A river village that was on the river until the river moved four li in one spring three hundred years ago. Nobody renamed it and the mills are still standing.' }
+        { name: PLACE.GRAIN_RAIN, metric: { xLi: 259, yLi: -9 }, kind: 'site', ambient: 'dense', grounds: ['battlefield'], note: 'Twelve thousand died here in one afternoon a hundred and forty years ago, and the ground has been fruiting ever since. The name is what that season was called before it happened.' },
+        { name: PLACE.OLD_RIVER, metric: { xLi: 220, yLi: -8 }, heldByFactionId: null, kind: 'village', ambient: 'thin', grounds: ['riverbank', 'farmland'], note: 'A river village that was on the river until the river moved four li in one spring three hundred years ago. Nobody renamed it and the mills are still standing.' }
     ],
     // Grain in the quantity that feeds three provinces, the roads that carry
     // it, and what is buried underneath. The dug goods and the hundred-and-

@@ -3,6 +3,7 @@ import type { ActionName } from './action-set.js';
 import { thePlanIsTheReadInsideTheVerb } from './action-set.js';
 import type { PlannedAction } from './planned-action.js';
 import { PRESSING_SOMEBODY } from './asking-is-not-doing.js';
+import { isAskingAboutWhatIsAlreadyInFrontOfThem } from './investigation-targets.js';
 
 /** Existing spans win; these costs apply only when the handler spent no time. */
 export const LESSER_ACTION_DAYS: Readonly<Record<ActionName, 0 | 0.125 | 0.25 | 0.5>> = {
@@ -28,6 +29,11 @@ export function lesserActionDays(plan: PlannedAction): number {
     if (thePlanIsTheReadInsideTheVerb(plan)) return 0;
     if (plan.action === 'stow' && (!plan.intent || plan.intent === 'look')) return 0;
     if (plan.action === 'carry' && !plan.target && (!plan.intent || plan.intent === 'wear')) return 0;
+    // "I look at the buildings" and "I look around" fold in the same read
+    // (`theBuiltGroundUnder` in turn-engine.ts's `look` case); the sentence
+    // reaching `investigate` instead of `look` is a parsing accident, not a
+    // deliberate search, and must not be priced as one.
+    if (plan.action === 'investigate' && isAskingAboutWhatIsAlreadyInFrontOfThem(plan.target ?? '')) return 0;
     return LESSER_ACTION_DAYS[plan.action];
 }
 

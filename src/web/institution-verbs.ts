@@ -3,6 +3,7 @@
  */
 
 import { askingYourHouseForARepairDose } from './asking-your-house-for-a-repair-dose.js';
+import { askingYourHouseForAStoredObject } from './asking-your-house-for-a-stored-object.js';
 import { DISASTER_RESPONSES } from '../data/cultivation/catastrophe.js';
 import { IMMORTAL_MOTIVE, getChannel } from '../data/cultivation/crossings.js';
 import {
@@ -259,7 +260,8 @@ export const institutionVerbs = {
         cultivator: Cultivator,
         target: string | undefined,
         intent: string | undefined,
-        matter: string | undefined
+        matter: string | undefined,
+        rawInput = ''
     ): Promise<Execution> {
         const which: PetitionIntent = PETITION_INTENTS.includes(intent as PetitionIntent)
             ? intent as PetitionIntent
@@ -270,6 +272,12 @@ export const institutionVerbs = {
         const repair = await askingYourHouseForARepairDose(
             this, run, cultivator, target ?? 'my house', matter ?? target ?? '');
         if (repair) return repair;
+
+        if (which !== 'descent') {
+            const stored = await askingYourHouseForAStoredObject(this, run, cultivator,
+                target ?? 'my house', matter ?? '', rawInput || `I request ${matter ?? ''}`);
+            if (stored) return stored;
+        }
 
         if (which === 'stock') return this.requisition(run, cultivator, target, matter);
         if (which === 'descent') return this.claimDescent(run, cultivator, target);

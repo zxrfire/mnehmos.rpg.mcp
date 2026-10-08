@@ -52,13 +52,31 @@ describe('arrivals take space in the played roster', () => {
             await game.act('who is here');
         }
         // Overflow visitors remain visible when the player walks to their area.
+        //
+        // A walk across a place now spends a quarter day of its own
+        // (`walking-across-a-place.ts`), and which area a null-`standingIn` body
+        // overflows into is drawn per hour (`where-in-a-place-somebody-is-standing.ts`),
+        // so the area read before walking there can already be stale by the time
+        // the walk lands. Re-read after moving and correct once if the clock moved
+        // the overflow out from under the first read.
         for (let i = 0; i < 5; i++) {
             const me = repos.cultivators.getById(cultivator.id)!;
             const placement = peopleInThisPlace(repos, me, world, place);
             const at = placement.whereIs.get(`visitor-${i}`)!;
             const area = placement.areas.find(one => one.id === at)!;
             if (me.standingIn !== at) await game.act(`I move to ${area.name}`);
-            expect(repos.cultivators.getById(cultivator.id)!.standingIn).toBe(at);
+
+            const after = repos.cultivators.getById(cultivator.id)!;
+            if (after.standingIn !== at) {
+                const resettled = peopleInThisPlace(repos, after, world, place);
+                const nowAt = resettled.whereIs.get(`visitor-${i}`)!;
+                if (after.standingIn !== nowAt) {
+                    await game.act(`I move to ${resettled.areas.find(one => one.id === nowAt)!.name}`);
+                }
+                expect(repos.cultivators.getById(cultivator.id)!.standingIn).toBe(nowAt);
+            } else {
+                expect(after.standingIn).toBe(at);
+            }
             expect(game.present(repos.cultivators.getById(cultivator.id)!).map(n => n.id)).toContain(`visitor-${i}`);
         }
         db.close();

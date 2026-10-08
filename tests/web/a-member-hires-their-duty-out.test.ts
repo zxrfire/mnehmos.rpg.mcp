@@ -7,6 +7,8 @@
  * no contribution. An unseen death does not announce that failure early.
  * Two missions accepted on the same day once overwrote each other's oath;
  * each now stays open or settles according to its own contractor's term.
+ * Hiring and accepting a chore now spend the member's conversational eighth
+ * of a day; the contractor still carries the remaining work, not the member.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
@@ -56,14 +58,14 @@ describe('a member hires their duty out', () => {
         expect(parseIntent('I take the pass watch to hire it out')).toMatchObject({ action: 'sect', intent: 'duty', topic: 'hire' });
         expect(parseIntent('I report Worker seen at Clear River Ferry')).toMatchObject({ action: 'sect', intent: 'report_missing', target: 'Worker', topic: 'Clear River Ferry' });
     });
-    it('transfers the agreed price, spends no member days, and pays contribution only after completion', async () => {
+    it('transfers the agreed price, spends a reply, and pays contribution only after completion', async () => {
         const h = await atAPost();
         const before = h.person().spiritStones;
         const days = h.game.state().run.elapsedDays;
         const merit = h.repos.sects.getMembership(h.id)!.contribution;
         const hired = await h.game.act('I hire Worker to serve my post');
         expect(hired.narration).toContain('takes over');
-        expect(h.game.state().run.elapsedDays).toBe(days);
+        expect(h.game.state().run.elapsedDays - days).toBeCloseTo(1 / 8);
         expect(h.person().spiritStones).toBeLessThan(before);
         expect(h.repos.sects.getMembership(h.id)!.contribution).toBe(merit);
         expect(theMissionPostOnTheSheet(h.game, h.person(), true), 'a hire still occupies the member body').toBeNull();
@@ -98,7 +100,7 @@ describe('a member hires their duty out', () => {
         const before = h.game.state().run.elapsedDays;
         const answer = await h.game.act('I take chores to hire it out');
         expect(answer.narration).toContain('You take up the post');
-        expect(h.game.state().run.elapsedDays).toBe(before);
+        expect(h.game.state().run.elapsedDays - before).toBeCloseTo(1 / 8);
         expect(ledgerAbout(h.db as unknown as DatabaseHandle, cultivator.id)
             .some(r => r.kind === 'oath' && r.status === 'open' && r.tags.includes('duty'))).toBe(true);
     }, 120_000);

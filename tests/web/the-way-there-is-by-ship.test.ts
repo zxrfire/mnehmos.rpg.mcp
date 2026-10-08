@@ -7,7 +7,9 @@
  * Ocean's place connections are `road` only because that is the engine's link kind, and every
  * sea crossing in the catalog has an end on open water, so an end there is the test
  * (`the-way-there-is-by-ship.ts`). At the landing a move says what the seat costs and who sells
- * it and spends nothing; anywhere else it walks to the landing and says the way on.
+ * it. Reading the route remains free, but the successful lesser move that reaches
+ * the landing answer costs its quarter-day; anywhere else it walks to the
+ * landing and says the way on.
  *
  * Played on `road-world`, where a new run opens at The Furnace Flank, inland.
  */
@@ -31,6 +33,7 @@ describe('the way there is by ship', () => {
     it.each(['I go to Silver Island', 'I travel to Silver Island', 'I sail to Silver Island'])(
         'island to island is a seat at the landing, not nights on open ground: "%s"', async said => {
             const { game } = await atSweetSpringIsland();
+            const before = game.state().run.elapsedDays;
 
             const done = await game.act(said);
 
@@ -39,7 +42,7 @@ describe('the way there is by ship', () => {
             expect(done.narration).toMatch(/sells the seats at the landing here/);
             expect(done.narration).not.toMatch(/nights? in the open|took to the road/);
             expect(game.state().cultivator.location).toBe('Sweet Spring Island');
-            expect(game.state().run.elapsedDays).toBe(0);
+            expect(game.state().run.elapsedDays).toBeCloseTo(before + 0.25);
 
             await game.act('I take the ship to Silver Island');
             expect(game.state().cultivator.location).toBe('Silver Island');
@@ -77,13 +80,15 @@ describe('the way there is by ship', () => {
         const onTheWater = world.locations.filter(row => row.parentId === sea.id).map(row => row.name);
         expect(onTheWater.length).toBeGreaterThan(9);
 
-        for (const name of onTheWater.filter(one => one !== 'Sweet Spring Island')) {
+        const destinations = onTheWater.filter(one => one !== 'Sweet Spring Island');
+        const before = game.state().run.elapsedDays;
+        for (const name of destinations) {
             const asked = await game.act(`I go to ${name}`);
             expect(asked.narration, name).toMatch(/is by ship, not on foot\./);
             expect(asked.narration, name).not.toMatch(/From .+ the way goes on to/);
             expect(game.state().cultivator.location).toBe('Sweet Spring Island');
         }
-        expect(game.state().run.elapsedDays).toBe(0);
+        expect(game.state().run.elapsedDays).toBeCloseTo(before + destinations.length * 0.25);
     }, 300_000);
 
     it('the board shows the six nearest and says how many more, and one it does not show still sells', async () => {

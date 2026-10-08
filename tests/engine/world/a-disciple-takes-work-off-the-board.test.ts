@@ -10,6 +10,12 @@
  * Red-checked: pricing the taking off `whatServiceIsWorth` instead of the
  * notice's terms fails the terms assertion (it pays no stones), and a close that
  * does not pay the settled terms fails the payment assertion.
+ *
+ * UPDATED: `peopleTakeWorkOffTheirHousesBoard` now draws which houses are read
+ * each year from a capped background sample rather than reading every house
+ * every call. The first test arranges exact local contact through the ordinary
+ * foreground context, retaining its original single-year call and assertions
+ * about terms rather than measuring whether the background sample drew it.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -22,6 +28,7 @@ import { SENDING_REASONS } from '../../../src/data/cultivation/why-a-house-puts-
 import { aPostingAsAnOffer } from '../../../src/engine/encounters/what-a-house-has-on-its-board.js';
 import { dutyTermsFor } from '../../../src/engine/encounters/duties.js';
 import { meritWith } from '../../../src/engine/world/what-a-house-counts-in-somebodys-favour.js';
+import { resolveWithPlayerPresent } from '../../../src/engine/world/background-incident-draw.js';
 import {
     peopleTakeWorkOffTheirHousesBoard,
     theBoardWorkTheyAreOn,
@@ -79,7 +86,8 @@ describe('an outer disciple takes work off their own house\'s board', () => {
         const probe = anOuterDisciple(state, houseId, 'probe-outer', 3);
         const day = Math.floor(state.currentDay);
 
-        peopleTakeWorkOffTheirHousesBoard(state, Math.floor(day / 365), day);
+        resolveWithPlayerPresent(state, probe.locationId!, () =>
+            peopleTakeWorkOffTheirHousesBoard(state, Math.floor(day / 365), day));
 
         const after = state.npcs.find(n => n.id === probe.id)!;
         expect(after.activity).not.toBeNull();

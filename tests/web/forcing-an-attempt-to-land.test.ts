@@ -484,6 +484,7 @@ describe('set_age', () => {
             const { game, repos } = makeGame({ adminMode: true, seed: 'age' });
             await game.newRun('Shen Yuan');
             const before = repos.cultivators.getById(game.currentRun().cultivator.id)!;
+            const daysBefore = repos.runs.getActiveRun()!.elapsedDays;
 
             const answer = await game.act('ADMIN set_age 40');
 
@@ -493,7 +494,7 @@ describe('set_age', () => {
             // The clock did not move, which is the whole distinction from
             // `advance_days`: no world ran, nothing happened to them in
             // between, and the answer says so rather than implying a life.
-            expect(repos.runs.getActiveRun()!.elapsedDays).toBe(0);
+            expect(repos.runs.getActiveRun()!.elapsedDays - daysBefore).toBe(0);
             expect(answer.narration).toMatch(/NO LIFE WAS LIVED AND NONE IS CLAIMED/);
         });
     }, 60_000);

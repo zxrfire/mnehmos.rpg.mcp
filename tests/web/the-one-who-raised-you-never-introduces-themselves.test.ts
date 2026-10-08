@@ -2,6 +2,9 @@
  * Somebody the player grew up with never gives them their name as though meeting them. Played:
  * the woman who raised the player answered a question, "gave you their name" was written over
  * the row saying she raised them, and the next card handed her over as a stranger.
+ * The introduction guard now shares the named-face reader: a mere witnessed
+ * sighting does not prevent introduction, while this lived childhood does.
+ * It reads all provenance so a later sighting cannot discard that childhood.
  */
 import { describe, expect, it } from 'vitest';
 

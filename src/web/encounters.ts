@@ -1,7 +1,9 @@
+import { journeyTimeHasReached } from '../engine/world/places-on-the-way.js';
 /**
  * The turn loop's adapter onto `src/engine/encounters/`.
  */
 
+import type { EncounterRollInput } from '../engine/encounters/types.js';
 import { ledgerAbout, writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { aDeliveryAsAnOffer, aStrangerIsNotHandedTheGoods, whatAHouseSendsItsSisters } from '../engine/world/what-a-house-sends-its-sisters.js';
 import {
@@ -50,6 +52,7 @@ import {
 import { thereIsNoDoorAt } from '../data/cultivation/a-favour-skips-the-admission-bar.js';
 import { whoCouldNominateInto } from '../engine/social-leverage/who-can-put-your-name-up-for-a-posting.js';
 import { isSealedOn } from '../engine/world/what-ground-a-place-is.js';
+import { isWater } from '../engine/world/places-on-the-way.js';
 import type { InterruptPolicy } from '../engine/world/time.js';
 import {
     aFindThisHouseCouldSendFor,
@@ -194,12 +197,17 @@ export interface EncounterRequest {
 
 /** Roll the window. Call this BEFORE provisioning or simulating anything. */
 export function encountersFor(deps: EncounterDeps, request: EncounterRequest): EncounterRoll {
+    return rollEncounters(encounterInputFor(deps, request));
+}
+
+/** Same actual scene authority for a deferred cadence check, with no stored cast. */
+export function encounterInputFor(deps: EncounterDeps, request: EncounterRequest): EncounterRollInput {
     const { cultivator } = request;
     const membership = request.membership ?? membershipFor(deps, cultivator);
     // The same reading the board takes, so what the house would post and what
     // it would send for are one account of the house rather than two.
     const standing = theHouseAsItStands(deps, cultivator, membership);
-    return rollEncounters({
+    return {
         seed: request.seed,
         startDay: request.startDay,
         days: request.days,
@@ -229,7 +237,7 @@ export function encountersFor(deps: EncounterDeps, request: EncounterRequest): E
         }),
         locatability: request.locatability ?? locatabilityFor(deps, cultivator),
         roster: request.roster ?? rosterFor(deps, cultivator)
-    });
+    };
 }
 
 /**
@@ -256,8 +264,9 @@ export function placeFor(world: WorldState | null, cultivator: Cultivator): Enco
         id: record.id,
         name: record.name,
         kind: record.kind,
+        substrate: record.tags.includes('air-course') ? 'air' : isWater(record) ? 'water' : 'land',
         danger: Math.max(0, Math.min(1, record.environment.danger + wrongHere)),
-        qiDensity: record.qiDensity,
+        qiDensity: record.tags.includes('air-course') ? 0 : record.qiDensity,
         hazards: record.hazards,
         controllingFactionId: record.controllingFactionId,
         // The schedule, not the column: `sealed` is refreshed at a year
@@ -453,6 +462,8 @@ const WHAT_STOPPED_IT: Readonly<Record<string, string>> = {
 };
 
 export function whatCutTheSpanShort(span: {
+    /** Precise native callers retain the actual fraction; legacy grids remain floored. */
+    preciseDays?: boolean;
     /** What the player's sentence asked for. */
     asked: number;
     /** What the span was cut to before the skip ran. */
@@ -478,9 +489,9 @@ export function whatCutTheSpanShort(span: {
     /** Absolute day the span began, in the run's frame. */
     startDay: number;
 }): SpanCutShort | null {
-    const asked = Math.max(0, Math.floor(span.asked));
-    const livedDays = Math.max(0, Math.floor(span.skip.simulatedDays));
-    if (livedDays >= asked) return null;
+    const asked = Math.max(0, span.preciseDays ? span.asked : Math.floor(span.asked));
+    const livedDays = Math.max(0, span.preciseDays ? span.skip.simulatedDays : Math.floor(span.skip.simulatedDays));
+    if (span.preciseDays ? journeyTimeHasReached(livedDays, asked) : livedDays >= asked) return null;
     // A death is not an interruption. The run ended; there is no next sentence
     // to make from where they are standing, and every other surface says so.
     if (span.skip.died) return null;
@@ -488,7 +499,8 @@ export function whatCutTheSpanShort(span: {
     // THE BODY FIRST, because it is the innermost and the most specific: the
     // skip was handed `lived` days and did not finish them, which no arrival and
     // no world event can explain.
-    if (span.skip.simulatedDays < span.skip.requestedDays) {
+    if (span.preciseDays ? !journeyTimeHasReached(span.skip.simulatedDays, span.skip.requestedDays)
+        : span.skip.simulatedDays < span.skip.requestedDays) {
         return {
             askedDays: asked,
             livedDays,
@@ -704,7 +716,9 @@ export function recordEncounters(
      * is another first. Optional only so that a caller with no database (an odds
      * harness, a design guard) can still read a roll.
      */
-    repos?: CultivationRepos
+    repos?: CultivationRepos,
+    /** Actual current run-relative hearing day for a streamed occurrence. Offsets stay intact. */
+    actualOccurrenceOnDay?: number
 ): RecordedEncounters {
     const learned: string[] = [];
     const met: string[] = [];
@@ -741,7 +755,8 @@ export function recordEncounters(
                 // guess, and it is here to satisfy the type honestly.
                 entryId: occurrence.entryId ?? occurrence.id,
                 what: occurrence.event.summary,
-                spokenOnDay: Math.floor(onDay) + occurrence.dayOffset
+                spokenOnDay: actualOccurrenceOnDay === undefined
+                    ? Math.floor(onDay) + occurrence.dayOffset : Math.floor(actualOccurrenceOnDay)
             });
         }
         for (const grant of occurrence.grants) {

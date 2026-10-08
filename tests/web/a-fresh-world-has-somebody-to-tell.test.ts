@@ -79,6 +79,7 @@ import type { WorldState } from '../../src/engine/world/world-state';
 import type { NpcRecord } from '../../src/engine/world/npc-state';
 import type { HistoricalFact } from '../../src/engine/world/history';
 import { npcsInTheArea, theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 /** The blood kinds `whoTheyCarryFor` reads. Not the two teaching ones. */
 const BLOOD = new Set(['kin', 'spouse', 'parent', 'child']);
@@ -106,6 +107,11 @@ const BLOOD = new Set(['kin', 'spouse', 'parent', 'child']);
  * Areas limit a conversation to three people. The sweep now walks the actual
  * areas of the opening town, rather than requiring the family in its busiest
  * area. No people or relationships are moved to make the conversation happen.
+ * Sparse routine placement later left zero three-person conversations at
+ * 08:00, while the unchanged town sweep still found 15 of 360 openings. The
+ * killer, bereaved and unrelated control are now met in their own live areas
+ * of that same town. Density, fresh facts and the priced account stay asserted;
+ * three independent people need not keep the same morning routine.
  *
  * AND THEN THE KILLINGS WALKED ONTO HOUSE GROUND, and the floor caught it. The
  * same sweep, run on exported trees at each commit: 23 of 360, then 15 once a
@@ -134,7 +140,7 @@ interface Sweep {
     pairs: number;
     hits: number;
     worldsWithOne: number;
-    /** Of those, the ones where one actual area holds all three for a conversation. */
+    /** Of those, the ones with a reachable bereaved person in an actual area. */
     inTheRoom: number;
     /** The first pair that opens IN THE ROOM with a priced loss, for the played tests. */
     first: { worldSeed: string; seed: string; areaId: string } | null;
@@ -142,7 +148,7 @@ interface Sweep {
 
 /**
  * Whether a run opening at this place would open beside somebody with a priced
- * loss, a living killer in the same square, and a bystander who has lost
+ * loss, a living killer in the same town, and a bystander who has lost
  * nobody - which is every precondition the three tests below need.
  *
  * The same reads `whatIsStandingHere` does, against the seeded world rather
@@ -153,13 +159,12 @@ function opensBesideALoss(state: WorldState, placeName: string, areaId?: string)
         l => l.name.toLowerCase() === placeName.trim().toLowerCase());
     if (!row) return false;
     // The town for density; one actual area for the played conversation.
-    const here = areaId
-        ? npcsInTheArea(state, areaId)
-        : state.npcs.filter(n => n.status === 'alive' && n.locationId === row.id);
+    const here = state.npcs.filter(n => n.status === 'alive' && n.locationId === row.id);
+    const addressed = areaId ? npcsInTheArea(state, areaId) : here;
     const dead = new Set(state.npcs.filter(n => n.status !== 'alive').map(n => n.id));
     const priced = state.history.facts.filter(f => f.data && 'deedWeight' in f.data);
 
-    for (const hearer of here) {
+    for (const hearer of addressed) {
         const loss = hearer.relationships.find(
             r => BLOOD.has(r.kind) && dead.has(r.targetId));
         if (!loss) continue;
@@ -351,8 +356,10 @@ describe('a fresh world has somebody to tell', () => {
         // account has somewhere to point.
         const killer = s.world.npcs.find(npc => npc.id === s.killer.id)!;
         expect(killer.status, 'the killer is still alive').toBe('alive');
-        expect(s.here.some(p => p.id === killer.id),
-            'and standing where it happened, so a player can name him').toBe(true);
+        expect(killer.locationId, 'and standing in the opening town where it happened').toBe(where!.id);
+        game.repos.cultivators.standIn(cultivator.id, theAreasOf(s.world, where!).whereIs.get(killer.id)!);
+        expect(game.present(game.repos.cultivators.getById(cultivator.id)!).some(p => p.id === killer.id),
+            'the player can walk to and name the killer').toBe(true);
     }, 180000);
 
     /**
@@ -369,6 +376,18 @@ describe('a fresh world has somebody to tell', () => {
         const { cultivator } = await game.newRun('Prober');
         game.repos.cultivators.standIn(cultivator.id, areaId);
         const s = await whatIsStandingHere(game, game.repos.cultivators.getById(cultivator.id));
+
+        const town = worldLocationFor(s.world, cultivator.location)!;
+        game.repos.cultivators.standIn(cultivator.id, theAreasOf(s.world, town).whereIs.get(s.killer.id)!);
+        expect(game.present(game.repos.cultivators.getById(cultivator.id)!).some(p => p.id === s.killer.id)).toBe(true);
+        // Seeing a face does not supply its name. Greet the actual area and
+        // keep the name they give before telling somebody in another area.
+        await game.act('hello');
+        expect(game.knowledge.isAwareOf(cultivator.id, 'cultivator', s.killer.id),
+            'the greeting must introduce the killer before naming them elsewhere').toBe(true);
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, new Set([s.hearer.id]));
+        expect(game.present(game.repos.cultivators.getById(cultivator.id)!).some(p => p.id === s.hearer.id),
+            'the bereaved person must still be reachable after the greeting').toBe(true);
 
         (game as unknown as { knowledge: { learn(i: unknown): unknown } }).knowledge.learn({
             holderId: (cultivator as { id: string }).id,
@@ -421,12 +440,15 @@ describe('a fresh world has somebody to tell', () => {
 
         const dead = new Set(
             s.world.npcs.filter(npc => npc.status !== 'alive').map(npc => npc.id));
-        const carriesNothing = s.here.find(p => {
-            const npc = s.world.npcs.find(n => n.id === p.id);
-            return npc !== undefined
+        const town = worldLocationFor(s.world, cultivator.location)!;
+        const placement = theAreasOf(s.world, town);
+        const carriesNothing = s.world.npcs.find(npc => {
+            return npc.status === 'alive' && npc.locationId === town.id && placement.whereIs.has(npc.id)
                 && !npc.relationships.some(r => BLOOD.has(r.kind) && dead.has(r.targetId));
         })!;
         expect(carriesNothing, 'somebody here has lost nobody').toBeDefined();
+        game.repos.cultivators.standIn(cultivator.id, placement.whereIs.get(carriesNothing.id)!);
+        expect(game.present(game.repos.cultivators.getById(cultivator.id)!).some(p => p.id === carriesNothing.id)).toBe(true);
 
         const said = await game.act(
             `I tell ${carriesNothing.name} that ${s.killer.name} killed ${s.victimName}`);

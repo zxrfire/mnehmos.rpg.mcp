@@ -13,6 +13,10 @@
  * still reading `alive`, and no grave anywhere. The cultivation layer had the
  * death right and the world was told none of it.
  *
+ * The 2026-10-03 belongings audit corrected death's old title overwrite: an
+ * ADMIN pouch grant arranges physical custody, not lawful ownership. The
+ * tracked blade retains the owner recorded before death; only possession and
+ * provenance move. This replaces the old assertion that carrying made it yours.
  * Every assertion below is on state. The narration is never read.
  */
 
@@ -77,15 +81,15 @@ describe('a death moves what the dead were carrying', () => {
             // ground whoever else is in the town. See `somebodyDidThis`.
             const place = game.state().cultivator.location;
 
-            // A rated object the world holds a row for and nobody is holding.
-            // The two the seeder leaves unpossessed are the only ones a player
-            // can come to hold without a house losing its property, which is
-            // itself a finding and is reported rather than worked around - see
-            // `trackedOnTheBody` in `estate-settlement.ts`.
+            // Arrange pouch custody for this estate test. The existing world's
+            // title remains authoritative: an ADMIN grant does not demonstrate
+            // lawful acquisition from its recorded owner.
             await game.act('ADMIN grant_item itemId=artifact-the-severed-ledger-blade');
             await game.act('ADMIN grant_item itemId=pill-qi-gathering quantity=2');
             await game.act('ADMIN grant_item itemId=herb-qi-grass quantity=3');
 
+            const recordedBlade = getObject(await worldNow(harness), 'artifact-the-severed-ledger-blade')!;
+            const recordedTitle = { ownerId: recordedBlade.ownerId, ownerName: recordedBlade.ownerName };
             expect(pouchRows(harness, cultivator.id)).toBeGreaterThan(0);
             const stonesHeld = game.state().cultivator.spiritStones;
             expect(stonesHeld).toBeGreaterThan(0);
@@ -129,7 +133,7 @@ describe('a death moves what the dead were carrying', () => {
             const blade = getObject(world, 'artifact-the-severed-ledger-blade');
             expect(blade).not.toBeNull();
             expect(blade!.possessorId).toBeNull();
-            expect(blade!.ownerId).toBe(cultivator.id);
+            expect({ ownerId: blade!.ownerId, ownerName: blade!.ownerName }).toEqual(recordedTitle);
             expect(blade!.provenance.some(p => p.previousHolderId === cultivator.id)).toBe(true);
 
             // ── THE RECORD ───────────────────────────────────────────────

@@ -38,6 +38,13 @@
  * The ordinary-fight arm starts with a real peer in the same area and lets
  * the fight continue across rounds; birthplace and one-shot resolution were
  * stale premises for that comparison.
+ * The player-death arm likewise meets a live peer through current placement.
+ * Its original four seeds and eight bouts remain: each bout now plays all its
+ * exchanges, because one attack sentence no longer resolves a whole fight.
+ * Continuing uses the standing fight's own strike answer, bounded by its
+ * body-derived round budget. Every exchange must advance that same fight or
+ * conclude it: repeating a peer-selection sentence can refuse after routines
+ * move the peer, leaving a non-null fight without making any combat progress.
  */
 
 import { readFileSync } from 'node:fs';
@@ -297,7 +304,34 @@ describe('and the world answers', () => {
 
             for (let bouts = 0; bouts < 8; bouts++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
-                const acted = await game.act('I spar with someone of my own rank');
+                const me = repos.cultivators.getById(cultivator.id)!;
+                const world = (await game.loadWorld())!;
+                const peer = world.npcs.find(n => n.status === 'alive' && n.id !== me.id
+                    && n.locationId !== null && n.cultivation.realmOrdinal === me.realmOrdinal)!;
+                expect(peer, 'a real peer must be available for the agreed bout').toBeDefined();
+                const place = world.locations.find(l => l.id === peer.locationId)!;
+                repos.cultivators.update(me.id, { location: place.name });
+                repos.cultivators.standIn(me.id, theAreasOf(world, place).whereIs.get(peer.id) ?? null);
+                expect(game.present(repos.cultivators.getById(me.id)!).some(p => p.id === peer.id)).toBe(true);
+                let acted = await game.act('I spar with someone of my own rank');
+                expect(acted.toolCalls.some(c => c.ok && ['combat.round', 'combat_manage.resolve'].includes(c.name)),
+                    'the agreed bout must actually open or resolve').toBe(true);
+                const remaining = game.fight === null ? 0
+                    : game.fight.state.roundBudget - game.fight.state.roundsFought;
+                for (let exchange = 0; exchange < remaining && game.fight !== null
+                    && cultivatorRow(db, cultivator.id).alive; exchange++) {
+                    const held = game.fight;
+                    const fightId = held.state.id;
+                    const roundsBefore = held.state.roundsFought;
+                    acted = await game.act('I keep swinging');
+                    expect(acted.toolCalls.some(c => c.ok && ['combat.round', 'combat_manage.resolve'].includes(c.name)),
+                        'continuing a bout must resolve an exchange, not refuse or select another peer').toBe(true);
+                    if (game.fight !== null) {
+                        expect(game.fight.state.id, 'the same agreed bout must continue').toBe(fightId);
+                        expect(game.fight.state.roundsFought, 'the combat round must advance').toBeGreaterThan(roundsBefore);
+                    }
+                }
+                expect(game.state().fight, 'the bout must end within its own round budget').toBeNull();
                 const held = obligations(db)
                     .filter(row => row.holder_id === 'house-immovable-mountain' && row.kind === 'blood_feud');
                 if (held.length > 0) {

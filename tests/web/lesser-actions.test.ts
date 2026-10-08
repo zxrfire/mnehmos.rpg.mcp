@@ -3,14 +3,18 @@
  * square forever. Fractions now advance one run clock and move the world's
  * whole day at midnight with the player present. Scene light is perceived,
  * never a clock reading through rock. Fractional clauses add within a plan.
+ * Looking at visible buildings formerly spent a search's half-day. Its read
+ * stays free; pricing a sought thing still requires the search's half-day.
  */
 import { describe, expect, it } from 'vitest';
 import { ACTION_NAMES } from '../../src/web/action-set';
-import { LESSER_ACTION_DAYS } from '../../src/web/lesser-action-costs';
+import { LESSER_ACTION_DAYS, lesserActionDays } from '../../src/web/lesser-action-costs';
 import { ScriptedProvider, makeGameInWorld } from './harness';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { worldLocationFor } from '../../src/web/entities';
 import { routineOf } from '../../src/engine/world/npc-routines';
+import { makeObject } from '../../src/engine/world/possessions';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 async function open(plans: unknown[] = [{ action: 'eat' }]) {
     const provider = new ScriptedProvider({ plans: plans.map(p => JSON.stringify(p)), narrations: ['The scene.'] });
@@ -26,6 +30,56 @@ async function open(plans: unknown[] = [{ action: 'eat' }]) {
 }
 
 describe('lesser acts spend the same clock', () => {
+    it('keeps visible ground reads free and prices a thorough search', () => {
+        expect(lesserActionDays({ action: 'investigate', target: 'the buildings' })).toBe(0);
+        expect(lesserActionDays({ action: 'investigate', target: 'the ground' })).toBe(0);
+        expect(lesserActionDays({ action: 'investigate', target: 'a hidden cache' })).toBe(1 / 2);
+    });
+
+    it('reads a present body and the player themselves without spending search time', async () => {
+        const { game, repos, db, town } = await open([
+            { action: 'investigate', target: 'myself' },
+            { action: 'investigate' },
+            { action: 'investigate', target: 'the nearest person' }
+        ]);
+        try {
+            const player = game.state().cultivator;
+            const people = game.atHand!.npcs.filter(n => n.status === 'alive'
+                && n.locationId === town.id);
+            expect(await standWhereThePeopleAre({ game, repos }, player.id,
+                new Set(people.map(n => n.id))), 'a visible body must be present').toBeGreaterThan(0);
+            expect(game.present(game.state().cultivator).length,
+                'the read must have somebody actually within sight').toBeGreaterThan(0);
+            const before = repos.runs.getById(game.state().run.id)!.elapsedDays;
+            for (const [sentence, resolvedKind] of [
+                ['I examine my own condition', 'self'],
+                ['I look around', null],
+                ['I look at the nearest person', 'cultivator']
+            ] as const) {
+                const turn = await game.act(sentence);
+                if (resolvedKind !== null) {
+                    expect(turn.toolCalls.some(call => call.name === 'engine.readState'
+                        && call.ok && call.summary.includes(`to a ${resolvedKind}`)),
+                        'the read must actually resolve its body').toBe(true);
+                }
+                expect(repos.runs.getById(game.state().run.id)!.elapsedDays).toBe(before);
+            }
+        } finally { db.close(); }
+    }, 180_000);
+
+    it('spends half a day on a successful examination of a sought thing', async () => {
+        const { game, repos, db } = await open([{ action: 'investigate', target: 'A folded note' }]);
+        try {
+            const player = game.state().cultivator;
+            game.atHand!.objects.push(makeObject({ id: 'note-being-examined', name: 'A folded note',
+                kind: 'other', significance: 'mundane', ownerId: player.id, possessorId: player.id }));
+            game.theWorldMoved();
+            const before = repos.runs.getById(game.state().run.id)!.elapsedDays;
+            const turn = await game.act('I examine the folded note closely');
+            expect(turn.toolCalls.some(call => call.name === 'engine.readState' && call.ok)).toBe(true);
+            expect(repos.runs.getById(game.state().run.id)!.elapsedDays - before).toBeCloseTo(1 / 2);
+        } finally { db.close(); }
+    }, 180_000);
     it('prices every action explicitly and leaves sheet and scene reads free', () => {
         expect(Object.keys(LESSER_ACTION_DAYS).sort()).toEqual([...ACTION_NAMES].sort());
         for (const action of ['look', 'status', 'inventory', 'list_techniques', 'recall', 'ceiling'] as const) {

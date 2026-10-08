@@ -13,6 +13,8 @@ import type { HistoricalFact } from './history.js';
 import { relationshipWith, upsertRelationship, type NpcRecord } from './npc-state.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import type { WorldState } from './world-state.js';
+import { routineOf } from './npc-routines.js';
+import { routeQueriesFor, type RouteQueries } from './locations.js';
 import { AGAINST_THEIR_OWN } from '../social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whatOneOfTheWorldsOwnPeopleKnows,
     whatOneOfTheWorldsOwnPeopleKnowsFromWitnessIndex } from './what-one-of-the-worlds-own-people-knows.js';
@@ -44,6 +46,8 @@ export interface WitnessReaction extends SeenDeed {
 }
 
 interface WitnessLookup {
+    /** Graph-only read, discarded with this synchronous witness pass. */
+    routes?: RouteQueries;
     npcAt: ReadonlyMap<string, number>;
     livingAt: ReadonlyMap<string, readonly NpcRecord[]>;
     rollByHouse: ReadonlyMap<string, readonly NpcRecord[]>;
@@ -85,18 +89,21 @@ function worldKnowledgeGate(world: WorldState): (holderId: string, kind: 'cultiv
 }
 
 function aWitnessTellsSomeoneHere(world: WorldState, fact: HistoricalFact,
-    seen: WitnessReaction, lookup?: WitnessLookup): void {
+    seen: WitnessReaction, lookup?: WitnessLookup, onDay = world.currentDay): void {
+    const observing = { ...world, currentDay: onDay };
     if (fact.data.toldOfWitnessedFact !== undefined) return;
     const witness = npcById(world, seen.witnessId, lookup);
     const place = world.locations.find(l => l.id === fact.locationId);
-    if (!witness || !place || witness.locationId !== place.id) return;
-    const areas = theAreasOf(world, place).whereIs;
+    if (!witness || !place || routineOf(observing, witness, lookup?.routes).locationId !== place.id) return;
+    const areas = theAreasOf(observing, place, undefined, undefined, lookup?.routes).whereIs;
+    const witnessArea = areas.get(witness.id);
+    if (witnessArea === undefined) return;
     const listener = (lookup ? lookup.livingAt.get(place.id) ?? [] : world.npcs).find(n => n.status === 'alive' && n.id !== witness.id
-        && n.id !== seen.actorId && n.locationId === place.id
-        && areas.get(n.id) === areas.get(witness.id));
+        && n.id !== seen.actorId && routineOf(observing, n, lookup?.routes).locationId === place.id
+        && areas.get(n.id) === witnessArea);
     if (!listener || !forStream(world.seed, 'witness-tells-somebody-here', fact.id, witness.id)
         .chance(Math.max(0.05, Math.min(0.9, 0.5 - reticenceOf(witness.id) * 0.3)))) return;
-    appendWorldFact(world, makeFact({ day: Math.floor(world.currentDay), kind: 'said_in_public',
+    appendWorldFact(world, makeFact({ day: Math.floor(onDay), kind: 'said_in_public',
         locationId: place.id, witnessIds: [witness.id, listener.id], visibility: 'regional',
         factionIds: fact.factionIds,
         actors: [{ id: witness.id, name: witness.name, role: 'said it' },
@@ -123,10 +130,11 @@ function trustFor(world: WorldState, actor: NpcRecord, witness: NpcRecord,
 
 function authorityKnownTo(world: WorldState, fact: HistoricalFact, witness: NpcRecord, actorId: string,
     knows: (holderId: string, kind: 'cultivator' | 'sect', id: string) => boolean,
-    preferredHouseId?: string | null, lookup?: WitnessLookup): { houseId: string; toId: string } | null {
+    preferredHouseId?: string | null, lookup?: WitnessLookup, onDay = world.currentDay): { houseId: string; toId: string } | null {
+    const observing = { ...world, currentDay: onDay };
     const ground = whoHoldsTheGround(world.locations, fact.locationId);
     const postedHere = (lookup ? lookup.livingAt.get(fact.locationId ?? '') ?? [] : world.npcs).filter(n => n.status === 'alive' && n.factionId !== null
-        && n.locationId === fact.locationId && n.activity?.kind === 'stationed'
+        && routineOf(observing, n, lookup?.routes).locationId === fact.locationId && n.activity?.kind === 'stationed'
         && knows(witness.id, 'cultivator', n.id));
     const houseId = preferredHouseId ?? ground.holderFactionId ?? postedHere[0]?.factionId ?? null;
     if (!houseId) return null;
@@ -146,9 +154,9 @@ function authorityKnownTo(world: WorldState, fact: HistoricalFact, witness: NpcR
 function reportingDecision(world: WorldState, fact: HistoricalFact, actor: NpcRecord,
     witness: NpcRecord, seen: SeenDeed, ledger: readonly ObligationRecord[],
     knows: (holderId: string, kind: 'cultivator' | 'sect', id: string) => boolean,
-    forOwnSide = false, lookup?: WitnessLookup): { houseId: string; toId: string } | null {
+    forOwnSide = false, lookup?: WitnessLookup, onDay = world.currentDay): { houseId: string; toId: string } | null {
     const authority = authorityKnownTo(world, fact, witness, actor.id, knows,
-        forOwnSide ? witness.factionId : undefined, lookup);
+        forOwnSide ? witness.factionId : undefined, lookup, onDay);
     if (!authority || actor.id === authority.toId) return null;
     const between = whatStandsBetween(ledger, witness.id, actor.id);
     const report = whatTheWitnessDoesAboutIt({ witness: { id: witness.id, name: witness.name,
@@ -169,6 +177,8 @@ export function reactToWitnessedFact(world: WorldState, fact: HistoricalFact, in
     ledger?: readonly ObligationRecord[];
     knows?: (holderId: string, kind: 'cultivator' | 'sect', id: string) => boolean;
     lookup?: WitnessLookup;
+    /** The event pass may run before the world's clock is advanced. */
+    onDay?: number;
 }): WitnessReaction[] {
     const actor = npcById(world, input.actorId, input.lookup);
     if (!actor) return [];
@@ -204,7 +214,7 @@ export function reactToWitnessedFact(world: WorldState, fact: HistoricalFact, in
         const knows = input.knows ?? worldKnowledgeGate(world);
         const report = (forOwnSide || needs && seeing.seen.manyHarmed) && !witness.tags.includes('the-player')
             ? reportingDecision(world, fact, actor, witness, seeing.seen,
-                input.ledger ?? world.obligations, knows, forOwnSide, input.lookup) : null;
+                input.ledger ?? world.obligations, knows, forOwnSide, input.lookup, input.onDay) : null;
         const row: WitnessReaction = { ...seeing.seen, witnessId: witness.id, actorId: actor.id,
             victimId: input.victimId, state: report ? forOwnSide ? 'reported_for' : 'reported' : needs ? 'pending'
                 : seeing.seen.wrong === null ? 'remembered' : 'ignored',
@@ -225,7 +235,7 @@ export function reactToWitnessedFact(world: WorldState, fact: HistoricalFact, in
         if (!fact.witnessIds.includes(witness.id)) fact.witnessIds.push(witness.id);
     }
     if (added.length > 0) save(world, fact, rows);
-    for (const row of added) if (row.state === 'remembered') aWitnessTellsSomeoneHere(world, fact, row, input.lookup);
+    for (const row of added) if (row.state === 'remembered') aWitnessTellsSomeoneHere(world, fact, row, input.lookup, input.onDay);
     return added;
 }
 
@@ -349,6 +359,9 @@ export function faceFromAPrice(purseStones: number): number {
 /** News reaches each person on the ordinary distance and standing clock. */
 export function peopleReadPricesTheyHaveHeardOf(world: WorldState, day: number): void {
     const knows = whatOneOfTheWorldsOwnPeopleKnows(world);
+    const observing = { ...world, currentDay: day };
+    const physicalPlaces = new Map(world.npcs.map(n => [n.id,
+        n.status === 'alive' ? routineOf(observing, n).locationId : n.locationId]));
     for (const fact of recentWitnessFacts(witnessIndexFor(world), day).filter(row => row.kind === 'bounty_posted'
         && row.day <= day && row.day >= day - 365)) {
         const targetId = typeof fact.data.priceOn === 'string' ? fact.data.priceOn : null;
@@ -365,9 +378,10 @@ export function peopleReadPricesTheyHaveHeardOf(world: WorldState, day: number):
                 theirFaceMoves(world, targetId, faceFromAPrice(purse), day);
                 fact.data.priceFaceCredited = true;
             }
-            if (reading === 'warning' && observer.locationId === target.locationId
+            if (reading === 'warning' && physicalPlaces.get(observer.id) !== null
+                && physicalPlaces.get(observer.id) === physicalPlaces.get(target.id)
                 && !factsWithData(world, 'priceWarning').some(row => row.data.priceWarning === fact.id && row.data.warnedBy === observer.id)) {
-                appendWorldFact(world, makeFact({ day, kind: 'said_in_public', locationId: observer.locationId,
+                appendWorldFact(world, makeFact({ day, kind: 'said_in_public', locationId: physicalPlaces.get(observer.id) ?? null,
                     witnessIds: [observer.id, target.id], visibility: 'secret',
                     actors: [{ id: observer.id, name: observer.name, role: 'warned' },
                         { id: target.id, name: target.name, role: 'recipient' }],
@@ -423,7 +437,7 @@ export function accountForWitnessedDeed(world: WorldState, fact: HistoricalFact,
     const weighed = weighAnAccountOfADeed({ trust: trustFor(world, actor, witness, fact, ledger), seen, account: input.account });
     Object.assign(seen, { state: weighed.belief, account: input.account, words: input.words, blamedId: input.blamedId ?? null });
     save(world, fact, rows);
-    if (weighed.belief === 'half-belief') aWitnessTellsSomeoneHere(world, fact, seen, input.lookup);
+    if (weighed.belief === 'half-belief') aWitnessTellsSomeoneHere(world, fact, seen, input.lookup, input.onDay);
     const at = npcIndex(world, witness.id, input.lookup);
     // A telling may have appended a fact onto the witness since the account began.
     const current = npcById(world, witness.id, input.lookup)!;
@@ -474,7 +488,11 @@ export function witnessReactionsThisYear(world: WorldState, day: number,
         | { kind: 'fact'; fact: HistoricalFact; war: boolean };
 
     let index = witnessIndexFor(world);
+    const observing = { ...world, currentDay: day };
+    const routes = routeQueriesFor(world.locations);
     const people = new Map(world.npcs.map(n => [n.id, n]));
+    const physicalPlaces = new Map(world.npcs.map(n => [n.id,
+        n.status === 'alive' ? routineOf(observing, n, routes).locationId : n.locationId]));
     const npcAt = new Map(world.npcs.map((n, at) => [n.id, at]));
     const places = new Map(world.locations.map(place => [place.id, place]));
     const livingAt = new Map<string, Body[]>();
@@ -490,7 +508,8 @@ export function witnessReactionsThisYear(world: WorldState, day: number,
     for (const person of world.npcs) {
         if (person.tags.includes('the-player')) {
             playerIds.add(person.id);
-            if (person.locationId) playerPlaces.add(person.locationId);
+            const at = physicalPlaces.get(person.id);
+            if (at) playerPlaces.add(at);
         }
         if (person.status === 'alive' && person.factionId !== null) {
             const roll = rollByHouse.get(person.factionId) ?? [];
@@ -499,9 +518,11 @@ export function witnessReactionsThisYear(world: WorldState, day: number,
         }
         if (!person.locationId) continue;
         if (person.status === 'alive') {
-            const here = livingAt.get(person.locationId) ?? [];
+            const at = physicalPlaces.get(person.id);
+            if (!at) continue;
+            const here = livingAt.get(at) ?? [];
             here.push(person);
-            livingAt.set(person.locationId, here);
+            livingAt.set(at, here);
         } else if (person.status === 'physically_dead' && person.diedOnDay !== null
             && person.diedOnDay >= day - 365) {
             const here = bodiesAt.get(person.locationId) ?? [];
@@ -509,15 +530,16 @@ export function witnessReactionsThisYear(world: WorldState, day: number,
             bodiesAt.set(person.locationId, here);
         }
     }
-    const lookup: WitnessLookup = { npcAt, livingAt, rollByHouse };
+    const lookup: WitnessLookup = { npcAt, livingAt, rollByHouse, routes };
     for (const goods of world.objects) {
         if (!goods.possessorId || !(goods.ownerId !== null && goods.ownerId !== goods.possessorId
             || goods.tags.some(tag => tag.startsWith('house:')))) continue;
         const holder = people.get(goods.possessorId);
-        if (!holder?.locationId) continue;
-        const here = goodsAt.get(holder.locationId) ?? [];
+        const at = holder && physicalPlaces.get(holder.id);
+        if (!at) continue;
+        const here = goodsAt.get(at) ?? [];
         here.push(goods);
-        goodsAt.set(holder.locationId, here);
+        goodsAt.set(at, here);
     }
     const areaByPlace = new Map<string, ReturnType<typeof theAreasOf>>();
     const areaAt = (placeId: string): ReturnType<typeof theAreasOf> | null => {
@@ -525,7 +547,7 @@ export function witnessReactionsThisYear(world: WorldState, day: number,
         if (area) return area;
         const place = places.get(placeId);
         if (!place) return null;
-        area = theAreasOf(world, place);
+        area = theAreasOf(observing, place, undefined, undefined, routes);
         areaByPlace.set(placeId, area);
         return area;
     };
@@ -698,7 +720,7 @@ function resolveWitnessFact(world: WorldState, fact: HistoricalFact, day: number
         for (const id of fact.witnessIds.filter(id => !onlyWitnesses || onlyWitnesses.has(id))) {
             const witness = npcById(world, id, lookup);
             if (witness?.status !== 'alive') continue;
-            const authority = authorityKnownTo(world, fact, witness, '', knows, undefined, lookup);
+            const authority = authorityKnownTo(world, fact, witness, '', knows, undefined, lookup, day);
             if (!authority) continue;
             const report = whatTheWitnessDoesAboutIt({ witness: { id: witness.id,
                 name: witness.name, standing: null, role: 'peer' }, theyOweYou: 0,
@@ -715,7 +737,7 @@ function resolveWitnessFact(world: WorldState, fact: HistoricalFact, day: number
     if (!parties || fact.witnessIds.length === 0 || !npcById(world, parties.actorId, lookup)) return changed;
     const seen = observationOf(fact);
     const added = reactToWitnessedFact(world, fact, { actorId: parties.actorId,
-        victimId: parties.victimId, knows, lookup,
+        victimId: parties.victimId, knows, lookup, onDay: day,
         witnesses: fact.witnessIds.filter(id => id !== parties.victimId && (!onlyWitnesses || onlyWitnesses.has(id))).map(id => ({ id, seen })) });
     changed += added.length;
     const actor = npcById(world, parties.actorId, lookup)!;

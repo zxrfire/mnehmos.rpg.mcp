@@ -17,6 +17,8 @@
  * subsystems in AGENTS.md's table came to be finished and dead.
  *
  * These tests type the sentence.
+ * A run opens at 08:00 now; refused acts retain the opening clock rather than
+ * resetting it to zero. Their unchanged no-time assertions use that baseline.
  *
  * `worldEnabled: true`, because the harness default is false and every guard
  * that needs a world to check against is skipped by design when it is.
@@ -138,21 +140,23 @@ describe('through the front door', () => {
     it('refuses a match nobody put to you, and says why rather than throwing', async () => {
         const { game } = makeGame({ seed: 'a-refusal', worldEnabled: true });
         await game.newRun('Ke Yan');
+        const before = game.state().run.elapsedDays;
 
         const result = await game.act('I refuse the match');
         // No open marriage pact and nobody named. A refusal that names a door
         // that does not exist is the thing `asking.md` forbids, so it names the
         // absent one instead.
-        expect(result.state.run.elapsedDays).toBe(0);
+        expect(result.state.run.elapsedDays).toBe(before);
         expect(JSON.stringify(result).toLowerCase()).toMatch(/refuse whom|nobody/);
     });
 
     it('will not place a child at a house the player knows nobody in', async () => {
         const { game } = makeGame({ seed: 'a-placement', worldEnabled: true });
         await game.newRun('Ke Yan');
+        const before = game.state().run.elapsedDays;
 
         const result = await game.act('I place my child at the Azure Cloud Pavilion');
-        expect(result.state.run.elapsedDays).toBe(0);
+        expect(result.state.run.elapsedDays).toBe(before);
         // A favour runs through a person and never through an institution -
         // `spending-a-word-to-place-a-child.ts`'s own rule, surfaced rather
         // than reimplemented. Either that refusal, or the Pavilion's own: it

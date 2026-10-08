@@ -108,6 +108,14 @@ export function whoAnswersTo(houseId: string): string[] {
     return out.sort();
 }
 
+/** Standing client houses whose disciples can be selected into this stronger house. */
+export function feederHousesFor(host: FactionRecord, houses: readonly FactionRecord[]): FactionRecord[] {
+    if (host.dissolvedOnDay !== null) return [];
+    const clients = new Set(whoAnswersTo(host.id));
+    return houses.filter(home => home.dissolvedOnDay === null && clients.has(home.id)
+        && Number(host.resources.power_ordinal ?? 0) > Number(home.resources.power_ordinal ?? 0));
+}
+
 /**
  * How warmly two houses stand to each other, as one answer.
  *

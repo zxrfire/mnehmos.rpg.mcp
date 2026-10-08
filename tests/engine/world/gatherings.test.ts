@@ -9,7 +9,8 @@
  *   - a circle whose host cannot pay does not gather
  *   - every tie a gathering writes carries the gathering's fact id, so its
  *     origin is answerable from the row two centuries later
- *   - the four kinds do different things
+ *   - the three informal kinds do different things; calendar boards are
+ *     covered by a-competition-is-run-by-realm.test.ts
  *   - the same seed produces the same world
  */
 
@@ -250,11 +251,7 @@ describe('what a gathering leaves behind', () => {
     }
 
     it('writes ties between people of different houses', () => {
-        // Checked on a MEETING rather than on whatever was drawn: a competition
-        // can end by moving its champion into the host house, so a tie that was
-        // cross-house when it was written reads as same-house afterwards. That
-        // is the feeder relationship firing, not a bug, and it is the reason
-        // this assertion has to be made against a kind that moves nobody.
+        // A meeting writes these ties; the formal capital board owns feeder selection.
         let checked = 0;
         for (let i = 0; i < 200 && checked === 0; i++) {
             const { state } = build({
@@ -403,7 +400,7 @@ describe('what a gathering leaves behind', () => {
     });
 });
 
-describe('the four kinds do different things', () => {
+describe('the three informal kinds do different things', () => {
     /** Force one kind by running many gatherings and picking the ones that fired. */
     function sample(): Map<string, ReturnType<typeof holdGathering>[]> {
         const out = new Map<string, ReturnType<typeof holdGathering>[]>();
@@ -435,61 +432,6 @@ describe('the four kinds do different things', () => {
             expect(held!.placings).toEqual([]);
             expect(held!.ties.length).toBeGreaterThan(0);
         }
-    });
-
-    it('a competition ranks everybody who came, exactly once each, ON THEIR OWN BOARD', () => {
-        // A competition is run BY REALM: a Qi Condensation winner, a Foundation
-        // Establishment winner, and so on. So places run 1..n WITHIN a bracket
-        // and the field as a whole is not one ladder - which it used to be, and
-        // which measured only which entrant was furthest along.
-        const competitions = drawn.get('competition') ?? [];
-        expect(competitions.length).toBeGreaterThan(0);
-        for (const held of competitions) {
-            expect(held!.placings.length).toBe(held!.attendeeIds.length);
-            expect(new Set(held!.placings.map(p => p.npcId)).size).toBe(held!.placings.length);
-
-            const boards = new Map<string, number[]>();
-            for (const p of held!.placings) {
-                const places = boards.get(p.bracket) ?? [];
-                places.push(p.place);
-                boards.set(p.bracket, places);
-            }
-            expect(boards.size).toBeGreaterThan(0);
-            for (const [, places] of boards) {
-                const sorted = [...places].sort((a, b) => a - b);
-                expect(sorted).toEqual(sorted.map((_, i) => i + 1));
-            }
-        }
-    });
-
-    it('a competition moves prestige, up at the top and down at the bottom', () => {
-        const { state } = build({
-            edges: [['house-b', 'house-a', 0.4], ['house-c', 'house-a', 0.4]],
-            chosen: { 'house-a': 2, 'house-b': 2, 'house-c': 2 }
-        });
-        let ran = false;
-        for (let i = 0; i < 200 && !ran; i++) {
-            const fresh = build({
-                edges: [['house-b', 'house-a', 0.4], ['house-c', 'house-a', 0.4]],
-                chosen: { 'house-a': 2, 'house-b': 2, 'house-c': 2 }
-            });
-            const held = holdGathering(
-                fresh.state, circlesOf(fresh.state)[0], fresh.state.currentDay,
-                forStream('prestige', String(i))
-            );
-            if (!held || held.kind !== 'competition') continue;
-            ran = true;
-            // Read across the whole board rather than off the top and bottom
-            // rows: a house that took first AND last nets to zero, which is
-            // correct and is not what this is asserting.
-            const prestige = fresh.state.factions.map(f => Number(f.resources.prestige ?? 0));
-            expect(Math.max(...prestige)).toBeGreaterThan(0);
-            expect(Math.min(...prestige)).toBeLessThan(0);
-            // It is a redistribution, not an injection.
-            expect(prestige.reduce((a, b) => a + b, 0)).toBeCloseTo(0, 6);
-        }
-        expect(ran).toBe(true);
-        void state;
     });
 
     it('a challenge is fought with the combat resolver and can hurt somebody', () => {
@@ -564,19 +506,16 @@ describe('the yearly pass', () => {
     });
 
     it('holds a circle to roughly its own interval and not to the event budget', () => {
-        // WITH ELDERS, because this measures the INTERVAL over fifteen
-        // centuries and the circle has to survive them to be counted. Without
-        // one in the yard, a hundred gatherings of accumulated bad blood
-        // eventually produce a killing and six people with no replacements
-        // kill each other off - which is the mechanism working, asserted in
-        // `nobody-is-invincible.test.ts`, and a confound here.
-        const { state } = build({
-            edges: [['house-b', 'house-a', 0.4], ['house-c', 'house-a', 0.4]],
-            chosen: { 'house-a': 2, 'house-b': 2, 'house-c': 2 },
-            withElders: true
-        });
+        // Removing random competitions left 27 meetings in the old mutable
+        // fixture: challenge deaths depleted its circle. Measure the calendar
+        // conditional on a living circle; mortality is covered separately.
         let count = 0;
         for (let year = 1; year <= 1500; year++) {
+            const { state } = build({
+                edges: [['house-b', 'house-a', 0.4], ['house-c', 'house-a', 0.4]],
+                chosen: { 'house-a': 2, 'house-b': 2, 'house-c': 2 },
+                withElders: true
+            });
             count += applyGatherings(state, year, year * 365).length;
         }
         // 1500 years, one circle, one roll in fifteen. A wide band, because the

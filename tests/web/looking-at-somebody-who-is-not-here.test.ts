@@ -38,6 +38,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TIME_CONSUMING_ACTIONS } from '../../src/web/actions';
 import { engineCalls, makeGameInWorld, planned, ScriptedProvider } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 /** Every name this cultivator holds for a person, with the id it is filed under. */
 function namesHeld(db: any): Array<{ id: string; name: string }> {
@@ -143,6 +144,7 @@ describe('a name they hold, whose bearer is not standing here', () => {
             seed: 'never-said', worldSeed: 'world-askscratch'
         });
         await game.newRun('Wen Shuyi');
+        const before = game.state().run.elapsedDays;
 
         const looked = await game.act('I look at Shellback');
         expect(engineCalls(looked).find(c => c.action === 'investigate')?.ok).toBe(false);
@@ -151,7 +153,7 @@ describe('a name they hold, whose bearer is not standing here', () => {
         // It must not confirm existence either way, so it says nothing about
         // whether Shellback is a person, a place or nobody at all.
         expect(looked.narration).not.toContain('Shellback');
-        expect(looked.state.run.elapsedDays).toBe(0);
+        expect(looked.state.run.elapsedDays - before).toBe(0);
     }, 200_000);
 });
 
@@ -172,28 +174,32 @@ describe('everything that can be inspected', () => {
         const { game, db } = await makeGameInWorld({
             seed: 'inspectable', worldSeed: 'world-askscratch'
         });
-        await game.newRun('Wen Shuyi');
+        const { cultivator } = await game.newRun('Wen Shuyi');
         await game.act('I look around');
 
-        const reached = async (said: string) => {
+        const reached = async (said: string, days: 0 | 0.5) => {
+            const before = game.state().run.elapsedDays;
             const result = await game.act(said);
             const call = engineCalls(result).find(c => c.action === 'investigate');
             expect(call, `${said} did not reach the read`).toBeDefined();
             expect(call!.ok, `${said} was refused`).toBe(true);
-            expect(result.state.run.elapsedDays, `${said} spent a day`).toBe(0);
+            expect(result.state.run.elapsedDays - before, `${said} spent the wrong time`).toBeCloseTo(days);
             return call!.summary;
         };
 
         const who = namesHeld(db)[0]!;
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, new Set([who.id]));
+        expect(game.present(game.currentRun().cultivator).map(person => person.id),
+            'the inspected person was not in the current area').toContain(who.id);
         // The KIND each name resolved to. The row id used to ride along beside
         // it and was a database key in front of a player; see
         // `no-engine-voice-in-a-played-turn`.
-        expect(await reached(`I look at ${who.name}`)).toMatch(/to a cultivator/);
-        expect(await reached('I examine the Golden Sheaf Sect')).toMatch(/to a sect/);
-        expect(await reached('I examine the Lesser Qi-Gathering Manual')).toMatch(/to a technique/);
-        expect(await reached('I examine this place')).toMatch(/to a place/);
+        expect(await reached(`I look at ${who.name}`, 0)).toMatch(/to a cultivator/);
+        expect(await reached('I examine the Golden Sheaf Sect', 0.5)).toMatch(/to a sect/);
+        expect(await reached('I examine the Lesser Qi-Gathering Manual', 0.5)).toMatch(/to a technique/);
+        expect(await reached('I examine this place', 0)).toMatch(/to a place/);
         // The asker themselves, which is its own kind and not a cultivator row.
-        expect(await reached('I examine my meridians')).toMatch(/to a self/);
+        expect(await reached('I examine my meridians', 0)).toMatch(/to a self/);
     }, 200_000);
 });
 
@@ -235,6 +241,7 @@ describe('a model may not answer a sentence about something with a read of the r
         await game.newRun('Wen Shuyi');
 
         for (const said of ['look at Shellback', 'I look at Shellback']) {
+            const before = game.state().run.elapsedDays;
             const result = await game.act(said);
             const row = planned(result);
             expect(row!.summary, said).toMatch(/investigate\(target="Shellback"\)/);
@@ -244,7 +251,7 @@ describe('a model may not answer a sentence about something with a read of the r
             // say the verb had "nowhere to put a subject", which stopped being
             // true of `look` without the defect it names stopping.
             expect(row!.summary, said).toMatch(/left the subject out of it/);
-            expect(result.state.run.elapsedDays, said).toBe(0);
+            expect(result.state.run.elapsedDays - before, said).toBe(0);
         }
     }, 200_000);
 
@@ -274,10 +281,11 @@ describe('a model may not answer a sentence about something with a read of the r
         await game.newRun('Wen Shuyi');
 
         expect(TIME_CONSUMING_ACTIONS).toContain('attack');
+        const before = game.state().run.elapsedDays;
         const result = await game.act('I attack Shellback');
         const row = planned(result);
         expect(row!.summary).toMatch(/routed by the model to look/);
         expect(engineCalls(result).some(c => c.action === 'attack')).toBe(false);
-        expect(result.state.run.elapsedDays).toBe(0);
+        expect(result.state.run.elapsedDays - before).toBe(0);
     }, 200_000);
 });

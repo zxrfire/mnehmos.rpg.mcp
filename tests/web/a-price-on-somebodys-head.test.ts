@@ -1,3 +1,10 @@
+/** Pricing05 actual96097 isolated the LAST repeated turn-in: first payment
+ * 30->772 (+742), f394 at365000, repeat365000.458333 on the same day, funds772.
+ * The dead target was pruned; the surviving paid receipt references f389. The
+ * native archive already reads notice names/terms, but forgetting could discard
+ * its dead-only notice despite that real receipt link. Surviving native evidence
+ * now retains its actual historical references; no body/name/terms/payment copy
+ * is created. All original20 price/proof/payment/wall/once assertions remain. */
 /**
  * A price on somebody's head is a piece of paper, and it runs both ways.
  *

@@ -1,3 +1,4 @@
+import { anInnIsKeptAt } from '../engine/world/public-transport-at-a-place.js';
 /**
  * A room at an inn: paid by the night, a meal with each night, and a roof while you stay in the place.
  *
@@ -10,8 +11,9 @@
  * people standing here (`who-keeps-a-counter-here.ts`).
  */
 
+import { isActing } from '../engine/world/npc-state.js';
 import { SATIETY_MAX, type Cultivator, type Run } from '../schema/cultivation.js';
-import { getOccupation, getPrice, stonesForACashPrice } from '../data/cultivation/mortal-world.js';
+import { getPrice, stonesForACashPrice } from '../data/cultivation/mortal-world.js';
 import { localPrice, placesNextTo } from '../data/cultivation/regions.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { standingOf } from '../server/consolidated/where-a-cultivator-is-standing.js';
@@ -26,6 +28,12 @@ import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 import { theKeeperAsTheyAreKnown, whoKeepsTheCounter, type ACounter } from './who-keeps-a-counter-here.js';
 
+import { aWalkAcrossThePlace, theAreaTheyAreIn, theAreaNamed } from './walking-across-a-place.js';
+import { peopleInThisPlace } from './hearsay.js';
+import { passHours } from './routine-invitations.js';
+import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
+import { foldTheCallsIntoOneTurn } from './a-sentence-can-be-more-than-one-call.js';
+
 const FLAG_LODGED_AT = 'lodged_at';
 
 interface Lodging {
@@ -39,9 +47,7 @@ export const AT_THE_INN = /\b(?:inns?|a room|the room|rooms? for the night|lodgi
 
 /** Whether this place keeps an inn, by the settlements the innkeeper's trade lists. */
 export function anInnIsKeptHere(cultivator: Cultivator): boolean {
-    const kind = standingOf(cultivator).settlementKind;
-    const trade = getOccupation('job-innkeeper');
-    return kind !== null && trade !== undefined && (trade.settlements as readonly string[]).includes(kind);
+    return anInnIsKeptAt(cultivator.location ?? '');
 }
 
 /**
@@ -112,7 +118,7 @@ function theNearestInnByRoad(cultivator: Cultivator): string | null {
  * Nights already paid for are not paid again: a room taken for three nights on
  * a room held through tomorrow buys the two it lacks.
  */
-export function takeARoom(
+export async function takeARoom(
     game: GameService,
     run: Run,
     cultivator: Cultivator,
@@ -122,7 +128,7 @@ export function takeARoom(
      * counts the turn itself; `bed` is the board row it was asked for by.
      */
     options: { andTheTurn?: boolean; bed?: ABed } = {}
-): Execution {
+): Promise<Execution> {
     const here = placeName(cultivator);
     if (!anInnIsKeptHere(cultivator)) {
         const nearest = theNearestInnByRoad(cultivator);
@@ -139,11 +145,6 @@ export function takeARoom(
     const held = whereTheyAreLodged(game, cultivator);
     const paidFrom = Math.max(today, held?.paidThroughDay ?? today);
     const toBuy = Math.max(0, today + nights - paidFrom);
-    const bed = whatTheBedCostsHere(game, cultivator, options.bed ?? 'price-inn-night');
-    const cash = bed.cash * Math.ceil(toBuy / bed.nights) + bed.mealCash * toBuy;
-    const stones = toBuy > 0 ? stonesForACashPrice(cash) : 0;
-    const keeper = whoKeepsTheCounter(game, cultivator, 'inn', ['inn']);
-
     // ALREADY PAID FOR, AND SAID SO. Played: "crash for the night" bought "0 night(s)
     // for 0 cash" under a purchase headline, and the narrator slept the night that
     // never passed.
@@ -156,8 +157,75 @@ export function takeARoom(
             `a-room-at-an-inn: already paid through run day ${held.paidThroughDay}. `
             + 'Nothing bought, no time passed.'
         );
-        return game.freeAction(run, 'buy', facts);
+        return { ...game.freeAction(run, 'buy', facts), timeDisposition: 'no_op' };
     }
+
+    let approach: Execution | null = null;
+    game.atHand = game.atHand ?? await game.loadWorld();
+    const at = theAreaTheyAreIn(game.atHand, cultivator);
+    if (game.atHand && !at) return refused('engine.takeARoom', 'buy', factsForRefusal(
+        'The inn counter is not here.', 'There is no reachable inn counter where you stand.', 'Nothing bought.'));
+    if (at && game.atHand) {
+        const areas = peopleInThisPlace(game.repos, cultivator, game.atHand, at.place).areas;
+        at.area = areas.find(area => area.id === cultivator.standingIn) ?? at.area;
+        const inn = theAreaNamed(areas, 'inn');
+        if (!inn) return refused('engine.takeARoom', 'buy', factsForRefusal(
+            'The inn counter is not here.', 'There is no reachable inn counter in this place.', 'Nothing bought.'));
+        if (inn.id !== at.area.id) {
+            approach = await aWalkAcrossThePlace(game, run, cultivator, 'inn');
+            if (!approach) return refused('engine.takeARoom', 'buy', factsForRefusal(
+                'The inn counter is not here.', 'The inn cannot be reached from here.', 'Nothing bought.'));
+            if (approach.outcome === 'refused' || approach.cutShort || !game.repos.cultivators.getById(cultivator.id)?.alive) return approach;
+        }
+    }
+    const current = { run: game.repos.runs.getById(run.id)!,
+        cultivator: game.repos.cultivators.getById(cultivator.id) ?? cultivator };
+    const purchase = bookAtTheCounter(game, current.run, current.cultivator, nightsWanted,
+        { ...options, andTheTurn: approach ? false : options.andTheTurn });
+    const pieces = approach ? [approach, purchase] : [purchase];
+    if (purchase.outcome !== 'refused' && purchase.timeDisposition !== 'no_op') {
+        const paid = { run: game.repos.runs.getById(run.id)!,
+            cultivator: game.repos.cultivators.getById(cultivator.id) ?? cultivator };
+        const advanced = await passHours(game, paid.run, paid.cultivator, LESSER_ACTION_DAYS.buy * 24);
+        purchase.calls.push({ name: 'engine.lesserActionTime', action: 'buy',
+            summary: `${LESSER_ACTION_DAYS.buy} day spent booking the room.`, ok: true });
+        if (advanced.spent) pieces.push(advanced.spent);
+    }
+    const folded = foldTheCallsIntoOneTurn(pieces, purchase.facts.headline);
+    return { ...folded, outcome: pieces[pieces.length - 1]!.outcome, timeDisposition: purchase.timeDisposition };
+}
+
+/** Purchase at the arrived-at counter, from fresh clock, body and present people. */
+function bookAtTheCounter(game: GameService, run: Run, cultivator: Cultivator,
+    nightsWanted: number, options: { andTheTurn?: boolean; bed?: ABed }): Execution {
+    const here = placeName(cultivator);
+    if (!anInnIsKeptHere(cultivator)) return refused('engine.takeARoom', 'buy', factsForRefusal(
+        `There is no inn at ${here}.`, 'No room is let here by the night.', 'Nothing bought; no payment made.'));
+    const today = Math.floor(run.elapsedDays);
+    const nights = Math.max(1, Math.floor(nightsWanted));
+    const held = whereTheyAreLodged(game, cultivator);
+    const paidFrom = Math.max(today, held?.paidThroughDay ?? today);
+    const toBuy = Math.max(0, today + nights - paidFrom);
+    if (toBuy === 0 && held) return { ...game.freeAction(run, 'buy', factsForToolResult(
+        'The room is already yours.', [`The room is already paid through day ${held.paidThroughDay}.`])), timeDisposition: 'no_op' };
+    const at = theAreaTheyAreIn(game.atHand, cultivator);
+    if (game.atHand && !at) return refused('engine.takeARoom', 'buy', factsForRefusal(
+        'The inn counter is not here.', 'You are no longer at a reachable inn counter.', 'Nothing bought; no payment made.'));
+    if (at && game.atHand) {
+        const areas = peopleInThisPlace(game.repos, cultivator, game.atHand, at.place).areas;
+        at.area = areas.find(area => area.id === cultivator.standingIn) ?? at.area;
+        const inn = theAreaNamed(areas, 'inn');
+        if (!inn || inn.id !== at.area.id) return refused('engine.takeARoom', 'buy', factsForRefusal(
+            'The inn counter is not here.', 'You are no longer at the inn counter.', 'Nothing bought; no payment made.'));
+    }
+    const keeper = whoKeepsTheCounter(game, cultivator, 'inn', ['inn']);
+    const stored = keeper ? game.repos.cultivators.getById(keeper.id) : null;
+    const person = !stored && keeper ? game.atHand?.npcs.find(npc => npc.id === keeper.id && isActing(npc.status)) : null;
+    if (!keeper || (!stored?.alive && !person)) return refused('engine.takeARoom', 'buy', factsForRefusal(
+        'Nobody is keeping the inn counter.', 'Nobody here can take payment and let the room.', 'Nothing bought; no payment made.'));
+    const bed = whatTheBedCostsHere(game, cultivator, options.bed ?? 'price-inn-night');
+    const cash = bed.cash * Math.ceil(toBuy / bed.nights) + bed.mealCash * toBuy;
+    const stones = stonesForACashPrice(cash);
 
     if (cultivator.spiritStones < stones) {
         return refused('engine.whatTheBedCostsHere', 'buy', factsForRefusal(
@@ -166,7 +234,7 @@ export function takeARoom(
             + `${howMany(toBuy, 'night')} is ${cash} cash, which comes to ${howMany(stones, 'spirit stone')}; `
             + `you are carrying ${cultivator.spiritStones}.`,
             `a-room-at-an-inn: ${toBuy} night(s), ${cash} cash, against ${cultivator.spiritStones} stones. `
-            + 'Nothing spent, no time passed.'
+            + 'Nothing bought; no payment made.'
         ));
     }
 
@@ -178,6 +246,12 @@ export function takeARoom(
             satiety: SATIETY_MAX - cultivator.satiety,
             starvationTurns: -cultivator.starvationTurns
         });
+        if (stored) game.repos.cultivators.applyDeltas(stored.id, { spiritStones: stones });
+        else if (person && game.atHand) {
+            person.spiritStones += stones;
+            person.updatedOnDay = game.atHand.currentDay;
+            game.theWorldMoved();
+        }
         if (options.andTheTurn !== false) game.repos.runs.incrementTurn(run.id, 1);
         return updated ?? cultivator;
     })();

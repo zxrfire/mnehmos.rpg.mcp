@@ -86,7 +86,7 @@ import {
     theAskInWords,
     theGapInWords
 } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
-import type { RequestKind } from './what-a-request-asks-and-of-whom.js';
+import { baseWeightOf, type RequestKind } from './what-a-request-asks-and-of-whom.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT THE CALLER HAS TO HAVE READ ALREADY
@@ -1087,14 +1087,15 @@ function costOfCompany(
     asked: TheOneBeingAsked,
     where: WhereTheyAlreadyAre,
     bound: string | null,
-    forDays: number,
-    theyWant: string | null
+    forDays: number | null,
+    theyWant: string | null,
+    reviseCompany: boolean
 ): RequestCosting {
-    const hours = Math.round(forDays * 24 * 60) / 60;
-    const duration = forDays < 1 ? `${hours} hour${hours === 1 ? '' : 's'}`
+    const hours = forDays === null ? null : Math.round(forDays * 24 * 60) / 60;
+    const duration = forDays === null ? 'ongoing company with no stated end' : forDays < 1 ? `${hours} hour${hours === 1 ? '' : 's'}`
         : `${forDays} day${forDays === 1 ? '' : 's'}`;
     const already = where.outWith;
-    if (already && already.withIds.includes(asking.id)) {
+    if (already && already.withIds.includes(asking.id) && !reviseCompany) {
         const until = already.untilDay;
         return {
             ask: 'a_real_favour',
@@ -1120,7 +1121,7 @@ function costOfCompany(
             askBack: null
         };
     }
-    if (already) {
+    if (already && !already.withIds.includes(asking.id)) {
         const until = already.untilDay;
         return {
             ask: 'a_real_favour',
@@ -1193,8 +1194,7 @@ function costOfCompany(
         lines,
         structure: [
             `Being asked along is ${theGapInWords(asked.ordinal, asking.ordinal)}, and it is `
-            + `priced as ${theAskInWords('a_real_favour')} - ${forDays} day`
-            + `${forDays === 1 ? '' : 's'} of the days of the person being asked, which is the `
+            + `priced as ${theAskInWords('a_real_favour')} - ${duration} of the person being asked, which is the `
             + `only ask in the game that spends those rather than the asker's. `
             + `${sameRoll ? 'Same roll.' : 'Not of the same house.'} `
             + `${raising.length === 0
@@ -1216,7 +1216,7 @@ function costOfCompany(
 
 export interface RequestToPrice {
     kind: Extract<
-        RequestKind, 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company' | 'guidance'
+        RequestKind, 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company' | 'passage' | 'guidance'
     >;
     /** Their row, for the guidance ask. See {@link WhereTheirAttentionIs}. */
     attention?: WhereTheirAttentionIs;
@@ -1244,20 +1244,28 @@ export interface RequestToPrice {
     /** Where the party is bound, as the sentence said, when it said. */
     bound?: string | null;
     /** The term asked for, in days. */
-    forDays?: number;
+    forDays?: number | null;
+    /** An explicit proposed new company term still goes through ordinary consent. */
+    reviseCompany?: boolean;
 }
 
 export function whatItWouldCostThem(request: RequestToPrice): RequestCosting {
     const named = request.namedButUnresolved ?? '';
     switch (request.kind) {
+        case 'passage':
+            return { ask: baseWeightOf('passage'),
+                lines: [`${request.asked.name} is being offered passage to ${request.namedButUnresolved}. Saying yes commits their time and the stated exchange on actual arrival.`],
+                structure: ['Ordinary consent is priced as time and exchange; an accepted rider does not join or leave a party.'],
+                techniqueId: null, refusal: null, askBack: null };
         case 'company':
             return costOfCompany(
                 request.asking,
                 request.asked,
                 request.where ?? { outWith: null, otherwiseAt: null },
                 request.bound ?? null,
-                Math.max(0, request.forDays ?? A_SEASON_ON_THE_ROAD),
-                request.theyWant ?? null
+                request.forDays === null ? null : Math.max(0, request.forDays ?? A_SEASON_ON_THE_ROAD),
+                request.theyWant ?? null,
+                request.reviseCompany ?? false
             );
         case 'guidance':
             return costOfGuidance(

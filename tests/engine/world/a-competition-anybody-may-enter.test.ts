@@ -1,5 +1,7 @@
 /**
  * The calendar an open competition is announced off.
+ * The owner later fixed competition cadences in catalog rows: city open boards
+ * and member-only house boards share this seeded repeating-date reader.
  *
  * ── THE DEFECT THIS IS THE FIRST HALF OF ─────────────────────────────────
  *

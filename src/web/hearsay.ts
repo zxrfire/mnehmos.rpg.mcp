@@ -1,3 +1,8 @@
+import { actualCarrierScene } from './the-actual-carrier-scene.js';
+import { stoppedRoadFor, betweenRoadEndpoints } from './a-road-stopped-partway.js';
+import { sameRoadPosition } from '../engine/world/road-course.js';
+import { roadPositionOfNpc } from '../engine/world/places-on-the-way.js';
+import { whoIsOnTheRoadWith } from '../engine/world/who-is-on-the-road-with-you.js';
 /**
  * Names entering the world through the mouths of people who assume you know them.
  */
@@ -14,10 +19,12 @@ import { PLAYER_ROLL_IDENTITY } from './encounters.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import type { WorldState } from '../engine/world/world-state.js';
-import type { LocationRecord } from '../engine/world/locations.js';
-import { AT_MOST_IN_AN_AREA, theAreasOf, whereInThisPlaceTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
-import { whereYouCanActFrom } from '../engine/world/something-acting-in-your-place.js';
+import { routeQueriesFor, type LocationRecord, type RouteQueries } from '../engine/world/locations.js';
+import { AT_MOST_IN_AN_AREA, theAreasOf, whereInThisPlaceTheyStand, type APlaceReadIntoAreas } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { activeProxiesByOwner } from '../engine/world/something-acting-in-your-place.js';
 import { isActing } from '../engine/world/npc-state.js';
+import { routineOf, routineTime } from '../engine/world/npc-routines.js';
+import { npcJourneyOnDay } from '../engine/world/places-on-the-way.js';
 import { worldLocationFor } from './entities.js';
 import {
     whatSomebodyWouldSayAboutAHouse,
@@ -38,6 +45,8 @@ import {
     placedStatement,
     travellerProse,
     whisperStatement,
+    TRAVELLER_AMBIENT_CHANCE,
+    TRAVELLER_LISTENING_CHANCE,
     type Traveller,
     type TravellerPlace
 } from '../engine/social/travellers.js';
@@ -196,7 +205,45 @@ function toSpeakable(entry: Mentionable): SpeakableName {
 /**
  * People standing in the cultivator's area, alive, not themselves.
  */
+type PeopleRead = APlaceReadIntoAreas & { people: RosterEntry[] };
+interface PresenceReadScope {
+    routes: Map<readonly LocationRecord[], RouteQueries>;
+    present: { repos: CultivationRepos; cultivator: Cultivator; world: WorldState | null; read: RosterEntry[] }[];
+    places: { repos: CultivationRepos; cultivator: Cultivator; world: WorldState; place: LocationRecord; read: PeopleRead }[];
+}
+let presenceReadScope: PresenceReadScope | null = null;
+
+/** Reuse placement only within this synchronous observation; finally discards every memo. */
+export function withPresenceReadScope<T>(read: () => T): T {
+    const previous = presenceReadScope;
+    presenceReadScope = { present: [], places: [], routes: new Map() };
+    try { return read(); }
+    finally { presenceReadScope = previous; }
+}
+
+/** The exact graph of this observation, never reused outside the synchronous scope. */
+export function routesForPresenceRead(locations: readonly LocationRecord[]): RouteQueries | undefined {
+    const scope = presenceReadScope;
+    if (!scope) return undefined;
+    let routes = scope.routes.get(locations);
+    if (!routes) { routes = routeQueriesFor(locations); scope.routes.set(locations, routes); }
+    return routes;
+}
+
 export function othersPresent(
+    repos: CultivationRepos,
+    cultivator: Cultivator,
+    world?: WorldState | null
+): RosterEntry[] {
+    const scope = presenceReadScope;
+    const cached = scope?.present.find(one => one.repos === repos && one.cultivator === cultivator && one.world === (world ?? null));
+    if (cached) return cached.read;
+    const read = readOthersPresent(repos, cultivator, world);
+    scope?.present.push({ repos, cultivator, world: world ?? null, read });
+    return read;
+}
+
+function readOthersPresent(
     repos: CultivationRepos,
     cultivator: Cultivator,
     world?: WorldState | null
@@ -216,7 +263,11 @@ export function othersPresent(
 
     const read = peopleInThisPlace(repos, cultivator, world, place);
     const area = read.areas.find(one => one.id === cultivator.standingIn)?.id
-        ?? whereInThisPlaceTheyStand(world, place, cultivator.standingIn, cultivator.sectId).id;
+        // A stale endpoint room/market label is not an area on the actual edge.
+        // The one cursor's filtered placement supplies the observer's road scene.
+        ?? (betweenRoadEndpoints(repos.db, cultivator) ? read.areas.find(one => one.for !== 'room')?.id
+            : whereInThisPlaceTheyStand(world, place, cultivator.standingIn, cultivator.sectId,
+                cultivator.standingIn == null ? read.areas : undefined).id);
     return read.people.filter(row => read.whereIs.get(row.id) === area);
 }
 
@@ -226,28 +277,61 @@ export function peopleInThisPlace(
     cultivator: Cultivator,
     world: WorldState,
     place: LocationRecord
-) {
+): PeopleRead {
+    const scope = presenceReadScope;
+    const cached = scope?.places.find(one => one.repos === repos && one.cultivator === cultivator
+        && one.world === world && one.place === place);
+    if (cached) return cached.read;
+    const proxies = activeProxiesByOwner(world);
+    const observerProxy = proxies.get(cultivator.id);
+    const throughProxy = observerProxy?.locationId === place.id
+        && String(observerProxy.data.standingIn) === cultivator.standingIn;
+    const cursor = throughProxy ? null : stoppedRoadFor(repos.db, cultivator);
+    const betweenEndpoints = !throughProxy && betweenRoadEndpoints(repos.db, cultivator);
+    const routes = routesForPresenceRead(world.locations);
+    const now = routineTime(world);
+    const carrier = throughProxy ? null : actualCarrierScene(repos, cultivator, world, now);
+    const followers = new Set(whoIsOnTheRoadWith(world.npcs, cultivator.id, now).map(npc => npc.id));
+    const accepts = (npc: import('../engine/world/npc-state.js').NpcRecord): boolean => {
+        if (carrier && !carrier.accepts(npc)) return false;
+        if (!cursor) return true;
+        if (followers.has(npc.id) && npc.activity?.fromLocationId == null
+            && npc.locationId === place.id) return true;
+        return sameRoadPosition(cursor.position ?? null, roadPositionOfNpc(world.locations, npc, now, routes));
+    };
     const stored = repos.cultivators.roster().filter(row => row.id !== cultivator.id && row.alive
-        && worldLocationFor(world, row.location)?.id === place.id);
+        && worldLocationFor(world, row.location)?.id === place.id
+        && (!carrier || (() => {
+            const sheet = repos.cultivators.getById(row.id);
+            return !!sheet && actualCarrierScene(repos, sheet, world, now)?.key === carrier.key;
+        })())
+        && (!cursor || sameRoadPosition(cursor.position ?? null,
+            stoppedRoadFor(repos.db, row)?.position ?? { kind: 'place', locationId: place.id, originLocationId: place.id })));
     const remote: { row: RosterEntry; standingIn: string }[] = [];
     for (const npc of world.npcs) {
         if (npc.id === cultivator.id || !isActing(npc.status)) continue;
-        const presence = whereYouCanActFrom(world, npc.id);
-        if (presence?.locationId !== place.id || typeof presence.data.standingIn !== 'string') continue;
+        const presence = proxies.get(npc.id);
+        if (betweenEndpoints || carrier || presence?.locationId !== place.id || typeof presence.data.standingIn !== 'string') continue;
+        // A remote presence must establish its own actual vessel-area reach; sharing an ocean
+        // row is not a berth on this physical hull. No corporeal body claim is borrowed.
         remote.push({ standingIn: presence.data.standingIn, row: worldRosterRow({ ...npc, locationId: place.id,
             cultivation: { ...npc.cultivation, realmOrdinal: presence.power ?? 0 },
             tags: [...npc.tags, `present-as:${presence.data.kind}`] }, world.currentDay, world) });
     }
     const read = theAreasOf(world, place, undefined, {
-        id: cultivator.id, sectId: cultivator.sectId, standingIn: cultivator.standingIn,
+        id: cultivator.id, sectId: cultivator.sectId, standingIn: betweenEndpoints ? null : cultivator.standingIn,
+        ...(cursor || carrier ? { physical: { accepts, betweenEndpoints,
+            ...(carrier ? { hull: { key:carrier.key, operatorId:carrier.operatorId, areaKind:carrier.areaKind } } : {}) } } : {}),
         others: [
-            ...stored.map(row => ({ id: row.id, standingIn: repos.cultivators.getById(row.id)?.standingIn })),
+            ...stored.map(row => ({ id: row.id, standingIn: betweenEndpoints ? null : repos.cultivators.getById(row.id)?.standingIn })),
             ...remote.map(one => ({ id: one.row.id, standingIn: one.standingIn }))
         ]
-    });
+    }, routes);
     const inWorld = world.npcs.filter(npc => isActing(npc.status) && read.whereIs.has(npc.id))
         .map(npc => remote.find(one => one.row.id === npc.id)?.row ?? worldRosterRow(npc, world.currentDay, world));
-    return { ...read, people: oneCrowd(stored, inWorld) };
+    const placement = { ...read, people: oneCrowd(stored, inWorld) };
+    scope?.places.push({ repos, cultivator, world, place, read: placement });
+    return placement;
 }
 
 /**
@@ -463,6 +547,29 @@ function offerTraveller(
     rng: { chance(p: number): boolean; int(min: number, max: number): number },
     locale: Locale
 ): Hearing | null {
+    if (input.world) {
+        const world = input.world;
+        const present = new Set(othersPresent(input.repos, input.cultivator, world).map(person => person.id));
+        const candidates = world.npcs.filter(npc => present.has(npc.id)
+            && routineOf(world, npc).activity?.kind === 'travelling'
+            && npc.activity?.untilDay != null && npc.activity.returnTo != null);
+        if (candidates.length === 0 || !rng.chance((input.intent ?? 'ambient') === 'listening'
+            ? TRAVELLER_LISTENING_CHANCE : TRAVELLER_AMBIENT_CHANCE)) return null;
+        const person = candidates[rng.int(0, candidates.length - 1)]!;
+          const activity = npcJourneyOnDay(world.locations, person, world.currentDay);
+          if (!activity) return null;
+          const from = world.locations.find(place => place.id === activity.from);
+          const to = world.locations.find(place => place.id === activity.to);
+        if (!from || !to) return null;
+        const names = [from, to].filter(place => !input.gate.isAwareOf(input.cultivator.id, 'place', place.name))
+            .map((place): SpeakableName => ({ kind: 'place', id: place.name, name: place.name,
+                stage: 'placed', statement: `A traveller described the road to ${place.name}.` }));
+        if (names.length === 0) return null;
+        const days = Math.max(0, Math.floor(world.currentDay - activity.sinceDay));
+        return { mode: 'told', speaker: 'A traveller', names, confidence: 0.4, sourceKind: 'told', stage: 'placed',
+            note: `A traveller on the road from ${from.name} to ${to.name}, ${days} days after setting out.`,
+            prose: `A traveller says they set out from ${from.name} ${days} days ago and are going to ${to.name}.` };
+    }
     const unknownPlaces: TravellerPlace[] = unknownTo(input.gate, input.cultivator.id, placesInLore())
         .map(entry => ({ id: entry.id, name: entry.name, regionId: entry.regionId }));
 

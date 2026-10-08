@@ -2,6 +2,7 @@
  * The audit found public boards without entrants, named disciples routed into
  * generic intake, tenure fixed at zero, and dead lamps without inquiries.
  * These turns pin the resulting records and the facts a player can read.
+ * The owner moved open boards to cities and kept grounds contests internal.
  * Fixtures set an arrangement; the ordinary turn routes perform each act.
  * Disabling these feature writes made all six assertions fail; restoring them
  * passed in the same command, with the world seed pinned in both arms.
@@ -10,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness.js';
 import { createNpc } from '../../src/engine/world/npc-state.js';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
-import { theDayItFallsIn } from '../../src/engine/world/a-competition-anybody-may-enter.js';
+import { capitalCalendar } from '../../src/engine/world/capital-missions-and-calendar.js';
 import { whoHasALampBurningIn } from '../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 
 async function game(seed: string) {
@@ -56,9 +57,9 @@ describe('documented features reached by player turns', () => {
     it('enters a public board by name, records a placing, and never rerolls it on a look', async () => {
         const h = await game('public-board');
         const year = Math.floor(h.world.currentDay / 365);
-        const host = h.world.factions.find(f => theDayItFallsIn(h.world.seed, f, year) !== null)!;
-        const day = theDayItFallsIn(h.world.seed, host, year)!;
-        const seat = h.world.locations.find(l => l.id === host.seatLocationId)!;
+        const occasion = [year, year + 1, year + 2].flatMap(y => capitalCalendar(h.world, y)).find(o => o.kind === 'competition')!;
+        const day = occasion.onDay;
+        const seat = h.world.locations.find(l => l.id === occasion.venueId)!;
         h.world.currentDay = day;
         h.repos.cultivators.update(h.cultivator.id, { location: seat.name, realmOrdinal: 8 });
         h.game.theWorldMoved();

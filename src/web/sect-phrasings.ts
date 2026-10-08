@@ -105,7 +105,7 @@ export type SectIntent =
  * promotion" reads as asking somebody a question).
  */
 export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
-    ['compete', /\b(?:enter|join|compete in|sign up for)\s+(?:the\s+|a\s+|public\s+|open\s+)*(?:competition|tournament|contest)\b/],
+    ['compete', /\b(?:enter|join|compete in|sign up for)\s+(?:the\s+|a\s+|public\s+|open\s+|internal\s+|inner-sect\s+|closed\s+)*(?:competition|tournament|contest|trials)\b/],
     ['promote', /\b(?:promote|promotes|promoted|promotion|raise me|elevate me|advance my rank|higher rank|next rank up|rise in rank)\b/],
     // `for what I am owed` is somebody ASKING a body for it, which is a petition
     // and is resolved by a different instrument that answers in its own terms.

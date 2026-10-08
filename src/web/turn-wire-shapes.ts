@@ -182,7 +182,20 @@ export interface Execution {
     events: SimEvent[];
     timeSkip: TimeSkipResult | null;
     breakthrough: BreakthroughResult | null;
+    /** All results of a folded execution, in order. Never persisted. */
+    timeSkips?: TimeSkipResult[];
+    breakthroughs?: BreakthroughResult[];
+    hearings?: Hearing[];
     outcome: 'executed' | 'refused';
+    /**
+     * A confirmed perceptual read, a completed no-op, or a named local crossing
+     * that was itself a move, spends no further lesser-act time. Set by the
+     * resolved execution, never inferred from prose or a freeAction receipt. A
+     * read may already have spent time approaching somebody; another action
+     * after that approach retains its own lesser cost. Engine-internal pricing
+     * only.
+     */
+    timeDisposition?: 'free_read' | 'no_op' | 'approach_only';
     /** Every engine call this action made, in the order it made them. */
     calls: ToolCallRecord[];
     /**

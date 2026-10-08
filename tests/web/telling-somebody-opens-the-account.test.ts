@@ -67,6 +67,14 @@
  *
  * `worldEnabled: true` throughout, and the world is pinned: the roster, who is
  * standing where and the history are all drawn from it.
+ *
+ * Sparse placement exposed another gap on 2026-10-03: the fresh-world telling
+ * opened its account with a null subject after the player met the killer and
+ * walked to the bereaved person in another area. Resolution searched only the
+ * run roster and current company, losing a name the player's memory held.
+ * Naming somebody in a claim needs that held reference, not their presence.
+ * The paired absent-person arms below require a known name to attach and an
+ * unknown name to remain unresolved; the listener must actually be present.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -77,6 +85,7 @@ import { NO_NAME_ON_IT, withNoNameOnIt } from '../../src/engine/social/accounts-
 import { createObligation } from '../../src/engine/social/grudges';
 import { worldLocationFor } from '../../src/web/entities';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { setLocation } from '../../src/engine/world/npc-state';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import type { WorldState } from '../../src/engine/world/world-state';
 
@@ -230,6 +239,16 @@ async function whoIsHere(
     return { world, here, where };
 }
 
+/** Put the player back in the addressed person's actual current area after a paid reply. */
+function standWith(game: any, cultivatorId: string, personId: string): void {
+    const cultivator = game.repos.cultivators.getById(cultivatorId)!;
+    const world = game.atHand! as WorldState;
+    const place = worldLocationFor(world, cultivator.location)!;
+    const area = theAreasOf(world, place).whereIs.get(personId);
+    expect(area, 'the addressed person has no current area in this place').toBeDefined();
+    game.repos.cultivators.standIn(cultivatorId, area!);
+}
+
 /** Give somebody a brother. See the header for why this is not already true. */
 function giveThemKin(world: WorldState, holderId: string, kin: { id: string; name: string }): void {
     world.npcs.find(npc => npc.id === holderId)!.relationships.push({
@@ -246,6 +265,43 @@ function giveThemKin(world: WorldState, holderId: string, kin: { id: string; nam
 }
 
 describe('telling somebody that a wrong was done to them', () => {
+    it.each([true, false])('uses an absent person\'s held name only when known: %s', async known => {
+        const { db, game, repos } = await makeGameInWorld({
+            seed: 'tells-absent', worldSeed: 'tells-world', worldEnabled: true
+        });
+        try {
+            const { cultivator } = await game.newRun('Prober');
+            const { world, here, where } = await whoIsHere(game, cultivator);
+            const hearer = here[0]!;
+            const doer = world.npcs.find(n => n.status === 'alive'
+                && !here.some(p => p.id === n.id)
+                && !repos.cultivators.roster().some(p => p.id === n.id)
+                && !game.knowledge.isAwareOf(cultivator.id, 'cultivator', n.id));
+            expect(doer, 'a world person outside both the room and run roster is required').toBeDefined();
+            if (known) game.knowledge.learnIfNew({
+                holderId: cultivator.id, kind: 'cultivator', id: doer!.id, name: doer!.name,
+                onDay: 0, sourceKind: 'told', sourceNote: 'Heard their name on the road.'
+            });
+            expect(game.knowledge.isAwareOf(cultivator.id, 'cultivator', doer!.id)).toBe(known);
+            const present = game.present(game.state().cultivator);
+            expect(present.some(p => p.id === hearer.id), 'the listener must be here').toBe(true);
+            expect(present.some(p => p.id === doer!.id), 'naming the subject must not need their presence').toBe(false);
+            aWrongDoneTo(world, where, doer!, hearer);
+            expect(ledger(db)).toHaveLength(0);
+
+            const turn = await game.act(`I tell ${hearer.name} that ${doer!.name} stole from him`);
+            expect(turn.toolCalls.some(call => call.name === 'world.whatATellingLandsOn' && call.ok)).toBe(true);
+            const rows = ledger(db);
+            expect(rows, 'a real telling must open the account').toHaveLength(1);
+            expect(rows[0]!.holder_id).toBe(hearer.id);
+            expect(rows[0]!.subject_id).toBe(known ? doer!.id : null);
+            expect(rows[0]!.severity).toBe('unforgivable');
+            expect(rows[0]!.from_belief).toBe(1);
+            expect(game.knowledge.isAwareOf(cultivator.id, 'cultivator', doer!.id),
+                'telling a claim must not discover its subject for the teller').toBe(known);
+        } finally { db.close(); }
+    }, 180000);
+
     it('opens the account, dated today, with the teller named on it', async () => {
         const { db, game } = await makeGameInWorld({
             seed: 'tells-1', worldSeed: 'tells-world', worldEnabled: true
@@ -253,7 +309,7 @@ describe('telling somebody that a wrong was done to them', () => {
         const { cultivator } = await game.newRun('Prober');
         await game.act('I look around');
 
-        const { world, here, where } = await whoIsHere(game, cultivator);
+        const { world, here, where } = await whoIsHere(game, cultivator, 3);
         expect(here.length, 'the square holds a hearer and somebody to have wronged them')
             .toBeGreaterThan(1);
         const [hearer, doer] = here;
@@ -319,8 +375,10 @@ describe('telling somebody that a wrong was done to them', () => {
         const { cultivator } = await game.newRun('Prober');
         await game.act('I look around');
 
-        const { world, here, where } = await whoIsHere(game, cultivator);
-        expect(here.length).toBeGreaterThan(2);
+        // Hearer, doer and innocent are a real three-person public area at one
+        // clock, not a location-wide crowd.  An area holds three at most.
+        const { world, here, where } = await whoIsHere(game, cultivator, 3);
+        expect(here.length).toBe(3);
         const [hearer, doer, innocent] = here;
         aWrongDoneTo(world, where, doer, hearer);
 
@@ -335,6 +393,45 @@ describe('telling somebody that a wrong was done to them', () => {
         // complete conviction.
         expect(rows[0].severity).toBe('unforgivable');
         expect(rows[0].from_belief).toBe(1);
+    }, 180000);
+
+    it('can blame a person the teller knows after they leave the public area, but does not invent an unknown one', async () => {
+        const { db, game } = await makeGameInWorld({
+            seed: 'tells-known-absent', worldSeed: 'tells-world', worldEnabled: true
+        });
+        const { cultivator } = await game.newRun('Prober');
+        await game.act('I look around');
+
+        // First make all three facts concrete in the same public area, so the
+        // teller really holds the claimed person's name before that person
+        // leaves.  The departure changes place, never the clock.
+        const { world, here, where } = await whoIsHere(game, cultivator, 3);
+        expect(here).toHaveLength(3);
+        const [hearer, doer, innocent] = here;
+        expect(new Set([hearer.id, doer.id, innocent.id]).size, 'hearer, doer and innocent are distinct').toBe(3);
+        aWrongDoneTo(world, where, doer, hearer);
+        const elsewhere = world.locations.find(place => place.id !== where && place.kind === 'settlement')!;
+        const at = world.npcs.findIndex(npc => npc.id === doer.id);
+        world.npcs[at] = setLocation(world.npcs[at]!, elsewhere.id, Math.floor(world.currentDay));
+        game.theWorldMoved();
+
+        await game.act(`I tell ${hearer.name} that ${doer.name} stole from him`);
+        const knownAbsent = ledger(db);
+        expect(knownAbsent).toHaveLength(1);
+        expect(knownAbsent[0]!.subject_id, 'the teller already holds this name').toBe(doer.id);
+
+        const { db: otherDb, game: otherGame } = await makeGameInWorld({
+            seed: 'tells-unknown-absent', worldSeed: 'tells-world', worldEnabled: true
+        });
+        const { cultivator: other } = await otherGame.newRun('Prober');
+        await otherGame.act('I look around');
+        const otherHere = await whoIsHere(otherGame, other, 3);
+        const [otherHearer, otherDoer] = otherHere.here;
+        aWrongDoneTo(otherHere.world, otherHere.where, otherDoer, otherHearer);
+        await otherGame.act(`I tell ${otherHearer.name} that Lantern Ghost stole from him`);
+        const unknown = ledger(otherDb);
+        expect(unknown).toHaveLength(1);
+        expect(unknown[0]!.subject_id, 'an unheard name remains unnamed').toBeNull();
     }, 180000);
 
     /**
@@ -369,6 +466,9 @@ describe('telling somebody that a wrong was done to them', () => {
         expect(first[0].subject_id).toBe(NO_NAME_ON_IT);
         expect(first[0].subject_id, 'null, not the empty string').toBeNull();
 
+        // The first telling took its eighth of a day. Rejoin the hearer's actual
+        // current area; a later named telling still has to be said to them.
+        standWith(game, cultivator.id, hearer.id);
         await game.act(`I tell ${hearer.name} that ${doer.name} stole from him`);
         const second = ledger(db);
         expect(second, 'one account, not two').toHaveLength(1);
@@ -423,8 +523,11 @@ describe('telling somebody that a wrong was done to them', () => {
         expect(after.subjectId).toBe(doer.id);
         expect(after.tags).toContain(`told-by:${cultivator.id}`);
         const hearerRow = game.atHand!.npcs.find((npc: { id: string }) => npc.id === hearer.id)!;
-        expect(hearerRow.relationships.find((tie: { targetId: string }) => tie.targetId === doer.id)?.kind)
-            .toBe('enemy');
+        // The birth draw may already give these two another tie (a child, for
+        // example). Naming the account must add the hostile fact rather than
+        // rely on which same-person tie happens to be stored first.
+        expect(hearerRow.relationships.some((tie: { targetId: string; kind: string }) =>
+            tie.targetId === doer.id && tie.kind === 'enemy')).toBe(true);
     }, 180000);
 
     it('and a hearer who thinks badly of the teller does not take the name', async () => {
@@ -530,8 +633,8 @@ describe('telling somebody that a wrong was done to them', () => {
         expect(again.narration).not.toMatch(/nothing in what you said/i);
     }, 180000);
 
-    /** Free, and it means it. A telling spends no day. */
-    it('spends no day', async () => {
+    /** A telling that lands is a reply, and a reply takes an eighth of a day. */
+    it('spends an eighth of a day', async () => {
         const { db, game } = await makeGameInWorld({
             seed: 'tells-6', worldSeed: 'tells-world', worldEnabled: true
         });
@@ -542,7 +645,7 @@ describe('telling somebody that a wrong was done to them', () => {
 
         const before = (await game.state()).run!.elapsedDays;
         await game.act(`I tell ${here[0].name} that ${here[1].name} stole from him`);
-        expect((await game.state()).run!.elapsedDays).toBe(before);
+        expect((await game.state()).run!.elapsedDays).toBe(before + 0.125);
         expect(ledger(db)).toHaveLength(1);
     }, 180000);
 });

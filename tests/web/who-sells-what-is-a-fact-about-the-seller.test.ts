@@ -82,7 +82,7 @@ const SHARED_ARTS = TECHNIQUES
     .slice(0, 6);
 
 /**
- * One square holding a person at every rung of the ladder, all carrying the
+ * One population with a person at every rung of the ladder, all carrying the
  * same books, so a difference in what they offer is a difference in them.
  */
 function aSquareAcrossTheWholeLadder(): WorldState {
@@ -130,9 +130,29 @@ function aSquareHoldingTwoMortals(pair: number): WorldState {
 const isARowOfTheBoard = (thingId: string): boolean => getPrice(thingId) !== undefined;
 const isAnArt = (thingId: string): boolean => getTechnique(thingId) !== undefined;
 
+/**
+ * The seller reader's fourth argument is the scene it is answering about.
+ * These are direct seller-rule tests, not a claim that every rung fits in one
+ * current area: ask the same single-person question of every person in the
+ * sweep, exactly as the header says.
+ */
+function readEachSeller(state: WorldState) {
+    return state.npcs.flatMap(npc =>
+        readWhatIsOnOfferHere(makeCultivator({ location: SQUARE }), state, undefined, [npc]).read);
+}
+
+/** A real small scene: one mortal and one person on the ladder. */
+function offersInView(state: WorldState) {
+    const mortal = state.npcs.find(npc => npc.cultivation.realmOrdinal < FOUNDATION_ORDINAL)!;
+    const cultivator = state.npcs.find(npc => npc.cultivation.realmOrdinal >= FOUNDATION_ORDINAL)!;
+    return readWhatIsOnOfferHere(
+        makeCultivator({ location: SQUARE }), state, undefined, [mortal, cultivator]
+    ).offers;
+}
+
 describe('the split is a rule about the seller', () => {
     const state = aSquareAcrossTheWholeLadder();
-    const { read } = readWhatIsOnOfferHere(makeCultivator({ location: SQUARE }), state);
+    const read = readEachSeller(state);
     const rungOf = new Map(state.npcs.map(n => [n.id, n.cultivation.realmOrdinal]));
     const standsBelow = (id: string): boolean => (rungOf.get(id) ?? 0) < FOUNDATION_ORDINAL;
 
@@ -200,9 +220,9 @@ describe('the split is a rule about the seller', () => {
 });
 
 describe('a square is no longer mute', () => {
-    it('puts somebody in front of a player where four rungs of people stand', () => {
+    it('puts sellers from both boards in front of a player', () => {
         const state = aSquareAcrossTheWholeLadder();
-        const { offers } = readWhatIsOnOfferHere(makeCultivator({ location: SQUARE }), state);
+        const offers = offersInView(state);
         expect(offers.length).toBeGreaterThan(0);
     });
 
@@ -212,7 +232,7 @@ describe('a square is no longer mute', () => {
         // cultivator came for becomes unreachable. Somebody on the ladder is
         // shown first and the board fills in behind them.
         const state = aSquareAcrossTheWholeLadder();
-        const { offers } = readWhatIsOnOfferHere(makeCultivator({ location: SQUARE }), state);
+        const offers = offersInView(state);
         expect(offers.some(offer => offer.fromTheMortalBoard), 'no bread in the square').toBe(true);
         expect(offers.some(offer => !offer.fromTheMortalBoard), 'bread took every slot').toBe(true);
     });
@@ -227,7 +247,9 @@ describe('a square is no longer mute', () => {
         let thinSquares = 0;
         for (let pair = 0; pair < 12; pair++) {
             const state = aSquareHoldingTwoMortals(pair);
-            const { offers } = readWhatIsOnOfferHere(makeCultivator({ location: SQUARE }), state);
+            const offers = readWhatIsOnOfferHere(
+                makeCultivator({ location: SQUARE }), state, undefined, state.npcs
+            ).offers;
             const seen = offers.map(offer => `${offer.sellerId}:${offer.thingId}`);
             expect(new Set(seen).size, 'the same offer was shown twice').toBe(seen.length);
             if (offers.length < OFFERS_SHOWN) thinSquares++;

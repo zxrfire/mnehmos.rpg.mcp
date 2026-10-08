@@ -151,7 +151,7 @@ export function goingOverTheWall(
     // WHERE IT LANDS: the seat, with its walls gone around.
     const onDay = Math.floor(world.currentDay);
     const { access } = howThisCultivatorStandsInTheHouseHolding({
-        ground: house.seat, cultivator, standing: null, onDay
+        ground: house.seat, cultivator, standing: null, onDay, objects: world.objects
     });
     const reach = reachThrough(pathTo(world.locations, house.seat.id), access, { enteredAt: house.seat.id });
     if (reach.stoppedAt !== null) {

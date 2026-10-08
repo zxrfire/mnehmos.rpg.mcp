@@ -473,7 +473,11 @@ describe('played: writing one out and selling it', () => {
      */
     it('has no answer at all for somebody standing above it, and still opens the account', async () => {
         const harness = await aSellerOfThePavilionsSword({
-            seed: 'leak-peak', mastery: 1, ordinal: 45, inTheHouse: true
+            // Re-pinned from 'leak-peak': the three-year writing span it now
+            // draws is cut short by a major encounter partway through (today's
+            // background passes and real distances), so the sale this test is
+            // about never ran at all. 'leak-peak-1' writes the copy out whole.
+            seed: 'leak-peak-1', mastery: 1, ordinal: 45, inTheHouse: true
         });
         const { game, id, db } = harness;
         await game.act('I look around');

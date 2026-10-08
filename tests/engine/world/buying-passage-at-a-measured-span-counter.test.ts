@@ -8,6 +8,11 @@
  * seventeen days' walk away, open four days in nine. Nothing here invented a
  * route shape - it was read off a branch entry that has been in the catalog the
  * whole time.
+ *
+ * 2026-10-07 native counter play exposed a zero-day quote followed by a
+ * whole-day debit for this hour. The old assertions excluded the hour because
+ * the engine rounded roads to days; fractional body/world clocks now preserve
+ * it. The fare, schedule and recovery rule stay the original authorities.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -112,7 +117,7 @@ describe('what the rung DOES change is what the crossing costs the body', () => 
         // has to the rest of the world would close.
         const mortal = quote(0, 0);
         expect(mortal.settlingDays).toBe(PASSENGER_SETTLING_AT_THE_BOTTOM);
-        expect(mortal.daysSavedAgainstWalking).toBe(14);
+        expect(mortal.daysSavedAgainstWalking).toBeCloseTo(14 - 1 / 24);
     });
 
     it('takes the worst passenger, because a party arrives together', () => {
@@ -140,11 +145,11 @@ describe('the schedule is the honest no, and it is not about the person', () => 
         expect(worst.daysSpent).toBeLessThan(FOUR_GRAVES.walkedDaysItReplaces);
     });
 
-    it('spends no day on the crossing itself for somebody at the floor', () => {
+    it('spends the actual hour without rounding it to a day at the folding floor', () => {
         // The whole product is that no day was spent on the road. Rounding an
         // hour up to a day would price away the thing being bought.
-        expect(quote(FOLD_FLOOR_ORDINAL, 0).daysSpent).toBe(0);
-        expect(quote(FOLD_FLOOR_ORDINAL, 0).daysSavedAgainstWalking).toBe(17);
+        expect(quote(FOLD_FLOOR_ORDINAL, 0).daysSpent * 24).toBeCloseTo(1);
+        expect(quote(FOLD_FLOOR_ORDINAL, 0).daysSavedAgainstWalking).toBeCloseTo(17 - 1 / 24);
     });
 });
 

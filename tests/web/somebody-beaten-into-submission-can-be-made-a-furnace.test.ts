@@ -234,8 +234,12 @@ describe('a conception from the rite is a child the world delivers', () => {
      * parents on the lineage.
      */
     it.each([
-        // Catalog additions moved the subject; re-pinned from furnace-rite-birth-11.
-        ['furnace-rite-birth-14', 'the subject carried'],
+        // Today's population pass (seeded ages spread, settlements refill, houses
+        // recruit within their rolls) redraws who `I look around` turns up and every
+        // RNG keyed to their id; furnace-rite-birth-14 no longer lands on a subject
+        // who conceives. Re-pinned from furnace-rite-birth-14, which was itself
+        // re-pinned from furnace-rite-birth-11.
+        ['furnace-rite-birth-25', 'the subject carried'],
         // Re-pinned from furnace-rite-birth-1 when the game began starting at 18.
         ['furnace-rite-birth-5', 'the player carried']
     ])('%s: %s', async (seed) => {

@@ -228,7 +228,7 @@ export class WorldStateRepository {
                 occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 wounds, technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
-                accumulating_since_day, bonded_cultivation_days, hp, body_on_day, qi_seal,
+                accumulating_since_day, bonded_cultivation_days, hp, qi, technique_cooldowns, body_on_day, qi_seal,
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
@@ -239,7 +239,7 @@ export class WorldStateRepository {
                 @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @wounds, @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
-                @accumulatingSinceDay, @bondedCultivationDays, @hp, @bodyOnDay, @qiSeal,
+                @accumulatingSinceDay, @bondedCultivationDays, @hp, @qi, @techniqueCooldowns, @bodyOnDay, @qiSeal,
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
@@ -939,6 +939,9 @@ export class WorldStateRepository {
                 accumulatingSinceDay: npc.cultivation.accumulatingSinceDay,
                 bondedCultivationDays: npc.cultivation.bondedCultivationDays ?? 0,
                 hp: npc.cultivation.hp,
+                qi: npc.cultivation.qi ?? null,
+                techniqueCooldowns: npc.cultivation.techniqueCooldowns === undefined ? null
+                    : JSON.stringify(npc.cultivation.techniqueCooldowns),
                 bodyOnDay: npc.cultivation.bodyOnDay,
                 qiSeal: npc.cultivation.seal === null
                     ? null
@@ -1605,6 +1608,9 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
                     Number(JSON.parse(row.attributes)?.might ?? 1),
                     row.realm_ordinal
                 ),
+            ...(row.qi === null ? {} : { qi: row.qi }),
+            ...(row.technique_cooldowns === null ? {} : {
+                techniqueCooldowns: parseRecord<number>(row.technique_cooldowns) }),
             bodyOnDay: row.body_on_day || row.last_advanced_on_day,
             seal: parseSeal(row.qi_seal)
         },
@@ -2185,6 +2191,8 @@ interface NpcRow {
     accumulating_since_day: number;
     bonded_cultivation_days: number;
     hp: number;
+    qi: number | null;
+    technique_cooldowns: string | null;
     body_on_day: number;
     qi_seal: string | null;
     location_id: string | null;

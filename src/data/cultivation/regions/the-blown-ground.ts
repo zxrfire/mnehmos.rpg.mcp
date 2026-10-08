@@ -8,6 +8,7 @@ import { AmbientQiSchema } from '../../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../../engine/cultivation/realms.js';
 import { PLACE, REGION_NAME } from '../place-names.js';
 import {
+    MetricRegionSchema,
     RegionCustomsSchema,
     RegionPlaceSchema,
     RegionRegisterSchema,
@@ -71,6 +72,7 @@ export const LeakageSchema = z.object({
 export type Leakage = z.infer<typeof LeakageSchema>;
 
 export const UngovernedGroundSchema = z.object({
+    metric: MetricRegionSchema.optional(),
     id: z.string(),
     name: z.string().min(1),
     /**
@@ -147,6 +149,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
     id: BLOWN_GROUND_ID,
     name: REGION_NAME.BURIAL_SANDS,
     bearing: 'interior',
+    metric: { xLi: 60, yLi: -90, extentLi: 30 },
     borderingRegionIds: [
         HOME_REGION_ID,
         ADJACENT_REGION_ID,
@@ -306,7 +309,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         'Shallow, rich, unmapped and unsurveyable in any way that lasts. It is one vein rather than several, it runs the length of the wedge, and what varies is not the vein but the depth of the cover over it - which is why the ground is worth more than the Buddha Precipice and less than nothing to anybody who wants to own it.',
     places: [
         {
-            name: PLACE.WIND_MARKET,
+            name: PLACE.WIND_MARKET, metric: { xLi: 47, yLi: -100 },
             kind: 'market_town', ambient: 'thin', note: 'The one market, which assembles for about six weeks after the wind turns and disperses. Everything sold here is sold once and nothing bought here comes with a name attached.',
             // THE WELL IS THE MAP.
             //
@@ -332,7 +335,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             ]
         },
         {
-            name: PLACE.SAND_WELL,
+            name: PLACE.SAND_WELL, metric: { xLi: 60, yLi: -86 },
             kind: 'village', ambient: 'thin', heldByFactionId: 'sect-moonwater',
             note: 'A fixed spring at the foot of exposed rock. Moonwater Sect keeps its water; Five Grains Sect keeps the granaries beside it. The sand sings in the wind outside the rock.',
             connections: [
@@ -364,11 +367,11 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 inscription: 'The lintel names an archive of the former western-road authority. The door was closed when that road was cut.',
                 contents: [{ name: 'Western Road Edict', text: 'This copy names the predecessors of Moonwater Sect as keepers of Truce Spring and its rock. It grants no moving dune. The issuing western-road authority is extinct; this copy alone cannot establish an unbroken succession.' }] },
             connections: [{ kind: 'path', otherPlaceName: PLACE.PAINTED_ESCARPMENT, description: 'A passage along the painted cliff.', travelDays: 0.1 }] },
-        { name: PLACE.STUBBORN_PIT, kind: 'site', ambient: 'spirit_tide', note: 'A show that has been open nineteen years, which is longer than a grant runs, and is consequently the only ground here anybody has killed over more than once.' },
-        { name: PLACE.THE_SHORT_ROAD, kind: 'site', ambient: 'thin', note: 'The direct line, named for the saving it promises against the gorge road. It saves eight days when it works and nobody has published how often it works.' },
-        { name: PLACE.TUOS_WALL, kind: 'site', ambient: 'thin', note: 'Where a house tried to stand still. About two hundred paces of it are above the sand and the rest is not, and nobody now living can name what it was called.' },
+        { name: PLACE.STUBBORN_PIT, metric: { xLi: 78, yLi: -80 }, kind: 'site', ambient: 'spirit_tide', note: 'A show that has been open nineteen years, which is longer than a grant runs, and is consequently the only ground here anybody has killed over more than once.' },
+        { name: PLACE.THE_SHORT_ROAD, metric: { xLi: 65, yLi: -108 }, kind: 'site', ambient: 'thin', note: 'The direct line, named for the saving it promises against the gorge road. It saves eight days when it works and nobody has published how often it works.' },
+        { name: PLACE.TUOS_WALL, metric: { xLi: 42, yLi: -80 }, kind: 'site', ambient: 'thin', note: 'Where a house tried to stand still. About two hundred paces of it are above the sand and the rest is not, and nobody now living can name what it was called.' },
         {
-            name: PLACE.HALFWAY_GATE,
+            name: PLACE.HALFWAY_GATE, metric: { xLi: 75, yLi: -102 },
             // "One gate station, at Halfway Gate, on ground so worthless the
             // question of granting it has never arisen." The province holds
             // nothing and this is the one thing standing on it that somebody
@@ -471,6 +474,7 @@ function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
         name: ground.name,
         role: 'adjacent',
         bearing: ground.bearing,
+        metric: ground.metric,
         traditionId: 'tradition-drawn',
         summary: ground.summary,
         governingFact: ground.governingFact,

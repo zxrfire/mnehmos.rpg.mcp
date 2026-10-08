@@ -403,7 +403,7 @@ describe('a bare duration is still seclusion, and only a bare duration', () => {
 describe('through the front door', () => {
     it('costs a starving cultivator nothing to be misunderstood', async () => {
         const { db, game } = makeGame({ seed: 'misparse' });
-        const { cultivator } = await game.newRun('Ke Yan');
+        const { cultivator, run: fresh } = await game.newRun('Ke Yan');
 
         // The exact bind: no stones, no food, the starvation clock running.
         db.prepare(
@@ -419,9 +419,10 @@ describe('through the front door', () => {
         // now reaches `investigate`, correctly, which is the tier working.
         const result = await game.act('I get on with it');
 
-        // Not one day, not one point of satiety, not one row.
+        // Not one day beyond the run's own 08:00 opening, not one point of
+        // satiety, not one row.
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
-        expect(result.state.run.elapsedDays).toBe(0);
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
         expect(result.state.cultivator.alive).toBe(true);
         expect(planned(result).action).toBe('unclear');
     });
@@ -442,7 +443,7 @@ describe('through the front door', () => {
 
     it('lets the same player be misunderstood a hundred times for free', async () => {
         const { db, game } = makeGame({ seed: 'patience' });
-        const { cultivator } = await game.newRun('Ke Yan');
+        const { cultivator, run: fresh } = await game.newRun('Ke Yan');
         db.prepare('UPDATE cultivators SET spirit_stones = 0, satiety = 2 WHERE id = ?')
             .run(cultivator.id);
 
@@ -452,7 +453,9 @@ describe('through the front door', () => {
 
         const state = game.state();
         expect(state.cultivator.alive).toBe(true);
-        expect(state.run.elapsedDays).toBe(0);
+        // Not zero outright - a run opens at 08:00 - but unmoved by a hundred
+        // sentences nobody could parse.
+        expect(state.run.elapsedDays).toBe(fresh.elapsedDays);
         expect(state.cultivator.satiety).toBe(2);
     });
 });
@@ -840,16 +843,17 @@ describe('the seat\'s powers reach the tool that implements them', () => {
     for (const [typed, tool] of WIRED) {
         it(`routes "${typed}" to ${tool}`, async () => {
             const { game } = makeGame({ seed: `leadership-${tool}` });
-            await game.newRun('Ke Yan');
+            const { run: fresh } = await game.newRun('Ke Yan');
 
             const result = await game.act(typed);
             const names = engineCalls(result).map(call => call.name);
 
             expect(names, `"${typed}" reached ${names.join(', ') || 'nothing'}`).toContain(tool);
             expect(names).not.toContain('engine.parseIntent');
-            // Somebody who serves no house is refused, and refused for free.
+            // Somebody who serves no house is refused, and refused for free -
+            // unmoved past the run's own 08:00 opening.
             expect(refusedCall(result)).not.toBeNull();
-            expect(result.state.run.elapsedDays).toBe(0);
+            expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
         });
     }
 });
@@ -904,7 +908,7 @@ describe('asking what was done to a place', () => {
 
     it('answers out of the record, and withholds a cause the world has not surrendered', async () => {
         const { db, game, repos } = await makeGameInWorld({ seed: 'scarred', worldSeed: 'demography' });
-        const { cultivator } = await game.newRun('Ke Yan');
+        const { cultivator, run: fresh } = await game.newRun('Ke Yan');
         const world = await game.loadWorld();
 
         const scarred = (world?.locations ?? []).filter(place => place.changes.length > 0);
@@ -932,9 +936,10 @@ describe('asking what was done to a place', () => {
         const everything = result.narration + JSON.stringify(result.toolCalls);
         expect(everything).not.toContain(hidden.causeFactId!);
 
-        // A read. Not a day, not a point of satiety, not a row.
+        // A read. Not a day beyond the run's own 08:00 opening, not a point
+        // of satiety, not a row.
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
-        expect(result.state.run.elapsedDays).toBe(0);
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 
     it('names the cause where the world does hold it', async () => {
@@ -962,14 +967,15 @@ describe('asking what was done to a place', () => {
 
     it('refuses ground that has no record, without saying which kind of nothing it is', async () => {
         const { game } = makeGame({ seed: 'unscarred' });
-        await game.newRun('Ke Yan');
+        const { run: fresh } = await game.newRun('Ke Yan');
 
         const result = await game.act('what happened here');
         const refused = refusedCall(result);
 
         expect(refused?.name).toBe('engine.locationHistory');
         expect(result.narration).toMatch(/no mark and nobody to ask/i);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // A read, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 });
 
@@ -1061,7 +1067,7 @@ describe('getting a wound seen to', () => {
 
     it('names the price and the shortfall when the purse is short', async () => {
         const { db, game, repos } = makeGame({ seed: 'treatment-broke' });
-        const { cultivator } = await game.newRun('Shi Wanjun');
+        const { cultivator, run: fresh } = await game.newRun('Shi Wanjun');
         repos.cultivators.addInjury(cultivator.id, {
             severity: 'serious',
             source: 'qi_deviation',
@@ -1078,9 +1084,9 @@ describe('getting a wound seen to', () => {
         // they are carrying, both stated.
         expect(result.narration).toMatch(/cash/);
         expect(result.narration).toMatch(/carrying/i);
-        // Refused for free.
+        // Refused for free, unmoved past the run's own 08:00 opening.
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
-        expect(result.state.run.elapsedDays).toBe(0);
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 
     it('costs nothing to ask for treatment nobody needs', async () => {
@@ -1224,12 +1230,13 @@ describe('buying a line off the price board', () => {
 
     it('refuses what the board never advertised, with the board attached', async () => {
         const { game } = makeGame({ seed: 'buy-nothing' });
-        await game.newRun('Shi Wanjun');
+        const { run: fresh } = await game.newRun('Shi Wanjun');
 
         const result = await game.act('I buy a spaceship');
         expect(refusedCall(result)?.name).toBe('engine.resolvePrice');
         expect(result.narration).toMatch(/millet|rations|inn/i);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // Refused for free, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 });
 
@@ -1357,7 +1364,7 @@ describe('the inheritance grounds, through the whole service', () => {
 
     it('lists only what this cultivator could actually name', async () => {
         const { game } = makeGame({ seed: 'sites-listing' });
-        await game.newRun('Ke Yan');
+        const { run: fresh } = await game.newRun('Ke Yan');
 
         const result = await game.act('what inheritance grounds are near here');
         expect(engineCalls(result).map(call => call.name)).toContain('engine.nameableSites');
@@ -1368,12 +1375,14 @@ describe('the inheritance grounds, through the whole service', () => {
             expect(result.narration, `${site.id} named to somebody who has not heard of it`)
                 .not.toContain(site.name);
         }
-        expect(result.state.run.elapsedDays).toBe(0);
+        // Asking what there is to approach, naming nothing, is the read -
+        // unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 
     it('does not open a site the cultivator has only ever heard rumoured', async () => {
         const { game } = makeGame({ seed: 'sites-unknown' });
-        await game.newRun('Ke Yan');
+        const { run: fresh } = await game.newRun('Ke Yan');
 
         // `trial-the-eighth-stone` starts at `whisper`, so the name is withheld
         // and there is nothing to resolve. Asked for by name anyway.
@@ -1382,7 +1391,8 @@ describe('the inheritance grounds, through the whole service', () => {
         for (const fragment of interiorStrings('trial-the-eighth-stone')) {
             expect(result.narration + JSON.stringify(result.toolCalls)).not.toContain(fragment);
         }
-        expect(result.state.run.elapsedDays).toBe(0);
+        // Refused for free, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 
     /**
@@ -1405,13 +1415,25 @@ describe('the inheritance grounds, through the whole service', () => {
             'what does it look like from out here',
             'I size up the trial'
         ];
-        for (const phrasing of phrasings) {
+        // Walking up to a site now spends its own eighth day - `site` is in
+        // `lesser-action-costs.ts` - so only the FIRST phrasing (the walk) is
+        // let through at whatever it costs. Studying the door, asking what it
+        // looks like, and sizing up the trial are reads once there, and must
+        // add nothing further.
+        let daysSoFar = game.currentRun().run.elapsedDays;
+        for (const [index, phrasing] of phrasings.entries()) {
             const result = await game.act(phrasing);
             const everything = result.narration + JSON.stringify(result.toolCalls);
             for (const fragment of leaks) {
                 expect(everything, `"${phrasing}" leaked ${site.id}'s interior`).not.toContain(fragment);
             }
-            expect(result.state.run.elapsedDays, `"${phrasing}" spent a day`).toBe(0);
+            if (index === 0) {
+                expect(result.state.run.elapsedDays, `"${phrasing}" spent less than approaching a site costs`)
+                    .toBeGreaterThanOrEqual(daysSoFar!);
+            } else {
+                expect(result.state.run.elapsedDays, `"${phrasing}" spent a day`).toBe(daysSoFar);
+            }
+            daysSoFar = result.state.run.elapsedDays;
         }
     });
 
@@ -1752,7 +1774,7 @@ describe('asking what I know', () => {
      */
     it('answers a name nobody has said with nothing, and says nothing about it', async () => {
         const { db, game } = makeGame({ seed: 'recall-gate' });
-        const { cultivator } = await game.newRun('Ke Yan');
+        const { cultivator, run: fresh } = await game.newRun('Ke Yan');
         const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
 
         const real = await game.act('what do I know of Lu Sheng');
@@ -1768,7 +1790,8 @@ describe('asking what I know', () => {
         expect(everything).not.toMatch(/False Immortal|Empyrean Court|wanderer/i);
 
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
-        expect(real.state.run.elapsedDays).toBe(0);
+        // A read, unmoved past the run's own 08:00 opening.
+        expect(real.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 
     it('never writes a knowledge record, however it is asked', async () => {
@@ -1855,7 +1878,7 @@ describe('asking what I know', () => {
 
     it('lists the whole holding when no name is given, and it is short', async () => {
         const { game } = makeGame({ seed: 'recall-holding' });
-        await game.newRun('Ke Yan');
+        const { run: fresh } = await game.newRun('Ke Yan');
 
         const result = await game.act('what do I know');
         // A starting cultivator's world is the county and the local sect.
@@ -1863,7 +1886,8 @@ describe('asking what I know', () => {
         // limitation, so the read has to be allowed to be this thin.
         expect(engineCalls(result).map(call => call.name)).toContain('knowledge.awareness');
         expect(result.narration).toMatch(/names/);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // A read, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 });
 
@@ -1879,12 +1903,13 @@ describe('asking what I know', () => {
 describe('asking what my dao is', () => {
     it('says plainly when there is nothing, which is the ordinary case', async () => {
         const { game } = makeGame({ seed: 'dao-empty' });
-        await game.newRun('Ke Yan');
+        const { run: fresh } = await game.newRun('Ke Yan');
 
         const result = await game.act('what is my dao');
         expect(engineCalls(result).map(call => call.name)).toContain('engine.daoOf');
         expect(result.narration).toMatch(/comprehended nothing/i);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // A read, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 
     it('names the road, the insights and what they are worth', async () => {
@@ -2175,13 +2200,15 @@ describe('institutions acting on each other', () => {
 
     it('refuses a declaration from somebody who serves no house, and says what it would need', async () => {
         const { game, db, cultivator } = await standing(null);
+        const fresh = game.currentRun().run.elapsedDays;
         const result = await game.act('I declare war on the Nine Abyss Flame Sect');
 
         // Position, not rank. The rogue is not junior; they are outside.
         expect(result.narration).toMatch(/serves no house/i);
         expect(result.narration).toMatch(/a war is a thing between two houses/i);
         expect(commitments(db, cultivator.id)).toEqual([]);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // Refused for free, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh);
     });
 
     it('refuses a junior in the house, in that house\'s own titles', async () => {
@@ -2311,6 +2338,7 @@ describe('institutions acting on each other', () => {
         const { game } = await standing(theSeatOf(), {
             knows: ['apex-earth-vein-tower'], seed: 'requisition', worldSeed: 'requisition-world'
         });
+        const fresh = game.currentRun().run.elapsedDays;
         const result = await game.act(
             'I file a Requisition Against Standing Stock with the Earth Vein Tower'
         );
@@ -2319,7 +2347,8 @@ describe('institutions acting on each other', () => {
         // what makes being refused a complete interaction rather than a wall.
         expect(result.narration).toMatch(/arterial system rather than in terms of themselves/i);
         expect(refusedCall(result)).not.toBeNull();
-        expect(result.state.run.elapsedDays).toBe(0);
+        // Refused for free, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh);
     });
 
     it('never discloses what is on the standing stock, in either direction', async () => {
@@ -2467,7 +2496,7 @@ describe('institutions acting on each other', () => {
 describe('a rank pointer lands on somebody who holds the rank', () => {
     it('refuses rather than fighting whoever is nearest', async () => {
         const { game, db } = makeGame({ seed: 'rank-pointer' });
-        const { cultivator } = await game.newRun('Ke Yan');
+        const { cultivator, run: fresh } = await game.newRun('Ke Yan');
 
         const before = cultivatorRow(db, cultivator.id);
         const result = await game.act('I kill the elder');
@@ -2478,7 +2507,8 @@ describe('a rank pointer lands on somebody who holds the rank', () => {
         // written. Prose is not evidence here; the row is.
         expect(cultivatorRow(db, cultivator.id).hp).toBe(before.hp);
         expect(injuryCount(db, cultivator.id)).toBe(0);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // Refused for free, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     });
 
     it('still reads a killing as a killing when the sentence names somebody', () => {
@@ -2612,6 +2642,7 @@ describe('the far side of the Lid', () => {
         // practice observed among people who are not there, and two names
         // overheard through a wall on the other side of the Lid.
         const { game } = await above('look-above');
+        const fresh = game.currentRun().run.elapsedDays;
         const result = await game.act('I look around');
 
         expect(result.narration).toMatch(/the seam|the landing/i);
@@ -2620,7 +2651,8 @@ describe('the far side of the Lid', () => {
         // tenure and no holdings measured upward.
         expect(result.narration).toMatch(/below the Lid|times over/i);
         expect(result.narration).toMatch(/stands \d+ of \d+|residents/i);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // A read, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh);
     }, 120_000);
 
     // ── the two answers ──────────────────────────────────────────────────
@@ -2630,6 +2662,7 @@ describe('the far side of the Lid', () => {
         // answers and the game should present both; what it used to do was
         // print one refusal and stop.
         const { game } = await above('two-ways');
+        const fresh = game.currentRun().run.elapsedDays;
         const result = await game.act('I attack the Nine Abyss Flame Sect');
 
         expect(result.narration).toMatch(/two ways/i);
@@ -2641,7 +2674,8 @@ describe('the far side of the Lid', () => {
         expect(result.narration).toMatch(/nine strikes/i);
         expect(result.narration).toContain(String(BREATHS_IN_THE_LOWER_REALM.min));
         expect(result.narration).toContain(String(BREATHS_IN_THE_LOWER_REALM.max));
-        expect(result.state.run.elapsedDays).toBe(0);
+        // The attempt itself is an `attack`, costed like any other.
+        expect(result.state.run.elapsedDays).toBeGreaterThan(fresh!);
     }, 120_000);
 
     it('refuses the proxy for want of a line, and says what a line is', async () => {
@@ -2682,12 +2716,13 @@ describe('the far side of the Lid', () => {
 
     it('refuses the descent to anybody who is not above the Lid', async () => {
         const { game } = makeGame({ seed: 'no-descent', worldEnabled: true });
-        await game.newRun('Ke Yan');
+        const { run: fresh } = await game.newRun('Ke Yan');
         const result = await game.act('I descend through the Lid');
 
         expect(result.narration).toMatch(/nothing to come down from|staircase/i);
         expect(refusedCall(result)).not.toBeNull();
-        expect(result.state.run.elapsedDays).toBe(0);
+        // Refused for free, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     }, 120_000);
 
     it('is survivable and probably not, which is the whole design of it', () => {
@@ -2838,11 +2873,13 @@ describe('a malformed quantity', () => {
 
     it('costs the player nothing at all', async () => {
         const { game } = makeGame({ seed: 'negative' });
-        await game.newRun('Ke Yan');
+        const { run: fresh } = await game.newRun('Ke Yan');
 
         const result = await game.act('I enter seclusion for -5 years');
-        // State, not prose. This used to come back with 750 days on the clock.
-        expect(result.state.run.elapsedDays).toBe(0);
+        // State, not prose. This used to come back with 750 days on the
+        // clock; now it must stay at the run's own 08:00 opening and move no
+        // further.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
         expect(result.state.cultivator.realmOrdinal).toBe(0);
     }, 120_000);
 
@@ -2929,7 +2966,7 @@ describe('the pill loop', () => {
         }
 
         const { game } = makeGame({ seed: 'recipes' });
-        await game.newRun('Ke Yan');
+        const { run: fresh } = await game.newRun('Ke Yan');
         const result = await game.act('what recipes do I know');
 
         // The listing, with what it wants and what is missing - not the generic
@@ -2939,7 +2976,8 @@ describe('the pill loop', () => {
         expect(result.narration).not.toMatch(/nothing about it drew attention/i);
         expect(result.narration).toMatch(/Formula/);
         expect(result.narration).toMatch(/short of|holding everything/i);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // A read, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     }, 120_000);
 
     it('resolves a formula by name instead of picking one', async () => {
@@ -2975,7 +3013,7 @@ describe('the pill loop', () => {
 describe('attacking a house', () => {
     it('refuses with the reason, and names both routes that do exist', async () => {
         const { db, game } = makeGame({ seed: 'faction-attack' });
-        const { cultivator } = await game.newRun('Ke Yan');
+        const { cultivator, run: fresh } = await game.newRun('Ke Yan');
         const target = SECTS.find(s => s.id === 'sect-nine-abyss-flame-sect')!;
         new KnowledgeGate(db).learnIfNew({
             holderId: cultivator.id, kind: 'sect', id: target.id, name: target.name,
@@ -2996,7 +3034,8 @@ describe('attacking a house', () => {
         // And it is a refusal, not a fight: nothing was resolved, nothing spent.
         expect(refusedCall(result)).not.toBeNull();
         expect(injuryCount(db, cultivator.id)).toBe(0);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // Refused for free, unmoved past the run's own 08:00 opening.
+        expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     }, 120_000);
 
     it('says nothing about a house the player has not heard of', async () => {

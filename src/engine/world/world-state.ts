@@ -51,7 +51,7 @@ import {
     type HistoryLedger
 } from './history.js';
 import { forStream } from '../cultivation/rng.js';
-import { factsWithData, witnessIndexFor, witnessHistoryWasPruned } from './witness-reaction-index.js';
+import { factsWithData, factsWithDataValue, witnessIndexFor, witnessHistoryWasPruned, referenceKeys } from './witness-reaction-index.js';
 import { noteLedgerPruned } from './a-fact-that-keeps-happening-is-one-row.js';
 import {
     locationsFromPriorAges,
@@ -77,6 +77,7 @@ import type { AreaStatus } from './what-is-true-of-a-place-right-now.js';
 import type { Absence } from './when-somebody-does-not-come-back.js';
 import type { Posting, Candidate } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import type { GroundThatPays } from './what-a-house-does-when-it-cannot-pay.js';
+import { locationOnNpcJourney } from './places-on-the-way.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // FACTIONS
@@ -499,9 +500,11 @@ export function upsertObject(state: WorldState, object: ObjectRecord): WorldStat
     return { ...state, objects: replace(state.objects, o => o.id === object.id, object) };
 }
 
-export function npcsAt(state: Pick<WorldState, 'npcs'>, locationId: string): NpcRecord[] {
+export function npcsAt(state: Pick<WorldState, 'npcs'> & Partial<Pick<WorldState, 'locations' | 'currentDay'>>,
+    locationId: string): NpcRecord[] {
     return state.npcs
-        .filter(n => n.locationId === locationId && isActing(n.status))
+        .filter(n => isActing(n.status) && (state.locations && state.currentDay !== undefined
+            ? locationOnNpcJourney(state.locations, n, state.currentDay) : n.locationId) === locationId)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 }
 
@@ -780,11 +783,45 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
     const dropped = new Set<string>();
     const affected = new Set<HistoricalFact>();
     for (const id of gone) for (const fact of index.references.get(id) ?? []) affected.add(fact);
+    const retainedHullAuthority = new Map<string, HistoricalFact | null>();
+    const stillLocatesAHull = (fact: HistoricalFact): boolean => {
+        const vessel = fact.data.vesselId;
+        if (fact.data.publicPassage !== true || typeof fact.data.seaLaneId !== 'string'
+            || typeof vessel !== 'string' || fact.day > state.currentDay) return false;
+        if (!retainedHullAuthority.has(vessel)) {
+            const latest = factsWithDataValue(state, 'vesselId', vessel)
+                .filter(row => row.data.publicPassage === true && typeof row.data.seaLaneId === 'string'
+                    && row.day <= state.currentDay)
+                .sort((a, b) => b.day - a.day || (index.order.get(b.id) ?? 0) - (index.order.get(a.id) ?? 0))[0];
+            retainedHullAuthority.set(vessel, latest ?? null);
+        }
+        return retainedHullAuthority.get(vessel) === fact;
+    };
     for (const fact of affected) {
-        if (fact.actors.length > 0 && fact.actors.every(a => gone.has(a.id))) {
+        if (fact.actors.length > 0 && fact.actors.every(a => gone.has(a.id)) && !stillLocatesAHull(fact)) {
             dropped.add(fact.id);
         }
     }
+    // A surviving factual receipt/testimony keeps its actual referenced evidence.
+    // Use the existing reference index; a dead-only cycle has no surviving root.
+    const retainedEvidence = new Set<string>();
+    const retainedReferences: string[] = [];
+    for (const id of dropped) {
+        if ([...(index.references.get(id) ?? [])].some(fact => !dropped.has(fact.id))) {
+            retainedReferences.push(id);
+        }
+    }
+    for (let at = 0; at < retainedReferences.length; at++) {
+        const id = retainedReferences[at]!;
+        if (!dropped.delete(id)) continue;
+        retainedEvidence.add(id);
+        const fact = index.byId.get(id);
+        if (!fact) continue;
+        for (const reference of referenceKeys(fact)) {
+            if (dropped.has(reference)) retainedReferences.push(reference);
+        }
+    }
+
     const isDropped = (id: string): boolean => dropped.has(id);
     const stillOnRecord = (id: string): boolean => !dropped.has(id);
     for (const id of dropped) for (const fact of index.references.get(id) ?? []) affected.add(fact);
@@ -792,27 +829,35 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
     // A row that names nobody forgotten is handed back as itself, not rebuilt:
     // the recurrence index keys rows by identity, and rebuilding every row every
     // year re-keyed the whole ledger each time it was read.
-    const touches = (fact: HistoricalFact): boolean =>
+    const touches = (fact: HistoricalFact, data: HistoricalFact['data']): boolean =>
         fact.actors.some(actor => gone.has(actor.id))
         || fact.witnessIds.some(id => gone.has(id))
         || fact.causes.some(isDropped)
-        || withoutTheForgotten(fact.data, gone) !== fact.data
+        || data !== fact.data
         || (fact.consequences !== null && (
             fact.consequences.beneficiaries.some(a => gone.has(a.id))
             || fact.consequences.losers.some(a => gone.has(a.id))
             || fact.consequences.relationshipChanges.some(change => gone.has(change.aId) || gone.has(change.bId))));
     const previousFacts = state.history.facts;
     const replaced = new Map<string, HistoricalFact>();
-    state.history.facts = state.history.facts
-        .filter(fact => stillOnRecord(fact.id))
-        .map(fact => {
-            if (!affected.has(fact) || !touches(fact)) return fact;
-            const row: HistoricalFact = {
+    const survivingFacts: HistoricalFact[] = [];
+    for (const fact of previousFacts) {
+        if (!stillOnRecord(fact.id)) continue;
+        if (!affected.has(fact)) {
+            survivingFacts.push(fact);
+            continue;
+        }
+        const data = retainedEvidence.has(fact.id) ? fact.data : withoutTheForgotten(fact.data, gone);
+        if (!touches(fact, data)) {
+            survivingFacts.push(fact);
+            continue;
+        }
+        const row: HistoricalFact = {
             ...fact,
-            actors: fact.actors.filter(actor => kept(actor.id)),
+            actors: retainedEvidence.has(fact.id) ? fact.actors : fact.actors.filter(actor => kept(actor.id)),
             witnessIds: fact.witnessIds.filter(kept),
             causes: fact.causes.filter(stillOnRecord),
-            data: withoutTheForgotten(fact.data, gone),
+            data,
             consequences: fact.consequences === null ? null : {
                 ...fact.consequences,
                 beneficiaries: fact.consequences.beneficiaries.filter(a => kept(a.id)),
@@ -820,10 +865,11 @@ export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldFor
                 relationshipChanges: fact.consequences.relationshipChanges
                     .filter(change => kept(change.aId) && kept(change.bId))
             }
-            };
-            replaced.set(row.id, row);
-            return row;
-        });
+        };
+        replaced.set(row.id, row);
+        survivingFacts.push(row);
+    }
+    state.history.facts = survivingFacts;
     noteLedgerPruned(state.history, previousFacts, dropped, replaced, index.order);
     witnessHistoryWasPruned(state, previousFacts, dropped, replaced);
 

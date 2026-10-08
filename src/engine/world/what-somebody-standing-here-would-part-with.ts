@@ -185,6 +185,8 @@ export function itIsTheThingTheyAreStillUsing(
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface AnOfferStandingHere {
+    /** Present only where this offer moves an existing tracked consignment. */
+    objectId?: string;
     sellerId: string;
     sellerName: string;
     thingId: string;

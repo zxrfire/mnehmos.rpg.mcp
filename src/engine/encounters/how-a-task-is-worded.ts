@@ -11,8 +11,21 @@
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 
-/** "10 years", "3 months", "18 days" - whichever unit reads plainest. */
+/** Whole spans keep their ordinary units; a real fraction retains its hours/minutes. */
 export function humanDays(days: number): string {
+    if (Number.isFinite(days) && days > 0 && !Number.isInteger(days)) {
+        const whole = Math.floor(days);
+        // Display precision only: the actual span and body clock are untouched.
+        const seconds = Math.round((days - whole) * 24 * 60 * 60);
+        if (seconds === 24 * 60 * 60) return humanDays(whole + 1);
+        const hours = Math.floor(seconds / (60 * 60));
+        const minutes = Math.floor((seconds % (60 * 60)) / 60);
+        const remainder = seconds % 60;
+        const units: Array<[number, string]> = [[hours, 'hour'], [minutes, 'minute'], [remainder, 'second']];
+        const fraction = units.filter(([amount]) => amount > 0)
+            .map(([amount, unit]) => amount + ' ' + unit + (amount === 1 ? '' : 's')).join(' ');
+        return [whole > 0 ? humanDays(whole) : '', fraction || 'less than 1 second'].filter(Boolean).join(' ');
+    }
     const d = Math.max(0, Math.round(days));
     if (d >= DAYS_PER_YEAR) {
         const years = d / DAYS_PER_YEAR;

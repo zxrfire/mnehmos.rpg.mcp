@@ -4,6 +4,8 @@
  * A holder's instruction bypasses agreement. Taking the hand off leaves the
  * hollowing and its account intact. Read fresh rows after every act: the world
  * replaces records when it writes the fight's aftermath.
+ * Hollowing spends time. Its target's current routine placement is read again
+ * before issuing an instruction; sharing the earlier square is not presence.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, engineCalls } from './harness';
@@ -41,6 +43,7 @@ async function withSomebodyHollowed() {
     const account = () => db.prepare(
         "SELECT id FROM obligations WHERE holder_id = ? AND subject_id = ? AND cause = 'violated' AND status = 'open'"
     ).all(mark.id, me.id);
+    await standWhereThePeopleAre(harness, me.id, new Set([mark.id]));
     return { game, repos, run, live, me, account };
 }
 

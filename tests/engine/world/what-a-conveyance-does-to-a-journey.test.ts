@@ -1,6 +1,11 @@
 /**
  * What a conveyance does to a journey.
  *
+ * Oct 7: innate body flight at Void Tribulation is distinct from lower sword
+ * flight. The historical sword-school exclusivity below that grant remains;
+ * the poor sword-house availability fixture explicitly excludes an unheld
+ * bodily grant, rather than treating every catalog row as a held capability.
+ *
  * The decisions pinned here, each of which lives only as a number or a branch
  * and would otherwise be silently reverted by the next person who finds it
  * surprising:
@@ -248,9 +253,9 @@ describe('soaring on one\'s own blade', () => {
     };
     const OTHER_SWORD_ART = SWORD_ARTS.find(a => a.id !== FLIGHT_ART.id)!;
 
-    it('is the one conveyance that is nobody\'s property', () => {
+    it('keeps sword flight personal rather than property', () => {
         expect(FLIGHT.holding).toBe('personal');
-        expect(CONVEYANCES.filter(c => c.holding === 'personal').length).toBe(1);
+        expect(CONVEYANCES.find(c => c.id === 'conv-body-flight')?.holding).toBe('personal');
         expect(FLIGHT.heads, 'a technique cannot move a party').toBe(1);
     });
 
@@ -423,7 +428,9 @@ describe('what a journey burns', () => {
     });
 
     it('prices a craft out of reach of a purse that cannot cover the burn', () => {
-        const available = CONVEYANCES.map(c => ({ conveyance: c, power: null }));
+        // This sword-house fixture supplies its blade art, not an unheld Void grant.
+        const available = CONVEYANCES.filter(c => c.id !== 'conv-body-flight')
+            .map(c => ({ conveyance: c, power: null }));
         const crossing = { walkingDays: 30, heads: 12 };
         const rich = bestForThisRoad(
             available, crossing.walkingDays, crossing.heads, true, 100_000);

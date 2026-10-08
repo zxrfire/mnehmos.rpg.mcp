@@ -130,6 +130,7 @@ describe('a ten-year seclusion', () => {
     it('returns a digest and persists a state consistent with it', async () => {
         const { db, game } = makeGame({ seed: 'decade' });
         const { cultivator } = await game.newRun('Wen Shu');
+        const daysBefore = game.state().run.elapsedDays;
 
         // Fund the provisions: ten years of food is 73 rations. Without stones
         // the engine correctly starves the cultivator around day 55, which is
@@ -152,7 +153,7 @@ describe('a ten-year seclusion', () => {
         expect(Array.isArray(timeSkip.events)).toBe(true);
 
         // The digest and the database agree, field by field.
-        expect(state.run.elapsedDays).toBe(timeSkip.simulatedDays);
+        expect(state.run.elapsedDays - daysBefore).toBe(timeSkip.simulatedDays);
         expect(state.run.turn).toBe(1);
         expect(state.cultivator.age).toBeCloseTo(STARTING_AGE + timeSkip.deltas.age, 5);
         expect(state.cultivator.realmOrdinal).toBe(timeSkip.deltas.realmOrdinal);
@@ -482,11 +483,20 @@ describe('investigate', () => {
         const { db, game } = makeGame();
         const { cultivator } = await game.newRun('Reader');
         knowsTheHouse(db, cultivator.id);
-        const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
+        const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id) as Record<string, unknown>;
+        const daysBefore = game.state().run.elapsedDays;
 
         const result = await game.act(`I examine ${LOCAL_SECT.name}.`);
-        expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
-        expect(result.state.run.elapsedDays).toBe(0);
+        const after = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id) as Record<string, unknown>;
+        const { age, years_at_current_realm: yearsAtRealm, updated_at: updatedAt, ...unchanged } = before;
+        expect(after).toMatchObject(unchanged);
+        expect(Number(after.age) - Number(age)).toBeCloseTo(
+            (result.state.run.elapsedDays - daysBefore) / DAYS_PER_YEAR
+        );
+        expect(Number(after.years_at_current_realm) - Number(yearsAtRealm)).toBeCloseTo(
+            (result.state.run.elapsedDays - daysBefore) / DAYS_PER_YEAR
+        );
+        expect(after.updated_at).not.toBe(updatedAt);
         expect(result.state.run.turn).toBe(1);
     });
 });
@@ -617,12 +627,13 @@ describe('free actions', () => {
         const { db, game } = makeGame();
         const { cultivator } = await game.newRun('Watcher');
         const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
+        const daysBefore = game.state().run.elapsedDays;
 
         const result = await game.act('I look around.');
 
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
         expect(result.state.run.turn).toBe(1);
-        expect(result.state.run.elapsedDays).toBe(0);
+        expect(result.state.run.elapsedDays - daysBefore).toBe(0);
     });
 });
 

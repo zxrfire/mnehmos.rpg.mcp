@@ -432,7 +432,7 @@ export type TheAsk =
      * being null the moment one of these is on a wall. The day comes off
      * `whatThisHouseHasOnPaper` and never off the day the paper was read.
      */
-    | { kind: 'open_competition'; onDay: number }
+    | { kind: 'open_competition'; onDay: number; venueName?: string }
     /**
      * A price the house has put on somebody. Only the world holds one, so it
      * arrives through `alsoAsking` like a search does. See
@@ -555,7 +555,7 @@ export function whatThePaperSays(
             // whole of what an open competition is for and is therefore what the
             // paper states. `how-an-entrant-is-announced.ts` is the reading that
             // does it when somebody actually stands up.
-            return `${house.name} is holding an open competition at its own gate in `
+            return `${house.name} announces an open competition at ${ask.venueName ?? house.name} in `
                 + `${Math.max(0, ask.onDay - onDay)} days. Anybody may enter, of any house or `
                 + 'none, and everybody who stands up is called out by their name and by who '
                 + 'they answer to. The boards are run one to a realm, so you stand against '
@@ -698,7 +698,7 @@ export function noticesOnTheWall(input: WallInput & {
         .flatMap(house => {
             const holding = whatThisHouseHasOnPaper(input.competitionCalendar?.seed ?? input.seed,
                 house, input.competitionCalendar?.onDay ?? input.onDay);
-            return holding === null ? [] : [{ house, onDay: input.competitionCalendar
+            return holding === null ? [] : [{ house, venueName: holding.hostName, onDay: input.competitionCalendar
                 ? input.onDay + holding.onDay - input.competitionCalendar.onDay : holding.onDay }];
         })
         // Soonest first, and only one. A wall carrying three competition
@@ -736,8 +736,8 @@ export function noticesOnTheWall(input: WallInput & {
         });
     }
 
-    for (const { house, onDay } of dated) {
-        const ask: TheAsk = { kind: 'open_competition', onDay };
+    for (const { house, onDay, venueName } of dated) {
+        const ask: TheAsk = { kind: 'open_competition', onDay, venueName };
         out.push({
             kind: ask.kind,
             houseId: house.id,

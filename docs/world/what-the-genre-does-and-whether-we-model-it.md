@@ -56,6 +56,16 @@ may be safer for being kind.
 | **Sparing an enemy** | Must be priced as a risk. If a spared enemy never returns, mercy is free and the engine is rewarding it. |
 | **A mortal family sheltering a wounded cultivator** | Mortals exist at ordinal 0. What they are owed does not. |
 
+## Player knowledge and character knowledge
+
+**Owner ruling, 2026-10-03:** the human's learning across runs is distinct from
+this character's encounters. The rule and its boundary are kept in
+[`AGENTS.md: Player knowledge and character knowledge are different`](../../AGENTS.md#player-knowledge-and-character-knowledge-are-different).
+Apply it to ordinary informed requests, including cultivation rooms; use
+[`discovery.md`](houses/discovery.md#the-hard-rule-for-the-narrator) for what the
+world introduces without being asked. Access and private information retain
+their actual authorities.
+
 ## Acts over a set
 
 Design owner's ruling, and it is the general rule for every set-shaped sentence -

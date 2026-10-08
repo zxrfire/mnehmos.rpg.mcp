@@ -24,6 +24,7 @@ import {
 } from '../engine/world/door-materials.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import { residenceOf } from '../engine/world/somewhere-that-is-theirs.js';
+import { theActualResidenceDoor } from '../engine/world/a-residence-door-that-was-broken.js';
 import { theQuartersOf } from '../engine/world/the-room-a-house-gives-you.js';
 import { getLocation, indexById } from '../engine/world/world-state.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
@@ -38,7 +39,7 @@ import type { Execution } from './turn-wire-shapes.js';
 /**
  * The door this cultivator would shut, sitting where they stand.
  */
-export function theDoorYouSitBehind(service: GameService, cultivator: Cultivator): TheDoor {
+function theMaterialOfTheDoorHere(service: GameService, cultivator: Cultivator): TheDoor {
     const world = service.atHand;
     const placeId = service.worldPlaceOf(cultivator);
     const here = world && placeId ? getLocation(world, placeId) : null;
@@ -61,6 +62,17 @@ export function theDoorYouSitBehind(service: GameService, cultivator: Cultivator
     if (residenceOf(world, cultivator.id)?.id === here.id) return yourOwnDoor(here);
     if (here.kind === 'settlement' || here.controllingFactionId) return anInnDoor();
     return yourOwnDoor(here);
+}
+
+/** Actual physical door available to close; qi/cycle seals are independent. */
+export function theDoorYouSitBehind(service: GameService, cultivator: Cultivator): TheDoor | null {
+    const world = service.atHand;
+    const placeId = service.worldPlaceOf(cultivator);
+    const here = world && placeId ? getLocation(world, placeId) : null;
+    const residenceDoor = here ? theActualResidenceDoor(here) : null;
+    if (residenceDoor) return residenceDoor.brokenOnDay === null
+        ? { ...residenceDoor.material, locationId: residenceDoor.locationId } : null;
+    return theMaterialOfTheDoorHere(service, cultivator);
 }
 
 /** Whether a sentence given to `craft` is about reinforcing a door. */
@@ -105,7 +117,16 @@ export function reinforcingYourDoor(
 ): Execution {
     const world = service.atHand;
     const placeId = service.worldPlaceOf(cultivator);
-    const door = theDoorYouSitBehind(service, cultivator);
+    const here = world && placeId ? getLocation(world, placeId) : null;
+    const actualDoor = here ? theActualResidenceDoor(here) : null;
+    if (actualDoor && actualDoor.brokenOnDay !== null) {
+        return refused('engine.reinforceADoor', 'craft', factsForRefusal(
+            'The actual residence door is broken.',
+            'There is no intact slab here to reinforce. Repair must be an actual modeled action.',
+            'No beast part, grade, time or damage datum changed.'
+        ));
+    }
+    const door = theMaterialOfTheDoorHere(service, cultivator);
 
     if (door.whose !== 'yours' || !world || !placeId) {
         const whose = door.whose === 'the_house'

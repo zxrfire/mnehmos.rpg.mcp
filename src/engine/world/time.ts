@@ -1,3 +1,4 @@
+import { stopPersonalNpcAirCourseAtDeath } from './an-air-course-in-the-world.js';
 /**
  * Time.
  */
@@ -9,6 +10,7 @@ import { rankName } from '../cultivation/realms.js';
 import { hasBody } from '../cultivation/existence.js';
 import { settleEstate, whereTheyFell } from './estate-at-death.js';
 import { readDeathsTogether } from './reading-the-estates-settled-together.js';
+import { releaseTheirQuartersAtDeath } from './what-somebody-keeps-in-their-quarters.js';
 import {
     concurrentEventsFor,
     makeFact,
@@ -21,6 +23,7 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { theWakeOfADeath, whatADeathIsWorth, whatTheyHeldUp } from './what-a-death-at-this-height-is-worth.js';
 import { recordMasterLost } from './recording-where-somebody-stands-in-a-house.js';
 import { openingsBetween, type LocationRecord } from './locations.js';
+import { locationOnNpcJourney } from './places-on-the-way.js';
 // The two standings at which the world calls a tie something. Imported from
 // where they are defined rather than retyped here: `gatherings.ts` states in
 // its own comment that `FRIENDSHIP_STANDING` is the bar `settleNpcDeath` uses
@@ -31,6 +34,7 @@ import {
     isActing,
     isTheWorldsToMove,
     legacyGoals,
+    setLocation,
     theWorldEnds,
     theTieBecomes,
     upsertRelationship,
@@ -203,6 +207,8 @@ export interface DeathHandoff {
 }
 
 export interface AdvanceTimeOptions {
+    /** Exact physical passage portions; ordinary clock callers retain whole days. */
+    preciseDays?: boolean;
     /**
      * Stop at the first interrupting effect that lands. Default true. A player
      * sealed in a cave for thirty years passes false, and then genuinely misses
@@ -246,7 +252,8 @@ export function advanceTime(
 ): TimeAdvanceResult {
     const state = opts.inPlace ? stateIn : cloneWorld(stateIn);
     const fromDay = state.currentDay;
-    const daysRequested = Math.max(0, Math.floor(Number.isFinite(days) ? days : 0));
+    const finiteDays = Number.isFinite(days) ? days : 0;
+    const daysRequested = Math.max(0, opts.preciseDays ? finiteDays : Math.floor(finiteDays));
     const requestedTarget = fromDay + daysRequested;
     const stopOnInterrupt = opts.stopOnInterrupt ?? true;
 
@@ -368,19 +375,22 @@ export function advanceTime(
         const npc = state.npcs[i];
         // Only the living run out of lifespan. A missing cultivator is not
         // adjudicated by the clock, and a sealed one is not ageing.
-        if (!hasBody(npc.status) || !isActing(npc.status)) continue;
+        const lifespanEnds = bodyLifespanEndsOn(state, npc);
+        if (lifespanEnds === null) continue;
         // And the player's own death is not the world clock's to declare. It
         // belongs to the survival layer, on the sheet that actually holds their
         // years; the mirror row this pass can see is a projection of that sheet
         // and killing it would append a death to the chronicle mid-run.
-        if (!isTheWorldsToMove(npc)) continue;
-        const vessel = npc.bodyId ? state.npcs.find(n => n.id === npc.bodyId) : null;
-        const lifespanEnds = vessel?.cultivation.lifespanEndsOnDay ?? npc.cultivation.lifespanEndsOnDay;
         if (lifespanEnds > target) continue;
         const onDay = Math.max(fromDay, lifespanEnds);
         const rank = rankName(npc.cultivation.realmOrdinal);
+        // Death records the living body's actual ground at its true boundary.
+        // Once terminal, obsolete journey dates must never move the corpse.
+        const deathGround = locationOnNpcJourney(state.locations, npc, onDay);
+        const dying = deathGround && deathGround !== npc.locationId
+            ? setLocation(npc, deathGround, onDay) : npc;
         const dead = theWorldEnds(
-            npc,
+            dying,
             onDay,
             `Lifespan exhausted at ${rank}. Died of old age.`
         );
@@ -409,7 +419,7 @@ export function advanceTime(
             kind: 'death',
             scale: worth.scale,
             actors: [{ id: npc.id, name: npc.name, role: 'deceased' }],
-            locationId: npc.locationId,
+            locationId: dead.locationId,
             factionIds: npc.factionId ? [npc.factionId] : [],
             summary: `${npc.name}, ${rank}, reached the end of their lifespan and died of old age.`,
             visibility: worth.visibility,
@@ -474,6 +484,7 @@ export function advanceTime(
     }
 
     state.currentDay = target;
+    if (opts.preciseDays) state.currentHour = (target - Math.floor(target)) * 24;
     advanceSeparatedPresences(state, fromDay);
     changes.push({ entity: 'world', entityId: state.id, field: 'currentDay', from: fromDay, to: target });
 
@@ -746,8 +757,15 @@ export function whenTheWorldWouldInterrupt(
     return best;
 }
 
+/** The same body's stored expiry read by the clock and its boundary selector. */
+export function bodyLifespanEndsOn(state: Pick<WorldState, 'npcs'>, npc: NpcRecord): number | null {
+    if (!hasBody(npc.status) || !isActing(npc.status) || !isTheWorldsToMove(npc)) return null;
+    const vessel = npc.bodyId ? state.npcs.find(person => person.id === npc.bodyId) : null;
+    return vessel?.cultivation.lifespanEndsOnDay ?? npc.cultivation.lifespanEndsOnDay;
+}
+
 /** Every day inside `(fromDay, toDay]` this effect falls due on. */
-function* whenThisFallsDue(
+export function* whenThisFallsDue(
     effect: ScheduledEffect,
     fromDay: number,
     toDay: number
@@ -761,7 +779,7 @@ function* whenThisFallsDue(
     if (day <= fromDay) {
         // Closed form, not a walk: an annual effect first written four hundred
         // years ago must not cost four hundred iterations to skip past.
-        day += Math.ceil((fromDay + 1 - day) / repeat) * repeat;
+        day += (Math.floor((fromDay - day) / repeat) + 1) * repeat;
     }
     let guard = 0;
     while (day <= toDay && guard++ < 100_000) {
@@ -909,6 +927,8 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // than left in the world's things. Before the estate, so nobody inherits
     // half of a pair that cannot be spoken into.
     theirJadeBreaks(state.objects, deceased.id, onDay, read?.keyed(deceased.id).map(at => state.objects[at]!));
+    releaseTheirQuartersAtDeath(state, deceased, read);
+    stopPersonalNpcAirCourseAtDeath(state, deceased, onDay);
 
     const estate = settleEstate({
         dead: { id: deceased.id, name: deceased.name },

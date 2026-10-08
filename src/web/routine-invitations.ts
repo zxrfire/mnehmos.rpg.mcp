@@ -1,3 +1,7 @@
+import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
+import { spendOnOwnedPassage } from './an-owned-passage.js';
+import { spendAboardTheShip, spendAboardTheCarriage } from './an-actual-paid-passage.js';
+import { thePaidCarriageClaim } from './a-paid-carriage-on-the-road.js';
 /** Invitations end at night; visits end when the host leaves the room. */
 import { routineTime } from '../engine/world/npc-routines.js';
 import { walkingDaysFrom } from '../engine/world/locations.js';
@@ -9,9 +13,7 @@ import { factsForToolResult } from './facts.js';
 import { aSpanPastTheEndOfThisLife } from './actions.js';
 import { factsForRefusal } from './facts.js';
 import { refused } from './tool-result-prose.js';
-import { theseDaysPassedInTheWorldToo } from '../server/state/cultivation-world.js';
 import { WAITING_FOCUS } from './turn-constants.js';
-import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 
 /** Only an invited person is returned; ordinary world activity is never stepped. */
 export function endInvitation(game: GameService, npc: NpcRecord): void {
@@ -77,7 +79,7 @@ export async function waitForHour(
 }
 
 /** Fractions persist on the run clock; midnight advances the world with its observer. */
-export async function passHours(game: GameService, run: Run, cultivator: Cultivator, elapsed: number): Promise<{
+export async function passHours(game: GameService, run: Run, cultivator: Cultivator, elapsed: number, resolvesOnTurn = run.turn + 1, finishTurn = true, whileApproaching?: () => string | null): Promise<{
     spent: Execution | null; finished: boolean;
 }> {
     const days = elapsed / 24;
@@ -86,23 +88,50 @@ export async function passHours(game: GameService, run: Run, cultivator: Cultiva
         const pastTheEnd = aSpanPastTheEndOfThisLife(cultivator, days);
         if (pastTheEnd) return { finished: false, spent: refused('engine.aSpanPastTheEnd', 'wait', factsForRefusal(
             'Longer than the life asking for it.', pastTheEnd.line, 'Nothing spent.')) };
-        const whole = Math.floor(days);
-        if (whole > 0) {
-            spent = await game.shortSkip(run, cultivator, game.ambientFor(cultivator, run), WAITING_FOCUS, 'Waiting', whole);
-            if (spent.cutShort || spent.timeSkip?.simulatedDays !== whole) return { spent, finished: false };
+        const flying = game.worldEnabled
+            ? await spendOnPersonalAirCourse(game, run, cultivator, days, resolvesOnTurn, finishTurn) : null;
+        if (flying) {
+            invitationsDue(game, game.repos.cultivators.getById(cultivator.id) ?? cultivator);
+            return { spent: flying, finished: flying.outcome === 'executed' && !flying.cutShort
+                && !flying.timeSkip?.interrupted && !flying.timeSkip?.died
+                && (game.repos.cultivators.getById(cultivator.id)?.alive ?? false) };
         }
-        const fraction = days - whole;
-        if (fraction > 0) {
-            game.db.transaction(() => {
-                game.repos.runs.advanceDays(run.id, fraction);
-                const body = game.repos.cultivators.getById(cultivator.id);
-                if (body?.alive) game.repos.cultivators.applyDeltas(body.id,
-                    { age: fraction / DAYS_PER_YEAR, yearsAtCurrentRealm: fraction / DAYS_PER_YEAR });
-            })();
-            const afterRun = game.repos.runs.getById(run.id)!;
-            const after = game.repos.cultivators.getById(cultivator.id) ?? cultivator;
-            if (game.worldEnabled) await theseDaysPassedInTheWorldToo(afterRun, after, fraction);
+        const owned = game.worldEnabled ? await spendOnOwnedPassage(game, run, cultivator, days, WAITING_FOCUS, resolvesOnTurn, false, finishTurn) : null;
+        if (owned) {
+            invitationsDue(game, game.repos.cultivators.getById(cultivator.id) ?? cultivator);
+            return { spent: owned, finished: owned.outcome === 'executed' && !owned.cutShort && !owned.timeSkip?.interrupted
+                && (game.repos.cultivators.getById(cultivator.id)?.alive ?? false) };
         }
+        const aboard = game.worldEnabled ? await spendAboardTheShip(game, run, cultivator, days, resolvesOnTurn, finishTurn) : null;
+        if (aboard) {
+            invitationsDue(game, game.repos.cultivators.getById(cultivator.id) ?? cultivator);
+            return { spent: aboard, finished: aboard.outcome === 'executed' && !aboard.cutShort && !aboard.timeSkip?.interrupted
+                && (game.repos.cultivators.getById(cultivator.id)?.alive ?? false) };
+        }
+        const carried = game.worldEnabled
+            ? await spendAboardTheCarriage(game, run, cultivator, days, WAITING_FOCUS, resolvesOnTurn, finishTurn) : null;
+        if (carried) {
+            invitationsDue(game, game.repos.cultivators.getById(cultivator.id) ?? cultivator);
+            return { spent: carried, finished: carried.outcome === 'executed' && !carried.cutShort && !carried.timeSkip?.interrupted
+                && (game.repos.cultivators.getById(cultivator.id)?.alive ?? false) };
+        }
+        if (thePaidCarriageClaim(game.db, cultivator.id)) return { finished: false,
+            spent: refused('engine.physicalCarriageClock', 'wait', factsForRefusal(
+                'The actual paid carrier cannot continue.',
+                'Its current physical source no longer carries the accepted passage. Nothing spent.',
+                'A retained receipt cannot replace a lost driver or hull.')) };
+        // Route adapters above remain authoritative. Off transport, ordinary
+        // time uses native encounters, food, hostility and the held body iterator.
+        spent = await game.shortSkip(run, cultivator, game.ambientFor(cultivator, run),
+            WAITING_FOCUS, 'Waiting', days, undefined, resolvesOnTurn, finishTurn, whileApproaching);
+        game.atHand = await game.loadWorld();
+        if (game.atHand) {
+            invitationsDue(game, game.repos.cultivators.getById(cultivator.id) ?? cultivator);
+            game.theWorldMoved();
+        }
+        return { spent, finished: spent.outcome === 'executed' && !spent.cutShort && !spent.timeSkip?.interrupted
+            && !spent.timeSkip?.died
+            && (game.repos.cultivators.getById(cultivator.id)?.alive ?? false) };
     }
     game.atHand = await game.loadWorld();
     if (game.atHand) {
@@ -114,12 +143,17 @@ export async function passHours(game: GameService, run: Run, cultivator: Cultiva
 
 /** Ending company needs no agreement; it names the invitation already held. */
 export function dismissCompany(game: GameService, run: Run, cultivator: Cultivator, target: string | undefined): Execution {
-    const withYou = game.whoIsWithYouOnTheRoad(cultivator).filter(n => n.activity?.redirect);
+    const withYou = game.whoIsWithYouOnTheRoad(cultivator);
     const said = target?.trim().toLowerCase();
     const addressed = said ? game.partyPutTo(cultivator, said, game.scopeFor(cultivator)) : null;
     const leaving = said ? withYou.filter(n => n.id === addressed?.id) : withYou;
-    for (const npc of leaving) endInvitation(game, npc);
+    for (const npc of leaving) {
+        if (npc.activity?.redirect) endInvitation(game, npc);
+        else if (npc.activity?.kind === 'travelling') delete npc.activity.passageCompany;
+        else npc.activity = null;
+    }
+    if (leaving.length) game.theWorldMoved();
     return game.freeAction(run, 'request', factsForToolResult('Company ends.', [
-        leaving.length ? 'The invited company has ended.' : 'Nobody in your company answers to that name.'
+        leaving.length ? 'The company agreement has ended.' : 'Nobody in your company answers to that name.'
     ]));
 }

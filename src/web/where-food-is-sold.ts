@@ -1,3 +1,4 @@
+import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
 /**
  * Where a meal or a sack of dry food comes from, where somebody is standing: a settlement, the town
  * below a house's wall, or the house's own refectory for one of its own. Anywhere else the pack is
@@ -30,10 +31,11 @@ export type WhereTheFoodIs = { sold: true; where: string; houseId?: string } | {
  */
 export function whereFoodComesFromHere(game: GameService, cultivator: Cultivator): WhereTheFoodIs {
     // ABOARD, nothing is sold and the hull feeds its passengers until its rations run out.
-    if (theVoyageUnderWay(game.repos.db, cultivator)) {
-        const hullDays = theRationsAboard(game.repos.db, cultivator);
+    if (theVoyageUnderWay(game.repos.db, cultivator, game.atHand)) {
+        const hullDays = theRationsAboard(game.repos.db, cultivator, game.atHand);
         return hullDays > 0 ? { sold: false, hullDays } : { sold: false };
     }
+    if (betweenRoadEndpoints(game.repos.db, cultivator)) return { sold: false };
     const standing = standingOf(cultivator, game.atHand);
     if (standing.settlementKind !== null) return { sold: true, where: `in ${standing.placeName ?? cultivator.location}` };
     const here = theAreaTheyAreIn(game.atHand, cultivator);
@@ -71,7 +73,7 @@ export function theTownsTheyKnowHere(game: GameService, cultivator: Cultivator):
 
 /** What is said where nobody sells food: that, and the towns of this province they know. */
 export function whereFoodIsSoldInstead(game: GameService, cultivator: Cultivator): string {
-    if (theVoyageUnderWay(game.repos.db, cultivator)) return "Nothing is sold aboard a ship, and the hull's rations are gone.";
+    if (theVoyageUnderWay(game.repos.db, cultivator, game.atHand)) return "Nothing is sold aboard a ship, and the hull's rations are gone.";
     const towns = theTownsTheyKnowHere(game, cultivator).slice(0, 2);
     return towns.length === 0
         ? 'Nobody here sells food.'

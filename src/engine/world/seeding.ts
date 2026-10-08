@@ -1,3 +1,4 @@
+import { initializeMetricGround } from './the-metric-ground-under-a-journey.js';
 /**
  * World seeding: turning the content catalogs into a world that is already running
  * when the player arrives.
@@ -98,6 +99,7 @@ import { lineagesFromTheKinTheWorldWrote } from './a-family-is-the-people-you-ar
 import { CHILD_STANDING, PARENT_STANDING, rosterOf } from './the-ties-an-ordinary-life-produces.js';
 import { uniformsForEverybodyAlreadyOnARoll } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { theRingsAWorldOpensWith } from './who-opens-the-world-wearing-a-ring.js';
+import { keepTheirQuartersInOrder } from './what-somebody-keeps-in-their-quarters.js';
 import {
     applyTheLoans,
     whatEachHouseHasOutOnLoan,
@@ -110,7 +112,12 @@ import {
     whyItIsTheirs
 } from './a-house-bestows-a-thing-on-somebody-who-earned-it.js';
 import { transferPossession, makeObject } from './possessions.js';
+import { seedTheKeysThatOpenAHouse } from './the-keys-that-open-a-houses-doors.js';
 import { setWhatEverybodyIsAt } from './what-somebody-is-at-when-you-walk-up.js';
+import { seedTownPhysicians, givePhysiciansTheirOpeningWork } from './who-is-actually-seeing-to-wounds.js';
+import { addPlacesOnTheWay } from './places-on-the-way.js';
+import { applyPostings } from './the-world-changing-on-its-own.js';
+import { ordinaryAdultsTakeWork } from './the-work-an-ordinary-mortal-does.js';
 import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
     seedTheFamiliesStandingInAPlace,
@@ -350,6 +357,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const npcs = seedPopulation(
         state, opts.catalog, factions, population, presentDay, rollWorthModelling);
     npcs.push(...seedGateTownResidents(state, presentDay));
+    npcs.push(...seedTownPhysicians(state, presentDay));
     seedTheRemainingVeinGrants(state, presentDay);
     // AFTER the population, so every procedural person draws exactly what they
     // drew before this existed, and BEFORE the lineages, so the family the
@@ -462,7 +470,11 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // before the world began. See `a-recruit-is-given-their-lamp-at-the-house.ts`.
     state.objects.push(...uniformsForEverybodyAlreadyOnARoll(state));
 
+    applyPostings(state, presentYear, presentDay, { initialPlacement: true });
+    state.objects.push(...seedTheKeysThatOpenAHouse(state));
     setWhatEverybodyIsAt(state, presentDay);
+    givePhysiciansTheirOpeningWork(state, presentDay);
+    ordinaryAdultsTakeWork(state, presentDay);
     // And the medicine that mends a cracked cultivator, which is placed rather
     // than scattered: exactly the authored holdings, on exactly those bodies,
     // and nowhere else. See `who-holds-the-structural-repair-medicine.ts`.
@@ -572,6 +584,10 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // AND A RING ON THE HANDS THAT COULD HAVE COME BY ONE. After the lending, so nobody lends a
     // ring down, and with no draw. See `who-opens-the-world-wearing-a-ring.ts`.
     state.objects.push(...theRingsAWorldOpensWith(state));
+    // Their allotments already exist even while they work or travel elsewhere.
+    // Only the explicitly infinite robe issue creates a change of clothes;
+    // finite tools and medicine are moved, never copied.
+    keepTheirQuartersInOrder(state, state.currentDay, true);
 
     // AND WHAT EVERY ONE OF THEM IS DOING. Last, because it reads where people
     // ended up standing and what they ended up holding. Before this, every
@@ -588,6 +604,9 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // the only deaths a fresh world contains are the wrongs, and those now fall
     // on people it keeps.
     theWorldForgetsTheMortalDead(state);
+
+    addPlacesOnTheWay(state.locations);
+    initializeMetricGround(state.locations, state.seed, opts.catalog.regions, opts.catalog.factions);
 
     return {
         state,

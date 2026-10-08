@@ -247,3 +247,12 @@ something that opens a file.
 The hour is derived from the run's fractional elapsed day, with no second clock column.
 Invitation deadlines, return walks and interrupted activities use the existing NPC
 activity JSON; daily routines are derived and have no stored schedule.
+
+World NPC qi is the existing NpcCultivation balance round-tripped through one
+nullable REAL column. NULL means the older world never recorded that resource;
+native opening initializes it once and saves it. Actual spent values, including
+zero, survive reopening. Resource native04 observed a spent zero reopen as 30
+because the repository omitted qi; this storage seam fixes that loss without
+adding recovery, a second pool or repository mechanics.
+
+World NPC technique_cooldowns is nullable JSON holding remaining cooldowns from actual uses. A legacy missing column means no NPC art use had been recorded, and migration creates no active cooldown or resource refill.

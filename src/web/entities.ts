@@ -4,6 +4,7 @@
 
 import type Database from 'better-sqlite3';
 import type { Cultivator } from '../schema/cultivation.js';
+import type { LocationRecord } from '../engine/world/locations.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
 import { keptAs, type ObjectRecord } from '../engine/world/possessions.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
@@ -40,7 +41,7 @@ import {
 } from '../data/cultivation/regions.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
-import { loosePlaceKey, placeKey, type KnowledgeGate } from './knowledge.js';
+import { loosePlaceKey, type KnowledgeGate } from './knowledge.js';
 import { awarenessOfSite, faceOf, nameableSites, resolveSite } from './trials.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import { A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL } from './what-a-house-is-called.js';
@@ -48,12 +49,10 @@ import { getSect } from '../data/cultivation/sects.js';
 import type { WhereTheyStandOnARoll }
     from '../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
-import type { LocationRecord } from '../engine/world/locations.js';
 import {
     readALineageOffAName,
     readTheRollFor
 } from '../engine/world/reading-a-lineage-off-a-name.js';
-import type { WorldState } from '../engine/world/world-state.js';
 import { aTypoAway } from './names-as-they-are-spelled.js';
 import {
     theNamesThisOneAnswersTo
@@ -105,29 +104,11 @@ export interface KnowledgeScope {
      * The world's own object rows.
      */
     objects?: readonly ObjectRecord[];
+    /** Current place names, only for a name the player explicitly supplied. Never a public listing. */
+    locations?: readonly Pick<LocationRecord, 'id' | 'name'>[];
 }
 
-/**
- * The world location a free-text place name refers to.
- */
-export function worldLocationFor(world: WorldState, place: string | null): LocationRecord | null {
-    const wanted = (place ?? '').trim().toLowerCase();
-    if (wanted.length === 0) return null;
-
-    const exact = world.locations.find(l => l.name.trim().toLowerCase() === wanted);
-    if (exact) return exact;
-
-    // "the Jade Gorge" against "Emerald Water City", and the id form for anything
-    // that reached us already keyed.
-    const key = placeKey(wanted);
-    const loose = loosePlaceKey(wanted);
-    return world.locations.find(l =>
-        placeKey(l.name) === key
-        || loosePlaceKey(l.name) === loose
-        || l.id === wanted
-        || l.id.endsWith(`-${key}`)
-        || l.id.endsWith(`-${loose}`)) ?? null;
-}
+export { worldLocationFor } from '../engine/world/place-lookup.js';
 
 export interface ResolvedEntity {
     kind: EntityKind;
@@ -564,12 +545,7 @@ export function resolveCultivator(
     // The first line establishes who; nothing after it needs to.
     const facts = [
         `${match.name} is here, and reads as ${describeStanding(observerOrdinal, match.realmOrdinal)}.`,
-        match.alive
-            // THE NUMBER, not a remark about it. "However many of those show"
-            // is the engine gesturing at what a cultivator's age looks like,
-            // which is the narrator's line and not a fact anybody holds.
-            ? `They are ${Math.floor(match.age)} years old.`
-            : 'They are dead. Whatever ended them is not written where you could read it.',
+        ...(!match.alive ? ['They are dead. Whatever ended them is not written where you could read it.'] : []),
         affiliation
             ? `They wear the marks of ${affiliation}${match.sectRank ? `, and are addressed as ${match.sectRank}` : ''}.`
             : 'They answer to nobody visible.',
@@ -684,13 +660,22 @@ export function resolveSect(
     scope?: KnowledgeScope,
     memberOf: string | null = null
 ): ResolvedEntity | null {
+    // A supplied full name/key is an attempt, not a discovery grant. Stored
+    // house names override catalog names for the same authoritative id.
+    const houses = new Map(SECTS.map(sect => [sect.id, { id: sect.id, name: sect.name }]));
+    for (const sect of repos.sects.list()) houses.set(sect.id, { id: sect.id, name: sect.name });
+    const supplied = [...houses.values()].filter(sect => [sect.name, sect.id,
+        sect.id.replace(/^(?:sect|house|apex)-/, '').replace(/-/g, ' ')]
+        .some(name => loosePlaceKey(name) === loosePlaceKey(query)));
+    if (supplied.length > 1) return null;
+    const suppliedId = supplied[0]?.id;
     const heard = (id: string): boolean =>
-        !scope || scope.gate.isAwareOf(scope.holderId, 'sect', id);
+        id === suppliedId || !scope || scope.gate.isAwareOf(scope.holderId, 'sect', id);
 
     // Stable catalog keys remain usable after a house is renamed, including their word form.
     const keyed = SECTS.find(sect => (sect.id === query.trim().toLowerCase()
         || sect.id.replace(/^(?:sect|house|apex)-/, '').replace(/-/g, ' ') === query.trim().toLowerCase()) && heard(sect.id));
-    if (keyed) query = keyed.name;
+    if (keyed) query = repos.sects.getById(keyed.id)?.name ?? keyed.name;
 
     // "my sect"
     if (memberOf && MY_OWN_HOUSE.test(query.trim())) {
@@ -1262,6 +1247,20 @@ const SELF_AS_A_SUBJECT = new RegExp(
     + ')$'
 );
 
+/** A physical lodging query cannot be taken by the rank inside its room name. */
+export function resolveTheRoomTheyStandIn(query: string, self: Cultivator): ResolvedEntity | null {
+    if (!self.location) return null;
+    const asked = query.trim();
+    const storedHere = /^(?:(?:what|the things|the belongings|the stock) (?:is |are )?)?stored here[.?]?$/i.test(asked);
+    const thisRoom = /^(?:(?:the|this|my|your) )?(?:room|quarters|belongings|stored belongings|stored stock)(?: here)?[.?]?$/i.test(asked);
+    const namedRoom = /\b(?:quarters|dormitory|residence|room)\b/i.test(asked)
+        && [self.location, self.location.split(':').at(-1)!]
+            .some(name => loosePlaceKey(name.replace(/^the /i, '')) === loosePlaceKey(asked.replace(/^the /i, '')));
+    if (!storedHere && !thisRoom && !namedRoom) return null;
+    return { kind: 'place', id: self.location, name: self.location, facts: [],
+        structure: ['The physical room the observer already occupies; no search or movement.'] };
+}
+
 export function resolveAnything(
     repos: CultivationRepos,
     query: string,
@@ -1489,6 +1488,26 @@ export function resolveKnownPlace(
     scope?: KnowledgeScope
 ): ResolvedEntity | null {
     const here = (self.location ?? '').trim();
+    // A named real place need not have been encountered by this character.
+    // With a world, its current rows are authoritative; removed rows do not
+    // reappear from a catalog. World-disabled readers retain actual catalog geography.
+    const real = scope?.locations ?? REGIONS.flatMap(region => [
+        { id: region.id, name: region.name }, ...region.places.map(place => ({ id: place.name, name: place.name }))
+    ]);
+    // Unknown internal ids cannot disclose an interior's unsupplied name.
+    // Already-held ids retain the existing knowledge-key path below.
+    const supplied = real.filter(place => loosePlaceKey(place.name) === loosePlaceKey(query));
+    const unique = new Map(supplied.map(place => [place.id, place]));
+    if (unique.size > 1) return null;
+    if (unique.size === 1) {
+        const place = [...unique.values()][0]!;
+        const reading = resolvePlace(place.name)!;
+        return { ...reading, id: place.id, name: place.name,
+            facts: reading.name === place.name ? reading.facts : [
+                place.name + ', which is a name and not an observation of its present conditions.'
+            ],
+            structure: ['Exact supplied place name resolved against a current row; no remote observation.'] };
+    }
     if (here.length >= 2 && matchScore(query, here) >= MATCH_THRESHOLD) {
         return resolvePlace(here);
     }

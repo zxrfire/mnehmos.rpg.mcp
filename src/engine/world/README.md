@@ -2,6 +2,15 @@
 
 # The World Layer
 
+`forcing-an-actual-vault-lock.ts` reads a generated vault's actual own-lock
+entry rating, or its recorded reinforcement, through the existing `canUnmake`
+authority. Explicit force removes that lock's sealed and entry bars through
+an ordinary location change linked to the factual breach. Other thresholds,
+wards, hazards, keys, goods and ancestors retain their state. This covers
+noncyclic generated vault locks; private holder-area doors need their own
+physical barrier identity. Monetary damage settlement still needs an actual
+priced property authority, rather than treating a grade as a repair invoice.
+
 > **Tier 3 - reference.** Design rationale and the contract of the code beside it. Never
 > auto-injected into a narration prompt. The narrator's always-loaded text is
 > [`../../../docs/world/NARRATOR-CORE.md`](../../../docs/world/NARRATOR-CORE.md).
@@ -10,8 +19,68 @@ Places, the five capability predicates, opportunity windows, the historical reco
 lineage, possessions, NPC records and the world clock. Read this before changing anything
 in `src/engine/world/`.
 
+`who-is-actually-seeing-to-wounds.ts` seeds named mortal physicians only where
+the occupation catalog offers their work. Their ordinary routine controls
+whether a clinic is working. House dispensing is derived from an actual member
+doing ordinary rank work on its ground, excluding office holders, concrete
+crafts, closed lessons and travel. No separate staff roster is stored. Played
+care must reach that person before spending medicine or money. A worker stored in another
+room keeps that room’s physical claim and cannot be selected as an infirmary attendant.
+Dispensing reads only seat-derived ordinary work or ordinary work already on clinical ground.
+
+The owner's places ruling (2026-10-03): a place must have usable destinations and feel
+alive through its ordinary work, meals, training and private lodging. Reuse the generated
+mission hall, practice yard, elder offices, alchemy hall, artifact refining hall and treasury;
+do not invent a second institutional layout. Shared everyday rooms remain reachable by the
+newest members. Rank precincts, keys and sealed doors keep their ordinary restrictions.
+Knowledge of a room never grants its access. Office holders stand outside sealed offices.
+Every house has an ordinary infirmary for the wound medicine it already refines.
+Saved compounds acquire only that missing room through `addMissingInfirmary`, which uses
+their existing outer precinct, construction capacity and style. It does not rebuild old
+rooms or redeal keys and offices; a repeated call changes nothing.
+Its current dispenser is read once per compound placement from actual available members doing rank work;
+offices, closed lessons, shared scenes and absence keep their claims on those people.
+A clinic area is the physician’s indoor workspace, distinct from a town street.
+Its physical cover remains when empty; this grants no bed, meal or available provider.
+Catalog physician settlements have a stable clinic area; only the actual living physician
+doing that work is placed there. Sleep and travel leave the clinic empty.
+`activeProxiesByOwner` computes one observation's first surviving proxy for each owner using
+the same dated predicate as `whereYouCanActFrom`; it is never stored or reused after a mutation.
+Advancement invalidates neighbour, office and lesson reads after every existing roster reset. Its pure realm update and nonfatal breakthrough retain only the transient geographic route context because their nested writes affect people and history, not links or parents. Death and every future reset caller invalidate that context by default. The context still ends with the advancement pass; no roster position or geographic cache persists between passes.
+
+A posting call derives capital membership once lazily and shares population-ordered town lists by seat region only until that call returns. It reads scalar costs directly from its authoritative route trees. Each house sort lazily reads the same first draw for each named market/person coordinate once: the comparator, rank priority and stable ties are unchanged, and candidates never compared still draw nothing. Geographic changes between calls are read anew; NPC availability, purses, craft, held posts and relief remain current reads. No classification or score map is kept on the world.
+
+Capital competition attendance shares one transient route graph per board while filling its existing event-day position read, before registration and contest mutations. Dispatch consignment loading and annual exchange restocking accept the caller's graph context but project the current seller row at the actual loading day. Post relief shares the homecoming call’s geographic read and reads each current outgoing and replacement row anew after postings: handover facts and activity changes are never cached. These scopes share geographic paths only; they neither persist positions nor survive changes to the location graph.
+
+Body co-location reads `routineOf` at the observation day, including timed travel and local
+redirects. Yearly passes use their event day before the durable clock advances. Witnesses,
+duel crowds, gatherings, disaster casualties and vein workers cannot count a traveller at
+their endpoint early. Historical ground and dead bodies retain their recorded locations.
+At sea, simultaneous finite itineraries on the same actual hull, lane and endpoints derive
+deck groups: shipmaster, passengers, then hands, at most three. Extra decks remain reachable;
+different hulls never share a deck bin. This adds no stored party or artificial `withIds`.
+Treasury stock and craft equipment are actual objects at their physical location; ownership,
+carrying and location remain independent, and a visible item is not a free item.
+
+`where-in-a-place-somebody-is-standing.ts` derives stable public city destinations from
+settlement kinds and existing capital/exchange data. A capital's auction house is an area
+of the city, preserving the city ID used by its calendar, lots and exchange. An empty inn,
+teahouse or market row is still somewhere to go. Areas never become extra settlement rows.
+Every living sect member has a holder area inside the lodging `whichRoomARungGets` assigns,
+including while working elsewhere or away. The dormitory is shared; each member's assigned
+corner and stored belongings have their own holder. A promotion changes the derived lodging,
+not the storage key. Worn equipment and carried provisions stay on the person. Sleeping
+residents' rooms never replace the public entrance reached by a road.
+
+`the-work-an-ordinary-mortal-does.ts` gives actual grown factionless ordinal-0
+residents with unknown occupations eligible catalog work at opening and after
+yearly demography. Occupations with fewer existing workers weigh more on the
+person's own stream; no clinic is guaranteed a successor. Known professions,
+children, cultivators, house members and concrete activities are preserved.
+The only stored profession is `identity.occupation`; routine work reads it.
+
 Seeded named and raised adults keep the rung-based age and legal lifespan cap.
-The lifespan cap leaves its existing 10% plus a separately drawn 0–4 years,
+The lifespan cap leaves its existing 10% plus a separately drawn 0-4 years,
 spreading the early old-age cohort over a few years. Ordinary advancement reviews
 may extend that span; no extra attempts or improved odds are granted. Age
 offsets have their own streams, preserving unrelated seeding draws.
@@ -25,7 +94,9 @@ is below its opening target. Houses recruit through the existing intake doors.
 Background recruitment, birth placement and the house's own replacement share
 `aRollWorthModelling`, derived from its catalog standing, ladder and age.
 The whole living roll counts, including people away; successive admissions
-consume the same pass's vacancies. A full roll does not permanently refuse an
+consume the same pass's vacancies. A stronger patron with a standing feeder
+house leaves its last novice vacancy for a capital board; ordinary intake
+uses the other vacancies. A full roll does not permanently refuse an
 applicant for their root. Actual conceptions and existing people's family
 arrangements retain their ordinary rules rather than cancelling a known child.
 Children conceived by an act retain the household where they are raised.
@@ -39,6 +110,51 @@ province has one approach to its province node, preferring its capital; the
 parent chain therefore cannot replace a priced road with a free shortcut.
 Unlinked sites remain reachable by an approach. Journeys, house entry trips
 and parties racing to an opening all read this distance.
+
+`places-on-the-way.ts` divides long ordinary land links around actual intermediate
+ground without changing their total price. Its route read uses the same distance
+search. Crossings retain their sea-lane rules and existing water. A timed traveller's
+departure is historical activity state; destination and dates already live there.
+`routineOf` reads the body along that route and at its destination once due, before
+the yearly pass retires the activity. No person is created to decorate a road.
+A quiet player journey reaches its requested end. An overlapping real journey can
+stop it on intermediate ground; the original remaining price survives that pause.
+Vehicles use their actual travel days for overlap, and a ship's voyage retains its
+sailed days, crew and hull provisions on the existing water record.
+The ordinary NPC journey planner books affordable open public lanes through the
+same fare/calendar and crossing resolver as the board. A paid passenger and crew
+hold the actual hull's finite itinerary; its body position and independent arrival
+derive from that activity even after the player leaves. A craft, pilot and fuel
+must support an owned crossing. A parked service term does not burn travel fuel.
+Live `stationed` activities carry the actual dispatch origin and departure day;
+their initial passage reads the same one-person route and craft quote. The body
+stays at its post after arrival, including beyond the posting term, until relief
+actually happens. Established seed posts without a dispatch origin are residents.
+`public-shipping.ts` owns the existing board's named lanes and generated open-water
+dock services, including world-only docks. It quotes actual finite passage bounds,
+the existing fare and crossing manifest; a sponsor pays the total seat fare from
+its own purse. `ship-crew.ts` owns the same named crew factory and binds those
+people to the actual hull's leg. Current bookings, the crew's confirmed port and
+immutable passage/course facts locate a known hull. The historical read uses the
+existing sparse fact index; it keeps no fleet position. A hull with no existing
+record is realised at its first boarding dock, as the original crew factory did.
+Paid mission reservations are read from the existing mission fact, reached only
+through current living participants' activity pointers. A surviving peer retains
+the return berths; completion or cancellation of the last living continuation
+releases them. Actual bound or recorded sailings supersede the planned leg at
+that departure. An elapsed unboarded reservation never establishes the hull's
+actual landfall. A reservation never writes an actual boarding receipt. Earliest
+useful sailing reads existing hull/calendar boundaries and daily crossing quotes
+up to the physical occasion deadline; it has no separate cadence or attempt cap.
+A hull at another port with no known return is unavailable regardless of weather
+or lifespan. Position and required next-port obstructions jump to their existing
+physical event instead of scanning the intervening years.
+Ordinary NPC destination comparisons stay pure. Their chosen stored booking alone
+commits the existing named crew and actual passage history, without charging a
+second fare. Rebinding replaces physical leg fields while preserving all existing
+mission, purpose and companion activity facts.
+A turnback changes that departure's actual crew and booked passengers together,
+preserving passenger purpose and companions; another departure stays independent.
 
 Catalog interiors with a `gateOrdinal` seed an entry threshold. The ordinal
 does not set a permanent `sealed` flag; the ordinary ruin entry check enforces
@@ -61,6 +177,14 @@ and nearby people bypass those draws. Selected incidents use the ordinary
 resolvers. History reads share indexes by person, house, place, year and sparse
 data column; append cursors and affected-bucket updates survive mortal pruning.
 These indexes are ephemeral readings of the ledger and are rebuilt after loading.
+An already-started return to a lost member's own seat closes normally; arrival
+is what lets the house know them again. Other lost errands stay unclosed.
+Due ordinary journeys are settled only where `locationOnNpcJourney` can put
+the person. A legacy journey across unwalkable water without a booked hull or
+capable craft ends on its projected ground, before arrival or payment is
+recorded; a due date does not carry the body across it.
+When an absent person leaves the roll, issued holdings are handed back in that
+same transition, before any later recruitment can read them as still issued.
 Place presence and returned reports also retain fact references, so reads do not
 rebuild the accumulated roll each year. Contact settlement reuses the same
 witness and advancement resolvers before cards read their facts; contact review
@@ -118,11 +242,21 @@ arrival on its own stream. The catalog remains the opening allocation and proced
 The yearly pass reaches `scouts-place-children-on-probation.ts`,
 `an-extinguished-lamp-opens-an-inquiry.ts`, `rumours-revise-a-deciders-plans.ts`,
 and `entering-an-open-competition.ts`. Scout probation keeps its start on the
-person's record and grants no membership. Lamp inquiries distinguish a witnessed
+person’s record and grants no membership. Lamp inquiries distinguish a witnessed
 death from a missing account and use ordinary bounty proof. Rumour goals belong
 to deciders and feed the ordinary sending planner. Paid Dao admission is a dated
 receipt in history; a purse or art alone never grants access. Lectures, promotions
 and successful commissions write the existing face field.
+An open capital board also selects one eligible realm winner into a stronger
+house that their home house answers to. The selected member enters at rank zero;
+their old house loses them. A factor's old-house goods pass to another factor
+physically present or follow their original homeward mission before the new
+journey to the receiving grounds. The receiving house must have the roll vacancy it kept
+for that feeder relationship. It pays for the route to its grounds, including
+public ship berths if it owns no suitable craft. A factor returning old-house
+goods first finishes that return and receives the old stint's merit once, then
+begins the receiving house's journey. Internal boards do not move members
+between houses.
 
 The clock reads due effects through `pendingEffects`; physical presence outside compounds
 uses `npcsAt`. Witness pools ask `whoCouldHaveSeenIt`, keeping reach and participant reads
@@ -445,6 +579,62 @@ the two levers on it: how long a master takes to teach an art and to write one
 out, both read off `yearsToWriteOutACopy`.
 
 ## How many people a house has
+
+City missions use the existing free-hand, office and away-activity reads.
+`capital-missions-and-calendar.ts` supplies quarterly business opportunities
+and dated auction and competition delegations. Every visit carries an end and
+the sending house as its return destination. The pressure cursor runs these
+calendar dates once; returns run before each dated task and at a span's end.
+The activity keeps the departure ground and destination. `locationOnNpcJourney`
+places a delegate on the route until arrival, at the capital through service,
+and on the return route before the stint ends. A delegation that cannot reach a
+dated event by its event day does not enter it. The ordinary house yard and
+journey quote choose and pay for conveyance. Across water without a house craft,
+the house can prepay both directions on the public board. The mission fact keeps
+its dated berth reservations while a living delegate is still assigned. Each
+actual boarding uses the shared public passage and crew, and each land leg has
+an exact arrival on the pressure calendar. A route with no available passage or
+no return fare sends nobody. The city placement and seller
+reads use that same physical position.
+The seeder also fills the existing posting circuit, keeping its posting count:
+the nearest populous town first, then seeded city markets. Seeded holders start
+at their posts; later replacements travel the actual route and are present only
+after arrival. They use and pay for a house conveyance when the route needs one.
+Posts remain held while a replacement is on the road. Residents and house rolls
+stay intact; posting does not reassign the city's population pool. The pressure
+calendar visits each replacement's arrival, shared-day departure and homecoming
+at their route dates, without stepping through every day of the stint.
+
+`a-capital-auction.ts` consigns existing priced possessions through ordinary
+store approval or personal willingness. Lot, bid and closing facts are the
+ledger; arriving sellers consign on auction day, and payment and the possession
+transfer happen once. Manuals and medicines
+with no cash price are not converted into cash lots. Capital boards use the
+ordinary realm brackets, lessons and face, including the winning house's face.
+Their key includes the venue; attendance requires presence at that venue.
+The existing settlement-tier reader selects capitals and cities, including
+Iron Crest whose catalog kind is a market town. Courts seated on sect ground are
+not city markets. Auction calendars are annual and competition calendars span
+three years, independent of the visitor's lifespan.
+
+`wares-at-a-capital-exchange.ts` backs ordinary local seller offers with finite
+house consignments. Goods come from the existing house-workshop and regional-export
+catalog, paid from the house stores, owned by the house and carried by its factor.
+Looking never creates stock. A new delegation checks goods out at its ground and
+offers them only after its carrier reaches the city; a standing counter
+receives a seasonal shipment when sold out. NPCs and the player trade the same row
+and actual purses. Receipts and unsold stock return after the carrier gets home. Service
+houses without material wares do not acquire invented products.
+
+A standing post remains held until replacement arrives. `theyAreRelieved` transfers
+witnessed accounts through a told-fact row referencing the original accounts,
+and pairs both people for the shared day. Later relief passes those same accounts;
+it does not create one new report per old report.
+Departure follows the handover. One-off delegations simply return when their term ends.
+The relief fact records the served interval, including the shared day. The
+outgoing holder follows the return route; service merit and exchange receipts
+settle at actual home arrival. Older relief facts gain a departure receipt when
+their holder leaves.
 
 Temporary postings are read from each living person's `stationed` activity and
 the place's controlling house by `howStrongThisHouseIsNow`. The person stays
@@ -1544,15 +1734,13 @@ people never **met**: measured before this module existed, 221 inherited grudges
 centuries and not one of them originating in two people who had been in a room together.
 
 A gathering is an event that puts a defined set of people in one place for a defined time
-and produces outcomes that persist. Four kinds, differing in what they write:
+and produces outcomes that persist. Three informal kinds, differing in what they write:
 
 ```text
 meeting      introductions. Ties, and nothing else. The floor and the commonest.
 challenge    resolveConfrontation with intent 'subdue'. The interesting endings are
              the ones where nobody-gets-hurt fails, and the one where the gap turns out
              to be categorical - which opens a GOAL, and goals inherit.
-competition  ranked on assessPower times a seeded showing. Moves resources.prestige,
-             and can select the winner UPWARD into the host house at its lowest rank.
 expedition   several houses' chosen enter a site and are scored on the HAUL (wings
              worked, weighted by depth - rewards spreading out) or on a PROOF (who
              reaches a named room first - rewards reading the place, because
@@ -1992,14 +2180,14 @@ Two things follow, and both are consequences of that table rather than rules of 
   formidable teachers.
 - **Each tier's floor is stocked from the tier below's ceiling.** An apex's outer
   disciples are substantially people who were the chosen at a court, taken upward -
-  `gatherings.ts` already moves a competition winner into the host house at rank 0 with
+  The former random gathering competition moved a winner into the host house at rank 0 with
   the `chosen` tag stripped, and because relationships live on the person's own record
   they arrive still holding their ties to the house they left. The claim is about
   *proportion*, not composition: most people at the bottom of an apex walked in the gate.
   **Measured, this does not currently show up in the connectedness figures** - ties per
   head at 120 years run apex 3.12, court 4.24, sect 5.02, small 4.92, so the apex is the
   *least* connected band, because its members are largely catalog figures seeded at a seat
-  with no local household. Selection upward fires about five times per fifteen hundred
+  with no local household. The removed automatic selection path fired about five times per fifteen hundred
   world-years, which is far too rarely to shape anything. The mechanism is real and the
   effect is not yet measurable.
 
@@ -3005,6 +3193,24 @@ the-room-a-house-gives-you.ts
                  key is the PERSON and the HOUSE, never the room, so promotion
                  moves the room and strands nothing; `removeMember` empties it
                  back onto the person, so storage is never a trap
+what-somebody-keeps-in-their-quarters.ts
+                 assigned quarters hold ordinary object rows under the same
+                 person/house key, independently of the member's current job
+                 or posting. World opening and house arrival issue a mundane
+                 change of robes through the existing infinite uniform stock;
+                 finite reserve goods are moved from the member, never minted.
+                 Worn and held gear, membership and communication equipment
+                 remain ready. A remote body cannot put goods away. Departure
+                 returns the actual objects, and death releases stored goods at
+                 their lodging rather than at the corpse; the shared death read
+                 is updated on that transfer as on ordinary estate transfers
+                 Scene stock and housekeeping share `readQuartersTogether` for
+                 one pass: lodgings are read once per house and objects grouped
+                 by holder. Transfers update that ephemeral read; no projection
+                 is kept in the saved world or reused after its pass
+                 Carried goods follow `locationOnNpcJourney` in that read; a
+                 party's stored destination is not its body's current place,
+                 and travelling toward the house cannot put goods away there
 war-melee.ts     the live caller: a war between two houses, which is a group
                  fight and nothing else. Ruled by the design owner - *this can
                  be easily simulated as a group fight, not bespoke* - so it
@@ -3526,50 +3732,31 @@ decision.
 **Not reachable by a sentence yet.** Nothing in `src/web/` lets a player buy or sell a
 craft, and no verb was written for it here.
 
-### The open competition, and the half of it that is built
+### Competition calendars and entries
 
-`gatherings.ts` is the **closed** competition and is complete: houses that would sit down
-with each other, delegations drawn from `chosenOf`, one board per realm. The **open** one -
-a house that opens its own gate to anybody, of any house or none - is the design owner's
-and was never built. What was measured before starting: `Gathering`, `applyGatherings` and
-every conclave reader had **zero references anywhere in `src/web/` or `src/server/`**. The
-whole subsystem ran headless, and the only channel any of it ever reached a player through
-was `what-people-are-saying.ts`, in the past tense with no date. **A competition nobody can
-hear about before it falls is not a competition.**
+`competition-calendars.ts` states each city's three-year open board, each house's
+seven-year internal board, and its fixed conclave cadence. A seeded phase and date
+repeat on that cadence. Calendar events do not depend on lifespan or a rate draw.
+`a-competition-anybody-may-enter.ts` reads those rows for the existing wall notices;
+`capital-missions-and-calendar.ts` reads the same city rows for delegations.
 
-- **`a-competition-anybody-may-enter.ts`** - the calendar, and the first slice. A house
-  opens its gate about every `AN_OPEN_COMPETITION_EVERY_YEARS`, the day is a function of
-  the seed, the house and the **year**, and the paper goes up within
-  `A_NOTICE_GOES_UP_DAYS` of it falling. It is a fourth `TheAsk` rather than a channel of
-  its own precisely because the discovery layer is already four deep and wired -
-  `noticesOnTheWall`, `readTheWall`, `billsOnTheWall`, `whatThereIsToWaitFor` - and a
-  second announcement channel beside four working ones would be this directory's dominant
-  defect committed on purpose.
-- **`how-an-entrant-is-announced.ts`** - name, then who they answer to, **including
-  nobody**, in one shape both ways. Derived over the placing rather than stored, and it is
-  what makes a rogue cultivator's placing worth anything. Routed into `runCompetition`'s
-  board line.
+`entering-an-open-competition.ts` settles both public city boards and private house
+boards through `rankAField`. Only physically present entrants are placed; each realm
+has its own winner. Internal entrants must belong to the host. A city board admits
+any house and the unaffiliated. The existing player competition verb registers on
+that same board. Results carry announced affiliation, realm, placing, face and lessons;
+public results use the ordinary witnessed-fact and distance-awareness machinery.
+Conclave seats are apportioned between realm boards before ranking within them.
 
-**The wall had no room and the measurement is why it has one nail more.** A fourth kind in
-the ask pool made the kinds outnumber the nails, and which one was dropped became a
-property of the seeded draw - a wall that had stopped posting work, the exact defect
-`houses-that-have-to-advertise-for-disciples.ts` was written against. Given only leftover
-nails instead, it measured **dead: zero competitions reached any city wall on the shipped
-map across three years**, because a real province has enough houses wanting hands to fill
-every nail every day. So `A_DATED_PAPER_TAKES_ONE_NAIL` is an extra nail rather than a
-shared one, and `BILLS_A_WALL_CARRIES` now means standing business only.
+Random inter-house competitions at sect grounds were removed from `gatherings.ts`:
+those meetings still produce introductions, friendly challenges and expeditions.
+The earlier wall measurement pooled house calendars (36% notice coverage); the
+owner's three-year city calendars replace that arrangement. Reachable houses also
+advertise other cities: the earlier four-city, three-year wall sweep measured 41.2% coverage.
+Dated paper retains
+its own nail beside standing work, because sharing those nails previously suppressed
+all dated notices on the shipped map.
 
-**And the rate is a province's figure, not a house's.** Four cities, three years: at every
-three years a competition was pending on **70%** of days, which is furniture; at every
-seven, **36%**, and all four cities carried one inside a player's first year.
-
-**Entries and results are live.** `I enter the public competition` registers the player
-at its host, preserving their id in an entry fact. `entering-an-open-competition.ts`
-uses the gathering resolver's realm brackets for the public board. Nearby idle NPCs
-also enter, each on a seeded one-in-five draw. Results, absence, affiliation announced by the host, face, and lessons
-are persisted once. The yearly pass handles NPC boards; boards with the player wait
-for the turn handler to supply attendance from the character sheet. The calendar
-still chooses the hosting date; the contest's lesson credit reads the actual field.
 - **`a-year-at-the-doors.ts`** - the yearly pass, one call. It routes `shutAPublicRuin`
   rather than rebuilding it. **That module had no caller outside its own test**, which is
   the whole of why nothing in the world was ever held.
@@ -3927,3 +4114,282 @@ Mortal pruning removes forgotten obligation participants while retaining
 accounts whose holder and subject remain. Exact nearby resolution uses the
 card area's placement, including projections, and expires shared activities
 on each scheduled pass's own day.
+
+`routeQueriesFor(locations)` is a transient shortest-tree read for one explicit
+synchronous batch with a read-only location graph. Optional route contexts flow
+through canonical journey and routine reads; each origin uses the existing
+walking distance search and predecessor order. No world, day, NPC state or
+placement is cached. Discard the context on leaving the read batch or before a
+graph mutation. A new batch observes changed links even with the same array IDs.
+Public distance results remain independent mutable maps.
+
+The advancement pass shares a route query context across its existing
+neighbourhood reads, constructing it lazily at the first read. Every existing
+neighbourhood reset also discards the context, so subsequent reads follow
+settlement and crossing mutations. Standing IDs and areas keep their existing
+per-place read lifetime; rates re-read the current people and their bodies.
+
+
+
+The yearly witness pass and homecoming sweep each own a fresh synchronous
+route-only read batch. Their nested work changes people, possessions,
+resources and history, but does not mutate the location graph. Witness
+placement, areas and authority reads share the graph context through the
+existing lookup; homecoming keeps reading each current activity after
+mission continuations and prior returns. Neither batch caches NPC rows,
+clocks, placement, pressure or the whole world. Discard the context before
+introducing any nested geography mutation.
+
+
+Capital sending, posting, witness and homecoming passes share only graph queries within a synchronous pass whose callers leave the graph unchanged. Capital public route choices use the same scope; no WorldState cache or coarse revision survives a pass. Quotes, reservations, purses and the current people are still read at each decision. Later calls rebuild from the current graph, including edits to existing links.
+
+
+Within an explicit route read batch, the location lookup, child ordering and
+province approach gateways are prepared once. Every source tree uses the same
+walking search as an unscoped read, with the existing open-link, minimum-price,
+containment and stable heap rules. Its relaxation helper is created once per
+search. This preparation has the same read-only graph lifetime as the context;
+the next batch prepares changed geography anew.
+
+A homecoming call shares its one route query context with its posting prefix,
+relief checks, consignment placement and return reads. An independent posting
+call creates its own fresh context after confirming there are towns to serve.
+The shared prefix mutates NPCs, resources, goods and history only; scheduling
+callbacks enqueue later tasks and do not execute them during this read batch.
+All NPC/activity reads keep their existing timing. Discard the context at the
+end of each call, including consecutive calls on the same world day.
+
+Public mission continuations use the homecoming call's transient geographic
+read across all waiting, outward and return legs. Independently invoked
+continuations create a fresh read; a context for another location array is
+replaced. Canonical member placement, bookings, hull availability, dates and
+purses remain current reads at each leg. Crew binding mutates NPC activity and
+passage facts only; it neither extends this context nor caches eligibility.
+
+The live census profile `census-live-20261003-01.aggregate.json` sampled 12.736s
+at 118 elapsed years: mortal forgetting was .983s inclusive, and consignment
+return .792s inclusive (.501s self). These are sample costs, not promised gains.
+The forgetting pass traverses surviving historical facts once, preserves their
+order and unchanged row identity, sanitizes flat data once per affected row,
+and calls both existing pruning hooks in their original order. Retention,
+dropped causes and cross-table cleanup are unchanged. A consignment return
+collects matching object indices once for that call; fact append and purse
+settlement do not insert or reorder objects before transfers. The indices are
+not shared with another return or kept on the world.
+
+World opening creates ordinary marked house keys for the existing architecture locks. The canonical portfolio supplies physical custody; an empty office stores its key in the actual room. Engraved room names make key names perceivable. There is no periodic replacement, office-change teleport or saved-world missing-key mint.
+
+Estate settlement retains an existing tracked world row's recorded owner, including nobody, while recording physical custody and any looting/loss. Only a newly materialised pouch object establishes its first owner at death. See docs/world/things/items.md for the ownership rule; death does not create a second claim decision.
+
+Dated access to a noncyclic locked room reads its actual held key, exactly as undated access does. A real opening cycle answers its own window; a key does not override a closed cycle. Keys do not waive the body/entry thresholds or house/private-room permissions. `isOpenOn` retains its physical opening query; `evaluateAccess` asks it only when a cycle governs the door.
+With no keyed opening, a noncyclic seal remains closed on both reads. Ordinary entry
+does not stand in for the separate attempt to break it; see the owner ruling
+[A locked door can be broken](../../../AGENTS.md#a-locked-door-can-be-broken).
+
+The full locationOnRoute read includes departure and destination endpoints.
+The exported isWater reader uses existing catalog water and named sea lanes;
+scene tests and passenger readers must not invent a second water tag or route.
+
+Accepted carriage and ship receipt reads use `journeyTimeHasReached` together
+with their actual driver/crew destination ground. A canonically reached landing
+reports zero remaining days; summing portions does not create a phantom tiny
+remainder. Reads never snap the stored clock, and a real unfinished portion
+retains its remaining span. Native body receipts remain the body authority.
+
+A partial foot journey keeps its historic origin and admitted directed edge/fraction
+inside the existing SQLite `road_stopped` JSON only. Changed destinations price
+both legal endpoint continuations through canonical route steps; continuing the
+same target retains admitted orientation. Each committed native body portion
+updates that sole cursor before world callbacks. Endpoint rooms, people, food
+sales and roofs require an actual reached vertex, not the coarse displayed
+corridor. Actual timed NPCs use the same guarded route projection before area
+caps; matched followers derive the leader's position. Engine-only readers with
+no played SQL leader position cannot assert an exact endpoint for those followers.
+Legacy cursors lacking origin cannot reconstruct a changed-target distance;
+they retain only their original continuation and conservative physical reach.
+Reopening reads the same flag, and actual relocation invalidates its old marker.
+
+Native foot checks suspend the existing encounter cadence at actual check dates.
+The sole stopped-road cursor is projected before fresh encounterInputFor reads
+company. A new admitted course captures its actual historical run/world moment
+once in that same flag; same-target continuation retains it, whereas a newly
+chosen course has its own actual departure occasion. Unknown old moments are
+not reconstructed. The held native body/pack iterator commits portions before
+world consequences, then the existing occurrence/account/fight authorities
+resolve that check. Departure zero spends no body time or food and completes a
+living action only through the native turn authority. Delivered occurrence
+receipts are merged once; no future departure cast is kept as current company.
+
+An observer on a known unfinished road edge uses only exact matching physical
+positions. Those already-filtered bodies share its public contact point before
+the existing three-person area cap; the coarse endpoint label supplies no rooms
+or residents. Vertex placement retains ordinary named-area draws.
+
+An owned residence's physical slab follows the actual tagged location, including
+a later title holder or an empty residence after death. `a-residence-door-that-was-broken.ts`
+reads native door material/reinforcement and the one changing `doorBrokenOnDay`
+datum. Native `canUnmake` decides force; `applyLocationChange` records damage
+against the actual destruction deed. No derived grade or key is stored. An intact
+slab does not itself assert a locked or shut door. Breaking it leaves qi seals,
+cycles, hazards, permissions, title and goods unchanged. No repair action,
+private physical-slot allocation or inn-door damage lifecycle is implied.
+
+Accepted foot and public carriage ground journeys supply exact intermediate
+vertex moments from the already priced canonical route to the existing clock
+boundary reader. A quiet span reaches each vertex before its onward portion;
+this adds no encounter rolls, mandatory player actions or stored position.
+Foot projection still uses its sole SQL cursor and carriage projection its
+actual dated driver. Real interruption retains that reached ground and the
+existing remaining-course authority. Played direct aircourses remain separate
+unresolved scope: a ground vertex chain is not an air route. The metric and
+capability foundation below does not itself execute a flight.
+
+
+Public travel venues derive from the same public route profile used by ticket
+menus. A landing, carriage station or folding counter has a local area only
+where the existing native offering or surveyed counter exists. Ordinary locals
+know its public existence and advertised routes without travelling first.
+An actual question may teach the advertised carrier route; passive boarding
+does not automatically grant walking knowledge. Directions reuse native
+walking, carriage and paid-span quotes without booking or payment. Paid-span
+passengers need no personal spatial fix. No private service or universal map
+is inferred. Public availability remains the native quote and timetable answer.
+The existing current-person counter reader remains responsible for a listener;
+a public venue alone does not establish a staffed counter or invent a worker.
+
+An actual paid or owned passage suspends an established company agreement once
+in NpcActivity.passageCompany; canonical party reads that original agreement
+while the current activity describes the physical course. Arrival restores only
+a still-valid agreement on the ground actually reached, without synthesizing
+a homeward journey or invitation dismissal. Death, expired terms and revoked
+company do not acquire membership. Fellow passengers remain actual vessel/area
+presence and never become the RPG party merely by boarding together.
+
+An established party agreement can persist while its holder boards a different
+actual craft. Ordinary party arrival cannot move a row whose current activity
+is independently travelling: that accepted physical course must carry its own
+body. Canonical membership and actual co-travel remain separate readings of
+the same activity, without a passenger roster or a second movement clock.
+
+An accepted physical carrier may supply its exact current hull/course and real
+operator to ordinary area placement. Its living dated members are selected
+before the foreground cap. Hull chunks use that accepted course identity rather
+than the hourly town-routine draw; unrelated hulls or regional residents cannot
+fill its decks. Explicit currently offered person areas retain their authority.
+This transient read stores neither a roster nor another position. Generic
+engine callers without the played accepted claim retain their existing read.
+
+Native verification, Oct7: Deck04 native84364 passed the large owned boat
+local-deck/greeting and actual unrelated-hull exclusion controls. Deck05
+native92877 passed ordinary public passenger name-giving/dialogue, chosen-deck
+preservation and shore-room refusal, with all runtime-module/hash coverage.
+These verify mechanics; repaired ship model narration remains to be played.
+Authored hull rooms and captain course requests are still separate pending work.
+
+The surveyed span crossing retains its catalog hour in the counter quote,
+alongside the existing timetable wait and passenger recovery. The former
+whole-day quote omitted the hour and the web arrival rounded it to a day.
+Paid span passage now uses the existing ordinary held body/world iterator
+with exact quoted days; unrelated legacy arrival callers retain their costs.
+This corrects duration only; separate crossing/recovery ground phases remain
+a required physical-travel follow-up rather than a completion claim.
+
+
+Public counter staff are actual local working people selected by one derived
+read shared by area placement, anonymous keeper resolution and current-work
+scene facts. A worker sleeping, eating, away, in company or doing a concrete
+task keeps that circumstance; an incompatible existing profession or an
+explicit other area is not reassigned to a counter. No staff roster, new
+profession or guaranteed attendance is stored. An empty counter has no
+listener. Surveyed folding passage remains the existing institution's
+terminal/courier service; its ordinary attendant is not asserted to have a
+personal spatial cultivation ability. Institutional passage authority is
+independent of whether a clerk is available for dialogue.
+
+Counter staffing deals transient structural worker facts from actual body sources.
+World facts require their real routine; repository-only listeners are projected by
+the web canonical presence reader, without manufacturing an NPC or routine. The
+same ordered deal and stream read both sources and never persists its selection.
+
+The selected public counter worker claims the existing service area before
+ordinary area packing. An inn worker stands at the named inn, rather than a
+random teahouse or noodle stall; other counters use their canonical service
+area. This reuses the same staffing selection used by payment. Explicit routine
+areas, home, shared activities and accepted carriers retain their physical
+claims; no absent worker or extra counter is created. Diagnostic07 observed a
+trading inn worker packed into the noodle stall and six rental failures. The
+placement repair awaits native checks and actual model acceptance.
+
+Company may have an explicitly agreed term or an unstated ongoing end. That
+end remains nullable in the same activity authority; no default night expiry
+is imposed on an explicit ongoing journey. New consent during a hull passage
+replaces only its suspended agreement, and explicit dismissal removes that
+agreement without cancelling or moving the physical passage.
+
+Public carriage quotes and numbered capacity refusals share one pure native assessment. The existing quote API derives its nullable quote from that assessment; callers do not recount seats. The same actual reservation set and native head count include the driver, while a refusal reports remaining passenger places against requested bodies. Other unavailable source/custody/course refusals stay distinct; neither refusal commits a booking, cost or clock.
+
+Actual finite-course landfall is written once per living body and accepted physical course in ordinary world history, after actual destination location commits and before the original activity or played carrier pointer is forgotten. `a-body-that-actually-arrived` retains immutable course/cause provenance and deduplicates identical arrivals. Current party membership, a ticket, a scheduled deadline or unrelated bodies meeting at a destination do not prove delivery. Player carriage, held craft and public ship projectors require their actual live arrival authority; unavailable carriers and dead bodies do not write an arrival. NPCs record their finite leg only when the native arrival path actually commits destination ground. A pending sending that did not move is not credited. No new clock, roster or payment system is stored. A common-course proof reads individual arrival facts and current living co-location; distinct tickets for the same exact hull/course can share a journey. Played foot travel still lacks an accepted per-body finite course and is not silently supplied equivalent proof.
+Metric ground lives once in exterior location data. Catalog region/place anchors
+are authored in li; a walking-day of physical distance is eighty li. Independent
+generated sites sample their parent's actual bounded extent on the world seed's
+physical-ground-position stream once (province extents are authored; the local
+exterior extent is three li). Renaming, road changes and later reads do not move
+an assigned site. Compound interiors and the existing single road midpoint derive
+from their actual exterior endpoints without a stored position copy.
+
+Opening seeding, saved-world upgrade and native newly generated ground use the
+same initializer. Unknown/unanchored roots and different layers remain unavailable
+for a metric air quote. Exact air duration enters priceJourney's explicit precise
+path, keeping its canonical speed and fuel terms; the default road path is unchanged.
+The cumulative Void class now confers body flight independently of spatial folding.
+This foundation does not yet implement a played aircourse, launch/debit, airborne
+co-presence or interruption position. It is not completed flight acceptance.
+
+House exterior positioning reads the catalog's actual seatPlaceName, and a
+gate town reads its existing gateId relation; their local samples lie beside
+that actual physical seat instead of drawing unrelated provincial points.
+Containment and roads remain intact. Coordinates never become PC knowledge
+or reveal a private route by themselves.
+
+An accepted air course has one historical receipt and an ordinary physical
+location referring to it. Geometry derives its point from the actual clock or
+its caused stopped fact; the location stores no copied coordinates, road links
+or origin geology. Personal flight uses actual held art/body capability and
+native launch terms. An owned air hull uses the same metric quote and native
+fuel authority; its living operator and current custody, rather than its
+owner's life, determine whether it can continue. NPC passengers reference the
+actual same physical site. Terminal actors are not moved to a target merely
+from an activity deadline.
+
+This prototype still requires native review of shared hull/death behavior.
+Independent NPC personal-flight qi and mission air quoting remain unbuilt;
+multiple capacity-driven shuttle legs remain unbuilt. These are gaps, not a
+license to price flights as road detours or grant free NPC qi.
+
+The incremental owned-air voyage records each already-executed native fuel
+debit as a caused payment fact. The existing causal history index exposes
+its actual covered-through clock; no pilot purse, inherited obligation or
+second fuel-rate table is created. A living pilot and valid custody are
+independent requirements from committed fuel. Owner death stops an unfunded
+remaining course at its paid reached point, even when a living pilot retains
+custody. A genuinely paid full native quote can support independent steering
+through that same payment seam. NPC mission acceptance has not yet been
+wired to this new physical course; the component control arranges and debits
+an actual actor explicitly and does not claim that path is complete.
+
+NPC travel resources (preparation contract, unvalidated): qi is one actual balance on NpcCultivation. Insight and rung derive its ceiling; native carriedAcross preserves the spent share across a rung. Saved worlds initialize a missing balance once, while zero stays zero. No passive qi recovery is authored. Ordinary personally held restore_qi pills use native dose/toxicity preparation and retain their spent object rows. Unsettled medicine's wider NPC sheet consequences and effective held-art cooldown chronology remain unfinished.
+
+A real NPC air leg has a historical accepted course and ordinary physical site. Personal death causes a stop before estate handling. Physical arrival preserves the existing native activity for recruit/mission/return settlement. Posting duty terms must not substitute for accepted-leg arrival dates. Multi-leg posting/sending integration is still a gap, not licensed by this draft.
+
+
+The shared common-land reading retains knowledge of an authored road subdivision only when its ROUTE_STOP ground has exact endpoint IDs and the existing positive road/path links, and both endpoint ways are already placed in that same seed reading. A generated name, arbitrary graph reachability, named-only endpoint or private/nonroad ground grants nothing. This is route knowledge, never entry/custody/room permission. The full historical NPC knowledge reader still omits seeded common places; its canonical composition is a separate unresolved source seam and is not claimed by this frontdoor slice.
+
+The world-owned air-pilot pass distinguishes a native world body from a SQL player mirror through `isTheWorldsToMove`. A present tagged mirror is not a world-owned operator. Actual Retained04 recorded a living self-piloted SQL body stopped before its finite arrival with the hull-operator/custody reason because the old guard tested only row presence. SQL held-body callers retain their actual life, custody, rung and committed-fuel checks; genuine world self-pilots and distinct NPC pilots retain existing world rules. This changes no air distance, calendar, fuel, death or payment authority.
+
+NPC usable art IDs and one sparse remaining-cooldown map govern actual movement-art launches. The catalog owns costs and duration; the existing school/rung gate is shared with played bodies. Native held previous/cumulative receipts reach each committed world portion before new pressure uses. No absolute last-use clock, passive qi refill or future requested-span burn is introduced.
+
+The full native NPC place reader composes ordinary seeded public land with actual physical/history/errand knowledge using highestStage. The pure existing person profile is shared with spoken directions; occupation remains in identity and no knowledge roster/rows are stored. Common seeding excludes player mirrors using isTheWorldsToMove. Name-only ground supplies no route, and knowledge never grants private entry. Witness-index fast and all non-place branches retain their existing authority.
+
+A surviving native factual receipt or testimony keeps its existing historical references through the witness index during mortal forgetting. Reference closure follows only actual indexed fact IDs reachable from surviving rows; an orphan dead-only cycle is still forgotten. Bodies, live presence and forgotten actor fields are still pruned. This preserves original published notice terms referenced by an actual payment receipt without a second name/terms catalog, resurrection, payment or private-scene grant. Pricing05 measured an already-paid same-day repeated claim losing its original notice after its only mortal actor was pruned.
+
+Newly retained referenced archival evidence keeps its original historical participant identity and data terms. The mortal NPC body still disappears; no current body, listener, position, custody or permission is synthesized. Other surviving mixed testimony retains existing forgotten-body sanitation. The reference closure is transient and stored nowhere.

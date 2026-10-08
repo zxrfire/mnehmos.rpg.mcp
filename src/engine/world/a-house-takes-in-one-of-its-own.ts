@@ -19,10 +19,11 @@
  * and whose roll is short of what it is worth modelling, has one of its own
  * outer disciples come forward: at the house's ground, at rank 0, in the band
  * the catalog states for that rung. Everything above rank 0 is still climbed.
+ * A patron with a feeder house holds one novice place for an open board.
  * A splinter has no compound and no unmodelled hundreds, so this never reaches
  * one.
  *
- * BORN TO SOMEBODY THERE. Minted with no family, the raised died heirless and
+ * BORN TO ONE OF ITS OWN. Minted with no family, the raised died heirless and
  * displaced the world's births: measured on `pass-a` and `pass-b` over 200
  * years, 619 raised deaths, every one heirless, born rows kept 800 against
  * 1,622 with no raising at all, and ties passed per death 0.75 against 1.37.
@@ -45,6 +46,7 @@ import { aChildTakesTheirParentsLine } from './a-child-takes-their-parents-line.
 import { createNpc, setRealm, type NpcRecord } from './npc-state.js';
 import { bindNewbornToHousehold, couldParent, rosterOf, type Roster } from './the-ties-an-ordinary-life-produces.js';
 import { getLocation, type FactionRecord, type WorldState } from './world-state.js';
+import { feederHousesFor } from './what-a-house-answers-to.js';
 
 const DAYS_PER_YEAR = 365;
 
@@ -70,6 +72,16 @@ export function vacanciesOnTheRolls(state: WorldState, day: number): Map<string,
     }));
 }
 
+/** Ordinary intake leaves a patron's last open novice place for its feeder board. */
+export function vacanciesForOrdinaryIntake(state: WorldState, day: number): Map<string, number> {
+    const vacancies = vacanciesOnTheRolls(state, day);
+    for (const house of state.factions) {
+        if (feederHousesFor(house, state.factions).length > 0)
+            vacancies.set(house.id, Math.max(0, (vacancies.get(house.id) ?? 0) - 1));
+    }
+    return vacancies;
+}
+
 /**
  * Whether a house has people the world does not model: its compound stands, it is
  * still the house's, and somebody of it is still counted (`howManyNobodyModels`). A seat a
@@ -90,7 +102,7 @@ export function stillHasPeopleNobodyModels(state: WorldState, house: FactionReco
 
 /** Each house short of its roll takes one of its own in. Returns how many came forward. */
 export function theHousesTakeInTheirOwn(state: WorldState, year: number, day: number): number {
-    const vacancies = vacanciesOnTheRolls(state, day);
+    const vacancies = vacanciesForOrdinaryIntake(state, day);
     const roll = new Map<string, { count: number; strongest: number }>();
     for (const n of state.npcs) {
         if (n.status !== 'alive' || n.factionId === null) continue;
@@ -135,14 +147,15 @@ export function theHousesTakeInTheirOwn(state: WorldState, year: number, day: nu
         taken.add(npc.name);
         npc = { ...setRealm(npc, ordinal, day), factionId: house.id, factionRankIndex: 0 };
 
-        // BORN TO SOMEBODY. Whoever came forward was born to one of the people
-        // at the house's ground, as a birth there would be (`applyDemography`),
-        // and takes their line and household. Without it every one of them
+        // BORN TO ONE OF ITS OWN. A visitor at the ground cannot be the source
+        // of the house's unmodelled roll. The raised takes their line and household.
+        // Without it every one of them
         // died heirless and inherited from nobody - see the header.
         roster ??= rosterOf(state);
         const oldEnough = (n: NpcRecord) => day - n.identity.bornOnDay >= (age + 18) * DAYS_PER_YEAR;
         const parents = couldParent(
-            roster.living.filter(n => oldEnough(n) && n.locationId === house.seatLocationId), age, day);
+            roster.living.filter(n => oldEnough(n) && n.factionId === house.id
+                && n.locationId === house.seatLocationId), age, day);
         const parent = parents.length > 0 ? parents[rng.int(0, parents.length - 1)]! : null;
         if (parent) {
             npc = aChildTakesTheirParentsLine(state, npc, parent, roster);

@@ -60,6 +60,8 @@ export type CapabilityGrant =
     | 'no_ambient_needed'
     /** Void Tribulation: dead zones, scars and voids become survivable. */
     | 'enters_dead_zones'
+    /** Void Tribulation: flies by its own body; distinct from folding space. */
+    | 'body_flight'
     /**
      * Void Tribulation: folding space rather than crossing it.
      *
@@ -150,7 +152,7 @@ const CLASS_GRANTS: Record<RealmCapabilityClass, CapabilityGrant[]> = {
     core: [],
     nascent_soul: ['soul_persists', 'prepared_vessel'],
     deity: ['carries_own_ambient', 'suppresses_lesser'],
-    void: ['no_ambient_needed', 'enters_dead_zones', 'spatial_folding', 'reads_formations'],
+    void: ['no_ambient_needed', 'enters_dead_zones', 'spatial_folding', 'reads_formations', 'body_flight'],
     body_integration: ['no_seam', 'immune_contamination'],
     grand_ascension: ['gates_places', 'elemental_neighbourhood', 'lasting_elemental_work', 'reads_lid'],
     tribulation: ['opens_lid']

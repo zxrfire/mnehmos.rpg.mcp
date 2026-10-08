@@ -163,7 +163,7 @@ export function whatTheyCouldHandIn(
             kind: object.kind,
             from: ingredient?.from ?? null,
             tracked: object,
-            pouchItemId: object.kind === 'material' ? thing.kindId : null,
+            pouchItemId: object.kind === 'material' || object.kind === 'pill' && getPill(thing.kindId) ? thing.kindId : null,
             row: object
         });
     }
@@ -355,7 +355,7 @@ export const handingInVerbs = {
             : null;
         const standsAt: { contribution: number | null } = { contribution: null };
         this.db.transaction(() => {
-            if (thing.pouchItemId !== null && !removeFromPouch(this.db, cultivator.id, thing.pouchItemId, 1)
+            if (thing.pouchItemId !== null && !removeFromPouch(this.db, cultivator.id, thing.pouchItemId, whatThisThingIs(thing.row)?.quantity ?? 1)
                 && thing.tracked === null) {
                 throw new Error(`The pouch was short of ${thing.name} as it was handed in.`);
             }

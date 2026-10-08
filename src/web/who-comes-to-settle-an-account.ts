@@ -7,6 +7,7 @@
  * house that holds one, or somebody who took up a price a house put on them.
  */
 
+import { isRuined } from '../engine/world/possessions.js';
 import type { AnAccountComingDue } from '../engine/encounters/types.js';
 import type { AHolder } from '../engine/social-leverage/being-hunted.js';
 import { WHAT_A_RECORD_COUNTS_FOR } from '../engine/social-leverage/personal-alignment.js';
@@ -166,13 +167,13 @@ export function accountsComingDue(service: GameService, cultivator: Cultivator):
  * rated thing they carry where that is higher. An art is pitched at or below the
  * rung of whoever works it, so it adds nothing a door would feel over the rung.
  */
-function whatTheyCouldBreakADoorWith(
+export function whatTheyCouldBreakADoorWith(
     world: WorldState | null,
     who: { id: string; realmOrdinal: number }
 ): number {
     let best = who.realmOrdinal;
     for (const object of world?.objects ?? []) {
-        if (object.possessorId !== who.id || object.power === null) continue;
+        if (object.possessorId !== who.id || object.power === null || isRuined(object)) continue;
         if (Number.isFinite(object.power) && object.power > best) best = object.power;
     }
     return best;

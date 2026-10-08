@@ -85,6 +85,7 @@ import {
 import { whoTheyLeave } from './who-is-left-when-somebody-dies.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { indexById, type FactionRecord, type WorldState } from './world-state.js';
+import { routineOf } from './npc-routines.js';
 
 /** What was declared before it started. */
 export type DuelTerms = 'to_yield' | 'life_and_death';
@@ -243,8 +244,9 @@ export function holdADuel(
     const { terms, where, day } = input;
     const rng = input.rng
         ?? forStream(state.seed, 'a-duel', input.challenger.id, input.challenged.id, day);
+    const observing = { ...state, currentDay: day };
     const watching = state.npcs.filter(n =>
-        n.status === 'alive' && isBelowTheLid(n) && n.locationId === where.id
+        n.status === 'alive' && isBelowTheLid(n) && routineOf(observing, n).locationId === where.id
         && n.id !== input.challenger.id && n.id !== input.challenged.id);
     const witnesses = watching.length;
     const faceMoved: Record<string, number> = {};

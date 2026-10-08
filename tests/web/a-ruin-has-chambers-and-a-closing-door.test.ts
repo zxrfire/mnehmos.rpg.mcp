@@ -71,7 +71,10 @@ describe('a ruin has chambers and a closing door', () => {
         const read = await h.game.act('I survey the ruin chambers');
         expect(read.narration).toContain('They record no routes');
         expect(read.narration).not.toContain('the archive');
-        expect(h.game.currentRun().run.elapsedDays).toBe(at);
+        // `site`'s free label is `outside` only - THE_LABEL_THAT_REACHES_A_VERBS_READ says so by
+        // name, deliberately: reading the map from a chamber already entered still spends the
+        // lesser eighth-day `site` now costs (lesser-action-costs.ts). Not the free step of the four.
+        expect(h.game.currentRun().run.elapsedDays).toBe(at + 0.125);
     }, 180_000);
 
     it('works real stock, learns a room map, and accepts the chamber name as a move', async () => {

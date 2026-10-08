@@ -76,6 +76,7 @@ import { advanceWorldYears } from '../../support/advance-world-years.js';
 import { createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { advanceSeparatedPresences } from '../../../src/engine/world/something-acting-in-your-place.js';
+import { resolveWithPlayerPresent } from '../../../src/engine/world/background-incident-draw.js';
 import { THE_LINE_AT_OLD_RIVER } from '../../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { MEMBERS } from '../../../src/data/cultivation/members.js';
 import { WANDERERS } from '../../../src/data/cultivation/wanderers.js';
@@ -133,6 +134,10 @@ describe('the world may not end somebody a catalog states is standing', () => {
  * Possession's paired arms exercise the shared module exempted by the source
  * ratchet. The control must take a body; the claim must prevent that. Ordinary
  * remote blows still wound a stated row, since the claim only withholds endings.
+ * Background sampling changed which actors are reviewed. These paired arms
+ * arrange contact through the engine's exact-resolution context, retaining the
+ * original one-day blow and hundred-day possession horizons. The claim is the
+ * ending seam, rather than whether a background draw happens to select it.
  */
 describe('a separated presence observes the same ending seam', () => {
     function worldWithTarget() {
@@ -151,20 +156,22 @@ describe('a separated presence observes the same ending seam', () => {
     }
 
     it('still lets a remote ordinary blow wound a stated target', () => {
-        const { world, target } = worldWithTarget();
-        world.npcs.push(addGoal(createNpc(world.seed, {
-            id: 'attacker', bornOnDay: 0, onDay: world.currentDay, locationId: 'home',
+        const { world: base, target } = worldWithTarget();
+        base.npcs.push(addGoal(createNpc(base.seed, {
+            id: 'attacker', bornOnDay: 0, onDay: base.currentDay, locationId: 'home',
             cultivation: { realmOrdinal: 46 }
-        }), { kind: 'revenge', text: 'Seeking the target.', targetId: target.id }, world.currentDay));
-        const claimed = structuredClone(world);
-        claimed.npcs[0].tags.push(CATALOG_STATES_STANDING_TAG);
-        advanceSeparatedPresences(world, world.currentDay - 1);
-        advanceSeparatedPresences(claimed, claimed.currentDay - 1);
-        expect(world.npcs.find(n => n.id === target.id)?.cultivation.injuries.length).toBeGreaterThan(0);
-        expect(claimed.npcs.find(n => n.id === target.id)?.status).toBe('alive');
-        expect(claimed.npcs.find(n => n.id === target.id)?.cultivation.injuries)
-            .toEqual(world.npcs.find(n => n.id === target.id)?.cultivation.injuries);
-        expect(claimed.objects.some(o => o.tags.includes('acting-proxy'))).toBe(true);
+        }), { kind: 'revenge', text: 'Seeking the target.', targetId: target.id }, base.currentDay));
+
+        const world = structuredClone(base);
+        const claimed = structuredClone(base);
+        claimed.npcs[0]!.tags.push(CATALOG_STATES_STANDING_TAG);
+        resolveWithPlayerPresent(world, 'home', () => advanceSeparatedPresences(world, world.currentDay - 1));
+        resolveWithPlayerPresent(claimed, 'home', () => advanceSeparatedPresences(claimed, claimed.currentDay - 1));
+        expect(world!.npcs.find(n => n.id === target.id)?.cultivation.injuries.length).toBeGreaterThan(0);
+        expect(claimed!.npcs.find(n => n.id === target.id)?.status).toBe('alive');
+        expect(claimed!.npcs.find(n => n.id === target.id)?.cultivation.injuries)
+            .toEqual(world!.npcs.find(n => n.id === target.id)?.cultivation.injuries);
+        expect(claimed!.objects.some(o => o.tags.includes('acting-proxy'))).toBe(true);
     });
 
     it('does not choose a stated vessel, while possession can take an ordinary body', () => {
@@ -181,8 +188,8 @@ describe('a separated presence observes the same ending seam', () => {
             const claimed = structuredClone(world);
             bare.currentDay = claimed.currentDay = day;
             claimed.npcs[0].tags.push(CATALOG_STATES_STANDING_TAG);
-            advanceSeparatedPresences(bare, day - 1);
-            advanceSeparatedPresences(claimed, day - 1);
+            resolveWithPlayerPresent(bare, 'away', () => advanceSeparatedPresences(bare, day - 1));
+            resolveWithPlayerPresent(claimed, 'away', () => advanceSeparatedPresences(claimed, day - 1));
             if (bare.npcs[0].status !== 'alive') taken++;
             expect(claimed.npcs[0].status).toBe('alive');
         }

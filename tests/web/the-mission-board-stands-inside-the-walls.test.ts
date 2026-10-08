@@ -44,12 +44,15 @@ async function standingAt(seed: string, where: WhatAnAreaIsFor | 'a town', opts:
     }
     const standing = () => repos.cultivators.getById(cultivator.id)!.standingIn ?? '';
     const days = () => game.state().run.elapsedDays;
-    return { game, ladder, standing, days };
+    // Runs now open at 08:00. Board reads remain free; compare against the
+    // opening clock rather than treating midnight as an invariant.
+    const openedAt = days();
+    return { game, ladder, standing, days, openedAt };
 }
 
 describe('the mission board inside a house', () => {
     it('walks a member over to it, shows their rung and below, and refuses a rung above by name', async () => {
-        const { game, ladder, standing, days } = await standingAt('board-outer', 'forecourt', { rung: 'outer', ordinal: 8 });
+        const { game, ladder, standing, days, openedAt } = await standingAt('board-outer', 'forecourt', { rung: 'outer', ordinal: 8 });
         const read = (await game.act('what missions are there')).narration ?? '';
         expect(read).toContain('You walk over to the mission board.');
         expect(standing()).toContain('#board#');
@@ -59,7 +62,7 @@ describe('the mission board inside a house', () => {
 
         const refused = (await game.act('I take the pass watch')).narration ?? '';
         expect(refused).toContain(`posts this to ${ladder[theFirstRungOf('inner', ladder.length)!]} and above`);
-        expect(days()).toBe(0);
+        expect(days()).toBe(openedAt);
     }, 240_000);
 
     it('lets a rung above take a rung below\'s mission', async () => {
@@ -84,12 +87,12 @@ describe('the mission board inside a house', () => {
     }, 240_000);
 
     it('is read by somebody inside who is not on the roll, and taken from by nobody but the house\'s own', async () => {
-        const { game, days } = await standingAt('board-intruder', 'board', { ordinal: 8 });
+        const { game, days, openedAt } = await standingAt('board-intruder', 'board', { ordinal: 8 });
         const read = (await game.act('what missions are there')).narration ?? '';
         expect(outerMissionIn(read), 'the board was not read').toBe(true);
         const refused = (await game.act('I take the chores')).narration ?? '';
         expect(refused).toContain('Azure Cloud Pavilion posts this for its own');
-        expect(days()).toBe(0);
+        expect(days()).toBe(openedAt);
     }, 240_000);
 
     it('is not there from outside the gate', async () => {
@@ -100,12 +103,12 @@ describe('the mission board inside a house', () => {
     }, 240_000);
 
     it('is not there from a town, even for a member', async () => {
-        const { game, days } = await standingAt('board-town', 'a town', { rung: 'outer', ordinal: 8 });
+        const { game, days, openedAt } = await standingAt('board-town', 'a town', { rung: 'outer', ordinal: 8 });
         const read = (await game.act('what missions are there')).narration ?? '';
         expect(outerMissionIn(read)).toBe(false);
         const refused = (await game.act('I take the chores')).narration ?? '';
         expect(refused).toContain('hang on the mission board inside its walls');
-        expect(days()).toBe(0);
+        expect(days()).toBe(openedAt);
     }, 240_000);
 });
 

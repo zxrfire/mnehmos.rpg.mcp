@@ -49,8 +49,10 @@ describe('information from the running verbs', () => {
         const pill = getPill('pill-immortal-longevity')!;
         const missing = HERBS.find(row => row.id === 'herb-thousand-autumn-chrysanthemum')!;
         repos.cultivators.update(cultivator.id, { realmOrdinal: 0 });
-        const before = game.currentRun();
         await game.act(`I investigate ${pill.name}`);
+        // A thorough search now costs its own half day - the snapshot for
+        // what REFINE spends is taken after that search, not before it.
+        const before = game.currentRun();
         const low = await game.act(`I refine ${pill.name}`);
         expect(low.toolCalls.some(call => call.action === 'refine' && !call.ok)).toBe(true);
         expect(low.narration).toContain('no formula');

@@ -14,11 +14,13 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { composeNarrationUser, narrationSystemPrompt } from '../../src/web/prompt';
-import { howTheRoomReadsThem, howTheyReadToYou, thePeopleHere, whoTheActWasPutTo } from '../../src/web/the-narrator-plays-the-world';
+import { composeNarrationUser, narrationSystemPrompt, INTENT_SYSTEM_PROMPT } from '../../src/web/prompt';
+import { howTheRoomReadsThem, howTheyReadToYou, thePeopleHere, thePlayerIsSureItIsThem, whoTheActWasPutTo } from '../../src/web/the-narrator-plays-the-world';
 import type { Company, EngineFacts } from '../../src/web/facts';
+import { factsForRefusal } from '../../src/web/facts';
 import { ProviderNarrator } from '../../src/web/narrator';
-import { ScriptedProvider } from './harness';
+import { ScriptedProvider, makeGame } from './harness';
+import { makeCultivator } from '../engine/cultivation/fixtures';
 
 const FACTS: EngineFacts = {
     headline: 'two arts you could be taught',
@@ -50,6 +52,145 @@ function aSquareWith(named: readonly string[], strangers: number): Company {
 }
 
 describe('the narrator is handed the people in the scene', () => {
+    /** Model10 invented disciples crossing outside an otherwise empty mission
+     * hall. The prompt invited "somebody crossing" from destination names,
+     * although no exterior actor or sightline was supplied. Destinations remain
+     * usable without becoming observations of traffic or lit lamps. This pins
+     * the supplied observation boundary, not real-model prose compliance. */
+    it('keeps accessible destinations without inventing observed traffic', () => {
+        const prompt = composeNarrationUser(FACTS, { ...SCENE, company: aSquareWith([], 0),
+            doorsFromHere: ['practice yard', 'your quarters'] });
+        expect(prompt).toContain('practice yard, your quarters');
+        expect(prompt).toContain('THE PEOPLE HERE: nobody');
+        expect(prompt).toContain('These names describe routes, not observed people or current activity');
+        expect(prompt).not.toContain('somebody crossing to another');
+        expect(prompt).not.toContain('a lamp lit in one');
+    });
+    /** Model10 substituted public dew-servant lodging for "my quarters"; the
+     * strict grounding gate correctly fell back. Teach the existing router the
+     * explicit possessive without weakening that gate or granting room access. */
+    it('asks the router to retain the explicit personal destination', () => {
+        expect(INTENT_SYSTEM_PROMPT).toContain('means target: "my quarters", not a public dormitory');
+        expect(INTENT_SYSTEM_PROMPT).toContain("resolves the player's actual assigned room and its access");
+    });
+
+    /**
+     * A pointed greeting with a topic used to return before the name authority.
+     * Model probe 05 then exposed a second obstruction: a look's witnessed
+     * "name that got said" prevented introduction despite the named-face
+     * reader correctly treating that sighting as unnamed. Both decisions now
+     * ask that existing reader; a sighting permits a first introduction and
+     * an actual name-giving prevents a second one.
+     */
+    it('introduces a merely seen pointed listener once before answering a conversational topic', async () => {
+        const greeting = JSON.stringify({ action: 'interact', target: 'someone', intent: 'talk', topic: 'greeting' });
+        const provider = new ScriptedProvider({ plans: [JSON.stringify({ action: 'look' }), greeting, greeting], narrations: ['(scripted)'] });
+        const { game, repos } = makeGame({ seed: 'pointed-topic-name', provider });
+        const { cultivator } = await game.newRun('Probe');
+        const listener = repos.cultivators.create(makeCultivator({ id: 'pointed-listener', name: 'Qiao Zhenru', kind: 'npc', location: cultivator.location }));
+        expect(game.present(repos.cultivators.getById(cultivator.id)!)).toHaveLength(1);
+        await game.act('I look around.');
+        const seen = game.knowledge.awareness(cultivator.id, 'cultivator');
+        expect(seen.some(row => row.id === listener.id)).toBe(true);
+        expect(thePlayerIsSureItIsThem(listener.name, seen)).toBe(false);
+        await game.act('I greet someone and ask their name.');
+        const learned = game.knowledge.awareness(cultivator.id, 'cultivator').find(row => row.id === listener.id);
+        expect(learned?.statement).toMatch(/gave you their name/i);
+        expect(game.company(repos.cultivators.getById(cultivator.id)!).named.some(card => card.id === listener.id)).toBe(true);
+        expect(thePlayerIsSureItIsThem(listener.name, game.knowledge.awareness(cultivator.id, 'cultivator'))).toBe(true);
+        const before = game.knowledge.provenanceOf(cultivator.id, 'cultivator', listener.id)
+            .filter(row => /gave you their name/.test(row.statement ?? ''));
+        await game.act('I greet someone again.');
+        const after = game.knowledge.provenanceOf(cultivator.id, 'cultivator', listener.id)
+            .filter(row => /gave you their name/.test(row.statement ?? ''));
+        expect(after).toEqual(before);
+    });
+
+    /** The resolver's real empty-room refusal, not a hand-authored narration hint. */
+    it('hands the narrator the failed address when the actual room is empty', async () => {
+        const provider = new ScriptedProvider({ plans: [JSON.stringify({ action: 'interact', target: 'the physician', intent: 'talk' })], narrations: ['(scripted)'] });
+        const { game, repos } = makeGame({ seed: 'no-listener', provider });
+        const { cultivator } = await game.newRun('Probe');
+        expect(game.present(repos.cultivators.getById(cultivator.id)!)).toEqual([]);
+        const mark = provider.calls.length;
+        const turn = await game.act('I speak to the physician.');
+        expect(turn.toolCalls.some(call => call.name === 'engine.resolveParty' && !call.ok)).toBe(true);
+        const prompt = provider.calls.slice(mark).filter(call => !(call.messages.find(message => message.role === 'system')?.content ?? '').startsWith('You are the intent router'))
+            .map(call => call.messages.find(message => message.role === 'user')?.content ?? '').join('\n');
+        expect(prompt).toContain('There is no listener, no reply, and no requested care');
+        expect(prompt).toContain('THE PEOPLE HERE: nobody');
+    });
+
+    /**
+     * Played clinic probe 2026-10-03: a greeting at 10:00 succeeded, then the
+     * clock and approach put the player alone in an inn at 22:00. The narrator
+     * moved the physician's historical "Right now" card into that empty inn
+     * and later made an absent physician ignore a request for treatment.
+     * Earlier executed speech remains; its earlier place and time cannot turn
+     * into current company. Failed addressing is an observation, not silence
+     * chosen by a listener who was never there.
+     */
+    it('keeps an earlier clinic reply separate from an empty inn and its failed request', () => {
+        const physician = { ...aSquareWith(['Wei Ciyi'], 0).named[0], at: 'seeing to patients' };
+        const absence = 'At this attempted request, nobody is present in the player\'s current area. There is no listener, no reply, and no requested care or other action by an addressee.';
+        const failed = factsForRefusal('Nobody by that name.', 'Nothing here answers.', 'resolver debug', [absence]);
+        const facts = { ...failed, lines: ['The physician returns your greeting.', ...failed.lines] };
+        const prompt = composeNarrationUser(facts, {
+            ...SCENE, place: 'the inn', company: aSquareWith([], 0),
+            justAddressed: [{ ...physician, repliedAt: { place: 'the physician\'s clinic', area: 'clinic', day: 365001, hour: 10 } }]
+        });
+        expect(prompt).toContain('The physician returns your greeting.');
+        expect(prompt).toContain(absence);
+        expect(prompt).toContain('THE PEOPLE HERE: nobody');
+        expect(prompt).toContain("Executed reply at the physician's clinic; day 365001, hour 10");
+        expect(prompt).toContain('At reply time: seeing to patients.');
+        expect(prompt).not.toContain('Right now: seeing to patients.');
+        expect(prompt).not.toContain('Executed reply at the inn');
+        expect(prompt).not.toContain('resolver debug');
+        // Ordinary current cards retain their present-tense observation.
+        expect(thePeopleHere({ named: [physician], strangers: [], total: 1 }, 0, [], null).join('\n'))
+            .toContain('Right now: seeing to patients.');
+    });
+
+    /**
+     * Model probe 05 still placed the physician in the final inn: the LAST
+     * instruction said "Then play" the historical addressee despite correct
+     * earlier cards. Pin that final instruction, including another actual
+     * person in the final room. Missing company stays an opt-in contract:
+     * callers that supply no roster have not asserted that somebody is absent.
+     * Model09 still resumed an absent infirmary speaker's jar-counting after
+     * the historical answer despite these earlier instructions. The endpoint
+     * must carry actual current-roster and failed-address authority after the
+     * style examples. These tests establish prompt facts, not model acceptance.
+     */
+    it('writes earlier replies before the actual final cast in the final instruction', () => {
+        const physician = { ...aSquareWith(['Wei Ciyi'], 0).named[0], at: 'seeing to patients' };
+        const earlier = [{ ...physician, repliedAt: { place: 'the clinic', area: 'clinic', day: 365001, hour: 10 } },
+            { ...physician, repliedAt: { place: 'the bridge', area: 'bridge', day: 365001, hour: 16 } }];
+        const suffix = (company?: Company, failedAddress = false) => {
+            const prompt = composeNarrationUser(FACTS, { ...SCENE, addressing: physician.name, company, justAddressed: earlier, failedAddress });
+            return prompt.slice(prompt.lastIndexOf('NOW WRITE THE TURN'));
+        };
+        for (const company of [aSquareWith([], 0), aSquareWith(['Tang Minya'], 0)]) {
+            const final = suffix(company, true);
+            expect(final).toContain('First play the executed reply captured at the clinic');
+            expect(final).toContain('Next play the executed reply captured at the bridge');
+            expect(final.indexOf('the clinic')).toBeLessThan(final.indexOf('the bridge'));
+            expect(final).toContain('Then return to the actual current place and cast');
+            expect(final).not.toContain(`Then play ${physician.name}`);
+            expect(final).not.toContain('the likeliest one answers');
+            expect(final).toContain('The failed address has no listener replying, refusing or providing care');
+            expect(final).toContain('A historical speaker absent from that current roster has no new gesture, speech or resumed task at the end');
+            expect(final).toContain('The unresolved address has no answer, refusal, gesture or treatment');
+            expect(final.indexOf('FINAL MOMENT')).toBeGreaterThan(final.indexOf('turns back to the road'));
+            if (company.total === 0) expect(final).toContain('Nobody is physically here with the player now');
+            else expect(final).not.toContain('Nobody is physically here with the player now');
+        }
+        expect(suffix(aSquareWith([physician.name], 0))).toContain(`Then play ${physician.name}`);
+        expect(suffix()).toContain(`Then play ${physician.name}`);
+        expect(suffix()).not.toContain('FINAL MOMENT');
+    });
+
     it('gives each person a card to play them from', () => {
         const said = thePeopleHere(aSquareWith(['Wei Ciyi', 'Tang Minya'], 0), 0, [], null).join('\n');
         expect(said).toContain('Wei Ciyi');
@@ -234,7 +375,9 @@ describe('the narrator is handed the people in the scene', () => {
         const family = aSquareWith(['Wei Ciyi', 'Tang Minya'], 0);
         (family.named[1] as { tiesHere?: unknown }).tiesHere = [{ kind: 'child', name: 'Wei Ciyi' }];
         const tied = thePeopleHere(family, 0, [], null).join('\n');
-        expect(tied).toMatch(/Ties to others here: child of (?:a man|somebody) of about 40/);
+        // Chronological age is not a visible description of an unfamiliar face.
+        expect(tied).toMatch(/Ties to others here: child of (?:a man|somebody)/);
+        expect(tied).not.toMatch(/child of [^\n]*\b40\b/);
         expect(tied).not.toMatch(/child of Wei Ciyi/);
         expect(unsure).not.toContain('A name that got said');
         expect(unsure.slice(unsure.indexOf('NAMES YOU MAY USE'))).not.toMatch(/^[^\n]*\n[^\n]*Wei Ciyi/);
@@ -294,7 +437,7 @@ describe('the narration prompt carries it', () => {
      * unsupported, it was the opposite of what the engine had ruled.
      */
     it('says an absence is the engine to state', () => {
-        expect(narrationSystemPrompt().toLowerCase()).toContain("an absence is the engine's to state");
+        expect(narrationSystemPrompt().toLowerCase()).toMatch(/an absence is the engine's\s+to state/);
     });
 
     /**

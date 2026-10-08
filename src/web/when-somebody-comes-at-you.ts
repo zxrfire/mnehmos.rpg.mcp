@@ -31,6 +31,7 @@ import type { StandingFight } from './fight-answers.js';
 import { wouldTheyWorkTheRiteOnYou } from './the-furnace-rite-worked-on-you.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
+import { recordTheResidenceDoorBreachAtThisArrival } from './breaking-the-door-on-an-actual-residence.js';
 
 /**
  * Whether this occurrence is somebody coming at the cultivator with nothing on
@@ -98,6 +99,16 @@ export function theyCameAtYou(
         run, party, onRecord, sent?.realmOrdinal ?? threat.threatOrdinal, theirRecord
     );
     if (isGuidingErrorBody(theirBody)) return null;
+
+    // This is a selected happened occurrence, after the actual body/world span.
+    // Carry target identity from the real shut door; never rediscover a later home.
+    if (occurrence.door?.what === 'broke_in' && occurrence.door.locationId) {
+        const currentSender = service.repos.cultivators.getById(party.id);
+        const stoppedAtDoor = recordTheResidenceDoorBreachAtThisArrival(service, run, cultivator, occurrence,
+            { ...party, realmOrdinal: theirRecord?.cultivation.realmOrdinal
+                ?? currentSender?.realmOrdinal ?? sent?.realmOrdinal ?? threat.threatOrdinal });
+        if (stoppedAtDoor) return stoppedAtDoor;
+    }
 
     // WHAT THEY CAME FOR. Somebody holding an art that draws on another comes to
     // make the player comply for it; an account that is carried rather than

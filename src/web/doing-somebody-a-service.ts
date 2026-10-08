@@ -186,7 +186,7 @@ export const serviceVerbs = {
             `a-service-is-something-done: obligation ${record.id} (oath, service_term, `
             + `${record.severity}) opened, holder ${cultivator.id}, subject ${person.id}, `
             + `${days} day(s), due on day ${record.dueOnDay}. Open until the days are served. `
-            + 'No days spent opening it.'
+            + 'Giving the word costs nothing: no time passed opening it.'
         );
 
         const done = this.freeAction(run, 'oath', facts);

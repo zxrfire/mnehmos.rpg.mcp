@@ -16,7 +16,7 @@ import {
     estateObjectId,
     type EstateInput
 } from '../../../src/engine/world/estate-at-death';
-import { isRuined, isStolen, makeObject } from '../../../src/engine/world/possessions';
+import { isRuined, isStolen, makeObject, transferPossession } from '../../../src/engine/world/possessions';
 
 const DEAD = { id: 'cult-1', name: 'Shen Ke' };
 
@@ -146,4 +146,42 @@ describe('what a death leaves', () => {
         expect(estate.buried).toBeNull();
         expect(leftSomething(estate)).toBe(false);
     });
+});
+
+
+/**
+ * Lived-in belongings audit, 2026-10-03: death's custody link used to rewrite
+ * an existing borrowed or stolen world object's owner to the dead carrier.
+ * items.md says an unchecked pouch is no claim on the register and taking
+ * from a corpse moves possession, not title. Preserve the actual owner,
+ * including a real null owner, while recording the dead carrier and taker.
+ * This is every tracked object's rule; keys need no estate exception.
+ */
+it.each(['artifact', 'manual', 'key'] as const)('death preserves an existing %s title through physical looting', kind => {
+    for (const ownerId of ['house-owner', 'other-person', null]) {
+        const row = transferPossession(makeObject({ id: 'known-property', name: 'Known property',
+            kind, significance: 'significant', ownerId, ownerName: ownerId ?? '' }),
+            { onDay: 1, toHolderId: DEAD.id, toHolderName: DEAD.name, how: 'lent' });
+        for (const standingOver of [[], [{ id: 'taker', name: 'Taker' }]]) {
+            const result = settleEstate(dying({ tracked: [{ itemId: row.id, name: row.name,
+                kind, significance: row.significance, power: row.power, worldRow: row }], standingOver }));
+            const after = result.objects[0]!;
+            expect(after.id).toBe(row.id);
+            expect(after.ownerId).toBe(ownerId);
+            expect(after.ownerName).toBe(row.ownerName);
+            expect(after.possessorId).toBe(standingOver[0]?.id ?? null);
+            expect(after.provenance.slice(row.provenance.length).map(p => p.how))
+                .toEqual(['found', standingOver.length ? 'looted' : 'lost']);
+            expect(after.provenance.at(-1)?.previousHolderId).toBe(DEAD.id);
+            expect(row.ownerId).toBe(ownerId);
+            expect(row.possessorId).toBe(DEAD.id);
+        }
+    }
+});
+
+it('a newly materialised pouch object still establishes the dead carrier as its first owner', () => {
+    const result = settleEstate(dying({ tracked: [{ itemId: 'pouch-object', name: 'Pouch object',
+        kind: 'artifact', significance: 'significant', power: 12, worldRow: null }] }));
+    expect(result.objects[0]!.ownerId).toBe(DEAD.id);
+    expect(result.objects[0]!.possessorId).toBeNull();
 });

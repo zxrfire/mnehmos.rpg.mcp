@@ -1329,3 +1329,7 @@ was met, and hands the resulting state to `survival.ts`.
   ladder is supposed to feel like, and the design rationale behind the rungs.
 
 Boundary trial damage is applied by `applyCrossingConsequence` in direct player attempts, seclusion, and NPC attempts. Soul state only worsens, continuity multiplies, and spent lifespan is charged rather than narrated. Seclusion returns the soul fields in its end state for the shared persistence path. Unmastered copying is refused by the existing mastery gate; it does not create a degraded manual.
+
+The proposed a-pill-dose-on-an-actual-body leaf moves native grade-dose and toxicity preparation out of the MCP adapter without adding a dose or draw. Actual actor adapters keep their own resource/item stores. Ordinary NPC recovery uses the same dose, native poison injury and restoration arithmetic; no passive rate is introduced. This preparation remains unvalidated and does not supply missing NPC chaos-sheet effects.
+
+Native art readiness reads the actual cooldown and qi before one debit. Cooldown burn preserves the existing whole elapsed-day rule: independent fractional actions do not accumulate credit; portions of one held receipt use floor(cumulative) minus floor(previous).

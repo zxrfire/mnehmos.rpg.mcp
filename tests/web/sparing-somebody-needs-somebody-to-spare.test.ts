@@ -165,6 +165,7 @@ describe('a hand held back from nobody', () => {
     for (const said of ['I let him go', 'I spare her', 'I stay my hand']) {
         it(`refuses honestly: "${said}"`, async () => {
             const at = await aSquareWithNobodyBeaten();
+            const fresh = at.game.state().run.elapsedDays;
             const turn = await at.game.act(said);
 
             expect(gotTheBlankLook(turn), 'the blank look').toBe(false);
@@ -179,8 +180,8 @@ describe('a hand held back from nobody', () => {
             expect(answer, 'the refusal has to name what is missing')
                 .toMatch(/nobody|no one|not holding/);
 
-            // A refusal is free. It spends no day.
-            expect(at.game.state().run.elapsedDays).toBe(0);
+            // A refusal is free, unmoved past the run's own 08:00 opening.
+            expect(at.game.state().run.elapsedDays).toBe(fresh);
 
             at.db.close();
         }, 120_000);
@@ -200,6 +201,7 @@ describe('a hand held back from nobody', () => {
 describe('standing between two other people', () => {
     it('is refused, and the refusal says why rather than looking blank', async () => {
         const at = await aSquareWithNobodyBeaten();
+        const fresh = at.game.state().run.elapsedDays;
         const turn = await at.game.act('I stand between them');
 
         expect(gotTheBlankLook(turn), 'the blank look').toBe(false);
@@ -210,7 +212,8 @@ describe('standing between two other people', () => {
         expect(answer).not.toContain('does not resolve into anything');
         expect(answer, 'the refusal has to say what is not happening')
             .toMatch(/fight/);
-        expect(at.game.state().run.elapsedDays).toBe(0);
+        // Refused for free, unmoved past the run's own 08:00 opening.
+        expect(at.game.state().run.elapsedDays).toBe(fresh);
 
         at.db.close();
     }, 120_000);

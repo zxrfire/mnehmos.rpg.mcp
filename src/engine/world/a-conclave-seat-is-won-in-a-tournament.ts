@@ -1,65 +1,15 @@
 /**
- * A conclave seat is held against the pool, and the pool settles it in a
- * tournament.
- *
- * `docs/world/houses/offices-and-succession.md`: conclave is *"held against the
- * pool, not awarded once"* - five inner disciples worth watching, three places,
- * and the three are not the same three forever - while inner is for life. The
- * comparison was written down and nothing ran it: once somebody reached the
- * conclave rung, only death moved them off it.
- *
- * The design owner ruled HOW it is settled: *"the thing that rotates is the
- * conclave. They settle it with a tournament on a fixed schedule, different per
- * sect, depending on the cultivation level of their conclave disciples."*
- *
- * ── WHAT RUNS ────────────────────────────────────────────────────────────
- *
- * The house's own field, ranked by `rankAField` - the same ranking a gathering
- * and a door conclave use, so no second opinion about who is better exists.
- * Everybody at the conclave rung stands in it, and so does everybody at the
- * rung below who clears the conclave rung's own realm bar. The seats are the
- * seats (`seatsAtRank`), the top of the board takes them, and a holder who is
- * beaten goes back to inner. No disgrace: the document says it is the count.
- * What they learned standing on the board is paid by `creditWhatTheyLearned`,
- * like any other contest.
- *
- * INNER IS FOR LIFE, so nobody falls past it: the rung below the conclave is
- * the floor of this whole mechanism.
- *
- * ── THE SCHEDULE, AND WHY IT IS ONE FUNCTION AND NOT A TABLE ─────────────
- *
- * *"Different per sect"*, off *"the cultivation level of their conclave
- * disciples"*: a contest every few years means nothing where the people in it
- * take two centuries to move. So the interval is a share of the years the
- * ladder itself credits at that height before it reads somebody as finished
- * (`stagnationYearsForOrdinal`, the same figure `howFinishedTheyLook` measures
- * a career against), taken at the middle of the conclave rung's own realm band.
- *
- * A QUARTER of it: four contests inside the span a disciple can stand at that
- * rung without the house writing them off, which is often enough that a rising
- * inner disciple gets a shot while they are rising and rare enough that the
- * seats are not a revolving door. Measured over the shipped catalog: 13 years
- * for the thirty-odd houses whose conclave rung sits in Qi Condensation or
- * Foundation, 25 for the six that sit in Core Formation, and 500 for the Empyrean
- * Court, whose Inner Disciples stand at Body Integration and above.
- *
- * The year each house holds it in is its own, drawn once off the seed and the
- * house, so two houses in a province do not hold theirs in the same spring.
- *
- * MEASURED over 500 years on `shape-a` and `shape-b`, with the intervals the
- * catalog produces (13 years for 28 houses, 25 for 8, 100 for one and 500 for
- * the Empyrean Court): 622 and 673 places won, 333 and 339 holders beaten for
- * one - so a place changes hands about nine times a house a century, and the
- * rest of the wins are seats that stood empty. The rungs stayed bottom-heavy
- * ({0:174, 1:138, 2:73, 3:64, 4:77, 5:34, 6:25} on `shape-a`), which is the
- * thing to watch: a contest that emptied the rungs under the conclave would be
- * this pass promoting rather than choosing.
+ * A house's conclave places are held against its own pool, settled on a fixed calendar.
+ * The owner's calendar ruling moves the earlier life-span-derived cycles into
+ * `competition-calendars.ts`. The old catalog measured 13, 25, 100 and 500 years;
+ * those choices remain, independently of future changes to a person's span.
+ * Entrants stand at the grounds. Realm boards receive their share of seats
+ * before ranking their own entrants; inner remains the floor for a beaten holder.
  */
-
+import { COMPETITION_CALENDARS } from '../../data/cultivation/competition-calendars.js';
 import { rankRealmBand } from '../../data/cultivation/members.js';
 import { forStream } from '../cultivation/rng.js';
 import { elderRungOf } from '../cultivation/leadership.js';
-import { stagnationYearsForOrdinal } from '../../schema/cultivation.js';
 import { creditWhatTheyLearned, rankAField, type GatheringPlacing } from './gatherings.js';
 import { isBelowTheLid } from './layers.js';
 import { isAwayOnSomething, isTheWorldsToMove } from './npc-state.js';
@@ -67,15 +17,6 @@ import { abundanceOf, ordinalExpectedAt, seatsAtRank } from './promotion-inside-
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { FactionRecord, WorldState } from './world-state.js';
-
-/**
- * Share of the years a rung credits that passes between two contests for it.
- * See the header for why a quarter.
- */
-export const A_CONTEST_EVERY = 1 / 4;
-
-/** The shortest a house's cycle may be, so nothing turns into a season. */
-export const NEVER_OFTENER_THAN_YEARS = 5;
 
 /** The rung a house's conclave stands on: the one under its lowest elder rung. */
 export function theConclaveRungOf(rankCount: number): number {
@@ -96,8 +37,7 @@ function theHeightItIsContestedAt(house: Pick<FactionRecord, 'id' | 'ranks' | 'r
 export function yearsBetweenConclaveContestsIn(house: Pick<FactionRecord, 'id' | 'ranks' | 'resources'>): number {
     const rung = theConclaveRungOf(house.ranks.length);
     if (rung <= 0) return 0;
-    const credited = stagnationYearsForOrdinal(theHeightItIsContestedAt(house, rung));
-    return Math.max(NEVER_OFTENER_THAN_YEARS, Math.round(credited * A_CONTEST_EVERY));
+    return COMPETITION_CALENDARS.find(row => row.houseId === house.id && row.purpose === 'conclave')?.everyYears ?? 13;
 }
 
 /** Whether this house holds its tournament in this year. */
@@ -146,7 +86,7 @@ export function theConclavesAreContested(state: WorldState, year: number, day: n
             ?? theHeightItIsContestedAt(house, rung);
         const standing = roll.filter(i => {
             const npc = state.npcs[i]!;
-            if (!isTheWorldsToMove(npc)) return false;
+            if (!isTheWorldsToMove(npc) || npc.locationId !== house.seatLocationId) return false;
             if (npc.activity && isAwayOnSomething(npc.activity.kind)) return false;
             if (npc.factionRankIndex === rung) return true;
             // The pool it is held against: the rung below, tall enough to stand
@@ -159,12 +99,19 @@ export function theConclavesAreContested(state: WorldState, year: number, day: n
         const seats = Math.max(1, seatsAtRank(rung, rankCount, roll.length, abundanceOf(house)));
         const placings: GatheringPlacing[] = [];
         const rng = forStream(state.seed, 'conclave-tournament', house.id, year);
-        const scored = rankAField(state, standing.map(i => state.npcs[i]!), rng, placings);
+        rankAField(state, standing.map(i => state.npcs[i]!), rng, placings);
         creditWhatTheyLearned(state, placings, day);
 
-        const order = [...scored].sort((a, b) => b.score - a.score
-            || (a.npc.id < b.npc.id ? -1 : a.npc.id > b.npc.id ? 1 : 0));
-        const winners = new Set(order.slice(0, seats).map(s => s.npc.id));
+        // Seats go to realm boards before ranking; scores never cross a realm.
+        const boards = [...new Set(placings.map(p => p.bracket))].map(bracket => {
+            const field = placings.filter(p => p.bracket === bracket).sort((a, b) => a.place - b.place);
+            const share = seats * field.length / standing.length;
+            return { field, quota: Math.floor(share), remainder: share % 1 };
+        });
+        const unfilled = seats - boards.reduce((sum, board) => sum + board.quota, 0);
+        boards.sort((a, b) => b.remainder - a.remainder || a.field[0]!.bracket.localeCompare(b.field[0]!.bracket));
+        for (let i = 0; i < unfilled; i++) boards[i % boards.length]!.quota++;
+        const winners = new Set(boards.flatMap(board => board.field.slice(0, board.quota).map(p => p.npcId)));
         const row: WhatTheContestSettled = {
             houseId: house.id, rung, seats, entrants: standing.length, raised: [], stepped: []
         };

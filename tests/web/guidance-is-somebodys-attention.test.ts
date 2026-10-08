@@ -106,17 +106,21 @@ async function somebodyAboveHere(seed: string, opts: { atLeast?: number } = {}) 
     expect(harness.game.currentRun().cultivator.knownTechniques.length, 'no method on the sheet').toBeGreaterThan(0);
     const world = (await harness.game.loadWorld())!;
     const me = harness.game.currentRun().cultivator;
-    const here = new Set(harness.game.present(me).map(row => row.id));
-    const above = world.npcs
-        .filter(npc => here.has(npc.id) && npc.status === 'alive'
-            && npc.cultivation.realmOrdinal > me.realmOrdinal)
+    // Sparse placement means the opening area is not promised a master. Pick
+    // a real eligible person first, then put the player in that person's actual
+    // area; only the resulting capped roster is the scene this file measures.
+    const eligible = world.npcs
+        .filter(npc => npc.status === 'alive' && npc.cultivation.realmOrdinal > me.realmOrdinal)
         .sort((a, b) => a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
             || (a.id < b.id ? -1 : 1));
-    expect(above.length, 'nobody above the player is standing where the run opened').toBeGreaterThan(0);
     // A master stands at least `A_MASTER_STANDS_THIS_FAR_ABOVE` over a disciple;
     // under that there is no bond to seal. Tests of a master ask for that gap.
-    const teacher = above.find(npc => npc.cultivation.realmOrdinal - me.realmOrdinal >= (opts.atLeast ?? 1));
-    expect(teacher, `nobody here stands ${opts.atLeast ?? 1} rungs above the player`).toBeDefined();
+    const teacher = eligible.find(npc => npc.cultivation.realmOrdinal - me.realmOrdinal >= (opts.atLeast ?? 1));
+    expect(teacher, `nobody in this world stands ${opts.atLeast ?? 1} rungs above the player`).toBeDefined();
+    await standWhereThePeopleAre(harness, me.id, new Set([teacher!.id]));
+    const here = new Set(harness.game.present(harness.game.currentRun().cultivator).map(row => row.id));
+    expect(here, 'the chosen teacher was not in the arranged current area').toContain(teacher!.id);
+    const above = eligible.filter(npc => here.has(npc.id));
     const others = world.npcs.filter(npc => here.has(npc.id) && npc.id !== teacher!.id
         && npc.status === 'alive');
     // Put them at something that is not teaching, so the arrangement starts
@@ -430,13 +434,14 @@ describe('being taught an art is a span with the teacher at your elbow', () => {
         }
         const world = (await harness.game.loadWorld())!;
         const me = harness.game.currentRun().cultivator;
-        const here = new Set(harness.game.present(me).map(row => row.id));
         const teacher = world.npcs
-            .filter(npc => here.has(npc.id) && npc.status === 'alive'
-                && npc.cultivation.realmOrdinal > me.realmOrdinal)
+            .filter(npc => npc.status === 'alive' && npc.cultivation.realmOrdinal > me.realmOrdinal)
             .sort((a, b) => a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
                 || (a.id < b.id ? -1 : 1))[0];
-        expect(teacher, 'nobody above the player here').toBeDefined();
+        expect(teacher, 'nobody above the player exists').toBeDefined();
+        await standWhereThePeopleAre(harness, me.id, new Set([teacher!.id]));
+        expect(harness.game.present(harness.game.currentRun().cultivator).map(row => row.id),
+            'the chosen teacher was not in the arranged current area').toContain(teacher!.id);
         // THE ART ON THEM is the arrangement: what somebody carries is their
         // world row, and this is that row.
         const at = world.npcs.findIndex(npc => npc.id === teacher!.id);

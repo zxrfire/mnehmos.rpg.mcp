@@ -110,8 +110,10 @@ export function walkingDaysPerDay(conveyance: Conveyance, power: number | null =
 export function daysByConveyance(
     walkingDays: number,
     conveyance: Conveyance,
-    power: number | null = null
+    power: number | null = null,
+    preciseDays = false
 ): number {
+    if (preciseDays) return Math.max(0, walkingDays) / walkingDaysPerDay(conveyance, power);
     const days = Math.max(0, Math.ceil(walkingDays));
     if (days === 0) return 0;
     return Math.max(1, Math.ceil(days / walkingDaysPerDay(conveyance, power)));
@@ -240,6 +242,7 @@ export function unsuitedFor(
  * What arriving on this says about the party, before a word is spoken.
  */
 export function whatArrivingOnThisSays(conveyance: Conveyance, power: number | null = null): string {
+    if (conveyance.id === 'conv-body-flight') return 'One person flying without a visible craft.';
     if (conveyance.holding === 'personal') {
         return 'One person, on their own art, and the art is a house\'s. Anybody who has seen '
             + 'that school move knows which house before the party is close enough to hail.';
@@ -362,6 +365,8 @@ export function couldFlyOnTheirOwnBlade(input: {
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface JourneyInput {
+    /** Metric air distance uses exact fractions; legacy roads retain day rounding. */
+    preciseDays?: boolean;
     /** What the road costs on foot. `travelDays` on a `RegionConnection`. */
     walkingDays: number;
     conveyance: Conveyance;
@@ -406,7 +411,7 @@ export function priceJourney(input: JourneyInput): JourneyCost {
     const heads = Math.max(1, Math.floor(input.heads));
     const capacity = Math.max(1, Math.floor(input.conveyance.heads));
     const trips = Math.ceil(heads / capacity);
-    const daysOneWay = daysByConveyance(input.walkingDays, input.conveyance, power);
+    const daysOneWay = daysByConveyance(input.walkingDays, input.conveyance, power, input.preciseDays ?? false);
     // Two extra legs per additional trip: back for the next load, and out
     // again. The party that went first is already there and is not counted
     // twice, which is why this is 2n-1 legs rather than 2n.
@@ -415,7 +420,7 @@ export function priceJourney(input: JourneyInput): JourneyCost {
         daysOneWay,
         trips,
         daysForEverybody,
-        daysSavedAgainstWalking: Math.max(0, Math.ceil(input.walkingDays) - daysOneWay),
+        daysSavedAgainstWalking: Math.max(0, (input.preciseDays ? input.walkingDays : Math.ceil(input.walkingDays)) - daysOneWay),
         stonesBurned: whatTheChestBurns({
             conveyance: input.conveyance, daysOneWay, heads, trips
         }),

@@ -13,6 +13,7 @@ import {
 } from './actions.js';
 import type { EngineFacts } from './facts.js';
 import { isDayLongAct } from './lesser-action-costs.js';
+import { isOneInformationExchange } from './one-information-exchange.js';
 import { theFragmentIsOnlyTheDeclaration } from './what-you-are-not-showing.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -53,11 +54,6 @@ export function stepsOfThePlan(plan: PlanWithSteps): readonly PlanStep[] {
     return steps.length > 0 ? steps : [{ action: plan.action }];
 }
 
-/**
- * How many engine calls one sentence may make.
- */
-export const MOST_CALLS_IN_ONE_TURN = 6;
-
 /** Whether this step spends a day, the purse or the body. */
 export function spendsSomething(step: PlanStep): boolean {
     // A CHOICE IS NEVER AN ACT. Structural rather than a classification
@@ -96,11 +92,12 @@ export function stepsInTheResponse(raw: unknown, input: string): PlanStep[] | nu
     if (list === null) return null;
 
     const steps: PlanStep[] = [];
-    for (const entry of list.slice(0, MOST_CALLS_IN_ONE_TURN * 2)) {
+    for (const entry of list) {
         const validated = validatePlan(entry);
         if (!validated.ok) continue;
         const said = theWordsThisStepCameFrom(entry);
-        const ownWords = theClauseThisStepQuotes({ action: validated.action, said }, input);
+        const ownWords = isOneInformationExchange(input) ? input
+            : theClauseThisStepQuotes({ action: validated.action, said }, input);
         steps.push({
             action: carryWhatOnlyTheSentenceKnows(validated.action, ownWords ?? input, [], true),
             said
@@ -157,11 +154,110 @@ function forMatching(text: string): string {
 /**
  * The player's sentence, cut where a person would cut it.
  */
-export function theClausesOf(input: string): string[] {
+/** Literal ranges supplied in this sentence, used only to preserve lexical names. */
+export interface ExplicitNameSpan { readonly start: number; readonly end: number }
+const CLAUSE_SEPARATOR = /,|;|\band then\b|\bthen\b|\band\b|\bafter that\b|\bbefore that\b|\bafterwards\b/gi;
+export function hasClauseSeparators(input: string): boolean {
+    return !input.matchAll(CLAUSE_SEPARATOR).next().done;
+}
+/** Actual names absent from the input are never returned or handed to a model. */
+export function explicitNameSpansIn(input: string, names: readonly string[]): readonly ExplicitNameSpan[] {
+    if (!hasClauseSeparators(input)) return [];
+    const lower = input.toLowerCase(), spans: ExplicitNameSpan[] = [];
+    for (const name of new Set(names)) {
+        if (!name || !hasClauseSeparators(name)) continue;
+        const needle = name.toLowerCase();
+        for (let at = lower.indexOf(needle); at >= 0; at = lower.indexOf(needle, at + 1)) {
+            const end = at + needle.length;
+            if (!/[\p{L}\p{N}_]$/u.test(input.slice(0, at))
+                && !/^[\p{L}\p{N}_]/u.test(input.slice(end))) spans.push({ start: at, end });
+        }
+    }
+    // Longest exact names own overlapping ranges; tied identical ranges collapse.
+    const held: ExplicitNameSpan[] = [];
+    for (const span of spans.sort((a, b) => b.end - b.start - (a.end - a.start) || a.start - b.start)) {
+        if (!held.some(one => span.start < one.end && span.end > one.start)) held.push(span);
+    }
+    return held.sort((a, b) => a.start - b.start);
+}
+/** Rebase literal ranges onto the exact clause being read, without inventing names. */
+export function nameSpansWithin(input: string, spans: readonly ExplicitNameSpan[], clause: string): readonly ExplicitNameSpan[] {
+    const at = input.indexOf(clause);
+    if (at < 0) return [];
+    return spans.filter(span => span.start >= at && span.end <= at + clause.length)
+        .map(span => ({ start: span.start - at, end: span.end - at }));
+}
+/** Restore only a meaningful target cut immediately before a name's own separator. */
+export function restoreExplicitNameTarget(action: PlannedAction, input: string,
+    spans: readonly ExplicitNameSpan[]): PlannedAction {
+    // Names may be the subject of a question, not only its addressed target.
+    // Reuse the actual literal spans already protecting clause segmentation.
+    if (action.topic) {
+        const restored = restoreExplicitNameInTopic(action.topic, input, spans);
+        if (restored !== action.topic) action = { ...action, topic: restored };
+    }
+    const target = action.target?.trim();
+    if (!target || /^(?:a|an|the|my|your|his|her|our|their)$/i.test(target)) return action;
+    const matches = new Set<string>();
+    for (const span of spans) {
+        const literal = input.slice(span.start, span.end);
+        const name = literal.replace(/^the\s+/i, '');
+        if (!name.toLowerCase().startsWith(target.toLowerCase()) || name.length <= target.length) continue;
+        if (/^(?:\s*(?:,|;)|\s+(?:and|then|after that|before that|afterwards)\b)/i.test(name.slice(target.length))) matches.add(literal);
+    }
+    return matches.size === 1 ? { ...action, target: [...matches][0]! } : action;
+}
+
+/** Preserve a topic prefix while restoring its exact, uniquely grounded name. */
+function restoreExplicitNameInTopic(topic: string, input: string,
+    spans: readonly ExplicitNameSpan[]): string {
+    const matches = new Set<string>();
+    for (const span of spans) {
+        const literal = input.slice(span.start, span.end);
+        for (const name of new Set([literal, literal.replace(/^the\s+/i, '')])) {
+            for (const boundary of name.matchAll(CLAUSE_SEPARATOR)) {
+                const prefix = name.slice(0, boundary.index).trimEnd();
+                if (prefix.length < 2 || !topic.toLowerCase().endsWith(prefix.toLowerCase())) continue;
+                const at = topic.length - prefix.length;
+                if (at > 0 && /[\p{L}\p{N}_]$/u.test(topic.slice(0, at))) continue;
+                matches.add(topic.slice(0, at) + literal);
+            }
+        }
+    }
+    return matches.size === 1 ? [...matches][0]! : topic;
+}
+function insideAnExplicitName(at: number, length: number, spans: readonly ExplicitNameSpan[]): boolean {
+    return spans.some(span => at < span.end && at + length > span.start);
+}
+function spansInTheTail(spans: readonly ExplicitNameSpan[], offset: number): readonly ExplicitNameSpan[] {
+    return spans.filter(span => span.start >= offset).map(span => ({ start: span.start - offset, end: span.end - offset }));
+}
+
+export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan[] = []): string[] {
+    if (isOneInformationExchange(input)) return [input.trim()];
+    // Keep the conversational prefix together when a distinct decision follows.
+    // This applies only to the bounded information exchange, never arbitrary acts.
+    for (const boundary of input.matchAll(/\band(?:\s+then)?\b|\bthen\b|;/gi)) {
+        if (insideAnExplicitName(boundary.index!, boundary[0].length, nameSpans)) continue;
+        const before = input.slice(0, boundary.index).trim();
+        const after = input.slice(boundary.index! + boundary[0].length).trim();
+        // A further question belongs to this exchange; keep looking for the
+        // boundary where an independently requested act actually starts.
+        if (/^(?:what|who|where|when|how|which|whether|your name|can you|could you|do you|would you)\b/i.test(after)) continue;
+        if (after && isOneInformationExchange(before)) {
+            return [before, ...theClausesOf(after, spansInTheTail(nameSpans, input.indexOf(after, boundary.index! + boundary[0].length)))];
+        }
+    }
+    const parts: string[] = [];
+    let begin = 0;
+    for (const boundary of input.matchAll(CLAUSE_SEPARATOR)) {
+        if (insideAnExplicitName(boundary.index!, boundary[0].length, nameSpans)) continue;
+        parts.push(input.slice(begin, boundary.index));
+        begin = boundary.index! + boundary[0].length;
+    }
+    parts.push(input.slice(begin));
     return whatFollowsAnIntentionIsStillTheIntention(
-        input
-            .split(/,|;|\band then\b|\bthen\b|\band\b|\bafter that\b|\bbefore that\b|\bafterwards\b/i)
-            .map(part => part.trim())
+        parts.map(part => part.trim())
             .filter(part => part.split(/\s+/).filter(Boolean).length >= 2)
             .filter(part => !thisFragmentModifiesTheActBesideIt(part))
     );
@@ -260,12 +356,13 @@ const ON_WHOSE_AUTHORITY =
 export async function theClausesNoStepAccountsFor(
     input: string,
     steps: readonly PlanStep[],
-    read: (clause: string) => Promise<PlannedAction>
+    read: (clause: string) => Promise<PlannedAction>,
+    nameSpans: readonly ExplicitNameSpan[] = []
 ): Promise<PlanStep[]> {
     const carried = new Set(steps.map(step => step.action.action));
     const lost: PlanStep[] = [];
 
-    for (const clause of theClausesOf(input)) {
+    for (const clause of theClausesOf(input, nameSpans)) {
         // A clause that only CHOOSES is answered by a choice, not by a verb, so
         // it is never lost and must never be reported as lost. Without this the
         // superseded reader step came back to the player as "the reading layer
@@ -278,7 +375,7 @@ export async function theClausesNoStepAccountsFor(
         // lost theft, the exact clause this was written for, priced itself as a
         // free read and was never reported. `costsTheAskerNothing` is a fact
         // about a plan, and it has to be given one.
-        const reading = await read(clause);
+        const reading = restoreExplicitNameTarget(await read(clause), clause, nameSpansWithin(input, nameSpans, clause));
         if (reading.action === 'unclear' || carried.has(reading.action)) continue;
         if (costsTheAskerNothing(reading)) continue;
         carried.add(reading.action);
@@ -303,9 +400,27 @@ export interface TheSentenceAsAPlan {
 export async function theWholeSentenceAsAPlan(
     input: string,
     fromTheReader: readonly PlanStep[],
-    read: (clause: string) => Promise<PlannedAction>
+    read: (clause: string) => Promise<PlannedAction>,
+    nameSpans: readonly ExplicitNameSpan[] = []
 ): Promise<TheSentenceAsAPlan> {
-    const clauses = theClausesOf(input);
+    const clauses = theClausesOf(input, nameSpans);
+    if (nameSpans.length > 0) fromTheReader = fromTheReader.map(step => {
+        const own = clauses.length === 1 ? input : step.said ?? input;
+        return { ...step, action: restoreExplicitNameTarget(step.action, own,
+            own === input ? nameSpans : nameSpansWithin(input, nameSpans, own)) };
+    });
+    // These are parts of one information exchange, even when a model emits
+    // separate greeting, origin and care steps. Preserve its addressed person
+    // and the full question. Any other requested act stays on the ordinary path.
+    if (isOneInformationExchange(input) && fromTheReader.length > 0
+        && fromTheReader.every(step => step.action.action === 'interact'
+            && (step.action.intent === undefined || step.action.intent === 'talk'))) {
+        return {
+            steps: [{ action: carryWhatOnlyTheSentenceKnows(fromTheReader[0]!.action, input), said: input }],
+            backfilled: [],
+            why: ['greeting, context and questions form one information exchange']
+        };
+    }
     if (clauses.length < 2) {
         return {
             steps: [...fromTheReader],
@@ -314,7 +429,8 @@ export async function theWholeSentenceAsAPlan(
         };
     }
 
-    const readings = await Promise.all(clauses.map(read));
+    const readings = await Promise.all(clauses.map(async clause => restoreExplicitNameTarget(
+        await read(clause), clause, nameSpansWithin(input, nameSpans, clause))));
 
     // A CLAUSE THAT CHOOSES IS A CHOICE, WHATEVER ANYBODY READ IT AS
     const chooses = clauses.map(theSelectionInThisClause);
@@ -447,9 +563,11 @@ export async function theWholeSentenceAsAPlan(
             superseded.push(step);
             return;
         }
-        steps.push(at !== null && step.said === undefined
-            ? { ...step, said: clauses[at]! }
-            : step);
+        const actual = at !== null && nameSpans.length > 0 ? { ...step,
+            action: restoreExplicitNameTarget(step.action, clauses[at]!, nameSpansWithin(input, nameSpans, clauses[at]!)) } : step;
+        steps.push(at !== null && actual.said === undefined
+            ? { ...actual, said: clauses[at]! }
+            : actual);
     });
     fillBetween(next, clauses.length);
 
@@ -495,9 +613,10 @@ function theClauseThisStepAnswersIsAChoice(
 export async function anyClauseReadsAsThisVerb(
     input: string,
     verb: ActionName,
-    read: (clause: string) => Promise<ActionName>
+    read: (clause: string) => Promise<ActionName>,
+    nameSpans: readonly ExplicitNameSpan[] = []
 ): Promise<boolean> {
-    for (const clause of theClausesOf(input)) {
+    for (const clause of theClausesOf(input, nameSpans)) {
         if (await read(clause) === verb) return true;
     }
     return false;
@@ -750,17 +869,14 @@ export interface WhatThisTurnMayRun {
     readonly askAbout: readonly PlanStep[];
     /**
      * Steps the turn did not reach, whether it stopped to ask or stopped
-     * because the turn's one costly act was spent. Named, never dropped.
+     * because their order needs clarification. Named, never dropped.
      */
     readonly heldForTheQuestion: readonly PlanStep[];
     /**
      * Whether the player's own sentence settled the order, so nothing was
-     * asked. True means `heldForTheQuestion` is what is left for next turn
-     * rather than what a question is about.
+     * asked. Ordered acts all run; only an unresolved order holds acts.
      */
     readonly theOrderWasGiven: boolean;
-    /** Steps past {@link MOST_CALLS_IN_ONE_TURN}. Named, never silently dropped. */
-    readonly overTheBound: readonly PlanStep[];
     /**
      * One clause the reader read twice, and which reading was taken.
      */
@@ -858,23 +974,22 @@ export function whatThisTurnMayRun(
     spansADay: (action: PlannedAction) => boolean = isDayLongAct
 ): WhatThisTurnMayRun {
     const withoutDoubleReadings = oneClauseIsOneAct(steps);
-    // A CLAUSE THAT SAID WHY IS NOT A SECOND THING TO DO. Before the bound and
-    // before the count, because a reason was never one of the turn's calls -
+    // A CLAUSE THAT SAID WHY IS NOT A SECOND THING TO DO. A reason was never
+    // one of the turn's calls -
     // "I need to eat, so I take whatever work will feed me" is one act, and a
     // question about which of the two comes first has nothing in it to answer.
     const { acts: withoutReasons, reasons: statedReasons } =
         tellingReasonsFromActs(withoutDoubleReadings.acts);
     // AND A GOING THAT NAMED NOWHERE IS NOT ONE OF THE TURN'S CALLS EITHER.
     const withoutEmptyGoings = aGoingThatNamesNowhereIsTheApproach(withoutReasons);
-    const kept = withoutEmptyGoings.slice(0, MOST_CALLS_IN_ONE_TURN);
-    const overTheBound = withoutEmptyGoings.slice(MOST_CALLS_IN_ONE_TURN);
+    const kept = withoutEmptyGoings;
     const secondReadings = withoutDoubleReadings.secondReadings;
 
     const dayLong = (step: PlanStep) => !step.selects && spansADay(step.action);
     const costly = kept.filter(dayLong);
     if (costly.length < 2) {
         return {
-            toRun: kept, askAbout: [], heldForTheQuestion: [], overTheBound,
+            toRun: kept, askAbout: [], heldForTheQuestion: [],
             theOrderWasGiven: false, secondReadings, statedReasons
         };
     }
@@ -884,12 +999,10 @@ export function whatThisTurnMayRun(
     // THE PLAYER MAY HAVE ALREADY ANSWERED THE QUESTION, or a reader may have
     // answered it for them. See `theReaderDecidedTheOrder`.
     if (theReaderDecidedTheOrder || theOrderIsAlreadySettled(kept, input)) {
-        const second = kept.findIndex((step, at) => at > first && dayLong(step));
         return {
-            toRun: kept.slice(0, second),
+            toRun: kept,
             askAbout: [],
-            heldForTheQuestion: kept.slice(second),
-            overTheBound,
+            heldForTheQuestion: [],
             theOrderWasGiven: true,
             secondReadings,
             statedReasons
@@ -900,7 +1013,6 @@ export function whatThisTurnMayRun(
         toRun: kept.slice(0, first),
         askAbout: costly,
         heldForTheQuestion: kept.slice(first),
-        overTheBound,
         theOrderWasGiven: false,
         secondReadings,
         statedReasons
@@ -1134,7 +1246,7 @@ export function whatTheQuestionAsks(fork: WhichComesFirst): string {
 
 /** The same question for the engine channel, which keeps every figure. */
 export function whatTheQuestionAsksStructurally(fork: WhichComesFirst): string {
-    return 'A turn spends at most one costly action. This sentence read as '
+    return 'The order of these acts was not resolved. This sentence read as '
         + `${fork.acts.length}: `
         + fork.acts
             .map(step => `${step.action.action}${step.action.target ? `(${step.action.target})` : '()'}`)
@@ -1249,6 +1361,10 @@ export interface OneCall<
     events: Event[];
     timeSkip: Skip | null;
     breakthrough: Break | null;
+    /** Transient ordered projections of nested executed results; scalars stay compatible. */
+    timeSkips?: Skip[];
+    breakthroughs?: Break[];
+    hearings?: Heard[];
     outcome: 'executed' | 'refused';
     calls: ToolCallRecordish[];
     hearing?: Heard | null;
@@ -1408,9 +1524,13 @@ export function theRowThatSaysWhereItStopped(
     };
 }
 
-/**
- * Several calls, folded into the one turn the player took.
- */
+/** Include a wrapper's newly assigned scalar without repeating a held result. */
+export function executionResults<T>(scalar: T | null | undefined, projected?: readonly T[]): T[] {
+    return projected ? [...projected, ...(scalar != null && !projected.includes(scalar) ? [scalar] : [])]
+        : scalar == null ? [] : [scalar];
+}
+
+/** Several calls, folded into the one turn the player took. */
 export function foldTheCallsIntoOneTurn<Event, Skip, Break, Heard, Seen>(
     calls: readonly OneCall<Event, Skip, Break, Heard, Seen>[],
     headline?: string
@@ -1420,14 +1540,28 @@ export function foldTheCallsIntoOneTurn<Event, Skip, Break, Heard, Seen>(
     const first = calls[0];
     if (!first) throw new Error('a turn folded no calls at all, which cannot happen');
 
-    // A fact two steps both reached is said once. Played blind: look/bills and work/board
-    // both reached the gate, and the narrator was handed the same answer twice.
+    // Static answers two steps reached are said once. Actual spans/attempts
+    // retain their occurrence order: two lived months are not one month read twice.
     const once = (texts: readonly string[]): string[] => texts.filter((text, at) => text.trim() === '' || texts.indexOf(text) === at);
+    const resultBearing = (call: OneCall<Event, Skip, Break, Heard, Seen>): boolean =>
+        call.timeSkip != null || call.breakthrough != null
+        || (call.timeSkips?.length ?? 0) > 0 || (call.breakthroughs?.length ?? 0) > 0;
+    const inOccurrenceOrder = (read: (facts: EngineFacts) => readonly string[]): string[] => {
+        const seen = new Set<string>();
+        const kept: string[] = [];
+        for (const call of calls) {
+            for (const text of read(call.facts)) {
+                if (resultBearing(call) || text.trim() === '' || !seen.has(text)) kept.push(text);
+                seen.add(text);
+            }
+        }
+        return kept;
+    };
     const facts: EngineFacts = {
         headline: headline ?? first.facts.headline,
-        lines: once(calls.flatMap(call => call.facts.lines)),
+        lines: inOccurrenceOrder(facts => facts.lines),
         structure: once(calls.flatMap(call => call.facts.structure)),
-        prose: once(calls.map(call => call.facts.prose).filter(text => text.length > 0)).join('\n\n')
+        prose: inOccurrenceOrder(facts => facts.prose.length > 0 ? [facts.prose] : []).join('\n\n')
     };
 
     const required = calls.flatMap(call => call.facts.required ?? []);
@@ -1436,16 +1570,18 @@ export function foldTheCallsIntoOneTurn<Event, Skip, Break, Heard, Seen>(
     return {
         facts,
         events: calls.flatMap(call => call.events),
-        // The one time skip and the one breakthrough a turn can hold, which is
-        // guaranteed by the law above: only a costly act produces either, and
-        // there is at most one costly act.
+        // The legacy scalar summary retains the first result. Every executed
+        // span and breakthrough remains in the per-step calls and facts above.
         timeSkip: calls.map(call => call.timeSkip).find(skip => skip !== null) ?? null,
         breakthrough: calls.map(call => call.breakthrough).find(result => result !== null) ?? null,
+        timeSkips: calls.flatMap(call => executionResults(call.timeSkip, call.timeSkips)),
+        breakthroughs: calls.flatMap(call => executionResults(call.breakthrough, call.breakthroughs)),
+        hearings: calls.flatMap(call => executionResults(call.hearing, call.hearings)),
         outcome: calls.some(call => call.outcome === 'executed') ? 'executed' : 'refused',
         calls: calls.flatMap(call => call.calls),
         hearing: calls.map(call => call.hearing).find(heard => heard != null) ?? null,
         // CONCATENATED, unlike the hearing above, and the difference is not an
-        // inconsistency. A turn has at most one thing somebody SAID to render,
+        // inconsistency. The legacy hearing summary retains one exchange,
         // and every step of a plan can show the player something - so taking
         // the first would silently drop what the later steps put in front of
         // them, which is the defect this seam exists to end.
@@ -1503,19 +1639,6 @@ export function theRowForAStatedReason(step: PlanStep): ToolCallRecordish {
     };
 }
 
-/** The row that names a step the bound cut off, because dropping it silently is the defect. */
-export function theRowForAStepOverTheBound(step: PlanStep): ToolCallRecordish {
-    return {
-        name: 'engine.stepNotRun',
-        action: step.action.action,
-        summary: `Not run: a sentence may make at most ${MOST_CALLS_IN_ONE_TURN} engine calls, `
-            + `and ${step.action.action}`
-            + `${step.action.target ? `(${step.action.target})` : '()'}`
-            + ' was past that. Nothing was spent on it. Say it again on its own and it will run.',
-        ok: false
-    };
-}
-
 /**
  * What the player reads when their own sentence gave the order.
  */
@@ -1526,7 +1649,7 @@ export function sayingWhatIsStillToCome(held: readonly PlanStep[]): string {
         : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
     return `You said what order you wanted, and that is the order it went in. `
         + `${capitalise(rest)} ${named.length === 1 ? 'is' : 'are'} still ahead of you - `
-        + `a turn spends one act that costs, and this one is spent. Say it again and it runs.`;
+        + `they have not run. Say which comes first and the ordered plan can run.`;
 }
 
 /** The same, as an inspector row per held step. */
@@ -1648,12 +1771,4 @@ export function theRowForAChoice(
         // operator looking for what went wrong should find it.
         ok: picked !== null
     };
-}
-
-/** The sentence a player reads when the bound cut something off. */
-export function sayingWhatTheBoundCutOff(over: readonly PlanStep[]): string {
-    const named = over.map(whatThisStepIsCalled);
-    return `That was more than one turn's worth of asking, so ${named.join(', ')} `
-        + `${named.length === 1 ? 'was' : 'were'} left. Nothing was spent on `
-        + `${named.length === 1 ? 'it' : 'them'}; say it again and it will run.`;
 }

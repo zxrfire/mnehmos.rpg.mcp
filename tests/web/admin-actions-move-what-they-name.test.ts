@@ -99,11 +99,13 @@ describe('a typed ADMIN action moves the thing it names', () => {
     it('advance_days really spends the days on the run clock', async () => {
         await withAdmin(true, async () => {
             const { game } = await operating('admin-advance-days');
-            expect(game.state().run.elapsedDays).toBe(0);
+            // A run now opens at 08:00 (`turn-engine.ts`'s `newRun`), a third of a
+            // day already spent before any act.
+            expect(game.state().run.elapsedDays).toBeCloseTo(1 / 3);
 
             const result = await game.act('ADMIN advance_days days=30');
 
-            expect(game.state().run.elapsedDays).toBe(30);
+            expect(game.state().run.elapsedDays).toBeCloseTo(30 + 1 / 3);
             // Real aging, not a clock nudged on its own.
             expect(game.state().cultivator.age).toBeGreaterThan(STARTING_AGE);
             expect(result.narration).toMatch(/TIME ADVANCED/i);
@@ -169,8 +171,9 @@ describe('a typed ADMIN action moves the thing it names', () => {
 
             expect(game.state().cultivator.location).toBe('The Jade Face');
             expect(result.narration).toMatch(/MOVED/i);
-            // A placement, not a journey. No road time was charged.
-            expect(game.state().run.elapsedDays).toBe(0);
+            // A placement, not a journey. No road time was charged, beyond the
+            // third of a day a run already opens with (`turn-engine.ts`'s `newRun`).
+            expect(game.state().run.elapsedDays).toBeCloseTo(1 / 3);
         });
     });
 

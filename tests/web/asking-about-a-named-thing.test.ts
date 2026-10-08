@@ -314,14 +314,19 @@ describe('played, through the whole service', () => {
         await game.newRun('Wen Shuyi');
         await game.act('I look around');
 
-        const resolved = async (said: string) => {
+        // A named house or art is a thorough investigation, at half a day.
+        // The ground visibly underfoot is a free observation even when the
+        // router calls it `investigate`: its target belongs to the same reader
+        // as `look`, rather than to a search. The run opens at 08:00.
+        let expectedDays = 1 / 3;
+        const resolved = async (said: string, days: 0 | 0.5) => {
             const result = await game.act(said);
             const read = engineCalls(result)
                 .find(call => call.action === 'investigate');
             expect(read, `${said} did not reach the read`).toBeDefined();
             expect(read!.ok, `${said} was refused`).toBe(true);
-            // Free. A question about anything costs nobody anything.
-            expect(result.state.run.elapsedDays, said).toBe(0);
+            expectedDays += days;
+            expect(result.state.run.elapsedDays, said).toBeCloseTo(expectedDays);
             return read!.summary;
         };
 
@@ -333,12 +338,12 @@ describe('played, through the whole service', () => {
         // `no-engine-voice-in-a-played-turn`. What this was ever asserting is
         // that the name resolved to a HOUSE rather than to a person or a place,
         // and that is what it asserts now.
-        expect(await resolved('tell me about the Golden Sheaf Sect'))
+        expect(await resolved('tell me about the Golden Sheaf Sect', 0.5))
             .toMatch(/to a sect/);
         // The ground underfoot.
-        expect(await resolved('tell me about this place')).toMatch(/to a place/);
+        expect(await resolved('tell me about this place', 0)).toMatch(/to a place/);
         // An art out of the catalog.
-        expect(await resolved('what do you know about the Lesser Qi-Gathering Manual'))
+        expect(await resolved('what do you know about the Lesser Qi-Gathering Manual', 0.5))
             .toMatch(/to a technique/);
     }, 200_000);
 
@@ -389,7 +394,9 @@ describe('played, through the whole service', () => {
         // could have, and not a refusal about a house nobody named.
         expect(engineCalls(result).some(call => call.name === 'sect_manage.standing')).toBe(false);
         expect(engineCalls(result).some(call => call.name === 'engine.resolveSect')).toBe(false);
-        expect(result.state.run.elapsedDays).toBe(0);
+        // A run opens with a third of a day already spent (`turn-engine.ts`'s
+        // `newRun`); the listing read itself still costs nothing more.
+        expect(result.state.run.elapsedDays).toBeCloseTo(1 / 3);
     }, 200_000);
 
     /**

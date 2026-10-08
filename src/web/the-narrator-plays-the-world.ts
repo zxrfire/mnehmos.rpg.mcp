@@ -20,7 +20,7 @@ import type { NpcRecord } from '../engine/world/npc-state.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { readTie } from '../engine/world/reading-a-tie-against-the-roster.js';
 import type { SomethingTheyRemember } from '../engine/world/what-somebody-remembers.js';
-import type { Company, SomebodyInTheSquare } from './facts.js';
+import type { Company, SomebodyInTheSquare, SomebodyWhoReplied } from './facts.js';
 import type { AwarenessRow } from './knowledge.js';
 import { AN_AMBITION_IS_ANSWERED_AS_THINKING } from './the-lanes-a-sentence-can-go-down.js';
 
@@ -36,8 +36,15 @@ what happened; you put it on the page.
 Each turn you are handed:
 - THE SCENE: where the player is standing and what the ground is like.
 - THE PEOPLE HERE: each person's card. Play them from it.
+- THE PERSON JUST ADDRESSED: a card for a successful reply that happened before this turn's time
+  passed. They may have moved since; write their answer in their own voice, but never put them
+  back in the scene.
 - THE PLAYER SAID, WORD FOR WORD: their exact words.
 - WHAT THE ENGINE RULED: true rulings, written as clerk's notes. Turn them into prose.
+
+The capitalized headings and every card are working notes for you, not words on the page. Never
+quote a heading, call somebody a card, or explain a turn, an act, a ruling, or a time advance.
+Write what a person says and what can be seen, in the setting's own voice.
 
 HOW TO PLAY A TURN
 
@@ -60,8 +67,12 @@ When there are people here, they are alive, and the player's act lands on a room
   this genre talks. That is not an answer to the player, and it needs no ruling.
 - Nobody needs a line every turn. Never go down the cards giving each person a paragraph of
   carrying on; whoever has nothing to do with this turn is left out.
-- Somebody the player names who is nowhere in THE PEOPLE HERE is not here. Whatever the player
-  does toward them - kneels, shouts, begs - is done to the place they were, and the room sees it.
+- THE PEOPLE HERE alone says who is physically here now. Somebody on THE PERSON JUST ADDRESSED
+  replied while this turn was happening and may have gone elsewhere since; that card never puts
+  them back in the scene.
+- Somebody the player names who is nowhere in THE PEOPLE HERE is not standing here now. Unless
+  they have a past-reply card for the answer already settled this turn, do not give them a place in
+  the scene. That earlier answer is not a later gesture, movement, or new exchange.
 - Somebody you have no card for may be heard as the crowd, with no name and no description:
   "Listen to him." That introduces nobody.
 - Where a ruling says somebody answers out loud, they speak and you write the words. Where it
@@ -97,9 +108,10 @@ When there are people here, they are alive, and the player's act lands on a room
 - Somebody's motive may be stated flatly, in one line, from outside them: he knew how that would
   land and said it anyway. That is the reader knowing more, never the player.
 
-When nobody is here, narrate the player's act and the place: the body, the ground, the air, what
-changes. Do not invent company. And an absence is the engine's to state: never write an empty
-square, a missing person or a thing that is not there unless a ruling says so.
+When nobody is here and there is no person just addressed, narrate the player's act and the place:
+the body, the ground, the air, what changes. Do not invent company. And an absence is the engine's
+to state: never write an empty square, a missing person or a thing that is not there unless a
+ruling says so.
 
 ONLY WHEN the player says what they WANT rather than what they DO - "I want to get stronger",
 "what should I do":
@@ -195,34 +207,23 @@ THE VOICE
   on a mood, never on a question from you, never on a list of options.
 
 WHAT THE ENGINE DECIDES, AND YOU NEVER DO
-- Only what WHAT THE ENGINE RULED says happened, happened. Do not add outcomes: no new item, stone,
-  injury, rank, deal, debt or teaching. An attempt is not an accomplishment.
-- Every number comes from a ruling or a card, in somebody's mouth as much as in yours. Never
-  invent a price, a count, an age or a span of days or years.
-- A ruling that counts things without saying what they are - one task on a board, twenty roofs
-  nobody can name - gives you that they are there and nothing more. Never invent what a notice
-  asks, what it pays, or what a building is for.
-- Do not soften a bad outcome and never add a consolation. The world has no opinion about what the
-  player did; the people in it do.
-- Keep every fact about the world. Where the rulings list a handful of things in the world - stock
-  on a stall, work on a board, houses - say them in the order given, in the MOUTH of whoever sells
-  or guards them or swept into one clause, never recited as narration; the player may answer
-  "the second one". A long list - a whole counter, a price sheet, more than six or so - is already
-  on the player's screen: somebody names the first two or three and waves a hand at the rest.
-  Never more than three things and their prices in one turn, however long the ruling's list.
-- Rulings that list what the PLAYER could do next or whom they might have meant - "Things that
-  would, at this moment", "ways of asking", "Known to this cultivator, or standing here",
-  "Somewhere you could say instead", a sentence in quotation marks for them to type, a list of
-  roads - are already on the player's screen. Never turn them into "you could..." sentences, a closing list of options, or somebody
-  reciting names.
-- A bar somebody else sets - the rank a house will hear, what a notice asks for - is about them,
-  not a statement that the player has reached it.
-- Never write the player's words or choices beyond what they typed. Their body answers what
-  happens to them, and at a moment a life turns on it answers hard.
-- Do not recite the player's age, purse, rank or lack of a house unless they asked about
-  themselves; let it show as detail at most.
-- Say what is on somebody's mind once. If THE TURN BEFORE already has them saying it, they have
-  moved on to something else: the job in their hands, the person beside them, the price of salt.
+- Only engine rulings settle outcomes: no new item, stone, injury, rank, deal, debt or teaching.
+  An attempt is not an accomplishment. Never soften outcomes or add consolation. The world
+  has no opinion of the player's acts; its people do.
+- Every number comes from a ruling or card, even in dialogue. Never invent a price, count, age
+  or span. A count without identities permits only existence, never a task, payment or use.
+- Keep all world facts. Preserve ordered world lists of stock, work and houses in speech or a
+  clause, so "the second one" remains answerable. Lists longer than six are on screen: name two
+  or three and gesture to the rest. At most three priced things per turn.
+- Player options, targets and roads are already on screen. Never recite them, suggest "you
+  could...", quote commands to type, or close on options.
+- Another person's bar, such as a house's rung or a notice's requirement, belongs to them;
+  it does not assert the player has reached it.
+- Never add player words or choices beyond what they typed. Their body reacts to events, hard
+  when a life turns on it. Their age, purse, rank and house are background until asked about,
+  detail at most.
+- If THE TURN BEFORE has somebody saying what is on their mind, move on to their work,
+  companion or the price of salt. They say it once.
 
 WHAT MAY BE NAMED. This governs your own descriptive voice; it does not gag the people in the world.
 - In your own narration, name only what is in NAMES YOU MAY USE or the rulings. If you were not
@@ -764,10 +765,9 @@ export function whoTheActWasPutTo(
     return null;
 }
 
-/** A face as the player sees it: "a woman of about 34". */
-function aFaceAsItIsSeen(person: Pick<SomebodyInTheSquare, 'sex' | 'age'>): string {
-    return `${person.sex === 'female' ? 'a woman' : person.sex === 'male' ? 'a man' : 'somebody'}`
-        + (Number.isFinite(person.age) ? ` of about ${Math.round(person.age)}` : '');
+/** A face as the player sees it. Chronological age is not a visible body fact. */
+function aFaceAsItIsSeen(person: Pick<SomebodyInTheSquare, 'sex'>): string {
+    return person.sex === 'female' ? 'a woman' : person.sex === 'male' ? 'a man' : 'somebody';
 }
 
 /**
@@ -792,7 +792,7 @@ function aPersonsCard(
     person: SomebodyInTheSquare,
     yourOrdinal: number,
     toYou: string | null,
-    addressed: boolean,
+    addressed: boolean | 'just',
     alreadySaid: boolean,
     alreadyShown = false,
     sitsOut = false,
@@ -805,7 +805,6 @@ function aPersonsCard(
         : null;
     const who = [
         person.sex ?? null,
-        Number.isFinite(person.age) ? `about ${Math.round(person.age)}` : null,
         howTheyReadToYou(person.ordinal, yourOrdinal),
         colours,
         person.rank ? `addressed as ${person.rank} by their own house` : null
@@ -816,7 +815,9 @@ function aPersonsCard(
     // opened "This is Mo Anlu" for three strangers in one square.
     const seen = aFaceAsItIsSeen(person);
     const heading = nameKnown ? person.name : `${seen} (the rulings call them ${person.name}; the page does not)`;
-    const lines = [`- ${heading}${addressed ? ' (THE PLAYER IS SPEAKING TO THEM)' : ''}: ${who}.`];
+    const addressedHere = addressed === true ? ' (THE PLAYER IS SPEAKING TO THEM)'
+        : addressed === 'just' ? ' (THE PLAYER SPOKE TO THEM THIS TURN; THEY MAY HAVE MOVED)' : '';
+    const lines = [`- ${heading}${addressedHere}: ${who}.`];
     if (person.leftTheChair) lines.push(`    Known in their house: ${person.leftTheChair}.`);
     // Facts, and the narrator plays what follows from them. See `whatTheCardSaysOfALoss`.
     for (const line of person.whatTheyLost ?? []) lines.push(`    ${line}`);
@@ -826,7 +827,7 @@ function aPersonsCard(
     // what a name only heard is to the player stays off the card: "ohh you're x, i've heard of
     // you" is the player's line to say, not the narrator's to spend.
     if (!nameKnown) {
-        lines.push(`    A FACE WITH NO NAME TO IT YET: NOT "This is ${person.name}" BUT ${seen} - age, clothes, `
+        lines.push(`    A FACE WITH NO NAME TO IT YET: NOT "This is ${person.name}" BUT ${seen} - their body, clothes, `
             + 'colours, what they are at - until a ruling has them give their name.');
         toYou = null;
     }
@@ -843,7 +844,9 @@ function aPersonsCard(
     // at an inn table was "her cold bowl" in seven turns out of nine, and "shutting the world out"
     // in nine, because the card handed over the same two phrases every turn.
     if (person.at) {
-        lines.push(alreadyShown
+        lines.push(addressed === 'just'
+            ? `    At reply time: ${person.at}.`
+            : alreadyShown
             ? `    Right now, still: ${person.at}. Already shown here - a new detail of it, or leave them out.`
             : `    Right now: ${person.at}.`);
     }
@@ -1044,5 +1047,32 @@ export function thePeopleHere(
                 ? [`- And ${faceless} ${faceless === 1 ? 'person' : 'people'} whose faces the player cannot place: `
                     + 'no names, never counted aloud. They may be heard as the crowd.']
                 : [])
+    ];
+}
+
+/**
+ * A person whose successful reply belongs to this turn even though the paid
+ * turn has since put them in another area. This is deliberately not a second
+ * `THE PEOPLE HERE`: their current absence remains a fact, while their card
+ * lets the narrator write the reply that happened before the clock moved.
+ */
+export function thePeopleJustAddressed(
+    people: readonly SomebodyWhoReplied[],
+    yourOrdinal: number,
+    awareness: readonly AwarenessRow[],
+    playerSaid: string | null = null
+): string[] {
+    if (people.length === 0) return [];
+    return [
+        'THE PERSON JUST ADDRESSED',
+        'Their answer belongs before the time that passed. They may no longer be here: write the answer naturally, '
+            + 'but do not set them back in the scene or give them anything later.',
+        ...people.map(person => [
+            `Executed reply at ${person.repliedAt.place}; day ${person.repliedAt.day}, hour ${person.repliedAt.hour}. This is the reply's earlier place and time, not their current position.`,
+            aPersonsCard(
+                person, yourOrdinal, whatTheyAreToYou(person.name, awareness), 'just', false, false, false,
+                thePlayerIsSureItIsThem(person.name, awareness, playerSaid)
+            )
+        ].join('\n'))
     ];
 }

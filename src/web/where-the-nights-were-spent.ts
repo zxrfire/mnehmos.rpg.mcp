@@ -1,3 +1,4 @@
+import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
 /**
  * Whether a span's nights were spent under a roof or in the open, and what the open cost the body.
  *
@@ -8,7 +9,7 @@
  * A roof is: the room at the inn here while it is paid for, the room a house
  * gives you or your own abode while you stand in it, anywhere inside walls or
  * under rock (an interior, a cave, a sealed or secret domain), or an act that is
- * roofed by what it is (a sealed seclusion, a course of care, paid work, a paid
+ * roofed by what it is (a sealed seclusion, paid work, a paid
  * seat). A road walked on foot, a hunt and a day on the herb ground are outdoors
  * whatever the place.
  */
@@ -23,13 +24,14 @@ import { endTheLodgingOnLeaving, whereTheyAreLodged } from './a-room-at-an-inn.j
 import type { ActionName } from './action-set.js';
 import { placeName } from './facts.js';
 import { theQuartersThisCultivatorHas } from './leaving-a-thing-in-your-own-room.js';
-import { theSeasonOn } from './prompt.js';
+import { theSeasonOn } from './the-season-on-a-day.js';
+import { theAreaTheyAreIn } from './walking-across-a-place.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 
 const OUTDOORS_BY_THE_ACT: ReadonlySet<ActionName> = new Set<ActionName>(['move', 'gather', 'hunt']);
 const UNDER_A_ROOF_BY_THE_ACT: ReadonlySet<ActionName> = new Set<ActionName>([
-    'seclude', 'treat', 'child', 'work', 'passage'
+    'seclude', 'child', 'work', 'passage'
 ]);
 
 /** Grounds that make a province hard country to sleep out in. */
@@ -38,8 +40,12 @@ const HARD_GROUND = new Set(['glacier', 'high_peak', 'desert']);
 const UNDER_ROCK_OR_WALLS = new Set(['cave', 'sealed_domain', 'secret_realm']);
 
 /** Whether where they stand is inside walls, under rock, or a room that is theirs. */
-function aRoofOverWhereTheyStand(game: GameService, world: WorldState | null, cultivator: Cultivator): boolean {
-    if (!world) return false;
+export function aRoofOverWhereTheyStand(game: GameService, world: WorldState | null, cultivator: Cultivator): boolean {
+    if (!world || betweenRoadEndpoints(game.repos.db, cultivator)) return false;
+    // A town's clinic is an actual interior area, not the settlement's street.
+    // Read the same resolved physical area as walking; a physician's identity
+    // or the outer requested-action label supplies no roof.
+    if (theAreaTheyAreIn(world, cultivator)?.area.for === 'clinic') return true;
     const at = game.worldPlaceOf(cultivator);
     const theirs = theQuartersThisCultivatorHas(game, world, cultivator);
     if (theirs && theirs.reachedFrom(at)) return true;
@@ -119,7 +125,7 @@ export function theWeatherTakesItsShare(
         const startDay = Math.floor(run.elapsedDays);
         const days = Array.from({ length: spent }, (_, i) => startDay + i);
         const outdoorsByTheAct = said === 'in_the_open' || OUTDOORS_BY_THE_ACT.has(action);
-        const lodging = outdoorsByTheAct ? null : whereTheyAreLodged(game, before);
+        const lodging = outdoorsByTheAct || betweenRoadEndpoints(game.repos.db, before) ? null : whereTheyAreLodged(game, before);
         const roofed = !outdoorsByTheAct
             && (UNDER_A_ROOF_BY_THE_ACT.has(action) || aRoofOverWhereTheyStand(game, game.atHand, before));
         const atTheInn = lodging ? days.filter(day => day < lodging.paidThroughDay) : [];

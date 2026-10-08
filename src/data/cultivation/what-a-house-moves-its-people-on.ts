@@ -18,7 +18,17 @@ import type {
 /**
  * Every kind of conveyance in the world.
  */
+/** Initial authored launch term: one finite pulse sized like the ordinary sword
+ * launch. Not a folding cost, upkeep rate, or another charge to an art user. */
+export const INNATE_FLIGHT_LAUNCH_QI = 25;
+
 export const CONVEYANCES: readonly Conveyance[] = [
+    {
+        id: 'conv-body-flight', name: "Flying by one's own body", grade: 'heaven',
+        range: 'crossing', holding: 'personal', heads: 1,
+        crossesGroundThatCannotBeWalked: true, seenComing: true, drawnByBeast: false,
+        description: 'The body-flight grant conferred by Void Tribulation. No craft or movement art is implied.'
+    },
     {
         id: 'conv-on-foot',
         name: 'Afoot',

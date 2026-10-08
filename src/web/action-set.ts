@@ -398,8 +398,15 @@ export const THE_LABEL_THAT_REACHES_A_VERBS_READ:
     passage: ['', 'board'],
     /** What the swearer already carries. */
     oath: ['', 'read'],
-    /** Reading it from outside is the free step of the four. */
-    site: ['outside'],
+    /**
+     * Reading it from outside is the free step of the four, and so is asking
+     * what there is to approach: `site-phrasings.ts` hands a nameless "what
+     * inheritance grounds are near here" the same `approach` label it hands
+     * "I go to the eighth stone" - the walk and the question are one intent,
+     * told apart only by whether a site was named. Naming one turns it into
+     * the walk, below.
+     */
+    site: ['outside', 'approach'],
     /** What the counters here will take. */
     legacy: ['', 'counters'],
     /** What it would take to ask them, and what they are after. */
@@ -466,7 +473,10 @@ export const THE_TOPIC_THAT_TURNS_A_READ_INTO_AN_ACT:
  * way, because `theReadThatAnswersIt` reaches the listing by dropping the name.
  */
 const A_NAME_TURNS_THESE_INTO_AN_ACT: Readonly<Record<string, readonly string[]>> = {
-    sect: ['', 'duty', 'curriculum']
+    sect: ['', 'duty', 'curriculum'],
+    // Naming a site under `approach` is the walk there, which spends; asking
+    // what there is to approach, with nothing named, is the listing above.
+    site: ['approach']
 };
 
 /**
@@ -640,6 +650,8 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
     'project', 'possess', 'reconstruct',
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
     'work', 'market', 'assess', 'sect', 'attack', 'hunt',
+    // The existing craft handler reads its named bill or reinforcement part here.
+    'craft',
     /**
      * WHAT is being put on, drawn or let go, in the player's own words. Used to
      * say it back ("your sword is in your hand") and for nothing else: which

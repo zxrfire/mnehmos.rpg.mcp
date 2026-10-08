@@ -16,12 +16,16 @@
  * failed too: a player who HAD raised one got a placement whose participants
  * named `child_of_<me>`, an id no row carries - which the same block's comment
  * calls "the only route a placed child has back to their own story".
+ * Raising spends years; the placement conversation is arranged in a current
+ * occupied area, because daily routines no longer leave the opening crowd in
+ * the same square afterwards. The refusal must still name an honest route.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
 import { theChildrenTheyRaised } from '../../src/web/encounters';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 const WORLD = 'world-place-a-child';
 
@@ -91,25 +95,36 @@ describe('placing a child', () => {
         const g = game as unknown as {
             present(c: unknown): { id: string; name: string; sectId: string | null }[];
             knowledge: { learn(input: Record<string, unknown>): unknown };
-            atHand: { npcs: { id: string; factionId: string | null }[] };
+            atHand: { npcs: { id: string; factionId: string | null }[] } | null;
+            loadWorld(): Promise<{ npcs: { id: string; factionId: string | null }[] } | null>;
         };
         const here = g.present(cultivator);
         await game.act(`I have a child with ${here[0]!.name}`);
 
         // Arranged: somebody here stands for the Pavilion, whose floor is open
         // to anybody, and the player has heard of a house where a word moves
-        // the bar. The refusal itself is the game's.
-        // Raising spends days; ask someone present afterwards.
+        // the bar. The refusal itself is the game's. Whoever is asked has
+        // their house overwritten below regardless of what it was, so the
+        // precondition is only that somebody is present - not that they
+        // already belong to a house, which people keep their own hours now
+        // and are not guaranteed to after days pass raising a child.
+        // `atHand` is the turn engine's own cached world and does not
+        // refresh itself after a time-costing act moves people by the hour,
+        // so it is reloaded here rather than trusted stale.
+        g.atHand = await g.loadWorld();
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id);
         const current = game.repos.cultivators.getById(cultivator.id)!;
-        const asked = g.present(current).find(row => row.sectId !== null)!;
-        g.atHand.npcs.find(npc => npc.id === asked.id)!.factionId = 'sect-azure-cloud-pavilion';
+        const asked = g.present(current)[0];
+        expect(asked, 'nobody here to ask').toBeDefined();
+        g.atHand = await g.loadWorld();
+        g.atHand!.npcs.find(npc => npc.id === asked!.id)!.factionId = 'sect-azure-cloud-pavilion';
         g.knowledge.learn({
             holderId: cultivator.id, kind: 'sect', id: 'sect-azure-mist-court',
             name: 'Azure Mist Court', onDay: 0, sourceKind: 'told', stage: 'named',
             statement: 'The Azure Mist Court exists.'
         });
 
-        const said = await game.act(`I place my child with ${asked.name}`);
+        const said = await game.act(`I place my child with ${asked!.name}`);
         expect(heard(said)).toMatch(/A word does move the bar at [^.]*Azure Mist Court/);
     }, 300_000);
 });

@@ -32,13 +32,28 @@
  * added for. The rule is narrower: a POSTING ends at the house, and somebody
  * already away on something keeps the home that errand holds.
  *
+ * Updated after the 2026-10-03 journey pass: a post can now take only somebody
+ * available at the house. The old village fixture therefore no longer produced
+ * any posts, and its two precondition assertions failed. Keep that absence as
+ * behaviour of its own; arrange available members at the seat for the return
+ * checks. The historic homecoming measurements above describe the earlier fix,
+ * not a licence to relocate an absent disciple when issuing a post.
+ * Removing only the seat-presence predicate made the absence check report two
+ * dispatched people instead of zero; the paired current arm passed all five.
+ *
+ * Posting performance scopes (2026-10-03) may reuse geographic classifications
+ * and fresh-stream sort scores only within one call. Consecutive calls below
+ * change town weights and capital tags in place: actual post destinations must
+ * follow the changed geography, even with the same world and location array.
+ * Singleton available rolls still dispatch through the ordinary rule.
+ *
  * Red-checked by reverting each half: the posting site turns the first two red,
  * `whereTheyGoBackTo` turns the drafted case red.
  */
 
 import { describe, expect, it } from 'vitest';
 
-import { applyPressure } from '../../../src/engine/world/the-world-changing-on-its-own.js';
+import { applyPostings, applyPressure } from '../../../src/engine/world/the-world-changing-on-its-own.js';
 import { createNpc, setRealm, type NpcRecord } from '../../../src/engine/world/npc-state.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { takeThemWithYou } from '../../../src/engine/world/who-is-on-the-road-with-you.js';
@@ -51,11 +66,9 @@ const VILLAGE = 'loc-village';
 const TOWN = 'loc-town';
 
 /**
- * One house, and every one of its people standing in a village rather than in
- * the compound - so a posting that went back to wherever somebody was standing
- * would send every one of them to the village.
+ * One house with people either available at its seat or absent in a village.
  */
-function build(): WorldState {
+function build(memberPlace = VILLAGE): WorldState {
     const state = createWorld({ seed: 'a-posting-ends-at-the-house', skipPriorAges: true, regionCount: 0 });
     state.currentDay = DAY;
     state.locations.push(makeLocation({ id: 'loc-region', name: 'The Province', kind: 'region' }));
@@ -71,7 +84,7 @@ function build(): WorldState {
             id: `npc-${i}`,
             bornOnDay: DAY - 60 * YEAR,
             onDay: DAY,
-            locationId: VILLAGE,
+            locationId: memberPlace,
             occupation: 'disciple'
         });
         npc = setRealm(npc, 14, DAY);
@@ -84,25 +97,32 @@ const stationed = (state: WorldState) =>
     state.npcs.filter(n => n.status === 'alive' && n.activity?.kind === 'stationed');
 
 describe('a posting ends at the house', () => {
-    it('is written with the house as home, wherever the person was standing', () => {
+    it('does not dispatch people who are absent from the house', () => {
         const state = build();
-        applyPressure(state, DAY, DAY + YEAR, { intensity: 0 });
+        expect(applyPostings(state, Math.floor(DAY / YEAR), DAY)).toBe(0);
+        expect(stationed(state)).toHaveLength(0);
+        expect(state.npcs.every(n => n.locationId === VILLAGE)).toBe(true);
+    });
+
+    it('is written with the house as home when an available member leaves', () => {
+        const state = build(SEAT);
+        applyPostings(state, Math.floor(DAY / YEAR), DAY);
         const posted = stationed(state);
         expect(posted.length, 'the precondition: somebody was posted').toBeGreaterThan(0);
         for (const who of posted) {
-            expect(who.activity!.returnTo, `${who.id} was posted from ${VILLAGE}`).toBe(SEAT);
+            expect(who.activity!.returnTo, `${who.id} left the house on a posting`).toBe(SEAT);
         }
     });
 
     it('and once the term is over they are at the house, or away from it on its business', () => {
-        const state = build();
-        applyPressure(state, DAY, DAY + YEAR, { intensity: 0 });
+        const state = build(SEAT);
+        applyPostings(state, Math.floor(DAY / YEAR), DAY);
         const posted = new Set(stationed(state).map(n => n.id));
         expect(posted.size).toBeGreaterThan(0);
 
         // Past the longest term a posting can be dealt, and the year the return
         // pass takes to reach one.
-        applyPressure(state, DAY + YEAR, DAY + 26 * YEAR, { intensity: 0 });
+        applyPressure(state, DAY, DAY + 26 * YEAR, { intensity: 0 });
 
         let checked = 0;
         for (const who of state.npcs) {
@@ -164,5 +184,44 @@ describe('somebody already away keeps the home that errand holds', () => {
             untilDay: DAY + 40
         });
         expect(taken!.activity!.returnTo).toBe(VILLAGE);
+    });
+});
+
+
+describe('posting geography is fresh on the next call', () => {
+    it('a single available member follows changed population weights', () => {
+        const state = build(SEAT);
+        state.npcs = state.npcs.slice(0, 1);
+        state.factions[0]!.resources.power_ordinal = 8;
+        const town = state.locations.find(p => p.id === TOWN)!;
+        const village = state.locations.find(p => p.id === VILLAGE)!;
+        town.data.populationWeight = 20;
+        village.data.populationWeight = 2;
+        expect(applyPostings(state, 200, DAY)).toBeGreaterThan(0);
+        expect(stationed(state).map(n => n.locationId)).toContain(town.id);
+        state.npcs = state.npcs.map(n => ({ ...n, locationId: SEAT, activity: null }));
+        town.data.populationWeight = 1;
+        village.data.populationWeight = 30;
+        expect(applyPostings(state, 200, DAY + 1)).toBeGreaterThan(0);
+        expect(stationed(state).map(n => n.locationId)).toContain(village.id);
+        expect(stationed(state).map(n => n.locationId)).not.toContain(town.id);
+    });
+
+    it('a newly recognized capital receives the market post on the next call', () => {
+        const state = build(SEAT);
+        state.npcs = state.npcs.slice(0, 2);
+        state.factions[0]!.resources.power_ordinal = 16;
+        state.locations.find(p => p.id === VILLAGE)!.data.populationWeight = 30;
+        state.locations.find(p => p.id === TOWN)!.data.populationWeight = 20;
+        const market = makeLocation({ id: 'new-market', name: 'New Market', kind: 'settlement',
+            parentId: 'loc-region', data: { populationWeight: 1 } });
+        state.locations.push(market);
+        expect(applyPostings(state, 200, DAY)).toBeGreaterThan(0);
+        expect(stationed(state).map(n => n.locationId)).not.toContain(market.id);
+        state.npcs = state.npcs.map(n => ({ ...n, locationId: SEAT, activity: null }));
+        market.tags.push('city');
+        expect(applyPostings(state, 200, DAY + 1)).toBeGreaterThan(0);
+        expect(stationed(state).map(n => n.locationId)).toContain(market.id);
+        expect(stationed(state).map(n => n.locationId)).not.toContain(TOWN);
     });
 });

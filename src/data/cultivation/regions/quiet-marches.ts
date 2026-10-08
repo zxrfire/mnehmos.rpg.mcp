@@ -107,6 +107,7 @@ export const THE_QUIET_MARCHES: Region = {
     name: REGION_NAME.SILENT_CLIFFS,
     role: 'adjacent',
     bearing: 'west',
+    metric: { xLi: -240, yLi: 0, extentLi: 30 },
     traditionId: 'tradition-cut',
     summary:
         'The province people leave: the western end of the world, the last of five driven provinces, and the only place in it where cultivation is a trade with tools. Something broke here nine hundred years ago and drove the qi out of the air and into the rock, so the Buddha Precipice does not breathe qi - it cuts it out of stone, and everything about the place follows from that. It has one road, it goes east, and there is nothing on the other side of the Buddha Precipice but four more provinces like it that nobody here has seen.',
@@ -202,7 +203,7 @@ export const THE_QUIET_MARCHES: Region = {
     ],
     places: [
         {
-            name: PLACE.IRON_GATE,
+            name: PLACE.IRON_GATE, metric: { xLi: -238, yLi: 2 },
             // THE PROVINCE IS ADMINISTERED DIRECTLY, WHICH IS THE ANSWER FOR
             // EVERY TOWN IN IT. "There is no sect to join... a cultivator deals
             // with the administration itself, at a counter", and the counter at
@@ -243,7 +244,7 @@ export const THE_QUIET_MARCHES: Region = {
             ]
         },
         {
-            name: PLACE.GRAVE_MARKET,
+            name: PLACE.GRAVE_MARKET, metric: { xLi: -250, yLi: -10 },
             // The Caravan's sorting yard stands here and its holding is the
             // salvage contract over the burn zones, "administered rather than
             // leased". A contractor paid by the administration does not govern
@@ -261,7 +262,7 @@ export const THE_QUIET_MARCHES: Region = {
             ]
         },
         {
-            name: PLACE.SIX_LI,
+            name: PLACE.SIX_LI, metric: { xLi: -232, yLi: -13 },
             // "A district with no face has no holder, so the column is blank" -
             // and the ground under it is ground "the Myriad Course Hall has
             // never scheduled", repainted by six people nobody pays. The one
@@ -279,8 +280,8 @@ export const THE_QUIET_MARCHES: Region = {
                 }
             ]
         },
-        { name: PLACE.JADE_FACE, kind: 'site', ambient: 'dense', grounds: ['cave', 'mountain'], note: 'One of two workable faces. Grant access at forty stones a day, and a queue of eleven.' },
-        { name: PLACE.DEAD_STONE, kind: 'site', ambient: 'thin', grounds: ['battlefield'], note: 'The current burn edge. It has moved about nine hundred paces since the survey was drawn.' }
+        { name: PLACE.JADE_FACE, metric: { xLi: -249, yLi: 16 }, kind: 'site', ambient: 'dense', grounds: ['cave', 'mountain'], note: 'One of two workable faces. Grant access at forty stones a day, and a queue of eleven.' },
+        { name: PLACE.DEAD_STONE, metric: { xLi: -260, yLi: 8 }, kind: 'site', ambient: 'thin', grounds: ['battlefield'], note: 'The current burn edge. It has moved about nine hundred paces since the survey was drawn.' }
     ],
     // Burnt ground and what is under it. The province's only real product is
     // salvage out of sealed sites and herbs that will not fruit on healthy

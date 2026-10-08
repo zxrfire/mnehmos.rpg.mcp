@@ -53,9 +53,11 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { commitNpcPublicPassage } from './ship-crew.js';
+import { bookNpcPassageForRoute, journeyNeedsWater, publicSeaLaneBetween } from './places-on-the-way.js';
 import { populationWeightOf, walkingDaysFrom } from './locations.js';
 import { whatSomebodyIsLike } from './what-somebody-is-like-and-where-it-came-from.js';
-import type { ActivityKind, NpcActivity, NpcRecord } from './npc-state.js';
+import { isAwayOnSomething, type ActivityKind, type NpcActivity, type NpcRecord } from './npc-state.js';
 import type { RoomPurpose } from './architecture.js';
 import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 import { whatTheyHold } from '../social-leverage/what-an-elder-is-in-charge-of.js';
@@ -187,10 +189,9 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
         case 'the_work_of_their_rank':
             return activity.note;
         case 'stationed':
-            // A posting is the work of their rank somewhere that is not their
-            // house, and the note says which - so this reads as what it is
-            // rather than as somebody loitering in a town.
-            return `posted here, and settled into it: ${activity.note}`;
+            if (activity.note.startsWith('Handing the post over')) return 'handing the post over to the person beside them';
+            // The assignment is theirs to say, not something a stranger sees.
+            return 'settled here for a time';
         case 'teaching':
             return withNames.length === 0
                 ? activity.note
@@ -217,8 +218,8 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
                 : 'sitting on the best of the ground and drawing on it';
         case 'out_with_a_party':
             return withNames.length === 0
-                ? `out on something: ${activity.note}`
-                : `out on something with ${them}`;
+                ? 'occupied here'
+                : `with ${them}`;
         case 'travelling':
             return activity.note.length > 0
                 ? activity.note
@@ -691,6 +692,8 @@ export function setWhatEverybodyIsAt(state: WorldState, onDay: number): void {
                 if (rng.next() > 0.66) continue;
                 const a = state.npcs[together[i]!]!;
                 const b = state.npcs[together[i + 1]!]!;
+                if (a.activity && isAwayOnSomething(a.activity.kind)
+                    || b.activity && isAwayOnSomething(b.activity.kind)) continue;
                 // Whoever is already at something that takes them elsewhere
                 // stays at it. An errand does not stop for a chat.
                 if (a.activity?.kind === 'mustering' || b.activity?.kind === 'mustering') continue;
@@ -796,7 +799,8 @@ function giveEveryJourneyAnEnd(state: WorldState, onDay: number): void {
         .map(f => [f.id, f.seatLocationId!]));
     const reachFrom = new Map<string, Map<string, number>>();
 
-    for (let at = 0; at < state.npcs.length; at++) {
+    const peopleBeforeDepartures = state.npcs.length;
+    for (let at = 0; at < peopleBeforeDepartures; at++) {
         const npc = state.npcs[at]!;
         const doing = npc.activity;
         if (npc.status !== 'alive' || !doing || doing.kind !== 'travelling') continue;
@@ -812,16 +816,28 @@ function giveEveryJourneyAnEnd(state: WorldState, onDay: number): void {
         const ownSeat = npc.factionId === null ? null : seatOf.get(npc.factionId) ?? null;
         let nearest = Infinity;
         let candidates: { id: string; weight: number }[] = [];
+          const booked = new Map<string, NpcRecord>();
         for (const [id, days] of reach) {
             if (id === here.id || days > nearest) continue;
             const place = byId.get(id);
             if (place === undefined || place.layer !== here.layer) continue;
             const livedIn = (place.kind === 'settlement' || id === ownSeat) && populationWeightOf(place) > 0;
             if (!livedIn) continue;
+              const lane = publicSeaLaneBetween(state.locations, here.id, id);
+              if (lane) {
+                  const passage = bookNpcPassageForRoute(state, npc, id, onDay, doing.note);
+                  if (!passage) continue;
+                  booked.set(id, passage);
+              } else if (journeyNeedsWater(state.locations, here.id, id)) continue;
             if (days < nearest) { nearest = days; candidates = []; }
             candidates.push({ id, weight: populationWeightOf(place) });
         }
-        if (candidates.length === 0) continue;
+          if (candidates.length === 0) {
+              // No passage has been bought and no craft is carrying this body.
+              // A termless opening description cannot schedule an ocean walk.
+              state.npcs[at] = { ...npc, activity: null };
+              continue;
+          }
 
         candidates.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
         const total = candidates.reduce((sum, c) => sum + c.weight, 0);
@@ -832,12 +848,20 @@ function giveEveryJourneyAnEnd(state: WorldState, onDay: number): void {
             draw -= c.weight;
         }
 
+          const passage = booked.get(goingTo);
+          if (passage) {
+              state.npcs[at] = passage;
+              commitNpcPublicPassage(state, state.npcs[at]!);
+              continue;
+          }
+
         state.npcs[at] = {
             ...npc,
             activity: {
                 ...doing,
                 untilDay: onDay + Math.max(1, Math.ceil(nearest)),
-                returnTo: goingTo
+                returnTo: goingTo,
+                fromLocationId: npc.locationId
             }
         };
     }

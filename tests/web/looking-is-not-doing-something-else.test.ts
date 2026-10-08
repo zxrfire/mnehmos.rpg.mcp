@@ -120,6 +120,10 @@ describe('a question inside a standing fight', () => {
         const first = await h.game.act('how hurt am I');
         const at = readBodyFrom(String(first.narration ?? ''));
         expect(at, 'the status read no longer reports the body').not.toBeNull();
+        // The day is already under way - a run opens at 08:00 and the attack
+        // that opened this fight spent its own span. What is asserted below is
+        // that ASKING adds nothing further, not that the clock reads zero.
+        const daysBefore = first.state?.run?.elapsedDays;
 
         for (const said of ['how hurt is he', 'what shape am I in', 'how hurt am I']) {
             const before = h.repos.cultivators.getById(cultivator.id)?.hp;
@@ -128,7 +132,7 @@ describe('a question inside a standing fight', () => {
             expect(after, `${said} spent blood`).toBe(before);
             // No day either. A read is free in every other part of the game and
             // a fight does not change that.
-            expect(answered.state?.run?.elapsedDays, `${said} spent a day`).toBe(0);
+            expect(answered.state?.run?.elapsedDays, `${said} spent a day`).toBe(daysBefore);
         }
 
         // And the body read still says the same thing at the end as it did at

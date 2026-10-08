@@ -29,6 +29,7 @@ import { canUnmake } from '../cultivation/whether-a-weapon-survives-being-used.j
 
 /** The door, as this file reads it. `door-materials.ts`'s `TheDoor` satisfies it. */
 export interface TheDoorTheySitBehind {
+    readonly locationId?: string;
     readonly name: string;
     readonly standsAt: number;
     readonly whose: 'the_inn' | 'the_house' | 'yours';

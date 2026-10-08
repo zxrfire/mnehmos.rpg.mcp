@@ -23,6 +23,7 @@ import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { MAX_ORDINAL, TRUE_IMMORTAL_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import {
     makeLocation,
+    linkLocations,
     makeThresholds,
     applyLocationChange,
     type LocationRecord
@@ -202,10 +203,19 @@ describe('cascade - parties under pressure choosing until the world is different
         expect(found).toBe(true);
     });
 
-    it('everybody below the disaster bar dies and everybody above walks out', () => {
+    it('only bodies actually there meet the disaster bar', () => {
+        // A durable traveller row already names its endpoint. The blast must
+        // spare that absent body, using event day while currentDay is still old.
         let checked = false;
         for (let seed = 0; seed < 200 && !checked; seed++) {
             const state = world();
+            const traveller = setRealm(createNpc('s', { id: 'not-there-yet', bornOnDay: 0,
+                onDay: 3650, locationId: 'loc-seat-b' }), 20, 3650);
+            traveller.activity = { kind: 'travelling', note: 'Walking to Stonegate', withIds: [],
+                sinceDay: 3648, untilDay: 3668, fromLocationId: 'loc-seat-a', returnTo: 'loc-seat-b' };
+            state.npcs.push(traveller);
+            linkLocations(state.locations[0], state.locations[1], 'road', 20);
+            state.currentDay = 3640;
             const result = runCascade(state, {
                 strickenId: 'f-victim', aggressorId: 'f-aggressor',
                 day: 3650, causeFactId: null, severity: 1
@@ -219,6 +229,7 @@ describe('cascade - parties under pressure choosing until the world is different
             for (const id of ['npc-1', 'npc-2']) {
                 expect(state.npcs.find(n => n.id === id)!.status).toBe('physically_dead');
             }
+            expect(state.npcs.find(n => n.id === traveller.id)!.status).toBe('alive');
             const aggressor = state.factions.find(f => f.id === 'f-aggressor')!;
             expect(aggressor.dissolvedOnDay).not.toBeNull();
         }

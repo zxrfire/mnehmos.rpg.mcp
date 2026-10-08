@@ -1,3 +1,4 @@
+import { startNpcAirJourney } from './an-actual-npc-air-course.js';
 /**
  * A dao ground is visited for a finite stretch, not lived on.
  */
@@ -15,22 +16,57 @@ import { isAwayOnSomething, isTheWorldsToMove, type NpcRecord } from './npc-stat
 import { whatSomebodyIsLike } from './what-somebody-is-like-and-where-it-came-from.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { WorldState } from './world-state.js';
+import { bookNpcPassageForRoute, journeyNeedsWater, publicSeaLaneBetween } from './places-on-the-way.js';
+import type { ObjectRecord } from './possessions.js';
+import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
+import { priceJourney } from './what-a-conveyance-does-to-a-journey.js';
+import { A_SPIRIT_BOAT_ANSWERS_TO, isWithThem, itWantsAPilot } from './a-vehicle.js';
+import { commitNpcPublicPassage } from './ship-crew.js';
 
-/** A journey keeps the traveller at their departure until its due day. */
+/** A timed journey. Presence reads its route from the departure and the clock. */
 export function startNpcJourney(
-    state: Pick<WorldState, 'locations'>,
+    state: WorldState | (Pick<WorldState, 'locations'> & Partial<Pick<WorldState, 'seed' | 'npcs'>>),
     npc: NpcRecord,
     destinationId: string,
     day: number,
-    note: string
+    note: string,
+    vehicle?: ObjectRecord
 ): NpcRecord {
-    const days = npc.locationId === null ? 1
-        : walkingDaysFrom(state.locations, npc.locationId).get(destinationId) ?? 1;
+    if (npc.locationId === null) return npc;
+    if ('history' in state) {
+        const air=startNpcAirJourney(state,npc,destinationId,day,note,vehicle);
+        if(air?.activity?.airCourseLocationId) return air;
+        // A real dose remains on the body even if flight did not become possible.
+        // The existing ordinary route may still be walked by that actual person.
+        if(air) npc=air;
+        // An actual owned flying hull cannot turn a refused launch into a road detour.
+        if(vehicle&&getConveyance(String(vehicle.data.conveyanceId??''))?.crossesGroundThatCannotBeWalked) return npc;
+    }
+    // Re-read the actual body after a native dose; absence supplies no ground.
+    if (npc.locationId === null) return npc;
+    if (!vehicle && publicSeaLaneBetween(state.locations, npc.locationId, destinationId)) {
+        return bookNpcPassageForRoute(state, npc, destinationId, day, note) ?? npc;
+    }
+    const water = journeyNeedsWater(state.locations, npc.locationId, destinationId);
+    const craft = vehicle && getConveyance(String(vehicle.data.conveyanceId ?? ''));
+    if (vehicle && (!craft || !isWithThem(vehicle, npc.id, npc.locationId)
+        || (vehicle.ownerId !== npc.id && vehicle.possessorId !== npc.id))) return npc;
+    if (craft && itWantsAPilot(craft) && npc.cultivation.realmOrdinal < A_SPIRIT_BOAT_ANSWERS_TO) return npc;
+    if (water && !craft?.crossesGroundThatCannotBeWalked) return npc;
+    const walking = walkingDaysFrom(state.locations, npc.locationId).get(destinationId);
+    if (walking === undefined) return npc;
+    const quote = craft ? priceJourney({ walkingDays: walking, conveyance: craft, power: vehicle?.power,
+        heads: 1, crossesGroundThatCannotBeWalked: water }) : null;
+    if (quote && npc.spiritStones < quote.stonesBurned) return npc;
+    const days = quote?.daysOneWay ?? walking;
     return {
         ...npc,
+        spiritStones: npc.spiritStones - (quote?.stonesBurned ?? 0),
         activity: {
             kind: 'travelling', note, withIds: [], sinceDay: day,
-            untilDay: day + Math.max(1, Math.ceil(days)), returnTo: destinationId
+            untilDay: day + Math.max(1, Math.ceil(days)), returnTo: destinationId,
+            fromLocationId: npc.locationId, conveyanceId: craft?.id ?? null,
+            conveyancePower: vehicle?.power ?? null, vesselId: vehicle?.id ?? null
         },
         updatedOnDay: day
     };
@@ -126,7 +162,8 @@ export function applyDaoGroundStints(
     day: number
 ): DaoGroundStintsResult {
     const result: DaoGroundStintsResult = { began: 0, comprehended: 0, gaveUp: 0, calledAway: 0 };
-    for (let at = 0; at < state.npcs.length; at++) {
+    const peopleBeforeDepartures = state.npcs.length;
+    for (let at = 0; at < peopleBeforeDepartures; at++) {
         const npc = state.npcs[at]!;
         if (npc.status !== 'alive' || !isTheWorldsToMove(npc) || npc.locationId === null) continue;
         const location = state.locations.find(place => place.id === npc.locationId);
@@ -169,6 +206,7 @@ export function applyDaoGroundStints(
         if (why === 'comprehended') recordDaoComprehension(state, npc, location!, ground, day);
         state.npcs[at] = startNpcJourney(state, npc, back, day,
             `${why[0]!.toUpperCase()}${why.slice(1)} ${ground.subject} at ${location!.name}.`);
+        if (state.npcs[at] !== npc) commitNpcPublicPassage(state, state.npcs[at]!);
         if (why === 'comprehended') result.comprehended++;
         else if (why === 'gave up') result.gaveUp++;
         else result.calledAway++;
