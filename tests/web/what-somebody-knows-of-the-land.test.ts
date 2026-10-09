@@ -195,6 +195,7 @@ describe('what somebody knows of the land', () => {
 
     // Played blind: the opening had the player growing up on tales of the Azure Dew Sect, and the
     // man who raised them, asked where it was, had never heard of it.
+    // The deterministic tier needs an explicit ask in their actual area.
     it('grows up hearing of the houses the one who raised them knows', async () => {
         let asked = 0;
         for (const seed of ['raised-hears-1', 'raised-hears-2', 'raised-hears-3', 'raised-hears-4']) {
@@ -203,9 +204,15 @@ describe('what somebody knows of the land', () => {
             const { cultivator } = game.currentRun();
             const raiser = game.knowledge.awareness(cultivator.id, 'cultivator').find(row => /raised you/.test(row.statement));
             if (!raiser) continue;
+            const world = game.atHand!;
+            const person = world.npcs.find(npc => npc.id === raiser.id)!;
+            const place = world.locations.find(row => row.id === person.locationId)!;
+            game.repos.cultivators.update(cultivator.id, { location: place.name });
+            game.repos.cultivators.standIn(cultivator.id, theAreasOf(world, place).whereIs.get(person.id) ?? null);
+            expect(game.present(game.currentRun().cultivator).map(row => row.id)).toContain(raiser.id);
             const grewUpOn = game.knowledge.awareness(cultivator.id, 'sect').filter(row => row.sourceKind === 'told');
             for (const house of grewUpOn) {
-                const turn = await game.act(`${raiser.name}, where is the ${house.name}?`);
+                const turn = await game.act(`I ask ${raiser.name} the way to ${house.name}`);
                 if (!turn.toolCalls.some(call => call.name === 'engine.theWayTo')) continue;
                 asked++;
                 expect(turn.narration, `${raiser.name} on ${house.name}`).not.toMatch(/does not know where/);

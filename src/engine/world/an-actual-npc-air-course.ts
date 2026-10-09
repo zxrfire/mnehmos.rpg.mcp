@@ -23,12 +23,19 @@ import { brokenStatusesOn } from '../cultivation/what-goes-wrong-at-a-realm-boun
 import { witnessIndexFor } from './witness-reaction-index.js';
 import {readActualDepartureApproach,departureSceneFor} from './departure-approach.js';
 import {routeQueriesFor,type RouteQueries} from './locations.js';
+import { isPlayerInvolved } from './background-incident-draw.js';
+import { exteriorGroundOfDeparture } from './departure-approach.js';
 
 export function theExteriorGroundsOfAnNpcAirDeparture(world:WorldState,npc:NpcRecord,toId:string,day:number,vesselId?:string,
     routes?:RouteQueries,scene?:ReturnType<typeof departureSceneFor>) {
     routes ??= routeQueriesFor(world.locations);
     if (npc.status !== 'alive' || !npc.locationId
         || locationOnNpcJourney(world.locations,npc,day,routes) !== npc.locationId) return null;
+    if (!isPlayerInvolved(world, npc)) {
+        const from = exteriorGroundOfDeparture(world, npc.locationId, routes.places);
+        const to = exteriorGroundOfDeparture(world, toId, routes.places);
+        return from && to ? { from, to } : null;
+    }
     const from=routes.places.get(npc.locationId);
     const to=routes.places.get(toId);
     if(!from||!to||[from,to].some(place=>place.tags.includes('interior')

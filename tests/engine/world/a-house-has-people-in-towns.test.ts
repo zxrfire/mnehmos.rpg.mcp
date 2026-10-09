@@ -19,7 +19,7 @@
  * Rates over lived worlds. No seed is pinned to a count.
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
 import { isElderRank } from '../../../src/engine/cultivation/leadership';
 import { getSect } from '../../../src/data/cultivation/sects';
@@ -55,6 +55,9 @@ async function worldsLived(): Promise<WorldState[]> {
 const living = (s: WorldState) => s.npcs.filter(n => n.status === 'alive');
 const stationed = (s: WorldState) => living(s).filter(n => n.activity?.kind === 'stationed');
 const cameDown = (s: WorldState) => s.history.facts.filter(f => f.summary.includes('came down on'));
+
+// The original walks are shared by every claim; cold setup gets the file budget.
+beforeAll(async () => { await worldsLived(); }, 900_000);
 
 describe('a house stations people outside itself', () => {
     it('has people posted at any given moment', async () => {

@@ -11,7 +11,7 @@
  * pinned to a count.
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
 import { whoseThisIs, couldBeCalledBackIn } from '../../../src/engine/world/a-house-holds-its-own';
 import type { WorldState } from '../../../src/engine/world/world-state';
@@ -48,6 +48,9 @@ function lentByAHouse(state: WorldState) {
         provenance: o.provenance
     }) === 'lent_by_their_house');
 }
+
+// The original walks are shared by every claim; cold setup gets the file budget.
+beforeAll(async () => { await worldsLived(); }, 900_000);
 
 describe('a house at war opens its vault', () => {
     it('happens at all, which it did not before', async () => {

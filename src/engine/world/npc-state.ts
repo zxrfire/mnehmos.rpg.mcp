@@ -36,7 +36,7 @@ import {
     whatASealLeavesInThePool,
     type AQiSeal
 } from '../cultivation/a-qi-seal-is-put-on-a-person.js';
-import { HP_RECOVERY_FRACTION_PER_DAY, type Injury } from '../../schema/cultivation.js';
+import { HP_RECOVERY_FRACTION_PER_DAY, type Injury, type Insight, type Achievement } from '../../schema/cultivation.js';
 import { personName } from './history.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 
@@ -534,6 +534,10 @@ export interface NpcCultivation {
     seal: AQiSeal | null;
     /** Technique ids they can actually use. */
     techniqueIds: string[];
+    /** Comprehensions earned from actual lived events through understanding.ts. */
+    insights?: Insight[];
+    /** The lived events the insights refer to, in the shared achievement schema. */
+    achievements?: Achievement[];
     /** Tags for environmental compatibility: 'fire', 'poison', 'soul', 'sword'. */
     specialties: string[];
     /** Absolute day their lifespan runs out at the current realm. */

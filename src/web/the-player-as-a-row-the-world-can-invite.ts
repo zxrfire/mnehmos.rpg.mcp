@@ -202,6 +202,8 @@ export function standInTheWorld(
         hp: cultivator.hp,
         bodyOnDay: onDay,
         techniqueIds: cultivator.knownTechniques.slice(),
+        insights: cultivator.insights.slice(),
+        achievements: cultivator.achievements.slice(),
         // The BODY's ceiling, not the rung's. Written from `lifespanForOrdinal`
         // it was the one physique-blind mirror row in the world - harmless only
         // because `time.ts` skips the player when it collects the day's dead,

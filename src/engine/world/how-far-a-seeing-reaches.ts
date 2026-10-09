@@ -29,6 +29,7 @@
 import type { EventScale } from './history.js';
 import type { NpcRecord } from './npc-state.js';
 import { regionOf } from './what-people-are-saying.js';
+import { placeScopeFor } from './locations.js';
 import type { WorldState } from './world-state.js';
 
 /** The area a thing of a given scale could be seen from. */
@@ -150,8 +151,9 @@ function inTheArea(
     people: readonly NpcRecord[]
 ): NpcRecord[] {
     const regions = new Map<string, string | null>();
+    const places = placeScopeFor(state.locations);
     const regionFor = (place: string) => {
-        if (!regions.has(place)) regions.set(place, regionOf(state, place));
+        if (!regions.has(place)) regions.set(place, regionOf(state, place, places));
         return regions.get(place)!;
     };
     const sight: ASeeing = { scale: seeing.scale, locationId: seeing.locationId, whoWasStandingAt: null };

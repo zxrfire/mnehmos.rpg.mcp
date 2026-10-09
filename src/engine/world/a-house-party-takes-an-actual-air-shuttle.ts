@@ -2,9 +2,10 @@
  * loads. Waiting and delivered people are read from current actors and actual
  * receipts; no future course or second passenger/attendance ledger is kept. */
 import type {WorldState,FactionRecord} from './world-state.js';
+import {getObject,getNpc} from './world-state.js';
 import type {NpcRecord,NpcActivity} from './npc-state.js';
 import type {ObjectRecord} from './possessions.js';
-import {isRuined} from './possessions.js';
+import {isRuined,transferPossession} from './possessions.js';
 import {isWithThem,whereItStands,itWantsAPilot,A_SPIRIT_BOAT_ANSWERS_TO} from './a-vehicle.js';
 import {quoteHouseAirDuty,theHouseLendsAnActualDutyCraft} from './a-house-party-takes-an-actual-air-leg.js';
 import {beginAnAirCourse,readAnAirCourseAdmission,recordPaidAirCourseFuel,settleWorldAirTravellers} from './an-air-course-in-the-world.js';
@@ -23,8 +24,9 @@ import type {OnTheRoll} from '../social-leverage/what-a-body-wants-is-what-its-d
 import { departureSceneFor, beginActualDepartureApproach, finishActualDepartureApproach } from './departure-approach.js';
 import { departureAreaAt } from './where-in-a-place-somebody-is-standing.js';
 import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
-import { routeQueriesFor, walkingDaysFrom } from './locations.js';
+import { routeQueriesFor, walkingDaysFrom, placeScopeFor } from './locations.js';
 import { sendASelectedHousePartyOnAnAvailableAirHull } from './a-house-party-takes-an-actual-air-leg.js';
+import { isPlayerInvolved } from './background-incident-draw.js';
 type Sending=NonNullable<WorldState['pendingSendings']>[number];
 type Phase='delivery'|'collecting'|'homebound'|'reloading';
 /** Selection reserves no fuel or custody. Each body walks before actual admission. */
@@ -102,17 +104,96 @@ function receipts(state:WorldState,row:Sending){return row.dispatchFactId?
 function latestDelivery(state:WorldState,row:Sending,id:string){return receipts(state,row).filter(fact=>
  fact.data.houseDutyPhase==='delivery'&&fact.data.toLocationId===row.locationId&&fact.actors.some(actor=>actor.id===id))
  .sort((a,b)=>Number(b.data.departureDay)-Number(a.data.departureDay))[0];}
-function bound(npc:NpcRecord,row:Sending){return npc.status==='alive'&&npc.activity?.kind==='out_with_a_party'&&npc.activity.capitalMissionId===row.dispatchFactId;}
+function bound(npc:NpcRecord,row:Sending){return npc.status==='alive'&&npc.activity?.capitalMissionId===row.dispatchFactId;}
 function funding(state:WorldState,row:Sending){const fact=row.dispatchFactId?witnessIndexFor(state).byId.get(row.dispatchFactId):undefined;
  if(!fact||fact.data.houseAirShuttle!==true||typeof fact.data.originId!=='string'||typeof fact.data.pilotId!=='string'
   ||typeof fact.data.vesselId!=='string'||typeof fact.data.fuelCommitted!=='number')return null;
  return {fact,origin:fact.data.originId,pilotId:fact.data.pilotId,vesselId:fact.data.vesselId,fuel:fact.data.fuelCommitted};}
+
+function unruinedHull(state:WorldState,id:string){const first=getObject(state,id);
+ return first&&!isRuined(first)?first:state.objects.find(object=>object.id===id&&!isRuined(object));}
+
+/** The existing intent and native capacity quote determine every load's dates. */
+function shuttleDates(state:WorldState,row:Sending){
+ const read=funding(state,row),hull=read&&unruinedHull(state,read.vesselId);
+ const craft=hull&&getConveyance(String(hull.data.conveyanceId??''));
+ if(!read||!hull||!craft||!row.locationId)return null;
+ const pilot=getNpc(state,read.pilotId);
+ if(!pilot||!bound(pilot,row)||isLostTrackOf(state,pilot)||hull.ownerId!==row.posting.houseId
+  ||receipts(state,row).some(receipt=>stopped(state,receipt)))return null;
+ const context={facts:witnessIndexFor(state).byId,onDay:row.departsOnDay,places:placeScopeFor(state.locations)};
+ const out=quoteAnAirJourney(state.locations,read.origin,row.locationId,craft,hull.power,row.party.length,context,1);
+ const back=quoteAnAirJourney(state.locations,row.locationId,read.origin,craft,hull.power,row.party.length,context,1);
+ if(!out?.pilotedLoads||!back?.pilotedLoads)return null;
+ const delivered=row.departsOnDay+out.daysForEverybody;
+ const serviceEnd=row.posting.reason.termBasis==='on_site'?delivered+row.posting.reason.days
+  :row.departsOnDay+row.posting.days-back.daysForEverybody;
+ const slots=new Map<string,number>();
+ let cursor=0;
+ const passengers=row.party.filter(person=>person.id!==read.pilotId);
+ for(const [load,quote] of out.pilotedLoads.filter(leg=>leg.direction==='outbound').entries())
+  for(const person of passengers.slice(cursor,cursor+=quote.heads-1))slots.set(person.id,load);
+ return { ...read,hull,craft,out,back,serviceEnd,slots,
+  homeDay:serviceEnd+back.daysForEverybody };
+}
+function distant(state:WorldState,row:Sending){return !row.party.some(member=>{
+ const person=state.npcs.find(npc=>npc.id===member.id);return person&&isPlayerInvolved(state,person);
+});}
+
+/** No stepped boarding or future receipt is needed for an unobserved load. */
+function projectDistantShuttle(state:WorldState,row:Sending,day:number){
+ const dates=shuttleDates(state,row);if(!dates)return;
+ if(!currentPilot(state,row)||receipts(state,row).some(receipt=>stopped(state,receipt)))return;
+ day=Math.max(day,state.currentDay);
+ const passengers=row.party.filter(member=>member.id!==dates.pilotId);
+ for(const member of row.party){
+  const at=state.npcs.findIndex(person=>person.id===member.id),person=state.npcs[at];
+  if(!person||!bound(person,row)||isLostTrackOf(state,person))continue;
+  const slot=dates.slots.get(person.id)??dates.out.trips-1;
+  const depart=row.departsOnDay+2*slot*dates.out.daysOneWay,arrive=depart+dates.out.daysOneWay;
+  const backDepart=dates.serviceEnd+2*(dates.slots.get(person.id)??0)*dates.back.daysOneWay;
+  const backArrive=backDepart+dates.back.daysOneWay;
+  let from=dates.origin,to=dates.origin,since=row.departsOnDay,until=depart,aboard=false;
+  let loadSlot:number|null=slot;
+  if(day>=depart&&day<arrive){to=row.locationId!;since=depart;until=arrive;aboard=true;}
+  else if(day>=arrive&&day<backDepart){from=to=row.locationId!;since=arrive;until=backDepart;}
+  else if(day>=backDepart&&day<backArrive){from=row.locationId!;to=dates.origin;since=backDepart;until=backArrive;aboard=true;}
+  else if(day>=backArrive){since=backArrive;until=dates.homeDay;}
+  // The pilot makes the empty return/collection legs between passenger loads.
+  if(person.id===dates.pilotId&&day<dates.serviceEnd){
+   const leg=Math.min(2*dates.out.trips-2,Math.floor(Math.max(0,day-row.departsOnDay)/dates.out.daysOneWay));
+   since=row.departsOnDay+leg*dates.out.daysOneWay;until=since+dates.out.daysOneWay;
+   from=leg%2?row.locationId!:dates.origin;to=leg%2?dates.origin:row.locationId!;
+   loadSlot=leg%2?null:Math.floor(leg/2);
+   aboard=day<until;if(!aboard){from=to=row.locationId!;since=until;until=dates.serviceEnd;}
+  }else if(person.id===dates.pilotId&&day>=dates.serviceEnd&&day<dates.homeDay){
+   const leg=Math.min(2*dates.back.trips-2,Math.floor((day-dates.serviceEnd)/dates.back.daysOneWay));
+   since=dates.serviceEnd+leg*dates.back.daysOneWay;until=since+dates.back.daysOneWay;
+   from=leg%2?dates.origin:row.locationId!;to=leg%2?row.locationId!:dates.origin;aboard=true;
+   loadSlot=leg%2?null:Math.floor(leg/2);
+  }
+  const peers=aboard&&loadSlot!==null?passengers.filter(peer=>dates.slots.get(peer.id)===loadSlot).map(peer=>peer.id):[];
+  if(aboard&&!peers.includes(dates.pilotId))peers.unshift(dates.pilotId);
+  state.npcs[at]={...person,locationId:to,activity:{...person.activity!,kind:aboard?'travelling':'out_with_a_party',
+   fromLocationId:aboard?from:undefined,returnTo:aboard?to:dates.origin,sinceDay:since,untilDay:until,
+   withIds:peers.filter(id=>id!==person.id),conveyanceId:dates.craft.id,conveyancePower:dates.hull.power,
+   vesselId:aboard?dates.vesselId:undefined,airCourseLocationId:undefined,airDutyReceiptId:undefined},updatedOnDay:day};
+ }
+ if(day>=dates.homeDay&&dates.hull.possessorId===dates.pilotId){
+  const house=state.factions.find(house=>house.id===row.posting.houseId);
+  if(house){const at=state.objects.findIndex(object=>object.id===dates.vesselId);
+   state.objects[at]={...transferPossession(dates.hull,{onDay:dates.homeDay,toHolderId:null,
+    toHolderName:house.name,how:'unknown',factId:dates.fact.id,source:'The house sending returned its hull.'}),
+    locationId:dates.origin,data:{...dates.hull.data,withId:house.id,mooredAt:dates.origin}};
+  }
+ }
+}
 function spent(state:WorldState,row:Sending){const index=witnessIndexFor(state);return receipts(state,row).reduce((total,receipt)=>
  total+[...(index.references.get(receipt.id)??[])].reduce((sum,fact)=>sum+(fact.data.airFuelPaidFor===receipt.id
   &&typeof fact.data.stonesDebited==='number'?fact.data.stonesDebited:0),0),0);}
 function currentPilot(state:WorldState,row:Sending){const read=funding(state,row);if(!read)return null;
- const house=state.factions.find(h=>h.id===row.posting.houseId&&h.dissolvedOnDay===null),pilot=state.npcs.find(n=>n.id===read.pilotId);
- const hull=state.objects.find(o=>o.id===read.vesselId&&!isRuined(o)),craft=hull?getConveyance(String(hull.data.conveyanceId??'')):null;
+ const house=state.factions.find(h=>h.id===row.posting.houseId&&h.dissolvedOnDay===null),pilot=getNpc(state,read.pilotId);
+ const hull=unruinedHull(state,read.vesselId),craft=hull?getConveyance(String(hull.data.conveyanceId??'')):null;
  if(!house||!pilot||!bound(pilot,row)||isLostTrackOf(state,pilot)||!hull||!craft||hull.ownerId!==house.id
   ||hull.possessorId!==pilot.id||!isWithThem(hull,pilot.id,pilot.locationId)
   ||itWantsAPilot(craft)&&pilot.cultivation.realmOrdinal<A_SPIRIT_BOAT_ANSWERS_TO)return null;
@@ -132,10 +213,15 @@ export function actualShuttleService(state:WorldState,npc:NpcRecord,row:Sending)
  if(!atSite||!journeyTimeHasReached(until,arrival))return null;
  return {delivery,fromDay:arrival,untilDay:until};
 }
-export function aShuttleMemberActuallyServed(state:WorldState,npc:NpcRecord,row:Sending){const site=actualShuttleService(state,npc,row);
+export function aShuttleMemberActuallyServed(state:WorldState,npc:NpcRecord,row:Sending){
+ if(distant(state,row)){const dates=shuttleDates(state,row);return !!dates&&bound(npc,row)&&!isLostTrackOf(state,npc)
+  &&journeyTimeHasReached(state.currentDay,dates.serviceEnd);}
+ const site=actualShuttleService(state,npc,row);
  return !!site&&site.untilDay>site.fromDay&&(row.posting.reason.termBasis!=='on_site'
   ||journeyTimeHasReached(site.untilDay,site.fromDay+row.posting.reason.days));}
 export function actualShuttleReturnDay(state:WorldState,npc:NpcRecord,row:Sending){const read=funding(state,row);
+ if(distant(state,row)){const dates=shuttleDates(state,row);return dates&&bound(npc,row)&&!isLostTrackOf(state,npc)
+  &&npc.locationId===dates.origin&&journeyTimeHasReached(state.currentDay,dates.homeDay)?dates.homeDay:null;}
  if(!read||!bound(npc,row)||npc.locationId!==read.origin||npc.activity?.airCourseLocationId)return null;
  const back=receipts(state,row).filter(fact=>fact.data.houseDutyPhase==='homebound'&&fact.actors.some(a=>a.id===npc.id))
   .sort((a,b)=>Number(b.data.departureDay)-Number(a.data.departureDay))[0];
@@ -181,7 +267,8 @@ function placeAcceptedLoad(state:WorldState,row:Sending,pilot:NpcRecord,hull:Obj
 export function beginAnActualHouseAirShuttle(state:WorldState,house:FactionRecord,people:readonly NpcRecord[],
  pilot:NpcRecord,hull:ObjectRecord,row:Sending,day:number,activities:ReadonlyMap<string,NpcActivity|null>,
  portfolios:readonly APortfolio[],roll:readonly OnTheRoll[],batch?:Parameters<typeof quoteHouseAirDuty>[8]){
- if(!journeyTimeHasReached(day,state.currentDay)||!journeyTimeHasReached(state.currentDay,day))return null;
+ if(day>state.currentDay||people.some(person=>isPlayerInvolved(state,person))
+  &&(!journeyTimeHasReached(day,state.currentDay)||!journeyTimeHasReached(state.currentDay,day)))return null;
  if(!whatThisHouseCouldTakeOut(state,house).some(row=>row.rowId===hull.id))return null;
  const read=quoteHouseAirDuty(state,house,people,pilot,hull,row.locationId??'',day,false,batch);
  if(!read||read.quote.trips<=1||!read.quote.pilotedLoads||!read.back.pilotedLoads
@@ -239,6 +326,12 @@ function readQuoteBack(state:WorldState,row:Sending,read:NonNullable<ReturnType<
 /** Continue only from an actual reached receipt, never from a nominal deadline. */
 export function continueActualHouseAirShuttle(state:WorldState,row:Sending,day:number):boolean{
  if(!row.dispatchFactId)return false;
+ if(funding(state,row)&&distant(state,row)){projectDistantShuttle(state,row,day);return true;}
+ settleHouseShuttleOnContact(state,new Set(row.party.map(member=>member.id)));
+ return continueExactShuttle(state,row,day);
+}
+function continueExactShuttle(state:WorldState,row:Sending,day:number):boolean{
+ if(!row.dispatchFactId)return false;
  // Annual reports cannot create a genuinely accepted load in their past.
  if(!journeyTimeHasReached(day,state.currentDay)||!journeyTimeHasReached(state.currentDay,day))return true;
  if(witnessIndexFor(state).byId.get(row.dispatchFactId)?.data.houseAssembly===true){continueAssembly(state,row,day);return true;}
@@ -276,4 +369,49 @@ export function continueActualHouseAirShuttle(state:WorldState,row:Sending,day:n
  if(pilot.locationId===actual.origin&&alive.some(n=>n.locationId===row.locationId))
   admitLoad(state,row,pilot,hull,[pilot],row.locationId!,day,'collecting');
  return true;
+}
+
+/** Contact replays only elapsed native loads, keeping the original paid intent. */
+export function settleHouseShuttleOnContact(state:WorldState,ids:ReadonlySet<string>):boolean{
+ let changed=false;
+ for(const row of state.pendingSendings??[]){
+  if(!row.party.some(member=>ids.has(member.id)))continue;
+  const read=funding(state,row),legs=receipts(state,row);
+  if(!read||!legs.length||row.party.some(member=>{
+   const person=state.npcs.find(npc=>npc.id===member.id);return !person||!bound(person,row)||isLostTrackOf(state,person);
+  }))continue;
+  const first=legs.sort((a,b)=>Number(b.data.departureDay)-Number(a.data.departureDay))[0]!,
+   hullAt=state.objects.findIndex(object=>object.id===read.vesselId&&!isRuined(object));
+  const hull=state.objects[hullAt];if(!hull||hull.possessorId!==read.pilotId)continue;
+  const horizon=state.currentDay;
+  const activity=state.npcs.find(person=>person.id===read.pilotId)?.activity;
+  if(activity?.airCourseLocationId||activity?.airDutyReceiptId)continue;
+  const firstPlace=state.locations.find(place=>place.data.airCourseId===first.id)?.id;
+  if(!firstPlace)continue;
+  for(const member of row.party){const at=state.npcs.findIndex(npc=>npc.id===member.id),person=state.npcs[at]!;
+   const onFirst=first.actors.some(actor=>actor.id===person.id);
+   const previous=legs.find(leg=>leg.actors.some(actor=>actor.id===person.id));
+   const standing=previous&&typeof previous.data.toLocationId==='string'?previous.data.toLocationId:read.origin;
+   state.npcs[at]={...person,locationId:onFirst?firstPlace:standing,activity:{...person.activity!,kind:'out_with_a_party',
+    sinceDay:Number(first.data.departureDay),untilDay:row.departsOnDay+row.posting.days,returnTo:read.origin,
+    fromLocationId:String(first.data.fromLocationId),
+    airCourseLocationId:onFirst?firstPlace:undefined,airDutyReceiptId:onFirst?first.id:latestDelivery(state,row,person.id)?.id,
+    vesselId:onFirst?read.vesselId:undefined}};
+  }
+  state.objects[hullAt]={...hull,locationId:firstPlace};
+  try{
+   state.currentDay=Number(first.data.departureDay);
+   for(;;){const next=nextActualHouseShuttleBoundary(state,row);
+    if(next==null||next>horizon)break;
+    const prior=latestLeg(state,row)?.id;
+    state.currentDay=next;continueExactShuttle(state,row,next);
+    if(latestLeg(state,row)?.id===prior){
+     const after=nextActualHouseShuttleBoundary(state,row);
+     if(after==null||after<=next)break;
+    }
+   }
+   settleWorldAirTravellers(state,horizon);changed=true;
+  }finally{state.currentDay=horizon;}
+ }
+ return changed;
 }

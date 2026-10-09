@@ -40,6 +40,7 @@ import {
 import type { WorldState } from './world-state.js';
 import { creditMerit, whatAttentionIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
 import { theirFaceMoves, whatBeingWatchedIsWorth } from './what-a-face-is-worth.js';
+import { isInsideTheCompound } from './a-recruit-is-given-their-lamp-at-the-house.js';
 
 /**
  * How often a house holds a lecture, as a share of years.
@@ -242,6 +243,8 @@ function recordTheAttentionThatEnded(
 export function giveThisYearsAttention(state: WorldState, year: number, day: number): number {
     const untilDay = year * 365 + 364;
     const byId = new Map(state.npcs.map((n, i) => [n.id, i] as const));
+    const houses = new Map(state.factions.filter(house=>house.dissolvedOnDay===null).map(house=>[house.id,house]));
+    const places = new Map(state.locations.map(place=>[place.id,place]));
     recordTheAttentionThatEnded(state, byId, day);
     const teaching = new Set<string>();
     let sets = 0;
@@ -298,6 +301,9 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
         if (at === undefined) continue;
         const master = state.npcs[at]!;
         if (!freeForTheirOwn(master, day)) continue;
+        // A new roll does not renew the old house's lessons away from home.
+        const home=master.factionId?houses.get(master.factionId)?.seatLocationId:null;
+        if(home&&!isInsideTheCompound(places,master.locationId,home))continue;
         const here = disciples.filter(id => {
             const d = state.npcs[byId.get(id)!]!;
             if (!present(d)) return false;

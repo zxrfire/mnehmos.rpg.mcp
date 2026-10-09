@@ -36,7 +36,6 @@ import {
     isTheWorldsToMove,
     maxBodyOf,
     relationshipWith,
-    setLocation,
     theWorldEnds,
     upsertRelationship,
     woundsCarriedBy,
@@ -63,6 +62,7 @@ import {
 } from './what-a-contest-is-worth-to-the-people-in-it.js';
 import { getLocation, indexById, type FactionRecord, type WorldState } from './world-state.js';
 import { routineOf } from './npc-routines.js';
+import { sendHouseMission } from './capital-missions-and-calendar.js';
 import { isRuined, isSomethingYouWouldSwing } from './possessions.js';
 import { asCarried, breakIt, isBroken, whatAFightMarked, writeBackWhatAFightLeft } from './object-damage.js';
 import { whatItAddsInAFight } from './what-somebody-fights-with.js';
@@ -1463,6 +1463,28 @@ function settleHouseStanding(state: WorldState, circle: Circle, ties: readonly G
     void circle;
 }
 
+/** Receive an arrived party through the ordinary meeting and house-standing readers. */
+export function receiveHouseVisitors(state: WorldState, host: FactionRecord, sending: FactionRecord,
+    visitors: readonly NpcRecord[], day: number, cause: HistoricalFact): HistoricalFact | null {
+    const hosts = state.npcs.filter(person => person.status === 'alive' && person.factionId === host.id
+        && person.locationId === host.seatLocationId && person.activity === null)
+        .sort((a, b) => b.factionRankIndex - a.factionRankIndex).slice(0, 3);
+    if (!hosts.length || !visitors.length) return null;
+    const slot = reserveFactSlot(state.history);
+    const ties: GatheringTie[] = [];
+    const attendees = [...visitors, ...hosts];
+    const summary = runMeeting(state, attendees, day, slot.id,
+        forStream(state.seed, 'received-house-party', cause.id), ties);
+    const fact = appendWorldFact(state, makeFact({ day, kind: 'gathering', visibility: 'public', scale: 'regional',
+        locationId: host.seatLocationId, factionIds: [host.id, sending.id], causes: [cause.id],
+        actors: attendees.map(person => ({ id: person.id, name: person.name, role: 'attended' })),
+        witnessIds: attendees.map(person => person.id), summary,
+        data: { gathering: 'meeting', houseBusiness: cause.data.houseBusiness ?? null } }), { reserved: slot });
+    if (fact.id !== slot.id) pointTiesAt(state, ties, slot.id, fact.id);
+    settleHouseStanding(state, { host, members: [host, sending] }, ties);
+    return fact;
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // SMALL THINGS
 // ─────────────────────────────────────────────────────────────────────────
@@ -1625,10 +1647,9 @@ export const A_SENIOR_IS_AWAY_FOR_DAYS = 60;
  *
  * ONE PER HOUSE, and it is the head where the head is standing at home, else
  * the most senior elder who is. Nobody already away is pulled off what they are
- * doing. They go as themselves - a `travelling` term with their own seat as
- * `returnTo`, closed by `bringHomeWhoeverIsDue` like every other term - so for
- * two months the house's deepest person is somewhere else, which is the whole
- * point of it being a reason.
+ * doing. Their ordinary mission itinerary walks out, spends sixty days at the
+ * host and walks home. The old travelling row cleared at the host and stranded
+ * them; the return is now a physical leg.
  */
 export function aGrandGatheringOfPowers(
     state: WorldState,
@@ -1655,18 +1676,10 @@ export function aGrandGatheringOfPowers(
             || (a.id < b.id ? -1 : 1))[0]!;
         const at = indexById(state.npcs, going.id);
         if (at < 0) continue;
-        state.npcs[at] = {
-            ...setLocation(state.npcs[at]!, locationId, day),
-            activity: {
-                kind: 'travelling',
-                note: `Gone to ${circle.host.name} for the gathering.`,
-                withIds: [],
-                sinceDay: day,
-                untilDay: day + A_SENIOR_IS_AWAY_FOR_DAYS,
-                returnTo: seat
-            }
-        };
-        went.push(state.npcs[at]!);
+        const venue = state.locations.find(place => place.id === locationId);
+        if (venue && sendHouseMission(state, house, venue, [going], 'the gathering of powers', day,
+            { days: A_SENIOR_IS_AWAY_FOR_DAYS }, undefined, undefined, undefined,
+            { houseBusiness: 'gathering' })) went.push(state.npcs[at]!);
     }
     return went;
 }

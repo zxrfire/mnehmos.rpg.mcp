@@ -70,6 +70,7 @@ import {
 } from '../cultivation/who-has-heard-of-a-thing-past-the-counter.js';
 import { theHeightAHouseWorksAt } from './where-the-pills-actually-are.js';
 import { witnessIndexFor, factsWithData, type WitnessIndex } from './witness-reaction-index.js';
+import { placeScopeFor, type PlaceScope } from './locations.js';
 
 /**
  * What a named holder stands at on one named thing.
@@ -103,10 +104,11 @@ const IN_A_ROOM_WITH: KnowingStage = 'encountered';
 const THE_HOUSE_DOWN_THE_PROVINCE: KnowingStage = 'named';
 
 function saidWhereTheyStand(state: WorldState, holder: NpcRecord,
-    facts: readonly HistoricalFact[]): boolean {
+    facts: readonly HistoricalFact[], scope?: PlaceScope): boolean {
     if (facts.length === 0) return false;
-    const teller = whereThisPersonIsStanding(state, holder);
-    return facts.some(fact => isInTheAirFor(state, fact, teller, state.currentDay));
+    scope ??= placeScopeFor(state.locations);
+    const teller = whereThisPersonIsStanding(state, holder, id => regionOf(state, id, scope));
+    return facts.some(fact => isInTheAirFor(state, fact, teller, state.currentDay, scope));
 }
 
 /**
@@ -117,9 +119,10 @@ function saidWhereTheyStand(state: WorldState, holder: NpcRecord,
  * `currentDay` at build time - circulation is asked at query time, so one built
  * reader stays correct as the world's clock moves.
  */
-export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebodyKnowsOfIt {
+export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState, scope?: PlaceScope): WhatSomebodyKnowsOfIt {
     const ledger = state.history.facts;
     const index = witnessIndexFor(state);
+    let queryPlaces: PlaceScope;
 
     // `getNpc` is a linear walk of several hundred rows and this asks per fact
     // per query. One map, built with everything else.
@@ -138,7 +141,8 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
             const npc = rowFor(holderId);
             if (!npc) return false;
             return isInTheAirFor(
-                state, fact, whereThisPersonIsStanding(state, npc), state.currentDay
+                state, fact, whereThisPersonIsStanding(state, npc, id => regionOf(state, id, queryPlaces)),
+                state.currentDay, queryPlaces
             );
         }
     });
@@ -162,15 +166,16 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
     }
 
     const saidHere = (holder: NpcRecord, facts: readonly HistoricalFact[]): boolean =>
-        saidWhereTheyStand(state, holder, facts);
+        saidWhereTheyStand(state, holder, facts, queryPlaces);
 
     return (holderId, kind, id) => {
+        queryPlaces = scope ?? placeScopeFor(state.locations);
         const holder = rowFor(holderId);
         if (!holder) return 'unaware';
 
         switch (kind) {
             case 'place':
-                return ofThePlace(state, holder, id, ofTheGround, errands);
+                return ofThePlace(state, holder, id, ofTheGround, errands, queryPlaces);
             case 'sect':
                 return ofTheHouse(state, holder, id, byHouse, presentAt, saidHere);
             case 'cultivator':
@@ -224,7 +229,8 @@ function ofThePlace(
     holder: NpcRecord,
     locationId: string,
     ofTheGround: (holderId: string, locationId: string) => KnowingStage,
-    errands: (factionId: string, locationId: string) => KnowingStage
+    errands: (factionId: string, locationId: string) => KnowingStage,
+    scope?: PlaceScope
 ): KnowingStage {
     // Standing in it is the top rung, so nothing below can add to it.
     if (holder.locationId === locationId) return BEING_THERE;
@@ -244,7 +250,7 @@ function ofThePlace(
             location: getLocation(state, holder.locationId ?? '')?.name ?? null,
             realmOrdinal: holder.cultivation.realmOrdinal,
             sectId: holder.factionId
-        }));
+        }), scope);
         const common = land.places.find(row => row.name === place.name)?.stage;
         if (common) stage = highestStage(stage, common);
     }

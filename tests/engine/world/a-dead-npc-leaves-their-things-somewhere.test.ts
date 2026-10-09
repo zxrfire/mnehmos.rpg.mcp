@@ -35,7 +35,7 @@
  * Rates over lived worlds. No seed is pinned to a count.
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
 import type { WorldState } from '../../../src/engine/world/world-state';
 
@@ -78,6 +78,9 @@ async function worldsLived(): Promise<Lived[]> {
     cached = lived;
     return cached;
 }
+
+// The original walks are shared by every claim; cold setup gets the file budget.
+beforeAll(async () => { await worldsLived(); }, 900_000);
 
 describe('a dead NPC leaves their things somewhere', () => {
     it('has deaths in it at all, which everything below rests on', async () => {

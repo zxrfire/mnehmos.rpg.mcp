@@ -10,6 +10,7 @@ import { LI_PER_WALKING_DAY } from './the-metric-ground-under-a-journey.js';
  * location ID; the site stores no copied coordinate, road link or endpoint.
  */
 import type { WorldState } from './world-state.js';
+import { getNpc, getObject, getLocation } from './world-state.js';
 import { makeLocation, makeEnvironment, type LocationRecord } from './locations.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -152,17 +153,17 @@ export function actualNpcPilotOfAirCourse(world: WorldState, receiptId: string) 
     const data = witnessIndexFor(world).byId.get(receiptId)?.data;
     if (!data || data.airCourse !== true || typeof data.pilotId !== 'string'
         || typeof data.vesselId !== 'string' || typeof data.conveyanceId !== 'string') return null;
-    const pilot = world.npcs.find(person => person.id === data.pilotId);
-    const craft = world.objects.find(object => object.id === data.vesselId);
+    const pilot = getNpc(world, data.pilotId);
+    const craft = getObject(world, data.vesselId);
     const conveyance = requireConveyance(data.conveyanceId);
     const held = craft && whoItIsWith(craft);
+    const site = pilot?.activity?.airCourseLocationId ? getLocation(world, pilot.activity.airCourseLocationId) : null;
     return pilot?.status === 'alive' && craft && !isRuined(craft)
         && (held === pilot.id || held === data.ownerId)
         && (!itWantsAPilot(conveyance) || pilot.cultivation.realmOrdinal >= A_SPIRIT_BOAT_ANSWERS_TO)
         && pilot.activity?.vesselId === craft.id
-        && world.locations.some(site => site.id === pilot.activity?.airCourseLocationId
-            && site.id === pilot.locationId && site.data.airCourseId === receiptId
-            && typeof site.data.airStoppedFactId !== 'string') ? pilot : null;
+        && site?.id === pilot.locationId && site.data.airCourseId === receiptId
+        && typeof site.data.airStoppedFactId !== 'string' ? pilot : null;
 }
 
 /** World-owned operators can lose their course after the SQL passenger has died. */
@@ -173,8 +174,9 @@ export function settleNpcPilotedAirCourses(world: WorldState, onDay: number): vo
         const fact = witnessIndexFor(world).byId.get(site.data.airCourseId), data = fact?.data;
         if (!data || data.ownedPassage !== true || typeof data.pilotId !== 'string'
             || typeof data.arrivalDay !== 'number') continue;
-        if (data.pilotId === data.bodyId && !world.npcs.some(npc => npc.id === data.bodyId && isTheWorldsToMove(npc))) continue;
-        const pilot = world.npcs.find(person => person.id === data.pilotId);
+        const pilot = getNpc(world, data.pilotId);
+        if (data.pilotId === data.bodyId && (!pilot || !isTheWorldsToMove(pilot))
+            && !world.npcs.some(npc => npc.id === data.bodyId && isTheWorldsToMove(npc))) continue;
         // SQL operators are checked by their actual held-body caller, not fabricated here.
         const paidThrough = paidAirCourseThrough(world, site.data.airCourseId);
         if (actualNpcPilotOfAirCourse(world, site.data.airCourseId)
@@ -203,10 +205,14 @@ export function stopPersonalNpcAirCourseAtDeath(world: WorldState, deceased: Npc
 
 /** Only a living traveller with the same unsuperseded course may write an arrival.
  * Dead personal bodies keep their caused point. Stopped sites never become endpoints. */
-export function settleWorldAirTravellers(world: WorldState, onDay: number): void {
-    const sites=new Map(world.locations.filter(place=>place.tags.includes('air-course')).map(place=>[place.id,place]));
-    for(let at=0;at<world.npcs.length;at++) {
-        const npc=world.npcs[at], site=npc.locationId ? sites.get(npc.locationId) : undefined;
+export function settleWorldAirTravellers(world: WorldState, onDay: number, personIds?: ReadonlySet<string>): void {
+    const sites=personIds?null:new Map(world.locations.filter(place=>place.tags.includes('air-course')).map(place=>[place.id,place]));
+    const selected=personIds?[...personIds].map(id=>world.npcs.findIndex(person=>person.id===id)).filter(at=>at>=0)
+        :world.npcs.keys();
+    for(const at of selected) {
+        const npc=world.npcs[at], site=npc.locationId ? personIds
+            ? world.locations.find(place=>place.id===npc.locationId&&place.tags.includes('air-course'))
+            : sites!.get(npc.locationId) : undefined;
         if(!site || typeof site.data.airCourseId!=='string' || typeof site.data.airStoppedFactId==='string') continue;
         const fact=witnessIndexFor(world).byId.get(site.data.airCourseId), data=fact?.data;
         if(!fact || !data || typeof data.arrivalDay!=='number' || typeof data.toLocationId!=='string') continue;

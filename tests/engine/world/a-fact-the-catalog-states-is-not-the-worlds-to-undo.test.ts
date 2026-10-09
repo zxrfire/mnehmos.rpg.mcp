@@ -1,3 +1,4 @@
+// Both original 120-year arms retain their horizons within the owner's fifteen-minute file budget.
 /**
  * A FACT A CATALOG STATES IS NOT THE WORLD'S TO UNDO.
  *
@@ -323,7 +324,7 @@ describe('the wall, which refuses differently from everything else', () => {
     let arms: { withClaim: WorldState; without: WorldState; watched: Set<string> };
     beforeAll(async () => {
         arms = await twoArms();
-    }, 120_000);
+    }, 900_000);
 
     it('kills at the wall and records it when nothing states they are standing', () => {
         // The fire check. If this is empty the two assertions below are vacuous

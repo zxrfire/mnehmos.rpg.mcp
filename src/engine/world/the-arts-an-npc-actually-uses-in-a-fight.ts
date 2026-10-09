@@ -13,14 +13,14 @@ import { makeFact } from './history.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
 
 export function npcCombatArts(npc: NpcRecord, day: number): Pick<CombatantInput,
-    'qi'|'maxQi'|'technique'|'techniqueCooldowns'> {
+    'qi'|'maxQi'|'technique'|'techniqueCooldowns'|'insights'> {
     let technique: CombatantInput['technique'] = null;
     for (const id of npc.cultivation.techniqueIds) {
         const art = getTechnique(id);
         if (!art || !anArtThatCanBeUsedInAFight(art) || art.requiredOrdinal > npc.cultivation.realmOrdinal || npcArtReadiness(npc,id,day)) continue;
         if (!technique || art.requiredOrdinal > technique.requiredOrdinal) technique = art;
     }
-    return { qi: qiStandingOn(npc,day), maxQi: maxQiOf(npc), technique,
+    return { qi: qiStandingOn(npc,day), maxQi: maxQiOf(npc), technique, insights: npc.cultivation.insights ?? [],
         techniqueCooldowns: npc.cultivation.techniqueCooldowns ?? {} };
 }
 

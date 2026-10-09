@@ -11,6 +11,10 @@ Cold walks publish intermediate snapshots every 25 years. A later worker resumes
 from the nearest completed snapshot with the same source key.
 An exited builder's lock can be reclaimed immediately; a live builder keeps it.
 Completed JSON stays on disk instead of retaining another copy in each process.
+Canonical snapshots store arrays in chunks of 1,024 records behind an atomically
+published manifest. A 1,200-year walk exceeded JavaScript's single-string limit;
+chunking preserves the JSON round trip without requiring a world-sized string.
+Readers also accept existing single-file snapshots.
 
 `serializedFixture` caches bytes under a hash of the fixture's import graph,
 dependency lockfile, runtime and inputs. A lock across forks permits one builder;

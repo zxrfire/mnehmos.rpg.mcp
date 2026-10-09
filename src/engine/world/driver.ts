@@ -5,8 +5,6 @@ import type { AnArtUseInterval } from '../cultivation/an-art-that-is-ready-to-us
 import { settleNpcPilotedAirCourses, settleWorldAirTravellers } from './an-air-course-in-the-world.js';
 import { initializeMetricGround } from './the-metric-ground-under-a-journey.js';
 import { settleLostPublicPassages } from './passenger-on-a-vessel.js';
-import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
-import { isRuined } from './possessions.js';
 /**
  * The driver: one call, and the world moves with the cultivator.
  *
@@ -55,7 +53,7 @@ import { nextWorldClockBoundary } from './world-clock-boundaries.js';
 import { settlePublicCarriages } from './public-carriages.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { factsAddedSince, witnessIndexFor } from './witness-reaction-index.js';
-import { resolveWithPlayerPresent } from './background-incident-draw.js';
+import { isPlayerInvolved, resolveWithPlayerPresent } from './background-incident-draw.js';
 import { advanceSummitBodies } from './summit-world.js';
 import type { HistoricalFact, Observer } from './history.js';
 import { buildPlayerDigest, type DigestOptions, type PlayerAccess, type PlayerDigest } from './digest.js';
@@ -83,7 +81,7 @@ export interface AdvanceForPlayOptions {
     artUseInterval?: AnArtUseInterval;
     /** In-world days to advance. The same span the cultivator is spending. */
     days: number;
-    /** Accepted physical spans alone consume exact fractions. Legacy callers floor. */
+    /** Keep accepted physical dates exact between world appointments. */
     preciseDays?: boolean;
     /** Extra actual dates of the already accepted carrier leg; no booking store. */
     passageDates?: readonly number[];
@@ -194,11 +192,18 @@ export function advanceWorldForPlay(
     state: WorldState,
     opts: AdvanceForPlayOptions
 ): PlayAdvanceResult {
+    return resolveWithPlayerPresent(state, opts.pressure?.visitingPresence,
+        () => advanceAtHand(state, opts));
+}
+
+function advanceAtHand(state: WorldState, opts: AdvanceForPlayOptions): PlayAdvanceResult {
     const fromDay = state.currentDay;
-    const transportClock=()=>state.objects.some(object=>getConveyance(String(object.data.conveyanceId??''))?.crossesGroundThatCannotBeWalked
-        &&!isRuined(object)
-        &&state.factions.some(house=>house.id===object.ownerId&&house.dissolvedOnDay===null))
-        ||state.npcs.some(npc=>npc.status==='alive'&&(npc.activity?.departureApproach||npc.activity?.capitalMissionWaiting));
+    const transportClock = () => resolveWithPlayerPresent(state, opts.pressure?.visitingPresence,
+        () => state.npcs.some(npc => npc.status === 'alive' && isPlayerInvolved(state, npc)
+            && (npc.activity?.departureApproach || npc.activity?.capitalMissionId
+                || npc.activity?.airCourseLocationId || npc.activity?.vesselId
+                || npc.activity?.kind === 'travelling' || npc.activity?.kind === 'stationed'
+                || npc.activity?.kind === 'out_with_a_party' && npc.activity.fromLocationId)));
     let geometrySeenLocations = state.locations.length;
     if (opts.preciseDays) state.currentHour = (state.currentDay - Math.floor(state.currentDay)) * 24;
     // A stable append cursor survives pruning and reserved-row insertion.
@@ -210,7 +215,7 @@ export function advanceWorldForPlay(
     // slice and the digest under-reports the year it just simulated. Nothing
     // would have thrown.
     const factsBefore = witnessIndexFor(state).nextOrder;
-    const requested = Math.max(0, opts.preciseDays||transportClock() ? opts.days : Math.floor(opts.days));
+    const requested = Math.max(0, opts.days);
 
     // ── Why this is a loop and not two calls ─────────────────────────────
     //
@@ -240,12 +245,11 @@ export function advanceWorldForPlay(
 
     while (remaining > 0) {
         const until = state.currentDay + Math.min(STEP, remaining);
-        const effectivePrecision=transportClock()||opts.preciseDays===true||!Number.isInteger(remaining)||(state.pendingSendings??[]).some(row=>row.dispatchFactId
-            &&state.npcs.some(npc=>npc.status==='alive'&&npc.activity?.capitalMissionId===row.dispatchFactId));
+        const effectivePrecision=transportClock()||opts.preciseDays===true||!Number.isInteger(remaining);
         if(effectivePrecision)state.currentHour=(state.currentDay-Math.floor(state.currentDay))*24;
         const boundary = effectivePrecision
             ? nextWorldClockBoundary(state, state.currentDay, until, opts.passageDates, opts.pressure,
-                opts.preciseDays || opts.pressure?.visitingPresence ? 'all' : 'transport') : null;
+                opts.preciseDays || opts.pressure?.visitingPresence ? 'foreground' : 'transport') : null;
         const slice = Math.min(STEP, remaining, boundary ? boundary.onDay - state.currentDay : Infinity);
         const before = state.currentDay;
         const livingBefore = new Set(state.npcs.filter(npc => npc.status === 'alive').map(npc => npc.id));

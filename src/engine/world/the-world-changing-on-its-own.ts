@@ -1,11 +1,13 @@
 import { aRetainedMemberActuallyServed, aRetainedMemberActuallyReturned, stillOnThisRetainedSending,
     stillOnAnActualRetainedReturn, actualRetainedReturnDay, retainedAirReturnBoundary, continueActualRetainedAirReturns } from './a-retained-sending-has-actually-served.js';
 import { initializeMetricGround } from './the-metric-ground-under-a-journey.js';
+import { settleWorldAirTravellers } from './an-air-course-in-the-world.js';
 import { recordNpcActualArrival } from './a-body-that-actually-arrived.js';
-import {continueActualHouseAirShuttle,beginHouseSendingAssembly} from './a-house-party-takes-an-actual-air-shuttle.js';
+import {continueActualHouseAirShuttle,beginHouseSendingAssembly,settleHouseShuttleOnContact} from './a-house-party-takes-an-actual-air-shuttle.js';
 import { itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from './a-vehicle.js';
-import { continueNpcDepartureApproach } from './npc-departure-approaches.js';
-import { theHouseLendsAnActualDutyCraft, quoteHouseAirDuty, admitPaidHouseAirDuty, admitPaidHouseAirReturn } from './a-house-party-takes-an-actual-air-leg.js';
+import { continueNpcDepartureApproach, settleNpcTravelOnContact } from './npc-departure-approaches.js';
+import { theHouseLendsAnActualDutyCraft, quoteHouseAirDuty, admitPaidHouseAirDuty, admitPaidHouseAirReturn,
+    sendASelectedHousePartyOnAnAvailableAirHull } from './a-house-party-takes-an-actual-air-leg.js';
 
 
 import { companyAfterPassage } from './company-during-a-passage.js';
@@ -18,7 +20,7 @@ import { loadExchangeConsignment, returnExchangeConsignment, tradeAtCapitalExcha
 import { theyAreRelieved } from './a-house-posts-the-one-being-played.js';
 import { offeredRitesThisYear } from './willing-rites-between-world-people.js';
 import { advancePublicCapitalMission, capitalCalendar, capitalPlaces, journeySelectedToHouseSeat, sendCapitalBusiness,
-    sendCapitalDelegations } from './capital-missions-and-calendar.js';
+    sendCapitalDelegations, houseBusinessCalendar, sendScheduledHouseBusiness } from './capital-missions-and-calendar.js';
 import { consignCapitalAuction, settleCapitalAuctions } from './a-capital-auction.js';
 import { advanceBeastContracts } from './beast-cultivation-contracts.js';
 import { WHAT_SCALE_DECIDES } from '../../data/cultivation/inheritance-trials.js';
@@ -53,7 +55,7 @@ import {
 import { beastsOnThisGround, bandOf, whatComesOffTheBody } from './hunting-a-spirit-beast.js';
 import { whatGroundThisIs } from './what-ground-a-place-is.js';
 import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
-import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
+import { theRoomsThisHouseHas, portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 import { rankName, triggersHeavenlyTribulation } from '../cultivation/realms.js';
 // Pressure is the LOWER world's own affairs, and only its own. Every selection
 // in this file is filtered to the mortal layer, because politics above the Lid
@@ -80,6 +82,7 @@ import {
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
     groundAPartyCanBeSentTo,
+    aPostingForItsActualLegs,
     theGroundAHouseHolds,
     whereASendingGoes,
     groundTheseHousesHold,
@@ -123,7 +126,8 @@ import {
     windowStartOn,
     type LocationRecord,
     type RouteQueries,
-    routeQueriesFor
+    routeQueriesFor,
+    placeScopeFor
 } from './locations.js';
 import { WHAT_SHUTS_IT, whatShutsThisDoor } from './a-door-that-closes-is-not-a-door-nobody-opened.js';
 import {
@@ -174,7 +178,7 @@ import {
     type NpcActivity
 } from './npc-state.js';
 import { andLetGoAtTheOtherEnd, andTheOtherEnd } from './a-tie-has-two-ends.js';
-import { enterWhoeverHasReachedTheHouse } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { enterWhoeverHasReachedTheHouse, isInsideTheCompound } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { theyOweTheHouseAReport } from './a-house-expects-somebody-it-took-on.js';
 import { theRoadsOntoARollThisYear } from './the-world-joins-a-house-the-way-a-player-does.js';
 import { FACTION_PARENTAGE } from '../../data/cultivation/governance-and-water-rights.js';
@@ -619,6 +623,7 @@ function pressureTasksForYear(state: WorldState, year: number,
     }
     for (const npc of state.npcs) {
         if (!isTheWorldsToMove(npc) || npc.activity?.untilDay == null) continue;
+        if (!isPlayerInvolved(state, npc)) continue;
         if (npc.activity.capitalMissionId) {
             const due = npc.activity.untilDay;
             if (due >= year * DAYS_PER_YEAR && due < (year + 1) * DAYS_PER_YEAR)
@@ -667,6 +672,11 @@ function pressureTasksForYear(state: WorldState, year: number,
                 (id, due) => schedulePostingDay(`capital-mission:${id}:${due}`, due));
                 tradeAtCapitalExchanges(state, day); } });
     }
+    for (const appointment of houseBusinessCalendar(state, year)) tasks.push({
+        key: `house-business:${appointment.houseId}:${appointment.receivingId}:${appointment.purpose}`,
+        day: appointment.onDay, run: () => { sendScheduledHouseBusiness(state, appointment,
+            (id, due) => schedulePostingDay(`house-mission:${id}:${due}`, due)); }
+    });
     for (const occasion of [...capitalCalendar(state, year), ...capitalCalendar(state, year + 1)]) {
         if (Math.floor(occasion.opensOnDay / DAYS_PER_YEAR) === year)
         tasks.push({ key: `capital-delegation:${occasion.venueId}:${occasion.kind}`, day: occasion.opensOnDay,
@@ -994,9 +1004,11 @@ function pressureTasksForYear(state: WorldState, year: number,
     tasks.push({ key: 'last-crossing', day: year * 365 + 200, run: (onDay: number) => {
         applyLastCrossing(state, year, onDay);
     } });
-    tasks.push({ key: 'board-work', day: year * 365 + 201, run: (onDay: number) => {
-        peopleTakeWorkOffTheirHousesBoard(state, year, onDay);
-    } });
+    for (const [quarter, offset] of [25, 115, 205, 340].entries()) {
+        tasks.push({ key: `board-work:${quarter}`, day: year * 365 + offset, run: (onDay: number) => {
+            peopleTakeWorkOffTheirHousesBoard(state, year, onDay, quarter);
+        } });
+    }
     tasks.push({ key: 'board-turn-ins', day: year * 365 + 202, run: (onDay: number) => {
         peopleTurnInWhatTheirHouseWants(state, onDay);
     } });
@@ -1024,6 +1036,9 @@ function pressureTasksForYear(state: WorldState, year: number,
     const scheduled = new Set(tasks.map(task => task.key));
     let nextTask = 0;
     schedulePostingDay = (key: string, day: number) => {
+        const personId = key.slice(key.indexOf(':') + 1, key.lastIndexOf(':'));
+        const person = state.npcs.find(npc => npc.id === personId);
+        if (person && !isPlayerInvolved(state, person)) return;
         if (day < year * DAYS_PER_YEAR || day > yearEndsOn
             || completed.has(key) || scheduled.has(key)) return;
         let at = nextTask;
@@ -1411,13 +1426,19 @@ function applyDemography(
     // so no row is written while the roster above still holds it.
     for (const child of born) {
         const recruiterId = tookOn.get(child.id);
-        if (child.factionId === null || recruiterId === undefined) continue;
-        theyOweTheHouseAReport(state, recruiterId, {
+        if (child.factionId === null) continue;
+        if(recruiterId!==undefined)theyOweTheHouseAReport(state, recruiterId, {
             houseId: child.factionId,
             person: { id: child.id, name: child.name },
             placeId: child.locationId,
             onDay: day
         });
+        const house=state.factions.find(house=>house.id===child.factionId);
+        const current=state.npcs.findIndex(person=>person.id===child.id);
+        if(house && current>=0 && child.locationId!==house.seatLocationId){
+            const entering=journeySelectedToHouseSeat(state,house,state.npcs[current]!,day);
+            if(entering)state.npcs[current]=entering;
+        }
     }
     void rng;
     void year;
@@ -1736,11 +1757,13 @@ function reviewSlot(id: string, period: number): number {
 
 /** Practice skipped by the background draw is reviewed once before a person's card. */
 export function settlePracticeOnContact(state: WorldState, personIds: ReadonlySet<string>): boolean {
+    const shuttle = settleHouseShuttleOnContact(state, personIds);
+    const travel = settleNpcTravelOnContact(state, personIds) || shuttle;
     const year = Math.floor(state.currentDay / 365);
-    if (year <= Math.floor(theDayTheWorldOpened(state) / 365)) return false;
+    if (year <= Math.floor(theDayTheWorldOpened(state) / 365)) return travel;
     const due = new Set([...personIds].filter(id => !factsWithDataValue(state, 'contactReviewFor', id)
         .some(fact => fact.data.reviewYear === year)));
-    if (due.size === 0) return false;
+    if (due.size === 0) return travel;
     applyAdvancement(state, year, Math.floor(state.currentDay), undefined, due);
     for (const id of due) {
         const person = state.npcs.find(npc => npc.id === id);
@@ -3266,6 +3289,7 @@ function applySendings(
     const at = new Map<string, number>();
     const homeOf = new Map(state.factions.map(house => [house.id, house.seatLocationId]));
     let departureRoutes: RouteQueries | undefined;
+    const newsPlaces = placeScopeFor(state.locations);
     // Where each name on a roll is standing, for whether the province's talk
     // reaches them. Built once and memoised on both halves: `regionOf` walks a
     // location's parents, and this is asked once per person per piece of ground.
@@ -3273,7 +3297,7 @@ function applySendings(
     const regionFor = (locationId: string | null): string | null => {
         const had = province.get(locationId);
         if (had !== undefined) return had;
-        const found = theRegionNewsIsMeasuredIn(state, locationId);
+        const found = theRegionNewsIsMeasuredIn(state, locationId, newsPlaces);
         province.set(locationId, found);
         return found;
     };
@@ -3342,7 +3366,7 @@ function applySendings(
             facts: state.history.facts, indexed: factIndex.byPlace,
             inTheAirFor: (fact, holderId) => {
                 const teller = tellerAt(holderId);
-                return teller !== null && isInTheAirFor(state, fact, teller, day);
+                return teller !== null && isInTheAirFor(state, fact, teller, day, newsPlaces);
             }
         })
     );
@@ -3667,12 +3691,32 @@ function applySendings(
             let admittedAir=false;
             let dispatchFactId:string|undefined;
             if(taking?.conveyance.crossesGroundThatCannotBeWalked&&goingTo===null)continue;
-            if(taking?.conveyance.crossesGroundThatCannotBeWalked&&goingTo!==null){
+            if(taking?.conveyance.crossesGroundThatCannotBeWalked&&goingTo!==null
+                &&selected.some(person=>isPlayerInvolved(state,person!))){
                 const assembling=beginHouseSendingAssembly(state,faction,{posting,party:party.map(member=>({...member})),
                     departsOnDay:day,locationId:goingTo,named,reachedPastItsWeight,
                     counterparties:[...whoTheErrandWasWith(state,aboutHouses,goingTo)]},day);
                 if(assembling){(state.pendingSendings??=[]).push(assembling);sent++;continue;}
                 continue;
+            }
+            if(taking?.conveyance.crossesGroundThatCannotBeWalked&&goingTo!==null){
+                const selectedRow={posting,party:party.map(member=>({...member})),departsOnDay:day,
+                    locationId:goingTo,named,reachedPastItsWeight,
+                    counterparties:[...whoTheErrandWasWith(state,aboutHouses,goingTo)]};
+                const houseRoll=roll.get(faction.id)??[];
+                const portfolios=portfoliosIn({locations:state.locations,sectId:faction.id,
+                    roll:houseRoll,rankCount:faction.ranks.length});
+                const admitted=sendASelectedHousePartyOnAnAvailableAirHull(state,faction,selected as NpcRecord[],
+                    goingTo,day,walking,!!water,inTheChest,read=>new Map(selected.map(person=>[person!.id,{
+                        kind:'out_with_a_party' as const,note:`On ${reason.name.toLowerCase()}.`,
+                        withIds:partyIds.filter(id=>id!==person!.id),sinceDay:day,
+                        untilDay:day+aPostingForItsActualLegs(posting,read.quote.daysForEverybody,read.back.daysForEverybody).days,
+                        returnTo:faction.seatLocationId,fromLocationId:person!.locationId
+                    }])),portfolios,houseRoll,selectedRow);
+                if(!admitted)continue;
+                posting={...aPostingForItsActualLegs(posting,admitted.read.quote.daysForEverybody,
+                    admitted.read.back.daysForEverybody),stonesBurned:admitted.fuel};
+                admittedAir=true;dispatchFactId=admitted.dispatchFactId;
             }
             if(!admittedAir){
                 const purseNow=Number(faction.resources.spirit_stones??0);
@@ -3882,6 +3926,16 @@ function applySendings(
 }
 
 /** The same settlement for a posting resolved now or after several yearly slices. */
+/** Successful work brings the ordinary materials or opened-ground spoils home. */
+export function landSuccessfulHouseWork(state: WorldState, faction: FactionRecord,
+    reason: ReturnType<typeof postingFor>['reason'], party: readonly Candidate[], goingTo: string | null, day: number) {
+    if(reason.id==='sending-for-materials')creditWhatCameBack(state,faction,partyOrdinal(party),party.length,day);
+    return reason.needs==='a_find'&&goingTo!==null ? applyWhatThePartyCarriedOut(state,{
+        locationId:goingTo,house:{id:faction.id,name:faction.name,seatLocationId:faction.seatLocationId},
+        readers:party.flatMap(member=>{const person=state.npcs.find(npc=>npc.id===member.id);
+            return person&&isTheWorldsToMove(person)?[person]:[];}),onDay:day
+    }):[];
+}
 function settleSending(state: WorldState, input: {
     faction: FactionRecord;
     sending: ReturnType<typeof resolveSending>;
@@ -3922,11 +3976,6 @@ function settleSending(state: WorldState, input: {
         state.npcs[index] = gone;
     }
 
-    // AND ONLY WHAT IS WORTH REPEATING BECOMES NEWS
-    if (sending.outcome === 'finished' && reason.id === 'sending-for-materials') {
-        creditWhatCameBack(state, faction, partyOrdinal(party), party.length, sending.returnsOnDay);
-    }
-
     // â”€â”€ AND A PARTY THAT OPENED A HOLE CARRIES OUT WHAT WAS IN IT â”€â”€â”€â”€
     //
     // RUINS YIELD MANUALS, which the setting has asserted in as many words
@@ -3942,20 +3991,7 @@ function settleSending(state: WorldState, input: {
     // province and draws that reason, and what is behind the door is what
     // `what-a-ruin-has-on-its-shelves.ts` says the ground was holding.
     const carriedOut = sending.outcome === 'finished'
-        && reason.needs === 'a_find' && goingTo !== null
-        ? applyWhatThePartyCarriedOut(state, {
-            locationId: goingTo,
-            house: {
-                id: faction.id, name: faction.name, seatLocationId: faction.seatLocationId
-            },
-            readers: party
-                .map(member => at.get(member.id))
-                .filter((index): index is number => index !== undefined)
-                .map(index => state.npcs[index])
-                .filter(row => row !== undefined && isTheWorldsToMove(row)),
-            onDay: sending.returnsOnDay
-        })
-        : [];
+        ? landSuccessfulHouseWork(state,faction,reason,party,goingTo,sending.returnsOnDay) : [];
 
     // AND THE GROUND CHANGES HANDS, OR IT DOES NOT. The whole of what the
     // house went for, and the same three writes `vein_lost` makes - the
@@ -4738,6 +4774,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
         return local;
     };
     let posted = 0;
+    const craftPositions = state.objects.flatMap((object, at) => typeof object.data.conveyanceId === 'string' ? [at] : []);
     for (const faction of liveFactions(state)) {
         const ranks = faction.ranks.length;
         if (ranks === 0) continue;
@@ -4837,7 +4874,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
                 const water = journeyNeedsWater(state.locations, from, town.id, routes)
                     || journeyNeedsWater(state.locations, town.id, home, routes);
                 const purse = Number(faction.resources.spirit_stones ?? 0);
-                taking = bestForThisRoad(whatThisHouseCouldTakeOut(state, faction),
+                taking = bestForThisRoad(whatThisHouseCouldTakeOut(state, faction, craftPositions),
                     Math.max(outward, returning), 1, water, purse / 2);
                 const refusedCrafts=new Set<string>();
                 while(taking?.conveyance.crossesGroundThatCannotBeWalked) {
@@ -4849,10 +4886,11 @@ export function applyPostings(state: WorldState, year: number, day: number,
                     if(airRead)break;
                     if(taking.rowId)refusedCrafts.add(taking.rowId);
                     else break;
-                    taking=bestForThisRoad(whatThisHouseCouldTakeOut(state,faction).filter(row=>!row.rowId||!refusedCrafts.has(row.rowId)),
+                    taking=bestForThisRoad(whatThisHouseCouldTakeOut(state,faction,craftPositions).filter(row=>!row.rowId||!refusedCrafts.has(row.rowId)),
                         Math.max(outward,returning),1,water,purse/2);
                 }
                 if(taking?.conveyance.crossesGroundThatCannotBeWalked&&!airRead)continue;
+                if(taking && itWantsAPilot(taking.conveyance) && who.cultivation.realmOrdinal<A_SPIRIT_BOAT_ANSWERS_TO)continue;
                 if (water && !taking) continue;
                 const outQuote = airRead?.quote ?? (taking ? priceJourney({ walkingDays: outward,
                     conveyance: taking.conveyance, power: taking.power, heads: 1,
@@ -4941,28 +4979,31 @@ function anAwayTermDueToClose(state:WorldState,npc:NpcRecord,day:number,reliefDa
     return {...doing,untilDay:doing.untilDay};
 }
 
-function bringHomeWhoeverIsDue(state: WorldState, day: number,
+function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
     schedule?: (key: string, day: number) => void): number {
+    const day = onDay;
     // Only the geographic graph is shared; every iteration reads the current row.
     const routes = routeQueriesFor(state.locations);
     settleHiredDuties(state, day);
     const reliefDays = new Map<string, number>();
     const reliefFacts = new Map<string, (typeof state.history.facts)[number]>();
     const readReliefs = () => {
-        for (const fact of factsWithDataValue(state, 'postRelief', true)) {
-            if (typeof fact.data.outgoingId !== 'string') continue;
-            if (fact.day < (reliefDays.get(fact.data.outgoingId) ?? -Infinity)) continue;
-            reliefDays.set(fact.data.outgoingId, fact.day);
-            reliefFacts.set(fact.data.outgoingId, fact);
+        for (const person of state.npcs) {
+            if (person.status !== 'alive' || person.activity?.kind !== 'stationed') continue;
+            for (const fact of factsWithDataValue(state, 'outgoingId', person.id)) {
+                if (fact.data.postRelief !== true || fact.day < (reliefDays.get(person.id) ?? -Infinity)) continue;
+                reliefDays.set(person.id, fact.day);
+                reliefFacts.set(person.id, fact);
+            }
         }
     };
     readReliefs();
-    // One pass per sweep for the houses whose posts await replacements. Re-posting every house
-    // here made each due post a full sweep of the world, and that grew with every post kept.
+    // Foreground relief is immediate; distant replacements use the annual posting draw.
     const dueHouses = new Set<string>();
     for (const n of state.npcs) {
         if (n.status === 'alive' && n.factionId !== null && n.activity?.kind === 'stationed'
             && n.activity.untilDay != null && n.activity.untilDay <= day && !isLostTrackOf(state, n)
+            && isPlayerInvolved(state, n)
             && (reliefDays.get(n.id) ?? -Infinity) < n.activity.sinceDay) dueHouses.add(n.factionId);
     }
     if (dueHouses.size > 0) {
@@ -4971,23 +5012,53 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
             onDeparture: (id, departure) => schedule?.(`post-depart:${id}:${departure}`, departure),
             onlyHouses: dueHouses
         }, routes);
-        for (const outgoing of state.npcs) {
-            if (outgoing.status !== 'alive' || outgoing.activity?.kind !== 'stationed'
-                || outgoing.activity.untilDay == null || outgoing.activity.untilDay > day
-                || !outgoing.locationId) continue;
-            if (theyAreRelieved(state, { relievedId: outgoing.id, townId: outgoing.locationId, today: day }, routes))
-                schedule?.(`post-depart:${outgoing.id}:${day + 1}`, day + 1);
-        }
-        readReliefs();
     }
+    let postedHere: Map<string, string[]> | undefined;
+    const standingPosts = () => {
+        if (postedHere) return postedHere;
+        postedHere = new Map();
+        for (const person of state.npcs) {
+            if (person.status !== 'alive' || person.activity?.kind !== 'stationed' || !person.locationId) continue;
+            const place = locationOnNpcJourney(state.locations, person, day, routes);
+            if (place !== person.locationId) continue;
+            const key = `${person.factionId}|${place}`;
+            const group = postedHere.get(key) ?? [];
+            group.push(person.id); postedHere.set(key, group);
+        }
+        return postedHere;
+    };
+    for (const outgoing of state.npcs) {
+        if (outgoing.status !== 'alive' || outgoing.activity?.kind !== 'stationed'
+            || outgoing.activity.untilDay == null || outgoing.activity.untilDay > day
+            || !outgoing.locationId || (reliefDays.get(outgoing.id) ?? -Infinity) >= outgoing.activity.sinceDay) continue;
+        const replacementId = standingPosts().get(`${outgoing.factionId}|${outgoing.locationId}`)?.find(id => id !== outgoing.id);
+        if (!replacementId) continue;
+        if (theyAreRelieved(state, { relievedId: outgoing.id, townId: outgoing.locationId, today: day, replacementId }, routes))
+            schedule?.(`post-depart:${outgoing.id}:${day + 1}`, day + 1);
+    }
+    readReliefs();
     const sendingsOf = new Map<string, NonNullable<WorldState['pendingSendings']>>();
     for (const row of state.pendingSendings ?? []) for (const member of row.party) {
         const rows = sendingsOf.get(member.id);
         if (rows) rows.push(row); else sendingsOf.set(member.id, [row]);
     }
     const continuedShuttles = new Map<NonNullable<WorldState['pendingSendings']>[number], boolean>();
+    let exchangeStock: Map<string, number[]> | undefined;
+    const consignmentsWith = (holderId: string): readonly number[] => {
+        if (!exchangeStock) {
+            exchangeStock = new Map();
+            for (let at = 0; at < state.objects.length; at++) {
+                const object = state.objects[at]!;
+                if (!object.tags.includes('exchange') || !object.possessorId) continue;
+                const rows = exchangeStock.get(object.possessorId) ?? [];
+                rows.push(at); exchangeStock.set(object.possessorId, rows);
+            }
+        }
+        return exchangeStock.get(holderId) ?? [];
+    };
     let home = 0;
     for (let i = 0; i < state.npcs.length; i++) {
+        let day = onDay;
         let npc = state.npcs[i];
         if (npc === undefined || npc.status !== 'alive') continue;
         if(continueNpcDepartureApproach(state,npc,day,routes))continue;
@@ -5010,9 +5081,21 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
             if (continuing) continue;
             npc = state.npcs[i]!;
         }
-        const doing = anAwayTermDueToClose(state,npc,day,reliefDays);
+        // Land an accepted course before a due-term reader can discard its binding.
+        if(npc.activity?.airCourseLocationId){
+            const place=routes.places.get(npc.activity.airCourseLocationId);
+            const receipt=place&&typeof place.data.airCourseId==='string'?witnessIndexFor(state).byId.get(place.data.airCourseId):undefined;
+            if(typeof receipt?.data.arrivalDay==='number'&&journeyTimeHasReached(day,receipt.data.arrivalDay)){
+                settleWorldAirTravellers(state,receipt.data.arrivalDay,new Set([npc.id]));
+                npc=state.npcs[i]!;
+            }
+            if(npc.activity?.airCourseLocationId)continue;
+        }
+        const dueTerm = anAwayTermDueToClose(state,npc,day,reliefDays);
         // Board work done at the house closes here too, and goes nowhere.
-        if (!doing) continue;
+        if (!dueTerm) continue;
+        let doing: NonNullable<ReturnType<typeof anAwayTermDueToClose>> = dueTerm;
+        if (doing.kind !== 'stationed' && !isPlayerInvolved(state, npc)) day = doing.untilDay;
         // A PERSON NOBODY CAN FIND DOES NOT COME HOME, and this is the line
         // that made Internal Affairs dead for the life of the repo.
         //
@@ -5060,7 +5143,8 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
                 power: doing.conveyancePower, heads: 1, crossesGroundThatCannotBeWalked: water }).daysForEverybody
                 : Math.max(1, Math.ceil(distance??0));
             const returnActivity: NpcActivity={kind:'travelling',note:'Returning home from a house posting.',withIds:[],
-                sinceDay:day,untilDay:day+journey,fromLocationId:npc.locationId,returnTo:back,
+                sinceDay:isPlayerInvolved(state,npc)?day:doing.untilDay!,
+                untilDay:(isPlayerInvolved(state,npc)?day:doing.untilDay!)+journey,fromLocationId:npc.locationId,returnTo:back,
                 conveyanceId:doing.conveyanceId,conveyancePower:doing.conveyancePower};
             if(doing.airDutyReceiptId) {
                 const peers=state.npcs.filter(person=>{
@@ -5087,6 +5171,8 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
                             data:{postServiceReceipt:true,outgoingId:person.id,servedSinceDay:term.sinceDay,servedUntilDay:day}}),{recur:false});
                     schedule?.(`post-return:${person.id}:${due}`,due);
                 }
+                // The admitted air receipt owns landfall, including a distant return.
+                continue;
             } else {
                 const relief = reliefFacts.get(npc.id);
                 if (relief && (typeof relief.data.servedSinceDay !== 'number'
@@ -5108,7 +5194,11 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
                 state.npcs[i]={...npc,activity:returnActivity,updatedOnDay:day};
                 schedule?.(`post-return:${npc.id}:${day+journey}`,day+journey);
             }
-            continue;
+            if (!isPlayerInvolved(state, npc) && returnActivity.untilDay! <= day) {
+                npc = state.npcs[i]!;
+                doing = { ...npc.activity!, untilDay: returnActivity.untilDay! };
+                day = doing.untilDay;
+            } else continue;
         }
         // A native air return already reached its bound home. Keep that actual
         // receipt/body for retained settlement; a disconnected walking graph
@@ -5145,7 +5235,8 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
             ? servedPost.data.servedSinceDay
             : typeof feederReturn?.data.stintDay === 'number' ? feederReturn.data.stintDay : doing.sinceDay;
         returnExchangeConsignment(state, npc, day, stintDay,
-            typeof feederReturn?.data.fromHouseId === 'string' ? feederReturn.data.fromHouseId : npc.factionId);
+            typeof feederReturn?.data.fromHouseId === 'string' ? feederReturn.data.fromHouseId : npc.factionId,
+            consignmentsWith(npc.id));
         if (sendingsOf.has(npc.id)) continue;
 
         // A place that has since ceased to exist leaves them standing where
@@ -5592,7 +5683,7 @@ function applyFactionEconomy(state: WorldState): void {
         const income = veins * whatAVeinPaysItsHolder(share)
             + levy + towns + members * 30 * (1 + share);
         const payroll = members * A_STIPEND_PER_MEMBER_PER_YEAR;
-        const upkeep = payroll + (faction.resources.tribute_owed_per_year ?? 0) * 0.1;
+        const upkeep = payroll;
         const before = faction.resources.spirit_stones ?? 0;
         faction.resources.spirit_stones = Math.max(0, Math.round(before + income - upkeep));
         faction.resources.members = members;
@@ -5614,8 +5705,7 @@ function applyFactionEconomy(state: WorldState): void {
         // nothing. Now it is the members who go without, which is who actually
         // goes without.
         //
-        // The tribute half is NOT paid to anybody: it goes to whoever the
-        // tribute is owed to, and that is a different house's business.
+        // Carried tribute is reserved at departure and received at its actual patron.
         const affordable = Math.max(0, Math.min(payroll, before + income));
         const each = members > 0 ? (affordable / members) * (1 - WHAT_A_MEMBER_LIVES_ON) : 0;
         if (each >= 1) {
@@ -5972,6 +6062,8 @@ function theProvinceGoes(
 ): readonly AHouseOnTheRoad[] {
     const roster = new Map<string, Candidate[]>();
     const at = new Map<string, number>();
+    const houses=new Map(state.factions.map(house=>[house.id,house]));
+    const places=routeQueriesFor(state.locations).places;
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i];
         at.set(npc.id, i);
@@ -5980,6 +6072,10 @@ function theProvinceGoes(
         // character to a door they did not set out for is the engine taking a
         // decision that is theirs.
         if (!isTheWorldsToMove(npc)) continue;
+        if(npc.activity && (isAwayOnSomething(npc.activity.kind)
+            || npc.activity.untilDay!=null && npc.activity.untilDay>day))continue;
+        const seat=houses.get(npc.factionId)?.seatLocationId;
+        if(!seat || !isInsideTheCompound(places,npc.locationId,seat))continue;
         const on = roster.get(npc.factionId);
         const who = { id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal };
         if (on) on.push(who); else roster.set(npc.factionId, [who]);

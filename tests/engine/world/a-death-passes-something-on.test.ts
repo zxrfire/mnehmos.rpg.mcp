@@ -64,7 +64,7 @@
  * word pass sweeps it. Count slips through their reader, not the row's presence.
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog';
 import { advanceWorldForPlay } from '../../../src/engine/world/driver';
@@ -197,6 +197,9 @@ function inheritedGoals(state: WorldState): number {
 function theDead(state: WorldState): number {
     return state.npcs.filter(n => n.status === 'physically_dead').length;
 }
+
+// The original walks are shared by every claim; cold setup gets the file budget.
+beforeAll(async () => { await worldsLived(); }, 900_000);
 
 describe('what a death leaves behind', () => {
     it('leaves something, over any span long enough to have deaths in it', async () => {

@@ -12,7 +12,7 @@
  * does not pay the settled terms fails the payment assertion.
  *
  * UPDATED: `peopleTakeWorkOffTheirHousesBoard` now draws which houses are read
- * each year from a capped background sample rather than reading every house
+ * at quarter dates from a capped background sample rather than reading every house
  * every call. The first test arranges exact local contact through the ordinary
  * foreground context, retaining its original single-year call and assertions
  * about terms rather than measuring whether the background sample drew it.
@@ -56,6 +56,7 @@ function anOuterDisciple(state: WorldState, houseId: string, id: string, ordinal
         name: `Disciple ${id}`,
         factionId: houseId,
         factionRankIndex: 0,
+        locationId: state.factions.find(house => house.id === houseId)!.seatLocationId,
         activity: null,
         merit: null,
         spiritStones: 0,
@@ -95,11 +96,13 @@ describe('an outer disciple takes work off their own house\'s board', () => {
         expect(doing.untilDay).toBeGreaterThan(day);
         expect(doing.note.length).toBeGreaterThan(0);
 
-        const terms = theBoardWorkTheyAreOn(after, doing.untilDay);
+        const mission = state.history.facts.find(fact => fact.id === doing.capitalMissionId);
+        const completedOn = mission ? Number(mission.data.plannedReturnDay) : doing.untilDay;
+        const terms = theBoardWorkTheyAreOn(after, completedOn);
         expect(terms).not.toBeNull();
         expect(terms!.houseId).toBe(houseId);
         expect(whatTheBoardQuotesAt(state, houseId, 3, rankCount)).toContainEqual({
-            days: doing.untilDay! - doing.sinceDay,
+            days: mission ? Number(mission.data.dutyDays) : doing.untilDay! - doing.sinceDay,
             contribution: terms!.contribution,
             stones: terms!.stones
         });
@@ -110,15 +113,19 @@ describe('an outer disciple takes work off their own house\'s board', () => {
         const probe = anOuterDisciple(state, houseId, 'probe-paid', 4);
         const day = Math.floor(state.currentDay);
 
-        peopleTakeWorkOffTheirHousesBoard(state, Math.floor(day / 365), day);
+        resolveWithPlayerPresent(state, probe.locationId!, () =>
+            peopleTakeWorkOffTheirHousesBoard(state, Math.floor(day / 365), day));
         const out = state.npcs.find(n => n.id === probe.id)!;
-        const terms = theBoardWorkTheyAreOn(out, out.activity!.untilDay)!;
+        const mission = state.history.facts.find(fact => fact.id === out.activity!.capitalMissionId);
+        const completedOn = mission ? Number(mission.data.plannedReturnDay) : out.activity!.untilDay;
+        const term = { ...out.activity!, untilDay: completedOn };
+        const terms = theBoardWorkTheyAreOn(out, completedOn)!;
         expect(terms.contribution).toBeGreaterThan(0);
 
-        const home = whatFinishingBoardWorkPays(out, out.activity!)!;
+        const home = whatFinishingBoardWorkPays(out, term)!;
         expect(meritWith(home, houseId)).toBe(terms.contribution);
         expect(home.spiritStones).toBe(terms.stones);
-        expect(theBoardWorkTheyAreOn(home, out.activity!.untilDay)).toBeNull();
+        expect(theBoardWorkTheyAreOn(home, completedOn)).toBeNull();
     });
 
     it('is not taken by somebody already on a term, or by the top of the house', () => {

@@ -2,6 +2,15 @@
 
 # The Web Front Door
 
+A senior completing ordinary duty with its named juniors earns the lecture's
+face and merit through `whatLeadingDisciplesIsWorth`, scaled by the actual
+elapsed undertaking and the juniors' existing mission danger. The ordinary
+duty ledger, contribution account and face row hold the result. An interrupted
+or refused duty goes through refusal and pays no leadership reward.
+The scale is `2 + log2(1 + elapsedDays / 20) + 2 * lostChance`, so safe
+twenty-day work earns three times the lecture figures for the same span and
+audience. A settled duty pays nothing on repeated completion.
+
 An indoor traveller uses `walking-to-a-departure.ts` before boarding. Its SQL
 body reads the same containment, locks and quarter-day station approach as an
 NPC, with the ordinary body/world span and interruptions. Geographic legs keep
@@ -303,7 +312,9 @@ The player's world mirror reads existence, soul and continuity from that sheet.
 Unknown projection makers remain unnamed, and a projection's scene card does
 not show its maker's distant activity or bodily wounds.
 
-Before company cards are composed, `settlePracticeOnContact` reviews accumulated
+Before company cards are composed, `settlePracticeOnContact` realizes a current
+background public passage through the native hull and crew, preserving its
+paid fare, dates and physical position. It also reviews accumulated
 practice once that year and `settleWitnessesOnContact` resolves their outstanding
 witness reactions through the yearly resolver. Reactions, accounts and reports
 remain on the original facts and obligation ledger. Witnessed deeds reach the

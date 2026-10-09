@@ -121,6 +121,54 @@ function keep(file: string, text: string): void {
     fs.renameSync(temp, file);
 }
 
+interface ChunkedWorld {
+    canonicalChunks: 1;
+    state: WorldState;
+    arrays: { path: string[]; files: string[] }[];
+}
+
+let publication = 0;
+
+/** Ledger growth must not require one string as large as the whole world. */
+function keepWorld(file: string, state: WorldState): void {
+    const directory = `${path.basename(file)}.${process.pid}.${publication++}.parts`;
+    const parts = path.join(path.dirname(file), directory);
+    fs.mkdirSync(parts);
+    const shell = { ...state, history: { ...state.history }, memories: { ...state.memories } };
+    const arrays: ChunkedWorld['arrays'] = [];
+    const cut = (keys: string[], rows: unknown[]): void => {
+        let target = shell as unknown as Record<string, unknown>;
+        for (const key of keys.slice(0, -1)) target = target[key] as Record<string, unknown>;
+        target[keys.at(-1)!] = [];
+        const files: string[] = [];
+        for (let offset = 0; offset < rows.length; offset += 1024) {
+            const name = `${arrays.length}-${offset}.json`;
+            fs.writeFileSync(path.join(parts, name), JSON.stringify(rows.slice(offset, offset + 1024)));
+            files.push(path.join(directory, name));
+        }
+        arrays.push({ path: keys, files });
+    };
+    for (const [key, value] of Object.entries(state)) if (Array.isArray(value)) cut([key], value);
+    cut(['history', 'facts'], state.history.facts);
+    cut(['memories', 'records'], state.memories.records);
+    keep(file, JSON.stringify({ canonicalChunks: 1, state: shell, arrays } satisfies ChunkedWorld));
+}
+
+function readKept(file: string): WorldState {
+    const kept = JSON.parse(fs.readFileSync(file, 'utf8')) as WorldState | ChunkedWorld;
+    if (!('canonicalChunks' in kept)) return kept;
+    for (const chunk of kept.arrays) {
+        let target = kept.state as unknown as Record<string, unknown>;
+        for (const key of chunk.path.slice(0, -1)) target = target[key] as Record<string, unknown>;
+        const rows = target[chunk.path.at(-1)!] as unknown[];
+        for (const part of chunk.files) {
+            const read = JSON.parse(fs.readFileSync(path.join(path.dirname(file), part), 'utf8')) as unknown[];
+            for (const row of read) rows.push(row);
+        }
+    }
+    return kept.state;
+}
+
 function walkInSpans(state: WorldState, days: number, stopOnInterrupt?: boolean,
     onCheckpoint?: (walked: number) => void): void {
     const fromDay = state.currentDay;
@@ -159,11 +207,10 @@ export async function soakedWorld(
         return JSON.parse(bytes.toString('utf8')) as WorldState;
     }
     const file = fileFor(seed, days);
-    const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : await walkIt(seed, days, file);
-    return JSON.parse(text) as WorldState;
+    return fs.existsSync(file) ? readKept(file) : await walkIt(seed, days, file);
 }
 
-async function walkIt(seed: string, days: number, file: string): Promise<string> {
+async function walkIt(seed: string, days: number, file: string): Promise<WorldState> {
     // ONE WALKER A WORLD. Another fork asking for the same walk waits for it
     // rather than doing it again; an exited builder's lock is abandoned.
     const lock = `${file}.lock`;
@@ -173,7 +220,7 @@ async function walkIt(seed: string, days: number, file: string): Promise<string>
             break;
         } catch (error) {
             if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-            if (fs.existsSync(file)) return fs.readFileSync(file, 'utf8');
+            if (fs.existsSync(file)) return readKept(file);
             const age = Date.now() - (fs.statSync(lock, { throwIfNoEntry: false })?.mtimeMs ?? 0);
             const alive = builderIsAlive(lock);
             if (alive === false || alive === null && age > 30 * 60_000) {
@@ -184,19 +231,18 @@ async function walkIt(seed: string, days: number, file: string): Promise<string>
         }
     }
     try {
-        if (fs.existsSync(file)) return fs.readFileSync(file, 'utf8');
+        if (fs.existsSync(file)) return readKept(file);
         const from = nearestKept(seed, days);
         const state: WorldState = from
-            ? JSON.parse(fs.readFileSync(from.file, 'utf8')) as WorldState
+            ? readKept(from.file)
             : seedWorld({ seed, catalog: await loadCultivationCatalog() }).state;
         const walked = from?.days ?? 0;
         if (days > walked) walkInSpans(state, days - walked, false, advanced => {
             const at = walked + advanced;
-            if (at < days) keep(fileFor(seed, at), JSON.stringify(state));
+            if (at < days) keepWorld(fileFor(seed, at), state);
         });
-        const text = JSON.stringify(state);
-        keep(file, text);
-        return text;
+        keepWorld(file, state);
+        return readKept(file);
     } finally {
         fs.rmSync(lock, { force: true });
     }

@@ -29,6 +29,10 @@
  * only the same binding can continue a previous walk.
  * A loaded consignment is offered at its intended exchange, never in lodging
  * while its carrier is still walking to the departure point.
+ * The year30 demography census found a recruit stranded at Silver Island:
+ * house purse0, personal purse21, fare24, and her actual recruiter held35.
+ * Admission can use a member's own fare or that recruiter's sponsorship at
+ * the same place. Neither payment invents money or grants a water route.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -37,7 +41,7 @@ import { advancePublicCapitalMission, journeySelectedToHouseSeat,
 import { advanceWorldForPlay } from '../../../src/engine/world/driver.js';
 import { createWorld, makeFaction, npcsAt } from '../../../src/engine/world/world-state.js';
 import { linkLocations, makeLocation } from '../../../src/engine/world/locations.js';
-import { createNpc, setRealm } from '../../../src/engine/world/npc-state.js';
+import { createNpc, setRealm, PLAYER_ROW_TAG } from '../../../src/engine/world/npc-state.js';
 import { applyPostings } from '../../../src/engine/world/the-world-changing-on-its-own.js';
 import { addPlacesOnTheWay, locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
@@ -50,6 +54,17 @@ import { whatAnIngredientIs } from '../../../src/engine/cultivation/what-a-cauld
 import { getPill } from '../../../src/data/cultivation/pills.js';
 import { pillCashPrice } from '../../../src/engine/cultivation/buying-and-bartering-pills.js';
 import { meritWith, whatServiceIsWorth } from '../../../src/engine/world/what-a-house-counts-in-somebodys-favour.js';
+import { theyOweTheHouseAReport } from '../../../src/engine/world/a-house-expects-somebody-it-took-on.js';
+
+/** Walked controls concern people in the actual player's party. */
+function foreground(state: ReturnType<typeof createWorld>): void {
+    const player = createNpc(state.seed, { id: 'player', locationId: null,
+        onDay: state.currentDay, bornOnDay: state.currentDay - 20 * 365 });
+    player.tags.push(PLAYER_ROW_TAG);
+    player.activity = { kind: 'idle', note: 'With the selected people.',
+        withIds: state.npcs.map(person => person.id), sinceDay: state.currentDay, untilDay: null };
+    state.npcs.push(player);
+}
 
 /** Bounded journey controls are separate from the excluded decade census. */
 describe('capital missions', () => {
@@ -82,6 +97,7 @@ describe('capital missions', () => {
         member.activity={kind:'travelling',note:'Walking to the departure point.',withIds:[],
             capitalMissionId:'earlier-intention',standingIn:room.id,fromLocationId:from.id,returnTo:from.id,
             sinceDay:day-1,untilDay:day-.75};state.npcs.push(member);
+        foreground(state);
         const selected=journeySelectedToHouseSeat(state,house,member,day);
         expect(selected?.activity?.capitalMissionId).not.toBe('earlier-intention');
         expect(selected?.activity?.sinceDay).toBe(day);
@@ -187,6 +203,7 @@ describe('capital missions', () => {
         for (let i = 0; i < 8; i++) state.npcs.push({ ...setRealm(createNpc(state.seed,
             { id: `public-member-${i}`, locationId: lodging.id, onDay: 0, bornOnDay: -30 * 365 }), 14, 0),
             factionId: houseRow.id, factionRankIndex: 1 });
+        foreground(state);
         sendCapitalDelegations(state, occasion);
         const mission = state.history.facts.find(f => f.data.publicMission === true)!;
         expect(mission, 'the house can dispatch without owning a hull').toBeTruthy();
@@ -270,8 +287,10 @@ describe('capital missions', () => {
         state.npcs.push(setRealm(createNpc(state.seed, { id: 'selected', name: 'Selected Hand',
             locationId: grounds.id, onDay: 0, bornOnDay: -30 * 365 }), 14, 0));
         const selected = state.npcs[0]!;
+        selected.spiritStones = 0;
+        foreground(state);
         expect(journeySelectedToHouseSeat(state, receiver, selected, 0),
-            'the route can be found, but the house cannot yet pay its fare').toBeNull();
+            'the route can be found, but neither the house nor its member can pay').toBeNull();
         expect(state.locations.every(place => place.changes.length === 0)).toBe(true);
         linkLocations(grounds, cloud, 'road', 100);
         linkLocations(grounds, emerald, 'road', 1);
@@ -281,6 +300,53 @@ describe('capital missions', () => {
         expect(travelling!.activity?.kind).toBe('travelling');
         expect(travelling!.activity?.returnTo, 'the first leg reaches the newly nearer dock').toBe(emerald.id);
         expect(locationOnNpcJourney(state.locations, travelling!, 1)).toBe(emerald.id);
+    });
+
+    it('a member pays the ordinary passage home when their house cannot sponsor it', () => {
+        const state = createWorld({seed:'personal-admission-fare',skipPriorAges:true,regionCount:0});
+        const dock = makeLocation({id:'dock',name:PLACE.CLOUD_GATE,kind:'settlement'});
+        const home = makeLocation({id:'home',name:PLACE.SWEETSPRING_ISLE,kind:'sect_seat'});
+        state.locations.push(dock,home);
+        const house = makeFaction({id:'house',name:'Receiving House',seatLocationId:home.id,
+            resources:{spirit_stones:0}});
+        state.factions.push(house);
+        const member = createNpc(state.seed,{id:'member',locationId:dock.id,onDay:0,bornOnDay:-20*365});
+        member.factionId=house.id;member.spiritStones=1_000_000;member.activity=null;state.npcs.push(member);
+        const travelling=journeySelectedToHouseSeat(state,house,member,0)!;
+        expect(travelling.activity?.capitalMissionId).toBeTruthy();
+        const receipt=state.history.facts.find(fact=>fact.id===travelling.activity!.capitalMissionId)!;
+        const fare=Number(receipt.data.publicFareStones);
+        expect(fare).toBeGreaterThan(0);
+        expect(travelling.spiritStones).toBe(1_000_000-fare);
+        expect(house.resources.spirit_stones).toBe(0);
+        expect(receipt.data.publicPayerId).toBe(member.id);
+        advancePublicCapitalMission(state,member.id,Number(receipt.data.plannedArrivalDay));
+        expect(state.npcs[0]!.locationId).toBe(home.id);
+        expect(state.npcs[0]!.spiritStones).toBe(travelling.spiritStones);
+    });
+
+    it('the actual recruiter at the dock sponsors a penniless recruit from their own purse', () => {
+        const state=createWorld({seed:'recruiter-admission-fare',skipPriorAges:true,regionCount:0});
+        const dock=makeLocation({id:'dock',name:PLACE.CLOUD_GATE,kind:'settlement'});
+        const home=makeLocation({id:'home',name:PLACE.SWEETSPRING_ISLE,kind:'sect_seat'});
+        state.locations.push(dock,home);
+        const house=makeFaction({id:'house',name:'Receiving House',seatLocationId:home.id,resources:{spirit_stones:0}});
+        state.factions.push(house);
+        for(const id of ['member','recruiter']){
+            const person=createNpc(state.seed,{id,locationId:dock.id,onDay:0,bornOnDay:-20*365});
+            person.factionId=house.id;person.spiritStones=id==='recruiter'?1_000_000:0;person.activity=null;state.npcs.push(person);
+        }
+        theyOweTheHouseAReport(state,'recruiter',{houseId:house.id,person:{id:'member',name:state.npcs[0]!.name},
+            placeId:dock.id,onDay:0});
+        const travelling=journeySelectedToHouseSeat(state,house,state.npcs[0]!,0)!;
+        expect(travelling.activity?.capitalMissionId).toBeTruthy();
+        const receipt=state.history.facts.find(fact=>fact.id===travelling.activity!.capitalMissionId)!;
+        expect(receipt.data.publicPayerId).toBe('recruiter');
+        expect(state.npcs[1]!.spiritStones).toBe(1_000_000-Number(receipt.data.publicFareStones));
+        expect(state.npcs[0]!.spiritStones).toBe(0);
+        expect(house.resources.spirit_stones).toBe(0);
+        advancePublicCapitalMission(state,'member',Number(receipt.data.plannedArrivalDay));
+        expect(state.npcs[0]!.locationId).toBe(home.id);
     });
 
     it('relieves a city posting before the member’s own grounds', () => {
@@ -298,6 +364,7 @@ describe('capital missions', () => {
             { id: `member-${i}`, locationId: 'seat', onDay: 0, bornOnDay: -30 * 365 }), 14, 0),
             factionId: 'house', factionRankIndex: 1 });
         applyPostings(state, 0, 0);
+        foreground(state);
         const posted = state.npcs.find(n => n.activity?.kind === 'stationed')!;
         expect(posted, 'the house must actually send somebody').toBeTruthy();
         expect(posted.locationId).toBe('city');

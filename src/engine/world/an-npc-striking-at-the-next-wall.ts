@@ -436,13 +436,8 @@ export function strikeAtTheWall(
     const injuries = woundsCarriedBy(npc);
     const subject = {
         realmOrdinal: ordinal,
-        // NOTHING HAS HAPPENED TO THEM YET. The world writes no insight on an
-        // NPC, so this is empty and stays empty; the roads below are what is in
-        // REACH, and the gate charges them against the age two lines down. The
-        // day this field starts carrying real comprehension - a tribulation an
-        // NPC survived, written down - it will add to the same total without
-        // anything here changing, which is what having one rule buys.
-        insights: [] as Insight[],
+        // Actual mission instruction enters the player's same comprehension gate.
+        insights: npc.cultivation.insights ?? [] as Insight[],
         // The arts in their hands, under the name a player's row uses for the
         // same fact - so the practice channel goes through the shared rule with
         // no adapter between the two sides at all.

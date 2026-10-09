@@ -23,6 +23,7 @@ import type { WorldState } from './world-state.js';
 import { prepareNpcDepartureApproach } from './npc-departure-approaches.js';
 import { exteriorGroundOfDeparture } from './departure-approach.js';
 import { stonesFor } from './the-fare-and-calendar-of-a-passage.js';
+import { isPlayerInvolved } from './background-incident-draw.js';
 
 export const ROUTE_STOP = 'route-stop';
 
@@ -66,6 +67,16 @@ export function bookNpcPassageForRoute(state: { locations: readonly LocationReco
         const to=state.locations.find(place=>place.id===destinationId);
         const line=ground&&to?publicShipLinesFrom(world,ground.name,day,routes).find(line=>line.to===to.name):undefined;
         if(!line)return null;
+        if (!isPlayerInvolved(world, npc)) {
+            const fare = stonesFor(line.cashPerSeat);
+            if (npc.status !== 'alive' || npc.spiritStones < fare) return null;
+            const leaves = Math.max(day, line.runsFromDay ?? day);
+            return { ...npc, locationId: ground!.id, spiritStones: npc.spiritStones - fare,
+                activity: companyDuringPassage(npc.activity, {
+                    kind: 'travelling', note: purpose, sinceDay: leaves, untilDay: leaves + line.days,
+                    fromLocationId: ground!.id, returnTo: destinationId, seaLaneId: line.lane.id, withIds: []
+                }, day), updatedOnDay: day };
+        }
         const approach=prepareNpcDepartureApproach(state as WorldState,npc,destinationId,day,purpose,'ship',undefined,routes);
         if(approach!==undefined)return approach;
         // An unaffordable seat needs no hull, weather or berth projection.
@@ -212,8 +223,8 @@ function projectNpcJourney(
         const to = npc.locationId;
         const home = activity.returnTo ?? from;
         const craft = activity.conveyanceId ? getConveyance(activity.conveyanceId) : undefined;
-        const outward = walkingRouteFrom(locations, from, to, routes);
-        const returning = walkingRouteFrom(locations, to, home, routes);
+        const outward = heldWalkingRoute(locations, from, to, routes);
+        const returning = heldWalkingRoute(locations, to, home, routes);
         if (!outward || !returning) return from;
         const places = (routes?.locations === locations ? routes.places : new Map(locations.map(place => [place.id, place])));
         if ((waterOnHeldRoute(outward, places) || waterOnHeldRoute(returning, places))
@@ -235,7 +246,7 @@ function projectNpcJourney(
         capture?.(point);return groundAtRoadPosition(locations,point);
     }
     if (from === null || day <= activity.sinceDay) return from;
-    if (activity.vesselId && activity.seaLaneId) {
+    if (activity.seaLaneId) {
         if (journeyTimeHasReached(day, activity.untilDay)) return activity.returnTo;
         const lane = SEA_LANES.find(one => one.id === activity.seaLaneId);
         const departure = locations.find(place => place.id === from);
@@ -246,7 +257,7 @@ function projectNpcJourney(
         return locations.find(place => place.name.toLowerCase() === water?.toLowerCase())?.id ?? from;
     }
     const craft = activity.conveyanceId ? getConveyance(activity.conveyanceId) : undefined;
-    const route = walkingRouteFrom(locations, from, activity.returnTo, routes);
+    const route = heldWalkingRoute(locations, from, activity.returnTo, routes);
     if (!route) return from;
     const places = (routes?.locations === locations ? routes.places : new Map(locations.map(place => [place.id, place])));
     if (waterOnHeldRoute(route, places) && !craft?.crossesGroundThatCannotBeWalked) return from;
@@ -257,17 +268,28 @@ function projectNpcJourney(
 
 /** Water on the actual existing route requires a hull or an art that can cross it. */
 export function journeyNeedsWater(locations: readonly LocationRecord[], from: string, to: string, routes?: RouteQueries): boolean {
-    const route = walkingRouteFrom(locations, from, to, routes);
+    const route = heldWalkingRoute(locations, from, to, routes);
     return route ? waterOnHeldRoute(route, (routes?.locations === locations ? routes.places : new Map(locations.map(place => [place.id, place])))) : false;
 }
 
 type HeldRoute = NonNullable<ReturnType<typeof walkingRouteFrom>>;
+const HELD_ROUTES = new WeakMap<RouteQueries, Map<string, HeldRoute | null>>();
+
+/** Physical readers share an immutable path while their route scope is unchanged. */
+function heldWalkingRoute(locations: readonly LocationRecord[], from: string, to: string, routes?: RouteQueries): HeldRoute | null {
+    routes ??= routeQueriesFor(locations);
+    let paths = HELD_ROUTES.get(routes);
+    if (!paths) { paths = new Map(); HELD_ROUTES.set(routes, paths); }
+    const key = `${from}|${to}`;
+    if (!paths.has(key)) paths.set(key, walkingRouteFrom(locations, from, to, routes));
+    return paths.get(key)!;
+}
 
 /** A live posting has one initial passage. Its term never starts a return trip. */
 function passageToAPost(locations: readonly LocationRecord[], npc: NpcRecord, routes?: RouteQueries) {
     const doing = npc.activity;
     if (doing?.kind !== 'stationed' || doing.fromLocationId == null || npc.locationId == null) return null;
-    const route = walkingRouteFrom(locations, doing.fromLocationId, npc.locationId, routes);
+    const route = heldWalkingRoute(locations, doing.fromLocationId, npc.locationId, routes);
     if (!route) return null;
     const places = (routes?.locations === locations ? routes.places : new Map(locations.map(place => [place.id, place])));
     const craft = doing.conveyanceId ? getConveyance(doing.conveyanceId) : undefined;
@@ -300,8 +322,8 @@ export function siteIntervalOnAnNpcPosting(locations: readonly LocationRecord[],
         || doing.airCourseLocationId) return null;
     if (doing.fromLocationId == null) return { locationId: npc.locationId,
         fromDay: doing.sinceDay, untilDay: doing.untilDay };
-    const outward = walkingRouteFrom(locations, doing.fromLocationId, npc.locationId, routes);
-    const returning = walkingRouteFrom(locations, npc.locationId, doing.returnTo ?? doing.fromLocationId, routes);
+    const outward = heldWalkingRoute(locations, doing.fromLocationId, npc.locationId, routes);
+    const returning = heldWalkingRoute(locations, npc.locationId, doing.returnTo ?? doing.fromLocationId, routes);
     if (!outward || !returning) return null;
     const places = routes?.locations === locations ? routes.places : new Map(locations.map(place => [place.id, place]));
     const craft = doing.conveyanceId ? getConveyance(doing.conveyanceId) : undefined;

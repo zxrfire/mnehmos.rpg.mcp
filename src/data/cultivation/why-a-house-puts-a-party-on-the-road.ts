@@ -394,6 +394,17 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         weight: 14
     },
     {
+        id: 'sending-to-carry-tribute',
+        name: '贡行 Tribute Carriage',
+        said: 'tribute carriage',
+        task: 'Carry the tribute of {house} to {place} for the next {term}',
+        what: 'The grant names a receiving house and an annual payment. Its own '
+            + 'people carry the payment to that house and return with the receipt.',
+        needs: 'a_parent', ceilingOrdinal: null, floorOrdinal: null, makes: null,
+        days: 20, hands: 3, atStake: 'the_grant', factKind: 'grant_renewed',
+        scale: 'local', weight: 14
+    },
+    {
         id: 'sending-to-open-an-inheritance',
         name: 'Opening what was found',
         said: 'opening party',
@@ -506,6 +517,17 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         factKind: 'gathering',
         scale: 'regional',
         weight: 11
+    },
+    {
+        id: 'sending-on-a-progress',
+        name: '扬威巡行 Display of Strength',
+        said: 'display of strength',
+        task: 'Accompany the display of strength of {house} through {place} for the next {term}',
+        what: 'A ranked party carries the house marks, its held treasures and its '
+            + 'own wealth through another house\'s ground, receives its people and returns home.',
+        needs: 'a_counterpart', ceilingOrdinal: null, floorOrdinal: null, makes: null,
+        days: 60, hands: 8, atStake: 'standing_with_a_house', factKind: 'gathering',
+        scale: 'regional', weight: 8
     },
     {
         id: 'sending-to-a-friendly-competition',

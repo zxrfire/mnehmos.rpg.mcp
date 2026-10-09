@@ -5,7 +5,7 @@
  * person's practice into an exact appointment. Played advances retain both. */
 import {expect,it} from 'vitest';
 import {createWorld} from '../../../src/engine/world/world-state.js';
-import {createNpc,setRealm} from '../../../src/engine/world/npc-state.js';
+import {createNpc,setRealm,PLAYER_ROW_TAG} from '../../../src/engine/world/npc-state.js';
 import {makeLocation} from '../../../src/engine/world/locations.js';
 import {bookNpcPassageForRoute} from '../../../src/engine/world/places-on-the-way.js';
 import {continueNpcDepartureApproach} from '../../../src/engine/world/npc-departure-approaches.js';
@@ -25,6 +25,10 @@ function scene(){
  const passenger={...createNpc(world.seed,{id:'passenger',locationId:room.id,onDay:world.currentDay,
   bornOnDay:world.currentDay-20*365}),spiritStones:100};
  world.npcs.push(passenger);
+ const player=createNpc(world.seed,{id:'observer',locationId:room.id,onDay:world.currentDay,bornOnDay:-20*365});
+ player.tags.push(PLAYER_ROW_TAG);
+ player.activity={kind:'idle',note:'With the passenger.',withIds:[passenger.id],sinceDay:world.currentDay,untilDay:null};
+ world.npcs.push(player);
  const approach=bookNpcPassageForRoute(world,passenger,destination.id,world.currentDay,'Taking wares to the island.');
  expect(approach?.activity?.departureApproach).toBeDefined();
  world.npcs[0]=approach!;

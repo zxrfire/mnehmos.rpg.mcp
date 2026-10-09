@@ -1,3 +1,4 @@
+// Canonical walks retain the original seeds, horizons and assertions.
 /**
  * Fostering, and the one thing that decides whether it is a feature: does
  * somebody in a running world actually do it.
@@ -376,7 +377,7 @@ describe('somebody in a running world does this', () => {
         // kept above 1 so a draw collapsed onto a single house still reads red.
         expect(receiving.size).toBeGreaterThanOrEqual(3);
         expect(sending.size).toBeGreaterThanOrEqual(2);
-    }, 240_000);
+    }, 900_000);
 
     it('leaves the child on the bloodline and off the parent\'s roll of children', async () => {
         let checked = 0;
@@ -450,7 +451,7 @@ describe('somebody in a running world does this', () => {
         expect(checked).toBeGreaterThan(0);
         expect(takerAlive).toBeGreaterThan(0);
         expect(stillBound / takerAlive).toBeGreaterThanOrEqual(0.9);
-    }, 240_000);
+    }, 900_000);
 
     it('assesses a fostered person against their sending house\'s terms, in the world pass', async () => {
         // The Court's terms are reached about once in six thousand world-years

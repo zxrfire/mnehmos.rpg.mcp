@@ -36,6 +36,7 @@ import {
 } from '../encounters/duties.js';
 import { shareOfAttention } from '../cultivation/cultivation.js';
 import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
+import { whatBeingWatchedIsWorth } from './what-a-face-is-worth.js';
 
 /** What this house counts in their favour. Nothing, where it counts none. */
 export function meritWith(npc: Pick<NpcRecord, 'merit'>, houseId: string | null): number {
@@ -100,4 +101,14 @@ export function whatAttentionIsWorth(
 ): number {
     if (listenersOfTheHouse <= 0) return 0;
     return whatServiceIsWorth(teacherOrdinal, days) * listenersOfTheHouse * shareOfAttention(listeners);
+}
+
+/** Leading real board work uses the lecture reward, scaled by span and danger. */
+export function whatLeadingDisciplesIsWorth(teacherOrdinal: number, days: number,
+    disciplesOfTheHouse: number, disciples: number, danger: number): { ratio: number; merit: number; face: number } {
+    const ratio = 2 + Math.log2(1 + Math.max(0, days) / ORDINARY_DUTY_DAYS)
+        + 2 * Math.max(0, Math.min(1, danger));
+    return { ratio,
+        merit: Math.round(whatAttentionIsWorth(teacherOrdinal, days, disciplesOfTheHouse, disciples) * ratio),
+        face: disciples > 0 && days > 0 ? whatBeingWatchedIsWorth(disciples) * ratio : 0 };
 }

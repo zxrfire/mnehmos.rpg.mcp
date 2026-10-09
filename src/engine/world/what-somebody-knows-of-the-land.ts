@@ -31,6 +31,7 @@ import type { OriginTierKey } from '../cultivation/origin.js';
 import { realmIndexOf } from '../cultivation/realms.js';
 import { forStream } from '../cultivation/rng.js';
 import type { WorldState } from './world-state.js';
+import { placeScopeFor, type PlaceScope } from './locations.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT KIND OF PLACE IT IS
@@ -58,8 +59,8 @@ export interface WhatTheyKnowOfTheLand {
 }
 
 /** The province a world row stands in, off its parents, as a catalog region id. */
-function provinceOfRow(world: Pick<WorldState, 'locations'>, locationId: string | null): string | null {
-    const byId = new Map(world.locations.map(row => [row.id, row]));
+function provinceOfRow(world: Pick<WorldState, 'locations'>, locationId: string | null, scope?: PlaceScope): string | null {
+    const byId = (scope ?? placeScopeFor(world.locations)).places;
     for (let row = locationId ? byId.get(locationId) : undefined, steps = 0; row && steps < 12; steps++) {
         if (row.kind === 'region') return row.id.replace(/^loc-/, '');
         row = row.parentId ? byId.get(row.parentId) : undefined;
@@ -68,13 +69,13 @@ function provinceOfRow(world: Pick<WorldState, 'locations'>, locationId: string 
 }
 
 /** The province somebody from `from` is of: a catalog place, or a world row by name. */
-function provinceOf(world: Pick<WorldState, 'locations'>, from: string | null): string | null {
+function provinceOf(world: Pick<WorldState, 'locations'>, from: string | null, scope?: PlaceScope): string | null {
     if (!from) return null;
     const place = PLACES.find(row => row.name === from);
     if (place) return place.regionId;
     const region = REGIONS.find(row => row.name === from);
     if (region) return region.id;
-    return provinceOfRow(world, world.locations.find(row => row.name === from)?.id ?? null);
+    return provinceOfRow(world, world.locations.find(row => row.name === from)?.id ?? null, scope);
 }
 
 /** Provinces next door, nearest first. */
@@ -161,19 +162,19 @@ export function howMuchOfTheRoadALifeHasSeen(occupation: string | null | undefin
 }
 
 /** The houses that stand on sect ground, with the province each stands in. */
-function theSeatedHouses(world: Pick<WorldState, 'locations' | 'factions'>) {
-    const kinds = new Map(world.locations.map(row => [row.id, row.kind]));
+function theSeatedHouses(world: Pick<WorldState, 'locations' | 'factions'>, scope = placeScopeFor(world.locations)) {
     return world.factions
         .filter(faction => faction.seatLocationId && faction.dissolvedOnDay === null
-            && kinds.get(faction.seatLocationId) === 'sect_seat')
-        .map(faction => ({ faction, province: provinceOfRow(world, faction.seatLocationId) }));
+            && scope.places.get(faction.seatLocationId)?.kind === 'sect_seat')
+        .map(faction => ({ faction, province: provinceOfRow(world, faction.seatLocationId, scope) }));
 }
 
 export function whatSomebodyKnowsOfTheLand(
     world: Pick<WorldState, 'locations' | 'factions'> & Partial<Pick<WorldState, 'seed' | 'currentDay'>>,
-    who: WhoTheyAre
+    who: WhoTheyAre,
+    scope = placeScopeFor(world.locations)
 ): WhatTheyKnowOfTheLand {
-    const home = provinceOf(world, who.from);
+    const home = provinceOf(world, who.from, scope);
     // What they have heard of, and how much of it they could find: the place they live widens
     // the first and not the second.
     const heard = howFarTheirKnowledgeReaches(world, who);
@@ -239,7 +240,7 @@ export function whatSomebodyKnowsOfTheLand(
     }
 
     // THE HOUSES, nearest first and by standing.
-    const seats = theSeatedHouses(world);
+    const seats = theSeatedHouses(world, scope);
     const houses = new Map<string, { id: string; name: string; stage: 'placed' | 'named' }>();
     const knowHouse = (faction: { id: string; name: string }, stage: 'placed' | 'named') => {
         if (houses.get(faction.id)?.stage !== 'placed') houses.set(faction.id, { id: faction.id, name: faction.name, stage });
@@ -278,7 +279,7 @@ export function whatSomebodyKnowsOfTheLand(
         places: [...places.entries()].map(([name, stage]) => ({ name, stage })),
         houses: [...houses.values()],
         publicHubs: who.from && world.seed !== undefined
-            ? publicTransportHubsAt({ seed: world.seed, locations: world.locations }, who.from, world.currentDay ?? 0)
+            ? publicTransportHubsAt({ seed: world.seed, locations: world.locations }, who.from, world.currentDay ?? 0, { scope })
                 .map(hub => ({ ...hub, place: who.from! }))
             : []
     };

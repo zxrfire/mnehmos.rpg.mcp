@@ -33,6 +33,7 @@ import {
     withAttentionRecorded
 } from '../../../src/engine/world/who-is-given-attention-this-year.js';
 import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
+import { makeLocation } from '../../../src/engine/world/locations.js';
 import { migrate } from '../../../src/storage/migrations.js';
 import { WorldStateRepository } from '../../../src/storage/repos/world-state.repo.js';
 
@@ -120,6 +121,23 @@ describe('a master at a desk', () => {
 });
 
 describe('attention given is remembered on the tie', () => {
+    /** A fallen house's transfers renewed lessons on the old ground for decades.
+     * A completed lesson is remembered, but a new house does not renew it there. */
+    it('ends an old lesson away from the new house without renewing it',()=>{
+        const state=createWorld({seed:'transferred-teacher',regionCount:0,skipPriorAges:true}),day=state.currentDay;
+        const home=makeLocation({id:'home',name:'New Grounds',kind:'sect_seat'}),old=makeLocation({id:'old',name:'Old Grounds',kind:'sect_seat'});
+        state.locations.push(home,old);
+        state.factions.push(makeFaction({id:HOUSE,name:'New House',seatLocationId:home.id}));
+        const master=createNpc(state.seed,{id:'master',locationId:old.id,onDay:day,bornOnDay:day-50*YEAR});
+        master.factionId=HOUSE;master.activity={kind:'teaching',note:'An old lesson',withIds:['disciple'],sinceDay:day-20,untilDay:day-1};
+        master.relationships=[tie('disciple','disciple')];
+        const disciple=createNpc(state.seed,{id:'disciple',locationId:old.id,onDay:day,bornOnDay:day-20*YEAR});
+        disciple.relationships=[tie(master.id,'master')];state.npcs.push(master,disciple);
+        giveThisYearsAttention(state,Math.floor(day/YEAR),day);
+        expect(state.npcs[0]!.activity?.untilDay??day-1).toBeLessThan(day);
+        expect(state.npcs[0]!.relationships[0]!.lastAttentionOnDay).toBe(day-1);
+    });
+
     it('stamps both ends when the lesson is given, and nobody without a tie', () => {
         const state = createWorld({ seed: 'remembered', presentYear: 1000, regionCount: 1 });
         const here = state.locations[0]!.id;

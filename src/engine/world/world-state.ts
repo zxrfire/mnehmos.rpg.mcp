@@ -495,7 +495,7 @@ export function lineageOf(state: WorldState, memberId: string): LineageRecord | 
 }
 
 export function getObject(state: WorldState, id: string): ObjectRecord | null {
-    return state.objects.find(o => o.id === id) ?? null;
+    return rowById(state.objects, id);
 }
 
 export function upsertObject(state: WorldState, object: ObjectRecord): WorldState {

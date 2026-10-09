@@ -6,7 +6,9 @@
  * went out to meet each other. `aGrandGatheringOfPowers` is the outing the
  * design owner's list has on it, built where gatherings already are: where the
  * circle's host stands at Core Formation or above, each house sends the deepest
- * person standing at home, on a `travelling` term their own seat closes.
+ * person standing at home. The former 60-day travelling row teleported to the
+ * host and cleared there, stranding the senior. The gathering now uses the real
+ * outward road, sixty days at the host and the road home, on the mission itinerary.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -19,7 +21,9 @@ import {
     aGrandGatheringOfPowers,
     type Circle
 } from '../../../src/engine/world/gatherings.js';
-import { makeLocation } from '../../../src/engine/world/locations.js';
+import { makeLocation, linkLocations } from '../../../src/engine/world/locations.js';
+import { advancePublicCapitalMission } from '../../../src/engine/world/capital-missions-and-calendar.js';
+import { locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
 import { PLAYER_ROW_TAG, createNpc, setRealm, type NpcRecord } from '../../../src/engine/world/npc-state.js';
 import { createWorld, makeFaction, type FactionRecord, type WorldState } from '../../../src/engine/world/world-state.js';
 
@@ -52,6 +56,8 @@ function world(power: number): WorldState {
             member(`${id}-disciple`, id, 1, 12)
         );
     }
+    linkLocations(state.locations.find(place => place.id === 'seat-host')!,
+        state.locations.find(place => place.id === 'seat-guest')!, 'road', 6);
     return state;
 }
 
@@ -66,10 +72,14 @@ describe('a grand gathering of powers', () => {
         const went = aGrandGatheringOfPowers(state, circleOf(state), state.factions, 'seat-host', DAY);
         expect(went.map(n => n.id)).toContain('guest-head');
         const away = state.npcs.find(n => n.id === 'guest-head')!;
-        expect(away.locationId).toBe('seat-host');
+        expect(locationOnNpcJourney(state.locations, away, DAY + 6)).toBe('seat-host');
         expect(away.activity?.kind).toBe('travelling');
-        expect(away.activity?.returnTo).toBe('seat-guest');
-        expect(away.activity?.untilDay).toBe(DAY + A_SENIOR_IS_AWAY_FOR_DAYS);
+        expect(locationOnNpcJourney(state.locations, away, DAY)).toBe('seat-guest');
+        const mission = state.history.facts.find(fact => fact.id === away.activity?.capitalMissionId)!;
+        expect(mission.data.publicServiceDays).toBe(A_SENIOR_IS_AWAY_FOR_DAYS);
+        expect(mission.data.plannedReturnDay).toBe(DAY + 12 + A_SENIOR_IS_AWAY_FOR_DAYS);
+        advancePublicCapitalMission(state, away.id, Number(mission.data.plannedReturnDay));
+        expect(state.npcs.find(person => person.id === away.id)!.locationId).toBe('seat-guest');
         // Not the disciples: they are who a gathering was already drawing on.
         expect(went.some(n => n.id.endsWith('disciple'))).toBe(false);
     });

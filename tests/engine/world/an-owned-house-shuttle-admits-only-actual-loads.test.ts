@@ -18,7 +18,7 @@ import {mkdtempSync,appendFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createWorld,makeFaction,type WorldState} from '../../../src/engine/world/world-state.js';
-import {createNpc,setRealm,markDead} from '../../../src/engine/world/npc-state.js';
+import {createNpc,setRealm,markDead,PLAYER_ROW_TAG} from '../../../src/engine/world/npc-state.js';
 import {makeLocation} from '../../../src/engine/world/locations.js';
 import {aVehicleOf} from '../../../src/engine/world/a-vehicle.js';
 import {requireConveyance} from '../../../src/data/cultivation/what-a-house-moves-its-people-on.js';
@@ -31,6 +31,8 @@ import {journeyTimeHasReached} from '../../../src/engine/world/places-on-the-way
 import {witnessIndexFor} from '../../../src/engine/world/witness-reaction-index.js';
 import {stopAnAirCourse} from '../../../src/engine/world/an-air-course-in-the-world.js';
 import {priceJourney,whatTheChestBurns} from '../../../src/engine/world/what-a-conveyance-does-to-a-journey.js';
+import {continueActualHouseAirShuttle} from '../../../src/engine/world/a-house-party-takes-an-actual-air-shuttle.js';
+import {settlePracticeOnContact} from '../../../src/engine/world/the-world-changing-on-its-own.js';
 import {WorldStateRepository} from '../../../src/storage/repos/world-state.repo.js';
 import {migrateWorld} from '../../../src/storage/migrations.world.js';
 /** Component bodies are already gathered outside. The separate calendar
@@ -42,7 +44,10 @@ function arranged(){
  const house=makeFaction({id:'shuttle-house',name:'Sending house',ranks:['Disciple','Elder','Head'],seatLocationId:from.id,resources:{spirit_stones:1000}});world.factions.push(house);
  const craft=requireConveyance('conv-spirit-boat'),hull=aVehicleOf({id:'shuttle-actual-hull',conveyanceId:craft.id,ownerId:house.id,ownerName:house.name,at:from.id});world.objects.push(hull);
  const people=Array.from({length:craft.heads+1},(_,index)=>{let n=createNpc(world.seed,{id:'shuttle-member-'+index,name:'Actual member '+index,
-  locationId:from.id,onDay:day,bornOnDay:day-40*365});if(index===0)n=setRealm(n,29,day);n.factionId=house.id;n.factionRankIndex=0;return n;});world.npcs.push(...people);
+ locationId:from.id,onDay:day,bornOnDay:day-40*365});if(index===0)n=setRealm(n,29,day);n.factionId=house.id;n.factionRankIndex=0;return n;});world.npcs.push(...people);
+ const player=createNpc(world.seed,{id:'shuttle-observer',locationId:null,onDay:day,bornOnDay:day-20*365});
+ player.tags.push(PLAYER_ROW_TAG);player.activity={kind:'idle',note:'With the shuttle party.',
+  withIds:people.map(person=>person.id),sinceDay:day,untilDay:null};world.npcs.push(player);
  for(const person of people)person.activity={kind:'idle',note:'Gathered together at the departure ground',
   withIds:people.filter(other=>other.id!==person.id).map(other=>other.id),sinceDay:day,untilDay:day+1};
  for(const person of people){const ground=theExteriorGroundsOfAnNpcAirDeparture(world,person,to.id,day);
@@ -65,6 +70,57 @@ function advance(world:WorldState,days:number){return advanceWorldForPlay(world,
 function legs(world:WorldState,id:string){return [...(witnessIndexFor(world).references.get(id)??[])].filter(f=>f.data.airCourse===true&&f.data.houseDutyDispatchId===id);}
 function body(world:WorldState,id:string){const n=world.npcs.find(n=>n.id===id);if(!n)throw Error('Actual original sending body disappeared');return n;}
 function exactClock(actual:number,expected:number){expect(journeyTimeHasReached(actual,expected)&&journeyTimeHasReached(expected,actual)).toBe(true);}
+it('a distant shuttle projects real loads and contact settles only elapsed native legs without another fuel charge',()=>{
+ const h=arranged(),observer=h.world.npcs.find(person=>person.tags.includes(PLAYER_ROW_TAG))!;
+ h.world.npcs=h.world.npcs.filter(person=>person.id!==observer.id);
+ const started=start(h),dispatch=started.row.dispatchFactId!,one=started.read.quote.daysOneWay;
+ const paid=Number(h.house.resources.spirit_stones),last=h.people.at(-1)!.id;
+ h.world.currentDay=h.day+one*1.5;
+ continueActualHouseAirShuttle(h.world,started.row,h.world.currentDay);
+ expect(legs(h.world,dispatch)).toHaveLength(1);
+ expect(body(h.world,last).locationId).toBe(h.from.id);
+ expect(body(h.world,h.people[1]!.id).locationId).toBe(h.to.id);
+ expect(body(h.world,h.pilot.id).activity?.withIds).toEqual([]);
+ expect(settlePracticeOnContact(h.world,new Set([last]))).toBe(true);
+ const actual=legs(h.world,dispatch);
+ expect(actual).toHaveLength(2);
+ expect(actual[1]!.data.houseDutyPhase).toBe('reloading');
+ exactClock(Number(actual[1]!.data.departureDay),h.day+one);
+ expect(Number(actual[1]!.data.arrivalDay)).toBeGreaterThan(h.world.currentDay);
+ expect(body(h.world,last).locationId).toBe(h.from.id);
+ expect(Number(h.house.resources.spirit_stones)).toBe(paid);
+ h.world.npcs.push(observer);
+ advance(h.world,one*1.5);
+ expect(body(h.world,last).locationId).toBe(h.to.id);
+ expect(Number(h.house.resources.spirit_stones)).toBe(paid);
+ h.world.npcs=h.world.npcs.filter(person=>person.id!==observer.id);
+ const serviceEnd=h.day+started.row.posting.days-started.read.back.daysForEverybody;
+ h.world.currentDay=serviceEnd+one*1.5;
+ continueActualHouseAirShuttle(h.world,started.row,h.world.currentDay);
+ expect(body(h.world,h.pilot.id).activity?.withIds).toEqual([]);
+ const clock=h.world.currentDay;
+ expect(settlePracticeOnContact(h.world,new Set([last]))).toBe(true);
+ const collected=legs(h.world,dispatch).at(-1)!;
+ expect(collected.data.houseDutyPhase).toBe('collecting');
+ exactClock(Number(collected.data.departureDay),serviceEnd+one);
+ expect(Number(collected.data.arrivalDay)).toBeGreaterThan(clock);
+ exactClock(h.world.currentDay,clock);expect(Number(h.house.resources.spirit_stones)).toBe(paid);
+});
+it('an unobserved shuttle finishes its own service and return without enumerating its loads',()=>{
+ const h=arranged();h.world.npcs=h.world.npcs.filter(person=>!person.tags.includes(PLAYER_ROW_TAG));
+ const started=start(h),paid=Number(h.house.resources.spirit_stones);
+ h.world.currentDay=h.day+started.row.posting.days;
+ continueActualHouseAirShuttle(h.world,started.row,h.world.currentDay);
+ expect(legs(h.world,started.row.dispatchFactId!)).toHaveLength(1);
+ for(const member of h.people){
+  const actual=body(h.world,member.id);
+  expect(actual.locationId).toBe(h.from.id);
+  expect(aShuttleMemberActuallyServed(h.world,actual,started.row)).toBe(true);
+  exactClock(actualShuttleReturnDay(h.world,actual,started.row)!,h.world.currentDay);
+ }
+ expect(h.world.objects.find(object=>object.id===h.hull.id)!.possessorId).toBeNull();
+ expect(Number(h.house.resources.spirit_stones)).toBe(paid);
+});
 it('a later duty quote rereads a selected member who entered their room',()=>{
  const h=arranged();
  expect(quoteHouseAirDuty(h.world,h.house,h.people,h.pilot,h.hull,h.to.id,h.day,false)).not.toBeNull();

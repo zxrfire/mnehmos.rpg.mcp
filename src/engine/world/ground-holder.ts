@@ -59,7 +59,7 @@
 import { PREFECTURES } from '../../data/cultivation/regions.js';
 import { getSect } from '../../data/cultivation/sects.js';
 import type { SectAlignment } from '../../schema/cultivation.js';
-import { whatATownPaysItsHolder, type LocationRecord } from './locations.js';
+import { whatATownPaysItsHolder, type LocationRecord, type PlaceScope } from './locations.js';
 import { rowById } from './world-state.js';
 
 /** How the question was answered, and the three ways it can fail to be. */
@@ -128,7 +128,7 @@ function whatSortOfGroundThisIs(step: { kind?: string }): string {
 
 function chainFrom(
     locations: readonly LocationRecord[],
-    locationId: string
+    locationId: string, scope?: PlaceScope
 ): LocationRecord[] {
     const chain: LocationRecord[] = [];
     const seen = new Set<string>();
@@ -136,13 +136,13 @@ function chainFrom(
     // and this used to pay for a Map over every location in the world to walk
     // them. Measured with `--cpu-prof` on one seed at 1,200 years, that build
     // was 4.1ms per simulated year, entered per house per posting.
-    let at: LocationRecord | null = rowById(locations, locationId);
+    let at: LocationRecord | null = scope ? scope.places.get(locationId) ?? null : rowById(locations, locationId);
     // `parentId` is data and a cycle in it is survivable rather than fatal,
     // the same posture `places.ts` takes when it walks the same edges.
     while (at && !seen.has(at.id)) {
         seen.add(at.id);
         chain.push(at);
-        at = at.parentId ? rowById(locations, at.parentId) : null;
+        at = at.parentId ? scope ? scope.places.get(at.parentId) ?? null : rowById(locations, at.parentId) : null;
     }
     return chain;
 }
@@ -157,10 +157,10 @@ function chainFrom(
  */
 export function theProvinceAround(
     locations: readonly LocationRecord[],
-    locationId: string | null | undefined
+    locationId: string | null | undefined, scope?: PlaceScope
 ): string | null {
     if (!locationId) return null;
-    for (const step of chainFrom(locations, locationId)) {
+    for (const step of chainFrom(locations, locationId, scope)) {
         if (step.kind === 'region') return step.id;
     }
     return null;

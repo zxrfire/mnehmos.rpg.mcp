@@ -11,6 +11,13 @@
 
 # Cultivation Content Catalogs
 
+`why-a-house-puts-a-party-on-the-road.ts` includes 贡行 (Tribute Carriage)
+and 扬威巡行 (Display of Strength) as ordinary sending reasons. Their real
+parent or counterpart requirements, service spans and hands enter the existing
+posting and board readers. House calendars derive allies and patronage from
+current relations and the catalog pyramid; this catalog grants no journey,
+arrival, tribute payment or separate experience-party roster.
+
 The month-care price names a month of lying still, not a seasonal absence.
 Its web treatment duration derives from this catalog's `DAYS_PER_MONTH`; the
 note supplies no second duration or recovery rule.

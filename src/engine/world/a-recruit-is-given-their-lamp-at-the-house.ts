@@ -517,11 +517,8 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
             // they are promoted - usually while living at home. Measured with
             // the trip for robes alone, six seeds at a century: 2084 of 2151
             // later joiners robed and 381 of 1261 owed a token holding one.
-            const owedAToken = canCut
-                && carriesATokenAt(npc.factionRankIndex)
-                && !holds(tokenIdFor(npc.id), npc, house.id);
-            if (wears(npc, house.id) && !owedAToken) continue;
-            if (npc.locationId === null || !freeToSetOut(npc)) continue;
+            // An entered member at nothing away still has to travel home.
+            if (npc.locationId === null || !freeToSetOut(npc, day)) continue;
             const from = actualPlace(npc);
             const road = from === npc.locationId && from !== null
                 && walkingDaysFrom(state.locations, from, undefined, routes).has(seat)
@@ -545,9 +542,10 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
     return done;
 }
 
-function freeToSetOut(npc: NpcRecord): boolean {
+function freeToSetOut(npc: NpcRecord, day: number): boolean {
     const doing = npc.activity;
     if (doing === null) return true;
     if (isAwayOnSomething(doing.kind) || doing.kind === 'mending') return false;
+    if (doing.kind === 'teaching' && doing.untilDay != null && doing.untilDay <= day) return true;
     return (doing.untilDay ?? null) === null && doing.withIds.length === 0;
 }

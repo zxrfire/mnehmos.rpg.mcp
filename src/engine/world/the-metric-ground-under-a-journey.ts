@@ -7,13 +7,14 @@ import { stoppedRoadPoint } from './where-a-carriage-stopped.js';
 import type { MetricPoint } from '../../data/cultivation/regions/region-schema.js';
 import { forStream } from '../cultivation/rng.js';
 import type { CatalogRegion, CatalogFaction } from './catalog.js';
-import type { LocationRecord } from './locations.js';
+import { placeScopeFor, type LocationRecord, type PlaceScope } from './locations.js';
 import type { HistoricalFact } from './history.js';
 import { acceptedAirCourse, interpolateAirCoursePoint } from './position-on-an-accepted-air-course.js';
 
 export interface MetricCourseContext {
     facts: ReadonlyMap<string, HistoricalFact>;
     onDay: number;
+    places?: PlaceScope;
 }
 
 /** Authored physical unit: one walking-day of distance is eighty li. */
@@ -30,8 +31,9 @@ function recordedPoint(place: LocationRecord): MetricPoint | null {
 }
 
 /** A transient read, shared for an observation; no persistent projection. */
-export function metricGroundRead(locations: readonly LocationRecord[], courseContext?: MetricCourseContext) {
-    const byId = new Map(locations.map(place => [place.id, place]));
+export function metricGroundRead(locations: readonly LocationRecord[], courseContext?: MetricCourseContext,
+    scope?: PlaceScope) {
+    const byId = scope?.places ?? new Map(locations.map(place => [place.id, place]));
     const points = new Map<string, MetricPoint | null>();
     const visiting = new Set<string>();
     function point(id: string): MetricPoint | null {
@@ -80,7 +82,7 @@ export function metricGroundRead(locations: readonly LocationRecord[], courseCon
 /** Unknown geometry and a different layer cannot become an air leg. */
 export function distanceThroughTheAir(locations: readonly LocationRecord[], fromId: string, toId: string,
     courseContext?: MetricCourseContext): number | null {
-    const read = metricGroundRead(locations, courseContext);
+    const read = metricGroundRead(locations, courseContext, courseContext?.places ?? placeScopeFor(locations));
     const from = read.byId.get(fromId), to = read.byId.get(toId);
     if (!from || !to || from.layer !== to.layer) return null;
     const a = read.point(fromId), b = read.point(toId);

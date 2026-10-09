@@ -25,6 +25,9 @@
  * The owner allows thirty minutes for this census. Both horizons use the
  * canonical demography soakedWorld cache; no claim walks a separate century.
  * Each unchanged snapshot shares its route read for physical census placement.
+ * Owner correction: the former majority-home assertion was the coordinator's
+ * wording. Actual business may take many members away; an absence without an
+ * activity is wrong. The full decade census checks every checkpoint's reasons.
  */
 import { describe, expect, it } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
@@ -33,6 +36,7 @@ import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import { PROVINCIAL_CAPITALS } from '../../../src/data/cultivation/regions.js';
 import { locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
 import { routeQueriesFor } from '../../../src/engine/world/locations.js';
+import { exteriorGroundOfDeparture } from '../../../src/engine/world/departure-approach.js';
 
 /** Native journey controls moved unchanged to capital-mission-journeys.test.ts.
  * The cached decade census keeps its original assertions and canonical seed. */
@@ -51,8 +55,10 @@ describe('capital missions', () => {
             const seats = new Set(state.locations.filter(l => l.kind === 'sect_seat').map(l => l.id));
             const grounds = alive.filter(n => seats.has(placeOf.get(n.id) ?? ''));
             const members = alive.filter(n => n.factionId && state.factions.some(h => h.id === n.factionId && h.dissolvedOnDay === null));
-            const home = members.filter(n => state.factions.find(h => h.id === n.factionId)?.seatLocationId === placeOf.get(n.id));
-            expect(home.length / members.length, 'most members remain at home').toBeGreaterThan(0.5);
+            const awayWithoutAReason = members.filter(n =>
+                state.factions.find(h => h.id === n.factionId)?.seatLocationId !==
+                    exteriorGroundOfDeparture(state, placeOf.get(n.id)!, routes.places)?.id && !n.activity);
+            expect(awayWithoutAReason, 'no member is stranded away without an activity').toEqual([]);
             expect(grounds.length, 'sect grounds remain the most populous group').toBeGreaterThan(
                 alive.filter(n => cityIds.has(placeOf.get(n.id) ?? '')).length);
 

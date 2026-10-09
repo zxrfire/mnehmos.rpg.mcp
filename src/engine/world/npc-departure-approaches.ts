@@ -6,11 +6,39 @@ import { departureAreaAt } from './where-in-a-place-somebody-is-standing.js';
 import { bookNpcPassageForRoute } from './places-on-the-way.js';
 import { startNpcJourney } from './dao-ground-stints.js';
 import { commitNpcPublicPassage } from './ship-crew.js';
-import { publicShipLinesFrom } from './public-shipping.js';
+import { publicShipLinesFrom, quotePublicPassage } from './public-shipping.js';
+import { shipIdForLane } from './the-ship-on-a-lane.js';
 import { routeQueriesFor, type RouteQueries } from './locations.js';
+import { isPlayerInvolved } from './background-incident-draw.js';
+
+/** Contact realizes the current passage without restarting its paid journey. */
+export function settleNpcTravelOnContact(world: WorldState, personIds: ReadonlySet<string>): boolean {
+    let changed = false;
+    const routes = routeQueriesFor(world.locations);
+    for (const id of personIds) {
+        const at = world.npcs.findIndex(person => person.id === id);
+        const person = world.npcs[at], doing = person?.activity;
+        if (person?.status !== 'alive' || doing?.kind !== 'travelling' || !doing.seaLaneId
+            || doing.vesselId || !doing.fromLocationId || !doing.returnTo || doing.untilDay == null
+            || world.currentDay < doing.sinceDay || world.currentDay >= doing.untilDay) continue;
+        const from = routes.places.get(doing.fromLocationId), to = routes.places.get(doing.returnTo);
+        const line = from && to ? publicShipLinesFrom(world, from.name, doing.sinceDay, routes)
+            .find(row => row.lane.id === doing.seaLaneId && row.to === to.name) : undefined;
+        if (!line) continue;
+        // Contact checks current custody and finite berths before realizing a hull.
+        if (!quotePublicPassage(world, from!.id, to!.id, doing.sinceDay,
+            1, [], undefined, [person.id], routes)) continue;
+        const accepted = { ...person, activity: { ...doing, vesselId: shipIdForLane(line.lane) } };
+        world.npcs[at] = accepted;
+        if (commitNpcPublicPassage(world, accepted)) changed = true;
+        else world.npcs[at] = person;
+    }
+    return changed;
+}
 
 export function prepareNpcDepartureApproach(world:WorldState,npc:NpcRecord,destinationId:string,
     day:number,purpose:string,service:'ship'|'carriage'|'air'|'ground',vehicleId?:string,routes?:RouteQueries):NpcRecord|null|undefined {
+    if (!isPlayerInvolved(world, npc)) return undefined;
     routes ??= routeQueriesFor(world.locations);
     const place=npc.locationId?exteriorGroundOfDeparture(world,npc.locationId,routes.places):undefined;
     const area=place&&(service==='ship'||service==='carriage'||service==='air'&&vehicleId)
@@ -27,6 +55,21 @@ export function prepareNpcDepartureApproach(world:WorldState,npc:NpcRecord,desti
 export function continueNpcDepartureApproach(world:WorldState,npc:NpcRecord,day:number,routes?:RouteQueries):boolean {
     const intent=npc.activity?.departureApproach,binding=npc.activity?.capitalMissionId;
     if(!intent||!binding)return false;
+    if (!isPlayerInvolved(world, npc)) {
+        const due = npc.activity?.untilDay;
+        if (due == null || due > day) return true;
+        const at = world.npcs.findIndex(person => person.id === npc.id);
+        if (at < 0) return true;
+        const ready = { ...npc, locationId: intent.locationId, activity: {
+            ...npc.activity!, standingIn: intent.areaId, departureApproach: undefined, capitalMissionId: undefined
+        } };
+        const vessel = intent.vehicleId ? world.objects.find(object => object.id === intent.vehicleId) : undefined;
+        world.npcs[at] = intent.service === 'gather' ? ready
+            : intent.service === 'ground' || intent.service === 'air' || vessel
+                ? startNpcJourney(world, ready, intent.destinationId, due, intent.purpose, vessel, routes)
+                : bookNpcPassageForRoute(world, ready, intent.destinationId, due, intent.purpose, routes) ?? ready;
+        return true;
+    }
     const request={intentId:binding,target:{locationId:intent.locationId,areaId:intent.areaId,vesselId:intent.vehicleId}};
     const result=finishActualDepartureApproach(world,npc.id,request,day,routes);
     if(result.kind!=='ready')return true;

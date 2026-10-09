@@ -26,9 +26,12 @@
  * WHAT IT IS. An errand with a term, at the place the notice names (the same
  * draw the wall's own `placeFor` makes), with whoever took the same notice. A
  * notice whose place is the house's own seat is work done at the house - a
- * making - and nobody moves for it. The settled terms ride on a tag, as a
+ * making - and nobody moves for it. Away work uses the ordinary mission route,
+ * its actual service and its road home. A free senior leads juniors where one
+ * can be spared. The settled terms ride on a tag, as a
  * player's accepted duty carries its terms, and `bringHomeWhoeverIsDue` pays
- * them when the term closes, for either kind.
+ * them when the term closes, for either kind. The tag ends at the real return,
+ * while the price still comes from the notice's service term.
  *
  * DANGER. Read off the terms' own regard through `lostChance`, the reading a
  * sending uses, and ended through `theWorldLoses`. At the board's pitch rules a
@@ -58,6 +61,10 @@
 import { forStream } from '../cultivation/rng.js';
 import { theStacksInHand } from './a-communication-talisman-carries-word-home.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
+import { isInsideTheCompound } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { routeQueriesFor } from './locations.js';
+import { locationOnNpcJourney } from './places-on-the-way.js';
+import { sendHouseMission } from './capital-missions-and-calendar.js';
 import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 import { dutyTermsFor, takeableOffAWall, type DutyTerms } from '../encounters/duties.js';
 import { howAnAskReaches } from '../encounters/how-an-ask-reaches-somebody.js';
@@ -76,7 +83,6 @@ import {
     isTheWorldsToMove,
     setLocation,
     theWorldLoses,
-    whereTheyGoBackTo,
     type NpcActivity,
     type NpcRecord
 } from './npc-state.js';
@@ -180,10 +186,11 @@ export function theBoardWorkTheyAreOn(
  * Owed by the house the work was taken from. Somebody who has left it since is
  * owed nothing by the house they are in now.
  */
-export function whatFinishingBoardWorkPays(npc: NpcRecord, doing: NpcActivity): NpcRecord | null {
+export function whatFinishingBoardWorkPays(npc: NpcRecord, doing: NpcActivity, finished = true): NpcRecord | null {
     const terms = theBoardWorkTheyAreOn(npc, doing.untilDay);
     if (terms === null) return null;
     const cleared: NpcRecord = { ...npc, tags: npc.tags.filter(t => !t.startsWith(ON_BOARD_WORK)) };
+    if (!finished) return cleared;
     // COUNTED BY THE HOUSE THE WORK WAS FOR, WHOEVER DID IT. This used to pay
     // nobody but that house's own, because merit was one pair keyed to the roll
     // you were on and a stranger had nowhere to stand in it. It is per-house
@@ -208,11 +215,12 @@ interface HowTheGroundIsKnown {
 
 function howTheGroundIsKnown(state: WorldState, day: number): HowTheGroundIsKnown {
     const index = witnessIndexFor(state);
+    const places = routeQueriesFor(state.locations);
     const region = new Map<string | null, string | null>();
     const regionFor = (locationId: string | null): string | null => {
         const had = region.get(locationId);
         if (had !== undefined) return had;
-        const found = regionOf(state, locationId);
+        const found = regionOf(state, locationId, places);
         region.set(locationId, found);
         return found;
     };
@@ -234,7 +242,7 @@ function howTheGroundIsKnown(state: WorldState, day: number): HowTheGroundIsKnow
                 facts: state.history.facts, indexed: index.byPlace,
                 inTheAirFor: (fact, holderId) => {
                     const teller = tellerAt(holderId);
-                    return teller !== null && isInTheAirFor(state, fact, teller, day);
+                    return teller !== null && isInTheAirFor(state, fact, teller, day, places);
                 }
             })
         ),
@@ -350,7 +358,8 @@ interface Taken {
 /**
  * The year's board work, taken. Returns how many people took a notice.
  */
-export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: number, day: number): number {
+export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: number, day: number, quarter?: number): number {
+    const routes = routeQueriesFor(state.locations);
     const rolls = new Map<string, number[]>();
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i]!;
@@ -367,7 +376,7 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
     const housesToRead = new Set(drawBackgroundIncidents(state.factions
         .filter(house => house.dissolvedOnDay === null && isBelowTheLid(house))
         .map(house => ({ value: house.id, rate: (rolls.get(house.id)?.length ?? 0) / 8 })),
-        forStream(state.seed, 'background-work-boards', year), 16));
+        forStream(state.seed, 'background-work-boards', year, quarter ?? 'annual'), quarter === undefined ? 16 : 4));
 
     for (const faction of state.factions) {
         if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
@@ -383,6 +392,8 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
         const readers = roll.filter(i => {
             const npc = state.npcs[i]!;
             return freeToTakeWork(npc)
+                && faction.seatLocationId !== null
+                && isInsideTheCompound(routes.places, locationOnNpcJourney(state.locations, npc, day, routes), faction.seatLocationId)
                 && howAnAskReaches({ pitchOrdinal: npc.cultivation.realmOrdinal, reachOfTheHouse: reach }) === 'the_wall';
         });
         // A week's work at home is also read by whoever is free for that much.
@@ -415,7 +426,7 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
         // The lowest rungs first: they live on this work, and a notice's hands
         // run out on whoever comes to it last.
         const chosenReaders = new Set(drawBackgroundIncidents(readers.filter(at => !isPlayerInvolved(state, state.npcs[at]!))
-            .map(value => ({ value, rate: 0.5 })), forStream(state.seed, 'background-board-readers', faction.id, year), 4));
+            .map(value => ({ value, rate: 0.5 })), forStream(state.seed, 'background-board-readers', faction.id, year, quarter ?? 'annual'), 4));
         const order = readers.filter(at => chosenReaders.has(at) || isPlayerInvolved(state, state.npcs[at]!))
             .filter(i => spare.has(state.npcs[i]!.id))
             .sort((a, b) => {
@@ -425,7 +436,7 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
                     || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0);
             });
 
-        const rng = forStream(state.seed, 'board-work', faction.id, year);
+        const rng = forStream(state.seed, 'board-work', faction.id, year, quarter ?? 'annual');
         const taken = new Map<string, Taken>();
         for (const at of order) {
             const npc = state.npcs[at]!;
@@ -471,18 +482,47 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
             else taken.set(chosen.entry.id, { entry: chosen.entry, reason: chosen.reason, who: [{ at, terms: chosen.terms }] });
         }
 
-        for (const { reason, who } of taken.values()) {
+        for (const { entry, reason, who } of taken.values()) {
             const goingTo = whereTheNoticeSendsThem(
                 state, house, faction.seatLocationId, findLocationId, elsewhere, reason, groundForWork);
             // WORK DONE AT THE HOUSE is a notice whose place is the house's own
             // seat: a making, not an errand. Nobody moves, the term is the work,
             // and the same close pays it.
-            const atTheHouse = goingTo !== null && goingTo === faction.seatLocationId;
+            if (goingTo === null) continue;
+            const atTheHouse = goingTo === faction.seatLocationId;
             const place = goingTo === null || atTheHouse
                 ? null
                 : state.locations.find(l => l.id === goingTo)?.name ?? null;
             const ids = who.map(w => state.npcs[w.at]!.id);
             const board = `the ${faction.name.replace(/^[Tt]he\s+/, '')}'s board`;
+            if (goingTo !== null && !atTheHouse) {
+                const juniors = who.map(({ at }) => state.npcs[at]!);
+                const juniorIds = new Set(juniors.map(person => person.id));
+                const senior = reason.factKind==='gathering'?undefined:people.filter(person => !juniorIds.has(person.id) && spare.has(person.id)
+                    && (freeToTakeWork(state.npcs.find(row => row.id === person.id)!)
+                        || (person.activity?.kind === 'their_practice' || person.activity?.kind === 'idle')
+                            && person.activity.untilDay == null && person.activity.withIds.length === 0)
+                    && isInsideTheCompound(routes.places, person.locationId, faction.seatLocationId!)
+                    && person.cultivation.realmOrdinal > Math.max(...juniors.map(member => member.cultivation.realmOrdinal)))
+                    .sort((a, b) => a.cultivation.realmOrdinal - b.cultivation.realmOrdinal)[0];
+                const venue = routes.places.get(goingTo);
+                const days = Math.max(...who.map(member => member.terms.days));
+                const mission = venue && sendHouseMission(state, faction, venue,
+                    senior ? [senior, ...juniors] : juniors, `${reason.name.toLowerCase()} off ${board}`, day,
+                    { days }, undefined, routes, undefined,
+                    { houseBusiness: senior ? 'experience' : 'board_work', boardEntryId: entry.id,
+                        leaderId: senior?.id ?? null, pitchOrdinal: Math.max(...who.map(member => member.terms.pitchOrdinal)),
+                        dutyDays: days });
+                if (!mission) continue;
+                const untilDay = Number(mission.data.plannedReturnDay);
+                for (const { at, terms } of who) {
+                    const member = state.npcs[at]!;
+                    state.npcs[at] = { ...member, tags: [...member.tags.filter(tag => !tag.startsWith(ON_BOARD_WORK)),
+                        asTag({ houseId: faction.id, untilDay, contribution: terms.contribution, stones: terms.stones })] };
+                    took++;
+                }
+                continue;
+            }
             for (const { at, terms } of who) {
                 const row = state.npcs[at]!;
                 const untilDay = day + terms.days;
@@ -504,7 +544,7 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
                         withIds: ids.filter(id => id !== row.id),
                         sinceDay: day,
                         untilDay,
-                        returnTo: whereTheyGoBackTo(row)
+                        returnTo: faction.seatLocationId
                     };
                 state.npcs[at] = {
                     ...moved,

@@ -3,6 +3,9 @@ import { witnessIndexFor } from './witness-reaction-index.js';
 import { nextPressureTaskOn, type PressureOptions } from './pressure.js';
 import { whenThisFallsDue, bodyLifespanEndsOn } from './time.js';
 import type { WorldState } from './world-state.js';
+import { isPlayerInvolved } from './background-incident-draw.js';
+import { siteIntervalOnAnNpcPosting } from './places-on-the-way.js';
+import { routeQueriesFor, type RouteQueries } from './locations.js';
 
 export interface WorldClockBoundary {
     onDay: number;
@@ -13,7 +16,7 @@ export interface WorldClockBoundary {
 /** Public callers read the same queue the world executor consumes. */
 export function nextWorldClockBoundary(world: WorldState, fromDay: number, untilDay: number,
     passageDates: readonly number[] = [], pressure: PressureOptions = {},
-    scope: 'all' | 'transport' = 'all'): WorldClockBoundary | null {
+    scope: 'all' | 'transport' | 'foreground' = 'all'): WorldClockBoundary | null {
     if (!(untilDay > fromDay)) return null;
     let next: WorldClockBoundary | null = null;
     const consider = (onDay: number, cause: WorldClockBoundary['cause'], sourceId: string): void => {
@@ -30,10 +33,14 @@ export function nextWorldClockBoundary(world: WorldState, fromDay: number, until
         }
     }
     const airSites=new Map(world.locations.filter(place=>place.tags.includes('air-course')).map(place=>[place.id,place]));
+    let routes: RouteQueries | undefined;
     for (const npc of world.npcs) {
         const transport = npc.activity?.departureApproach || npc.activity?.capitalMissionId
-            || npc.activity?.capitalMissionWaiting || npc.activity?.airCourseLocationId || npc.activity?.vesselId;
-        if (scope === 'transport' && (npc.status !== 'alive' || !transport)) continue;
+            || npc.activity?.capitalMissionWaiting || npc.activity?.airCourseLocationId || npc.activity?.vesselId
+            || npc.activity?.kind === 'travelling' || npc.activity?.kind === 'stationed'
+            || npc.activity?.kind === 'out_with_a_party' && npc.activity.fromLocationId;
+        if (scope === 'transport' && (npc.status !== 'alive' || !transport || !isPlayerInvolved(world, npc))) continue;
+        if (scope === 'foreground' && !isPlayerInvolved(world, npc)) continue;
         const expires = bodyLifespanEndsOn(world, npc);
         if (expires !== null) consider(expires, 'body_expiry', npc.id);
         const airSite=npc.activity?.airCourseLocationId ? airSites.get(npc.activity.airCourseLocationId) : undefined;
@@ -44,6 +51,14 @@ export function nextWorldClockBoundary(world: WorldState, fromDay: number, until
             consider(airFact.data.arrivalDay,'journey_due',npc.id);
         if (npc.activity?.untilDay != null)
             consider(npc.activity.untilDay, 'journey_due', npc.id);
+        if (npc.activity?.kind === 'out_with_a_party' && npc.activity.fromLocationId
+            && !npc.activity.airDutyReceiptId && isPlayerInvolved(world, npc)) {
+            const service = siteIntervalOnAnNpcPosting(world.locations, npc, routes ??= routeQueriesFor(world.locations));
+            if (service) {
+                consider(service.fromDay, 'journey_due', npc.id);
+                consider(service.untilDay, 'journey_due', npc.id);
+            }
+        }
     }
     for (const day of passageDates) consider(day, 'passage_boundary', 'accepted-passage');
     return next;

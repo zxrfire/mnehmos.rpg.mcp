@@ -38,8 +38,8 @@
  * Joining is not proof: until they have been to the house a doorway finds no
  * token. Going there robes them and, at a rung that carries one where the house
  * can light lamps, gives them a token with a lamp burning - and they live
- * there. The founding roll is not walked to its own gate; a founder promoted onto
- * the token rung is, which is the same trip for the same reason. Somebody who
+ * there. The former founding-roll exemption stranded robed members with no
+ * activity away. An idle founder now also takes the actual road home. Somebody who
  * leaves hands back what they were issued, and a robe in a stranger's hands
  * stays there.
  *
@@ -197,11 +197,31 @@ describe('a recruit joins where they stand and has nothing to show for it', () =
         expect(atTheDoorway(state, 'recruit')).toBe('no token to read');
     });
 
-    it('and the founding roll is not walked to its own gate', () => {
+    it('ordinary town work does not strand a robed member away from their house',()=>{
+        const state=build(),i=at(state,'founder');
+        state.npcs[i]={...state.npcs[i]!,activity:{kind:'the_work_of_their_rank',note:'Working as Porter.',withIds:[],sinceDay:DAY-50,untilDay:null}};
+        enterWhoeverHasReachedTheHouse(state,DAY);
+        expect(npc(state,'founder').activity?.kind).toBe('travelling');
+        expect(npc(state,'founder').activity?.returnTo).toBe(SEAT);
+        expect(locationOnNpcJourney(state.locations,npc(state,'founder'),DAY+6)).toBe(SEAT);
+    });
+
+    it('an ended lesson does not strand a robed member away from their new house',()=>{
+        const state=build(),i=at(state,'founder');
+        state.npcs[i]={...state.npcs[i]!,activity:{kind:'teaching',note:'The old lesson',withIds:['disciple'],sinceDay:DAY-50,untilDay:DAY-1}};
+        enterWhoeverHasReachedTheHouse(state,DAY);
+        expect(npc(state,'founder').activity?.kind).toBe('travelling');
+        expect(npc(state,'founder').activity?.returnTo).toBe(SEAT);
+        expect(locationOnNpcJourney(state.locations,npc(state,'founder'),DAY)).toBe(VILLAGE);
+        expect(locationOnNpcJourney(state.locations,npc(state,'founder'),DAY+6)).toBe(SEAT);
+    });
+
+    it('and an idle founding member away walks home without needing new robes', () => {
         const state = build();
         enterWhoeverHasReachedTheHouse(state, DAY);
-        expect(npc(state, 'founder').activity).toBeNull();
+        expect(npc(state, 'founder').activity?.returnTo).toBe(SEAT);
         expect(locationOnNpcJourney(state.locations, npc(state, 'founder'), DAY)).toBe(VILLAGE);
+        expect(locationOnNpcJourney(state.locations, npc(state, 'founder'), DAY + 6)).toBe(SEAT);
     });
 
     it('though a founder promoted onto the token rung makes the same trip', () => {

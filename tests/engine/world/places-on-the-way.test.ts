@@ -24,6 +24,7 @@ import { linkLocations, makeLocation, walkingDaysFrom, walkingRouteFrom, routeQu
 import { createNpc, markDead, setExistence } from '../../../src/engine/world/npc-state.js';
 import { startNpcJourney } from '../../../src/engine/world/dao-ground-stints.js';
 import { routineOf } from '../../../src/engine/world/npc-routines.js';
+import { resolveWithPlayerPresent } from '../../../src/engine/world/background-incident-draw.js';
 import { SEA_LANES } from '../../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
 import { shipIdForLane } from '../../../src/engine/world/the-ship-on-a-lane.js';
 import { postingFor } from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
@@ -137,7 +138,8 @@ describe('places on an actual journey', () => {
         const funded = { ...person, id: 'ordinary-paying-traveller', spiritStones: quote.fareStones * 3,
             activity: { kind: 'idle' as const, note: 'At the actual landing.', withIds: [], sinceDay: 100, untilDay: null,
                 standingIn: theAreasOf(world, from).areas.find(area => area.for === 'landing')!.id } };
-        const candidate = bookNpcPassageForRoute(world, funded, to.id, 100, 'Taking ordinary passage.')!;
+        const candidate = resolveWithPlayerPresent(world, from.id,
+            () => bookNpcPassageForRoute(world, funded, to.id, 100, 'Taking ordinary passage.'))!;
         expect(world.npcs).toHaveLength(0);
         expect(world.history.facts).toHaveLength(0);
         expect(commitNpcPublicPassage(world, candidate)).toBe(false);

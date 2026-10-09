@@ -19,6 +19,7 @@ import {requireConveyance} from '../../../src/data/cultivation/what-a-house-move
 import {appendWorldFact} from '../../../src/engine/world/who-was-there-when-it-happened.js';
 import {makeFact} from '../../../src/engine/world/history.js';
 import {theAreasOf} from '../../../src/engine/world/where-in-a-place-somebody-is-standing.js';
+import {resolveWithPlayerPresent} from '../../../src/engine/world/background-incident-draw.js';
 const catalog=await loadCultivationCatalog();
 function fixture(){
  const world=seedWorld({seed:'ordinary-public-berths',catalog,presentYear:0}).state;
@@ -42,14 +43,16 @@ it('charges independently accepted passengers once and refuses another body at r
  const accepted: NpcRecord[]=[];
  for(let i=0;i<available;i++){
   const original=add('paid-'+i),opening=original.spiritStones;
-  const personal=bookNpcPassageForRoute(world,original,to.id,quote.departureDay,'Taking wares to the actual dock.');
+  const personal=resolveWithPlayerPresent(world,from.id,
+   ()=>bookNpcPassageForRoute(world,original,to.id,quote.departureDay,'Taking wares to the actual dock.'));
   expect(personal).not.toBeNull();world.npcs[world.npcs.findIndex(one=>one.id===original.id)]=personal!;
   expect(commitNpcPublicPassage(world,personal!)).toBe(true);
   expect(personal!.spiritStones).toBe(opening-quote.fareStones);accepted.push(personal!);
  }
  expect(quotePublicPassage(world,from.id,to.id,quote.departureDay,1)).toBeNull();
  const late=add('not-admitted'),purse=late.spiritStones,activity=late.activity;
- expect(bookNpcPassageForRoute(world,late,to.id,quote.departureDay,'Seeking a seat.')).toBeNull();
+ expect(resolveWithPlayerPresent(world,from.id,
+  ()=>bookNpcPassageForRoute(world,late,to.id,quote.departureDay,'Seeking a seat.'))).toBeNull();
  expect(late.spiritStones).toBe(purse);expect(late.activity).toBe(activity);
  const facts=world.history.facts.filter(fact=>fact.data.actualBoarding===true&&fact.data.vesselId===quote.vesselId);
  const actualActors=new Set(facts.flatMap(fact=>fact.actors.map(actor=>actor.id)));

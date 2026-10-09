@@ -16,6 +16,7 @@ import type { AnOfferStandingHere } from './what-somebody-standing-here-would-pa
 import type { WorldState } from './world-state.js';
 import { locationOnNpcJourney } from './places-on-the-way.js';
 import { routeQueriesFor, type RouteQueries } from './locations.js';
+import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 
 /** A dispatch buys one consignment; looking never restocks a counter. */
 export function loadExchangeConsignment(state: WorldState, seller: NpcRecord, day: number, routes?: RouteQueries): void {
@@ -155,8 +156,13 @@ export function tradeAtCapitalExchanges(state: WorldState, day: number): void {
         stockPositions.set(object.possessorId, held);
     }
     const auctioned = new Set(pendingAuctionLots(state).map(f => f.data.objectId));
-    for (const selected of state.npcs.filter(n => isTheWorldsToMove(n) && n.status === 'alive'
-        && n.activity && cities.has(positions.get(n.id) ?? ''))) {
+    const eligible = state.npcs.filter(n => isTheWorldsToMove(n) && n.status === 'alive'
+        && n.activity && cities.has(positions.get(n.id) ?? ''));
+    const distant = eligible.filter(person => !isPlayerInvolved(state, person));
+    const selectedCounters = new Set((distant.length <= 4 ? distant : drawBackgroundIncidents(
+        distant.map(value => ({ value, rate: 1 })), forStream(state.seed, 'background-exchange-counters', day), 4))
+        .map(person => person.id));
+    for (const selected of eligible.filter(person => selectedCounters.has(person.id) || isPlayerInvolved(state, person))) {
         const seller = state.npcs.find(n => n.id === selected.id)!;
         if (seller.status === 'alive' && seller.activity?.kind === 'stationed'
             && cities.has(positions.get(seller.id) ?? '')
@@ -183,7 +189,7 @@ export function tradeAtCapitalExchanges(state: WorldState, day: number): void {
 
 /** An ended stint returns unsold stock and its receipts exactly once. */
 export function returnExchangeConsignment(state: WorldState, seller: NpcRecord, day: number,
-    stintDay = seller.activity?.sinceDay, houseId = seller.factionId): void {
+    stintDay = seller.activity?.sinceDay, houseId = seller.factionId, stockPositions?: readonly number[]): void {
     const house = state.factions.find(h => h.id === houseId);
     if (!house || stintDay == null) return;
     if (factsWithDataValue(state, 'sellerId', seller.id).some(f => f.data.exchangeReturn === true
@@ -192,7 +198,7 @@ export function returnExchangeConsignment(state: WorldState, seller: NpcRecord, 
     const receipts = exchangeReceipts(state, seller.id, house.id, stintDay);
     const remit = Math.min(receipts, seller.spiritStones);
     const unsold: number[] = [];
-    for (let i = 0; i < state.objects.length; i++) {
+    for (const i of stockPositions ?? state.objects.map((_, at) => at)) {
         const object = state.objects[i]!;
         if (object.tags.includes('exchange') && object.possessorId === seller.id && object.ownerId === house.id) unsold.push(i);
     }

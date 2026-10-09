@@ -5,7 +5,7 @@ import { isRuined } from './possessions.js';
 import { whereItStands, whoItIsWith } from './a-vehicle.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
-export function whatThisHouseCouldTakeOut(state: WorldState, faction: FactionRecord):
+export function whatThisHouseCouldTakeOut(state: WorldState, faction: FactionRecord, craftPositions?: readonly number[]):
     { conveyance: Conveyance; power: number | null; rowId?: string }[] {
     const out: { conveyance: Conveyance; power: number | null; rowId?: string }[] = [];
     for (const id of CARRIAGES_BY_GRADE) {
@@ -13,7 +13,7 @@ export function whatThisHouseCouldTakeOut(state: WorldState, faction: FactionRec
             out.push({ conveyance: requireConveyance(id), power: null });
         }
     }
-    for (const thing of state.objects) {
+    for (const thing of craftPositions ? craftPositions.map(at => state.objects[at]!) : state.objects) {
         if (thing.ownerId !== faction.id || isRuined(thing)) continue;
         // The yard offers only its actual available hull, not one lent elsewhere.
         if (whereItStands(thing) !== faction.seatLocationId

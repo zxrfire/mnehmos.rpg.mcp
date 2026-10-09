@@ -1,5 +1,8 @@
 import { publicWatchTargetsOf } from '../engine/world/where-a-house-keeps-its-public-watch.js';
 import { journeyTimeHasReached } from '../engine/world/places-on-the-way.js';
+import { whatLeadingDisciplesIsWorth } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
+import { theirFaceMoves } from '../engine/world/what-a-face-is-worth.js';
+import { regardFor } from '../engine/cultivation/regard.js';
 /**
  * The turn loop's adapter onto `src/engine/encounters/`.
  */
@@ -67,6 +70,7 @@ import {
     groundTheseHousesHold,
     whereTheOpenGroundIs,
     whichHousesAReasonIsAbout,
+    lostChance,
     type AFindThisHouseHas,
     type WhereTheOpenGroundIs,
     type HouseAsItStands
@@ -1656,17 +1660,29 @@ export function completeDuty(input: DutyLedgerInput): DutySettlementResult {
         note: `Completed by day ${input.onDay}.`
     });
 
+    const paid = ledgerAbout(repos.db as unknown as DatabaseHandle, cultivator.id)
+        .find(row => row.id === oath.id && row.status === 'settled');
+    if (paid) return { obligation: paid, contribution: 0, stones: 0, landed: 0,
+        line: 'The duty is already completed.' };
+
+    const disciples = input.world?.npcs.filter(person => person.status === 'alive'
+        && duty.takingOut.some(junior => junior.id === person.id)) ?? [];
+    const leading = disciples.length ? whatLeadingDisciplesIsWorth(cultivator.realmOrdinal, Math.max(0, input.onDay - acceptedOn),
+        disciples.filter(person => person.factionId === duty.factionId).length, disciples.length,
+        Math.max(...disciples.map(person => lostChance(regardFor(duty.pitchOrdinal, person.cultivation.realmOrdinal))))) : null;
+    const contribution = duty.contribution + (leading?.merit ?? 0);
     let credited = 0;
     repos.db.transaction(() => {
         writeOneObligation(repos.db as unknown as DatabaseHandle, settled);
-        if (duty.factionId && duty.contribution > 0) {
-            repos.sects.addContribution(duty.factionId, cultivator.id, duty.contribution);
-            credited = duty.contribution;
+        if (duty.factionId && contribution > 0) {
+            repos.sects.addContribution(duty.factionId, cultivator.id, contribution);
+            credited = contribution;
         }
         if (duty.stones > 0) {
             repos.cultivators.applyDeltas(cultivator.id, { spiritStones: duty.stones });
         }
     })();
+    if (input.world && leading) theirFaceMoves(input.world, cultivator.id, leading.face, input.onDay);
 
     // AND WHAT THE WORK MADE. A notice whose reason makes a thing lands it
     // through the one landing the world's own close uses, with the player as

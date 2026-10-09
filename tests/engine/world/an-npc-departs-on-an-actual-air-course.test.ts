@@ -3,8 +3,8 @@
  * WorldState gives actual exterior anchors an unrelated twelve-day road.
  * The native starter must produce a real world-clock air receipt, one actual
  * finite launch/fuel charge, an airborne physical site, and a living arrival.
- * This proves the generic journey entry; board/posting acceptance and multi-leg
- * mission itinerary integration are additional controls, still unfinished. */
+ * This proves the generic journey entry. Board acceptance and multi-leg duties
+ * have separate controls in capital-mission-journeys and the mission-board tests. */
 import { expect,it } from 'vitest';
 import { createWorld } from '../../../src/engine/world/world-state.js';
 import { createNpc,setRealm,maxQiOf,theWorldEnds } from '../../../src/engine/world/npc-state.js';
@@ -15,6 +15,7 @@ import { settleNpcDeath } from '../../../src/engine/world/time.js';
 import { makeObject } from '../../../src/engine/world/possessions.js';
 import { routineTime } from '../../../src/engine/world/npc-routines.js';
 import { locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
+import { advanceWorldForPlay } from '../../../src/engine/world/driver.js';
 
 function fixture(){
     const world=createWorld({seed:'actual-npc-air-departure',regionCount:0,skipPriorAges:true});
@@ -50,6 +51,17 @@ it('the generic NPC starter charges once and reaches a metric target while alive
     expect(h.world.npcs[0]?.locationId).toBe(h.to.id);
     expect(h.world.npcs[0]?.cultivation.qi).toBe(before-25);
     expect(h.from.links[0]?.travelDays).toBe(12);
+});
+
+/** The century census found three people stranded on accepted air-course
+ * records: the generic return cleared their binding before settling arrival. */
+it('a background world span settles the actual air arrival before clearing the journey',()=>{
+    const h=fixture(),travelling=startNpcJourney(h.world,h.npc,h.to.id,h.day,'An actual ground visit');
+    h.world.npcs[0]=travelling;
+    expect(travelling.activity?.airCourseLocationId).toBeDefined();
+    advanceWorldForPlay(h.world,{days:100,pressure:{intensity:0,peopleWalkOutOnTheirOwnAccount:false}});
+    expect(h.world.npcs.find(person=>person.id===h.npc.id)!.locationId).toBe(h.to.id);
+    expect(h.world.npcs.find(person=>person.id===h.npc.id)!.activity?.airCourseLocationId).toBeUndefined();
 });
 
 it('a personal NPC death freezes the actual point before later estate/location reads',()=>{

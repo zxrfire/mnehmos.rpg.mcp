@@ -17,6 +17,7 @@ import type { CapitalOccasion } from './capital-missions-and-calendar.js';
 import type { WorldState } from './world-state.js';
 import { locationOnNpcJourney } from './places-on-the-way.js';
 import { routeQueriesFor } from './locations.js';
+import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 
 function saleValue(object: ObjectRecord): number | null {
     if (isRuined(object) || object.kind === 'manual') return null;
@@ -38,8 +39,13 @@ export function consignCapitalAuction(state: WorldState, occasion: CapitalOccasi
     const venue = state.locations.find(l => l.id === occasion.venueId);
     if (!venue) return;
     const routes = routeQueriesFor(state.locations);
-    const here = state.npcs.filter(n => n.status === 'alive' && isTheWorldsToMove(n)
+    const present = state.npcs.filter(n => n.status === 'alive' && isTheWorldsToMove(n)
         && locationOnNpcJourney(state.locations, n, day, routes) === venue.id);
+    const distant = present.filter(person => !isPlayerInvolved(state, person));
+    const selected = new Set((distant.length <= 4 ? distant : drawBackgroundIncidents(
+        distant.map(value => ({ value, rate: 1 })), forStream(state.seed, 'background-auction-sellers', venue.id, day), 4))
+        .map(person => person.id));
+    const here = present.filter(person => selected.has(person.id) || isPlayerInvolved(state, person));
     const activeObjects = new Set(pendingAuctionLots(state).map(f => String(f.data.objectId)));
     const houseSellers = new Map<string, NpcRecord>();
     for (const seller of here) if (seller.factionId && !houseSellers.has(seller.factionId)) {
@@ -165,7 +171,12 @@ function settleThem(state: WorldState, day: number,
             && (n.id === playerAt?.id ? playerAt.locationId
                 : positionOn(n, closes)) === lot.locationId);
         const previous = Math.max(Number(lot.data.reserve) - 1, ...bids.map(b => Number(b.data.stones)));
-        for (const npc of participants.filter(isTheWorldsToMove)) {
+        const possible = participants.filter(isTheWorldsToMove);
+        const distant = possible.filter(person => !isPlayerInvolved(state, person));
+        const selected = new Set((distant.length <= 4 ? distant : drawBackgroundIncidents(
+            distant.map(value => ({ value, rate: 1 })), forStream(state.seed, 'background-auction-bidders', lot.id), 4))
+            .map(person => person.id));
+        for (const npc of possible.filter(person => selected.has(person.id) || isPlayerInvolved(state, person))) {
             if (npc.id === lot.data.sellerId || npc.id === lot.data.payeeId) continue;
             const rng = forStream(state.seed, 'auction-bid', lot.id, npc.id);
             const interested = npc.goals.some(g => g.status === 'active' && (g.kind === 'wealth' || g.kind === 'cultivation'));

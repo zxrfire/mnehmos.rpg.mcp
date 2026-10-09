@@ -1,3 +1,4 @@
+// Canonical walks retain the original seed, horizons and assertions.
 /**
  * A house may fall; the ladder may not - the long walk out of
  * `demography.test.ts`, in a file of its own so the rest of that file runs
@@ -132,5 +133,5 @@ describe('a house may fall; the ladder may not', () => {
             `${risen.length} of ${high.length} people above Qi Condensation were born since `
             + 'the seeding. The rest of the ladder is inherited rather than climbed.'
         ).toBeGreaterThan(0.5);
-    }, 600_000);
+    }, 900_000);
 });

@@ -51,7 +51,9 @@ import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js
 import { getSendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOnNpcJourney, physicalJourneyDays } from './places-on-the-way.js';
+import { isPlayerInvolved } from './background-incident-draw.js';
+import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { RouteQueries } from './locations.js';
 import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
 import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-charge-of.js';
@@ -227,6 +229,14 @@ export function theyAreRelieved(state: WorldState, input: {
         && locationOnNpcJourney(state.locations, n, input.today, routes) === input.townId
         && (!input.replacementId || n.id === input.replacementId));
     if (!replacement) return false;
+    if (!isPlayerInvolved(state, npc) && !isPlayerInvolved(state, replacement)) {
+        const term = replacement.activity!;
+        const craft = term.conveyanceId ? getConveyance(term.conveyanceId) : undefined;
+        const arrived = term.sinceDay + (term.fromLocationId
+            ? physicalJourneyDays(state.locations, term.fromLocationId, input.townId, craft,
+                term.conveyancePower, 1, routes) : 0);
+        input = { ...input, today: Math.min(input.today, Math.max(doing.untilDay ?? doing.sinceDay, arrived)) };
+    }
     const factIndex = witnessIndexFor(state);
     const byId = factIndex.byId;
     const accounts = new Map<string, (typeof state.history.facts)[number]>();

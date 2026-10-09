@@ -2,6 +2,49 @@
 
 # The World Layer
 
+House business has recurring dates on `houseBusinessCalendar`, read from actual
+allies and the catalog's patronage pyramid. Distant appointments resolve through
+a capped draw; player involvement uses the existing exact reader. Envoys, tribute
+carriers and displays of strength reuse the sending reasons and paid mission
+itinerary. Tribute moves from the sending purse into an actual marked cargo row
+and then into the recipient's purse at physical arrival. The economy does not
+charge the same tribute again. A progress reaches its host with actual people
+and visible held or worn possessions; meetings, standing, face and news use the existing gathering paths.
+
+Experience parties take ordinary notices off the house's internal board. A
+spare senior leads the existing party, actual routes add travel time to its
+service, and successful homecoming pays the notice's contribution once. Actual
+instruction and visited ground use `understanding.ts`; an NPC holds earned
+insights on their cultivation row and their crossing reads them. A leader uses
+the lecture reward multiplied by `2 + log2(1 + elapsed days / 20) + 2 * danger`,
+where danger is the existing mission loss chance. A safe twenty-day mission uses
+three times that shared calculation for its actual span and audience; lecture
+merit already prices those days. Longer or more dangerous undertakings scale further.
+
+An entered member at nothing away travels home through the ordinary route even
+when already robed. Gathering seniors have an outward leg, a sixty-day visit
+and a homeward leg. Census checks require a reason for each absence; there is
+no majority-at-home bar.
+An ended lesson outside a transferred member's new compound does not renew
+there. Their existing admission route brings them home. An accepted air leg
+settles its physical arrival before any generic return clears that binding.
+Convergences select available members on their own grounds rather than taking
+people out of another mission. A new house child starts their admission journey
+when born away. Admission first uses house sponsorship, then the member's purse,
+then their actual recruiter at the same place. Each pays the ordinary fare from
+existing funds; the player's purse is never spent by background recruitment.
+
+Background transport uses the existing foreground authority, `isPlayerInvolved`.
+Distant departures bypass scene placement and stepped doors. Public itineraries
+retain their actual fares, timetables and road durations; contact realizes the
+current accepted ship without another fare or different dates. A distant owned
+shuttle commits the ordinary captain, custody and fuel once, then derives each
+body's position from native capacity and service dates. Waiting members remain
+at origin; empty returns carry only the pilot. Contact settles only elapsed
+native legs, including a second encounter after the service interval. The exact
+controller then continues the actual current load. No new foreground flag,
+passenger roster, speculative arrival receipt or future course is stored.
+
 Departures use `departure-approach.ts`: containment supplies the enclosing exterior,
 actual doors and carried keys decide the exit, and `LOCAL_WALK_DAYS` supplies the
 existing quarter-day walk to the departure area. An approach holds an intention
@@ -15,10 +58,13 @@ air leg. Paid house ship itineraries include that walk and preserve the reached
 dock while waiting for the booked date. Native house sendings gather their real selected members
 at the Spirit Boat Berth before the ordinary loan, pilot, capacity and fuel reads.
 A free capable pilot is part of the selected group and consumes a berth. The world
-driver visits actual calendar and transport boundaries when a house holds an air
-craft or a person holds an approach. Background transport precision does not
-enumerate unrelated practice deadlines; explicit precise and played advances
-retain every body boundary. It never enumerates hours. A closed exit
+driver visits actual transport boundaries for people involved with the player.
+Background journeys use their route, conveyance and calendar durations in closed
+form, with no station scene or speculative public berth booking. Exact walks
+remain for the player's area and party through `isPlayerInvolved`, the same
+reader used by cards and incident draws. Contact realizes a current public
+passage on its native hull without restarting it or charging again. Personal
+flight retains its accepted course and spending. It never enumerates hours. A closed exit
 cannot fall through to an immediate air or land departure.
 
 Capital business and selected-member travel use the existing actual land/public
@@ -613,15 +659,44 @@ City missions use the existing free-hand, office and away-activity reads.
 and dated auction and competition delegations. Every visit carries an end and
 the sending house as its return destination. The pressure cursor runs these
 calendar dates once; returns run before each dated task and at a span's end.
+Background sending decisions, exchange counters, auction sellers and bidders
+use capped draws: four decisions per relevant appointment. Foreground people
+bypass the cap. These are resolution rates, not limits on admission, attendance,
+capacity or player actions. Geographic itineraries share route scopes; purses,
+bodies, custody and the calendar remain current reads.
+Ordinary board opportunities recur on four quarter dates, with four houses
+drawn per date. Envoys and tribute keep annual house/ally and house/patron
+dates. Progress cadence reads roll size and catalog power: annual for twelve
+members at power 35, three-yearly for six at power 23, otherwise five-yearly
+for four members. Eight background house-business appointments resolve per
+quarter; involved houses bypass that draw. No appointment guarantees free
+members, funds or a physical route.
+Tribute preserves the existing economy's annual carried amount (one tenth of
+`tribute_owed_per_year`). It is reserved in an actual marked casket, delivered
+to the real patron and credited there once, rather than silently removed.
+Progress parties pass through actual roads and publish news only at ground
+already reached. Host reception uses the ordinary meeting, standing and face
+paths. Their native itinerary brings them home.
+Experience parties are ordinary board missions with an available senior and
+disciples, not another trip type. Native sending resolution supplies real
+work, danger and loss. Collection and found books land at the treasury only
+on homecoming, through the retained sending's same stock authority.
+Successful instruction records native achievements and insights; ordinary
+breakthrough and combat readers use those same insights. Leadership pays the
+lecture's face and merit figures multiplied by
+`2 + log2(1 + elapsedDays / 20) + 2 * lostChance`: a safe twenty-day undertaking
+earns three times a talk. Actual travel counts, and longer or more dangerous
+work earns more. Failed work and repeated completion pay nothing.
 The activity keeps the departure ground and destination. `locationOnNpcJourney`
 places a delegate on the route until arrival, at the capital through service,
 and on the return route before the stint ends. A delegation that cannot reach a
 dated event by its event day does not enter it. Capital missions use the actual
 land itinerary and prepay both water directions on the public board. A parked
-house craft does not supply a captain or an admitted flight. The mission fact keeps
+house craft does not supply a captain or an admitted flight. The foreground mission fact keeps
 its dated berth reservations while a living delegate is still assigned. Each
-actual boarding uses the shared public passage and crew, and each land leg has
-an exact arrival on the pressure calendar. A route with no available passage or
+foreground boarding uses the shared public passage and crew. Background legs
+catch up at their own physical dates without per-person clock appointments.
+A route with no available passage or
 no return fare sends nobody. The city placement and seller
 reads use that same physical position.
 The seeder also fills the existing posting circuit, keeping its posting count:
@@ -629,9 +704,11 @@ the nearest populous town first, then seeded city markets. Seeded holders start
 at their posts; later replacements travel the actual route and are present only
 after arrival. They use and pay for a house conveyance when the route needs one.
 Posts remain held while a replacement is on the road. Residents and house rolls
-stay intact; posting does not reassign the city's population pool. The pressure
-calendar visits each replacement's arrival, shared-day departure and homecoming
-at their route dates, without stepping through every day of the stint.
+stay intact; posting does not reassign the city's population pool. The annual
+posting pass chooses distant replacements. Their real arrival starts the shared
+handover day before the old hand returns. Foreground relief continues to run
+when due; background returns catch up without repeated selection at every
+unrelated calendar event.
 
 `a-capital-auction.ts` consigns existing priced possessions through ordinary
 store approval or personal willingness. Lot, bid and closing facts are the
@@ -4764,3 +4841,10 @@ the caller's route scope through their departure. Public geographic lane
 boards retain the same locations and checked timetable reader. Transport clock
 checks identify flying craft before searching their owners' houses. An
 elemental-expiry pass retains the object array when no object changes.
+
+Ground knowledge and news share the caller's checked place scope within a
+synchronous read. A retained default knowledge reader refreshes that scope on
+each query; it does not keep yesterday's geography. A homecoming pass groups
+actual exchange stock by its current carrier before checking each returned
+stint. An admitted paid air return keeps its receipt until actual landfall;
+generic term clearing cannot close the journey on the departure date.

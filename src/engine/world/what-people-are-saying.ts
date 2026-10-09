@@ -5,7 +5,7 @@
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { EventScale, HistoricalFact } from './history.js';
 import { getFaction, getLocation, getNpc, type WorldState } from './world-state.js';
-import { placeScopeFor } from './locations.js';
+import { placeScopeFor, type PlaceScope } from './locations.js';
 import type { NpcRecord } from './npc-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -108,14 +108,15 @@ const WHAT_THE_DISTANCE_COSTS: Readonly<Record<HowFarOff, number>> = Object.free
 export function howFarOff(
     state: WorldState,
     fact: HistoricalFact,
-    teller: TellerStanding
+    teller: TellerStanding,
+    scope?: PlaceScope
 ): HowFarOff {
     if (fact.witnessIds.includes(teller.id)) return 'here';
     if (fact.actors.some(a => a.id === teller.id)) return 'here';
     if (fact.locationId === null) return 'unplaceable';
     if (teller.locationId != null && teller.locationId === fact.locationId) return 'here';
     if (teller.regionId === null) return 'unplaceable';
-    return regionOf(state, fact.locationId) === teller.regionId ? 'in the region' : 'a region away';
+    return regionOf(state, fact.locationId, scope) === teller.regionId ? 'in the region' : 'a region away';
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -319,11 +320,12 @@ export function isInTheAirFor(
     state: WorldState,
     fact: HistoricalFact,
     teller: TellerStanding,
-    onDay: number
+    onDay: number,
+    scope?: PlaceScope
 ): boolean {
     if (fact.visibility === 'secret') return false;
     if (fact.day > onDay) return false;
-    return airtimeOf(state, fact, teller, onDay) > 0;
+    return airtimeOf(state, fact, teller, onDay, scope) > 0;
 }
 
 /**
@@ -339,9 +341,10 @@ function airtimeOf(
     state: WorldState,
     fact: HistoricalFact,
     teller: TellerStanding,
-    onDay: number
+    onDay: number,
+    scope?: PlaceScope
 ): number {
-    const far = howFarOff(state, fact, teller);
+    const far = howFarOff(state, fact, teller, scope);
 
     // NOT YET. Distance governs when as well as whether, so a thing that
     // happened this morning a province away has not happened here.
@@ -454,27 +457,27 @@ export function whereThisPersonIsStanding(
 }
 
 /** The province-level container a place sits in. Null when unknown. */
-export function regionOf(state: WorldState, locationId: string | null): string | null {
+export function regionOf(state: WorldState, locationId: string | null, scope?: PlaceScope): string | null {
     if (!locationId) return null;
     // A place's province is fixed while the place list is unchanged; every fact's bystander
     // read asked it once per person in the world.
-    const routes = placeScopeFor(state.locations);
+    const routes = scope ?? placeScopeFor(state.locations);
     let held = REGIONS_OF.get(routes);
     if (!held) REGIONS_OF.set(routes, held = new Map());
     if (held.has(locationId)) return held.get(locationId)!;
-    const region = regionAbove(state, locationId);
+    const region = regionAbove(locationId, routes);
     held.set(locationId, region);
     return region;
 }
 
 const REGIONS_OF = new WeakMap<object, Map<string, string | null>>();
 
-function regionAbove(state: WorldState, locationId: string): string | null {
-    let at = getLocation(state, locationId);
+function regionAbove(locationId: string, scope: PlaceScope): string | null {
+    let at = scope.places.get(locationId);
     const seen = new Set<string>();
     while (at && at.parentId && !seen.has(at.id)) {
         seen.add(at.id);
-        const up = getLocation(state, at.parentId);
+        const up = scope.places.get(at.parentId);
         if (!up) break;
         at = up;
     }
