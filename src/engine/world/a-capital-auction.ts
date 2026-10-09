@@ -156,7 +156,10 @@ function settleThem(state: WorldState, day: number,
     const positionOn = (npc: NpcRecord, onDay: number): string | null => {
         let positions = positionsByDay.get(onDay);
         if (!positions) { positions = new Map(); positionsByDay.set(onDay, positions); }
-        if (!positions.has(npc.id)) positions.set(npc.id, locationOnNpcJourney(state.locations, npc, onDay, routes));
+        // Somebody with no activity is where their row says (`projectNpcJourney` returns it); only a
+        // person who is doing something can be somewhere else on the day, so only they are projected.
+        if (!positions.has(npc.id)) positions.set(npc.id, npc.activity
+            ? locationOnNpcJourney(state.locations, npc, onDay, routes) : npc.locationId);
         return positions.get(npc.id) ?? null;
     };
     const lots = pendingAuctionLots(state).filter(f => Number(f.data.closesOnDay) <= day);

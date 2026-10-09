@@ -1,6 +1,5 @@
 /** Completed background business keeps visits and live evidence, not every docket. */
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
-import { lifespanForOrdinal } from '../cultivation/realms.js';
 import { isPlayerInvolved } from './background-incident-draw.js';
 import { isTheWorldsToMove } from './npc-state.js';
 import { howAGradeIsStored, isRuined } from './possessions.js';
@@ -17,7 +16,12 @@ const routine = (fact: HistoricalFact): boolean => {
         || data.exchangeReturn === true || data.exchangeSale === true || data.exchangeHandover === true
         || data.auctionLot === true || data.auctionBid === true || data.auctionResult === true
         || data.capitalCompetition === true || data.capitalOccasion === true
-        || data.houseProgress === true || typeof data.houseBusiness === 'string');
+        || data.houseProgress === true || typeof data.houseBusiness === 'string'
+        // A board's entries and its non-winning placings are paperwork once it is decided; who won is
+        // history and stays. Arrivals, reliefs, passages, receipts and delivered tribute are dockets.
+        || (data.openCompetition === true && (data.entry === true || (data.result === true && data.place !== 1)))
+        || data.actualBodyArrival === true || data.postRelief === true || data.postServiceReceipt === true
+        || data.publicPassage === true || data.capitalMission === true || data.tributeReceived === true);
 };
 
 /** The yearly boundary shares the dead-row sweep's index and reference hooks. */
@@ -25,11 +29,14 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     const year = Math.floor(state.currentDay / DAYS_PER_YEAR);
     if (SWEPT.get(state) === year) return;
     SWEPT.set(state, year);
-    const cutoff = state.currentDay - lifespanForOrdinal(0) * DAYS_PER_YEAR;
+    // A settled docket is paperwork after a year. Anything still in play is held below by what points
+    // at it (an activity, an obligation, an open lot, a schedule entry), whatever its age.
+    const cutoff = state.currentDay - DAYS_PER_YEAR;
     const index = witnessIndexFor(state);
     if (!['publicMission', 'exchangeConsignment', 'exchangeReturn', 'exchangeSale', 'exchangeHandover',
         'auctionLot', 'auctionBid', 'auctionResult', 'capitalCompetition', 'capitalOccasion',
-        'houseProgress', 'houseBusiness'].some(key => factsWithData(state, key).some(fact => fact.day < cutoff))) return;
+        'houseProgress', 'houseBusiness', 'openCompetition', 'actualBodyArrival', 'postRelief',
+        'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived'].some(key => factsWithData(state, key).some(fact => fact.day < cutoff))) return;
     const exact = new Set(state.npcs.filter(person => isPlayerInvolved(state, person)).map(person => person.id));
     const players = new Set(state.npcs.filter(person => !isTheWorldsToMove(person)).map(person => person.id));
     const held = new Set<string>();
@@ -100,10 +107,10 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     const previous = state.history.facts;
     const candidates = new Set<string>();
     const visited = new Set<string>();
-    // A visit is evidence about somebody who can still be asked about it. Keeping the last routine
-    // visit of everybody who ever lived grew the ledger by ~20,000 facts a century without end;
-    // the dead keep their death and every non-routine fact, which this pass never touches.
-    const living = new Set(state.npcs.filter(person => person.status === 'alive').map(person => person.id));
+    // A visit is evidence kept for the foreground, the people a card is built for, as with every other
+    // exact record. A background person's routine is read off their role and activity when they are
+    // met. Keeping the last routine visit of everybody grew the ledger by ~20,000 facts a century.
+    const living = exact;
     for (let at = previous.length - 1; at >= 0; at--) {
         const fact = previous[at]!;
         if (!routine(fact) || fact.day >= cutoff || fact.actors.some(actor => exact.has(actor.id))

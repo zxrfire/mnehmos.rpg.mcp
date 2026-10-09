@@ -1,6 +1,10 @@
 /** At year1150 routine business held 273,945 gathering facts and 113,675
  * objects. Completed offscreen dockets can leave; current terms, witnessed
- * deeds, visits and counted amounts must survive the ordinary boundary. */
+ * deeds and counted amounts must survive the ordinary boundary.
+ *
+ * Visits are kept for the foreground only, the people a card is built for (owner, 2026-10-09: the
+ * card system is the foreground/background line). A background person's routine is read off their
+ * role and activity when they are met, so their old settled dockets go like any other. */
 import { expect, it } from 'vitest';
 import { createWorld } from '../../../src/engine/world/world-state.js';
 import { createNpc, setRealm, PLAYER_ROW_TAG } from '../../../src/engine/world/npc-state.js';
@@ -25,14 +29,14 @@ function arrangement() {
     return { world, docket };
 }
 
-it('the live boundary retains visits, current obligations and referenced evidence while pruning completed dockets', () => {
+it('the live boundary retains current business and referenced evidence while pruning a background person\'s settled dockets', () => {
     const { world, docket } = arrangement();
     const obsolete = docket(1), evidence = docket(2), current = docket(world.currentDay - 1, { receiptId: evidence.id });
     const visited = docket(3);
     advanceWorldForPlay(world, { days: 1, stopOnInterrupt: false });
     const index = witnessIndexFor(world);
-    expect(index.byId.has(obsolete.id)).toBe(false);
-    for (const fact of [evidence, current, visited]) expect(index.byId.has(fact.id)).toBe(true);
+    for (const fact of [obsolete, visited]) expect(index.byId.has(fact.id)).toBe(false);
+    for (const fact of [evidence, current]) expect(index.byId.has(fact.id)).toBe(true);
     for (const person of world.npcs) for (const id of person.historyFactIds) expect(index.byId.has(id)).toBe(true);
     expect(referenceKeys(index.byId.get(current.id)!)).toContain(evidence.id);
 });
