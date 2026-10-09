@@ -100,6 +100,10 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     const previous = state.history.facts;
     const candidates = new Set<string>();
     const visited = new Set<string>();
+    // A visit is evidence about somebody who can still be asked about it. Keeping the last routine
+    // visit of everybody who ever lived grew the ledger by ~20,000 facts a century without end;
+    // the dead keep their death and every non-routine fact, which this pass never touches.
+    const living = new Set(state.npcs.filter(person => person.status === 'alive').map(person => person.id));
     for (let at = previous.length - 1; at >= 0; at--) {
         const fact = previous[at]!;
         if (!routine(fact) || fact.day >= cutoff || fact.actors.some(actor => exact.has(actor.id))
@@ -108,6 +112,7 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
         if (fact.locationId || fact.factionIds.length) for (const id of new Set([
             ...fact.actors.map(actor => actor.id), ...fact.witnessIds
         ])) {
+            if (!living.has(id)) continue;
             const key = `${id}\u001f${fact.locationId ?? ''}\u001f${fact.factionIds.join('|')}`;
             if (!visited.has(key)) { visited.add(key); visit = true; }
         }
