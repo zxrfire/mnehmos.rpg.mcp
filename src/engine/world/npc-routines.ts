@@ -47,6 +47,16 @@ export function invitationEndsAt(state: Pick<Clock, 'currentDay' | 'currentHour'
     return Math.floor(state.currentDay) + 21 / 24 + ((state.currentHour ?? 8) >= 21 ? 1 : 0);
 }
 
+/** Placement asks for the same physical position without drawing an unused daily activity. */
+export function routineLocationOf(state: Clock, npc: NpcRecord, routes?: RouteQueries): string | null {
+    const now = routineTime(state), redirect = npc.activity?.redirect;
+    if (redirect && (now < redirect.until || redirect.returnDays === null
+        || now < redirect.until + (redirect.returnDays ?? 0))) return npc.locationId;
+    return redirect ? npc.activity?.returnTo ?? npc.locationId
+        : state.locations ? locationOnNpcJourney(state.locations, npc, now, routes, undefined,
+            id => state.npcs?.find(person => person.id === id)) : npc.locationId;
+}
+
 /** A person's ordinary activity remains the source of their work and trade. */
 export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries,
     actualHullArea?: (npc: NpcRecord) => string | null): {
@@ -65,8 +75,7 @@ export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries,
             sinceDay: redirect.until, untilDay: redirect.returnDays === null ? null : redirect.until + (redirect.returnDays ?? 0),
             returnTo: npc.activity?.returnTo }, home: false, standingIn: null, locationId: npc.locationId };
     }
-    const locationId = redirect ? npc.activity?.returnTo ?? npc.locationId
-        : state.locations ? locationOnNpcJourney(state.locations, npc, now, routes, undefined, id=>state.npcs?.find(person=>person.id===id)) : npc.locationId;
+    const locationId = routineLocationOf(state, npc, routes);
     const result = (activity: NpcActivity | null, home = false) => ({ activity, home,
         standingIn: !redirect ? actualHullArea?.(npc) ?? (activity === journeyActivity
             && !vesselRoomChosen(ordinary?.standingIn) ? ordinary?.standingIn : null) ?? null : null, locationId });

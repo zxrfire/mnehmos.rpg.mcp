@@ -20,10 +20,10 @@ import {isLostTrackOf} from './who-a-house-has-lost-track-of.js';
 import {whatThisHouseCouldTakeOut} from './what-a-house-can-take-out.js';
 import type {APortfolio} from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import type {OnTheRoll} from '../social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
-import { beginActualDepartureApproach, finishActualDepartureApproach } from './departure-approach.js';
-import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
+import { departureSceneFor, beginActualDepartureApproach, finishActualDepartureApproach } from './departure-approach.js';
+import { departureAreaAt } from './where-in-a-place-somebody-is-standing.js';
 import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
-import { walkingDaysFrom } from './locations.js';
+import { routeQueriesFor, walkingDaysFrom } from './locations.js';
 import { sendASelectedHousePartyOnAnAvailableAirHull } from './a-house-party-takes-an-actual-air-leg.js';
 type Sending=NonNullable<WorldState['pendingSendings']>[number];
 type Phase='delivery'|'collecting'|'homebound'|'reloading';
@@ -33,13 +33,15 @@ export function beginHouseSendingAssembly(state:WorldState,house:FactionRecord,r
   ||!journeyTimeHasReached(day,state.currentDay))return null;
  const ground=state.locations.find(place=>place.id===house.seatLocationId);
  if(!ground)return null;
- const berth=theAreasOf(state,ground).areas.find(area=>area.for==='spirit_berth');
+ const routes=routeQueriesFor(state.locations);
+ const berth=departureAreaAt(state,ground,'spirit_berth',routes);
  if(!berth)return null;
  const intention=makeFact({day,kind:'gathering',locationId:ground.id,visibility:'faction',
   factionIds:[house.id],actors:row.party.map(person=>({id:person.id,name:person.name,role:'delegate'})),
   summary:'House members were called to the Spirit Boat Berth.',data:{houseAssembly:true}});
  const request={intentId:'assembly',target:{locationId:ground.id,areaId:berth.id}};
- const read=row.party.map(member=>beginActualDepartureApproach(state,member.id,request,day));
+ const scene=departureSceneFor(state,routes);
+ const read=row.party.map(member=>beginActualDepartureApproach(state,member.id,request,day,undefined,routes,scene));
  if(read.some(result=>result.kind==='refused'||result.kind==='needs_geographic_leg'))return null;
  const intent=appendWorldFact(state,intention,{recur:false,bystanders:false});
  for(const result of read){if(result.kind==='approaching'){
@@ -55,9 +57,11 @@ function continueAssembly(state:WorldState,row:Sending,day:number){
  const house=state.factions.find(h=>h.id===row.posting.houseId&&h.dissolvedOnDay===null);
  const ground=state.locations.find(place=>place.id===house?.seatLocationId);
  if(!house||!ground||!row.locationId)return;
- const berth=theAreasOf(state,ground).areas.find(area=>area.for==='spirit_berth');if(!berth)return;
+ const routes=routeQueriesFor(state.locations);
+ const berth=departureAreaAt(state,ground,'spirit_berth',routes);if(!berth)return;
  const request={intentId:row.dispatchFactId!,target:{locationId:ground.id,areaId:berth.id}};
- const results=row.party.map(member=>finishActualDepartureApproach(state,member.id,request,day));
+ const scene=departureSceneFor(state,routes);
+ const results=row.party.map(member=>finishActualDepartureApproach(state,member.id,request,day,routes,scene));
  if(results.some(result=>result.kind!=='ready'))return;
  for(const result of results)if(result.kind==='ready'){
   const at=state.npcs.findIndex(person=>person.id===result.actor.id);state.npcs[at]=result.actor;

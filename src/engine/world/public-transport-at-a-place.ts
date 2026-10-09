@@ -5,7 +5,7 @@
  * This read creates no vehicle, provider, fare, booking or knowledge record.
  */
 import { getOccupation } from '../../data/cultivation/mortal-world.js';
-import { REGIONS, isOpenWater, placesNextTo, provinceRoadDays, regionIdOfPlace, requireRegion } from '../../data/cultivation/regions.js';
+import { REGIONS, isOpenWater, placesNextTo, provinceRoadDays, regionIdOfPlace, getRegion, requireRegion } from '../../data/cultivation/regions.js';
 import { requireConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import { publicShipLinesFrom, theProvinceOf, type DockWorld } from './public-shipping.js';
 import { daysByConveyance } from './what-a-conveyance-does-to-a-journey.js';
@@ -35,9 +35,9 @@ const PEOPLED = new WeakMap<PlaceScope, Map<string, LocationRecord | null>>();
 
 export function theMostPeopledPlaceIn(
     world: { locations: readonly LocationRecord[] },
-    provinceId: string
+    provinceId: string,scope?:PlaceScope
 ): LocationRecord | null {
-    const routes = placeScopeFor(world.locations);
+    const routes = scope??placeScopeFor(world.locations);
     let answers = PEOPLED.get(routes);
     if (!answers) PEOPLED.set(routes, answers = new Map());
     if (!answers.has(provinceId)) answers.set(provinceId, mostPeopled(world, provinceId));
@@ -59,22 +59,22 @@ function mostPeopled(world: { locations: readonly LocationRecord[] }, provinceId
 
 
 /** Canonical province approach, moved unchanged from the web travel reader. */
-export function whereTheRoadEndsIn(world: DockWorld, place: string): { name: string; provinceName: string | null } {
+export function whereTheRoadEndsIn(world: DockWorld, place: string,scope?:PlaceScope): { name: string; provinceName: string | null } {
     const bare = (name: string) => name.replace(/^the\s+/i, '').toLowerCase();
-    const worldRow = world ? worldLocationFor(world, place) : null;
+    const worldRow = world ? worldLocationFor(world, place,scope) : null;
     const asProvince = regionIdOfPlace(place) ? undefined : REGIONS.find(region => bare(region.name) === bare(place));
     const name = worldRow?.name ?? asProvince?.name ?? place;
-    const row = world ? worldLocationFor(world, name) : null;
+    const row = world ? worldLocationFor(world, name,scope) : null;
     if (!world || !row || row.kind !== 'region') return { name, provinceName: null };
-    const town = theMostPeopledPlaceIn(world, row.id);
+    const town = theMostPeopledPlaceIn(world, row.id,scope);
     return town ? { name: town.name, provinceName: row.name } : { name, provinceName: null };
 }
 /** Exact original public line logic; web retains its actual unfinished-road guard. */
-export function publicTransportFrom(world: DockWorld, here: string, today: number, catalogRegion?: string): ALine[] {
-    const regionId = catalogRegion ?? theProvinceOf(world, here);
-    if (!regionId) return [];
-    const lines: ALine[] = publicShipLinesFrom(world, here, today);
-    if (isOpenWater(regionId) || isOpenWater(theProvinceOf(world, here))) return lines;
+export function publicTransportFrom(world: DockWorld, here: string, today: number, catalogRegion?: string,scope?:PlaceScope): ALine[] {
+    const regionId = catalogRegion ?? theProvinceOf(world, here,scope);
+    if (!regionId || !getRegion(regionId)) return [];
+    const lines: ALine[] = publicShipLinesFrom(world, here, today,scope);
+    if (isOpenWater(regionId) || isOpenWater(theProvinceOf(world, here,scope))) return lines;
 
     const carriage = requireConveyance(THE_DRAWN_CARRIAGE);
     const byRoad = new Map<string, number>();
@@ -83,13 +83,13 @@ export function publicTransportFrom(world: DockWorld, here: string, today: numbe
     }
     // THE PROVINCE ROADS COME INTO ONE TOWN, and that town's station runs them.
     const province = requireRegion(regionId);
-    if (whereTheRoadEndsIn(world, province.name).name === here) {
+    if (whereTheRoadEndsIn(world, province.name,scope).name === here) {
         for (const link of province.connections) {
             if (link.kind === 'sea_crossing' || isOpenWater(link.otherRegionId)) continue;
             const days = provinceRoadDays(province.id, link.otherRegionId);
             const other = REGIONS.find(region => region.id === link.otherRegionId);
             if (days === null || !other) continue;
-            const town = whereTheRoadEndsIn(world, other.name).name;
+            const town = whereTheRoadEndsIn(world, other.name,scope).name;
             if (!regionIdOfPlace(town)) continue;
             byRoad.set(town, Math.min(days, byRoad.get(town) ?? Infinity));
         }
@@ -112,15 +112,18 @@ export function publicTransportFrom(world: DockWorld, here: string, today: numbe
 export type PublicHubKind = 'landing' | 'carriage_station' | 'span_counter';
 export interface PublicHub { kind: PublicHubKind; name: string; destinations: string[]; providerHouseId?: string; inheritedTerminal?: boolean }
 /** Physical public venues persist through closed timetables or occupied seats. */
-export function publicTransportHubsAt(world: DockWorld, here: string, today: number): PublicHub[] {
-    const lines = publicTransportFrom(world, here, today);
+export function publicTransportHubsAt(world: DockWorld, here: string, today: number,
+    read?:{scope?:PlaceScope;kind?:PublicHubKind}): PublicHub[] {
+    const lines = read?.kind==='landing'?publicShipLinesFrom(world,here,today,read.scope)
+        :read?.kind==='span_counter'?[]:publicTransportFrom(world, here, today,undefined,read?.scope);
     const hubs: PublicHub[] = [];
     for (const [service, kind, name] of [['ship', 'landing', 'the landing'], ['carriage', 'carriage_station', 'the carriage station']] as const) {
+        if(read?.kind&&kind!==read.kind)continue;
         const destinations = lines.filter(line => line.service === service).map(line => line.to);
         if (destinations.length) hubs.push({ kind, name, destinations });
     }
     const counter = counterPlaceNameAt(here);
-    if (counter) hubs.push({ kind: 'span_counter', name: 'the folding counter', destinations: routesFrom(counter).map(route => route.toPlace), providerHouseId: THE_SPAN_HOUSE_ID, inheritedTerminal: routesFrom(counter).some(route => route.inheritedTerminal) });
+    if (counter&&(!read?.kind||read.kind==='span_counter')) hubs.push({ kind: 'span_counter', name: 'the folding counter', destinations: routesFrom(counter).map(route => route.toPlace), providerHouseId: THE_SPAN_HOUSE_ID, inheritedTerminal: routesFrom(counter).some(route => route.inheritedTerminal) });
     return hubs;
 }
 
@@ -131,6 +134,6 @@ export function anInnIsKeptAt(here: string): boolean {
     const trade = getOccupation('job-innkeeper');
     return kind !== undefined && trade !== undefined && (trade.settlements as readonly string[]).includes(kind);
 }
-export function publicCountersAt(world: DockWorld, here: string, today: number): PublicCounterKind[] {
-    return [...(anInnIsKeptAt(here) ? ['inn' as const] : []), ...publicTransportHubsAt(world, here, today).map(hub => hub.kind)];
+export function publicCountersAt(world: DockWorld, here: string, today: number,scope?:PlaceScope): PublicCounterKind[] {
+    return [...(anInnIsKeptAt(here) ? ['inn' as const] : []), ...publicTransportHubsAt(world, here, today,{scope}).map(hub => hub.kind)];
 }

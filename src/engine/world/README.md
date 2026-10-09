@@ -4674,3 +4674,33 @@ actual selected group still decide whether that path is reached. The calendar
 acceptance fixture supplies an actual road, funded chest, free pilot and spare
 members, then advances ordinary appointments until selection and timed assembly
 produce actual current-clock loads.
+
+
+Departure facility selection reads the same canonical first area as a full scene,
+without placing the population. A synchronous house selection or assembly shares
+one scene per place and moment; the batch ends before any actor, door or hull
+changes. Daily placement asks the existing physical routine-position authority
+before generating activities for people actually in the scene. Keys are read
+when a keyed door or cabin requires them and are reread at the actual exit.
+
+Public shipping retains geographic lines under checked place scopes and keeps
+at most eight daily boards per origin. Each caller receives fresh lines and
+arrays; fractional seasonal opening dates keep the ordinary calendar rule.
+Live custody, finite berths, living reservations, fares and weather still decide
+each quote. The quote's temporary hull read shares its current crew, bookings
+and reservations across its own calculations. Its actor-membership index checks current IDs, life, vessel binding, mission binding and crew tags, including in-place edits; dates, occupation, custody and position are read from the current actors. It creates no passenger state.
+Provider watch projection requests the actual span hubs alone, sharing checked
+geography and extending its read for appended rows. Unknown fixture provinces
+have no public catalog transport board.
+
+A detached air-course append extends the checked lookup and route scopes without
+rebuilding existing trees. An incoming road, duplicate identity, ordinary place
+append or changed existing record still invalidates the relevant scope. Shipping
+and lookup indexes therefore survive a new isolated course while its real site
+remains discoverable. Retained service, homecoming and dated post appointments
+pass the existing route queries through their physical journey readers.
+
+A newly paid capital intention starts a new departure walk even when its member
+still carries an expired earlier walk's note. Continuation requires the same
+mission binding. The ordinary actor, door, elapsed time and boarding checks remain
+authoritative.

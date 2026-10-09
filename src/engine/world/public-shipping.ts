@@ -21,7 +21,7 @@ import { REGIONS, isOpenWater, placeRoadDays, regionIdOfPlace, requireRegion } f
 import { forStream } from '../cultivation/rng.js';
 import { SEA_LANES } from '../../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
 import { regionCatalogIdOf } from './how-a-cultivator-comes-by-a-road.js';
-import { placeScopeFor, type LocationRecord } from './locations.js';
+import { placeScopeFor, type LocationRecord, type PlaceScope } from './locations.js';
 import { worldLocationFor, loosePlaceKey } from './place-lookup.js';
 import { SHORT_ACTION_DAYS } from './short-action.js';
 import type { PassageRunMoment } from './passage-moment.js';
@@ -44,11 +44,11 @@ type World = DockWorld;
 /** The catalog place a lane's landfall names, where it names one. */
 
 /** The province a place is in, by the catalog or the world's row. */
-export function theProvinceOf(world: World, place: string): string | null {
+export function theProvinceOf(world: World, place: string,scope?:PlaceScope): string | null {
     const named = regionIdOfPlace(place);
     if (named) return named;
-    const row = world ? worldLocationFor(world, place) : null;
-    return row && world ? regionCatalogIdOf(world as WorldState, row.id) : null;
+    const row = world ? worldLocationFor(world, place,scope) : null;
+    return row && world ? regionCatalogIdOf(world as WorldState, row.id,scope?.places) : null;
 }
 
 function isOpenWaterProvinceRow(row: LocationRecord | undefined): boolean {
@@ -68,9 +68,9 @@ function theDocksOnOpenWater(world: World): string[] {
 }
 
 /** Every place a ship puts in at. */
-export function thePortsShipsPutInAt(world: World): string[] {
+export function thePortsShipsPutInAt(world: World,scope?:PlaceScope): string[] {
     if (!world) return portsShipsPutInAt(world);
-    const routes = placeScopeFor(world.locations);
+    const routes = scope??placeScopeFor(world.locations);
     let ports = PORTS.get(routes);
     if (!ports) PORTS.set(routes, ports = portsShipsPutInAt(world));
     return ports.slice();
@@ -112,11 +112,11 @@ export function theDockOf(world: World, place: string): string | null {
  * grounds; otherwise the one of its province's ports its own draw points at, since the world keeps
  * no distance for it. A catalog place is its own.
  */
-export function thePortADockIsNear(world: World, dock: string): string {
+export function thePortADockIsNear(world: World, dock: string,scope?:PlaceScope): string {
     const province = regionIdOfPlace(dock);
     if (province) return requireRegion(province).places.find(place => loosePlaceKey(place.name) === loosePlaceKey(dock))!.name;
-    const row = world ? worldLocationFor(world, dock) : null;
-    const regionId = row && world ? regionCatalogIdOf(world as WorldState, row.id) : null;
+    const row = world ? worldLocationFor(world, dock,scope) : null;
+    const regionId = row && world ? regionCatalogIdOf(world as WorldState, row.id,scope?.places) : null;
     const ports = regionId ? requireRegion(regionId).places.filter(place => place.kind !== 'site') : [];
     if (!row || ports.length === 0) return dock;
     const house = row.controllingFactionId ?? (row.data as { factionId?: unknown }).factionId;
@@ -126,8 +126,8 @@ export function thePortADockIsNear(world: World, dock: string): string {
 }
 
 /** Days of sailing between two docks of one open-water province. */
-export function daysOfSailingBetween(world: World, from: string, to: string): number {
-    const [a, b] = [thePortADockIsNear(world, from), thePortADockIsNear(world, to)];
+export function daysOfSailingBetween(world: World, from: string, to: string,scope?:PlaceScope): number {
+    const [a, b] = [thePortADockIsNear(world, from,scope), thePortADockIsNear(world, to,scope)];
     const out = (a === from ? 0 : 1) + (b === to ? 0 : 1);
     return (a === b ? 0 : placeRoadDays(a, b) ?? SHORT_ACTION_DAYS) + out;
 }
@@ -141,9 +141,11 @@ export interface PublicShipLine {
  * A ship between two ports of an open-water province. The catalog states the days and
  * nothing else about the passage, so it is worked all year at ordinary weather.
  */
+const GENERATED_PASSAGES = new WeakSet<SeaLane>();
+
 function aPassageBetween(from: string, to: string, days: number): SeaLane {
     const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    return {
+    const passage = {
         id: `passage-${slug(from)}-${slug(to)}`,
         fromPlace: from,
         toPlace: to,
@@ -152,6 +154,8 @@ function aPassageBetween(from: string, to: string, days: number): SeaLane {
         intermediateLandfallDays: [],
         weatherSeverity: 1
     };
+    GENERATED_PASSAGES.add(passage);
+    return passage;
 }
 
 /** The first day from today the lane is worked, or null where it never is. */
@@ -168,9 +172,37 @@ function whenTheLaneRuns(lane: SeaLane, today: number): number | null {
  * dock of the province, nearest first (`where-a-ship-puts-in.ts`). Nothing from anywhere a ship
  * does not put in.
  */
-export function publicShipLinesFrom(world: DockWorld, here: string, today: number): PublicShipLine[] {
-    const regionId = theProvinceOf(world, here);
-    const ports = thePortsShipsPutInAt(world);
+const SHIP_LINES = new WeakMap<object,Map<string,{lines:PublicShipLine[];days:Map<number,PublicShipLine[]>}>>();
+const CATALOG_PORTS = {};
+
+export function publicShipLinesFrom(world: DockWorld, here: string, today: number,scope?:PlaceScope): PublicShipLine[] {
+    scope ??= world?placeScopeFor(world.locations):undefined;
+    const key=world?scope!:CATALOG_PORTS;
+    let answers=SHIP_LINES.get(key);
+    if(!answers)SHIP_LINES.set(key,answers=new Map());
+    const name=(world?.seed??'')+'\u0001'+here,day=Math.floor(today);
+    let held=answers.get(name);
+    if(!held){
+        held={lines:shipLinesFrom(world,here,0,scope),days:new Map()};
+        answers.set(name,held);
+    }
+    let lines=held.days.get(day);
+    if(!lines){
+        lines=held.lines.map(line=>{
+            const runs=whenTheLaneRuns(line.lane,day);
+            return {...line,runsFromDay:runs===day?null:runs};
+        });
+        if(held.days.size>=8)held.days.delete(held.days.keys().next().value!);
+        held.days.set(day,lines);
+    }
+    return lines.map(line=>({...line,
+        lane:GENERATED_PASSAGES.has(line.lane)?{...line.lane,intermediateLandfallDays:line.lane.intermediateLandfallDays.slice()}:line.lane,
+        runsFromDay:line.runsFromDay===null?null:line.runsFromDay+today-day}));
+}
+
+function shipLinesFrom(world: DockWorld, here: string, today: number,scope?:PlaceScope): PublicShipLine[] {
+    const regionId = theProvinceOf(world, here,scope);
+    const ports = thePortsShipsPutInAt(world,scope);
     if (!regionId || !ports.includes(here)) return [];
     const lines: PublicShipLine[] = [];
     for (const lane of SEA_LANES) {
@@ -192,8 +224,8 @@ export function publicShipLinesFrom(world: DockWorld, here: string, today: numbe
     }
     if (!isOpenWater(regionId)) return lines;
     const across = ports
-        .filter(port => port !== here && theProvinceOf(world, port) === regionId && !lines.some(line => line.to === port))
-        .map(port => ({ to: port, days: daysOfSailingBetween(world, here, port) }))
+        .filter(port => port !== here && theProvinceOf(world, port,scope) === regionId && !lines.some(line => line.to === port))
+        .map(port => ({ to: port, days: daysOfSailingBetween(world, here, port,scope) }))
         .sort((a, b) => a.days - b.days || a.to.localeCompare(b.to));
     for (const { to, days } of across) {
         const lane = aPassageBetween(here, to, days);
@@ -229,18 +261,61 @@ function shippingHasHistory(world:ShippingWorld):world is ShippingWorld & Histor
 /** Only the physical booking bounds are needed to locate a known hull. */
 type HullLeg = Omit<PublicPassageLeg, 'lane'> & { laneId: string; reserved?: true; passengerIds?: readonly string[] };
 
-/** Paid future berths exist only while a living participant continues the mission. */
-function activeReservedLegs(world: ShippingWorld, vesselId: string): HullLeg[] {
-    if (!world.history) return [];
-    const ids = new Set<string>();
-    for (const npc of world.npcs ?? []) {
-        const activity = npc.activity as (NpcActivity & { capitalMissionId?: string }) | null;
-        if (npc.status === 'alive' && activity?.capitalMissionId) ids.add(activity.capitalMissionId);
+/** Actor membership is indexed; each quote still reads the current records. */
+type ShippingActorShape={id:string;alive:boolean;vessel:string|null;mission:string|null;crew:string[]};
+const SHIPPING_ACTORS=new WeakMap<readonly NpcRecord[],{
+    shapes:ShippingActorShape[];vessels:Map<string,Set<number>>;missions:Map<string,Set<number>>;living:Map<string,number>
+}>();
+function shippingActors(npcs:readonly NpcRecord[]) {
+    let read=SHIPPING_ACTORS.get(npcs);
+    if(!read)SHIPPING_ACTORS.set(npcs,read={shapes:[],vessels:new Map(),missions:new Map(),living:new Map()});
+    const membership=(shape:ShippingActorShape)=>new Set([...(shape.vessel?[shape.vessel]:[]),...shape.crew]);
+    const remove=(shape:ShippingActorShape,at:number)=>{
+        for(const vessel of membership(shape)) {
+            const slots=read!.vessels.get(vessel);slots?.delete(at);
+            if(slots?.size===0)read!.vessels.delete(vessel);
+        }
+        if(shape.mission){const slots=read!.missions.get(shape.mission);slots?.delete(at);
+            if(slots?.size===0)read!.missions.delete(shape.mission);}
+        if(shape.alive){const count=read!.living.get(shape.id)!-1;
+            if(count)read!.living.set(shape.id,count);else read!.living.delete(shape.id);}
+    };
+    for(let at=0;at<Math.max(npcs.length,read.shapes.length);at++) {
+        const npc=npcs[at],old=read.shapes[at];
+        if(!npc){if(old)remove(old,at);continue;}
+        const alive=npc.status==='alive',vessel=npc.activity?.vesselId??null;
+        const mission=alive?npc.activity?.capitalMissionId??null:null;
+        let sameCrew=!!old,crewAt=0;
+        for(const tag of npc.tags)if(tag.startsWith('crew-of:')) {
+            if(old?.crew[crewAt++]!==tag.slice(8))sameCrew=false;
+        }
+        if(old&&old.id===npc.id&&old.alive===alive&&old.vessel===vessel&&old.mission===mission
+            &&sameCrew&&crewAt===old.crew.length)continue;
+        if(old)remove(old,at);
+        const shape={id:npc.id,alive,vessel,mission,crew:npc.tags.filter(tag=>tag.startsWith('crew-of:')).map(tag=>tag.slice(8))};
+        read.shapes[at]=shape;
+        for(const id of membership(shape)){
+            const slots=read.vessels.get(id)??new Set<number>();slots.add(at);read.vessels.set(id,slots);
+        }
+        if(mission){const slots=read.missions.get(mission)??new Set<number>();slots.add(at);read.missions.set(mission,slots);}
+        if(alive)read.living.set(npc.id,(read.living.get(npc.id)??0)+1);
     }
-    if (!ids.size) return [];
+    read.shapes.length=npcs.length;
+    const people=(slots:ReadonlySet<number>|undefined)=>[...slots??[]].sort((a,b)=>a-b).map(at=>npcs[at]!);
+    return {people:(vessel:string)=>people(read!.vessels.get(vessel)),living:read.living,
+        missions:()=>[...read!.missions].sort((a,b)=>Math.min(...a[1])-Math.min(...b[1]))
+            .map(([id,slots])=>[id,people(slots).map(npc=>npc.id)] as const)};
+}
+type ShippingActors=ReturnType<typeof shippingActors>;
+
+/** Paid future berths exist only while a living participant continues the mission. */
+function activeReservedLegs(world: ShippingWorld, vesselId: string,read:ShippingActors): HullLeg[] {
+    if (!world.history) return [];
+    const ids=read.missions();
+    if(!ids.length)return [];
     const index = witnessIndexFor(world as WorldState);
     const legs: HullLeg[] = [];
-    for (const id of ids) {
+    for (const [id,passengerIds] of ids) {
         const mission = index.byId.get(id);
         if (mission?.data.publicMission !== true || typeof mission.data.publicReservations !== 'string') continue;
         let reservations: unknown;
@@ -255,14 +330,14 @@ function activeReservedLegs(world: ShippingWorld, vesselId: string): HullLeg[] {
                 || !Number.isFinite(leg.arrivalDay) || leg.arrivalDay <= leg.departureDay) continue;
             legs.push({ vesselId, fromId: leg.fromId, toId: leg.toId,
                 departureDay: leg.departureDay, arrivalDay: leg.arrivalDay, laneId: leg.lane.id, reserved: true,
-                passengerIds: (world.npcs ?? []).filter(npc=>npc.status==='alive' && npc.activity?.capitalMissionId===id).map(npc=>npc.id) });
+                passengerIds });
         }
     }
     return legs;
 }
 
 /** Current bookings and their immutable history locate a hull; no fleet store exists. */
-function knownHullLegs(world: ShippingWorld, vesselId: string): HullLeg[] {
+function knownHullLegs(world: ShippingWorld, vesselId: string,read:ShippingActors): HullLeg[] {
     const held = new Map<number, { leg: HullLeg; authority: number; confirmedDay: number }>();
     const keep = (leg: HullLeg, authority: number, confirmedDay: number) => {
         const old = held.get(leg.departureDay);
@@ -270,7 +345,7 @@ function knownHullLegs(world: ShippingWorld, vesselId: string): HullLeg[] {
             held.set(leg.departureDay, { leg, authority, confirmedDay });
     };
     // An actual bound/recorded course supersedes its paid plan at the same departure.
-    for (const leg of activeReservedLegs(world, vesselId)) keep(leg, -1, leg.departureDay);
+    for (const leg of activeReservedLegs(world, vesselId,read)) keep(leg, -1, leg.departureDay);
     // The existing sparse index owns historical lookups. It reads only history.
     const history = world.history ? factsWithDataValue(world as WorldState, 'vesselId', vesselId) : [];
     const byFactId = new Map(history.map(fact => [fact.id, fact]));
@@ -295,7 +370,7 @@ function knownHullLegs(world: ShippingWorld, vesselId: string): HullLeg[] {
             departureDay: data.departureDay, arrivalDay: interrupted ? changed.day : data.arrivalDay,
             laneId: data.seaLaneId }, 1, fact.day);
     }
-    for (const npc of world.npcs ?? []) {
+    for (const npc of read.people(vesselId)) {
         const doing = npc.activity;
         if (doing?.kind !== 'travelling' || doing.vesselId !== vesselId || !doing.seaLaneId
             || !doing.fromLocationId || !doing.returnTo || doing.untilDay == null) continue;
@@ -307,14 +382,33 @@ function knownHullLegs(world: ShippingWorld, vesselId: string): HullLeg[] {
     return [...held.values()].map(one => one.leg);
 }
 
-type HullRead = { legs: readonly HullLeg[]; standingCrew: readonly NpcRecord[] };
+type HullRead = { legs: readonly HullLeg[]; standingCrew: readonly NpcRecord[];
+    crewIds: ReadonlySet<string>; berths:()=>{crewHeads:number;aboard:ReadonlyMap<number,ReadonlySet<string>>};
+    operator:NpcRecord|null; physicalHull:ObjectRecord|undefined };
 
 /** A single unchanged quote pass holds only an ephemeral read of existing truth. */
 function readHull(world: ShippingWorld, vesselId: string, consideredLegs: readonly PublicPassageLeg[]): HullRead {
-    return { legs: [...knownHullLegs(world, vesselId), ...consideredLegs.filter(leg => leg.vesselId === vesselId)
-        .map(leg => ({ ...leg, laneId: leg.lane.id }))],
-        standingCrew: (world.npcs ?? []).filter(npc => npc.status === 'alive'
-            && npc.tags.includes(`crew-of:${vesselId}`) && npc.activity?.kind !== 'travelling') };
+    const read=shippingActors(world.npcs??[]),people=read.people(vesselId);
+    const crew=people.filter(npc=>npc.tags.includes('crew-of:'+vesselId));
+    const crewIds=new Set(crew.map(npc=>npc.id));
+    const standingCrew=crew.filter(npc=>npc.status==='alive'&&npc.activity?.kind!=='travelling');
+    const operator=crew.find(npc=>npc.status==='alive'&&npc.identity.occupation==='shipmaster')??null;
+    let berths:{crewHeads:number;aboard:Map<number,Set<string>>}|undefined;
+    return { legs: [...knownHullLegs(world, vesselId,read), ...consideredLegs.filter(leg => leg.vesselId === vesselId)
+        .map(leg => ({ ...leg, laneId: leg.lane.id }))],standingCrew,crewIds,operator,
+        physicalHull:world.objects?.find(object=>object.id===vesselId),
+        berths:()=>{
+            if(berths)return berths;
+            const aboard=new Map<number,Set<string>>();
+            const crewHeads=[...crewIds].reduce((count,id)=>count+(read.living.get(id)??0),0);
+            for(const npc of people) {
+                if(npc.activity?.kind==='travelling'&&npc.activity.vesselId===vesselId) {
+                    const ids=aboard.get(npc.activity.sinceDay)??new Set<string>();
+                    ids.add(npc.id);aboard.set(npc.activity.sinceDay,ids);
+                }
+            }
+            return berths={crewHeads,aboard};
+        } };
 }
 
 /** A world obstruction can change only at an existing hull/crew position event. */
@@ -353,8 +447,8 @@ function hullPositionAt(hull: HullRead, fromId: string, toId: string, departureD
 /** A first boarding realises the lane's hull at that dock, as the existing crew factory does. */
 export function quotePublicPassage(world: ShippingWorld, fromId: string, toId: string,
     departureDay: number, heads = 1, consideredLegs: readonly PublicPassageLeg[] = [],
-    crossingSeed = `${world.seed}:${departureDay}`, requestingIds: readonly string[] = []): PublicPassageQuote | null {
-    return quoteAPublicPassage(world, fromId, toId, departureDay, heads, consideredLegs, crossingSeed, undefined, requestingIds).quote;
+    crossingSeed = `${world.seed}:${departureDay}`, requestingIds: readonly string[] = [],scope?:PlaceScope): PublicPassageQuote | null {
+    return quoteAPublicPassage(world, fromId, toId, departureDay, heads, consideredLegs, crossingSeed, undefined, requestingIds,undefined,scope).quote;
 }
 
 /** A real existing hull may take an admitted onward line only from its actual port.
@@ -375,32 +469,32 @@ export function quotePublicPassageOnActualHull(world: ShippingWorld, vesselId:st
 /** The single fare, weather and hull-position authority behind both public readers. */
 function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     departureDay: number, heads: number, consideredLegs: readonly PublicPassageLeg[],
-    crossingSeed: string, held?: HullRead, requestingIds: readonly string[] = [], actualVesselId?: string): { quote: PublicPassageQuote | null; retryAt?: number | null } {
+    crossingSeed: string, held?: HullRead, requestingIds: readonly string[] = [], actualVesselId?: string,scope?:PlaceScope): { quote: PublicPassageQuote | null; retryAt?: number | null } {
     if (!Number.isInteger(heads) || heads < 1 || !Number.isFinite(departureDay)) return { quote: null };
-    const from = world.locations.find(place => place.id === fromId);
-    const to = world.locations.find(place => place.id === toId);
+    scope ??= placeScopeFor(world.locations);
+    const from = scope.places.get(fromId);
+    const to = scope.places.get(toId);
     if (!from || !to || fromId === toId) return { quote: null };
-    const line = publicShipLinesFrom(world, from.name, departureDay).find(one => one.to === to.name);
+    const line = publicShipLinesFrom(world, from.name, departureDay,scope).find(one => one.to === to.name);
     if (!line || line.runsFromDay !== null) return { quote: null };
     const lane = line.lane;
     const vesselId = actualVesselId ?? shipIdForLane(lane);
-    if (world.objects && world.npcs && !publicShipHullCanBeBoarded({objects:world.objects,npcs:world.npcs,locations:world.locations},
-        {vesselId,fromId,departureDay}, false)) return {quote:null,retryAt:null};
     const hull = held ?? readHull(world, vesselId, consideredLegs);
+    if (world.objects && world.npcs && !publicShipHullCanBeBoarded({objects:world.objects,npcs:world.npcs,locations:world.locations},
+        {vesselId,fromId,departureDay}, false,{hull:hull.physicalHull,operator:hull.operator})) return {quote:null,retryAt:null};
     const legs = hull.legs;
     const position = hullPositionAt(hull, fromId, toId, departureDay, lane.id);
     if (position.blockedUntil !== undefined) return { quote: null, retryAt: position.blockedUntil };
     const same = position.same;
-    const aboard = new Set((world.npcs ?? []).filter(npc => npc.activity?.kind === 'travelling'
-        && npc.activity.vesselId === vesselId && npc.activity.sinceDay === departureDay)
-        .map(npc => npc.id));
+    const berths=hull.berths();
+    const aboard = new Set(berths.aboard.get(departureDay));
     const bookings = shippingHasHistory(world) ? factsWithDataValue(world,'vesselId',vesselId)
         .filter(fact => fact.data.publicPassage===true && fact.data.actualBoarding===true
             && fact.data.departureDay===departureDay && fact.data.fromLocationId===fromId
             && fact.data.toLocationId===toId) : [];
     for (const booking of bookings) for (const actor of booking.actors) if (actor.role==='aboard') aboard.add(actor.id);
-    const crewIds=new Set((world.npcs ?? []).filter(npc=>npc.tags.includes('crew-of:'+vesselId)).map(npc=>npc.id));
-    for (const reserved of activeReservedLegs(world,vesselId)) if (reserved.departureDay===departureDay
+    const crewIds=hull.crewIds;
+    for (const reserved of hull.legs) if (reserved.reserved && reserved.departureDay===departureDay
         && reserved.fromId===fromId && reserved.toId===toId)
         for (const id of reserved.passengerIds ?? []) aboard.add(id);
     const requesting=new Set(requestingIds);
@@ -416,7 +510,7 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     if (unknownLegacy) return {quote:null,retryAt:same?.arrivalDay ?? null};
     // Existing realised crew occupy berths too; the first boarding uses the
     // exact crew-factory draw before any people or object are materialised.
-    const crewHeads=Math.max((world.npcs ?? []).filter(npc=>npc.status==='alive' && crewIds.has(npc.id)).length,
+    const crewHeads=Math.max(berths.crewHeads,
         1+shipHandsForHull(world.seed,vesselId));
     const capacity=requireConveyance('conv-water-ship').heads;
     if (crewHeads+heads>capacity) return {quote:null,retryAt:null};
@@ -443,13 +537,14 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
  */
 export function earliestQuotedPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     readyDay: number, latestUsefulArrival: number, heads = 1,
-    consideredLegs: readonly PublicPassageLeg[] = []): PublicPassageQuote | null {
+    consideredLegs: readonly PublicPassageLeg[] = [],scope?:PlaceScope): PublicPassageQuote | null {
     if (!Number.isFinite(readyDay) || !Number.isFinite(latestUsefulArrival)
         || latestUsefulArrival <= readyDay || !Number.isInteger(heads) || heads < 1) return null;
-    const from = world.locations.find(place => place.id === fromId);
-    const to = world.locations.find(place => place.id === toId);
+    scope ??= placeScopeFor(world.locations);
+    const from = scope.places.get(fromId);
+    const to = scope.places.get(toId);
     if (!from || !to || fromId === toId) return null;
-    const line = publicShipLinesFrom(world, from.name, readyDay).find(one => one.to === to.name);
+    const line = publicShipLinesFrom(world, from.name, readyDay,scope).find(one => one.to === to.name);
     if (!line) return null;
     const vesselId = shipIdForLane(line.lane);
     const hull = readHull(world, vesselId, consideredLegs);
@@ -472,7 +567,7 @@ export function earliestQuotedPublicPassage(world: ShippingWorld, fromId: string
             day = opens;
             continue;
         }
-        const reading = quoteAPublicPassage(world, fromId, toId, day, heads, consideredLegs, `${world.seed}:${day}`, hull);
+        const reading = quoteAPublicPassage(world, fromId, toId, day, heads, consideredLegs, `${world.seed}:${day}`, hull,undefined,undefined,scope);
         const quoted = reading.quote;
         if (quoted && quoted.arrivalDay <= latestUsefulArrival) return quoted;
         if (reading.retryAt === null) return null;

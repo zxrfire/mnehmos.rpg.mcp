@@ -16,11 +16,11 @@ export function shipHandsForHull(seed:string,vesselId:string):number {
 
 /** Pure admission reads actual custody before any crew/activity/body debit commits. */
 export function publicShipHullCanBeBoarded(world: {objects:readonly WorldState['objects'][number][];npcs:readonly WorldState['npcs'][number][];locations:readonly WorldState['locations'][number][]},
-    leg: Pick<PublicPassageLeg,'vesselId'|'fromId'|'departureDay'>, atDeparture = true): boolean {
-    const hull=world.objects.find(object=>object.id===leg.vesselId);
+    leg: Pick<PublicPassageLeg,'vesselId'|'fromId'|'departureDay'>, atDeparture = true,read?:{hull:ObjectRecord|undefined;operator:NpcRecord|null}): boolean {
+    const hull=read?read.hull:world.objects.find(object=>object.id===leg.vesselId);
     if (!hull) return true; // first accepted boarding, not quote-time realisation
     if (isRuined(hull) || hull.data?.conveyanceId!=='conv-water-ship') return false;
-    const operator=world.npcs.find(npc=>npc.status==='alive' && npc.tags.includes('crew-of:'+leg.vesselId)
+    const operator=read?read.operator:world.npcs.find(npc=>npc.status==='alive' && npc.tags.includes('crew-of:'+leg.vesselId)
         && npc.identity.occupation==='shipmaster');
     return !!operator && (!atDeparture || locationOnNpcJourney(world.locations,operator,leg.departureDay)===leg.fromId)
         && (hull.possessorId===operator.id || hull.possessorId===null && whoItIsWith(hull)===operator.id);

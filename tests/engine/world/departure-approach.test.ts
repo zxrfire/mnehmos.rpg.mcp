@@ -2,6 +2,7 @@
  * still holds; a due date alone cannot move a body or admit a passenger. */
 import { expect, it } from 'vitest';
 import { createWorld } from '../../../src/engine/world/world-state.js';
+import { makeObject } from '../../../src/engine/world/possessions.js';
 import { createNpc } from '../../../src/engine/world/npc-state.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { theAreasOf } from '../../../src/engine/world/where-in-a-place-somebody-is-standing.js';
@@ -46,4 +47,20 @@ it('rechecks a door closed during the actual walk and never boards', () => {
     expect(finishActualDepartureApproach(h.world, h.npc.id, h.request, h.world.currentDay).kind).toBe('refused');
     expect(h.world.npcs[0]!.locationId).toBe(h.room.id);
     expect(h.world.history.facts).toHaveLength(0);
+});
+
+
+it('reads the held key at each real locked exit, including its loss during the walk',()=>{
+    const h=scene(),day=h.world.currentDay;
+    h.room.sealed=true;h.room.data.keyId='dwelling-token';
+    const key=makeObject({id:'dwelling-key',name:'Jade dwelling token',kind:'key',possessorId:h.npc.id,
+        data:{keyId:'dwelling-token'}});
+    h.world.objects.push(key);
+    const approach=beginActualDepartureApproach(h.world,h.npc.id,h.request,day);
+    expect(approach.kind).toBe('approaching');
+    if(approach.kind!=='approaching')throw Error('The held key did not open the exit');
+    h.world.npcs[0]=approach.actor;h.world.currentDay=day+.25;
+    key.tags.push('ruined');
+    expect(finishActualDepartureApproach(h.world,h.npc.id,h.request,h.world.currentDay).kind).toBe('refused');
+    expect(h.world.npcs[0]!.locationId).toBe(h.room.id);
 });

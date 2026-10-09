@@ -1307,10 +1307,17 @@ export interface PlaceScope { readonly places: ReadonlyMap<string, LocationRecor
 const SHARED_PLACES = new WeakMap<readonly LocationRecord[], { snapshot: [LocationRecord, string, string | null, string, boolean][]; scope: PlaceScope }>();
 export function placeScopeFor(locations: readonly LocationRecord[]): PlaceScope {
     const held = SHARED_PLACES.get(locations);
-    if (held && held.snapshot.length === locations.length && held.snapshot.every(([p, name, parentId, kind, sealed], i) => {
+    if (held && held.snapshot.length <= locations.length && held.snapshot.every(([p, name, parentId, kind, sealed], i) => {
         const now = locations[i];
         return now === p && now.name === name && now.parentId === parentId && now.kind === kind && now.sealed === sealed;
-    })) return held.scope;
+    }) && isolatedAirAppend(locations,held.snapshot.length)) {
+        for(let i=held.snapshot.length;i<locations.length;i++){
+            const p=locations[i]!;
+            if(!held.scope.places.has(p.id))(held.scope.places as Map<string,LocationRecord>).set(p.id,p);
+            held.snapshot.push([p,p.name,p.parentId,p.kind,p.sealed]);
+        }
+        return held.scope;
+    }
     const scope: PlaceScope = { places: new Map(locations.map(place => [place.id, place])) };
     SHARED_PLACES.set(locations, { snapshot: locations.map(p => [p, p.name, p.parentId, p.kind, p.sealed]), scope });
     return scope;
@@ -1318,12 +1325,30 @@ export function placeScopeFor(locations: readonly LocationRecord[]): PlaceScope 
 
 export function routeQueriesFor(locations: readonly LocationRecord[]): RouteQueries {
     const held = SHARED_ROUTES.get(locations);
-    if (held && held.snapshot.length === locations.length && held.snapshot.every((s, i) => sameShape(s, locations[i]))) {
+    if (held && held.snapshot.length <= locations.length && held.snapshot.every((s, i) => sameShape(s, locations[i]))
+        && isolatedAirAppend(locations,held.snapshot.length)) {
+        for(let i=held.snapshot.length;i<locations.length;i++){
+            const p=locations[i]!;
+            if(!held.routes.places.has(p.id))(held.routes.places as Map<string,LocationRecord>).set(p.id,p);
+            held.snapshot.push(shapeOf(p));
+        }
         return held.routes;
     }
     const routes = freshRouteQueries(locations);
     SHARED_ROUTES.set(locations, { snapshot: locations.map(shapeOf), routes });
     return routes;
+}
+
+/** A detached course adds no dock, parent edge or incoming walking connection. */
+function isolatedAirAppend(locations:readonly LocationRecord[],from:number):boolean {
+    if(from===locations.length)return true;
+    const ids=new Set<string>();
+    for(let i=from;i<locations.length;i++){
+        const row=locations[i]!;
+        if(row.kind!=='wilds'||row.parentId!==null||row.links.length!==0||!row.tags.includes('air-course'))return false;
+        ids.add(row.id);
+    }
+    return !locations.slice(0,from).some(row=>ids.has(row.id)||row.links.some(link=>ids.has(link.toLocationId)));
 }
 
 function freshRouteQueries(locations: readonly LocationRecord[]): RouteQueries {

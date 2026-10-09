@@ -178,18 +178,20 @@ function key(name: string): string {
 
 /** True where the house keeps a counter at this place. */
 export function thereIsACounterAt(place: string): boolean {
-    return SPAN_ROUTES.some(route => key(route.fromPlace) === key(place));
+    return counterPlaceNameAt(place) !== null;
 }
 
 /** The counter's own name for this place, or null where there is no counter. */
 export function counterPlaceNameAt(place: string): string | null {
-    const found = SPAN_ROUTES.find(route => key(route.fromPlace) === key(place));
+    const wanted=key(place);
+    const found = SPAN_ROUTES.find(route => key(route.fromPlace) === wanted);
     return found?.fromPlace ?? null;
 }
 
 /** Everywhere the house will sell a passage to from here. */
 export function routesFrom(place: string): readonly SpanRoute[] {
-    return SPAN_ROUTES.filter(route => key(route.fromPlace) === key(place));
+    const wanted=key(place);
+    return SPAN_ROUTES.filter(route => key(route.fromPlace) === wanted);
 }
 
 /** One line on a board, by the name a player would type back at it. */

@@ -24,6 +24,9 @@
  * onto the admitted public mission. Capital travel has one actual itinerary.
  * Free members in lodging were excluded from delegation selection even though
  * the room belongs to the grounds. Selection reads containment; departure walks.
+ * A direct pressure year selected somebody still carrying an expired departure
+ * note from an earlier mission. A new paid intention begins its own real walk;
+ * only the same binding can continue a previous walk.
  * A loaded consignment is offered at its intended exchange, never in lodging
  * while its carrier is still walking to the departure point.
  */
@@ -65,6 +68,26 @@ describe('capital missions', () => {
         expect(selected?.activity).toBeNull();
         expect(house.resources.spirit_stones).toBe(100);
         expect(state.history.facts).toHaveLength(0);
+    });
+    it('a newly paid mission starts its own walk after an earlier intention expired',()=>{
+        const state=createWorld({seed:'new-departure-intention',skipPriorAges:true,regionCount:0});
+        const from=makeLocation({id:'old-seat',name:'Cloud Pine grounds',kind:'sect_seat'});
+        const room=makeLocation({id:'old-lodging',name:'The dwelling',kind:'chamber',parentId:from.id,tags:['interior']});
+        const to=makeLocation({id:'new-seat',name:'Jade Reed grounds',kind:'sect_seat'});
+        linkLocations(from,to,'road',3);state.locations.push(from,room,to);
+        const day=state.currentDay;
+        const house=makeFaction({id:'receiving-house',name:'Jade Reed House',seatLocationId:to.id,resources:{spirit_stones:100}});
+        state.factions.push(house);
+        const member=createNpc(state.seed,{id:'selected-traveller',locationId:from.id,onDay:day,bornOnDay:day-20*365});
+        member.activity={kind:'travelling',note:'Walking to the departure point.',withIds:[],
+            capitalMissionId:'earlier-intention',standingIn:room.id,fromLocationId:from.id,returnTo:from.id,
+            sinceDay:day-1,untilDay:day-.75};state.npcs.push(member);
+        const selected=journeySelectedToHouseSeat(state,house,member,day);
+        expect(selected?.activity?.capitalMissionId).not.toBe('earlier-intention');
+        expect(selected?.activity?.sinceDay).toBe(day);
+        expect(selected?.activity?.untilDay).toBe(day+.25);
+        expect(selected?.activity?.standingIn).toBe(room.id);
+        expect(selected?.locationId).toBe(from.id);
     });
     it('a parked house hull supplies neither a captain nor an admitted route for a delegation', () => {
         const houseRow = SECTS.find(h => h.id === 'sect-cinnabar-crucible-sect')!;

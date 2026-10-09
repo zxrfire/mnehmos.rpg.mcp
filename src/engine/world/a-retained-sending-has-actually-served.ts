@@ -1,3 +1,4 @@
+import type { RouteQueries } from './locations.js';
 import type { HistoricalFact } from './history.js';
 /** A retained term reads the original activity, actual native legs and their
  * bound receipts. Due dates and nominal destinations establish neither service
@@ -65,7 +66,7 @@ function enoughService(row: RetainedSending, fromDay: number, untilDay: number) 
     return untilDay > fromDay && (row.posting.reason.termBasis !== 'on_site'
         || journeyTimeHasReached(untilDay, fromDay + row.posting.reason.days));
 }
-export function aRetainedMemberActuallyServed(state: WorldState, npc: NpcRecord, row: RetainedSending): boolean {
+export function aRetainedMemberActuallyServed(state: WorldState, npc: NpcRecord, row: RetainedSending,routes?:RouteQueries): boolean {
     if (npc.status !== 'alive' || isLostTrackOf(state, npc) || !row.locationId) return false;
     if(row.dispatchFactId)return aShuttleMemberActuallyServed(state,npc,row);
     const air = airDutyOf(state, npc, row);
@@ -77,12 +78,12 @@ export function aRetainedMemberActuallyServed(state: WorldState, npc: NpcRecord,
         return air.returning != null || npc.locationId === row.locationId && !npc.activity?.airCourseLocationId;
     }
     if (!stillOnThisRetainedSending(npc, row)) return false;
-    const site = siteIntervalOnAnNpcPosting(state.locations, npc);
+    const site = siteIntervalOnAnNpcPosting(state.locations, npc,routes);
     return !!site && site.locationId === row.locationId && enoughService(row, site.fromDay, site.untilDay)
         && journeyTimeHasReached(state.currentDay, site.untilDay)
-        && locationOnNpcJourney(state.locations, npc, (site.fromDay + site.untilDay) / 2) === row.locationId;
+        && locationOnNpcJourney(state.locations, npc, (site.fromDay + site.untilDay) / 2,routes) === row.locationId;
 }
-export function actualRetainedReturnDay(state: WorldState, npc: NpcRecord, row: RetainedSending): number | null {
+export function actualRetainedReturnDay(state: WorldState, npc: NpcRecord, row: RetainedSending,routes?:RouteQueries): number | null {
     if(row.dispatchFactId)return actualShuttleReturnDay(state,npc,row);
     const doing = npc.activity;
     if (!doing || npc.status !== 'alive' || isLostTrackOf(state, npc)) return null;
@@ -95,11 +96,11 @@ export function actualRetainedReturnDay(state: WorldState, npc: NpcRecord, row: 
     }
     const due = row.departsOnDay + row.posting.days;
     return stillOnThisRetainedSending(npc, row) && journeyTimeHasReached(state.currentDay, due)
-        && locationOnNpcJourney(state.locations, npc, state.currentDay) === (doing.returnTo ?? npc.locationId)
+        && locationOnNpcJourney(state.locations, npc, state.currentDay,routes) === (doing.returnTo ?? npc.locationId)
         ? due : null;
 }
-export function aRetainedMemberActuallyReturned(state: WorldState, npc: NpcRecord, row: RetainedSending): boolean {
-    return actualRetainedReturnDay(state, npc, row) != null;
+export function aRetainedMemberActuallyReturned(state: WorldState, npc: NpcRecord, row: RetainedSending,routes?:RouteQueries): boolean {
+    return actualRetainedReturnDay(state, npc, row,routes) != null;
 }
 /** A native appointment at the service boundary, not a stored watch timer. */
 export function retainedAirReturnBoundary(state: WorldState, row: RetainedSending): number | null {

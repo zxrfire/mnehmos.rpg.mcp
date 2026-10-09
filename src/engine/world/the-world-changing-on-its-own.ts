@@ -608,6 +608,7 @@ function pressureTasksForYear(state: WorldState, year: number,
     const completed = new Set(cursor.completed);
     const tasks: { key: string; day: number; run: (day: number) => void }[] = [];
     let schedulePostingDay: (key: string, day: number) => void = () => {};
+    let appointmentRoutes:RouteQueries|undefined;
     const selectedForAFeeder = new Set(factsWithDataValue(state, 'feederSelection', true)
         .map(f => f.data.selectedId).filter((id): id is string => typeof id === 'string'));
     for (const due of physicalRetrievalDeadlines(state)) {
@@ -641,7 +642,8 @@ function pressureTasksForYear(state: WorldState, year: number,
             const leg=typeof legId==='string'?witnessIndexFor(state).byId.get(legId):undefined;
             const arrival = typeof leg?.data.arrivalDay==='number' ? leg.data.arrivalDay
                 : npc.activity.sinceDay + physicalJourneyDays(state.locations,
-                    npc.activity.fromLocationId, npc.locationId, craft, npc.activity.conveyancePower);
+                    npc.activity.fromLocationId, npc.locationId, craft, npc.activity.conveyancePower,1,
+                        appointmentRoutes??=routeQueriesFor(state.locations));
             if (arrival >= year * DAYS_PER_YEAR && arrival < (year + 1) * DAYS_PER_YEAR)
                 tasks.push({ key: `post-arrival:${npc.id}:${arrival}`, day: arrival, run: () => {} });
         }
@@ -3996,6 +3998,7 @@ function settleSending(state: WorldState, input: {
 
 /** Finish the retained posting before its surviving party can return home. */
 function resolveRetainedSendings(state: WorldState, day: number): void {
+    let routes:RouteQueries|undefined;
     const waiting = state.pendingSendings ?? [];
     state.pendingSendings = waiting.filter(row => row.departsOnDay + row.posting.days > day);
     for (const row of waiting) {
@@ -4013,7 +4016,8 @@ function resolveRetainedSendings(state: WorldState, day: number): void {
             && fact.actors.length === row.party.length && row.party.every(member => fact.actors.some(actor => actor.id === member.id)));
         const unserved = available.some(member => {
             const npc = state.npcs.find(person => person.id === member.id)!;
-            return !aRetainedMemberActuallyServed(state, npc, row) || !aRetainedMemberActuallyReturned(state, npc, row);
+            return !aRetainedMemberActuallyServed(state, npc, row,routes??=routeQueriesFor(state.locations))
+                || !aRetainedMemberActuallyReturned(state, npc, row,routes);
         });
         if (unserved) {
             // Keep only genuine still-active work/courses; a superseding activity
@@ -4039,7 +4043,7 @@ function resolveRetainedSendings(state: WorldState, day: number): void {
             location: row.locationId ? getLocation(state, row.locationId) : null
         });
         const actualReturns = available.map(member => actualRetainedReturnDay(state,
-            state.npcs.find(npc => npc.id === member.id)!, row)).filter((value): value is number => value != null);
+            state.npcs.find(npc => npc.id === member.id)!, row,routes)).filter((value): value is number => value != null);
         if (actualReturns.length > 0) sending.returnsOnDay = Math.max(...actualReturns);
         // People lost along the way remain losses in the departing party's account.
         const alreadyLost = row.party.filter(member => !available.some(p => p.id === member.id));
@@ -4060,7 +4064,7 @@ function resolveRetainedSendings(state: WorldState, day: number): void {
             const at = state.npcs.findIndex(npc => npc.id === member.id);
             const current = state.npcs[at];
             if (!current || current.status !== 'alive') continue;
-            const returnedOn = actualRetainedReturnDay(state, current, row);
+            const returnedOn = actualRetainedReturnDay(state, current, row,routes);
             if (returnedOn !== null) state.npcs[at] = { ...current,
                 activity: companyAfterPassage(current, returnedOn) };
         }
@@ -4666,7 +4670,8 @@ export function applyPostings(state: WorldState, year: number, day: number,
         && populationWeightOf(l) > 0);
     // Genuine provider-owned inherited terminals are staffed work sites even
     // when their catalog location is a ruin. Ordinary empty ruins stay excluded.
-    const watches = publicWatchTargetsTogether(state);
+    routes ??= routeQueriesFor(state.locations);
+    const watches = publicWatchTargetsTogether(state,routes);
     if (towns.length === 0 && watches.size === 0) return 0;
     if (!routes || routes.locations !== state.locations) routes = routeQueriesFor(state.locations);
 
@@ -4946,10 +4951,10 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
     for (let i = 0; i < state.npcs.length; i++) {
         let npc = state.npcs[i];
         if (npc === undefined || npc.status !== 'alive') continue;
-        if(continueNpcDepartureApproach(state,npc,day))continue;
+        if(continueNpcDepartureApproach(state,npc,day,routes))continue;
         // Actual-clock continuation owns linked work, including an unladen return.
         if (npc.activity?.retrievalRequestId) continue;
-        const shuttle=(state.pendingSendings??[]).find(row=>row.dispatchFactId
+        const shuttle=npc.activity?.capitalMissionId&&(state.pendingSendings??[]).find(row=>row.dispatchFactId
             &&row.dispatchFactId===npc.activity?.capitalMissionId);
         if(shuttle&&continueActualHouseAirShuttle(state,shuttle,day))continue;
         if (npc.activity?.capitalMissionId && npc.activity.untilDay != null
@@ -5063,7 +5068,7 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
         // receipt/body for retained settlement; a disconnected walking graph
         // cannot put it back at the service post or clear its return binding.
         if ((state.pendingSendings ?? []).some(row => row.party.some(member => member.id === npc.id)
-            && actualRetainedReturnDay(state, npc, row) !== null)) continue;
+            && actualRetainedReturnDay(state, npc, row,routes) !== null)) continue;
         if (doing.kind === 'travelling') {
             const ground = locationOnNpcJourney(state.locations, npc, day, routes, undefined, id=>state.npcs.find(person=>person.id===id));
             if (ground !== doing.returnTo) {

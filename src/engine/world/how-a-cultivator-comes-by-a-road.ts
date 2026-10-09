@@ -142,12 +142,14 @@ function regionLocationFor(state: WorldState, catalogRegionId: string): Location
 }
 
 /** Which province a location is in, walking up the parent chain. */
-export function regionCatalogIdOf(state: WorldState, locationId: string | null): string | null {
-    let current = locationId ? getLocation(state, locationId) : null;
+export function regionCatalogIdOf(state: WorldState, locationId: string | null,
+    places?:ReadonlyMap<string,LocationRecord>): string | null {
+    const at=(id:string)=>places?places.get(id)??null:getLocation(state,id);
+    let current = locationId ? at(locationId) : null;
     for (let hops = 0; current && hops < 8; hops++) {
         const id = current.data.catalogRegionId;
         if (typeof id === 'string') return id;
-        current = current.parentId ? getLocation(state, current.parentId) : null;
+        current = current.parentId ? at(current.parentId) : null;
     }
     return null;
 }

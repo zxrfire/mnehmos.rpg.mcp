@@ -50,18 +50,19 @@ export function daysOfABookedPassage(npcs: readonly NpcRecord[], lane: SeaLane,
 
 /** The ordinary planner books the existing board's affordable, open passage once. */
 export function bookNpcPassageForRoute(state: { locations: readonly LocationRecord[]; npcs?: readonly NpcRecord[]; seed?: string },
-    npc: NpcRecord, destinationId: string, day: number, purpose: string): NpcRecord | null {
+    npc: NpcRecord, destinationId: string, day: number, purpose: string, routes?:RouteQueries): NpcRecord | null {
     if (!npc.locationId) return null;
     if('history' in state){
         const world=state as WorldState;
-        const ground=exteriorGroundOfDeparture(world,npc.locationId);
+        routes ??= routeQueriesFor(state.locations);
+        const ground=exteriorGroundOfDeparture(world,npc.locationId,routes.places);
         const to=state.locations.find(place=>place.id===destinationId);
-        if(!ground||!to||!publicShipLinesFrom(world,ground.name,day).some(line=>line.to===to.name))return null;
-        const approach=prepareNpcDepartureApproach(state as WorldState,npc,destinationId,day,purpose,'ship');
+        if(!ground||!to||!publicShipLinesFrom(world,ground.name,day,routes).some(line=>line.to===to.name))return null;
+        const approach=prepareNpcDepartureApproach(state as WorldState,npc,destinationId,day,purpose,'ship',undefined,routes);
         if(approach!==undefined)return approach;
     }
     const quote = quotePublicPassage(typeof state.seed === 'string'
-        ? state as typeof state & { seed: string } : { ...state, seed: npc.id }, npc.locationId, destinationId, day);
+        ? state as typeof state & { seed: string } : { ...state, seed: npc.id }, npc.locationId, destinationId, day,1,[],undefined,[],routes);
     if (!quote || npc.spiritStones < quote.fareStones) return null;
     return startNpcPassage(state.locations, npc, { lane: quote.lane, destinationId, onDay: day,
         days: quote.days, fareStones: quote.fareStones, purpose });

@@ -11,9 +11,9 @@ import { theProvinceAround } from './ground-holder.js';
 import { isBelowTheLid } from './layers.js';
 import { isAwayOnSomething, isTheWorldsToMove, setLocation, type NpcRecord } from './npc-state.js';
 import { routeQueriesFor, walkingDaysFrom, type RouteQueries } from './locations.js';
-import { beginActualDepartureApproach, finishActualDepartureApproach, readActualDepartureApproach, exteriorGroundOfDeparture } from './departure-approach.js';
+import { departureSceneFor, beginActualDepartureApproach, finishActualDepartureApproach, readActualDepartureApproach, exteriorGroundOfDeparture } from './departure-approach.js';
 import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
-import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
+import { departureAreaAt } from './where-in-a-place-somebody-is-standing.js';
 import { journeyNeedsWater, locationOnNpcJourney } from './places-on-the-way.js';
 import { earliestQuotedPublicPassage, onSponsoredPublicPassage, publicShipLinesFrom,
     quotePublicPassage, recordPublicPassage, thePortsShipsPutInAt,
@@ -45,7 +45,7 @@ function publicRoute(state: WorldState, fromId: string, toId: string, graph: Rou
     const key = `${fromId}|${toId}`;
     if (routes.has(key)) return routes.get(key)!;
     const byName = new Map(state.locations.map(place => [place.name, place]));
-    const ports = thePortsShipsPutInAt(state).map(name => byName.get(name)).filter(
+    const ports = thePortsShipsPutInAt(state,graph).map(name => byName.get(name)).filter(
         (place): place is LocationRecord => place !== undefined);
     const outward = walkingDaysFrom(state.locations, fromId, undefined, graph);
     const inward = walkingDaysFrom(state.locations, toId, undefined, graph);
@@ -64,7 +64,7 @@ function publicRoute(state: WorldState, fromId: string, toId: string, graph: Rou
         const last = inward.get(port.id);
         if (last !== undefined && !journeyNeedsWater(state.locations, port.id, toId, graph))
             add(port.id, toId, last, 'land');
-        for (const line of publicShipLinesFrom(state, port.name, 0)) {
+        for (const line of publicShipLinesFrom(state, port.name, 0,graph)) {
             const other = byName.get(line.to);
             if (other && nodes.has(other.id)) add(port.id, other.id, line.days, 'ship');
         }
@@ -117,10 +117,10 @@ function quotedRoute(state: WorldState, legs: readonly MissionLeg[], fromDay: nu
         }
         const from = state.locations.find(place => place.id === leg.fromId);
         const to = state.locations.find(place => place.id === leg.toId);
-        const line = from && to ? publicShipLinesFrom(state, from.name, day).find(row => row.to === to.name) : undefined;
+        const line = from && to ? publicShipLinesFrom(state, from.name, day,graph).find(row => row.to === to.name) : undefined;
         if (!line) return null;
         const quote = earliestQuotedPublicPassage(state, leg.fromId, leg.toId,
-            day, latestArrival, heads, considered);
+            day, latestArrival, heads, considered,graph);
         if (!quote) return null;
         considered.push(quote);
         day = quote.arrivalDay;
@@ -138,12 +138,14 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
     const from = state.locations.find(place => place.id === leg.fromId);
     const to = state.locations.find(place => place.id === leg.toId);
     if (!from || !to) return false;
-    const station=leg.by==='land'?null:theAreasOf(state,from).areas.find(area=>area.for==='landing');
+    graph ??= routeQueriesFor(state.locations);
+    const station=leg.by==='land'?null:departureAreaAt(state,from,'landing',graph);
     {
         const request={intentId:missionId,target:{locationId:from.id,areaId:station?.id}};
-        const arrivals=members.map(member=>member.activity?.note==='Walking to the departure point.'
-            ?finishActualDepartureApproach(state,member.id,request,day)
-            :beginActualDepartureApproach(state,member.id,request,day));
+        const scene=departureSceneFor(state,graph);
+        const arrivals=members.map(member=>member.activity?.note==='Walking to the departure point.'&&member.activity.capitalMissionId===missionId
+            ?finishActualDepartureApproach(state,member.id,request,day,graph,scene)
+            :beginActualDepartureApproach(state,member.id,request,day,member,graph,scene));
         if(arrivals.some(result=>result.kind==='refused'||result.kind==='needs_geographic_leg'))return false;
         let walking=false;
         for(const result of arrivals)if('actor' in result){
@@ -168,7 +170,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
         if (distance === undefined || journeyNeedsWater(state.locations, from.id, to.id, graph)) return false;
         due = day + Math.max(1, Math.ceil(distance));
     } else {
-        const line = publicShipLinesFrom(state, from.name, day).find(row => row.to === to.name);
+        const line = publicShipLinesFrom(state, from.name, day,graph).find(row => row.to === to.name);
         if (!line) return false;
         const mission = witnessIndexFor(state).byId.get(missionId);
         const reservations = mission?.data.publicReservations;
@@ -188,7 +190,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
             }
             return true;
         }
-        quote = quotePublicPassage(state, from.id, to.id, departure, members.length, [], undefined, members.map(member=>member.id));
+        quote = quotePublicPassage(state, from.id, to.id, departure, members.length, [], undefined, members.map(member=>member.id),graph);
         if (!quote) {
             const retry = day + 30;
             for (const member of members) {
@@ -238,9 +240,10 @@ function sendByPublicPassage(state: WorldState, house: FactionRecord, venue: Loc
     const departureGround = state.locations.find(place => place.id === route[0]?.fromId);
     if (!departureGround) return;
     const departureArea = route[0]?.by === 'ship'
-        ? theAreasOf(state, departureGround).areas.find(area => area.for === 'landing')?.id : null;
+        ? departureAreaAt(state,departureGround,'landing',graph)?.id : null;
+    const scene = departureSceneFor(state,graph);
     const approaches = party.map(member => readActualDepartureApproach(state, member.id,
-        {intentId: 'public-mission-quote', target: {locationId: departureGround.id, areaId: departureArea}}, day));
+        {intentId: 'public-mission-quote', target: {locationId: departureGround.id, areaId: departureArea}}, day,undefined,graph,scene));
     if (approaches.some(read => read.kind !== 'ready' && read.kind !== 'local_walk')) return;
     const initialWalk = approaches.some(read => read.kind === 'local_walk') ? LOCAL_WALK_DAYS : 0;
     const considered: PublicPassageQuote[] = [];
@@ -283,7 +286,7 @@ export function journeySelectedToHouseSeat(state: WorldState, house: FactionReco
     if (!house.seatLocationId || !npc.locationId) return null;
     const graph = routeQueriesFor(state.locations);
     const physical = locationOnNpcJourney(state.locations, npc, day, graph);
-    const from = physical && exteriorGroundOfDeparture(state, physical)?.id;
+    const from = physical && exteriorGroundOfDeparture(state, physical,graph.places)?.id;
     if (!from) return null;
     if (from === house.seatLocationId && physical === npc.locationId && (npc.activity?.kind !== 'travelling'
         || npc.activity.untilDay != null && npc.activity.untilDay <= day))
@@ -292,9 +295,9 @@ export function journeySelectedToHouseSeat(state: WorldState, house: FactionReco
     if (!route) return null;
     const departureGround = state.locations.find(place => place.id === from)!;
     const departureArea = route[0]?.by === 'ship'
-        ? theAreasOf(state, departureGround).areas.find(area => area.for === 'landing')?.id : null;
+        ? departureAreaAt(state,departureGround,'landing',graph)?.id : null;
     const approach = readActualDepartureApproach(state, npc.id,
-        {intentId: 'selected-passage-quote', target: {locationId: from, areaId: departureArea}}, day);
+        {intentId: 'selected-passage-quote', target: {locationId: from, areaId: departureArea}}, day,undefined,graph);
     if (approach.kind !== 'ready' && approach.kind !== 'local_walk') return null;
     const considered: PublicPassageQuote[] = [];
     const arrival = quotedRoute(state, route, day, 1, considered, npc.cultivation.lifespanEndsOnDay, graph,
@@ -429,11 +432,11 @@ export function capitalCalendar(state: WorldState, year: number): CapitalOccasio
 }
 
 /** Free hands, after the existing head, gate and room reads have kept their people. */
-function spareFor(state: WorldState, house: FactionRecord, day: number): NpcRecord[] {
+function spareFor(state: WorldState, house: FactionRecord, day: number,graph:RouteQueries): NpcRecord[] {
     const roll = state.npcs.filter(n => n.status === 'alive' && n.factionId === house.id && isTheWorldsToMove(n));
     const grounds = new Map(roll.map(n => {
-        const physical = locationOnNpcJourney(state.locations,n,day);
-        return [n.id,physical ? exteriorGroundOfDeparture(state,physical)?.id : null];
+        const physical = locationOnNpcJourney(state.locations,n,day,graph);
+        return [n.id,physical ? exteriorGroundOfDeparture(state,physical,graph.places)?.id : null];
     }));
     const rooms = portfoliosIn({ locations: state.locations, sectId: house.id,
         roll: roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })), rankCount: house.ranks.length });
@@ -472,7 +475,7 @@ export function sendCapitalBusiness(state: WorldState, year: number, quarter: nu
         const nearby = cities.filter(l => theProvinceAround(state.locations, l.id) === province);
         const venues = nearby.length && rng.chance(0.8) ? nearby : cities;
         const venue = venues[rng.int(0, venues.length - 1)]!;
-        const spare = spareFor(state, house, day);
+        const spare = spareFor(state, house, day,graph);
         if (!spare.length) continue;
         const reason = ['trade and purchases', 'carrying the house report', 'escorting the house envoy'][rng.int(0, 2)]!;
         const party = [...spare].sort((a, b) => forStream(state.seed, 'capital-business-hand', house.id,
@@ -497,7 +500,7 @@ export function sendCapitalDelegations(state: WorldState, occasion: CapitalOccas
         const rng = forStream(state.seed, 'capital-delegation', venue.id, occasion.kind, occasion.onDay, house.id);
         const near = theProvinceAround(state.locations, house.seatLocationId) === province;
         if (!rng.chance(near ? 0.75 : 0.2)) continue;
-        const spare = spareFor(state, house, day);
+        const spare = spareFor(state, house, day,graph);
         const interest = (n: NpcRecord) => 1 + n.goals.filter(g => g.status === 'active'
             && (occasion.kind === 'auction' ? g.kind === 'wealth' || g.kind === 'cultivation'
                 : g.kind === 'status' || g.kind === 'cultivation')).reduce((s, g) => s + g.priority, 0)

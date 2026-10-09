@@ -39,10 +39,12 @@ export function practiceAmongNeighbours(state: WorldState, npc: NpcRecord, day: 
 export function advanceSummitBodies(state: WorldState, fromDay: number, toDay: number): DeathHandoff[] {
     const deaths: DeathHandoff[] = [];
     expireElementalWorks(state, toDay);
+    const places = new Map(state.locations.map(place => [place.id, place]));
+    const works = new Set(state.objects.map(object => object.id));
     for (let at = 0; at < state.npcs.length; at++) {
         let npc = state.npcs[at]!;
         if (npc.status !== 'alive' || npc.tags.includes(PLAYER_ROW_TAG)) continue;
-        const place = state.locations.find(l => l.id === npc.locationId);
+        const place = npc.locationId ? places.get(npc.locationId) : undefined;
         if (!place) continue;
         const prefix = 'elemental-stay:';
         const old = npc.tags.find(t => t.startsWith(prefix));
@@ -56,7 +58,7 @@ export function advanceSummitBodies(state: WorldState, fromDay: number, toDay: n
                 const hurtOn = Math.max(firstHarm, fromDay + 1);
                 npc = bodyTaken(npc, maxBodyOf(npc) * 0.1, hurtOn);
                 const exit = place.links.filter(l => l.open && !l.requiresKeyId)
-                    .map(l => state.locations.find(p => p.id === l.toLocationId))
+                    .map(l => places.get(l.toLocationId))
                     .find(p => {
                         if (!p || elementalTolerance(npc.cultivation.realmOrdinal, npc.cultivation.injuries, p) !== null) return false;
                         const access = evaluateAccess(p, { realmOrdinal: npc.cultivation.realmOrdinal, onDay: hurtOn });
@@ -87,11 +89,11 @@ export function advanceSummitBodies(state: WorldState, fromDay: number, toDay: n
         if (npc.status === 'alive' && npc.activity?.kind === 'their_practice') {
             const element = expressedElement(npc.cultivation.techniqueIds);
             const id = `elemental-work:${npc.id}:${npc.activity.sinceDay}`;
-            if (element && !state.objects.some(o => o.id === id)) {
+            if (element && !works.has(id)) {
                 const work = makeElementalWork({ id, makerId: npc.id, makerName: npc.name,
                     locationId: npc.locationId!, ordinal: npc.cultivation.realmOrdinal,
                     injuries: npc.cultivation.injuries, element, onDay: toDay });
-                if (work) state.objects.push(work);
+                if (work) { state.objects.push(work); works.add(work.id); }
             }
         }
         state.npcs[at] = npc;

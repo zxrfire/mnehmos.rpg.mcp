@@ -45,7 +45,7 @@ import { isOpenWater } from '../../data/cultivation/regions.js';
 import { whatKindOfPlace } from './what-somebody-knows-of-the-land.js';
 import { SEA_LANES } from '../../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
 import { isAwayOnSomething, isActing, PLAYER_ROW_TAG, type ActivityKind, type NpcRecord } from './npc-state.js';
-import type { LocationRecord, RouteQueries } from './locations.js';
+import type { LocationRecord, RouteQueries, PlaceScope } from './locations.js';
 import {routeQueriesFor} from './locations.js';
 import type { WorldState } from './world-state.js';
 import { routineOf, routineTime } from './npc-routines.js';
@@ -230,6 +230,29 @@ function anArea(place: Pick<LocationRecord, 'id'>, what: WhatAnAreaIsFor, name: 
     return { id: `${place.id}${MARK}${what}${MARK}${slug(name)}`, placeId: place.id, name, for: what };
 }
 
+/** Facilities have their first area regardless of who is standing there. */
+export function departureAreaAt(state: State, place: LocationRecord,
+    kind: 'landing' | 'carriage_station' | 'spirit_berth',scope?:PlaceScope): AnAreaOfAPlace | undefined {
+    return theKindsAt(state,place,routineTime(state),kind,scope).includes(kind)
+        ?anArea(place,kind,theNamesFor(place,kind)[0]!):undefined;
+}
+
+function theKindsAt(state: State,place: LocationRecord,now: number,
+    only?:'landing'|'carriage_station'|'spirit_berth',scope?:PlaceScope): WhatAnAreaIsFor[] {
+    return [...(only?[]:theKindsOf(place)),
+        ...(only==='spirit_berth'?[]:publicTransportHubsAt(state,place.name,now,
+            {scope,kind:only}).map(hub=>hub.kind)),
+        ...((!only||only==='carriage_station')&&(state.objects??[]).some(object=>{
+            if(object.locationId!==place.id||!object.tags.includes('conveyance'))return false;
+            const craft=getConveyance(String(object.data.conveyanceId??''));
+            return craft&&!craft.crossesGroundThatCannotBeWalked&&!craft.waterOnly;
+        })?['carriage_station' as const]:[]),
+        ...((!only||only==='spirit_berth')&&(place.kind==='sect_seat'||(state.objects??[]).some(object=>object.locationId===place.id
+            &&object.tags.includes('conveyance')
+            &&getConveyance(String(object.data.conveyanceId??''))?.crossesGroundThatCannotBeWalked))
+            ?['spirit_berth' as const]:[])];
+}
+
 /**
  * A room somebody has paid for at an inn here, as an area of the place: nobody is dealt into it,
  * so standing in it is standing alone but for whoever is with them. The owner: "go to your room,
@@ -366,7 +389,7 @@ export function theAreasOf(
                 exchangeHands.add(person.id);
         }
     }
-    const workers = betweenEndpoints ? new Map<PublicCounterKind, NpcRecord>() : workersAtPublicCounters(state, place.name, people, publicCountersAt(state, place.name, state.currentDay), routes);
+    const workers = betweenEndpoints ? new Map<PublicCounterKind, NpcRecord>() : workersAtPublicCounters(state, place.name, people, publicCountersAt(state, place.name, state.currentDay,routes), routes);
     const countersByPerson = new Map([...workers].map(([counter, person]) => [person.id, counter]));
     const kindOf = (group: NpcRecord[]): WhatAnAreaIsFor => {
         if (standingWith?.physical?.hull) return standingWith.physical.hull.areaKind;
@@ -421,17 +444,8 @@ export function theAreasOf(
             whereIs.set(npc.id, room.id);
         }
     }
-    for (const what of (standingWith?.physical?.hull ? [standingWith.physical.hull.areaKind] : betweenEndpoints ? ['here' as const] : [...theKindsOf(place),
-        ...publicTransportHubsAt(state, place.name, now).map(hub => hub.kind),
-        ...((state.objects??[]).some(object=>{
-            const craft=getConveyance(String(object.data.conveyanceId??''));
-            return object.locationId===place.id&&object.tags.includes('conveyance')
-                &&craft&&!craft.crossesGroundThatCannotBeWalked&&!craft.waterOnly;
-        })?['carriage_station' as const]:[]),
-        ...(place.kind === 'sect_seat' || (state.objects ?? []).some(object =>
-            object.locationId === place.id && object.tags.includes('conveyance')
-              && getConveyance(String(object.data.conveyanceId ?? ''))?.crossesGroundThatCannotBeWalked)
-             ? ['spirit_berth' as const] : [])])) {
+    for (const what of (standingWith?.physical?.hull ? [standingWith.physical.hull.areaKind]
+        : betweenEndpoints ? ['here' as const] : theKindsAt(state,place,now,undefined,routes))) {
         // Anybody bigger than an area is taken three at a time; then in the order of a draw per
         // person on its own stream, the one on watch first so the gate a road reaches has them.
         const pieces = groups.filter(group => kindOf(group) === what)

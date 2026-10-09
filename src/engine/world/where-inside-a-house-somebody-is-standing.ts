@@ -54,7 +54,7 @@ import { isActing, type NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 import { whoDispensesAtTheHouse } from './who-is-actually-seeing-to-wounds.js';
 import { whoIsAtAClosedLesson } from './where-a-master-takes-their-own-disciples.js';
-import { routineOf } from './npc-routines.js';
+import { routineOf, routineLocationOf } from './npc-routines.js';
 import { theLodgingsOfAHouse, whichRoomARungGets, type LodgingRoom } from './the-room-a-house-gives-you.js';
 
 /** One compound, as much of it as a placement read needs. */
@@ -282,14 +282,14 @@ export function npcsStandingIn(
     const seatId = compounds.seatOf.get(locationId);
     if (seatId === undefined) {
         return state.npcs.filter(n => isActing(n.status)
-            && routineOf(state, n, routes).locationId === locationId)
+            && routineLocationOf(state, n, routes) === locationId)
             .sort((a, b) => a.id.localeCompare(b.id));
     }
     const compound = compounds.bySeat.get(seatId)!;
     const people = new Set(state.npcs.map(n => n.id));
     return state.npcs
         .filter(n => {
-            const at = routineOf(state, n, routes).locationId;
+            const at = routineLocationOf(state, n, routes);
             return isActing(n.status) && at !== null && (at === seatId || compound.inside.has(at));
         })
         .filter(n => whereTheyAreStanding(state, compounds, n, people, routes) === locationId)
