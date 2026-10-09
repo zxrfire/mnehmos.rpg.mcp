@@ -31,32 +31,48 @@ export function loadExchangeConsignment(state: WorldState, seller: NpcRecord, da
     const wares = [...waresMadeBy(house.id)].sort((a, b) =>
         forStream(state.seed, 'exchange-ware', seller.id, day, a).next()
         - forStream(state.seed, 'exchange-ware', seller.id, day, b).next()).slice(0, rng.int(1, 3));
+    const auctioned = new Set(pendingAuctionLots(state).map(fact => fact.data.objectId));
     for (const id of wares) {
-        const objectId = `exchange:${seller.id}:${day}:${id}`;
-        if (state.objects.some(o => o.id === objectId)) continue;
+        const freshId = `exchange:${seller.id}:${day}:${id}`;
+        if (state.objects.some(o => o.id === freshId) || factsWithDataValue(state, 'stintDay', day)
+            .some(fact => fact.data.exchangeConsignment === true && fact.data.wareId === id
+                && fact.actors.some(actor => actor.id === seller.id))) continue;
         const ingredient = whatAnIngredientIs(id);
         const pill = getPill(id);
         const price = ingredient?.value ?? (pill ? pillCashPrice(pill) : null);
         if (price == null || price <= 0) continue;
+        const stockAt = state.objects.findIndex(object => object.ownerId === house.id && object.possessorId === null
+            && object.locationId === ground && !isRuined(object) && !auctioned.has(object.id)
+            && object.tags.includes('exchange') && whatThisThingIs(object)?.kindId === id);
+        const stock = stockAt >= 0 ? state.objects[stockAt]! : null;
+        const quantity = stock ? whatThisThingIs(stock)!.quantity : 0;
+        const objectId = quantity === 1 ? stock!.id : freshId;
         const purse = Number(house.resources.spirit_stones ?? 0);
-        if (purse < price) continue;
-        house.resources.spirit_stones = purse - price;
+        if (!stock && purse < price) continue;
+        if (!stock) house.resources.spirit_stones = purse - price;
         const name = ingredient?.name ?? pill!.name;
         const fact = appendWorldFact(state, makeFact({ day, kind: 'gathering', visibility: 'faction',
             summary: `${house.name} loaded ${name} for ${destination}.`,
             locationId: ground, factionIds: [house.id],
             actors: [{ id: seller.id, name: seller.name, role: 'factor' }],
-            data: { exchangeConsignment: true, objectId, stintDay: day } }), { recur: false });
-        const object = makeObject({ id: objectId, name, kind: ingredient ? 'material' : 'pill',
+            data: { exchangeConsignment: true, objectId, wareId: id, stintDay: day } }), { recur: false });
+        const object = quantity === 1 ? { ...stock!, data: { ...stock!.data, stintDay: day } }
+            : makeObject({ id: objectId, name, kind: ingredient ? 'material' : 'pill',
             ownerId: house.id, ownerName: house.name, possessorId: seller.id, locationId: ground,
             tags: ['exchange', `house:${house.id}`, `grade:${ingredient?.grade ?? pill!.grade}`],
             data: { ...(ingredient ? { materialId: id } : { pillId: id }), stintDay: day },
             provenance: [{ onDay: day, holderId: null, holderName: house.name, how: ingredient ? 'found' : 'crafted',
                 source: house.name, previousHolderId: null, previousHolderName: null, factId: fact.id,
-                note: 'Workshop output or gathered regional export, paid out of the house stores.' }] });
-        state.objects.push(transferPossession(object, { onDay: day, toHolderId: seller.id,
+                note: stock ? 'Separated from returned house stock.'
+                    : 'Workshop output or gathered regional export, paid out of the house stores.' }] });
+        const loaded = transferPossession(object, { onDay: day, toHolderId: seller.id,
             toHolderName: seller.name, how: 'lent', transfersOwnership: false, factId: fact.id,
-            note: 'Consigned to the exchange for this stint.' }));
+            note: 'Consigned to the exchange for this stint.' });
+        if (quantity === 1) state.objects[stockAt] = loaded;
+        else {
+            if (stock) state.objects[stockAt] = { ...stock, data: { ...stock.data, quantity: quantity - 1 } };
+            state.objects.push(loaded);
+        }
     }
 }
 

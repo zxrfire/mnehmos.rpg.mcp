@@ -35,6 +35,25 @@ then their actual recruiter at the same place. Each pays the ordinary fare from
 existing funds; the player's purse is never spent by background recruitment.
 
 Background transport uses the existing foreground authority, `isPlayerInvolved`.
+Personal fostering is paid through the actual favour ledger. Its receiving house
+must still exist and accept a word; the ordinary intake's modelled-roll budget is
+not a physical capacity and cannot veto the parent's personal placement. The
+child counts on the receiving roll, reducing subsequent ordinary intake. A held
+favour is settled once; otherwise the sponsor's actual obligation is recorded.
+
+Completed background business retains a mortal lifetime of detailed dockets,
+the last older visit per person/place, and every actual referenced or outstanding
+receipt. The ordinary yearly boundary removes redundant older routine rows
+through the existing recurrence and witness pruning hooks and removes their
+trajectory backlinks. Career events, priced deeds and foreground records remain.
+Unclaimed background mortal/earth goods use their native counted storage: equal
+custody, ground, kind and grade can fold into an amount. Tracked goods, claims,
+inherited/stolen provenance and played ownership remain exact. Existing live
+references protect identities; surviving references to folded stock use its row.
+Returned exchange goods are reloaded at their actual departure ground before
+buying workshop output. A load takes one unit and pays only for newly produced
+stock; repeated loading on the same appointment does not load or pay again.
+
 Distant departures bypass scene placement and stepped doors. Public itineraries
 retain their actual fares, timetables and road durations; contact realizes the
 current accepted ship without another fare or different dates. A distant owned

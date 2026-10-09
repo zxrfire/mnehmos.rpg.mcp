@@ -18,6 +18,7 @@ import { exchangeOffers, loadExchangeConsignment, returnExchangeConsignment, tra
 import { enterAnOpenCompetition, settleOpenCompetitions } from '../../../src/engine/world/entering-an-open-competition.js';
 import { theDayItFallsIn } from '../../../src/engine/world/a-competition-anybody-may-enter.js';
 import { stageCeilingFor } from '../../../src/engine/social/discovery.js';
+import { whatThisThingIs } from '../../../src/engine/world/what-a-house-gives-merit-for.js';
 import { SECTS } from '../../../src/data/cultivation/sects.js';
 
 function arrangement() {
@@ -36,6 +37,29 @@ function arrangement() {
 }
 
 describe('exchange goods and continuous posts', () => {
+    it('loads returned goods at the actual departure ground before buying new output', () => {
+        const { state, house, seller } = arrangement();
+        loadExchangeConsignment(state, seller, 0);
+        const first = state.objects.map(object => object.id);
+        returnExchangeConsignment(state, seller, 90, 0);
+        state.npcs[0] = { ...state.npcs[0]!, locationId: 'seat', activity: {
+            kind: 'stationed', note: 'Loading at home.', sinceDay: 90, untilDay: 180, withIds: [], returnTo: 'seat'
+        } };
+        const purse = Number(house.resources.spirit_stones);
+        const ids = new Set(state.objects.map(object => object.id));
+        loadExchangeConsignment(state, state.npcs[0]!, 90);
+        const reused = state.objects.filter(object => first.includes(object.id) && object.possessorId === seller.id);
+        expect(reused.length).toBeGreaterThan(0);
+        expect(reused.every(object => object.locationId === 'seat')).toBe(true);
+        expect(purse - Number(house.resources.spirit_stones)).toBe(state.objects.filter(object => !ids.has(object.id))
+            .reduce((sum, object) => sum + whatThisThingIs(object)!.marketStones!, 0));
+        const after = state.objects.map(object => ({ id: object.id, holder: object.possessorId }));
+        const paid = Number(house.resources.spirit_stones);
+        loadExchangeConsignment(state, state.npcs[0]!, 90);
+        expect(state.objects.map(object => ({ id: object.id, holder: object.possessorId }))).toEqual(after);
+        expect(Number(house.resources.spirit_stones)).toBe(paid);
+        expect(reused.every(object => ids.has(object.id))).toBe(true);
+    });
     it('moves finite workshop stock in either direction and returns the house receipts', () => {
         const { state, house, seller, buyer } = arrangement();
         loadExchangeConsignment(state, seller, 0);

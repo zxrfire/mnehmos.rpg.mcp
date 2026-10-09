@@ -8,6 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
+import { writeFileSync } from 'node:fs';
 
 /**
  * A HOUSE MAY FALL. THE LADDER MAY NOT.
@@ -83,8 +84,21 @@ describe('a house may fall; the ladder may not', () => {
         const seededFactionIds = seeded.factions.map(f => f.id);
         // The five hundred years `demography.test.ts` keeps, first, so this waits
         // on that walk rather than repeating it.
-        await soakedWorld('drift-guard', { years: 500 });
+        const bytes = (rows: unknown[]) => rows.reduce<number>((sum, row) =>
+            sum + Buffer.byteLength(JSON.stringify(row)), 2) + Math.max(0, rows.length - 1);
+        const census = (world: typeof seeded, years: number) => ({ years, day: world.currentDay,
+            collections: Object.fromEntries(Object.entries(world).filter(([, value]) => Array.isArray(value))
+                .map(([key, value]) => [key, { rows: (value as unknown[]).length, bytes: bytes(value as unknown[]) }])),
+            facts: { rows: world.history.facts.length, bytes: bytes(world.history.facts) },
+            memories: { rows: world.memories.records.length, bytes: bytes(world.memories.records) } });
+        const growth = [census(await soakedWorld('drift-guard', { years: 500 }), 500)];
+        growth.push(census(await soakedWorld('drift-guard', { years: 1000 }), 1000));
+        const pastLimit = await soakedWorld('drift-guard', { years: 1200 });
+        expect(pastLimit.currentDay).toBe(seeded.currentDay + 1200 * 365);
+        growth.push(census(pastLimit, 1200));
         const state = await soakedWorld('drift-guard', { years: HORIZON_YEARS });
+        growth.push(census(state, HORIZON_YEARS));
+        writeFileSync('.claude/ladder-world-growth.json', JSON.stringify(growth, null, 2));
         const alive = state.npcs.filter(n => n.status === 'alive');
 
         // ── Decline, at the level decline belongs to. ──────────────────────

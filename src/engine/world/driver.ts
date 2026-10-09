@@ -74,6 +74,7 @@ import {
 import type { KnowledgeRecord } from '../social/knowledge.js';
 import type { ObligationInput } from '../social/grudges.js';
 import { theWorldForgetsTheMortalDead } from './world-state.js';
+import { keepTheBusinessStillOnTheBooks } from './the-business-the-world-still-keeps.js';
 import type { WorldState } from './world-state.js';
 
 export interface AdvanceForPlayOptions {
@@ -355,6 +356,7 @@ function advanceAtHand(state: WorldState, opts: AdvanceForPlayOptions): PlayAdva
         settleWorldAirTravellers(state, state.currentDay);
         opts.atWorldBoundary?.(state, state.currentDay);
         theWorldForgetsTheMortalDead(state);
+        keepTheBusinessStillOnTheBooks(state);
         remaining -= time.daysAdvanced;
         if (time.interrupted) {
             interrupted = true;

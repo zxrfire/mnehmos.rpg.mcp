@@ -1,0 +1,149 @@
+/** Completed background business keeps visits and live evidence, not every docket. */
+import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { lifespanForOrdinal } from '../cultivation/realms.js';
+import { isPlayerInvolved } from './background-incident-draw.js';
+import { isTheWorldsToMove } from './npc-state.js';
+import { howAGradeIsStored, isRuined } from './possessions.js';
+import { whatThisThingIs } from './what-a-house-gives-merit-for.js';
+import { noteLedgerPruned } from './a-fact-that-keeps-happening-is-one-row.js';
+import { factsWithData, referenceKeys, witnessHistoryWasPruned, witnessIndexFor } from './witness-reaction-index.js';
+import type { HistoricalFact } from './history.js';
+import type { WorldState } from './world-state.js';
+
+const SWEPT = new WeakMap<WorldState, number>();
+const routine = (fact: HistoricalFact): boolean => {
+    const data = fact.data;
+    return !('deedWeight' in data) && (data.publicMission === true || data.exchangeConsignment === true
+        || data.exchangeReturn === true || data.exchangeSale === true || data.exchangeHandover === true
+        || data.auctionLot === true || data.auctionBid === true || data.auctionResult === true
+        || data.capitalCompetition === true || data.capitalOccasion === true
+        || data.houseProgress === true || typeof data.houseBusiness === 'string');
+};
+
+/** The yearly boundary shares the dead-row sweep's index and reference hooks. */
+export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
+    const year = Math.floor(state.currentDay / DAYS_PER_YEAR);
+    if (SWEPT.get(state) === year) return;
+    SWEPT.set(state, year);
+    const cutoff = state.currentDay - lifespanForOrdinal(0) * DAYS_PER_YEAR;
+    const index = witnessIndexFor(state);
+    if (!['publicMission', 'exchangeConsignment', 'exchangeReturn', 'exchangeSale', 'exchangeHandover',
+        'auctionLot', 'auctionBid', 'auctionResult', 'capitalCompetition', 'capitalOccasion',
+        'houseProgress', 'houseBusiness'].some(key => factsWithData(state, key).some(fact => fact.day < cutoff))) return;
+    const exact = new Set(state.npcs.filter(person => isPlayerInvolved(state, person)).map(person => person.id));
+    const players = new Set(state.npcs.filter(person => !isTheWorldsToMove(person)).map(person => person.id));
+    const held = new Set<string>();
+    const objectIds = new Set(state.objects.map(object => object.id));
+    const protectedObjects = new Set<string>();
+    const hold = (value: unknown): void => {
+        if (typeof value === 'string') {
+            if (index.byId.has(value)) held.add(value);
+            if (objectIds.has(value)) protectedObjects.add(value);
+        }
+        else if (Array.isArray(value)) for (const part of value) hold(part);
+        else if (value && typeof value === 'object') for (const part of Object.values(value)) hold(part);
+    };
+    for (const person of state.npcs) {
+        hold(person.activity);
+        if (exact.has(person.id)) { hold(person.historyFactIds); hold(person.relationships); }
+        hold(person.goals);
+    }
+    hold(state.obligations);
+    hold(state.memories.records);
+    hold(state.schedule);
+    hold(state.opportunities);
+    hold(state.runs);
+    hold(state.lineages);
+    hold(state.absences);
+    hold(state.statuses);
+    hold(state.ascensions);
+    for (const place of state.locations) { hold(place.data); hold(place.changes); }
+    for (const lot of index.openAuctionLots) held.add(lot.id);
+
+    for (const fact of state.history.facts) if (!routine(fact) || fact.day >= cutoff
+        || fact.actors.some(actor => exact.has(actor.id)) || fact.witnessIds.some(id => players.has(id))) {
+        for (const value of Object.values(fact.data)) if (typeof value === 'string') protectedObjects.add(value);
+    }
+    const stacks = new Map<string, number>();
+    const aliases = new Map<string, string>();
+    const objects: WorldState['objects'] = [];
+    let shortened = false;
+    for (const object of state.objects) {
+        const thing = whatThisThingIs(object);
+        const counted = thing && (object.kind === 'pill' || object.kind === 'material')
+            && howAGradeIsStored(thing.grade) === 'counted' && !isRuined(object)
+            && object.claims.length === 0 && !object.provenance.some(link => link.how === 'inherited' || link.how === 'stolen')
+            && !exact.has(object.ownerId ?? '') && !exact.has(object.possessorId ?? '')
+            && !object.knownOwnershipBy.some(id => players.has(id));
+        if (!counted) { hold(object); objects.push(object); continue; }
+        const countedRow = object.provenance.length > 1 ? { ...object, provenance: object.provenance.slice(-1) } : object;
+        if (countedRow !== object) shortened = true;
+        if (protectedObjects.has(object.id)) { hold(countedRow); objects.push(countedRow); continue; }
+        const key = JSON.stringify([object.kind, thing.kindId, thing.grade, object.ownerId,
+            object.possessorId, object.locationId, [...object.tags].sort(),
+            Object.entries(object.data).filter(([key]) => key !== 'quantity' && key !== 'stintDay')
+                .sort(([a], [b]) => a.localeCompare(b))]);
+        const previous = stacks.get(key);
+        if (previous === undefined) {
+            stacks.set(key, objects.length);
+            const row = countedRow;
+            objects.push(row); hold(row.provenance);
+        } else {
+            const row = objects[previous]!;
+            objects[previous] = { ...row, data: { ...row.data,
+                quantity: whatThisThingIs(row)!.quantity + thing.quantity } };
+            aliases.set(object.id, row.id);
+        }
+    }
+    if (aliases.size || shortened) state.objects = objects;
+
+    const previous = state.history.facts;
+    const candidates = new Set<string>();
+    const visited = new Set<string>();
+    for (let at = previous.length - 1; at >= 0; at--) {
+        const fact = previous[at]!;
+        if (!routine(fact) || fact.day >= cutoff || fact.actors.some(actor => exact.has(actor.id))
+            || fact.witnessIds.some(id => players.has(id))) { held.add(fact.id); continue; }
+        let visit = false;
+        if (fact.locationId || fact.factionIds.length) for (const id of new Set([
+            ...fact.actors.map(actor => actor.id), ...fact.witnessIds
+        ])) {
+            const key = `${id}\u001f${fact.locationId ?? ''}\u001f${fact.factionIds.join('|')}`;
+            if (!visited.has(key)) { visited.add(key); visit = true; }
+        }
+        if (visit) held.add(fact.id); else candidates.add(fact.id);
+    }
+    // A surviving receipt retains its actual causal evidence, including old dockets.
+    const pending = [...held];
+    for (let at = 0; at < pending.length; at++) {
+        const fact = index.byId.get(pending[at]!);
+        if (!fact) continue;
+        for (const id of referenceKeys(fact)) if (index.byId.has(id) && !held.has(id)) {
+            held.add(id); pending.push(id);
+        }
+    }
+    for (const id of held) candidates.delete(id);
+    const replacements = new Map<string, HistoricalFact>();
+    const facts: HistoricalFact[] = [];
+    for (const fact of previous) {
+        if (candidates.has(fact.id)) continue;
+        let data = fact.data;
+        for (const [key, value] of Object.entries(data)) if (typeof value === 'string' && aliases.has(value)) {
+            if (data === fact.data) data = { ...data };
+            data[key] = aliases.get(value)!;
+        }
+        if (data !== fact.data) { const row = { ...fact, data }; replacements.set(row.id, row); facts.push(row); }
+        else facts.push(fact);
+    }
+    if (!candidates.size && !replacements.size) return;
+    state.history.facts = facts;
+    noteLedgerPruned(state.history, previous, candidates, replacements, index.order);
+    witnessHistoryWasPruned(state, previous, candidates, replacements);
+    state.npcs = state.npcs.map(person => {
+        if (person.historyFactIds.every(id => !candidates.has(id))
+            && person.relationships.every(tie => tie.factIds.every(id => !candidates.has(id)))) return person;
+        return { ...person, historyFactIds: person.historyFactIds.filter(id => !candidates.has(id)),
+            relationships: person.relationships.map(tie => tie.factIds.some(id => candidates.has(id))
+                ? { ...tie, factIds: tie.factIds.filter(id => !candidates.has(id)) } : tie) };
+    });
+}

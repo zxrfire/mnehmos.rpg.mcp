@@ -1390,10 +1390,7 @@ function applyDemography(
         // parent's ties rather than by any list.
         const fostered = parent
             ? placeAChildTheirHouseWillNotKeep(
-                state, npc, parent, ordinal, day, forStream(state.seed, 'fostering', id), roster,
-                handed ? undefined : parentsFamily
-                    ? new Map(ordinaryVacancies).set(parentsFamily.id, rollVacancies.get(parentsFamily.id) ?? 0)
-                    : ordinaryVacancies)
+                state, npc, parent, ordinal, day, forStream(state.seed, 'fostering', id), roster)
             : null;
         if (fostered) {
             npc = fostered;
@@ -1487,8 +1484,7 @@ function placeAChildTheirHouseWillNotKeep(
     ordinal: number,
     day: number,
     rng: CultivationRNG,
-    roster: Roster,
-    vacancies?: ReadonlyMap<string, number>
+    roster: Roster
 ): NpcRecord | null {
     // Never the player's own mirror row. Placing your child is a decision a
     // person makes, and a world pass that made it for them would be the engine
@@ -1501,11 +1497,16 @@ function placeAChildTheirHouseWillNotKeep(
     // Who this parent actually knows. Their own rows, nobody else's, and the
     // house comes off the person rather than off a list of houses.
     const candidates: FosterCandidate[] = [];
+    const owed = new Map(state.obligations.filter(account => account.kind === 'favor'
+        && account.status === 'open' && account.holderId === parent.id && account.subjectId !== null)
+        .map(account => [account.subjectId!, account]));
     const asked = new Set(
         parent.tags.filter(t => t.startsWith(PLACED_WITH)).map(t => t.slice(PLACED_WITH.length))
     );
-    for (const tie of parent.relationships) {
-        const at = roster.at.get(tie.targetId);
+    const people = new Set([...parent.relationships.map(tie => tie.targetId), ...owed.keys()]);
+    for (const personId of people) {
+        const tie = parent.relationships.find(tie => tie.targetId === personId);
+        const at = roster.at.get(personId);
         if (at === undefined) continue;
         const person = state.npcs[at];
         if (person.status !== 'alive' || !person.factionId) continue;
@@ -1514,12 +1515,13 @@ function placeAChildTheirHouseWillNotKeep(
         // world's own question and is answered here.
         const house = state.factions.find(f => f.id === person.factionId);
         if (!house || house.dissolvedOnDay !== null || !isBelowTheLid(house)) continue;
-        if (vacancies && (vacancies.get(house.id) ?? 0) <= 0) continue;
+        // An ordinary intake budget is a modelled slice, not a personal placement bar.
         candidates.push({
             personId: person.id,
             personName: person.name,
             houseId: person.factionId,
-            standing: tie.standing,
+            standing: tie?.standing ?? 0,
+            owesTheFosterer: owed.get(person.id),
             alreadyAsked: asked.has(person.id)
         });
     }
@@ -1551,6 +1553,11 @@ function placeAChildTheirHouseWillNotKeep(
     const parentAt = roster.at.get(parent.id);
     if (takerAt === undefined || parentAt === undefined) return null;
     const taker = state.npcs[takerAt];
+    if (placed.spent) {
+        const at = state.obligations.findIndex(account => account.id === placed.spent!.id);
+        if (at >= 0) state.obligations[at] = placed.spent;
+    }
+    if (placed.incurred) state.obligations.push(placed.incurred);
 
     // The child is on the receiving house's roll, at the bottom of it, WITHOUT
     // having met its admission ordinal. That exception is the whole of what the
