@@ -98,7 +98,7 @@ Generated from the `trigger` attributes in this directory. Do not edit by hand -
 
 <!-- BEGIN GENERATED: triggers -->
 
-**259 situations, from 33 files.**
+**260 situations, from 33 files.**
 Sorted by the situation, not by the file, because the file is the thing you do not know.
 
 | When this is true | Read | Section |
@@ -225,6 +225,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | somebody argues ancient beats modern, or the player is choosing between an ancient art and a modern one | [`history/ancient.md`](history/ancient.md#neither-one-is-better) | Neither one is better (tier 2) |
 | somebody asks a house for a manual, or a book changes hands | [`climbing/manuals.md`](climbing/manuals.md#a-manual-is-an-item-with-a-count) | A manual is an item with a count (tier 2) |
 | somebody asks what it actually takes to reach the top of the ladder | [`houses/origin.md`](houses/origin.md#the-shape-of-an-immortal-life) | The shape of an immortal life (tier 2) |
+| somebody asks where a house has people outside its own ground, or the player walks into a house's shop, posting or branch | [`houses/dao-houses.md`](houses/dao-houses.md#where-a-house-keeps-its-people-away-from-home) | Where a house keeps its people away from home (tier 2) |
 | somebody asks where an object came from, two accounts of one object disagree, or a provenance has to be checked | [`things/items.md`](things/items.md#provenance-is-testimony) | Provenance is testimony (tier 2) |
 | somebody asks who holds a reserved Protector's chair, or why no house has one | [`climbing/immortals.md`](climbing/immortals.md#the-post-is-vacant-not-abolished) | The post is vacant, not abolished (tier 2) |
 | somebody asks why cheap goods restock forever and good ones do not, or a grade's supply is being decided | [`things/items.md`](things/items.md#why-that-line-falls-where-it-does) | Why that line falls where it does (tier 2) |

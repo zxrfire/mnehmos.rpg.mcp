@@ -316,7 +316,7 @@ session somebody wrote down design that was already in the catalog.
 `house-ninefold-karma` · its entry: [`sects.ts:2241`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 20 · [`history.ts`](../../src/data/cultivation/history.ts) 18 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 15 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 6 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 6
-  …and 21 more files.
+  …and 22 more files.
 
 **Constants most about it:** `THE_CALENDAR_OFFSET`, `CALENDARS`, `DAO_HOUSES`, `DESTROYED_DAO_HOUSES`, `RANK_MISREADINGS`, `SECTS`, and 17 more
 
@@ -324,8 +324,8 @@ session somebody wrote down design that was already in the catalog.
 
 `house-flowing-light` · its entry: [`sects.ts:2368`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 13 · [`history.ts`](../../src/data/cultivation/history.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
-  …and 10 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 13 · [`history.ts`](../../src/data/cultivation/history.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2 · [`dao-houses.md`](../../docs/world/houses/dao-houses.md) 1
+  …and 11 more files.
 
 **Constants most about it:** `WHY_ACCOUNTS_DISAGREE`, `DAO_HOUSE_DISPUTES`, `DAO_HOUSES`, `THE_LID`, `TITLE_TRANSLATIONS`
 
@@ -334,7 +334,7 @@ session somebody wrote down design that was already in the catalog.
 `house-vermilion-seal` · its entry: [`sects.ts:2471`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`history.ts`](../../src/data/cultivation/history.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 5 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 3
-  …and 11 more files.
+  …and 12 more files.
 
 **Constants most about it:** `AUCTION_VENUES`, `CALENDARS`, `DORMANT_ARTS`, `TRADITION_WAR`, `AUCTION_ACCESS`, `CUSTODY_TAKERS`, and 1 more
 
@@ -343,7 +343,7 @@ session somebody wrote down design that was already in the catalog.
 `house-still-blade` · its entry: [`sects.ts:2576`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 17 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) 2
-  …and 9 more files.
+  …and 10 more files.
 
 **Constants most about it:** `ARCHIVE_COPIES`, `DAO_HOUSE_DISPUTES`, `DAO_HOUSES`, `DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE`, `DEMONIC_STANDINGS`
 
@@ -361,7 +361,7 @@ session somebody wrote down design that was already in the catalog.
 `house-shrinking-earth` · its entry: [`sects.ts:2785`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 26 · [`sects.ts`](../../src/data/cultivation/sects.ts) 20 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 8 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 4
-  …and 19 more files.
+  …and 20 more files.
 
 **Constants most about it:** `DEAD_CIVILISATIONS`, `DEAD_SCRIPTS`, `THE_FIRST_CULTIVATORS`, `AGES`, `CONTRACTS`, `CUSTODY_TAKERS`, and 6 more
 
@@ -370,7 +370,7 @@ session somebody wrote down design that was already in the catalog.
 `house-immovable-mountain` · its entry: [`sects.ts:2912`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 49 · [`sects.ts`](../../src/data/cultivation/sects.ts) 37 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 17 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 12 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 12 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 10 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 9
-  …and 17 more files.
+  …and 18 more files.
 
 **Constants most about it:** `DESTROYED_DAO_HOUSES`, `DRIVEN_GROUND_AND_THE_NODE`, `LID_THEORIES`, `THE_CALENDAR_OFFSET`, `ARCHIVE_COPIES`, `SECTS`, and 19 more
 

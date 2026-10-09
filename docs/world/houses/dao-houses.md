@@ -23,6 +23,7 @@ consequence they cannot trace.
 | [Houses rise, fall, and rewrite what happened](#houses-rise-fall-and-rewrite-what-happened) | the player is investigating a ruin, a discrepancy in the record, or who used to hold a territory |
 | [Discovery, not exposition](#discovery-not-exposition) | the narrator is about to say what a house specialises in |
 | [And it outlives its experts](#and-it-outlives-its-experts) | a house's greatest living expert dies, or somebody expects a discipline to die with its holder |
+| [Where a house keeps its people away from home](#where-a-house-keeps-its-people-away-from-home) | somebody asks where a house has people outside its own ground, or the player walks into a house's shop, posting or branch |
 | [Related](#related) | **Tier 3** - never injected |
 
 ---
@@ -237,6 +238,36 @@ If the greatest living karma cultivator dies, the discipline does not. It surviv
 disciples, manuals, artifacts, descendants, sealed inheritances and fragments. A house can
 lose its finest expert and remain dangerous, because the thing that made it dangerous was
 never one person.
+
+## Where a house keeps its people away from home
+
+<!-- tier: 2 trigger="somebody asks where a house has people outside its own ground, or the player walks into a house's shop, posting or branch" -->
+
+A house has three ways to keep people somewhere other than its own ground, from smallest
+to largest. A house does not have all three everywhere, and not every city has every house.
+Some houses are in almost every city that matters, and some are in none.
+
+| Presence | Who is there | What it is |
+|---|---|---|
+| **A posting** (驻守) | One member, usually in a rented room. Two while a posting is handed over. | Any house can keep one: eyes in a city, a watch, a standing duty. The relief arrives and takes the handover before the outgoing member leaves. |
+| **A shopfront** (分号, *fēnhào*) | Three disciples at most, because three is all a scene holds. | A Dao house's self-contained storefront with a room at the back where its disciples sleep. The house sells its trade over the counter. |
+| **A branch** (下院, *xiàyuàn*, a lower cloister) | A small house of its own, with middle management and leaders answering to the head temple. | Teaches some of the head temple's teachings and keeps its own people. **Only the Immovable Mountain Temple has branches.** |
+
+Every other house treats its own ground as the place its people return to and train at.
+A shopfront is where it sells, not where it raises disciples.
+
+Who keeps what, as ruled:
+
+- **Shrinking Earth Pavilion:** shopfronts. Its folding counters, at its surveyed terminals.
+- **Vermilion Sigil Terrace:** shopfronts. It holds the auction at every capital, and its
+  witnesses keep each floor. A court is a house and never a venue.
+- **Jade Register Hall:** shopfronts. Gate registration only at the cities that matter
+  (provincial capitals and capitals): a small fee, and a record of who came in.
+- **Flowing Star Tower:** shopfronts. Offices where somebody who has run out of the usual
+  ways asks where to find a person or a thing. They tell you, or they give their best guess.
+- **Immovable Mountain Temple:** branches, in several cities.
+- **Ninefold Karma Palace** and **Still Blade Pavilion:** one place each, like a sect. People
+  come to the Palace to learn karma. Both keep ordinary postings like any house.
 
 ## Related
 
