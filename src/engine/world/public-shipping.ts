@@ -18,7 +18,7 @@ import { REGIONS, isOpenWater, placeRoadDays, regionIdOfPlace, requireRegion } f
 import { forStream } from '../cultivation/rng.js';
 import { SEA_LANES } from '../../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
 import { regionCatalogIdOf } from './how-a-cultivator-comes-by-a-road.js';
-import type { LocationRecord } from './locations.js';
+import { placeScopeFor, type LocationRecord } from './locations.js';
 import { worldLocationFor, loosePlaceKey } from './place-lookup.js';
 import { SHORT_ACTION_DAYS } from './short-action.js';
 import type { PassageRunMoment } from './passage-moment.js';
@@ -66,6 +66,17 @@ function theDocksOnOpenWater(world: World): string[] {
 
 /** Every place a ship puts in at. */
 export function thePortsShipsPutInAt(world: World): string[] {
+    if (!world) return portsShipsPutInAt(world);
+    const routes = placeScopeFor(world.locations);
+    let ports = PORTS.get(routes);
+    if (!ports) PORTS.set(routes, ports = portsShipsPutInAt(world));
+    return ports.slice();
+}
+
+/** The ports for one unchanged place list: every line and dock read in a year asks the same thing. */
+const PORTS = new WeakMap<object, string[]>();
+
+function portsShipsPutInAt(world: World): string[] {
     const ports = new Set<string>();
     for (const lane of SEA_LANES) {
         for (const end of [theLandfall(lane.fromPlace), theLandfall(lane.toPlace)]) if (end) ports.add(end);

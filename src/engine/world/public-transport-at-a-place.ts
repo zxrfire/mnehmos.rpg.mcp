@@ -11,7 +11,7 @@ import { publicShipLinesFrom, theProvinceOf, type DockWorld } from './public-shi
 import { daysByConveyance } from './what-a-conveyance-does-to-a-journey.js';
 import { theSeatFare } from './the-fare-and-calendar-of-a-passage.js';
 import { counterPlaceNameAt, routesFrom } from './where-the-measured-span-still-answers.js';
-import { populationWeightOf, type LocationRecord } from './locations.js';
+import { populationWeightOf, placeScopeFor, type LocationRecord, type PlaceScope } from './locations.js';
 import { pathTo } from './architecture.js';
 import { worldLocationFor } from './place-lookup.js';
 import type { SeaLane } from './what-a-sea-crossing-costs.js';
@@ -30,10 +30,21 @@ export interface ALine {
 }
 
 
+/** Answers per unchanged place list: every caller in a year asks the same few provinces. */
+const PEOPLED = new WeakMap<PlaceScope, Map<string, LocationRecord | null>>();
+
 export function theMostPeopledPlaceIn(
     world: { locations: readonly LocationRecord[] },
     provinceId: string
 ): LocationRecord | null {
+    const routes = placeScopeFor(world.locations);
+    let answers = PEOPLED.get(routes);
+    if (!answers) PEOPLED.set(routes, answers = new Map());
+    if (!answers.has(provinceId)) answers.set(provinceId, mostPeopled(world, provinceId));
+    return answers.get(provinceId)!;
+}
+
+function mostPeopled(world: { locations: readonly LocationRecord[] }, provinceId: string): LocationRecord | null {
     let best: LocationRecord | null = null;
     for (const place of world.locations) {
         if (place.kind !== 'settlement' || place.sealed) continue;

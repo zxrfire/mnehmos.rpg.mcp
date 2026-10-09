@@ -23,7 +23,8 @@ function sample(state: Clock, stream: string, ...parts: (string | number)[]): nu
         read.daily.clear();
     }
     const cache = stream === 'daily-habit' || stream === 'house-mealtimes' ? read.stable : read.daily;
-    const key = JSON.stringify([stream, ...parts]);
+    // A separator no id contains; `JSON.stringify` here was most of a routine read.
+    const key = parts.length === 0 ? stream : `${stream}\u0001${parts.join('\u0001')}`;
     let value = cache.get(key);
     if (value === undefined) {
         value = forStream(state.seed, stream, ...parts).next();

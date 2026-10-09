@@ -120,12 +120,35 @@ export function whoCouldHaveSeenIt(state: WorldState, seeing: ASeeing,
  * Sorted by id so a draw over it does not inherit roster order, which is the
  * same reason `whoWasThere` sorts before drawing.
  */
+/**
+ * One scene: while a single settlement runs (an auction closing), nobody moves, so the people
+ * in an area that day are the same for every fact it writes. Callers read ids and houses only.
+ */
+let SCENE: Map<string, NpcRecord[]> | null = null;
+export function inOneScene<T>(run: () => T): T {
+    if (SCENE) return run();
+    SCENE = new Map();
+    try { return run(); } finally { SCENE = null; }
+}
+
 export function everybodyInTheArea(
     state: WorldState,
     seeing: { scale: EventScale; locationId: string | null; day: number },
     people: readonly NpcRecord[] = state.npcs
 ): NpcRecord[] {
     if (seeing.locationId === null) return [];
+    const sceneKey = SCENE && people === state.npcs ? `${seeing.scale}|${seeing.locationId}|${seeing.day}` : null;
+    if (sceneKey !== null && SCENE!.has(sceneKey)) return SCENE!.get(sceneKey)!.slice();
+    const here = inTheArea(state, { ...seeing, locationId: seeing.locationId }, people);
+    if (sceneKey !== null) SCENE!.set(sceneKey, here.slice());
+    return here;
+}
+
+function inTheArea(
+    state: WorldState,
+    seeing: { scale: EventScale; locationId: string; day: number },
+    people: readonly NpcRecord[]
+): NpcRecord[] {
     const regions = new Map<string, string | null>();
     const regionFor = (place: string) => {
         if (!regions.has(place)) regions.set(place, regionOf(state, place));

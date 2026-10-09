@@ -5,6 +5,7 @@
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { EventScale, HistoricalFact } from './history.js';
 import { getFaction, getLocation, getNpc, type WorldState } from './world-state.js';
+import { placeScopeFor } from './locations.js';
 import type { NpcRecord } from './npc-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -455,6 +456,20 @@ export function whereThisPersonIsStanding(
 /** The province-level container a place sits in. Null when unknown. */
 export function regionOf(state: WorldState, locationId: string | null): string | null {
     if (!locationId) return null;
+    // A place's province is fixed while the place list is unchanged; every fact's bystander
+    // read asked it once per person in the world.
+    const routes = placeScopeFor(state.locations);
+    let held = REGIONS_OF.get(routes);
+    if (!held) REGIONS_OF.set(routes, held = new Map());
+    if (held.has(locationId)) return held.get(locationId)!;
+    const region = regionAbove(state, locationId);
+    held.set(locationId, region);
+    return region;
+}
+
+const REGIONS_OF = new WeakMap<object, Map<string, string | null>>();
+
+function regionAbove(state: WorldState, locationId: string): string | null {
     let at = getLocation(state, locationId);
     const seen = new Set<string>();
     while (at && at.parentId && !seen.has(at.id)) {

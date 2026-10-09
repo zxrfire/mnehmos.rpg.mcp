@@ -9,6 +9,7 @@ import { whatThisThingIs } from './what-a-house-gives-merit-for.js';
 import { whatThisPersonWouldPartWith } from './what-somebody-standing-here-would-part-with.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { inOneScene } from './how-far-a-seeing-reaches.js';
 import { factsWithDataValue, pendingAuctionLots, witnessIndexFor } from './witness-reaction-index.js';
 import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { isRuined, transferPossession, type ObjectRecord } from './possessions.js';
@@ -137,6 +138,11 @@ export function bidAtCapitalAuction(state: WorldState, bidder: NpcRecord, venueI
 
 /** Once at closing: real bids, conserved purses and the ordinary possession transfer. */
 export function settleCapitalAuctions(state: WorldState, day: number,
+    playerAt?: { id: string; locationId: string | null }): HistoricalFact[] {
+    return inOneScene(() => settleThem(state, day, playerAt));
+}
+
+function settleThem(state: WorldState, day: number,
     playerAt?: { id: string; locationId: string | null }): HistoricalFact[] {
     const results: HistoricalFact[] = [];
     const positionsByDay = new Map<number, Map<string, string | null>>();

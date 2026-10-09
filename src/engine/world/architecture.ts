@@ -15,6 +15,7 @@ import {
     makeEnvironment,
     makeLocation,
     makeThresholds,
+    placeScopeFor,
     type AccessAssessment,
     type AccessQuery,
     type LocationKind,
@@ -1579,7 +1580,7 @@ export function pathTo(
     locations: readonly LocationRecord[],
     locationId: string
 ): LocationRecord[] {
-    const byId = new Map(locations.map(l => [l.id, l]));
+    const byId = placeScopeFor(locations).places;
     const chain: LocationRecord[] = [];
     const seen = new Set<string>();
     let cursor: string | null = locationId;

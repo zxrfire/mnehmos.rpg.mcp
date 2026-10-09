@@ -1267,7 +1267,65 @@ export interface RouteQueries {
     treeFrom(startId: string): { days: ReadonlyMap<string, number>; previous: ReadonlyMap<string, string> };
 }
 
+/**
+ * Shortest-route trees are reused while the place list is the same list holding the same records.
+ * A place changes by being replaced (`state.locations[i] = next`) or added, never by editing its
+ * links in place, so identical length and identical records mean an identical walking graph.
+ * Measured on a seeded full-catalog world: callers built a fresh graph and a fresh search on every
+ * call, and that alone was about 40% of a simulated year.
+ */
+const SHARED_ROUTES = new WeakMap<readonly LocationRecord[], { snapshot: PlaceShape[]; routes: RouteQueries }>();
+
+/** What a cached read depends on, taken per place: the record, and the fields an in-place edit could move. */
+interface PlaceShape {
+    place: LocationRecord; links: LocationRecord['links']; name: string; parentId: string | null; kind: string;
+    /** Each road as it was: the link object, where it goes, whether it is open, and its days. */
+    roads: (LocationRecord['links'][number] | string | boolean | number)[];
+}
+const roadsOf = (place: LocationRecord) => place.links.flatMap(l => [l, l.toLocationId, l.open, l.travelDays]);
+const shapeOf = (place: LocationRecord): PlaceShape =>
+    ({ place, links: place.links, name: place.name, parentId: place.parentId, kind: place.kind, roads: roadsOf(place) });
+const sameShape = (s: PlaceShape, place: LocationRecord | undefined): boolean => {
+    if (s.place !== place || s.links !== place.links || s.name !== place.name
+        || s.parentId !== place.parentId || s.kind !== place.kind || s.roads.length !== place.links.length * 4) return false;
+    for (let i = 0; i < place.links.length; i++) {
+        const l = place.links[i]!;
+        if (s.roads[i * 4] !== l || s.roads[i * 4 + 1] !== l.toLocationId
+            || s.roads[i * 4 + 2] !== l.open || s.roads[i * 4 + 3] !== l.travelDays) return false;
+    }
+    return true;
+};
+
+/**
+ * The places themselves, for reads that do not walk a road: lookups by name, a place's province,
+ * its parent chain, the docks. Checked by record identity, name, parent, kind and sealing only, so
+ * it is cheap. Reads of road prices use `routeQueriesFor`, which also checks every road's fields,
+ * because `src/web/places.ts` edits a merged road's days and opening in place.
+ */
+export interface PlaceScope { readonly places: ReadonlyMap<string, LocationRecord> }
+const SHARED_PLACES = new WeakMap<readonly LocationRecord[], { snapshot: [LocationRecord, string, string | null, string, boolean][]; scope: PlaceScope }>();
+export function placeScopeFor(locations: readonly LocationRecord[]): PlaceScope {
+    const held = SHARED_PLACES.get(locations);
+    if (held && held.snapshot.length === locations.length && held.snapshot.every(([p, name, parentId, kind, sealed], i) => {
+        const now = locations[i];
+        return now === p && now.name === name && now.parentId === parentId && now.kind === kind && now.sealed === sealed;
+    })) return held.scope;
+    const scope: PlaceScope = { places: new Map(locations.map(place => [place.id, place])) };
+    SHARED_PLACES.set(locations, { snapshot: locations.map(p => [p, p.name, p.parentId, p.kind, p.sealed]), scope });
+    return scope;
+}
+
 export function routeQueriesFor(locations: readonly LocationRecord[]): RouteQueries {
+    const held = SHARED_ROUTES.get(locations);
+    if (held && held.snapshot.length === locations.length && held.snapshot.every((s, i) => sameShape(s, locations[i]))) {
+        return held.routes;
+    }
+    const routes = freshRouteQueries(locations);
+    SHARED_ROUTES.set(locations, { snapshot: locations.map(shapeOf), routes });
+    return routes;
+}
+
+function freshRouteQueries(locations: readonly LocationRecord[]): RouteQueries {
     const places = new Map(locations.map(place => [place.id, place]));
     let graph: WalkingGraph | undefined;
     const trees = new Map<string, { days: ReadonlyMap<string, number>; previous: ReadonlyMap<string, string> }>();
@@ -1300,13 +1358,10 @@ export function walkingDaysFrom(
     previous?: Map<string, string>,
     routes?: RouteQueries
 ): Map<string, number> {
-    if (routes?.locations === locations) {
-        const tree = routes.treeFrom(startId);
-        if (previous) for (const [id, from] of tree.previous) previous.set(id, from);
-        // Public distance maps retain their independent mutable-result contract.
-        return new Map(tree.days);
-    }
-    return walkingDaysOn(walkingGraphFor(locations), startId, previous);
+    const tree = (routes?.locations === locations ? routes : routeQueriesFor(locations)).treeFrom(startId);
+    if (previous) for (const [id, from] of tree.previous) previous.set(id, from);
+    // Public distance maps retain their independent mutable-result contract.
+    return new Map(tree.days);
 }
 
 interface WalkingGraph {
@@ -1417,10 +1472,9 @@ function walkingDaysOn(graph: WalkingGraph, startId: string, previous?: Map<stri
 export function walkingRouteFrom(
     locations: readonly LocationRecord[], startId: string, destinationId: string, routes?: RouteQueries
 ): { locationId: string; days: number }[] | null {
-    const previous = new Map<string, string>();
-    const tree = routes?.locations === locations ? routes.treeFrom(startId) : null;
-    const days = tree?.days ?? walkingDaysFrom(locations, startId, previous);
-    const predecessors = tree?.previous ?? previous;
+    const tree = (routes?.locations === locations ? routes : routeQueriesFor(locations)).treeFrom(startId);
+    const days = tree.days;
+    const predecessors = tree.previous;
     if (!days.has(destinationId)) return null;
     const route = [{ locationId: destinationId, days: days.get(destinationId)! }];
     while (route[0]!.locationId !== startId) {

@@ -4530,9 +4530,24 @@ export function howManyPostsAHouseKeeps(powerOrdinal: number): number {
  * is one person, one place, and years, and it is why a house has somebody in a
  * town it does not own.
  */
+/** A house's standing preference among market towns: a function of seed, house and town only. */
+const HOUSE_MARKET_SCORES = new Map<string, number>();
+function houseMarketScore(seed: string, factionId: string, townId: string): number {
+    const key = `${seed}\u0000${factionId}\u0000${townId}`;
+    let score = HOUSE_MARKET_SCORES.get(key);
+    if (score === undefined) {
+        score = forStream(seed, 'house-market-post', factionId, townId).next();
+        if (HOUSE_MARKET_SCORES.size > 50_000) HOUSE_MARKET_SCORES.clear();
+        HOUSE_MARKET_SCORES.set(key, score);
+    }
+    return score;
+}
+
 export function applyPostings(state: WorldState, year: number, day: number,
     options: { initialPlacement?: boolean; onArrival?: (id: string, day: number) => void;
-        onDeparture?: (id: string, day: number) => void } = {}, routes?: RouteQueries): number {
+        onDeparture?: (id: string, day: number) => void;
+        /** Only these houses; a relief mid-year re-posts the houses whose posts fell due. */
+        onlyHouses?: ReadonlySet<string> } = {}, routes?: RouteQueries): number {
     const rng = forStream(state.seed, 'postings', year);
     // A city can host another house's post even when a house is seated there.
     // Compounds and other seats remain visits, not posting destinations.
@@ -4595,6 +4610,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
     for (const faction of liveFactions(state)) {
         const ranks = faction.ranks.length;
         if (ranks === 0) continue;
+        if (options.onlyHouses && !options.onlyHouses.has(faction.id)) continue;
 
         const roll = rolls.get(faction.id) ?? [];
         // WHO THE HOUSE CAN SPARE. Anybody already away is already spared, and
@@ -4635,15 +4651,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
             : getLocation(state, faction.seatLocationId)?.parentId ?? null;
         const local = localTowns(seatRegion);
         const cityIds = cities ??= new Set(capitalPlaces(state).map(l => l.id));
-        const marketScores = new Map<string, number>();
-        const marketScore = (id: string) => {
-            let score = marketScores.get(id);
-            if (score === undefined) {
-                score = forStream(state.seed, 'house-market-post', faction.id, id).next();
-                marketScores.set(id, score);
-            }
-            return score;
-        };
+        const marketScore = (id: string) => houseMarketScore(state.seed, faction.id, id);
         const markets = towns.filter(t => cityIds.has(t.id) && t.id !== local[0]?.id)
             .sort((a, b) => marketScore(a.id) - marketScore(b.id));
         const posts = [...new Map([...(local.slice(0, 1)), ...markets, ...local].map(t => [t.id, t])).values()]
@@ -4777,13 +4785,19 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
         }
     };
     readReliefs();
-    // One house pass per sweep, even if several posts await replacements.
-    if (state.npcs.some(n => n.status === 'alive' && n.activity?.kind === 'stationed'
-        && n.activity.untilDay != null && n.activity.untilDay <= day && !isLostTrackOf(state, n)
-        && (reliefDays.get(n.id) ?? -Infinity) < n.activity.sinceDay)) {
+    // One pass per sweep for the houses whose posts await replacements. Re-posting every house
+    // here made each due post a full sweep of the world, and that grew with every post kept.
+    const dueHouses = new Set<string>();
+    for (const n of state.npcs) {
+        if (n.status === 'alive' && n.factionId !== null && n.activity?.kind === 'stationed'
+            && n.activity.untilDay != null && n.activity.untilDay <= day && !isLostTrackOf(state, n)
+            && (reliefDays.get(n.id) ?? -Infinity) < n.activity.sinceDay) dueHouses.add(n.factionId);
+    }
+    if (dueHouses.size > 0) {
         applyPostings(state, Math.floor(day / DAYS_PER_YEAR), day, {
             onArrival: (id, arrival) => schedule?.(`post-arrival:${id}:${arrival}`, arrival),
-            onDeparture: (id, departure) => schedule?.(`post-depart:${id}:${departure}`, departure)
+            onDeparture: (id, departure) => schedule?.(`post-depart:${id}:${departure}`, departure),
+            onlyHouses: dueHouses
         }, routes);
         for (const outgoing of state.npcs) {
             if (outgoing.status !== 'alive' || outgoing.activity?.kind !== 'stationed'
