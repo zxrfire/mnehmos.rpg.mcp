@@ -82,7 +82,7 @@ describe('capital missions', () => {
                             .includes(String(f.data.reason)))
                         .map(f => Math.floor((f.day - opened.currentDay) / 365)));
                     const occasionYears = new Set(dispatches.filter(f =>
-                        f.data.reason === 'the auction delegation' || f.data.reason === 'the inter-house competition')
+                        ['the auction delegation', 'witnessing the auction', 'the inter-house competition'].includes(String(f.data.reason)))
                         .map(f => Math.floor((f.day - opened.currentDay) / 365)));
                     expect(businessYears.size, `${city.name}: business sent in separate years`).toBeGreaterThanOrEqual(2);
                     expect(occasionYears.size, `${city.name}: calendar delegations sent in separate years`).toBeGreaterThanOrEqual(2);

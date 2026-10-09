@@ -19,7 +19,7 @@ import { drawBackgroundIncidents, isPlayerInvolved, resolveWithPlayerPresent } f
 import { loadExchangeConsignment, returnExchangeConsignment, tradeAtCapitalExchanges } from './wares-at-a-capital-exchange.js';
 import { theyAreRelieved } from './a-house-posts-the-one-being-played.js';
 import { offeredRitesThisYear } from './willing-rites-between-world-people.js';
-import { advancePublicCapitalMission, capitalCalendar, capitalPlaces, journeySelectedToHouseSeat, sendCapitalBusiness,
+import { advancePublicCapitalMission, capitalCalendar, capitalPlaces, whoHoldsTheAuctions, journeySelectedToHouseSeat, sendCapitalBusiness,
     sendCapitalDelegations, houseBusinessCalendar, sendScheduledHouseBusiness } from './capital-missions-and-calendar.js';
 import { consignCapitalAuction, settleCapitalAuctions } from './a-capital-auction.js';
 import { advanceBeastContracts } from './beast-cultivation-contracts.js';
@@ -4769,6 +4769,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
 
     // Only immutable geographic classifications are shared within this call.
     let cities: Set<string> | undefined;
+    let auctioneer: string | undefined;
     const localsByRegion = new Map<string | null, LocationRecord[]>();
     const localTowns = (region: string | null) => {
         let local = localsByRegion.get(region);
@@ -4825,8 +4826,11 @@ export function applyPostings(state: WorldState, year: number, day: number,
             ? null
             : getLocation(state, faction.seatLocationId)?.parentId ?? null;
         const local = localTowns(seatRegion);
-        const terminals = watches.get(faction.id) ?? [];
         const cityIds = cities ??= new Set(capitalPlaces(state).map(l => l.id));
+        // The house that holds the capital auctions keeps its witnesses on each floor, as the
+        // Span keeps its terminals: those posts come before any market of its own choosing.
+        const terminals = [...(watches.get(faction.id) ?? []),
+            ...(faction.id === (auctioneer ??= whoHoldsTheAuctions(state)?.id ?? '') ? towns.filter(t => cityIds.has(t.id)) : [])];
         const marketScore = (id: string) => houseMarketScore(state.seed, faction.id, id);
         const markets = towns.filter(t => cityIds.has(t.id) && t.id !== local[0]?.id)
             .sort((a, b) => marketScore(a.id) - marketScore(b.id));

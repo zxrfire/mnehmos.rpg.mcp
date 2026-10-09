@@ -38,6 +38,7 @@ export function consignCapitalAuction(state: WorldState, occasion: CapitalOccasi
     day = occasion.opensOnDay): void {
     const venue = state.locations.find(l => l.id === occasion.venueId);
     if (!venue) return;
+    const holder = state.factions.find(h => h.id === occasion.hostId);
     const routes = routeQueriesFor(state.locations);
     const present = state.npcs.filter(n => n.status === 'alive' && isTheWorldsToMove(n)
         && locationOnNpcJourney(state.locations, n, day, routes) === venue.id);
@@ -79,8 +80,7 @@ export function consignCapitalAuction(state: WorldState, occasion: CapitalOccasi
         const object = state.objects[at]!;
         const fact = appendWorldFact(state, makeFact({ day, kind: 'gathering',
             visibility: 'public', locationId: venue.id,
-            // A venue named "The Third Sluice Court" must not read "the The Third Sluice Court".
-            summary: `${object.name} is entered in ${/^the\s/i.test(venue.name) ? venue.name.replace(/^The\s/, 'the ') : `the ${venue.name}`} auction at a reserve of ${reserve} spirit stones.`,
+            summary: `${object.name} is entered in the ${venue.name} auction${holder ? ` under the ${holder.name}'s witness` : ''} at a reserve of ${reserve} spirit stones.`,
             actors: [{ id: seller.id, name: seller.name, role: 'seller' }],
             factionIds: seller.factionId ? [seller.factionId] : [], data: { auctionLot: true,
                 objectId, sellerId: seller.id, payeeId: ownerId, reserve, closesOnDay: occasion.endsOnDay } }));

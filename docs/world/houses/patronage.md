@@ -95,7 +95,11 @@ The big sects are the most populous places in the world, and that is correct. A 
 not filled by emptying them. It is filled by giving people a reason to come:
 
 - **Missions** a house dispatches people on: court business, tribute, postings, escort, a price on somebody.
-- **Auctions**, at the venues in `AUCTION_VENUES` (`src/data/cultivation/rogues.ts`).
+- **Auctions**, at the venues in `AUCTION_VENUES` (`src/data/cultivation/rogues.ts`). A capital's
+  yearly auction is held by a Dao house, as the Span holds the portals: the Vermilion Sigil
+  Terrace, because a hammer under its witness is a sworn sale. It keeps witnesses posted on
+  every capital floor and sends more for the sale. If it falls, the oldest standing Dao house
+  takes the floor. A court is a house, never a venue.
 - **Open competitions**, which houses send delegations to.
 - **The exchange**, where cultivators of every house sell their wares.
 

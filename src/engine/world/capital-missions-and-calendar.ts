@@ -41,6 +41,7 @@ import { whatFinishingBoardWorkPays } from './a-disciple-takes-work-off-the-boar
 import { recordNpcActualArrival } from './a-body-that-actually-arrived.js';
 import { discoverableInsights, integrateInsight, recordAchievement } from '../cultivation/understanding.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
+import { DAO_HOUSES } from '../../data/cultivation/sects.js';
 import { withAttentionRecorded } from './who-is-given-attention-this-year.js';
 import { landSuccessfulHouseWork } from './the-world-changing-on-its-own.js';
 import { whoTheySayTookThemOn } from './a-house-expects-somebody-it-took-on.js';
@@ -573,10 +574,24 @@ function occasionDates(state: WorldState, venue: LocationRecord, year: number,
     }
     return drawn;
 }
+/** The oath house witnesses every hammer, so a sale on its floor is sworn rather than shaken on. */
+export const THE_AUCTION_HOUSE_ID = 'house-vermilion-seal';
+/**
+ * Like the Span's counters, a capital auction belongs to one Dao house. If the Terrace has
+ * fallen, the oldest Dao house still standing takes the floor; with none left there is no auction.
+ */
+export function whoHoldsTheAuctions(state: Pick<WorldState, 'factions'>): FactionRecord | null {
+    const standing = new Map(state.factions.filter(h => h.dissolvedOnDay === null && isBelowTheLid(h)).map(h => [h.id, h]));
+    if (standing.has(THE_AUCTION_HOUSE_ID)) return standing.get(THE_AUCTION_HOUSE_ID)!;
+    const heir = [...DAO_HOUSES].sort((a, b) => b.foundedYearsAgo - a.foundedYearsAgo || a.id.localeCompare(b.id))
+        .find(house => standing.has(house.id));
+    return heir ? standing.get(heir.id)! : null;
+}
 /** One auction a year, one inter-house board every three years, with seeded dates. */
 export function capitalCalendar(state: WorldState, year: number): CapitalOccasion[] {
     const occasions: CapitalOccasion[] = [];
     const graph = routeQueriesFor(state.locations);
+    const auctioneer = whoHoldsTheAuctions(state);
     for (const venue of capitalPlaces(state)) {
         const province = theProvinceAround(state.locations, venue.id, graph);
         const houses = state.factions.filter(h => h.dissolvedOnDay === null && isBelowTheLid(h));
@@ -584,12 +599,11 @@ export function capitalCalendar(state: WorldState, year: number): CapitalOccasio
             ?? houses.filter(h => theProvinceAround(state.locations, h.seatLocationId, graph) === province)
                 .sort((a, b) => Number(b.resources.power_ordinal ?? 0) - Number(a.resources.power_ordinal ?? 0)
                     || a.id.localeCompare(b.id))[0];
-        if (!host) continue;
         const row = COMPETITION_CALENDARS.find(r => r.open && r.venueName === venue.name);
         const { auction: auctionDay, contest: contestDay } = occasionDates(state, venue, year, row);
-        occasions.push({ venueId: venue.id, hostId: host.id, kind: 'auction',
+        if (auctioneer) occasions.push({ venueId: venue.id, hostId: auctioneer.id, kind: 'auction',
             opensOnDay: auctionDay - 45, onDay: auctionDay, endsOnDay: auctionDay + 7 });
-        if (contestDay !== null) {
+        if (host && contestDay !== null) {
             const day = contestDay;
             occasions.push({ venueId: venue.id, hostId: host.id, kind: 'competition',
                 opensOnDay: day - (row?.noticeDays ?? 90), onDay: day, endsOnDay: day + 14 });
@@ -889,12 +903,14 @@ export function sendCapitalDelegations(state: WorldState, occasion: CapitalOccas
         && forStream(state.seed, 'capital-delegation', venue.id, occasion.kind, occasion.onDay, house.id)
             .chance(theProvinceAround(state.locations, house.seatLocationId, graph) === province ? 0.75 : 0.2)),
         'background-capital-delegation', venue.id, occasion.kind, occasion.onDay);
+    // The house holding an auction always sends its witnesses; nobody else's hammer binds.
+    const witnessing = occasion.kind === 'auction' ? host.id : null;
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null || !house.seatLocationId || !isBelowTheLid(house)) continue;
-        if (!selected.has(house.id)) continue;
+        if (!selected.has(house.id) && house.id !== witnessing) continue;
         const rng = forStream(state.seed, 'capital-delegation', venue.id, occasion.kind, occasion.onDay, house.id);
         const near = theProvinceAround(state.locations, house.seatLocationId, graph) === province;
-        if (!rng.chance(near ? 0.75 : 0.2)) continue;
+        if (house.id !== witnessing && !rng.chance(near ? 0.75 : 0.2)) continue;
         const spare = spareFor(state, house, day,graph);
         const interest = (n: NpcRecord) => 1 + n.goals.filter(g => g.status === 'active'
             && (occasion.kind === 'auction' ? g.kind === 'wealth' || g.kind === 'cultivation'
@@ -906,11 +922,13 @@ export function sendCapitalDelegations(state: WorldState, occasion: CapitalOccas
                 forStream(state.seed, 'capital-delegate-hand', venue.id, occasion.onDay, b.id).next())) / interest(b))
             .slice(0, rng.int(1, 2));
         if (party.length) send(state, house, venue, party,
-            occasion.kind === 'auction' ? 'the auction delegation' : 'the inter-house competition',
+            house.id === witnessing ? 'witnessing the auction'
+                : occasion.kind === 'auction' ? 'the auction delegation' : 'the inter-house competition',
             day, { untilDay: occasion.endsOnDay + 14, eventDay: occasion.onDay }, onDue, graph, routes);
     }
     appendWorldFact(state, makeFact({ day, kind: 'gathering', visibility: 'public', scale: 'regional',
-        summary: `${venue.name} holds an ${occasion.kind === 'auction' ? 'auction' : 'inter-house competition'} on day ${occasion.onDay}.`,
+        summary: occasion.kind === 'auction' ? `${host.name} holds an auction at ${venue.name} on day ${occasion.onDay}.`
+            : `${venue.name} holds an inter-house competition on day ${occasion.onDay}.`,
         locationId: venue.id, factionIds: [host.id], magnitude: 0.4,
         actors: [],
         data: { capitalOccasion: true, hostId: host.id, occasionKind: occasion.kind, onDay: occasion.onDay, endsOnDay: occasion.endsOnDay } }));
