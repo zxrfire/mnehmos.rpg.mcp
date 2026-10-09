@@ -10161,7 +10161,12 @@ ${noticed}`;
 
         const scope = this.scopeFor(cultivator);
         const asSect = resolveSect(this.repos, wanted, scope, cultivator.sectId);
-        if (asSect) return { id: asSect.id, name: asSect.name, kind: 'sect' };
+        // `resolveSect` lets a typed full name through as an attempt, which is right for asking
+        // the way. Acting on a house is not asking: what the player knows from another run grants
+        // the character nothing, so a house it has never heard of cannot be acted on.
+        if (asSect && (asSect.id === cultivator.sectId || heard(asSect.id))) {
+            return { id: asSect.id, name: asSect.name, kind: 'sect' };
+        }
 
         let best: { id: string; name: string; kind: 'court' | 'apex' } | null = null;
         let bestScore = MATCH_THRESHOLD;
@@ -13208,7 +13213,9 @@ ${opened.text}` : receipt,
             ? npcsWhereTheyStand(careWorld, carePlace, cultivator.standingIn, { id: cultivator.id })
                 .find(npc => (requestedProviderId === undefined || npc.id === requestedProviderId)
                     && physicianIsWorking(careWorld, npc)) : undefined;
-        if (!physician) {
+        // With the world off there is nobody to check against, and this guard
+        // fails open like every other world guard (AGENTS.md, the test harness).
+        if (this.worldEnabled && !physician) {
             return refused('world.physicianIsWorking', 'treat', factsForRefusal(
                 'Nobody here is seeing to wounds.',
                 'Visit a town clinic while its physician is working, or your house\'s infirmary for its own medicine.',
@@ -13329,16 +13336,18 @@ ${opened.text}` : receipt,
         const paid = provisioning.cultivator;
         // The service was bought from this actual person. It is their purse,
         // not wealth removed from circulation by an imaginary counter.
-        physician.spiritStones += cost;
-        physician.updatedOnDay = careWorld!.currentDay;
-        const precedingWork = physician.activity;
+        const precedingWork = physician?.activity ?? null;
         // A paid course is actual work on the existing activity calendar.
         // Ordinary meals are part of doing it; a death or a changed duty can
         // still interrupt it, and is checked after the world advances.
-        const paidWork = { kind: 'the_work_of_their_rank' as const, note: 'Providing the paid course of care.', withIds: [],
-            sinceDay: careWorld!.currentDay, untilDay: careWorld!.currentDay + TREATMENT_DAYS };
-        physician.activity = paidWork;
-        this.theWorldMoved();
+        const paidWork = physician && careWorld ? { kind: 'the_work_of_their_rank' as const, note: 'Providing the paid course of care.', withIds: [],
+            sinceDay: careWorld.currentDay, untilDay: careWorld.currentDay + TREATMENT_DAYS } : null;
+        if (physician && careWorld && paidWork) {
+            physician.spiritStones += cost;
+            physician.updatedOnDay = careWorld.currentDay;
+            physician.activity = paidWork;
+            this.theWorldMoved();
+        }
 
         const startDay = Math.floor(run.elapsedDays);
         const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, paid, TREATMENT_DAYS, {
@@ -13365,11 +13374,12 @@ ${opened.text}` : receipt,
             hostility: ruinHostilityHere(this, paid),
             toll: tollConditionsFor(this.repos, paid)
         }, 'reserved');
-        const attending = this.atHand?.npcs.find(npc => npc.id === physician.id);
+        const attending = this.atHand?.npcs.find(npc => npc.id === physician?.id);
         const ourCourse = attending !== undefined && JSON.stringify(attending.activity) === JSON.stringify(paidWork);
-        const stillServing = skip.simulatedDays >= TREATMENT_DAYS && ourCourse
+        // No physician means the world is off, where the course is the board's and only time can stop it.
+        const stillServing = skip.simulatedDays >= TREATMENT_DAYS && (physician === undefined || ourCourse
             && attending!.status === 'alive'
-            && locationOnNpcJourney(this.atHand!.locations, attending!, this.atHand!.currentDay) === carePlace?.id;
+            && locationOnNpcJourney(this.atHand!.locations, attending!, this.atHand!.currentDay) === carePlace?.id);
         // Restore only our own course. A new engine-written duty, a journey or
         // a conflict is somebody's actual state and must survive this return.
         if (attending?.status === 'alive' && ourCourse) {

@@ -221,7 +221,8 @@ function bookAtTheCounter(game: GameService, run: Run, cultivator: Cultivator,
     const keeper = whoKeepsTheCounter(game, cultivator, 'inn', ['inn']);
     const stored = keeper ? game.repos.cultivators.getById(keeper.id) : null;
     const person = !stored && keeper ? game.atHand?.npcs.find(npc => npc.id === keeper.id && isActing(npc.status)) : null;
-    if (!keeper || (!stored?.alive && !person)) return refused('engine.takeARoom', 'buy', factsForRefusal(
+    // With the world off nobody can be checked for, and the guard fails open (AGENTS.md).
+    if (game.atHand && (!keeper || (!stored?.alive && !person))) return refused('engine.takeARoom', 'buy', factsForRefusal(
         'Nobody is keeping the inn counter.', 'Nobody here can take payment and let the room.', 'Nothing bought; no payment made.'));
     const bed = whatTheBedCostsHere(game, cultivator, options.bed ?? 'price-inn-night');
     const cash = bed.cash * Math.ceil(toBuy / bed.nights) + bed.mealCash * toBuy;
