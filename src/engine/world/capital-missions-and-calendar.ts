@@ -38,15 +38,31 @@ export interface CapitalOccasion {
 interface MissionLeg { fromId: string; toId: string; by: 'land' | 'ship' }
 type MissionService = { days: number } | { untilDay: number; eventDay: number };
 type PublicRoutesInOnePass = Map<string, MissionLeg[] | null>;
+type PublicDockRead = { ports: LocationRecord[];
+    lines: Map<string, { toId: string; days: number }[]> };
+const DOCKS_IN_ONE_PASS = new WeakMap<PublicRoutesInOnePass, PublicDockRead>();
+
+/** A sending pass changes people and bookings, not its geographic dock connections. */
+function publicDocksInOnePass(state: WorldState, graph: RouteQueries, routes: PublicRoutesInOnePass): PublicDockRead {
+    let read = DOCKS_IN_ONE_PASS.get(routes);
+    if (read) return read;
+    const byName = new Map(state.locations.map(place => [place.name, place]));
+    const ports = thePortsShipsPutInAt(state, graph).map(name => byName.get(name))
+        .filter((place): place is LocationRecord => place !== undefined);
+    const lines = new Map(ports.map(port => [port.id, publicShipLinesFrom(state, port.name, 0, graph)
+        .flatMap(line => { const other = byName.get(line.to);
+            return other ? [{ toId: other.id, days: line.days }] : []; })]));
+    read = { ports, lines };
+    DOCKS_IN_ONE_PASS.set(routes, read);
+    return read;
+}
 
 /** Route results live only for one unchanged-graph sending pass. */
 function publicRoute(state: WorldState, fromId: string, toId: string, graph: RouteQueries,
     routes: PublicRoutesInOnePass): MissionLeg[] | null {
     const key = `${fromId}|${toId}`;
     if (routes.has(key)) return routes.get(key)!;
-    const byName = new Map(state.locations.map(place => [place.name, place]));
-    const ports = thePortsShipsPutInAt(state,graph).map(name => byName.get(name)).filter(
-        (place): place is LocationRecord => place !== undefined);
+    const { ports, lines } = publicDocksInOnePass(state, graph, routes);
     const outward = walkingDaysFrom(state.locations, fromId, undefined, graph);
     const inward = walkingDaysFrom(state.locations, toId, undefined, graph);
     const nodes = new Set([fromId, toId, ...ports.map(port => port.id)]);
@@ -64,9 +80,8 @@ function publicRoute(state: WorldState, fromId: string, toId: string, graph: Rou
         const last = inward.get(port.id);
         if (last !== undefined && !journeyNeedsWater(state.locations, port.id, toId, graph))
             add(port.id, toId, last, 'land');
-        for (const line of publicShipLinesFrom(state, port.name, 0,graph)) {
-            const other = byName.get(line.to);
-            if (other && nodes.has(other.id)) add(port.id, other.id, line.days, 'ship');
+        for (const line of lines.get(port.id) ?? []) {
+            if (nodes.has(line.toId)) add(port.id, line.toId, line.days, 'ship');
         }
     }
     const direct = outward.get(toId);

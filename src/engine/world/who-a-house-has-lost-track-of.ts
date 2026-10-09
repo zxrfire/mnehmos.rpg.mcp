@@ -104,6 +104,15 @@ export function theHouseKnowsAgain<H extends Pick<FactionRecord, 'tags'>>(house:
         && !t.startsWith(`${TOLD_TO_LOOK_AT}${personId}|`)) };
 }
 
+/** Earliest house mark per person, for one read-only absence sweep. */
+export function whoHousesCannotAccountFor(state: Pick<WorldState, 'factions'>): ReadonlyMap<string, number> {
+    const earliest = new Map<string, number>();
+    for (const house of state.factions) for (const [id, day] of lostTrackIn(house.tags)) {
+        if (day < (earliest.get(id) ?? Infinity)) earliest.set(id, day);
+    }
+    return earliest;
+}
+
 /**
  * Since when anybody has lost track of this person: the world a pass ago, or a
  * house that holds them lost. Null where nobody has. The one read every "missing"
@@ -111,10 +120,15 @@ export function theHouseKnowsAgain<H extends Pick<FactionRecord, 'tags'>>(house:
  */
 export function whenTheyWereLastAccountedFor(
     state: Pick<WorldState, 'factions'>,
-    person: { id: string; tags: readonly string[] }
+    person: { id: string; tags: readonly string[] },
+    houses?: ReadonlyMap<string, number>
 ): number | null {
     const pending = whenTheWorldLostSightOf(person);
     let earliest: number | null = pending;
+    if (houses) {
+        const since = houses.get(person.id) ?? null;
+        return since === null ? pending : pending === null ? since : Math.min(pending, since);
+    }
     for (const house of state.factions) {
         const since = whenTheHouseLostTrackOf(house, person.id);
         if (since !== null && (earliest === null || since < earliest)) earliest = since;

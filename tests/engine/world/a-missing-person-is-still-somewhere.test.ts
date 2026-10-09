@@ -1,5 +1,8 @@
 /**
  * A missing person is still somewhere.
+ * An absence sweep shares house marks before any house learns or clears them;
+ * duplicate marks retain the first valid house entry and pending world loss
+ * still participates in the earliest date. A later sweep reads changed houses.
  *
  * The design owner: *"they still die of old age unless they advance, and they
  * still die or reappear and can be found dead. Missing people are still somewhere
@@ -46,7 +49,10 @@ import {
     isLostTrackOf,
     theHouseLosesTrackOf,
     whenTheHouseLostTrackOf,
-    whenTheWorldLostSightOf
+    whenTheWorldLostSightOf,
+    whenTheyWereLastAccountedFor,
+    whoHousesCannotAccountFor,
+    theHouseKnowsAgain
 } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 import { createWorld, makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
 
@@ -70,6 +76,22 @@ function aWorld(): { state: WorldState; person: NpcRecord } {
 }
 
 describe('somebody the world loses is still a living person', () => {
+    it('keeps the earliest actual loss and rereads houses after they learn again', () => {
+        const { state, person } = aWorld();
+        state.factions[0]!.tags.push('lost-track-of|' + person.id + '|' + (DAY - 2),
+            'lost-track-of|' + person.id + '|' + (DAY - 20), 'lost-track-of|invalid|NaN');
+        const other = makeFaction({ id: 'other-house', name: 'The Other House', foundedOnDay: 0 });
+        state.factions.push(theHouseLosesTrackOf(other, person.id, DAY - 10));
+        const lost = { ...person, tags: ['lost-sight-of|' + (DAY - 5)] };
+        const read = whoHousesCannotAccountFor(state);
+        expect(whenTheyWereLastAccountedFor(state, lost, read)).toBe(DAY - 10);
+        expect(whenTheyWereLastAccountedFor(state, lost, read)).toBe(whenTheyWereLastAccountedFor(state, lost));
+        state.factions = state.factions.map(house => theHouseKnowsAgain(house, person.id));
+        const learned = whoHousesCannotAccountFor(state);
+        expect(whenTheyWereLastAccountedFor(state, lost, learned)).toBe(DAY - 5);
+        expect(whenTheyWereLastAccountedFor(state, person, learned)).toBeNull();
+    });
+
     it('stays alive where they are, and their house holds that it does not know where', () => {
         const { state, person } = aWorld();
         const lost = theWorldLoses(person, DAY, 'Went into the hills.')!;

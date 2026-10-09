@@ -21,21 +21,24 @@ import { getConveyance, INNATE_FLIGHT_LAUNCH_QI } from '../../data/cultivation/w
 import { isWithThem, itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from './a-vehicle.js';
 import { brokenStatusesOn } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
-import {readActualDepartureApproach} from './departure-approach.js';
+import {readActualDepartureApproach,departureSceneFor} from './departure-approach.js';
+import {routeQueriesFor,type RouteQueries} from './locations.js';
 
-export function theExteriorGroundsOfAnNpcAirDeparture(world:WorldState,npc:NpcRecord,toId:string,day:number,vesselId?:string) {
+export function theExteriorGroundsOfAnNpcAirDeparture(world:WorldState,npc:NpcRecord,toId:string,day:number,vesselId?:string,
+    routes?:RouteQueries,scene?:ReturnType<typeof departureSceneFor>) {
+    routes ??= routeQueriesFor(world.locations);
     if (npc.status !== 'alive' || !npc.locationId
-        || locationOnNpcJourney(world.locations,npc,day) !== npc.locationId) return null;
-    const from=world.locations.find(place=>place.id===npc.locationId);
-    const to=world.locations.find(place=>place.id===toId);
+        || locationOnNpcJourney(world.locations,npc,day,routes) !== npc.locationId) return null;
+    const from=routes.places.get(npc.locationId);
+    const to=routes.places.get(toId);
     if(!from||!to||[from,to].some(place=>place.tags.includes('interior')
         || ['precinct','hall','chamber','vault','cave','sealed_domain','secret_realm'].includes(place.kind))) return null;
     if(vesselId&&readActualDepartureApproach(world,npc.id,{intentId:'npc-hull-departure',
-        target:{locationId:from.id,vesselId}},day,npc).kind==='already_aboard')return {from,to};
-    const clock={...world,currentDay:day,currentHour:(day%1)*24};
-    const routine=routineOf(clock,npc);
+        target:{locationId:from.id,vesselId}},day,npc,routes,scene).kind==='already_aboard')return {from,to};
+    const clock=scene?.at(day).clock??{...world,currentDay:day,currentHour:(day%1)*24};
+    const routine=routineOf(clock,npc,routes);
     if(routine.home) return null;
-    const areas=theAreasOf(clock,from);
+    const areas=scene?.areas(day,from)??theAreasOf(clock,from,undefined,undefined,routes);
     const area=areas.areas.find(one=>one.id===areas.whereIs.get(npc.id));
     if(area?.for==='room'||area?.for==='clinic') return null;
     return {from,to};

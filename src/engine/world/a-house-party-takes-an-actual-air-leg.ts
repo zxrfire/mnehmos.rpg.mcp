@@ -1,3 +1,5 @@
+import {departureSceneFor} from './departure-approach.js';
+import {routeQueriesFor} from './locations.js';
 /** A native house dispatch lends the actual tracked hull through the ordinary
  * store authority. Work selection never supplies custody permission. The accepted
  * leg receipt holds its actual arrival and pre-paid return commitment; activities
@@ -40,9 +42,10 @@ export function quoteHouseAirDuty(state:WorldState,house:FactionRecord,people:re
  if(!from||!conveyance?.crossesGroundThatCannotBeWalked || isRuined(craft)
   || house.dissolvedOnDay!==null || !people.some(person=>person.id===pilot.id)
   || new Set(people.map(person=>person.id)).size!==people.length
-  || people.some(person=>person.status!=='alive'||person.factionId!==house.id
-   ||theExteriorGroundsOfAnNpcAirDeparture(state,person,toId,day)?.from.id!==from)
   || itWantsAPilot(conveyance)&&pilot.cultivation.realmOrdinal<A_SPIRIT_BOAT_ANSWERS_TO)return null;
+ const routes=routeQueriesFor(state.locations),scene=departureSceneFor(state,routes);
+ if(people.some(person=>person.status!=='alive'||person.factionId!==house.id
+   ||theExteriorGroundsOfAnNpcAirDeparture(state,person,toId,day,undefined,routes,scene)?.from.id!==from))return null;
  const quote=quoteAnAirJourney(state.locations,from,toId,conveyance,craft.power,people.length,
   {facts:witnessIndexFor(state).byId,onDay:day},1);
  const back=quoteAnAirJourney(state.locations,toId,house.seatLocationId??from,conveyance,craft.power,people.length,

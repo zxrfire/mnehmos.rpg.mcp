@@ -44,6 +44,7 @@ import {
     theHouseLosesTrackOf,
     whenTheWorldLostSightOf,
     whenTheyWereLastAccountedFor,
+    whoHousesCannotAccountFor,
     whoTheHouseHasLostTrackOf
 } from './who-a-house-has-lost-track-of.js';
 import { whoHasALampBurningIn } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
@@ -682,8 +683,9 @@ export function openAbsencesForTheUnaccountedFor(
     // somebody with no house has nobody to hold the mark, and the people waiting
     // on them are the absence itself.
     const lostOnDay = new Map<string, number>();
+    const houses = whoHousesCannotAccountFor(state);
     for (const npc of state.npcs) {
-        const lostOn = whenTheyWereLastAccountedFor(state, npc);
+        const lostOn = whenTheyWereLastAccountedFor(state, npc, houses);
         if (lostOn !== null) lostOnDay.set(npc.id, lostOn);
     }
     whatHousesLearnOfTheirOwn(state, onDay);

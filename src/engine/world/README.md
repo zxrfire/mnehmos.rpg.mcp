@@ -4704,3 +4704,17 @@ A newly paid capital intention starts a new departure walk even when its member
 still carries an expired earlier walk's note. Continuation requires the same
 mission binding. The ordinary actor, door, elapsed time and boarding checks remain
 authoritative.
+
+
+A dated capital sending pass shares its geographic dock connections; the order
+of each route's land and ship edges remains unchanged. Actual quotes and
+boardings still read changed people, payment, capacity and custody. An absence
+sweep projects the earliest house mark per person before houses learn anything,
+then combines each person's pending world-loss mark through the existing reader.
+The projection ends at that sweep; a later sweep reads the current house marks.
+
+House air-duty quotes check the existing pilot requirement before population
+placement. Eligible selected bodies share one departure scene per place and
+moment through the existing exterior-ground reader. An actual shuttle load
+uses a fresh read batch before admission changes any body or hull. Neither
+read grants a cabin exit, future arrival, pilot qualification or new passenger.

@@ -1,11 +1,17 @@
 /** The owned shuttle must load real bodies, including its pilot, rather than
  * treating an aggregate multi-trip quote as a voyage. These controls retain
  * actual empty returns, per-body service, native reopening and per-leg fuel.
- * The calendar fixture adds the missing timed berth assembly through ordinary
- * appointments, with a real connected road, funded chest and spare members.
- * An earlier one-date diagnostic omitted those facts and pinned a probabilistic
- * selection. No control writes a future course or copied passenger roster. */
+ * The calendar fixture adds timed berth assembly through ordinary appointments,
+ * with a real connected road, funded chest and spare members. An earlier
+ * one-date diagnostic omitted those facts and pinned a probabilistic selection.
+ * No control writes a future course or copied passenger roster.
+ * A five-second live census profile spent 4.98 seconds in full area placement
+ * under house air quotes, including an ordinal-7 prospective pilot. Pure party
+ * reads share a scene; a later quote rereads a member who entered quarters.
+ * Ordinary pilot qualifications and physical-presence gates remain. The room
+ * assertion was red-checked by removing the actual room refusal. */
 import {expect,it} from 'vitest';
+import {aRoomOfTheirOwn} from '../../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import {theExteriorGroundsOfAnNpcAirDeparture} from '../../../src/engine/world/an-actual-npc-air-course.js';
 import Database from 'better-sqlite3';
 import {mkdtempSync,appendFileSync} from 'node:fs';
@@ -59,6 +65,18 @@ function advance(world:WorldState,days:number){return advanceWorldForPlay(world,
 function legs(world:WorldState,id:string){return [...(witnessIndexFor(world).references.get(id)??[])].filter(f=>f.data.airCourse===true&&f.data.houseDutyDispatchId===id);}
 function body(world:WorldState,id:string){const n=world.npcs.find(n=>n.id===id);if(!n)throw Error('Actual original sending body disappeared');return n;}
 function exactClock(actual:number,expected:number){expect(journeyTimeHasReached(actual,expected)&&journeyTimeHasReached(expected,actual)).toBe(true);}
+it('a later duty quote rereads a selected member who entered their room',()=>{
+ const h=arranged();
+ expect(quoteHouseAirDuty(h.world,h.house,h.people,h.pilot,h.hull,h.to.id,h.day,false)).not.toBeNull();
+ const member=h.people.find(person=>person.id!==h.pilot.id)!;
+ const at=h.world.npcs.findIndex(person=>person.id===member.id);
+ h.world.npcs[at]={...member,activity:{...member.activity!,standingIn:aRoomOfTheirOwn(h.from,member.id).id}};
+ const people=h.people.map(person=>h.world.npcs.find(actual=>actual.id===person.id)!);
+ const before=JSON.stringify(h.world);
+ expect(quoteHouseAirDuty(h.world,h.house,people,h.pilot,h.hull,h.to.id,h.day,false)).toBeNull();
+ expect(JSON.stringify(h.world)).toBe(before);
+});
+
 it('explicit piloted fractional quotes sum the same real one-leg fuel while legacy and single-load quotes keep their contract',()=>{
  const craft=requireConveyance('conv-spirit-boat'),input={walkingDays:1,conveyance:craft,heads:craft.heads+1,preciseDays:true};
  const actual=priceJourney({...input,pilotHeads:1});if(!actual?.pilotedLoads)throw Error('Real multi-load quote has no native load projection');

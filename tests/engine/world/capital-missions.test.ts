@@ -22,6 +22,9 @@
  * without a pilot or an air receipt. Actual house flight is covered by the shuttle
  * controls; this file keeps the refusal and moves its cargo/fare/arrival checks
  * onto the admitted public mission. Capital travel has one actual itinerary.
+ * The owner allows thirty minutes for this census. Both horizons use the
+ * canonical demography soakedWorld cache; no claim walks a separate century.
+ * Each unchanged snapshot shares its route read for physical census placement.
  */
 import { describe, expect, it } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
@@ -29,17 +32,19 @@ import { capitalPlaces } from '../../../src/engine/world/capital-missions-and-ca
 import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import { PROVINCIAL_CAPITALS } from '../../../src/data/cultivation/regions.js';
 import { locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
+import { routeQueriesFor } from '../../../src/engine/world/locations.js';
 
 /** Native journey controls moved unchanged to capital-mission-journeys.test.ts.
- * This source-hash cached decade census remains excluded by the owner. */
+ * The cached decade census keeps its original assertions and canonical seed. */
 describe('capital missions', () => {
     it('keeps every capital occupied by residents and several visiting houses over a decade', async () => {
         const opened = await soakedWorld('demography', { years: 0 });
         const lived = await soakedWorld('demography', { years: 10 });
         for (const state of [opened, lived]) {
             const alive = state.npcs.filter(n => n.status === 'alive');
+            const routes = routeQueriesFor(state.locations);
             const placeOf = new Map(alive.map(n => [n.id,
-                locationOnNpcJourney(state.locations, n, state.currentDay)]));
+                locationOnNpcJourney(state.locations, n, state.currentDay, routes)]));
             const cities = capitalPlaces(state);
             expect(cities.map(c => c.name)).toEqual(expect.arrayContaining(Object.values(PROVINCIAL_CAPITALS)));
             const cityIds = new Set(cities.map(c => c.id));
@@ -78,5 +83,5 @@ describe('capital missions', () => {
                 }
             }
         }
-    }, 900_000);
+    }, 1_800_000);
 });

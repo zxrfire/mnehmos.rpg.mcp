@@ -135,9 +135,10 @@ function admitLoad(state:WorldState,row:Sending,pilot:NpcRecord,hull:ObjectRecor
  day:number,phase:Phase,priorOutwards:readonly HistoricalFact[]=[]){
  const read=funding(state,row),craft=getConveyance(String(hull.data.conveyanceId??''));
  if(!read||!craft||!pilot.locationId||hull.possessorId!==pilot.id||hull.ownerId!==row.posting.houseId
-  ||!isWithThem(hull,pilot.id,pilot.locationId)||isRuined(hull)||!people.some(n=>n.id===pilot.id)
-  ||people.some(person=>state.npcs.find(n=>n.id===person.id)!==person||!bound(person,row)
-   ||theExteriorGroundsOfAnNpcAirDeparture(state,person,to,day)?.from.id!==pilot.locationId))return null;
+  ||!isWithThem(hull,pilot.id,pilot.locationId)||isRuined(hull)||!people.some(n=>n.id===pilot.id))return null;
+ const routes=routeQueriesFor(state.locations),scene=departureSceneFor(state,routes);
+ if(people.some(person=>state.npcs.find(n=>n.id===person.id)!==person||!bound(person,row)
+   ||theExteriorGroundsOfAnNpcAirDeparture(state,person,to,day,undefined,routes,scene)?.from.id!==pilot.locationId))return null;
  const quote=quoteAnAirJourney(state.locations,pilot.locationId,to,craft,hull.power,people.length,
   {facts:witnessIndexFor(state).byId,onDay:day},1);
  if(!quote||quote.trips!==1||quote.stonesBurned>read.fuel-spent(state,row))return null;
