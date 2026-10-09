@@ -11,7 +11,7 @@ import { reportingMagnitudeFor } from './a-deed-enters-the-world-as-a-fact.js';
 import { whatArrivingInIsWorth } from './a-crossing-enters-the-world-as-news.js';
 import { groundAtLocation } from './how-a-cultivator-comes-by-a-road.js';
 import { makeFact } from './history.js';
-import { walkingDaysFrom } from './locations.js';
+import { routeQueriesFor, walkingDaysFrom, type RouteQueries } from './locations.js';
 import { isAwayOnSomething, isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { whatSomebodyIsLike } from './what-somebody-is-like-and-where-it-came-from.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -31,13 +31,15 @@ export function startNpcJourney(
     destinationId: string,
     day: number,
     note: string,
-    vehicle?: ObjectRecord
+    vehicle?: ObjectRecord,
+    routes?: RouteQueries
 ): NpcRecord {
     if (npc.locationId === null) return npc;
+    routes ??= routeQueriesFor(state.locations);
     if ('history' in state) {
         const craft=vehicle&&getConveyance(String(vehicle.data.conveyanceId??''));
         const approach=prepareNpcDepartureApproach(state,npc,destinationId,day,note,
-            craft?.crossesGroundThatCannotBeWalked?'air':craft&&!craft.waterOnly?'carriage':'ground',vehicle?.id);
+            craft?.crossesGroundThatCannotBeWalked?'air':craft&&!craft.waterOnly?'carriage':'ground',vehicle?.id,routes);
         if(approach!==undefined)return approach??npc;
         const air=startNpcAirJourney(state,npc,destinationId,day,note,vehicle);
         if(air?.activity?.airCourseLocationId) return air;
@@ -49,10 +51,10 @@ export function startNpcJourney(
     }
     // Re-read the actual body after a native dose; absence supplies no ground.
     if (npc.locationId === null) return npc;
-    if (!vehicle && publicSeaLaneBetween(state.locations, npc.locationId, destinationId)) {
-        return bookNpcPassageForRoute(state, npc, destinationId, day, note) ?? npc;
+    if (!vehicle && publicSeaLaneBetween(state.locations, npc.locationId, destinationId,undefined,routes)) {
+        return bookNpcPassageForRoute(state, npc, destinationId, day, note,routes) ?? npc;
     }
-    const water = journeyNeedsWater(state.locations, npc.locationId, destinationId);
+    const water = journeyNeedsWater(state.locations, npc.locationId, destinationId,routes);
     const craft = vehicle && getConveyance(String(vehicle.data.conveyanceId ?? ''));
     if (vehicle && (!craft || !isWithThem(vehicle, npc.id, npc.locationId)
         || (vehicle.ownerId !== npc.id && vehicle.possessorId !== npc.id))) return npc;
@@ -60,7 +62,7 @@ export function startNpcJourney(
     if (craft?.waterOnly) return npc;
     if (craft && itWantsAPilot(craft) && npc.cultivation.realmOrdinal < A_SPIRIT_BOAT_ANSWERS_TO) return npc;
     if (water && !craft?.crossesGroundThatCannotBeWalked) return npc;
-    const walking = walkingDaysFrom(state.locations, npc.locationId).get(destinationId);
+    const walking = walkingDaysFrom(state.locations, npc.locationId,undefined,routes).get(destinationId);
     if (walking === undefined) return npc;
     const quote = craft ? priceJourney({ walkingDays: walking, conveyance: craft, power: vehicle?.power,
         heads: 1, crossesGroundThatCannotBeWalked: water }) : null;

@@ -1,5 +1,5 @@
 import {departureSceneFor} from './departure-approach.js';
-import {routeQueriesFor} from './locations.js';
+import {routeQueriesFor,type RouteQueries} from './locations.js';
 /** A native house dispatch lends the actual tracked hull through the ordinary
  * store authority. Work selection never supplies custody permission. The accepted
  * leg receipt holds its actual arrival and pre-paid return commitment; activities
@@ -21,6 +21,7 @@ import {witnessIndexFor} from './witness-reaction-index.js';
 import {whatThisHouseCouldTakeOut} from './what-a-house-can-take-out.js';
 import {bestForThisRoad} from './what-a-conveyance-does-to-a-journey.js';
 import {beginAnActualHouseAirShuttle} from './a-house-party-takes-an-actual-air-shuttle.js';
+type DepartureBatch={routes:RouteQueries;scene:ReturnType<typeof departureSceneFor>};
 
 export function theHouseLendsAnActualDutyCraft(state:WorldState,house:FactionRecord,pilot:NpcRecord,
  craft:ObjectRecord,portfolios:readonly APortfolio[],roll:readonly OnTheRoll[],day:number){
@@ -37,13 +38,13 @@ export function theHouseLendsAnActualDutyCraft(state:WorldState,house:FactionRec
 }
 /** Pure quote of the actual selected group; multiple trips need an actual shuttle itinerary. */
 export function quoteHouseAirDuty(state:WorldState,house:FactionRecord,people:readonly NpcRecord[],
- pilot:NpcRecord,craft:ObjectRecord,toId:string,day:number,singleLoad=true){
+ pilot:NpcRecord,craft:ObjectRecord,toId:string,day:number,singleLoad=true,batch?:DepartureBatch){
  const from=pilot.locationId,conveyance=getConveyance(String(craft.data.conveyanceId??''));
  if(!from||!conveyance?.crossesGroundThatCannotBeWalked || isRuined(craft)
   || house.dissolvedOnDay!==null || !people.some(person=>person.id===pilot.id)
   || new Set(people.map(person=>person.id)).size!==people.length
   || itWantsAPilot(conveyance)&&pilot.cultivation.realmOrdinal<A_SPIRIT_BOAT_ANSWERS_TO)return null;
- const routes=routeQueriesFor(state.locations),scene=departureSceneFor(state,routes);
+ const routes=batch?.routes??routeQueriesFor(state.locations),scene=batch?.scene??departureSceneFor(state,routes);
  if(people.some(person=>person.status!=='alive'||person.factionId!==house.id
    ||theExteriorGroundsOfAnNpcAirDeparture(state,person,toId,day,undefined,routes,scene)?.from.id!==from))return null;
  const quote=quoteAnAirJourney(state.locations,from,toId,conveyance,craft.power,people.length,
@@ -55,8 +56,8 @@ export function quoteHouseAirDuty(state:WorldState,house:FactionRecord,people:re
 }
 /** Caller has already debited these exact native two-leg fuel quotes once. */
 export function admitPaidHouseAirDuty(state:WorldState,house:FactionRecord,people:readonly NpcRecord[],
- pilot:NpcRecord,loan:ObjectRecord,toId:string,day:number,activities:ReadonlyMap<string,NpcActivity|null>){
- const read=quoteHouseAirDuty(state,house,people,pilot,loan,toId,day);
+ pilot:NpcRecord,loan:ObjectRecord,toId:string,day:number,activities:ReadonlyMap<string,NpcActivity|null>,batch?:DepartureBatch){
+ const read=quoteHouseAirDuty(state,house,people,pilot,loan,toId,day,true,batch);
  if(!read||loan.possessorId!==pilot.id||!isWithThem(loan,pilot.id,read.from)
   ||people.some(person=>activities.get(person.id)==null))return null;
  const accepted=beginAnAirCourse(state,{bodyId:pilot.id,bodyName:pilot.name,fromId:read.from,toId,
@@ -115,11 +116,11 @@ export function admitPaidHouseAirReturn(state:WorldState,npc:NpcRecord,day:numbe
  * before fuel or custody changes. A multi-load quote is not an admitted itinerary. */
 export function sendAnActualSelectedHouseParty(state:WorldState,house:FactionRecord,
  people:readonly NpcRecord[],pilot:NpcRecord,craft:ObjectRecord,toId:string,day:number,
- activities:ReadonlyMap<string,NpcActivity|null>,portfolios:readonly APortfolio[],roll:readonly OnTheRoll[]){
+ activities:ReadonlyMap<string,NpcActivity|null>,portfolios:readonly APortfolio[],roll:readonly OnTheRoll[],batch?:DepartureBatch){
  if(!whatThisHouseCouldTakeOut(state,house).some(row=>row.rowId===craft.id)
   ||people.some(person=>state.npcs.find(row=>row.id===person.id)!==person
    ||activities.get(person.id)==null))return null;
- const read=quoteHouseAirDuty(state,house,people,pilot,craft,toId,day);
+ const read=quoteHouseAirDuty(state,house,people,pilot,craft,toId,day,true,batch);
  if(!read||!(read.quote.daysOneWay>0)||whereItStands(craft)!==read.from)return null;
  const fuel=read.quote.stonesBurned+read.back.stonesBurned;
  const purse=Number(house.resources.spirit_stones??0);
@@ -129,7 +130,7 @@ export function sendAnActualSelectedHouseParty(state:WorldState,house:FactionRec
  // Synchronous admission has no intervening actor or callback. Its readiness is
  // the exact read above; a refusal has made no payment or custody write.
  house.resources.spirit_stones=purse-fuel;
- const accepted=admitPaidHouseAirDuty(state,house,people,pilot,loan.object,toId,day,activities);
+ const accepted=admitPaidHouseAirDuty(state,house,people,pilot,loan.object,toId,day,activities,batch);
  if(!accepted)throw Error('Validated paid current sending lost its actual air admission');
  return {accepted,fuel,read};
 }
@@ -144,6 +145,7 @@ export function sendASelectedHousePartyOnAnAvailableAirHull(state:WorldState,hou
  taking:ReturnType<typeof whatThisHouseCouldTakeOut>[number])=>ReadonlyMap<string,NpcActivity|null>,
  portfolios:readonly APortfolio[],roll:readonly OnTheRoll[],sending?:NonNullable<WorldState['pendingSendings']>[number]){
  const refusedCrafts=new Set<string>();
+ const routes=routeQueriesFor(state.locations),batch={routes,scene:departureSceneFor(state,routes)};
  for(;;){
   const taking=bestForThisRoad(whatThisHouseCouldTakeOut(state,house).filter(row=>
    row.conveyance.crossesGroundThatCannotBeWalked&&row.rowId!==undefined&&!refusedCrafts.has(row.rowId)),
@@ -151,14 +153,14 @@ export function sendASelectedHousePartyOnAnAvailableAirHull(state:WorldState,hou
   if(!taking?.rowId)return null;
   const craft=state.objects.find(row=>row.id===taking.rowId);
   if(craft){for(const pilot of people){
-   const read=quoteHouseAirDuty(state,house,people,pilot,craft,toId,day,sending===undefined);
+   const read=quoteHouseAirDuty(state,house,people,pilot,craft,toId,day,sending===undefined,batch);
    if(!read)continue;
    const activities=activitiesFor(read,taking);
    if(sending&&read.quote.trips>1){
-    const admitted=beginAnActualHouseAirShuttle(state,house,people,pilot,craft,sending,day,activities,portfolios,roll);
+    const admitted=beginAnActualHouseAirShuttle(state,house,people,pilot,craft,sending,day,activities,portfolios,roll,batch);
     if(admitted)return {...admitted,taking,dispatchFactId:admitted.row.dispatchFactId};
    }else{const admitted=sendAnActualSelectedHouseParty(state,house,people,pilot,craft,toId,day,
-     activities,portfolios,roll);
+     activities,portfolios,roll,batch);
     if(admitted)return {...admitted,taking,dispatchFactId:undefined};}
 
   }}

@@ -37,8 +37,8 @@ export function continueNpcDepartureApproach(world:WorldState,npc:NpcRecord,day:
     if(intent.service==='gather')return true;
     const vessel=intent.vehicleId?world.objects.find(object=>object.id===intent.vehicleId):undefined;
     const booked=intent.service==='ground'||intent.service==='air'
-        ?startNpcJourney(world,ready,intent.destinationId,day,intent.purpose,vessel)
-        :intent.vehicleId?(vessel?startNpcJourney(world,ready,intent.destinationId,day,intent.purpose,vessel):null)
+        ?startNpcJourney(world,ready,intent.destinationId,day,intent.purpose,vessel,routes)
+        :intent.vehicleId?(vessel?startNpcJourney(world,ready,intent.destinationId,day,intent.purpose,vessel,routes):null)
         :bookNpcPassageForRoute(world,ready,intent.destinationId,day,intent.purpose,routes);
     if(booked&&booked!==ready&&(!booked.activity?.departureApproach)){
         world.npcs[at]=booked;

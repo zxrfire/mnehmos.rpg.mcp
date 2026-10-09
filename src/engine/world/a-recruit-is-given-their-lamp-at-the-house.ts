@@ -37,8 +37,8 @@
  *                                    `returnTo`, ended by `bringHomeWhoeverIsDue`
  *                                    like any other, and entered the year the
  *                                    pass finds them inside. No mover of its own.
- *   elsewhere, robed, owed a token   to the seat for it and back, keeping the
- *                                    home they already had.
+ *   elsewhere, robed, owed a token   to the seat to live there, with the token
+ *                                    issued only after actual arrival.
  *
  * Until then a doorway finds no token (`theHouseTheirTokenNames` is null), and a
  * recruit who is mid-scene or already away on something keeps having none until
@@ -70,17 +70,18 @@ import {
     thisHouseCanIssue,
     tokenIdFor
 } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
-import { walkingDaysFrom, type LocationRecord } from './locations.js';
+import { routeQueriesFor, walkingDaysFrom, type LocationRecord } from './locations.js';
+import { locationOnNpcJourney, journeyNeedsWater } from './places-on-the-way.js';
+import { startNpcJourney } from './dao-ground-stints.js';
 import {
     isAwayOnSomething,
     isTheWorldsToMove,
-    setLocation,
-    whereTheyGoBackTo,
     type NpcRecord
 } from './npc-state.js';
 import { isWorn, makeObject, WORN_TAG, type ObjectRecord } from './possessions.js';
 import { handBackTheirSlips } from './a-communication-talisman-carries-word-home.js';
 import type { WorldState } from './world-state.js';
+import { journeySelectedToHouseSeat } from './capital-missions-and-calendar.js';
 import { keepTheirQuartersInOrder, handBackVacatedQuarters } from './what-somebody-keeps-in-their-quarters.js';
 import {
     deliverWhatTheyOweTheHouse,
@@ -407,7 +408,10 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
     }
     const wears = (npc: NpcRecord, houseId: string): boolean => robed.has(`${npc.id}|${houseId}`);
 
-    const byId = new Map(state.locations.map(l => [l.id, l]));
+    const routes = routeQueriesFor(state.locations);
+    const byId = routes.places;
+    const actualPlace = (npc: NpcRecord): string | null =>
+        locationOnNpcJourney(state.locations, npc, day, routes);
     // Gathered once rather than asked per house: the same answer as
     // `whereThisHouseBurnsItsLamps`, which walks every location per call.
     const lampRoomOf = new Map<string, string>();
@@ -437,7 +441,6 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
             }
             return elder;
         };
-        let reach: Map<string, number> | undefined;
 
         const enter = (npc: NpcRecord): void => {
             const given = whatTheHouseGivesThem({
@@ -467,7 +470,7 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
         // arriving in the same year are let in that year.
         for (const { at } of members) {
             const npc = state.npcs[at]!;
-            if (!isTheWorldsToMove(npc) || !isInsideTheCompound(byId, npc.locationId, seat)) continue;
+            if (!isTheWorldsToMove(npc) || !isInsideTheCompound(byId, actualPlace(npc), seat)) continue;
             done.reported += deliverWhatTheyOweTheHouse(state, npc.id, house.id, day);
         }
 
@@ -478,7 +481,7 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
             // their own sheet, and the world does not walk them anywhere.
             if (!isTheWorldsToMove(npc)) continue;
 
-            if (isInsideTheCompound(byId, npc.locationId, seat)) {
+            if (isInsideTheCompound(byId, actualPlace(npc), seat)) {
                 if (!wears(npc, house.id)) {
                     // NEVER ENTERED: let in on the house's word, which is the
                     // report of whoever took them on. Without it they are taken
@@ -501,7 +504,7 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
                 continue;
             }
 
-            // ELSEWHERE AND NEVER ENTERED: go and be entered, and come home.
+            // Free members move into their house through its actual one-way route.
             // From anything that stops when somebody stops - not from a term
             // (an errand, a posting, a journey already under way), not from a
             // scene somebody else is named in, which is symmetric and would be
@@ -519,22 +522,15 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
                 && !holds(tokenIdFor(npc.id), npc, house.id);
             if (wears(npc, house.id) && !owedAToken) continue;
             if (npc.locationId === null || !freeToSetOut(npc)) continue;
-            reach ??= walkingDaysFrom(state.locations, seat);
-            const days = reach.get(npc.locationId);
-            // Nowhere the map can walk to the seat from is a fact about the
-            // map, and they stay where they are.
-            if (days === undefined) continue;
-            if (!wears(npc, house.id)) {
-                // NEVER ENTERED: they move in. On the road to the seat for the
-                // walk, and entered the year they are standing in it.
-                state.npcs[at] = onTheRoadToLiveAtTheHouse(npc, house.name, seat, day, days);
-                done.sent++;
-                continue;
-            }
-            // ALREADY ONE OF ITS OWN, owed a token: there and back.
-            const there = onTheRoadToBeEntered(npc, house.name, seat, day, days);
+            const from = actualPlace(npc);
+            const road = from === npc.locationId && from !== null
+                && walkingDaysFrom(state.locations, from, undefined, routes).has(seat)
+                && !journeyNeedsWater(state.locations, from, seat, routes);
+            const there = road
+                ? startNpcJourney(state, npc, seat, day, `Going to live at ${house.name}.`,undefined,routes)
+                : journeySelectedToHouseSeat(state, state.factions[h]!, npc, day);
+            if (!there || there === npc) continue;
             state.npcs[at] = there;
-            enter(there);
             done.sent++;
         }
 
@@ -554,66 +550,4 @@ function freeToSetOut(npc: NpcRecord): boolean {
     if (doing === null) return true;
     if (isAwayOnSomething(doing.kind) || doing.kind === 'mending') return false;
     return (doing.untilDay ?? null) === null && doing.withIds.length === 0;
-}
-
-/**
- * A recruit going to live at the house that took them.
- *
- * The design owner: *"move into the compound."* This was a round trip, on the
- * argument that joining where you stand is right and so is living where you
- * live, and it was measured against the one-way version: on the `demography`
- * seed at 80 years, people in settlements 557 to 338 and sect ground 21% to 46%.
- * The owner has ruled the other way, and the drain is the ruling's consequence
- * rather than a defect - settlements lose the people houses recruit. See
- * `demography.test.ts`.
- *
- * Walked, not placed: standing where they joined, `travelling` for the walk with
- * the seat as `returnTo`, so `bringHomeWhoeverIsDue` puts them in the compound
- * when the term is up and this pass enters them the year it finds them there.
- */
-function onTheRoadToLiveAtTheHouse(
-    npc: NpcRecord,
-    houseName: string,
-    seat: string,
-    day: number,
-    days: number
-): NpcRecord {
-    return {
-        ...npc,
-        activity: {
-            kind: 'travelling',
-            note: `On the way to ${houseName}, to be entered on its roll and live there.`,
-            withIds: [],
-            sinceDay: day,
-            untilDay: day + Math.max(1, Math.ceil(days)),
-            returnTo: seat
-        },
-        updatedOnDay: day
-    };
-}
-
-/**
- * There and back, for one of the house's own who is owed a token and lives
- * elsewhere: standing at the seat for the term, with where they set out from as
- * `returnTo`, so `bringHomeWhoeverIsDue` ends it like any other. A recruit moves
- * in (`onTheRoadToLiveAtTheHouse`); somebody already entered keeps their home.
- */
-function onTheRoadToBeEntered(
-    npc: NpcRecord,
-    houseName: string,
-    seat: string,
-    day: number,
-    days: number
-): NpcRecord {
-    return {
-        ...setLocation(npc, seat, day),
-        activity: {
-            kind: 'travelling',
-            note: `Entered on the roll at ${houseName}, and on the way back.`,
-            withIds: [],
-            sinceDay: day,
-            untilDay: day + Math.max(1, Math.ceil(2 * days)),
-            returnTo: whereTheyGoBackTo(npc)
-        }
-    };
 }

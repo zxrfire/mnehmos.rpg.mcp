@@ -18,6 +18,16 @@
  * reached home while a later road projection put its operator back at the post.
  * The current-row binding and receipt-proven return completion preserve actual
  * native arrival/body/custody; successor validation remains root-owned and pending.
+ * The home census also found whole-away escorts rejected when both physical
+ * legs exactly filled their term: zero time parked is not failed on-site work.
+ * That false unfinished binding blocked the body write home until Internal
+ * Affairs erased it at the destination. Explicit on-site terms still need all
+ * their authored service; an escort can be served by the actual journey.
+ * After repairing that read, the same native case found successful settlement
+ * clearing the route before committing its proven home position. The assertion
+ * keeps the returned body at the actual road endpoint, not its old site marker.
+ * An unserved errand that really returned closes unfinished at home. Keeping
+ * its returned actor bound forever accumulated work that could never succeed.
  */
 import { expect, it } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
@@ -30,7 +40,7 @@ import { aPostingThatCanReachItsGround, siteIntervalOnAnNpcPosting, journeyTimeH
 import { isLostTrackOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 import { aRetainedMemberActuallyServed } from '../../../src/engine/world/a-retained-sending-has-actually-served.js';
 import { beginAnAirCourse, stopAnAirCourse, settleWorldAirTravellers } from '../../../src/engine/world/an-air-course-in-the-world.js';
-import { makeLocation } from '../../../src/engine/world/locations.js';
+import { linkLocations, makeLocation } from '../../../src/engine/world/locations.js';
 import { quoteAnAirJourney, conveyanceOfPersonalFlight } from '../../../src/engine/world/what-an-air-journey-takes.js';
 import { aRetainedMemberActuallyReturned } from '../../../src/engine/world/a-retained-sending-has-actually-served.js';
 import { aVehicleOf } from '../../../src/engine/world/a-vehicle.js';
@@ -103,6 +113,54 @@ it('resolves the genuinely served same-site term through the ordinary native out
     expect(news).toHaveLength(1); expect(news[0]!.truth).not.toBe('unresolved');
     expect(news[0]!.data.retainedSendingUnfinished).not.toBe(true);
     move(h, 1); expect(reports(h).filter(fact => fact.day === h.start + h.posting.days)).toEqual(news);
+});
+it('a whole-away escort whose real road fills its term returns without requiring time parked', () => {
+    const h = arranged();
+    const from = makeLocation({ id: 'escort-home', name: 'House grounds', kind: 'sect_seat' });
+    const to = makeLocation({ id: 'escort-market', name: 'Market', kind: 'settlement' });
+    const reason = getSendingReason('sending-an-escort')!;
+    linkLocations(from, to, 'road', reason.days / 2);
+    h.world.locations = [from, to]; h.house.seatLocationId = from.id;
+    h.row.posting = aPostingThatCanReachItsGround(postingFor({ reason, house: h.house,
+        pitchOrdinal: 0, locationId: to.id, hands: 1 }), h.world.locations, from.id, to.id);
+    h.row.locationId = to.id;
+    h.member.locationId = to.id;
+    h.member.activity = { kind: 'out_with_a_party', note: 'Escorting the house envoy.', withIds: [],
+        sinceDay: h.start, untilDay: h.start + h.row.posting.days,
+        fromLocationId: from.id, returnTo: from.id };
+    const due = h.member.activity.untilDay!;
+    const site = siteIntervalOnAnNpcPosting(h.world.locations, h.member)!;
+    expect(site.untilDay).toBe(site.fromDay);
+    h.world.currentDay = due;
+    expect(aRetainedMemberActuallyServed(h.world, h.member, h.row)).toBe(true);
+    expect(aRetainedMemberActuallyReturned(h.world, h.member, h.row)).toBe(true);
+    h.world.currentDay = h.start;
+    move(h, h.row.posting.days);
+    expect(h.world.pendingSendings).toHaveLength(0);
+    expect(h.world.npcs.find(person => person.id === h.member.id)!.locationId).toBe(from.id);
+    expect(h.world.history.facts.some(fact => fact.data.retainedSendingUnfinished === true)).toBe(false);
+    expect(h.world.history.facts.filter(fact => fact.kind === reason.factKind
+        && fact.actors.some(actor => actor.id === h.member.id))).toHaveLength(1);
+});
+it('a genuinely returned but unserved on-site errand closes unfinished at home', () => {
+    const h = arranged();
+    const from = makeLocation({ id: 'unserved-home', name: 'House grounds', kind: 'sect_seat' });
+    const to = makeLocation({ id: 'unserved-market', name: 'Market', kind: 'settlement' });
+    linkLocations(from, to, 'road', h.posting.days / 2);
+    h.world.locations = [from, to]; h.house.seatLocationId = from.id;
+    h.row.locationId = to.id; h.row.posting = { ...h.posting, locationId: to.id };
+    h.member.locationId = to.id;
+    h.member.activity = { kind: 'out_with_a_party', note: 'Checking the posting.', withIds: [],
+        sinceDay: h.start, untilDay: h.start + h.posting.days,
+        fromLocationId: from.id, returnTo: from.id };
+    move(h, h.posting.days);
+    const actual = h.world.npcs.find(person => person.id === h.member.id)!;
+    expect(actual.locationId).toBe(from.id);
+    expect(actual.activity).toBeNull();
+    expect(h.world.pendingSendings).toHaveLength(0);
+    const news = reports(h).filter(fact => fact.data.retainedSendingUnfinished === true);
+    expect(news).toHaveLength(1);
+    expect(news[0]!.truth).toBe('unresolved');
 });
 for (const stopped of [false, true]) it('requires native air landfall and rejects a caused stop: ' + stopped, () => {
     const h = arranged();

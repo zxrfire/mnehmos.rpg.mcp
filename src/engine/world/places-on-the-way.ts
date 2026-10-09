@@ -22,6 +22,7 @@ import { isTerminal } from '../cultivation/existence.js';
 import type { WorldState } from './world-state.js';
 import { prepareNpcDepartureApproach } from './npc-departure-approaches.js';
 import { exteriorGroundOfDeparture } from './departure-approach.js';
+import { stonesFor } from './the-fare-and-calendar-of-a-passage.js';
 
 export const ROUTE_STOP = 'route-stop';
 
@@ -30,12 +31,18 @@ export function journeyTimeHasReached(actual: number, asked: number): boolean {
     return actual >= asked || asked - actual <= Number.EPSILON * Math.max(1, Math.abs(actual), Math.abs(asked)) * 8;
 }
 
+const LANE_BOARDS = new WeakMap<readonly LocationRecord[], Map<string, { locations: readonly LocationRecord[]; seed: string }>>();
+
 /** A public lane only joins its actual landfalls, in either direction. */
-export function publicSeaLaneBetween(locations: readonly LocationRecord[], fromId: string, toId: string, seed = 'public-board'): SeaLane | null {
-    const from = locations.find(place => place.id === fromId)?.name;
-    const to = locations.find(place => place.id === toId)?.name;
+export function publicSeaLaneBetween(locations: readonly LocationRecord[], fromId: string, toId: string, seed = 'public-board', routes?: RouteQueries): SeaLane | null {
+    const from = (routes?.places.get(fromId)??locations.find(place => place.id === fromId))?.name;
+    const to = (routes?.places.get(toId)??locations.find(place => place.id === toId))?.name;
     if (!from || !to) return null;
-    return publicShipLinesFrom({ locations, seed }, from, 0).find(line => line.to === to)?.lane ?? null;
+    let boards = LANE_BOARDS.get(locations);
+    if (!boards) { boards = new Map(); LANE_BOARDS.set(locations, boards); }
+    let board = boards.get(seed);
+    if (!board) { board = { locations, seed }; boards.set(seed, board); }
+    return publicShipLinesFrom(board, from, 0,routes).find(line => line.to === to)?.lane ?? null;
 }
 
 /** A hull already booked for this departure has one passage duration. */
@@ -57,9 +64,12 @@ export function bookNpcPassageForRoute(state: { locations: readonly LocationReco
         routes ??= routeQueriesFor(state.locations);
         const ground=exteriorGroundOfDeparture(world,npc.locationId,routes.places);
         const to=state.locations.find(place=>place.id===destinationId);
-        if(!ground||!to||!publicShipLinesFrom(world,ground.name,day,routes).some(line=>line.to===to.name))return null;
+        const line=ground&&to?publicShipLinesFrom(world,ground.name,day,routes).find(line=>line.to===to.name):undefined;
+        if(!line)return null;
         const approach=prepareNpcDepartureApproach(state as WorldState,npc,destinationId,day,purpose,'ship',undefined,routes);
         if(approach!==undefined)return approach;
+        // An unaffordable seat needs no hull, weather or berth projection.
+        if(npc.spiritStones<stonesFor(line.cashPerSeat))return null;
     }
     const quote = quotePublicPassage(typeof state.seed === 'string'
         ? state as typeof state & { seed: string } : { ...state, seed: npc.id }, npc.locationId, destinationId, day,1,[],undefined,[],routes);

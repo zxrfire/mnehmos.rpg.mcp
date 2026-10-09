@@ -13,6 +13,7 @@ import { isAwayOnSomething, isTheWorldsToMove, setLocation, type NpcRecord } fro
 import { routeQueriesFor, walkingDaysFrom, type RouteQueries } from './locations.js';
 import { departureSceneFor, beginActualDepartureApproach, finishActualDepartureApproach, readActualDepartureApproach, exteriorGroundOfDeparture } from './departure-approach.js';
 import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
+import { stonesFor } from './the-fare-and-calendar-of-a-passage.js';
 import { departureAreaAt } from './where-in-a-place-somebody-is-standing.js';
 import { journeyNeedsWater, locationOnNpcJourney } from './places-on-the-way.js';
 import { earliestQuotedPublicPassage, onSponsoredPublicPassage, publicShipLinesFrom,
@@ -118,7 +119,7 @@ function homeRoute(outward: readonly MissionLeg[]): MissionLeg[] {
 /** Quote both real directions before committing a house to the errand. */
 function quotedRoute(state: WorldState, legs: readonly MissionLeg[], fromDay: number,
     heads: number, considered: PublicPassageQuote[], latestArrival: number, graph: RouteQueries,
-    initialWalk?: number): number | null {
+    initialWalk?: number, batch?: Parameters<typeof earliestQuotedPublicPassage>[8]): number | null {
     let day = fromDay;
     for (const [step, leg] of legs.entries()) {
         day += step === 0 ? initialWalk ?? (leg.by === 'ship' ? LOCAL_WALK_DAYS : 0)
@@ -135,7 +136,7 @@ function quotedRoute(state: WorldState, legs: readonly MissionLeg[], fromDay: nu
         const line = from && to ? publicShipLinesFrom(state, from.name, day,graph).find(row => row.to === to.name) : undefined;
         if (!line) return null;
         const quote = earliestQuotedPublicPassage(state, leg.fromId, leg.toId,
-            day, latestArrival, heads, considered,graph);
+            day, latestArrival, heads, considered,graph,batch);
         if (!quote) return null;
         considered.push(quote);
         day = quote.arrivalDay;
@@ -143,11 +144,24 @@ function quotedRoute(state: WorldState, legs: readonly MissionLeg[], fromDay: nu
     return day;
 }
 
+/** Listed fares bound the purse before any expensive dated hull search. */
+function listedRouteFare(state: WorldState, legs: readonly MissionLeg[], day: number,
+    heads: number, graph: RouteQueries): number {
+    let fare = 0;
+    for (const leg of legs) {
+        if (leg.by !== 'ship') continue;
+        const from = graph.places.get(leg.fromId), to = graph.places.get(leg.toId);
+        const line = from && to ? publicShipLinesFrom(state, from.name, day, graph).find(row => row.to === to.name) : undefined;
+        if (line) fare += stonesFor(line.cashPerSeat) * heads;
+    }
+    return fare;
+}
+
 /** A mission's paid ship seats and ordinary walking legs share one dated itinerary. */
 function startPublicMissionLeg(state: WorldState, missionId: string,
     members: NpcRecord[], legs: readonly MissionLeg[], step: number, day: number,
     onDue?: (memberId: string, day: number) => void, missionStep = step,
-    graph?: RouteQueries): boolean {
+    graph?: RouteQueries, readScene?: ReturnType<typeof departureSceneFor>): boolean {
     const leg = legs[step];
     if (!leg || members.length === 0) return false;
     const from = state.locations.find(place => place.id === leg.fromId);
@@ -157,7 +171,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
     const station=leg.by==='land'?null:departureAreaAt(state,from,'landing',graph);
     {
         const request={intentId:missionId,target:{locationId:from.id,areaId:station?.id}};
-        const scene=departureSceneFor(state,graph);
+        const scene=readScene??departureSceneFor(state,graph);
         const arrivals=members.map(member=>member.activity?.note==='Walking to the departure point.'&&member.activity.capitalMissionId===missionId
             ?finishActualDepartureApproach(state,member.id,request,day,graph,scene)
             :beginActualDepartureApproach(state,member.id,request,day,member,graph,scene));
@@ -252,6 +266,9 @@ function sendByPublicPassage(state: WorldState, house: FactionRecord, venue: Loc
     routes ??= new Map();
     const route = publicRoute(state, house.seatLocationId, venue.id, graph, routes);
     if (!route) return;
+    const purse = Number(house.resources.spirit_stones ?? 0);
+    if (listedRouteFare(state, route, day, party.length, graph)
+        + listedRouteFare(state, homeRoute(route), day, party.length, graph) > purse) return;
     const departureGround = state.locations.find(place => place.id === route[0]?.fromId);
     if (!departureGround) return;
     const departureArea = route[0]?.by === 'ship'
@@ -262,16 +279,16 @@ function sendByPublicPassage(state: WorldState, house: FactionRecord, venue: Loc
     if (approaches.some(read => read.kind !== 'ready' && read.kind !== 'local_walk')) return;
     const initialWalk = approaches.some(read => read.kind === 'local_walk') ? LOCAL_WALK_DAYS : 0;
     const considered: PublicPassageQuote[] = [];
+    const batch: Parameters<typeof earliestQuotedPublicPassage>[8] = {};
     const lifespan = Math.min(...party.map(member => member.cultivation.lifespanEndsOnDay));
     const outwardDeadline = 'eventDay' in service ? Math.min(service.eventDay, lifespan)
         : lifespan - service.days;
-    const arrived = quotedRoute(state, route, day, party.length, considered, outwardDeadline, graph, initialWalk);
+    const arrived = quotedRoute(state, route, day, party.length, considered, outwardDeadline, graph, initialWalk,batch);
     if (arrived === null || 'eventDay' in service && arrived > service.eventDay) return;
     const serviceEnd = 'days' in service ? arrived + service.days : Math.max(arrived + 1, service.untilDay);
-    const home = quotedRoute(state, homeRoute(route), serviceEnd, party.length, considered, lifespan, graph);
+    const home = quotedRoute(state, homeRoute(route), serviceEnd, party.length, considered, lifespan, graph,undefined,batch);
     if (home === null) return;
     const fare = considered.reduce((sum, leg) => sum + leg.fareStones, 0);
-    const purse = Number(house.resources.spirit_stones ?? 0);
     if (fare > purse) return;
     house.resources.spirit_stones = purse - fare;
     const dispatch = appendWorldFact(state, makeFact({ day, kind: 'gathering', visibility: 'faction',
@@ -287,7 +304,7 @@ function sendByPublicPassage(state: WorldState, house: FactionRecord, venue: Loc
             }))),
             publicFareStones: fare, plannedReturnDay: home } }), { recur: false });
     const ready = party.map(member => state.npcs.find(n => n.id === member.id)!);
-    if (!startPublicMissionLeg(state, dispatch.id, ready, route, 0, day, onDue, 0, graph))
+    if (!startPublicMissionLeg(state, dispatch.id, ready, route, 0, day, onDue, 0, graph, scene))
         throw new Error(`The paid route from ${house.seatLocationId} to ${venue.id} could not begin.`);
     for (const member of party) {
         const at = state.npcs.findIndex(n => n.id === member.id);
@@ -308,18 +325,21 @@ export function journeySelectedToHouseSeat(state: WorldState, house: FactionReco
         return {...npc, activity: null, updatedOnDay: day};
     const route = publicRoute(state, from, house.seatLocationId, graph, new Map());
     if (!route) return null;
+    const purse = Number(house.resources.spirit_stones ?? 0);
+    if (listedRouteFare(state, route, day, 1, graph) > purse) return null;
     const departureGround = state.locations.find(place => place.id === from)!;
     const departureArea = route[0]?.by === 'ship'
         ? departureAreaAt(state,departureGround,'landing',graph)?.id : null;
+    const scene = departureSceneFor(state, graph);
     const approach = readActualDepartureApproach(state, npc.id,
-        {intentId: 'selected-passage-quote', target: {locationId: from, areaId: departureArea}}, day,undefined,graph);
+        {intentId: 'selected-passage-quote', target: {locationId: from, areaId: departureArea}}, day,undefined,graph,scene);
     if (approach.kind !== 'ready' && approach.kind !== 'local_walk') return null;
     const considered: PublicPassageQuote[] = [];
+    const batch: Parameters<typeof earliestQuotedPublicPassage>[8] = {};
     const arrival = quotedRoute(state, route, day, 1, considered, npc.cultivation.lifespanEndsOnDay, graph,
-        approach.kind === 'local_walk' ? LOCAL_WALK_DAYS : 0);
+        approach.kind === 'local_walk' ? LOCAL_WALK_DAYS : 0,batch);
     if (arrival === null || arrival >= npc.cultivation.lifespanEndsOnDay) return null;
     const fare = considered.reduce((total, leg) => total + leg.fareStones, 0);
-    const purse = Number(house.resources.spirit_stones ?? 0);
     if (fare > purse) return null;
     const at = state.npcs.findIndex(person => person.id === npc.id);
     if (at < 0) return null;
@@ -335,7 +355,7 @@ export function journeySelectedToHouseSeat(state: WorldState, house: FactionReco
                 lane: leg.lane, vesselId: leg.vesselId, fromId: leg.fromId, toId: leg.toId,
                 departureDay: leg.departureDay, arrivalDay: leg.arrivalDay
             }))), publicFareStones: fare, plannedArrivalDay: arrival } }), { recur: false });
-    if (!startPublicMissionLeg(state, dispatch.id, [state.npcs[at]!], route, 0, day, undefined, 0, graph))
+    if (!startPublicMissionLeg(state, dispatch.id, [state.npcs[at]!], route, 0, day, undefined, 0, graph, scene))
         throw new Error(`The paid journey to ${house.name} could not begin.`);
     return state.npcs[at]!;
 }
@@ -419,6 +439,30 @@ export function capitalPlaces(state: WorldState): LocationRecord[] {
         && (l.tags.includes('city') || whatKindOfPlace(l.name) === 'provincial capital'));
 }
 
+const CALENDAR_DATES = new WeakMap<WorldState, { seed: string;
+    years: Map<number, Map<string, { auction: number; contest: number | null }>> }>();
+/** Only seeded dates are shared; the current venue and living host are still read. */
+function occasionDates(state: WorldState, venue: LocationRecord, year: number,
+    row: (typeof COMPETITION_CALENDARS)[number] | undefined) {
+    let held = CALENDAR_DATES.get(state);
+    if (!held || held.seed !== state.seed) {
+        held = { seed: state.seed, years: new Map() }; CALENDAR_DATES.set(state, held);
+    }
+    let dates = held.years.get(year);
+    if (!dates) {
+        dates = new Map(); held.years.set(year, dates);
+        if (held.years.size > 3) held.years.delete(held.years.keys().next().value!);
+    }
+    const key = JSON.stringify([venue.id, venue.name, row?.id, row?.everyYears]);
+    let drawn = dates.get(key);
+    if (!drawn) {
+        drawn = { auction: year * DAYS_PER_YEAR + 100 + forStream(state.seed, 'capital-calendar', venue.id).int(0, 35),
+            contest: theDayItFallsIn(state.seed, { id: row?.id ?? `open:${venue.id}`,
+                name: venue.name, everyYears: row?.everyYears ?? 3 }, year) };
+        dates.set(key, drawn);
+    }
+    return drawn;
+}
 /** One auction a year, one inter-house board every three years, with seeded dates. */
 export function capitalCalendar(state: WorldState, year: number): CapitalOccasion[] {
     const occasions: CapitalOccasion[] = [];
@@ -430,11 +474,8 @@ export function capitalCalendar(state: WorldState, year: number): CapitalOccasio
                 .sort((a, b) => Number(b.resources.power_ordinal ?? 0) - Number(a.resources.power_ordinal ?? 0)
                     || a.id.localeCompare(b.id))[0];
         if (!host) continue;
-        const rng = forStream(state.seed, 'capital-calendar', venue.id);
-        const auctionDay = year * DAYS_PER_YEAR + 100 + rng.int(0, 35);
         const row = COMPETITION_CALENDARS.find(r => r.open && r.venueName === venue.name);
-        const contestDay = theDayItFallsIn(state.seed, { id: row?.id ?? `open:${venue.id}`,
-            name: venue.name, everyYears: row?.everyYears ?? 3 }, year);
+        const { auction: auctionDay, contest: contestDay } = occasionDates(state, venue, year, row);
         occasions.push({ venueId: venue.id, hostId: host.id, kind: 'auction',
             opensOnDay: auctionDay - 45, onDay: auctionDay, endsOnDay: auctionDay + 7 });
         if (contestDay !== null) {
@@ -496,7 +537,9 @@ export function sendCapitalBusiness(state: WorldState, year: number, quarter: nu
         const party = [...spare].sort((a, b) => forStream(state.seed, 'capital-business-hand', house.id,
             year, quarter, a.id).next() - forStream(state.seed, 'capital-business-hand', house.id,
             year, quarter, b.id).next()).slice(0, reason.startsWith('escorting') ? 2 : 1);
-        send(state, house, venue, party, reason, day, { days: rng.int(40, 80) }, onDue, graph, routes);
+        const serviceDays = reason === 'trade and purchases' ? rng.int(7, 21)
+            : reason === 'carrying the house report' ? rng.int(1, 3) : rng.int(3, 7);
+        send(state, house, venue, party, reason, day, { days: serviceDays }, onDue, graph, routes);
     }
 }
 

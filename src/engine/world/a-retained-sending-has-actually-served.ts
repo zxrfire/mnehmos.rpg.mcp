@@ -63,8 +63,9 @@ export function stillOnAnActualRetainedReturn(state: WorldState, npc: NpcRecord,
     return airDutyOf(state, npc, row)?.returning != null;
 }
 function enoughService(row: RetainedSending, fromDay: number, untilDay: number) {
-    return untilDay > fromDay && (row.posting.reason.termBasis !== 'on_site'
-        || journeyTimeHasReached(untilDay, fromDay + row.posting.reason.days));
+    // A whole-away escort can spend its term travelling; on-site work cannot.
+    return journeyTimeHasReached(untilDay, fromDay + (row.posting.reason.termBasis === 'on_site'
+        ? row.posting.reason.days : 0));
 }
 export function aRetainedMemberActuallyServed(state: WorldState, npc: NpcRecord, row: RetainedSending,routes?:RouteQueries): boolean {
     if (npc.status !== 'alive' || isLostTrackOf(state, npc) || !row.locationId) return false;

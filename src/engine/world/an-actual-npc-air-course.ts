@@ -47,15 +47,18 @@ export function theExteriorGroundsOfAnNpcAirDeparture(world:WorldState,npc:NpcRe
 /** Current area/routine and actual exterior ground, not inherited room coordinates. */
 export function quoteNpcAirDeparture(world: WorldState, npc: NpcRecord, toId: string,
     day: number, vehicle?: ObjectRecord, requireLaunchBalance=true, requestedArt?: string) {
-    const ground=theExteriorGroundsOfAnNpcAirDeparture(world,npc,toId,day,vehicle?.id);
-    if(!ground)return null;
-    const {from,to}=ground;
     const bodily=canFlyByTheirOwnBody(npc.cultivation.realmOrdinal,brokenStatusesOn(npc.cultivation.injuries));
     const art=vehicle?null:requestedArt||!bodily
         ?heldPersonalFlightArt(npc.cultivation.realmOrdinal,npc.cultivation.techniqueIds,requestedArt):null;
     if(!vehicle&&requestedArt&&!art)return null;
     const craft=vehicle?getConveyance(String(vehicle.data.conveyanceId??'')):conveyanceOfPersonalFlight(art?.id??null);
     if(!craft||!craft.crossesGroundThatCannotBeWalked) return null;
+    if (!vehicle && !art && !bodily || vehicle && itWantsAPilot(craft)
+        && npc.cultivation.realmOrdinal<A_SPIRIT_BOAT_ANSWERS_TO) return null;
+    // A body without flight needs no population placement read.
+    const ground=theExteriorGroundsOfAnNpcAirDeparture(world,npc,toId,day,vehicle?.id);
+    if(!ground)return null;
+    const {from,to}=ground;
     if(vehicle){
         if(isRuined(vehicle)||!isWithThem(vehicle,npc.id,from.id)
             ||(vehicle.ownerId!==npc.id&&vehicle.possessorId!==npc.id)

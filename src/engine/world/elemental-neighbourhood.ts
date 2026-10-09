@@ -53,6 +53,8 @@ export function makeElementalWork(input: {
 }
 
 export function expireElementalWorks(state: WorldState, day: number): void {
+    if (!state.objects.some(o => o.tags.includes('elemental-work') && !o.tags.includes('ruined')
+        && typeof o.data.expiresOnDay === 'number' && o.data.expiresOnDay <= day)) return;
     state.objects = state.objects.map(o => o.tags.includes('elemental-work') && !o.tags.includes('ruined')
         && typeof o.data.expiresOnDay === 'number' && o.data.expiresOnDay <= day
         ? ruin(o, { onDay: o.data.expiresOnDay, source: 'the elemental working expired' }) : o);

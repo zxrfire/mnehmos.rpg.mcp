@@ -195,9 +195,9 @@ export function advanceWorldForPlay(
     opts: AdvanceForPlayOptions
 ): PlayAdvanceResult {
     const fromDay = state.currentDay;
-    const transportClock=()=>state.objects.some(object=>!isRuined(object)
-        &&state.factions.some(house=>house.id===object.ownerId&&house.dissolvedOnDay===null)
-        &&getConveyance(String(object.data.conveyanceId??''))?.crossesGroundThatCannotBeWalked)
+    const transportClock=()=>state.objects.some(object=>getConveyance(String(object.data.conveyanceId??''))?.crossesGroundThatCannotBeWalked
+        &&!isRuined(object)
+        &&state.factions.some(house=>house.id===object.ownerId&&house.dissolvedOnDay===null))
         ||state.npcs.some(npc=>npc.status==='alive'&&(npc.activity?.departureApproach||npc.activity?.capitalMissionWaiting));
     let geometrySeenLocations = state.locations.length;
     if (opts.preciseDays) state.currentHour = (state.currentDay - Math.floor(state.currentDay)) * 24;

@@ -4718,3 +4718,49 @@ placement. Eligible selected bodies share one departure scene per place and
 moment through the existing exterior-ground reader. An actual shuttle load
 uses a fresh read batch before admission changes any body or hull. Neither
 read grants a cabin exit, future arrival, pilot qualification or new passenger.
+
+Ordinary generated house members open at their enclosing house. Birthplace and
+named people's authored lives retain their existing sources. New recruits and
+members owed a token use an ordinary one-way NPC journey on a connected land
+route, or the house-funded public itinerary where water requires it. The gate issues robes
+and tokens only when their physical journey has reached the compound.
+
+A sending draws from members physically available at home. An overdue binding
+still occupies its person until it is actually settled. Whole-away service can
+consist entirely of its real outward and return legs; explicit on-site work
+still requires its authored service span. Successful retained settlement commits
+the actual returned ground before discarding the journey that derived it.
+Genuine homecoming also closes an unserved term as unfinished, without crediting
+service or keeping the returned member unavailable forever.
+An overdue report is deduplicated against that term's existing ledger fact,
+without erasing the route, return or standing-post obligation.
+
+Catalog power sizes a house's external posts; its head's later advancement does
+not create additional establishments. Relief still requires the replacement's
+actual arrival before the incumbent leaves. Quarterly business retains four
+35% dispatch opportunities per house-year. Reports take 1–3 days on site,
+envoy escorts 3–7, and trading 7–21. Both travel legs use the actual road and
+admitted ship itinerary; calendar attendance retains its existing dated span.
+Each homecoming sweep continues a shuttle once for its whole selected sending.
+It groups pending sendings by their actual members once for the sweep, without
+keeping a passenger list or changing a person's binding.
+A gathered sending refused an actual available hull ends its unpaid assembly
+at the berth. Its ledger records the refused departure and the original retained
+term settles unfinished on that actual refusal date; no voyage, service, fuel charge or future arrival is
+invented, and its members are available for later ordinary work.
+
+Pure appointment checkpoints at the same moment share their completed sweep.
+A real action invalidates that sharing. Ship reservation parsing, corrected
+hull history and seeded calendar dates are checked projections of their source
+records. A synchronous quote and its departure share the same placement read
+until admission changes a body or hull; later continuations read again.
+
+A personal berth with an unaffordable listed fare needs no hull projection.
+House itineraries check their listed fares before searching future boardings.
+An unchanged quotation shares actor membership and hull history across its
+legs, including each new considered reservation; actual admission reads anew.
+Ordinary NPCs check flight capability before population placement and share
+the caller's route scope through their departure. Public geographic lane
+boards retain the same locations and checked timetable reader. Transport clock
+checks identify flying craft before searching their owners' houses. An
+elemental-expiry pass retains the object array when no object changes.

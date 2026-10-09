@@ -1769,7 +1769,9 @@ function seedPopulation(
                 const takes = whoAHouseWillTake(candidate.id);
                 if (cf && cf.recruits && ordinal >= cf.admissionOrdinal
                     && (takes === null || takes === npc.identity.sex)) {
-                    npc = { ...npc, factionId: candidate.id, factionRankIndex: 0 };
+                    // Established members live at their house before its actual posts and errands.
+                    npc = { ...npc, factionId: candidate.id, factionRankIndex: 0,
+                        locationId: candidate.seatLocationId ?? npc.locationId };
                 }
             }
 

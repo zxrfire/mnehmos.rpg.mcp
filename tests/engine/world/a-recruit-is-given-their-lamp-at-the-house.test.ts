@@ -28,8 +28,10 @@
  * 557 to 338 and a settlement emptied, and was turned into a round trip for it.
  * The design owner has since ruled *"move into the compound"*: settlements lose
  * the people houses recruit, `demography.test.ts` records what that costs and
- * what it still guards, and only somebody already entered who is owed a token
- * makes the trip there and back.
+ * what it still guards. The later home census exposed the remaining token
+ * round trip: it placed a member at the seat, issued the token before walking,
+ * then returned them to a remote town. Members otherwise live at their house;
+ * both admissions now use the actual one-way route and issue only on arrival.
  *
  * ── WHAT THIS PINS ───────────────────────────────────────────────────────
  *
@@ -65,6 +67,7 @@ import {
 import { theyOweTheHouseAReport } from '../../../src/engine/world/a-house-expects-somebody-it-took-on.js';
 import { createNpc, setRealm, type NpcRecord } from '../../../src/engine/world/npc-state.js';
 import { linkLocations, makeLocation } from '../../../src/engine/world/locations.js';
+import { locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
 import { createWorld, makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
 
 const YEAR = 365;
@@ -174,7 +177,7 @@ describe('a recruit joins where they stand and has nothing to show for it', () =
         const done = enterWhoeverHasReachedTheHouse(state, DAY);
         expect(done.sent).toBeGreaterThan(0);
         const recruit = npc(state, 'recruit');
-        expect(recruit.locationId, 'still walking').toBe(VILLAGE);
+        expect(locationOnNpcJourney(state.locations, recruit, DAY), 'still walking').toBe(VILLAGE);
         expect(recruit.activity?.kind).toBe('travelling');
         expect(recruit.activity?.returnTo, 'the house is where they are going to live').toBe(SEAT);
         expect(typeof recruit.activity?.untilDay).toBe('number');
@@ -198,7 +201,7 @@ describe('a recruit joins where they stand and has nothing to show for it', () =
         const state = build();
         enterWhoeverHasReachedTheHouse(state, DAY);
         expect(npc(state, 'founder').activity).toBeNull();
-        expect(npc(state, 'founder').locationId).toBe(VILLAGE);
+        expect(locationOnNpcJourney(state.locations, npc(state, 'founder'), DAY)).toBe(VILLAGE);
     });
 
     it('though a founder promoted onto the token rung makes the same trip', () => {
@@ -207,6 +210,13 @@ describe('a recruit joins where they stand and has nothing to show for it', () =
         state.objects.splice(token, 1);
         enterWhoeverHasReachedTheHouse(state, DAY);
         expect(npc(state, 'founder').activity?.kind).toBe('travelling');
+        expect(locationOnNpcJourney(state.locations, npc(state, 'founder'), DAY)).toBe(VILLAGE);
+        expect(npc(state, 'founder').activity?.returnTo).toBe(SEAT);
+        expect(carries(state, tokenIdFor('founder'), 'founder')).toBe(false);
+        enterWhoeverHasReachedTheHouse(state, DAY + 1);
+        expect(carries(state, tokenIdFor('founder'), 'founder'), 'not at the gate yet').toBe(false);
+        applyPressure(state, DAY, DAY + 2 * YEAR, { intensity: 0 });
+        expect(npc(state, 'founder').locationId).toBe(SEAT);
         expect(carries(state, tokenIdFor('founder'), 'founder')).toBe(true);
     });
 

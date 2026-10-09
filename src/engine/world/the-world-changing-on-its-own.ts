@@ -42,6 +42,8 @@ import { theirFaceMoves, whatBeingWatchedIsWorth } from './what-a-face-is-worth.
 import { housesFindEmptyShelves } from './a-house-finds-an-empty-shelf.js';
 import { settleHiredDuties } from './a-hired-duty-is-served.js';
 import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
+import { getSect } from '../../data/cultivation/sects.js';
+import { departureSceneFor, exteriorGroundOfDeparture } from './departure-approach.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
 import { whatASearchBroughtBack } from './what-a-search-brings-back.js';
@@ -606,33 +608,33 @@ function pressureTasksForYear(state: WorldState, year: number,
     const actOnAnEmptyPurse = opts.housesActOnAnEmptyPurse ?? true;
     const peopleWalkOut = opts.peopleWalkOutOnTheirOwnAccount ?? true;
     const completed = new Set(cursor.completed);
-    const tasks: { key: string; day: number; run: (day: number) => void }[] = [];
+    const tasks: { key: string; day: number; checkpoint?: boolean; run: (day: number) => void }[] = [];
     let schedulePostingDay: (key: string, day: number) => void = () => {};
     let appointmentRoutes:RouteQueries|undefined;
     const selectedForAFeeder = new Set(factsWithDataValue(state, 'feederSelection', true)
         .map(f => f.data.selectedId).filter((id): id is string => typeof id === 'string'));
     for (const due of physicalRetrievalDeadlines(state)) {
         if (due.day >= year * DAYS_PER_YEAR && due.day < (year + 1) * DAYS_PER_YEAR)
-            tasks.push({ key: due.key, day: due.day, run: () => {} });
+            tasks.push({ key: due.key, day: due.day, checkpoint: true, run: () => {} });
     }
     for (const npc of state.npcs) {
         if (!isTheWorldsToMove(npc) || npc.activity?.untilDay == null) continue;
         if (npc.activity.capitalMissionId) {
             const due = npc.activity.untilDay;
             if (due >= year * DAYS_PER_YEAR && due < (year + 1) * DAYS_PER_YEAR)
-                tasks.push({ key: `capital-mission:${npc.id}:${due}`, day: due, run: () => {} });
+                tasks.push({ key: `capital-mission:${npc.id}:${due}`, day: due, checkpoint: true, run: () => {} });
         }
         if (selectedForAFeeder.has(npc.id)
             && (npc.activity.kind === 'travelling' || npc.activity.kind === 'out_with_a_party')) {
             const due = npc.activity.untilDay;
             if (due >= year * DAYS_PER_YEAR && due < (year + 1) * DAYS_PER_YEAR)
-                tasks.push({ key: `feeder-journey:${npc.id}:${due}`, day: due, run: () => {} });
+                tasks.push({ key: `feeder-journey:${npc.id}:${due}`, day: due, checkpoint: true, run: () => {} });
         }
         if (npc.activity.kind === 'travelling'
             && npc.activity.note === 'Returning home from a house posting.') {
             const due = npc.activity.untilDay;
             if (due >= year * DAYS_PER_YEAR && due < (year + 1) * DAYS_PER_YEAR)
-                tasks.push({ key: `post-return:${npc.id}:${due}`, day: due, run: () => {} });
+                tasks.push({ key: `post-return:${npc.id}:${due}`, day: due, checkpoint: true, run: () => {} });
             continue;
         }
         if (npc.activity.kind !== 'stationed') continue;
@@ -645,17 +647,17 @@ function pressureTasksForYear(state: WorldState, year: number,
                     npc.activity.fromLocationId, npc.locationId, craft, npc.activity.conveyancePower,1,
                         appointmentRoutes??=routeQueriesFor(state.locations));
             if (arrival >= year * DAYS_PER_YEAR && arrival < (year + 1) * DAYS_PER_YEAR)
-                tasks.push({ key: `post-arrival:${npc.id}:${arrival}`, day: arrival, run: () => {} });
+                tasks.push({ key: `post-arrival:${npc.id}:${arrival}`, day: arrival, checkpoint: true, run: () => {} });
         }
         const due = npc.activity.untilDay;
         if (due < year * DAYS_PER_YEAR) {
             tasks.push({ key: `relief-overdue:${npc.id}:${year}`, day: year * DAYS_PER_YEAR,
-                run: () => {} });
+                checkpoint: true, run: () => {} });
         }
         if (due >= year * DAYS_PER_YEAR && due < (year + 1) * DAYS_PER_YEAR) {
-            tasks.push({ key: `relief:${npc.id}:${due}`, day: due, run: () => {} });
+            tasks.push({ key: `relief:${npc.id}:${due}`, day: due, checkpoint: true, run: () => {} });
             if (due + 1 <= yearEndsOn)
-                tasks.push({ key: `relief-home:${npc.id}:${due}`, day: due + 1, run: () => {} });
+                tasks.push({ key: `relief-home:${npc.id}:${due}`, day: due + 1, checkpoint: true, run: () => {} });
         }
     }
     for (let quarter = 0; quarter < 4; quarter++) {
@@ -1026,19 +1028,24 @@ function pressureTasksForYear(state: WorldState, year: number,
             || completed.has(key) || scheduled.has(key)) return;
         let at = nextTask;
         while (at < tasks.length && tasks[at]!.day <= day) at++;
-        tasks.splice(at, 0, { key, day, run: () => {} });
+        tasks.splice(at, 0, { key, day, checkpoint: true, run: () => {} });
         scheduled.add(key);
     };
     return {
         tasks, completed,
         run(fromDay: number, toDay: number): void {
+        let checkpointDay: number | undefined;
         for (let i = 0; i < tasks.length; i++) {
             const task = tasks[i]!;
             nextTask = i + 1;
             if (completed.has(task.key) || task.day < fromDay || task.day > toDay) continue;
-            bringHomeWhoeverIsDue(state, task.day, schedulePostingDay);
-            finishStructuralRecoveries(state, task.day);
-            resolveWithPlayerPresent(state, opts.visitingPresence, () => task.run(task.day), task.day);
+            // Consecutive empty appointments at one moment share their completed sweep.
+            if (!task.checkpoint || checkpointDay !== task.day) {
+                bringHomeWhoeverIsDue(state, task.day, schedulePostingDay);
+                finishStructuralRecoveries(state, task.day);
+                resolveWithPlayerPresent(state, opts.visitingPresence, () => task.run(task.day), task.day);
+            }
+            checkpointDay = task.checkpoint ? task.day : undefined;
             cursor.completed.push(task.key);
             completed.add(task.key);
         }
@@ -3257,6 +3264,8 @@ function applySendings(
     const roster = new Map<string, OnTheRollForAnErrand[]>();
     const roll = new Map<string, OnTheRoll[]>();
     const at = new Map<string, number>();
+    const homeOf = new Map(state.factions.map(house => [house.id, house.seatLocationId]));
+    let departureRoutes: RouteQueries | undefined;
     // Where each name on a roll is standing, for whether the province's talk
     // reaches them. Built once and memoised on both halves: `regionOf` walks a
     // location's parents, and this is asked once per person per piece of ground.
@@ -3294,6 +3303,10 @@ function applySendings(
         // character on an errand they did not take is the engine taking a
         // decision that is theirs.
         if (!isTheWorldsToMove(npc)) continue;
+        const home = homeOf.get(npc.factionId);
+        if (home && npc.locationId !== home && (!npc.locationId
+            || exteriorGroundOfDeparture(state, npc.locationId,
+                (departureRoutes ??= routeQueriesFor(state.locations)).places)?.id !== home)) continue;
         const bucket = roster.get(npc.factionId);
         // THREE COLUMNS THE ROSTER NEVER CARRIED, all read off the npc already
         // in hand. Where somebody is standing and what rank they hold are what
@@ -3309,7 +3322,7 @@ function applySendings(
             locationId: npc.locationId,
             committedUntilDay: npc.activity && (isAwayOnSomething(npc.activity.kind)
                 || (npc.activity.kind === 'mending' && npc.activity.thingId?.startsWith('repair-')))
-                ? npc.activity.untilDay ?? null
+                ? Infinity
                 : null
         };
         if (bucket) bucket.push(row); else roster.set(npc.factionId, [row]);
@@ -4000,9 +4013,13 @@ function settleSending(state: WorldState, input: {
 function resolveRetainedSendings(state: WorldState, day: number): void {
     let routes:RouteQueries|undefined;
     const waiting = state.pendingSendings ?? [];
-    state.pendingSendings = waiting.filter(row => row.departsOnDay + row.posting.days > day);
+    const dueOn = (row: (typeof waiting)[number]) => row.dispatchFactId
+        ? factsWithDataValue(state, 'houseAssemblyCancelled', row.dispatchFactId).at(-1)?.day
+            ?? row.departsOnDay + row.posting.days
+        : row.departsOnDay + row.posting.days;
+    state.pendingSendings = waiting.filter(row => dueOn(row) > day);
     for (const row of waiting) {
-        const due = row.departsOnDay + row.posting.days;
+        const due = dueOn(row);
         if (due > day) continue;
         const faction = state.factions.find(house => house.id === row.posting.houseId);
         if (!faction) continue;
@@ -4025,7 +4042,8 @@ function resolveRetainedSendings(state: WorldState, day: number): void {
             // extended into a newly completed errand after a late arrival.
             if (available.some(member => {
                 const npc = state.npcs.find(person => person.id === member.id)!;
-                return stillOnThisRetainedSending(npc, row) || stillOnAnActualRetainedReturn(state, npc, row);
+                return (stillOnThisRetainedSending(npc, row) || stillOnAnActualRetainedReturn(state, npc, row))
+                    && !aRetainedMemberActuallyReturned(state, npc, row, routes);
             }))
                 state.pendingSendings.push(row);
             if (!previouslyUnfinished) settleSending(state, {
@@ -4035,6 +4053,15 @@ function resolveRetainedSendings(state: WorldState, day: number): void {
                 year: Math.floor(row.departsOnDay / 365), reachedPastItsWeight: false,
                 onTheRoll: state.npcs.filter(npc => npc.factionId === faction.id && npc.status === 'alive').length
             });
+            for (const member of available) {
+                const at = state.npcs.findIndex(npc => npc.id === member.id);
+                const current = state.npcs[at]!;
+                const returnedOn = actualRetainedReturnDay(state, current, row, routes);
+                if (returnedOn !== null) state.npcs[at] = {
+                    ...setLocation(current, locationOnNpcJourney(state.locations, current, state.currentDay, routes), returnedOn),
+                    activity: companyAfterPassage(current, returnedOn)
+                };
+            }
             continue;
         }
         const sending = resolveSending({
@@ -4065,8 +4092,12 @@ function resolveRetainedSendings(state: WorldState, day: number): void {
             const current = state.npcs[at];
             if (!current || current.status !== 'alive') continue;
             const returnedOn = actualRetainedReturnDay(state, current, row,routes);
-            if (returnedOn !== null) state.npcs[at] = { ...current,
-                activity: companyAfterPassage(current, returnedOn) };
+            if (returnedOn !== null) {
+                // Commit the proven ground before discarding the route that derives it.
+                const ground = locationOnNpcJourney(state.locations, current, state.currentDay, routes);
+                state.npcs[at] = { ...setLocation(current, ground, returnedOn),
+                    activity: companyAfterPassage(current, returnedOn) };
+            }
         }
     }
     bringHomeWhoeverIsDue(state, day);
@@ -4512,9 +4543,8 @@ const LATE_ENOUGH_TO_SAY_SO = 0.5;
  * carries the day it is due back, so being late is arithmetic, and Internal Affairs
  * cannot forget to notice.
  *
- * Said ONCE. The activity is cleared when it is said, because the point is the
- * house raising the alarm rather than a compound announcing the same absence
- * every year for a century.
+ * Said once per actual away term. The ledger holds that report; the activity
+ * still holds the body's route, return and obligation until it actually ends.
  *
  * WHO IT ACTUALLY SEES. `bringHomeWhoeverIsDue` runs a day earlier and closes
  * the errand of everybody at or past their due day - a superset of what this
@@ -4545,9 +4575,8 @@ function whatInternalAffairsNotices(state: WorldState, day: number): PressureEve
         const house = npc.factionId === null ? null : houseOf.get(npc.factionId) ?? null;
         const late = Math.max(0, Math.floor((day - doing.untilDay) / 30));
 
-        // Said, and then not said again. Whatever happened to them is somebody
-        // else's to find out.
-        state.npcs[i] = { ...npc, activity: null };
+        if (factsWithDataValue(state, 'overduePersonId', npc.id).some(fact =>
+            fact.data.overdueSinceDay === doing.sinceDay && fact.data.overdueUntilDay === doing.untilDay)) continue;
 
         out.push(emit(state, 'overdue', day, {
             day,
@@ -4564,6 +4593,8 @@ function whatInternalAffairsNotices(state: WorldState, day: number): PressureEve
             factionIds: house ? [house.id] : [],
             visibility: 'faction',
             magnitude: 0.3 + Math.min(0.3, npc.cultivation.realmOrdinal * 0.01),
+            data: { overduePersonId: npc.id, overdueSinceDay: doing.sinceDay,
+                overdueUntilDay: doing.untilDay },
             unattributed:
                 'Somebody at the compound has been asking after a name, in the tone of '
                 + 'a person who has already asked everybody easier.',
@@ -4756,7 +4787,8 @@ export function applyPostings(state: WorldState, year: number, day: number,
         const markets = towns.filter(t => cityIds.has(t.id) && t.id !== local[0]?.id)
             .sort((a, b) => marketScore(a.id) - marketScore(b.id));
         const posts = [...new Map([...terminals, ...(local.slice(0, 1)), ...markets, ...local].map(t => [t.id, t])).values()]
-            .slice(0, howManyPostsAHouseKeeps(Number(faction.resources.power_ordinal ?? 0)));
+            .slice(0, howManyPostsAHouseKeeps(getSect(faction.id)?.powerOrdinal
+                ?? Number(faction.resources.power_ordinal ?? 0)));
         const held = new Set(roll
             .filter(n => n.activity?.kind === 'stationed' && (n.activity.untilDay == null || n.activity.untilDay > day))
             .map(n => {
@@ -4796,6 +4828,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
             let fuel = 0;
             let dutyLoan: ReturnType<typeof theHouseLendsAnActualDutyCraft> = null;
             let airRead: ReturnType<typeof quoteHouseAirDuty> = null;
+            let departureBatch: Parameters<typeof quoteHouseAirDuty>[8];
             if (!options.initialPlacement) {
                 if (!from || !home) continue;
                 const outward = routes.treeFrom(from).days.get(town.id);
@@ -4811,7 +4844,8 @@ export function applyPostings(state: WorldState, year: number, day: number,
                     const craft=taking.rowId ? state.objects.find(row=>row.id===taking!.rowId) : undefined;
                     dutyLoan=craft ? theHouseLendsAnActualDutyCraft(state,faction,who,craft,rooms,
                         roll.map(person=>({id:person.id,rankIndex:person.factionRankIndex})),day) : null;
-                    airRead=dutyLoan?.object ? quoteHouseAirDuty(state,faction,[who],who,dutyLoan.object,town.id,day) : null;
+                    airRead=dutyLoan?.object ? quoteHouseAirDuty(state,faction,[who],who,dutyLoan.object,town.id,day,true,
+                        departureBatch??={routes,scene:departureSceneFor(state,routes)}) : null;
                     if(airRead)break;
                     if(taking.rowId)refusedCrafts.add(taking.rowId);
                     else break;
@@ -4852,7 +4886,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
             };
             if(airRead&&dutyLoan?.object) {
                 const accepted=admitPaidHouseAirDuty(state,faction,[who],who,dutyLoan.object,town.id,day,
-                    new Map([[who.id,stationed.activity]]));
+                    new Map([[who.id,stationed.activity]]),departureBatch);
                 if(!accepted)throw Error('Validated paid native posting lost its actual hull acceptance');
             } else state.npcs[index]=stationed;
             if (!options.initialPlacement) options.onArrival?.(who.id, day + outbound);
@@ -4946,7 +4980,12 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
         }
         readReliefs();
     }
-    const standing = new Set(state.locations.map(l => l.id));
+    const sendingsOf = new Map<string, NonNullable<WorldState['pendingSendings']>>();
+    for (const row of state.pendingSendings ?? []) for (const member of row.party) {
+        const rows = sendingsOf.get(member.id);
+        if (rows) rows.push(row); else sendingsOf.set(member.id, [row]);
+    }
+    const continuedShuttles = new Map<NonNullable<WorldState['pendingSendings']>[number], boolean>();
     let home = 0;
     for (let i = 0; i < state.npcs.length; i++) {
         let npc = state.npcs[i];
@@ -4954,9 +4993,16 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
         if(continueNpcDepartureApproach(state,npc,day,routes))continue;
         // Actual-clock continuation owns linked work, including an unladen return.
         if (npc.activity?.retrievalRequestId) continue;
-        const shuttle=npc.activity?.capitalMissionId&&(state.pendingSendings??[]).find(row=>row.dispatchFactId
+        const shuttle=npc.activity?.capitalMissionId&&sendingsOf.get(npc.id)?.find(row=>row.dispatchFactId
             &&row.dispatchFactId===npc.activity?.capitalMissionId);
-        if(shuttle&&continueActualHouseAirShuttle(state,shuttle,day))continue;
+        if(shuttle){
+            let continued = continuedShuttles.get(shuttle);
+            if(continued===undefined){
+                continued=continueActualHouseAirShuttle(state,shuttle,day);
+                continuedShuttles.set(shuttle,continued);
+            }
+            if(continued)continue;
+        }
         if (npc.activity?.capitalMissionId && npc.activity.untilDay != null
             && npc.activity.untilDay <= day) {
             const continuing = advancePublicCapitalMission(state, npc.id, day,
@@ -5067,8 +5113,7 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
         // A native air return already reached its bound home. Keep that actual
         // receipt/body for retained settlement; a disconnected walking graph
         // cannot put it back at the service post or clear its return binding.
-        if ((state.pendingSendings ?? []).some(row => row.party.some(member => member.id === npc.id)
-            && actualRetainedReturnDay(state, npc, row,routes) !== null)) continue;
+        if (sendingsOf.get(npc.id)?.some(row => actualRetainedReturnDay(state, npc, row,routes) !== null)) continue;
         if (doing.kind === 'travelling') {
             const ground = locationOnNpcJourney(state.locations, npc, day, routes, undefined, id=>state.npcs.find(person=>person.id===id));
             if (ground !== doing.returnTo) {
@@ -5101,7 +5146,7 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
             : typeof feederReturn?.data.stintDay === 'number' ? feederReturn.data.stintDay : doing.sinceDay;
         returnExchangeConsignment(state, npc, day, stintDay,
             typeof feederReturn?.data.fromHouseId === 'string' ? feederReturn.data.fromHouseId : npc.factionId);
-        if ((state.pendingSendings ?? []).some(row => row.party.some(member => member.id === npc.id))) continue;
+        if (sendingsOf.has(npc.id)) continue;
 
         // A place that has since ceased to exist leaves them standing where
         // the errand took them, which is truer than teleporting them into a
@@ -5142,7 +5187,7 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number,
                 withIds: row.activity.withIds.filter(id => id !== npc.id) } };
         }
         state.npcs[i] = {
-            ...(back !== null && standing.has(back) ? setLocation(settled, back, day) : settled),
+            ...(back !== null && routes.places.has(back) ? setLocation(settled, back, day) : settled),
             activity: doing.redirect?.previous ?? null
         };
         if (doing.kind === 'travelling') recordNpcActualArrival(state, state.npcs[i]!, doing, day);

@@ -25,7 +25,7 @@ import {requireConveyance} from '../../../src/data/cultivation/what-a-house-move
 import {getSendingReason} from '../../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import {postingFor} from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import {quoteHouseAirDuty,theHouseLendsAnActualDutyCraft} from '../../../src/engine/world/a-house-party-takes-an-actual-air-leg.js';
-import {beginAnActualHouseAirShuttle,aShuttleMemberActuallyServed,actualShuttleReturnDay,actualShuttleService} from '../../../src/engine/world/a-house-party-takes-an-actual-air-shuttle.js';
+import {beginAnActualHouseAirShuttle,beginHouseSendingAssembly,aShuttleMemberActuallyServed,actualShuttleReturnDay,actualShuttleService} from '../../../src/engine/world/a-house-party-takes-an-actual-air-shuttle.js';
 import {advanceWorldForPlay} from '../../../src/engine/world/driver.js';
 import {journeyTimeHasReached} from '../../../src/engine/world/places-on-the-way.js';
 import {witnessIndexFor} from '../../../src/engine/world/witness-reaction-index.js';
@@ -179,6 +179,27 @@ it('past and future first admissions conserve actual clock, treasury, custody, b
  expect(beginAnActualHouseAirShuttle(h.world,h.house,h.people,h.pilot,h.hull,h.row,h.day+offset,h.activities,[],h.roll)).toBeNull();
  expect({day:h.world.currentDay,hour:h.world.currentHour,resources:h.house.resources,objects:h.world.objects,
   npcs:h.world.npcs,history:h.world.history,pending:h.world.pendingSendings}).toEqual(before);}
+});
+/** A three-year cost profile spent 35 seconds retrying unboarded assemblies.
+ * A refused hull does not hold its gathered members for the sending's years. */
+it('a gathered assembly without fuel money ends at the berth without claiming service',()=>{
+ const h=arranged();
+ h.from.links.push({toLocationId:h.to.id,kind:'road',travelDays:12,open:true,requiresKeyId:null,note:''});
+ h.to.links.push({toLocationId:h.from.id,kind:'road',travelDays:12,open:true,requiresKeyId:null,note:''});
+ const assembly=beginHouseSendingAssembly(h.world,h.house,h.row,h.day);
+ expect(assembly).not.toBeNull();h.world.pendingSendings=[assembly!];
+ h.house.resources.spirit_stones=0;
+ advance(h.world,1);
+ expect(h.world.pendingSendings??[]).toHaveLength(0);
+ advance(h.world,4);
+ expect(h.world.history.facts.filter(f=>f.data.houseAssemblyCancelled===assembly!.dispatchFactId)).toHaveLength(1);
+ expect(h.world.history.facts.some(f=>f.data.houseAirShuttle===true||f.data.airCourse===true)).toBe(false);
+ for(const person of h.people){
+  const actual=body(h.world,person.id);
+  expect(actual.locationId).toBe(h.from.id);
+  expect(actual.activity?.capitalMissionId).not.toBe(assembly!.dispatchFactId);
+  expect(aShuttleMemberActuallyServed(h.world,actual,assembly!)).toBe(false);
+ }
 });
 /** The original one-date diagnostic demanded a dispatch at a probabilistic
  * appointment and omitted the road and the hand kept at the gate. This one

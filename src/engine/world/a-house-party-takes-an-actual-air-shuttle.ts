@@ -79,7 +79,18 @@ function continueAssembly(state:WorldState,row:Sending,day:number){
    sinceDay:day,untilDay:day+aPostingForItsActualLegs(row.posting,read.quote.daysForEverybody,read.back.daysForEverybody).days,
    returnTo:ground.id,fromLocationId:ground.id
   }])),portfolios,roll,selected);
- if(!admitted)return;
+ if(!admitted){
+  // An unaccepted hull request ends the assembly, without a voyage or service.
+  appendWorldFact(state,makeFact({day,kind:'gathering',locationId:ground.id,visibility:'faction',
+   factionIds:[house.id],actors:people.map(person=>({id:person.id,name:person.name,role:'delegate'})),
+   causes:[row.dispatchFactId!],summary:'The house sending did not board an air hull.',
+   data:{houseAssemblyCancelled:row.dispatchFactId!}}),{recur:false,bystanders:false});
+  for(const person of people){const at=state.npcs.findIndex(n=>n.id===person.id),current=state.npcs[at];
+   if(current?.activity?.capitalMissionId===row.dispatchFactId)
+    state.npcs[at]={...current,activity:null,updatedOnDay:day};
+  }
+  return;
+ }
  row.departsOnDay=day;row.posting={...aPostingForItsActualLegs(row.posting,admitted.read.quote.daysForEverybody,
   admitted.read.back.daysForEverybody),stonesBurned:admitted.fuel};row.dispatchFactId=admitted.dispatchFactId;
 }
@@ -169,10 +180,10 @@ function placeAcceptedLoad(state:WorldState,row:Sending,pilot:NpcRecord,hull:Obj
  * first load is admitted; the remainder stay physically at their departure. */
 export function beginAnActualHouseAirShuttle(state:WorldState,house:FactionRecord,people:readonly NpcRecord[],
  pilot:NpcRecord,hull:ObjectRecord,row:Sending,day:number,activities:ReadonlyMap<string,NpcActivity|null>,
- portfolios:readonly APortfolio[],roll:readonly OnTheRoll[]){
+ portfolios:readonly APortfolio[],roll:readonly OnTheRoll[],batch?:Parameters<typeof quoteHouseAirDuty>[8]){
  if(!journeyTimeHasReached(day,state.currentDay)||!journeyTimeHasReached(state.currentDay,day))return null;
  if(!whatThisHouseCouldTakeOut(state,house).some(row=>row.rowId===hull.id))return null;
- const read=quoteHouseAirDuty(state,house,people,pilot,hull,row.locationId??'',day,false);
+ const read=quoteHouseAirDuty(state,house,people,pilot,hull,row.locationId??'',day,false,batch);
  if(!read||read.quote.trips<=1||!read.quote.pilotedLoads||!read.back.pilotedLoads
   ||whereItStands(hull)!==read.from||people.some(n=>state.npcs.find(p=>p.id===n.id)!==n||!activities.get(n.id)))return null;
  const fuel=read.quote.stonesBurned+read.back.stonesBurned,purse=Number(house.resources.spirit_stones??0);
