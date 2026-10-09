@@ -176,7 +176,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-frostmirror-court` · its entry: [`sects.ts:1463`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 4 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 4 · [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) 3
-  …and 16 more files.
+  …and 17 more files.
 
 **Constants most about it:** `ARTERIALS`, `CONTINGENCIES`, `FAVOUR_STANCES`, `LIVING_TRANSMISSIONS`, `ORIGIN_ACCOUNTS`, `SEA_CARGO`, and 2 more
 
@@ -185,7 +185,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-deeproot-court` · its entry: [`sects.ts:1527`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 14 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`bodies-that-cannot-keep-their-members-children.ts`](../../src/data/cultivation/bodies-that-cannot-keep-their-members-children.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3
-  …and 8 more files.
+  …and 9 more files.
 
 **Constants most about it:** `SHARED_EVENTS`, `FACTION_RELATIONSHIPS`, `COURTS`, `LID_NON_POSITIONS`, `SEALED_FIGURE_NAMES`, `WHY_NOBODY_MOVES`
 
@@ -194,7 +194,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-hollow-court` · its entry: [`sects.ts:1554`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 10 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) 3
-  …and 23 more files.
+  …and 24 more files.
 
 **Constants most about it:** `IMMORTAL_ANCESTORS`, `LID_NON_POSITIONS`, `THE_HOLLOW_COURT_COULD`, `ARTERIALS`, `AZURE_CLOUD_INTAKE`, `AZURE_INTAKE`, and 13 more
 
@@ -203,7 +203,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-the-severed` · its entry: [`sects.ts:1610`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2
-  …and 11 more files.
+  …and 12 more files.
 
 **Constants most about it:** `LID_NON_POSITIONS`, `DEMONIC_STANDINGS`, `LIVING_TRANSMISSIONS`
 
@@ -228,7 +228,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-nine-abyss-flame-sect` · its entry: [`sects.ts:1799`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 2
-  …and 9 more files.
+  …and 10 more files.
 
 **Constants most about it:** `HELD_INSTRUMENTS`, `SEALED_FIGURE_NAMES`
 
@@ -237,7 +237,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-storm-tyrant-court` · its entry: [`sects.ts:1867`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 4
-  …and 17 more files.
+  …and 18 more files.
 
 **Constants most about it:** `RECEIPT_HISTORIES`, `ARTERIALS`, `COURTS`, `MEDICINE_HOLDINGS`, `ORIGIN_ACCOUNTS`, `REGISTERS_COUNT_WHAT_THEY_CAN_SEE`, and 2 more
 
@@ -246,7 +246,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-ancient-bough-grove` · its entry: [`sects.ts:1926`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`patronage.md`](../../docs/world/houses/patronage.md) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
-  …and 6 more files.
+  …and 7 more files.
 
 **Constants most about it:** `DEFERENCE_HOLDINGS`, `THE_SENDING_PYRAMID`
 
@@ -333,17 +333,17 @@ session somebody wrote down design that was already in the catalog.
 
 `house-vermilion-seal` · its entry: [`sects.ts:2471`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`history.ts`](../../src/data/cultivation/history.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 5 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) 2
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`history.ts`](../../src/data/cultivation/history.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 5 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 3
   …and 11 more files.
 
-**Constants most about it:** `CALENDARS`, `DORMANT_ARTS`, `TRADITION_WAR`, `AUCTION_ACCESS`, `CUSTODY_TAKERS`, `GUEST_ELDERS`
+**Constants most about it:** `AUCTION_VENUES`, `CALENDARS`, `DORMANT_ARTS`, `TRADITION_WAR`, `AUCTION_ACCESS`, `CUSTODY_TAKERS`, and 1 more
 
 ### Still Blade Pavilion
 
 `house-still-blade` · its entry: [`sects.ts:2576`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 17 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) 2
-  …and 8 more files.
+  …and 9 more files.
 
 **Constants most about it:** `ARCHIVE_COPIES`, `DAO_HOUSE_DISPUTES`, `DAO_HOUSES`, `DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE`, `DEMONIC_STANDINGS`
 
@@ -361,7 +361,7 @@ session somebody wrote down design that was already in the catalog.
 `house-shrinking-earth` · its entry: [`sects.ts:2785`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 26 · [`sects.ts`](../../src/data/cultivation/sects.ts) 20 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 8 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 4
-  …and 17 more files.
+  …and 19 more files.
 
 **Constants most about it:** `DEAD_CIVILISATIONS`, `DEAD_SCRIPTS`, `THE_FIRST_CULTIVATORS`, `AGES`, `CONTRACTS`, `CUSTODY_TAKERS`, and 6 more
 
@@ -370,7 +370,7 @@ session somebody wrote down design that was already in the catalog.
 `house-immovable-mountain` · its entry: [`sects.ts:2912`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 49 · [`sects.ts`](../../src/data/cultivation/sects.ts) 37 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 17 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 12 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 12 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 10 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 9
-  …and 16 more files.
+  …and 17 more files.
 
 **Constants most about it:** `DESTROYED_DAO_HOUSES`, `DRIVEN_GROUND_AND_THE_NODE`, `LID_THEORIES`, `THE_CALENDAR_OFFSET`, `ARCHIVE_COPIES`, `SECTS`, and 19 more
 

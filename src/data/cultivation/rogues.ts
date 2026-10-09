@@ -795,34 +795,36 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
     {
         id: 'auction-low-fall-floor',
         name: 'The public floor at Emerald Water City',
-        runByFactionId: 'sect-thousand-treasure-pavilion',
+        // The owner: a capital auction is held by a Dao house, as the Span holds the portals.
+        // The Pavilion is the floor's largest consigner, not its keeper.
+        runByFactionId: 'house-vermilion-seal',
         regionId: 'region-low-fall',
         places: [PLACE.GREEN_FALL],
         cadence: 'Quarterly, with a preview two days before, and the preview has not been open to the public in eight years.',
         entryBondStones: 20,
         protections: [
-            'Floor peace inside the hall, enforced by the Pavilion, and stopping at its own door in writing',
+            'Floor peace inside the hall, sworn by every bidder at the door and stopping at the door in writing',
             'A catalogue, which is a statement of what the lot is and never of where it came from',
-            'Oath witnessing available for large lots, at the oath-hall rate, arranged before the sale rather than after',
-            'Registration at the door, which is a protection for the Pavilion and a record for everybody else'
+            'Every hammer witnessed by a Sworn Clerk, so a winning bid is an oath and walking away from one is a breach',
+            'Registration at the door, which is a protection for the Terrace and a record for everybody else'
         ],
-        whatSells: 'Dug goods, mostly: manuals in grades nobody teaches, materials, spent artifacts, and about four lots a year that a sect sends somebody to stop.',
+        whatSells: 'Dug goods, mostly, and most of them consigned by the Thousand Relic Pavilion: manuals in grades nobody teaches, materials, spent artifacts, and about four lots a year that a sect sends somebody to stop.',
         sectlessNote: 'A rogue with twenty stones can stand on this floor and bid on anything unreserved, which is a real and unusual openness. What they cannot do is bid on a reserved lot, and the reserved lots are the reason anybody came.'
     },
     {
         id: 'auction-low-fall-reserved',
         name: 'The private floor',
-        runByFactionId: 'sect-thousand-treasure-pavilion',
+        runByFactionId: 'house-vermilion-seal',
         regionId: 'region-low-fall',
         places: [PLACE.GREEN_FALL],
         cadence: 'The same day, after the public floor closes, in a room off it.',
         entryBondStones: 300,
         protections: [
             'A named guarantor or a faction seal, without which the bond is not accepted at any size',
-            'Settlement through the Pavilion rather than between the parties, which is what the guarantor is guaranteeing',
-            'No catalogue leaves the room, and the Pavilion has never published a reserved-floor result'
+            'Settlement through the Terrace\'s vault rather than between the parties, which is what the guarantor is guaranteeing',
+            'No catalogue leaves the room, and the Terrace has never published a reserved-floor result'
         ],
-        whatSells: 'Heaven-grade and above, and anything the Pavilion has been told to place quietly.',
+        whatSells: 'Heaven-grade and above, and anything the Thousand Relic Pavilion has been told to place quietly.',
         sectlessNote: 'A sectless cultivator can be in this room only as somebody\'s agent, and being somebody\'s agent means somebody knows what you carried out of it.'
     },
     {
@@ -874,7 +876,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
 /** What the circuit will and will not let an unaffiliated cultivator do. */
 export const AUCTION_ACCESS = {
     canBid: [
-        'Any unreserved lot on a public floor, on posting the bond, which is the openness the Pavilion is genuinely proud of',
+        'Any unreserved lot on a public floor, on posting the bond, which is the openness the Terrace is genuinely proud of',
         'Anything at a kerb, a yard sale or a manifest sale, where there is no floor and therefore no rule',
         'Mortal and earth-grade goods generally, which is most of what a rogue could pay for in any case'
     ],
@@ -889,7 +891,7 @@ export const AUCTION_ACCESS = {
         'Buy it afterwards from whoever did win it, at a markup, which is a large part of what the kerb is for'
     ],
     theRealConstraint:
-        'The bond is not the barrier. A rogue who can afford a heaven-grade lot can afford the bond ten times over, and the number of rogues who can afford a heaven-grade lot is very close to none. The circuit is open to them because their exclusion would cost the Pavilion nothing and their inclusion costs it nothing either.'
+        'The bond is not the barrier. A rogue who can afford a heaven-grade lot can afford the bond ten times over, and the number of rogues who can afford a heaven-grade lot is very close to none. The circuit is open to them because their exclusion would cost the Terrace nothing and their inclusion costs it nothing either.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────

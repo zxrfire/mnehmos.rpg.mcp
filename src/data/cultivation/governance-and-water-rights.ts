@@ -2355,7 +2355,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             tributeStonesPerYear: 7_500,
             inKind: ['a catalogue of every lot above a threshold value, sent onward before the auction rather than after it'],
             disciplesPerCycle: 0,
-            buys: ['the right to auction, without which the Pavilion is a warehouse', 'first sight of what comes out of the ground in two provinces'],
+            buys: ['the right to deal in dug goods, without which the Pavilion has nothing to consign', 'first sight of what comes out of the ground in two provinces'],
             renewal: 'Twelve years. The pre-auction catalogue clause means the Pavilion has never once sold a genuinely significant lot to whoever bid highest.'
         },
         standing: 'good',

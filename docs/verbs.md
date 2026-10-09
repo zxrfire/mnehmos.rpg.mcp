@@ -142,7 +142,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`recognise`](#recognise) | `target` | nothing | yes | yes | - |
 | [`news`](#news) | - | nothing | yes | yes | - |
 | [`tell`](#tell) | `target` `topic` `intent` | varies | yes | - | [1](#tell) |
-| [`request`](#request) | `target` `intent` `topic` `days` | time | yes | - | [14](#request) |
+| [`request`](#request) | `target` `intent` `topic` `days` | time | yes | - | [16](#request) |
 | [`challenge`](#challenge) | `target` | varies | yes | - | - |
 | [`guard`](#guard) | `target` `days` | time | yes | - | - |
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
@@ -655,7 +655,7 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 Takes `target`, `intent`, `topic`, `days`.
 
-Intents: `teaching`, `guidance`, `discipleship`, `ending_a_bond`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `advancement`, `company`, `nothing`, `unstated`.
+Intents: `teaching`, `guidance`, `discipleship`, `ending_a_bond`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `advancement`, `company`, `course_change`, `passage`, `nothing`, `unstated`.
 
 ### `challenge`
 
