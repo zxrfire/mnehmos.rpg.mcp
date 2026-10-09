@@ -10,26 +10,22 @@ import { vesselRoomChosen } from './rooms-in-a-vessel.js';
 
 type Clock = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour'> & Partial<Pick<WorldState, 'locations' | 'npcs'>>;
 
-const samples = new WeakMap<Clock, { seed: string; day: number; stable: Map<string, number>; daily: Map<string, number> }>();
+/**
+ * A stream sample is a pure function of seed, stream and parts, so it is cached by those and not by
+ * the clock object. Keyed on the clock it missed whenever a caller built a fresh clock, which the
+ * departure readers do for every look ahead; that was half of a simulated year.
+ */
+const samples = new Map<string, number>();
 
 /** Cache only stream samples; an activity or a position is always read afresh. */
 function sample(state: Clock, stream: string, ...parts: (string | number)[]): number {
-    const day = Math.floor(state.currentDay);
-    let read = samples.get(state);
-    if (!read || read.seed !== state.seed) {
-        read = { seed: state.seed, day, stable: new Map(), daily: new Map() };
-        samples.set(state, read);
-    } else if (read.day !== day) {
-        read.day = day;
-        read.daily.clear();
-    }
-    const cache = stream === 'daily-habit' || stream === 'house-mealtimes' ? read.stable : read.daily;
     // A separator no id contains; `JSON.stringify` here was most of a routine read.
-    const key = parts.length === 0 ? stream : `${stream}\u0001${parts.join('\u0001')}`;
-    let value = cache.get(key);
+    const key = `${state.seed}\u0001${stream}\u0001${parts.join('\u0001')}`;
+    let value = samples.get(key);
     if (value === undefined) {
         value = forStream(state.seed, stream, ...parts).next();
-        cache.set(key, value);
+        if (samples.size >= 400_000) samples.clear();
+        samples.set(key, value);
     }
     return value;
 }
