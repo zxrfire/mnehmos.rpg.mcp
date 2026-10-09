@@ -73,6 +73,10 @@ async function aHouseThatLostItsHead() {
         l.kind !== 'region' && l.kind !== 'grave' && l.name !== cultivator.location
         && !before.npcs.some(row => row.locationId === l.id)
         && before.locations.filter(other => other.name === l.name).length === 1)!;
+    // What the player knows is not what the character knows (owner, 2026-10-03): a place nobody has
+    // told this character of needs directions first, so the character is told of it before the road.
+    for (const id of [empty.id, empty.name]) h.game.knowledge.learnIfNew({ holderId: cultivator.id, kind: 'place', id,
+        name: empty.name, onDay: 0, sourceKind: 'witnessed', stage: 'encountered' });
     provider.plan = JSON.stringify({ action: 'move', intent: 'travel', target: empty.name });
     for (let leg = 0; leg < 6 && h.game.currentRun().cultivator.location !== empty.name; leg++) {
         await h.game.act(`I travel to ${empty.name}`);

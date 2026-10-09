@@ -4449,8 +4449,10 @@ export class GameService {
             const sameCarrier = acceptedCarrier !== null && carrierHere() === acceptedCarrier;
             const freshCrossing = advanced.finished && currentBody.alive && (sameCarrier || stillAtOrigin())
                 ? crossToWhoeverTheyNamed(this, currentBody, action.target, false) : null;
-            if (!advanced.finished || !freshCrossing || freshCrossing.personId !== crossed.personId
-                || (!sameCarrier && freshCrossing.areaId !== crossed.areaId)) {
+            // People keep their routines while you walk over, so the person you named may have moved to
+            // another area of the same place. You follow them: the approach holds while you are still in
+            // the place you set out from and the same person is still within reach.
+            if (!advanced.finished || !freshCrossing || freshCrossing.personId !== crossed.personId) {
                 const facts = factsForRefusal('The approach did not reach its listener.',
                     'The actual crossing stopped or its reachable listener changed. The requested act was not carried out.',
                     'approach: no destination area or handler committed; actual spent time and world consequences retained.');

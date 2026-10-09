@@ -27,7 +27,8 @@ import {
     makeThresholds,
     ordinaryBandFor,
     qiFraction,
-    standingConsequence
+    standingConsequence,
+    walkingDaysFrom
 } from '../../../src/engine/world/locations.js';
 import { sectGroundDensity, seedWorld } from '../../../src/engine/world/seeding.js';
 import { fixtureCatalog } from './fixtures.js';
@@ -137,8 +138,10 @@ describe('a sect is a place', () => {
             expect(town, ground.name).toBeDefined();
             expect(ground.links.some(l => l.toLocationId === town.id && l.open)).toBe(true);
             expect(town.links.some(l => l.toLocationId === ground.id && l.open)).toBe(true);
-            expect(town.links.some(l => l.toLocationId === region.id && l.open)).toBe(true);
-            expect(region.links.some(l => l.toLocationId === town.id && l.open)).toBe(true);
+            // The province reaches the town by its road network: a link, or the province's one
+            // containment approach (a day), whichever the map holds. Either is a road you can walk.
+            expect(walkingDaysFrom(state.locations, region.id).has(town.id), ground.name).toBe(true);
+            expect(walkingDaysFrom(state.locations, town.id).has(region.id), ground.name).toBe(true);
         }
     });
 
