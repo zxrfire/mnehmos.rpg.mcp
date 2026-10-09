@@ -2,6 +2,7 @@
  * A player says one sentence containing a plan, and the turn carries it out.
  */
 
+import { deedAccountInWords } from './an-account-of-yourself.js';
 import {
     TARGETED_ACTIONS,
     carryWhatOnlyTheSentenceKnows,
@@ -235,6 +236,8 @@ function spansInTheTail(spans: readonly ExplicitNameSpan[], offset: number): rea
 
 export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan[] = []): string[] {
     if (isOneInformationExchange(input)) return [input.trim()];
+    // "It wasn't me, it was X" is one account, a blame; split at the comma it became a bare denial.
+    if (deedAccountInWords(input) === 'blame') return [input.trim()];
     // Keep the conversational prefix together when a distinct decision follows.
     // This applies only to the bounded information exchange, never arbitrary acts.
     for (const boundary of input.matchAll(/\band(?:\s+then)?\b|\bthen\b|;/gi)) {
