@@ -10161,12 +10161,7 @@ ${noticed}`;
 
         const scope = this.scopeFor(cultivator);
         const asSect = resolveSect(this.repos, wanted, scope, cultivator.sectId);
-        // `resolveSect` lets a typed full name through as an attempt, which is right for asking
-        // the way. Acting on a house is not asking: what the player knows from another run grants
-        // the character nothing, so a house it has never heard of cannot be acted on.
-        if (asSect && (asSect.id === cultivator.sectId || heard(asSect.id))) {
-            return { id: asSect.id, name: asSect.name, kind: 'sect' };
-        }
+        if (asSect) return { id: asSect.id, name: asSect.name, kind: 'sect' };
 
         let best: { id: string; name: string; kind: 'court' | 'apex' } | null = null;
         let bestScore = MATCH_THRESHOLD;

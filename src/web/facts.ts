@@ -2491,12 +2491,13 @@ export function factsForInteraction(
         lines: [
             // Second person, like every other line the player reads. This
             // said the player's own name, which put two people into an
-            // answer where one of them is the reader.
-            `You went to ${subject}.`,
+            // answer where one of them is the reader. And not "went to": an
+            // attempt at a house that is not here moves nobody anywhere.
+            `You turned to ${subject}.`,
             ...subjectFacts,
         ],
         prose: [
-            `You go to ${subject}.`,
+            `You turn to ${subject}.`,
             subjectFacts.join(' '),
         ].join('\n\n')
     };

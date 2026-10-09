@@ -2363,16 +2363,17 @@ describe('institutions acting on each other', () => {
 
     // ── the knowledge gate, which none of this may weaken ────────────────
 
-    it('answers an unheard house and an invented one identically', async () => {
+    it('takes a real house named from another run as an attempt, and an invented one as nobody', async () => {
+        // The owner, 2026-10-03: a name the player knows from earlier runs may
+        // guide a named attempt; the ordinary rules then answer it. An invented
+        // name still has nobody behind it. See player-supplied-names-are-attempts.
         const { game } = await standing(theSeatOf(), { seed: 'gate-a' });
-        // A real house this cultivator has never been told about.
         const unheard = await game.act('I declare war on the Corpse Refining Sect');
-        // A house that does not exist at all.
         const invented = await game.act('I declare war on the Emerald Nothing Sect');
 
-        expect(unheard.narration).toMatch(/against nobody|not said who/i);
+        expect(unheard.narration).toMatch(/corpse refining sect/i);
         expect(invented.narration).toMatch(/against nobody|not said who/i);
-        // Neither may confirm anything about the name that was typed.
+        // The attempt reaches the house that was named, never an old name for it.
         expect(unheard.narration).not.toMatch(/corpse lantern/i);
     });
 
@@ -2415,10 +2416,10 @@ describe('institutions acting on each other', () => {
         const { game } = await standing(null, { seed: 'bystander', worldEnabled: true });
         const named = await game.act('I ask the Empyrean Court about the crossing');
 
-        // The addressee is a name this cultivator does not hold, so the question
-        // was not asked. It must not be re-aimed at whoever is standing nearest.
+        // A named house is an attempt at that house (the owner, 2026-10-03). It
+        // must not be re-aimed at whoever is standing nearest, and nobody moved.
         expect(engineCalls(named).map(c => c.name)).not.toContain('engine.askedAbout');
-        expect(named.narration).not.toMatch(/empyrean court/i);
+        expect(named.narration).not.toMatch(/you go to|you went to/i);
 
         // And a DESCRIPTION still reaches somebody, which is the behaviour this
         // must not cost: `POINTING` is the closed set that separates the two.
@@ -2435,7 +2436,9 @@ describe('institutions acting on each other', () => {
         const { game } = await standing(null, { seed: 'substitution' });
         const result = await game.act('I apply to the Thousand Relic Pavilion');
 
-        expect(result.narration).toMatch(/not one anybody has said to you|not a name you hold/i);
+        // The attempt is at the house the player named (the owner, 2026-10-03),
+        // answered by that house's own bar, and never swapped for another.
+        expect(result.narration).toMatch(/thousand relic pavilion/i);
         expect(result.narration).not.toMatch(/there is one name you have for this/i);
     });
 
@@ -3038,13 +3041,14 @@ describe('attacking a house', () => {
         expect(result.state.run.elapsedDays).toBe(fresh.elapsedDays);
     }, 120_000);
 
-    it('says nothing about a house the player has not heard of', async () => {
-        // The knowledge gate still wins: an unheard house gets the ordinary
-        // unresolved-target refusal, which names nobody and confirms nothing.
+    it('tells nothing about a house the player has not heard of', async () => {
+        // Naming it is an attempt (the owner, 2026-10-03) and gets the house-is-not-
+        // a-person refusal, but an attempt is not a discovery: how strong the house
+        // is stays with somebody who has heard of it.
         const { game } = makeGame({ seed: 'faction-unheard' });
         await game.newRun('Ke Yan');
         const result = await game.act('I attack the Nine Abyss Flame Sect');
-        expect(result.narration).not.toMatch(/nine abyss/i);
+        expect(result.narration).not.toMatch(/strongest person/i);
         expect(refusedCall(result)).not.toBeNull();
     }, 120_000);
 });

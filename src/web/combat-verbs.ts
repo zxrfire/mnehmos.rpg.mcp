@@ -428,6 +428,10 @@ export const combatVerbs = {
                 ?? getApexInstitution(asFaction.id)?.powerOrdinal
                 ?? null;
             const position = positionIn(this.repos, cultivator.id);
+            // A name the player brought from another run is an attempt, not a discovery: how strong
+            // the house is stays with somebody who has actually heard of it.
+            const heardOf = asFaction.id === cultivator.sectId
+                || this.knowledge.isAwareOf(cultivator.id, 'sect', asFaction.id);
             return refused('engine.resolveParty', 'attack', factsForRefusal(
                 'A house is not standing in front of you.',
                 `${asFaction.name} is a name, a roll and some ground. There is nobody called that `
@@ -435,7 +439,7 @@ export const combatVerbs = {
                 + 'them can be fought by somebody standing in the same place as them - or the '
                 + 'thing a house does to another house, which is a decision made by whoever heads '
                 + 'that house and not by whoever is angry.'
-                + (theirs === null
+                + (theirs === null || !heardOf
                     ? ''
                     : ` The strongest person they will actually put in a room stands at `
                       + `${rankName(theirs)}.`)
