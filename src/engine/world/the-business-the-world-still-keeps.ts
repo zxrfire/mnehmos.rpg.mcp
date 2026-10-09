@@ -24,6 +24,13 @@ const routine = (fact: HistoricalFact): boolean => {
         || data.publicPassage === true || data.capitalMission === true || data.tributeReceived === true);
 };
 
+/**
+ * Mundane events a world forgets once nobody alive took part in or saw them, and nothing in the world
+ * still points at them (owner, 2026-10-09). Consequential kinds (deaths, wars, inheritances, marriages,
+ * finds, forbidden ground, grudges, prices) are not on this list: they leave evidence and causes.
+ */
+const MUNDANE = new Set(['said_in_public', 'opportunity', 'grant_renewed', 'spirit_tide', 'gave_up_waiting', 'promotion']);
+
 /** The yearly boundary shares the dead-row sweep's index and reference hooks. */
 export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     const year = Math.floor(state.currentDay / DAYS_PER_YEAR);
@@ -38,6 +45,11 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
         'houseProgress', 'houseBusiness', 'openCompetition', 'actualBodyArrival', 'postRelief',
         'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived'].some(key => factsWithData(state, key).some(fact => fact.day < cutoff))) return;
     const exact = new Set(state.npcs.filter(person => isPlayerInvolved(state, person)).map(person => person.id));
+    const alive = new Set(state.npcs.filter(person => person.status === 'alive').map(person => person.id));
+    // Forgotten: a mundane event nobody alive took part in or witnessed.
+    const forgotten = (fact: HistoricalFact): boolean => MUNDANE.has(fact.kind)
+        && fact.actors.every(actor => !alive.has(actor.id)) && fact.witnessIds.every(id => !alive.has(id));
+    const disposable = (fact: HistoricalFact): boolean => routine(fact) || forgotten(fact);
     const players = new Set(state.npcs.filter(person => !isTheWorldsToMove(person)).map(person => person.id));
     const held = new Set<string>();
     const objectIds = new Set(state.objects.map(object => object.id));
@@ -67,7 +79,7 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     for (const place of state.locations) { hold(place.data); hold(place.changes); }
     for (const lot of index.openAuctionLots) held.add(lot.id);
 
-    for (const fact of state.history.facts) if (!routine(fact) || fact.day >= cutoff
+    for (const fact of state.history.facts) if (!disposable(fact) || fact.day >= cutoff
         || fact.actors.some(actor => exact.has(actor.id)) || fact.witnessIds.some(id => players.has(id))) {
         for (const value of Object.values(fact.data)) if (typeof value === 'string') protectedObjects.add(value);
     }
@@ -113,7 +125,7 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     const living = exact;
     for (let at = previous.length - 1; at >= 0; at--) {
         const fact = previous[at]!;
-        if (!routine(fact) || fact.day >= cutoff || fact.actors.some(actor => exact.has(actor.id))
+        if (!disposable(fact) || fact.day >= cutoff || fact.actors.some(actor => exact.has(actor.id))
             || fact.witnessIds.some(id => players.has(id))) { held.add(fact.id); continue; }
         let visit = false;
         if (fact.locationId || fact.factionIds.length) for (const id of new Set([
