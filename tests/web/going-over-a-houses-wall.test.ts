@@ -23,7 +23,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { toldTheWayTo } from './told-the-way';
+import { toldTheWayTo, travelUntilThere } from './told-the-way';
 import { makeGameInWorld } from './harness';
 import { parseIntent } from '../../src/web/actions';
 import { theOneWhoSeesThem } from '../../src/web/inside-without-leave';
@@ -87,8 +87,12 @@ async function atTheGate(seed: string) {
     const harness = await makeGameInWorld({ seed, worldSeed: 'road-world' });
     await harness.game.newRun('Probe');
     await toldTheWayTo(harness, HOUSE);
-    await harness.game.act(`I travel to the ${HOUSE}`);
-    await harness.game.act('I go to the gate');
+    const town = () => (harness.game.atHand?.locations ?? []).find(l => l.tags.includes('gate_town')
+        && harness.game.atHand!.factions.some(f => f.id === l.data.gateOf && f.name === HOUSE))?.name;
+    await travelUntilThere(harness, `I travel to the ${HOUSE}`, () => harness.game.currentRun().cultivator.location === town());
+    const seatName = () => { const w = harness.game.atHand!; const f = w.factions.find(h => h.name === HOUSE);
+        return w.locations.find(l => l.id === f?.seatLocationId)?.name; };
+    await travelUntilThere(harness, 'I go to the gate', () => harness.game.currentRun().cultivator.location === seatName());
     const world = (await harness.game.loadWorld())!;
     const house = theHouseThisNameReaches(world, HOUSE)!;
     expect(house, `no ${HOUSE} in this world`).not.toBeNull();

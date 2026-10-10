@@ -24,3 +24,15 @@ export async function toldTheWayTo(harness: Pick<Harness, 'game' | 'db'>, ...pla
             onDay: 0, sourceKind: 'told', stage: 'placed', sourceNote: 'Somebody gave directions.' });
     }
 }
+
+/**
+ * Travels until the character is where the sentence leads, answering a demand on the road the way a
+ * player would (the owner: a journey is a multi-part action and an interruption stops it).
+ */
+export async function travelUntilThere(harness: Pick<Harness, 'game'>, sentence: string,
+    arrived: () => boolean, legs = 4): Promise<void> {
+    for (let leg = 0; leg < legs && !arrived(); leg++) {
+        const done = await harness.game.act(sentence);
+        if (/demand/i.test(done.narration ?? '')) await harness.game.act('I pay them');
+    }
+}
