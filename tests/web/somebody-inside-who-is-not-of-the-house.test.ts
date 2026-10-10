@@ -187,6 +187,8 @@ async function insideAHouse(seed: string, opts: { large?: boolean } = {}) {
         houseId: string; houseName: string;
     } | null = null;
     for (const place of [...world.locations].sort((a, b) => (a.id < b.id ? -1 : 1))) {
+        // A head compound with rooms inside it; a Temple's lower cloister is a walled ground with none.
+        if (typeof place.data.branchOf === 'string') continue;
         const ground = whoHoldsTheGround(world.locations, place.id);
         if (ground.holding !== 'held' || !ground.holderFactionId) continue;
         if (opts.large && howManyAHouseReallyHas(world, ground.holderFactionId) <= A_ROLL_A_PLAYER_COULD_KNOW) continue;

@@ -66,6 +66,7 @@ import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { ActionName } from './actions.js';
 import type { GameService } from './turn-engine.js';
+import { isATempleBranch } from '../engine/world/a-temple-branch.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import { guestPlaceHeldBy } from '../server/consolidated/sect-guest.js';
 import { theyAreNotShowingWhatTheyAre } from './what-you-are-not-showing.js';
@@ -918,8 +919,11 @@ export const attentionVerbs = {
             // is somewhere a person stands.
             const standing = world.locations.find(place => place.id === placeId) ?? null;
             const seatOfIt = theSeatOfTheCompound(world, placeId, compounds);
+            // A lower cloister's gate opens straight onto the city it stands in.
             const outside = seatOfIt !== null
-                ? (seatOfIt.id === placeId ? null : seatOfIt)
+                ? (seatOfIt.id === placeId
+                    ? (isATempleBranch(seatOfIt) ? world.locations.find(place => place.id === seatOfIt.parentId) ?? null : null)
+                    : seatOfIt)
                 : standing?.parentId
                     ? world.locations.find(place => place.id === standing.parentId && place.kind !== 'region') ?? null
                     : null;
