@@ -2741,7 +2741,6 @@ export class GameService {
         }
 
         const { run, cultivator: asStored } = this.requireLiveRun();
-        const cultivator = this.withoutAStaleArea(asStored);
 
         // ADMIN is an operator surface, not a game action, so it is answered
         // before the narrator ever sees the input. context.md: it lifts content
@@ -2758,11 +2757,13 @@ export class GameService {
                 );
                 return ran.result;
             }
-            return await this.adminAct(rest, run, cultivator);
+            return await this.adminAct(rest, run, asStored);
         }
 
-        const ambient = this.ambientFor(cultivator, run);
+        const ambient = this.ambientFor(asStored, run);
         this.atHand = await this.loadWorld();
+        // Read against the world this turn is played in, not whatever was at hand before it.
+        const cultivator = this.withoutAStaleArea(asStored);
 
         // THE PLAYER IS ON THE ROSTER, AND THE SHEET IS THE SOURCE
         invitationsDue(this, cultivator);
