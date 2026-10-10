@@ -1,3 +1,4 @@
+import { activityForVerb } from './encounters.js';
 import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
 import { spendOnOwnedPassage } from './an-owned-passage.js';
 import { spendAboardTheShip, spendAboardTheCarriage } from './an-actual-paid-passage.js';
@@ -128,7 +129,8 @@ export async function passHours(game: GameService, run: Run, cultivator: Cultiva
         // Route adapters above remain authoritative. Off transport, ordinary
         // time uses native encounters, food, hostility and the held body iterator.
         spent = await game.shortSkip(run, cultivator, game.ambientFor(cultivator, run),
-            WAITING_FOCUS, label, days, undefined, resolvesOnTurn, finishTurn, whileApproaching);
+            // The label words the account; what can happen in the hours is a wait's, whatever it is called.
+            WAITING_FOCUS, label, days, activityForVerb('Waiting'), resolvesOnTurn, finishTurn, whileApproaching);
         game.atHand = await game.loadWorld();
         if (game.atHand) {
             invitationsDue(game, game.repos.cultivators.getById(cultivator.id) ?? cultivator);
