@@ -364,13 +364,13 @@ export const takingVerbs = {
 
         if (decided.state === 'yours') {
             const what = decided.object?.name ?? decided.thing;
-            return this.freeAction(run, 'interact', factsForRefusal(
+            return { ...this.freeAction(run, 'interact', factsForRefusal(
                 `${what}: already yours.`,
                 `You reach for ${theArticleIsAlreadyOnIt(what)} and find it where you left `
                 + 'it, which is on you.',
                 `Taking refused as a no-op: the row's possessor is already ${cultivator.id}. `
                 + 'Nothing moved, no time passed, and no account opened.'
-            ));
+            )), timeDisposition: 'no_op' };
         }
 
         // ── A FIND, WHICH IS THE CASE THE RULING NAMES ──────────────────

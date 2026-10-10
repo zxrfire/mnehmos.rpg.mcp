@@ -1116,6 +1116,20 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // own step keeps every sentence that names no person, which is the
         // other half of the same routing and is pinned in
         // `a-rung-is-somebodys-to-give.test.ts`.
+        // OFFERING A RIDE IN YOUR OWN CRAFT, and asking whoever commands the one
+        // you are in to go elsewhere. Both are requests: the other person agrees,
+        // and a course change is the captain's call (the owner's travel rulings).
+        'request/passage': [
+            'I offer Elder Fang a ride to the Salt Road',
+            'I offer Elder Fang a free passage to the Salt Road',
+            'I offer to take Elder Fang to the Salt Road for 50 spirit stones'
+        ],
+        'request/course_change': [
+            'I ask the captain to change course to the Salt Road',
+            'I ask the pilot to turn back to the Salt Road',
+            'I tell the driver to drive to the Salt Road',
+            'I beg the captain to take us to the Salt Road'
+        ],
         'request/advancement': [
             'I ask Elder Fang to promote me',
             'I bribe Elder Fang with 2000 stones to promote me',

@@ -12,6 +12,8 @@ import { theHouseLendsAnActualDutyCraft, quoteHouseAirDuty, admitPaidHouseAirDut
 
 import { companyAfterPassage } from './company-during-a-passage.js';
 import { publicWatchTargetsTogether } from './where-a-house-keeps-its-public-watch.js';
+import { A_SHOPFRONT_HOLDS, shopfrontSitesOf } from './a-dao-house-shopfront.js';
+import { A_BRANCH_HOLDS, templeBranchesOf } from './a-temple-branch.js';
 import { physicalRetrievalDeadlines } from './continuing-a-physical-store-retrieval.js';
 import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js';
 import { ordinaryAdultsTakeWork } from './the-work-an-ordinary-mortal-does.js';
@@ -4827,23 +4829,37 @@ export function applyPostings(state: WorldState, year: number, day: number,
             : getLocation(state, faction.seatLocationId)?.parentId ?? null;
         const local = localTowns(seatRegion);
         const cityIds = cities ??= new Set(capitalPlaces(state).map(l => l.id));
-        // The house that holds the capital auctions keeps its witnesses on each floor, as the
-        // Span keeps its terminals: those posts come before any market of its own choosing.
-        const terminals = [...(watches.get(faction.id) ?? []),
-            ...(faction.id === (auctioneer ??= whoHoldsTheAuctions(state)?.id ?? '') ? towns.filter(t => cityIds.has(t.id)) : [])];
+        // A Dao house's shopfronts (the Span's terminals, the Jade Register's gates, the Flowing Star's
+        // offices, the auction floors of whoever holds the auctions) and the Temple's lower cloisters
+        // are kept before any market of the house's own choosing. A shopfront holds at most three and a
+        // cloister six, and together they never take more than half the roll away (the owner: up to
+        // about 60% may be out, each with a reason). See docs/world/houses/dao-houses.md.
+        const shopfronts = [...new Map([...(watches.get(faction.id) ?? []), ...shopfrontSitesOf(state, faction.id),
+            ...(faction.id === (auctioneer ??= whoHoldsTheAuctions(state)?.id ?? '') ? towns.filter(t => cityIds.has(t.id)) : [])]
+            .map(t => [t.id, t])).values()];
+        const branches = templeBranchesOf(state, faction.id);
+        const standingSites = shopfronts.length + branches.length;
+        const share = standingSites === 0 ? 0 : Math.floor(roll.length / 2 / standingSites);
+        const holds = new Map<string, number>([
+            ...shopfronts.map(t => [t.id, Math.max(1, Math.min(A_SHOPFRONT_HOLDS, share))] as const),
+            ...branches.map(t => [t.id, Math.max(1, Math.min(A_BRANCH_HOLDS, share))] as const)]);
         const marketScore = (id: string) => houseMarketScore(state.seed, faction.id, id);
         const markets = towns.filter(t => cityIds.has(t.id) && t.id !== local[0]?.id)
             .sort((a, b) => marketScore(a.id) - marketScore(b.id));
-        const posts = [...new Map([...terminals, ...(local.slice(0, 1)), ...markets, ...local].map(t => [t.id, t])).values()]
+        const posts = [...new Map([...(local.slice(0, 1)), ...markets, ...local].filter(t => !holds.has(t.id))
+            .map(t => [t.id, t])).values()]
             .slice(0, howManyPostsAHouseKeeps(getSect(faction.id)?.powerOrdinal
                 ?? Number(faction.resources.power_ordinal ?? 0)));
-        const held = new Set(roll
-            .filter(n => n.activity?.kind === 'stationed' && (n.activity.untilDay == null || n.activity.untilDay > day))
-            .map(n => {
-                const receipt=n.activity?.airDutyReceiptId?witnessIndexFor(state).byId.get(n.activity.airDutyReceiptId):undefined;
-                return typeof receipt?.data.toLocationId==='string'?receipt.data.toLocationId:n.locationId;
-            }));
-        const empty = posts.filter(t => !held.has(t.id));
+        const held = new Map<string, number>();
+        for (const n of roll) {
+            if (n.activity?.kind !== 'stationed' || (n.activity.untilDay != null && n.activity.untilDay <= day)) continue;
+            const receipt=n.activity?.airDutyReceiptId?witnessIndexFor(state).byId.get(n.activity.airDutyReceiptId):undefined;
+            const at = typeof receipt?.data.toLocationId==='string'?receipt.data.toLocationId:n.locationId;
+            if (at) held.set(at, (held.get(at) ?? 0) + 1);
+        }
+        // One empty slot per place a house is short of its people, standing sites first.
+        const empty = [...shopfronts, ...branches, ...posts].flatMap(t =>
+            Array.from({ length: Math.max(0, (holds.get(t.id) ?? 1) - (held.get(t.id) ?? 0)) }, () => t));
         if (empty.length === 0) continue;
 
         const handScores = new Map<string, number>();
@@ -4918,7 +4934,10 @@ export function applyPostings(state: WorldState, year: number, day: number,
                 ...setLocation(state.npcs[index]!, town.id, day),
                 activity: {
                     kind: 'stationed',
-                    note: terminals.some(place=>place.id===town.id)?`Serving the crossing watch at ${town.name}.`:`Serving a house posting at ${town.name}.`,
+                    note: (watches.get(faction.id) ?? []).some(place=>place.id===town.id)?`Serving the crossing watch at ${town.name}.`
+                        : branches.some(place=>place.id===town.id)?`Serving at ${town.name}.`
+                        : shopfronts.some(place=>place.id===town.id)?`Keeping the house's shopfront at ${town.name}.`
+                        : `Serving a house posting at ${town.name}.`,
                     withIds: [],
                     sinceDay: day,
                     untilDay: day + outbound + years * DAYS_PER_YEAR,

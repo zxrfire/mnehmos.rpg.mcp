@@ -4840,6 +4840,11 @@ const A_DELIVERY_HANDED_OVER = /\b(?:deliver|delivers|hand over|hands over|hand 
 function planIntent(input: string): PlannedAction {
     const offeredRide = rideOfferSaid(input);
     if (offeredRide) return { action: 'request', intent: 'passage', target: offeredRide.person, topic: offeredRide.destination };
+    // Asking whoever is driving or piloting to go somewhere else. The verb reads the course out of
+    // the sentence (`requestedCaptainCourse`) and refuses it unless this person is the one in command.
+    const course = /^(?:i\s+)?(?:ask|tell|beg|order)\s+(.+?)\s+to\s+((?:change (?:the )?(?:course|destination)|turn back|(?:sail|steer) (?:back )?)\s*to\s+.+?)[.!?]*$/i.exec(input)
+        ?? /^(?:i\s+)?(?:ask|tell|beg|order)\s+((?:the|our|my)\s+(?:captain|pilot|driver|helmsman|shipmaster|coachman|carter|boatman))\s+to\s+((?:drive|take (?:me|us)) (?:back )?to\s+.+?)[.!?]*$/i.exec(input);
+    if (course) return { action: 'request', intent: 'course_change', target: course[1]!.trim(), topic: course[2]!.trim() };
     const remoteSword = /^(?:i\s+)?send (?:my|the) sword to (.+?)[.!]?$/i.exec(input);
     if (remoteSword) return { action: 'project', proxy: 'sword', target: remoteSword[1] };
     const clone = /^(?:i\s+)?split off a clone(?: (?:to|at) (.+?))?[.!]?$/i.exec(input);

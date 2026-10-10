@@ -115,6 +115,7 @@ import { transferPossession, makeObject } from './possessions.js';
 import { seedTheKeysThatOpenAHouse } from './the-keys-that-open-a-houses-doors.js';
 import { setWhatEverybodyIsAt } from './what-somebody-is-at-when-you-walk-up.js';
 import { seedTownPhysicians, givePhysiciansTheirOpeningWork } from './who-is-actually-seeing-to-wounds.js';
+import { seedTheTempleBranches } from './a-temple-branch.js';
 import { addPlacesOnTheWay } from './places-on-the-way.js';
 import { applyPostings } from './the-world-changing-on-its-own.js';
 import { ordinaryAdultsTakeWork } from './the-work-an-ordinary-mortal-does.js';
@@ -354,6 +355,8 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // `settleTheSeededPastIntoProvinces`.
     state.locations = settleTheSeededPastIntoProvinces(state.locations, opts.seed);
     const factions = seedFactions(state, opts.catalog, regionLocations, presentDay);
+    // The Temple's lower cloisters, before anybody is posted, so the opening pass staffs them.
+    seedTheTempleBranches(state, presentDay);
     const npcs = seedPopulation(
         state, opts.catalog, factions, population, presentDay, rollWorthModelling);
     npcs.push(...seedGateTownResidents(state, presentDay));

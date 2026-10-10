@@ -54,6 +54,31 @@ import { whatATalkIsWorthToTheHouse } from '../../src/web/a-teacher-giving-you-t
 import { howCloseTheyStandToTheirWall } from '../../src/web/standing-guard';
 import type { Cultivator } from '../../src/schema/cultivation';
 import { aVehicleOf } from '../../src/engine/world/a-vehicle';
+import { routineOf } from '../../src/engine/world/npc-routines';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import type { WorldState } from '../../src/engine/world/world-state';
+import type { NpcRecord } from '../../src/engine/world/npc-state';
+
+/**
+ * Where somebody is comes from the hour (the owner: people have lives), so a person is chosen among
+ * those the place's own area reading puts in a town right now, and the player is taken there.
+ * `company` asks for somebody with others in their area.
+ */
+function inATown(world: WorldState, npc: NpcRecord): { town: WorldState['locations'][number]; company: number } | null {
+    const routine = routineOf(world, npc);
+    if (routine.home || routine.locationId === null) return null;
+    const town = world.locations.find(l => l.id === routine.locationId && l.kind === 'settlement');
+    if (!town) return null;
+    const { whereIs } = theAreasOf(world, town);
+    const area = whereIs.get(npc.id);
+    if (!area || area.includes('#room#')) return null;
+    return { town, company: [...whereIs.values()].filter(a => a === area).length - 1 };
+}
+
+async function goStandWith(harness: Harness, meId: string, world: WorldState, npc: NpcRecord): Promise<void> {
+    harness.repos.cultivators.update(meId, { location: inATown(world, npc)!.town.name });
+    await standWhereThePeopleAre(harness, meId, new Set([npc.id]));
+}
 
 const WORLD = 'a-xianxia-run';
 
@@ -94,7 +119,7 @@ function theOddsOf(turn: Turn): number {
 }
 
 /** GIVEN a fresh run standing somewhere, fed, and somebody above them here. */
-async function somebodyAboveHere(seed: string, opts: { atLeast?: number } = {}) {
+async function somebodyAboveHere(seed: string, opts: { atLeast?: number; company?: boolean } = {}) {
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD, adminMode: true });
     await harness.game.newRun('Prober');
     await harness.game.act('I buy a year of provisions');
@@ -110,14 +135,15 @@ async function somebodyAboveHere(seed: string, opts: { atLeast?: number } = {}) 
     // a real eligible person first, then put the player in that person's actual
     // area; only the resulting capped roster is the scene this file measures.
     const eligible = world.npcs
-        .filter(npc => npc.status === 'alive' && npc.cultivation.realmOrdinal > me.realmOrdinal)
+        .filter(npc => npc.status === 'alive' && npc.cultivation.realmOrdinal > me.realmOrdinal
+            && (inATown(world, npc)?.company ?? -1) >= (opts.company ? 1 : 0))
         .sort((a, b) => a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
             || (a.id < b.id ? -1 : 1));
     // A master stands at least `A_MASTER_STANDS_THIS_FAR_ABOVE` over a disciple;
     // under that there is no bond to seal. Tests of a master ask for that gap.
     const teacher = eligible.find(npc => npc.cultivation.realmOrdinal - me.realmOrdinal >= (opts.atLeast ?? 1));
     expect(teacher, `nobody in this world stands ${opts.atLeast ?? 1} rungs above the player`).toBeDefined();
-    await standWhereThePeopleAre(harness, me.id, new Set([teacher!.id]));
+    await goStandWith(harness, me.id, world, teacher!);
     const here = new Set(harness.game.present(harness.game.currentRun().cultivator).map(row => row.id));
     expect(here, 'the chosen teacher was not in the arranged current area').toContain(teacher!.id);
     const above = eligible.filter(npc => here.has(npc.id));
@@ -435,11 +461,11 @@ describe('being taught an art is a span with the teacher at your elbow', () => {
         const world = (await harness.game.loadWorld())!;
         const me = harness.game.currentRun().cultivator;
         const teacher = world.npcs
-            .filter(npc => npc.status === 'alive' && npc.cultivation.realmOrdinal > me.realmOrdinal)
+            .filter(npc => npc.status === 'alive' && npc.cultivation.realmOrdinal > me.realmOrdinal && inATown(world, npc) !== null)
             .sort((a, b) => a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
                 || (a.id < b.id ? -1 : 1))[0];
         expect(teacher, 'nobody above the player exists').toBeDefined();
-        await standWhereThePeopleAre(harness, me.id, new Set([teacher!.id]));
+        await goStandWith(harness, me.id, world, teacher!);
         expect(harness.game.present(harness.game.currentRun().cultivator).map(row => row.id),
             'the chosen teacher was not in the arranged current area').toContain(teacher!.id);
         // THE ART ON THEM is the arrangement: what somebody carries is their
@@ -515,7 +541,7 @@ describe('being taught an art is a span with the teacher at your elbow', () => {
 
 describe('somebody already teaching the room', () => {
     it('is sat in on without asking, for less than a sole student gets, and the set is put back', async () => {
-        const { harness, world, me, teacher, others } = await somebodyAboveHere('sat-in');
+        const { harness, world, me, teacher, others } = await somebodyAboveHere('sat-in', { company: true });
         expect(others.length, 'nobody else here to be in front of the teacher').toBeGreaterThan(0);
         const today = Math.floor(world.currentDay);
         const at = world.npcs.findIndex(npc => npc.id === teacher.id);
@@ -578,6 +604,9 @@ describe('giving a talk', () => {
         await harness.game.act('I buy a year of provisions');
         await harness.game.act('ADMIN set_realm ordinal=20');
         const world = (await harness.game.loadWorld())!;
+        const listener = world.npcs.find(npc => npc.status === 'alive' && npc.cultivation.realmOrdinal < 20
+            && (inATown(world, npc)?.company ?? -1) >= 1)!;
+        await goStandWith(harness, harness.game.currentRun().cultivator.id, world, listener);
         const me = harness.game.currentRun().cultivator;
         const here = new Set(harness.game.present(me).map(row => row.id));
         const below = world.npcs.filter(npc => here.has(npc.id) && npc.status === 'alive'

@@ -741,7 +741,17 @@ const SUBJECT_DOMAINS: Record<string, InsightDomain> = {
     refinement: 'alchemy',
     alchemy: 'alchemy',
     mortality: 'life_death',
-    debt: 'karma'
+    debt: 'karma',
+    // The Dao houses' principles, which a house's own ground opens (`a-house-principle-on-its-own-
+    // ground.ts`). Karma, fate, oaths, names and severance are all ties between things; space is the
+    // void folded; fixity is ground nailed down, which is formation work.
+    karma: 'karma',
+    fate: 'karma',
+    oaths: 'karma',
+    names: 'karma',
+    severance: 'karma',
+    space: 'void',
+    fixity: 'formation'
 };
 
 /**

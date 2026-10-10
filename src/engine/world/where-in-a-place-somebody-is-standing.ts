@@ -51,6 +51,7 @@ import type { WorldState } from './world-state.js';
 import { routineOf, routineTime } from './npc-routines.js';
 import { theLodgingsOfAHouse, whichRoomARungGets } from './the-room-a-house-gives-you.js';
 import { townHasAClinic, physicianIsWorking } from './who-is-actually-seeing-to-wounds.js';
+import { shopfrontsAt, theShopfrontOf, type ShopfrontKind } from './a-dao-house-shopfront.js';
 import {
     npcsStandingIn,
     npcsWithin,
@@ -62,7 +63,7 @@ import {
 export const AT_MOST_IN_AN_AREA = 3;
 
 /** What an area of a place is for. */
-export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'board' | 'here' | 'room' | 'deck' | 'exchange' | 'clinic' | 'landing' | 'carriage_station' | 'span_counter' | 'spirit_berth';
+export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'board' | 'here' | 'room' | 'deck' | 'exchange' | 'clinic' | 'landing' | 'carriage_station' | 'span_counter' | 'spirit_berth' | 'register_gate' | 'star_office';
 
 export interface AnAreaOfAPlace {
     /** `<place id>#<kind>#<slug>`. */
@@ -201,6 +202,8 @@ function theNamesFor(place: Pick<LocationRecord, 'name' | 'tags'>, what: WhatAnA
         case 'carriage_station': return ['the carriage station'];
         case 'span_counter': return ['the folding counter'];
         case 'spirit_berth': return ['the Spirit Boat Berth'];
+        case 'register_gate': return ['the Jade Register gatehouse'];
+        case 'star_office': return ['the Flowing Star office'];
         case 'clinic': return ["the physician's clinic"];
         case 'table': return town.table;
         case 'gate': return OUTSIDE_THE_GATE;
@@ -215,6 +218,11 @@ function theNamesFor(place: Pick<LocationRecord, 'name' | 'tags'>, what: WhatAnA
         case 'room': return [];
     }
 }
+
+/** The area a Dao house's shopfront keeps, by its kind. */
+const A_SHOPFRONT_AREA: Record<ShopfrontKind, WhatAnAreaIsFor | null> = {
+    register_gate: 'register_gate', star_office: 'star_office', auction_floor: 'exchange'
+};
 
 const ORDINALS = ['second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
 
@@ -240,6 +248,8 @@ export function departureAreaAt(state: State, place: LocationRecord,
 function theKindsAt(state: State,place: LocationRecord,now: number,
     only?:'landing'|'carriage_station'|'spirit_berth',scope?:PlaceScope): WhatAnAreaIsFor[] {
     return [...(only?[]:theKindsOf(place)),
+        // A Dao house's shopfront is a counter of its own; the Terrace's floor is the exchange's auction house.
+        ...(only?[]:shopfrontsAt(state,place).map(shop=>A_SHOPFRONT_AREA[shop.kind]).filter((k):k is WhatAnAreaIsFor=>k!==null)),
         ...(only==='spirit_berth'?[]:publicTransportHubsAt(state,place.name,now,
             {scope,kind:only}).map(hub=>hub.kind)),
         ...((!only||only==='carriage_station')&&(state.objects??[]).some(object=>{
@@ -397,6 +407,9 @@ export function theAreasOf(
         if (routines.get(group[0]!.id)!.home) return 'room';
         const counter = countersByPerson.get(group[0]!.id);
         if (counter) return counter === 'inn' ? 'table' : counter;
+        // Somebody a Dao house keeps on post here works its shopfront.
+        const shop = group[0]!.activity?.kind === 'stationed' ? theShopfrontOf(state, group[0]!.factionId, place) : null;
+        if (shop && A_SHOPFRONT_AREA[shop.kind]) return A_SHOPFRONT_AREA[shop.kind]!;
         if (house !== null) {
             return group.some(n => n.id === watch?.id) || group.every(n => n.factionId !== house) ? 'gate' : 'forecourt';
         }
@@ -544,10 +557,12 @@ export function theAreasOf(
             whereIs.delete(other.id);
             whereIs.set(other.id, (count(desired.id) < AT_MOST_IN_AN_AREA ? desired : elsewhere(desired)).id);
         }
-        const at = standingWith.physical?.hull
+        // Aboard, the hull's own area; where the hull has no area here yet, the ordinary reading.
+        const aboardAt = standingWith.physical?.hull
             ? areas.find(one => one.id === standingWith.standingIn && (one.for === standingWith.physical!.hull!.areaKind || standingWith.physical!.hull!.rooms?.some(room => room.id === one.id)))
-                ?? areas.find(one => one.for === standingWith.physical!.hull!.areaKind)!
-            : areaTheyStandIn(place, areas, standingWith.standingIn, standingWith.sectId ?? null);
+                ?? areas.find(one => one.for === standingWith.physical!.hull!.areaKind)
+            : undefined;
+        const at = aboardAt ?? areaTheyStandIn(place, areas, standingWith.standingIn, standingWith.sectId ?? null);
         if (!areas.some(area => area.id === at.id)) areas.push(at);
         const companions = people.filter(n => (!standingWith.physical?.hull || at.for !== 'room') && routines.get(n.id)!.activity?.withIds.includes(standingWith.id))
             // Following a leader cannot override this person's actual chosen hull area.
@@ -609,9 +624,14 @@ function areaTheyStandIn(
     const sameKind = placeId === place.id ? areas.find(area => area.for === kind) : undefined;
     if (sameKind) return sameKind;
     const house = theHouseOfTheSeat(place);
-    if (house !== null) return areas.find(area => area.for === (ofTheHouse === house ? 'forecourt' : 'gate'))!;
-    // Sleeping residents are private doors, never the entrance reached by a road.
-    return areas.find(area => area.for !== 'room')!;
+    const door = house !== null ? areas.find(area => area.for === (ofTheHouse === house ? 'forecourt' : 'gate')) : undefined;
+    if (door) return door;
+    // Sleeping residents are private doors, never the entrance reached by a road. Where the only
+    // areas read so far are private rooms, the place's own first public area is still there.
+    const open = areas.find(area => area.for !== 'room');
+    if (open) return open;
+    const first = theKindsOf(place).find(k => k !== 'room') ?? 'here';
+    return anArea(place, first, theNamesFor(place, first)[0] ?? itsOwnName(place));
 }
 
 /**

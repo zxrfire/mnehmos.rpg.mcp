@@ -21,7 +21,9 @@ const routine = (fact: HistoricalFact): boolean => {
         // history and stays. Arrivals, reliefs, passages, receipts and delivered tribute are dockets.
         || (data.openCompetition === true && (data.entry === true || (data.result === true && data.place !== 1)))
         || data.actualBodyArrival === true || data.postRelief === true || data.postServiceReceipt === true
-        || data.publicPassage === true || data.capitalMission === true || data.tributeReceived === true);
+        || data.publicPassage === true || data.capitalMission === true || data.tributeReceived === true
+        // A gate entry is a docket; a year's registration has run out by the time it is a year old.
+        || data.gateRegistration === true);
 };
 
 /**
@@ -43,7 +45,7 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     if (!['publicMission', 'exchangeConsignment', 'exchangeReturn', 'exchangeSale', 'exchangeHandover',
         'auctionLot', 'auctionBid', 'auctionResult', 'capitalCompetition', 'capitalOccasion',
         'houseProgress', 'houseBusiness', 'openCompetition', 'actualBodyArrival', 'postRelief',
-        'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived'].some(key => factsWithData(state, key).some(fact => fact.day < cutoff))) return;
+        'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived', 'gateRegistration'].some(key => factsWithData(state, key).some(fact => fact.day < cutoff))) return;
     const exact = new Set(state.npcs.filter(person => isPlayerInvolved(state, person)).map(person => person.id));
     const alive = new Set(state.npcs.filter(person => person.status === 'alive').map(person => person.id));
     // Forgotten: a mundane event nobody alive took part in or witnessed.

@@ -17,6 +17,10 @@ import { exchangeOffers, tradeExchangeObject } from '../engine/world/wares-at-a-
 import { reviewPlayerBeastContract } from '../engine/world/beast-cultivation-contracts.js';
 import { theOrdinaryRoleNamed, thePersonInThatOrdinaryRole } from './the-person-in-a-named-role.js';
 import { physicianIsWorking, whoDispensesAtTheHouse } from '../engine/world/who-is-actually-seeing-to-wounds.js';
+import { enteringAtTheJadeGate } from './entering-a-city-at-the-jade-gate.js';
+import { askingTheFlowingStarOffice } from './asking-the-flowing-star-office.js';
+import { isATempleBranch } from '../engine/world/a-temple-branch.js';
+import { aHousePrincipleOpenHere } from '../engine/world/a-house-principle-on-its-own-ground.js';
 import { purposeOf } from '../engine/world/architecture.js';
 import { carePricesHere, PHYSICIAN_VISIT_PRICE, PHYSICIAN_COURSE_PRICE } from './what-care-costs-where-you-are.js';
 import { askingAboutCareHere } from './asking-about-the-care-actually-offered-here.js';
@@ -3297,6 +3301,11 @@ export class GameService {
 
         for (const line of settleTheSeparatedBody(this, Math.floor(this.atHand?.currentDay ?? 0) - (this.currentRun().run.elapsedDays - clockOnEntry))) {
             execution.facts.lines.push(line);
+        }
+        // Coming into a city that matters past the Jade Register's gatehouse, by whatever road.
+        for (const line of enteringAtTheJadeGate(this, cultivator)) {
+            execution.facts.lines.push(line);
+            execution.facts.prose = `${execution.facts.prose}\n\n${line}`;
         }
         const after = this.currentRun();
 
@@ -8388,6 +8397,8 @@ ${noticed}`;
         // them. `whoWouldAsk` predicted this exact gap in its own comment: the
         // house roll was left out "only because nothing hands this method a
         // curriculum". This is the curriculum.
+        const office = askingTheFlowingStarOffice(this, cultivator, asked.id, topic);
+        if (office !== null) return office;
         const pointed = subject === null && ownFact === null
             // ANYTHING THEY KNOW, first, because that is the rule. The
             // art-holder read below is one instance of it and not the shape of
@@ -8494,7 +8505,7 @@ ${noticed}`;
         // ASKING IN THE REGION GIVES IT
         const gate = subject?.kind === 'sect' && this.atHand
             ? this.atHand.locations.find(row =>
-                row.kind === 'sect_seat' && row.controllingFactionId === subject.id)
+                row.kind === 'sect_seat' && row.controllingFactionId === subject.id && !isATempleBranch(row))
             : undefined;
         // Both provinces read off the WORLD, not off the gazetteer. `standingOf` is
         // a name match against the static places and answers with the HOME region
@@ -19535,6 +19546,10 @@ ${fit.line}`;
         const world = this.atHand;
         if (!world) return context;
         const here = world.locations.find(place => place.id === this.worldPlaceOf(cultivator));
+        // A Dao house's principle, open to whoever stands on its ground and is let in to it: its own
+        // members, and at the Karma Palace anybody who comes (the owner: people visit it to learn karma).
+        const principle = here ? aHousePrincipleOpenHere(world, here, cultivator.sectId ?? null) : null;
+        if (principle) context.tradition = principle;
         const marker = this.sites.atHand(run.id);
         const markedSite = marker ? getSite(marker.catalogId) : null;
         const readings = [
