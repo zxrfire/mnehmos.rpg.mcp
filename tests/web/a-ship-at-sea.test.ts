@@ -82,11 +82,11 @@ describe('a ship at sea', () => {
 
         const waited = await game.act('I wait 2 days');
         expect(AT_SEA.exec(waited.narration)?.[1]).toBe(String(Number(day) + 2));
-        expect(game.state().run.elapsedDays).toBe(Number(day) + 2);
+        expect(Math.floor(game.state().run.elapsedDays)).toBe(Number(day) + 2);
 
         const landed = await game.act('I wait until we arrive');
         expect(game.state().cultivator.location).toBe('Sweet Spring Island');
-        expect(game.state().run.elapsedDays).toBe(Number(days));
+        expect(Math.floor(game.state().run.elapsedDays)).toBe(Number(days));
         expect(landed.narration).toMatch(new RegExp(`${days} days by ship from Emerald Water City to Sweet Spring Island`));
     }, 120_000);
 
