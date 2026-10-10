@@ -10,6 +10,7 @@ import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { A_SHOPFRONT_HOLDS, isACityThatMatters, shopfrontsAt, shopfrontSitesOf } from '../../../src/engine/world/a-dao-house-shopfront.js';
 import { A_BRANCH_HOLDS, HOW_MANY_BRANCHES, THE_TEMPLE_ID, templeBranchesOf, whoHeadsTheBranch } from '../../../src/engine/world/a-temple-branch.js';
 import { theAreasOf } from '../../../src/engine/world/where-in-a-place-somebody-is-standing.js';
+import { theRollItsPostsNeed } from '../../../src/engine/world/what-a-houses-standing-posts-need.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 
 const catalog = await loadCultivationCatalog();
@@ -38,6 +39,19 @@ describe('a Dao house keeps shopfronts in the cities that matter', () => {
             const staffed = sites.filter(site => onPost(houseId, site.id).length > 0);
             expect(staffed.length, `${houseId} keeps nobody at any shopfront`).toBeGreaterThan(0);
             for (const site of sites) expect(onPost(houseId, site.id).length).toBeLessThanOrEqual(A_SHOPFRONT_HOLDS);
+        }
+    });
+
+    it('keeps a roll big enough for its posts, and staffs each one fully', () => {
+        // The owner: with posts capped at about half the roll, "a house's roll might have to be bigger too".
+        for (const houseId of ['house-jade-register', 'house-flowing-light', 'house-vermilion-seal']) {
+            const house = world.factions.find(f => f.id === houseId)!;
+            if (!house.tags.includes('recruits')) continue;
+            const roll = world.npcs.filter(n => n.status === 'alive' && n.factionId === houseId).length;
+            expect(roll, `${houseId} opens below what its posts need`).toBeGreaterThanOrEqual(theRollItsPostsNeed(world, houseId));
+            for (const site of shopfrontSitesOf(world, houseId)) {
+                expect(onPost(houseId, site.id).length, `${houseId} at ${site.name}`).toBe(A_SHOPFRONT_HOLDS);
+            }
         }
     });
 

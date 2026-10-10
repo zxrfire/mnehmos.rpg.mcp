@@ -2173,7 +2173,8 @@ function seedThePeopleAHouseRaised(
                 : (presentDay - faction.foundedOnDay) / DAYS_PER_YEAR
         });
         // A house whose standing posts need more people than its standing does keeps the larger roll.
-        const short = Math.max(wanted, theRollItsPostsNeed(state, faction.id)) - here.length;
+        const target = Math.max(wanted, theRollItsPostsNeed(state, faction.id));
+        const short = target - here.length;
         if (short <= 0) continue;
 
         const ladder = faction.ranks.length;
@@ -2187,7 +2188,7 @@ function seedThePeopleAHouseRaised(
         // the ones its own people are already standing on. Filled from the
         // bottom, which is where a house that took somebody in this decade puts
         // them.
-        const seats = rosterByRung(wanted, ladder);
+        const seats = rosterByRung(target, ladder);
         for (const npc of here) {
             const rung = npc.factionRankIndex;
             if (rung >= 0 && rung < seats.length) seats[rung] = Math.max(0, seats[rung] - 1);

@@ -262,8 +262,12 @@ describe('what a seeded world holds once its houses have raised their own', () =
             const seatOf = new Map(state.factions.map(f => [f.id, f.seatLocationId]));
             const raised = state.npcs.filter(n => n.id.startsWith('npc-raised-'));
             expect(raised.length).toBeGreaterThan(0);
+            // Raised onto their house's ground; the opening posting pass may then send them to keep
+            // one of its posts (a shopfront, a lower cloister), which is a stint with a reason.
             for (const npc of raised) {
-                expect([npc.id, npc.locationId]).toEqual([npc.id, seatOf.get(npc.factionId ?? '')]);
+                const onAPost = npc.activity?.kind === 'stationed';
+                expect([npc.id, onAPost ? 'on a post' : npc.locationId])
+                    .toEqual([npc.id, onAPost ? 'on a post' : seatOf.get(npc.factionId ?? '')]);
             }
         });
     }
