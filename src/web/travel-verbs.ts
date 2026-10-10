@@ -647,6 +647,10 @@ function routeTheyHaveNotLearned(engine: GameService, cultivator: Cultivator,
     // before you know it): the town outside a gate, the gate at the end of a town's road.
     const here = !betweenRoadEndpoints(engine.repos.db, cultivator) ? worldLocationFor(engine.atHand, cultivator.location) : null;
     if (here?.links.some(link => link.toLocationId === place.id && link.open && link.travelDays <= IN_PLAIN_SIGHT_DAYS)) return null;
+    // A place you have sighted is a place you can head for, its name unknown (see-but-not-know).
+    if ((readJsonFlag<{ id: string }[]>(engine.repos.db, cultivator.id, 'located_places') ?? []).some(seen => seen.id === place.id)) return null;
+    // And what is part of where you stand: the cliff above the spring, the spring below the cliff.
+    if (here && (place.parentId === here.id || here.parentId === place.id) && here.kind !== 'region' && place.kind !== 'region') return null;
     return refused('knowledge.canPointAt', action, factsForRefusal(
         'You do not know the way there.',
         'You can ask somebody here for directions to ' + place.name + '.',

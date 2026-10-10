@@ -70,7 +70,9 @@ describe('documented ground reached in play', () => {
         expect(Number(readJsonFlag(db, cultivator.id, FLAG_RATIONS_HELD)), food.narration).toBe(1);
         const directions = await game.act('where can I go');
         const province = world.locations.find(place => place.id === town.parentId)!;
-        expect(directions.narration).toContain(`${town.name}, ${province.name}`);
+        // The area you stand in is named between the town and its province (a place is read into areas).
+        const esc = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        expect(directions.narration).toMatch(new RegExp(`${esc(town.name)}, (?:[^,.]+, )?${esc(province.name)}`));
         const returned = await game.act('I travel to the gate');
         expect(game.state().cultivator.location, returned.narration).toBe(gate.name);
     }, 120_000);
