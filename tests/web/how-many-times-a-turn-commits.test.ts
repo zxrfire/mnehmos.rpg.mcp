@@ -77,14 +77,16 @@ async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
  * encounters - plus an unknown number of bare autocommitting statements.
  *
  * Measured with an inventory read: ONE transaction and ZERO autocommits. A
- * turn that spends a year is five and zero. The discovery bound above accounts
+ * turn that spends a year is six and zero. The discovery bound above accounts
  * for learning new claims without raising either fixed high-water mark.
  *
  * Zero autocommits is the stronger half: it says every write in a turn is
  * inside some transaction, so there is no statement that can land alone.
  */
 const A_PLAIN_TURN = { commits: 1, autocommits: 0 };
-const A_YEAR_LONG_TURN = { commits: 5, autocommits: 0 };
+// Six since a person met settles on contact what the background rates skipped (the owner: background
+// people move into the foreground when met): one commit when somebody in the scene is settled.
+const A_YEAR_LONG_TURN = { commits: 6, autocommits: 0 };
 
 describe('what one turn costs to make durable', () => {
     let harness: Harness;
