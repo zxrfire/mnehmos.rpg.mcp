@@ -1,3 +1,4 @@
+import { publicTransportHubsAt } from '../engine/world/public-transport-at-a-place.js';
 import {launchOwnedSeaPassage} from './launching-an-owned-sea-passage.js';
 import { quoteAnAirJourney, conveyanceOfPersonalFlight } from '../engine/world/what-an-air-journey-takes.js';
 import { witnessIndexFor } from '../engine/world/witness-reaction-index.js';
@@ -647,6 +648,10 @@ function routeTheyHaveNotLearned(engine: GameService, cultivator: Cultivator,
     // before you know it): the town outside a gate, the gate at the end of a town's road.
     const here = !betweenRoadEndpoints(engine.repos.db, cultivator) ? worldLocationFor(engine.atHand, cultivator.location) : null;
     if (here?.links.some(link => link.toLocationId === place.id && link.open && link.travelDays <= IN_PLAIN_SIGHT_DAYS)) return null;
+    // What the counters where you stand have posted is somewhere you can head for: the landing's board
+    // names where its ships sail (the owner's travel rulings: public hubs exist, and locals know them).
+    if (here && publicTransportHubsAt(engine.atHand, here.name, engine.atHand.currentDay)
+        .some(hub => hub.destinations.some(name => worldLocationFor(engine.atHand!, name)?.id === place.id))) return null;
     // A place you have sighted is a place you can head for, its name unknown (see-but-not-know).
     if ((readJsonFlag<{ id: string }[]>(engine.repos.db, cultivator.id, 'located_places') ?? []).some(seen => seen.id === place.id)) return null;
     // And what is part of where you stand: the cliff above the spring, the spring below the cliff.

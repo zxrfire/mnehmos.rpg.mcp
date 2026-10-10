@@ -2740,7 +2740,8 @@ export class GameService {
             }
         }
 
-        const { run, cultivator } = this.requireLiveRun();
+        const { run, cultivator: asStored } = this.requireLiveRun();
+        const cultivator = this.withoutAStaleArea(asStored);
 
         // ADMIN is an operator surface, not a game action, so it is answered
         // before the narrator ever sees the input. context.md: it lifts content
@@ -18666,6 +18667,22 @@ ${fit.line}`;
     /**
      * Whether this cultivator could set out for a world location.
      */
+    /**
+     * An area belongs to its place. Where the sheet stands somebody in an area of a place they are not
+     * in (a location written without its area), the area is stale and they are simply in the place.
+     * A hull's own areas are not place rows and are left alone.
+     */
+    private withoutAStaleArea(cultivator: Cultivator): Cultivator {
+        const world = this.atHand;
+        const area = cultivator.standingIn;
+        if (!world || !area) return cultivator;
+        const areaPlace = area.split('#')[0]!;
+        const here = worldLocationFor(world, cultivator.location);
+        if (!here || areaPlace === here.id || !world.locations.some(l => l.id === areaPlace)) return cultivator;
+        this.repos.cultivators.standIn(cultivator.id, null);
+        return { ...cultivator, standingIn: null };
+    }
+
     canPointAtLocation(cultivator: Cultivator, record: LocationRecord): boolean {
         if (this.knowledge.canPointAt(cultivator.id, 'place', record.id)) return true;
         // Somebody on a house's roll knows the way home: its ground, the town at its gate, and
