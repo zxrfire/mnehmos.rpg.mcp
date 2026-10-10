@@ -59,9 +59,10 @@ export function comesAtYou(occurrence: EncounterOccurrence): boolean {
 /**
  * What the fight's other side is called, where the draw named nobody.
  *
- * TODO(owner: "for now just one"): walking alone, a band is fought as its leader
- * alone and `confrontation.count` is ignored. Against an escort a band fights as
- * a group: see {@link theRestOfTheFight}.
+ * The leader, named for the band. Walking alone, the band still fights as one (the owner,
+ * 2026-10-09): the leader's man closes in first, in one exchange, before the leader's
+ * own fight opens (see `theyCameAtYou`). Against an escort a band fights as a group:
+ * see {@link theRestOfTheFight}.
  */
 function whoLeadsThem(occurrence: EncounterOccurrence): string {
     const many = (occurrence.confrontation?.count ?? 1) > 1;
@@ -124,9 +125,35 @@ export function theyCameAtYou(
     const entry = ENCOUNTERS.find(row => row.id === occurrence.entryId);
 
     const techniqueId = service.artTheyWouldFightWith(cultivator) ?? null;
-    const selfBody = combatantFromCultivator(
+    let selfBody = combatantFromCultivator(
         cultivator, service.repos, techniqueId ?? undefined, service.atHand?.objects ?? []
     );
+
+    // A BAND IS A BAND WHEN YOU WALK ALONE TOO. The owner: a band fights as a group even
+    // with nobody beside you. Three in a room: you, the leader and one of their men in front,
+    // the rest hanging back. The man closes in first, in one exchange, and the leader's fight
+    // opens on what that left of you.
+    const theBand = threat.count ?? 1;
+    const closedIn: string[] = [];
+    if (!sent && !onTheVehicle && theBand > 1 && entry?.kind === 'bandits') {
+        const man = service.theBodyTheyStandIn(run, { id: 'one of the band', name: 'one of the band' }, false,
+            threat.threatOrdinal, null);
+        if (!isGuidingErrorBody(man)) {
+            const melee = resolveMelee([
+                { id: 'you', name: 'you', members: [selfBody] },
+                { id: 'band', name: 'the band', members: [man] }
+            ], { rng: forStream(run.seed, 'the-band-closes-in', occurrence.absoluteDay), ambient,
+                turn: run.turn + 1, intent: { thrown: AN_ORDINARY_SWING, willWithdraw: true } });
+            const mine = melee.combatants.find(one => one.id === selfBody.id);
+            const theirs = melee.combatants.find(one => one.id !== selfBody.id);
+            if (mine && mine.hp < cultivator.hp) {
+                service.repos.cultivators.applyDeltas(cultivator.id, { hp: mine.hp - cultivator.hp });
+                selfBody = { ...selfBody, hp: mine.hp };
+            }
+            closedIn.push(`One of the leader's men closes in first, ${theirs && theirs.fate !== 'standing' && theirs.fate !== 'bystander'
+                ? 'and is put out of it' : 'and lands what they can'}; ${theBand > 2 ? `the other ${theBand - 2} hang back` : 'the leader comes on'}.`);
+        }
+    }
     const running = service.artTheyWouldRunWith(cultivator);
     const ground = service.groundUnderAFight(cultivator);
     const turn = run.turn + 1;
@@ -214,7 +241,7 @@ export function theyCameAtYou(
         ? `${party.name} came over the account ${account.holderIsAHouse ? `${account.holderName} holds` : 'they hold'} `
           + `against you: ${account.what.trim()}`
         : null;
-    const said = [throughTheDoor, owed, line].filter((one): one is string => one !== null);
+    const said = [throughTheDoor, owed, ...closedIn, line].filter((one): one is string => one !== null);
     const facts = factsForToolResult(`${party.name} attacks.`, said);
     facts.required = said;
     if (door) {

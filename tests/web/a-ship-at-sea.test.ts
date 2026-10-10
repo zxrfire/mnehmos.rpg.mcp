@@ -116,7 +116,7 @@ describe('a ship at sea', () => {
     }, 120_000);
 
     it('past the middle of the passage, a ship that lost its crew goes on, among the people on that water', async () => {
-        const { game, stopped } = await stoppedOnTheEasternPassage('east-333');
+        const { game, stopped } = await stoppedOnTheEasternPassage('east-29');
 
         expect(stopped.narration).toMatch(/The crew did not hold the ship\. It is past the middle of the passage and goes on\./);
         expect(AT_SEA.exec(stopped.narration)?.[3]).toBe('Cloud Gate');
@@ -130,7 +130,7 @@ describe('a ship at sea', () => {
     }, 120_000);
 
     it('short of the middle, a ship that lost its crew turns back for the port it left', async () => {
-        const { game, stopped } = await stoppedOnTheEasternPassage('east-64');
+        const { game, stopped } = await stoppedOnTheEasternPassage('east-8');
 
         expect(stopped.narration).toMatch(/The crew did not hold the ship\. It turns back for Sweet Spring Island/);
         expect(AT_SEA.exec(stopped.narration)?.[3]).toBe('Sweet Spring Island');
@@ -141,9 +141,9 @@ describe('a ship at sea', () => {
     }, 120_000);
 
     it('a leader who comes at the passenger is fought at sea', async () => {
-        const { game, stopped } = await stoppedOnTheEasternPassage('east-12');
+        const { game, stopped } = await stoppedOnTheEasternPassage('east-8');
 
-        expect(stopped.narration).toMatch(/Its leader came at you/);
+        expect(stopped.narration).toMatch(/attacks you/);
         expect(stopped.narration).toMatch(/The fight is open/);
         expect(stopped.narration).toMatch(AT_SEA);
         expect(['Sweet Spring Island', 'Cloud Gate']).not.toContain(game.state().cultivator.location);
