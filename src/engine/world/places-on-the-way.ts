@@ -74,7 +74,9 @@ export function bookNpcPassageForRoute(state: { locations: readonly LocationReco
             return { ...npc, locationId: ground!.id, spiritStones: npc.spiritStones - fare,
                 activity: companyDuringPassage(npc.activity, {
                     kind: 'travelling', note: purpose, sinceDay: leaves, untilDay: leaves + line.days,
-                    fromLocationId: ground!.id, returnTo: destinationId, seaLaneId: line.lane.id, withIds: []
+                    // The lane's hull, so a passenger met on it can be put aboard the actual ship.
+                    fromLocationId: ground!.id, returnTo: destinationId, seaLaneId: line.lane.id,
+                    vesselId: shipIdForLane(line.lane), withIds: []
                 }, day), updatedOnDay: day };
         }
         const approach=prepareNpcDepartureApproach(state as WorldState,npc,destinationId,day,purpose,'ship',undefined,routes);
