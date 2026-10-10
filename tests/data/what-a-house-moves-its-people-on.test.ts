@@ -66,14 +66,17 @@ describe('the conveyance ladder', () => {
     });
 
     // RULING 1. The line is grade and only grade.
-    it('is tracked exactly where the grade is heaven and counted everywhere below', () => {
+    it('is tracked exactly where the grade is heaven or the hull is somewhere to stand, and counted everywhere below', () => {
+        // The owner's ship rulings: a large vessel has real decks and cabins and a crew of real
+        // people, so a hull with an interior is one particular hull, whatever its grade.
         for (const c of CONVEYANCES) {
             if (c.holding === 'none' || c.holding === 'personal') continue;
             const atOrAboveHeaven = c.grade !== null && refiningOrdinalFor(c.grade) >= HEAVEN_FLOOR;
+            const somewhereToStand = (c.interiorLayout?.length ?? 0) > 0;
             expect(
                 c.holding === 'tracked',
                 `${c.id} is ${c.holding} at ${c.grade} grade, which contradicts the counted/tracked line`
-            ).toBe(atOrAboveHeaven);
+            ).toBe(atOrAboveHeaven || somewhereToStand);
         }
     });
 
@@ -97,11 +100,13 @@ describe('the conveyance ladder', () => {
         expect(conveyancesForRange('district').length).toBeGreaterThan(0);
     });
 
-    it('is the only thing in the world that crosses water, at exactly one rung', () => {
+    it('is the only thing in the world that flies a party over water, at exactly one rung', () => {
+        // "Spirit boat" is the genre's flying boat; a water vessel is a ship, and ships keep to water.
         const overWater = CONVEYANCES.filter(
-            c => c.crossesGroundThatCannotBeWalked && c.heads > 1
+            c => c.crossesGroundThatCannotBeWalked && c.heads > 1 && !c.waterOnly
         );
         expect(overWater.map(c => c.id)).toEqual(['conv-spirit-boat']);
+        for (const ship of CONVEYANCES.filter(c => c.waterOnly)) expect(ship.name).not.toMatch(/boat/i);
     });
 
     it('puts a beast in the traces only below the rung where a beast can decline', () => {

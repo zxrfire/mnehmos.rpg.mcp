@@ -4451,7 +4451,7 @@ export class GameService {
             // and body time still observe the original physical area.
             const advanced = await passHours(this, run, cultivator, LESSER_ACTION_DAYS.move * 24,
                 resolvesOnTurn, false, acceptedCarrier ? undefined : () => stillAtOrigin() ? null
-                    : 'The actual observer left the approach area.');
+                    : 'The actual observer left the approach area.', 'Walking over');
             approachSpent = advanced.spent;
             const currentRun = this.repos.runs.getById(run.id)!;
             const currentBody = this.repos.cultivators.getById(cultivator.id)!;
@@ -4463,7 +4463,7 @@ export class GameService {
             // the place you set out from and the same person is still within reach.
             if (!advanced.finished || !freshCrossing || freshCrossing.personId !== crossed.personId) {
                 const facts = factsForRefusal('The approach did not reach its listener.',
-                    'The actual crossing stopped or its reachable listener changed. The requested act was not carried out.',
+                    'By the time you got there they had gone about their day, and whatever you meant to say to them was not said.',
                     'approach: no destination area or handler committed; actual spent time and world consequences retained.');
                 const failed: Execution = { facts, events: [], timeSkip: null, breakthrough: null,
                     outcome: 'refused', calls: [{ name: 'engine.approachUnfinished', action: action.action,

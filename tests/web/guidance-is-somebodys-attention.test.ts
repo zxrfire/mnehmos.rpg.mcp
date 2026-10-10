@@ -75,6 +75,14 @@ function inATown(world: WorldState, npc: NpcRecord): { town: WorldState['locatio
     return { town, company: [...whereIs.values()].filter(a => a === area).length - 1 };
 }
 
+/** The bond and the days it took let the teacher go about their day; the player goes back to them. */
+async function backToThem(harness: Harness, meId: string, npcId: string): Promise<void> {
+    const world = (await harness.game.loadWorld())!;
+    const npc = world.npcs.find(n => n.id === npcId)!;
+    expect(inATown(world, npc), 'the teacher went somewhere a visitor cannot follow').not.toBeNull();
+    await goStandWith(harness, meId, world, npc);
+}
+
 async function goStandWith(harness: Harness, meId: string, world: WorldState, npc: NpcRecord): Promise<void> {
     harness.repos.cultivators.update(meId, { location: inATown(world, npc)!.town.name });
     await standWhereThePeopleAre(harness, meId, new Set([npc.id]));
@@ -255,6 +263,7 @@ describe('a master may say no', () => {
         expect(tieFrom(harness.repos as never, teacher.id, me.id)?.type).toBe('disciple');
         expect(tieFrom(harness.repos as never, me.id, teacher.id)?.type).toBe('master');
 
+        await backToThem(harness, me.id, teacher.id);
         const asTheirDisciple = theOddsOf(await harness.game.act(asked) as Turn);
         console.log(`GUIDANCE ODDS: stranger ${asAStranger}, disciple ${asTheirDisciple}, margin ${(asTheirDisciple - asAStranger).toFixed(4)}`);
         expect(asTheirDisciple, `stranger ${asAStranger}, disciple ${asTheirDisciple}`)
@@ -287,6 +296,7 @@ describe('a master may say no', () => {
         const before = harness.game.currentRun().run.elapsedDays;
         const seen = watchTheRate(harness);
 
+        await backToThem(harness, me.id, teacher.id);
         const turn = await harness.game.act(
             'ADMIN request I ask my master to guide my cultivation for 10 days'
         ) as Turn;
@@ -321,6 +331,7 @@ describe('a master may say no', () => {
         await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
         const asked = `could I ask ${teacher.name} to guide my cultivation for 10 days`;
 
+        await backToThem(harness, me.id, teacher.id);
         const span = await harness.game.act('ADMIN request I ask my master to guide my cultivation for 10 days') as Turn;
         expect(span.toolCalls.map(call => call.name), everythingSaid(span)).toContain('world.theyGiveTheirAttention');
         const world = (await harness.game.loadWorld())!;

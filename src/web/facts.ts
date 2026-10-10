@@ -720,12 +720,16 @@ function timeSkipProse(
 
     // NOT EVERY SPAN IS SPENT SITTING DOWN.
     // Each picks a different opening sentence.
-    const travelling = /travel|journey|road|walk/i.test(label);
+    // Going over to somebody elsewhere in the same place is a walk across it, not a road.
+    const crossingThePlace = /walking over/i.test(label);
+    const travelling = !crossingThePlace && /travel|journey|road|walk/i.test(label);
     const sailing = /sailing/i.test(label);
     const sentOut = /dut(?:y|ies)|commission|assignment|errand|mission|task|work|labour/i.test(label);
     const livedWithSomebody = /rais(?:e|ing)|child|marriage|household/i.test(label);
 
-    const opening = sailing
+    const opening = crossingThePlace
+        ? `${where}. You went across to where they had been standing.`
+        : sailing
         ? `${where}. ${before.name} was aboard, at sea.`
         : travelling
         ? `${where}. ${before.name} took to the road.`

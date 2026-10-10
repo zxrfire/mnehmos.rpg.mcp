@@ -30,6 +30,7 @@ import {
     getSendingReason
 } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { BEAST_CHANGE_ORDINAL } from '../../src/data/cultivation/beasts.js';
+import { HOUSE_MISSIONS } from '../../src/data/cultivation/what-a-house-posts-for-its-own.js';
 import { REGARD_BANDS } from '../../src/schema/cultivation.js';
 import { MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
 
@@ -93,11 +94,11 @@ describe('the beast ceiling, and the absence of one everywhere else', () => {
 });
 
 describe('the reason binds to state the world already keeps', () => {
-    it('every need key is used by at least one reason', () => {
-        for (const need of ReasonNeedSchema.options) {
-            expect(SENDING_REASONS_BY_NEED.get(need)).toBeDefined();
-        }
-        const used = new Set(SENDING_REASONS.map(r => r.needs));
+    it('every need key is used by at least one reason or posting', () => {
+        // A house's own postings ask for state too (the crossing watch needs a public terminal),
+        // so a key a posting asks for is a key something asked for.
+        const used = new Set<string>([...SENDING_REASONS.map(r => r.needs), ...HOUSE_MISSIONS.map(m => m.needs)]);
+        for (const need of ReasonNeedSchema.options) expect(used.has(need), need).toBe(true);
         // Not every key has to be used, but an unused one is a key nothing
         // asked for, which is the small version of a field nothing writes.
         expect(used.size).toBe(ReasonNeedSchema.options.length);

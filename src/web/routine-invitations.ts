@@ -80,7 +80,8 @@ export async function waitForHour(
 }
 
 /** Fractions persist on the run clock; midnight advances the world with its observer. */
-export async function passHours(game: GameService, run: Run, cultivator: Cultivator, elapsed: number, resolvesOnTurn = run.turn + 1, finishTurn = true, whileApproaching?: () => string | null): Promise<{
+export async function passHours(game: GameService, run: Run, cultivator: Cultivator, elapsed: number, resolvesOnTurn = run.turn + 1, finishTurn = true, whileApproaching?: () => string | null,
+    label = 'Waiting'): Promise<{
     spent: Execution | null; finished: boolean;
 }> {
     const days = elapsed / 24;
@@ -127,7 +128,7 @@ export async function passHours(game: GameService, run: Run, cultivator: Cultiva
         // Route adapters above remain authoritative. Off transport, ordinary
         // time uses native encounters, food, hostility and the held body iterator.
         spent = await game.shortSkip(run, cultivator, game.ambientFor(cultivator, run),
-            WAITING_FOCUS, 'Waiting', days, undefined, resolvesOnTurn, finishTurn, whileApproaching);
+            WAITING_FOCUS, label, days, undefined, resolvesOnTurn, finishTurn, whileApproaching);
         game.atHand = await game.loadWorld();
         if (game.atHand) {
             invitationsDue(game, game.repos.cultivators.getById(cultivator.id) ?? cultivator);
