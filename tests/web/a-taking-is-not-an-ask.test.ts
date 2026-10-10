@@ -18,6 +18,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { makeGameInWorld } from './harness';
 
 const WORLD = 'a-taking-is-not-an-ask';
@@ -72,6 +73,9 @@ describe('a theft is a taking and not a request', () => {
         const { h, name } = await inCompanyOf();
 
         await h.game.act(`I steal from ${name}`);
+        // An eighth of a day went by, and people have lives: go back to them before trying again.
+        const them = h.game.atHand!.npcs.find(npc => npc.name === name)!;
+        await standWhereThePeopleAre(h, h.game.currentRun().cultivator.id, new Set([them.id]));
         const again = await h.game.act(`I steal from ${name}`);
 
         expect(again.narration).not.toContain('this was the first try');
