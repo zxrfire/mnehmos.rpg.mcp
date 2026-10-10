@@ -1927,6 +1927,9 @@ export function concludeConfrontation(input: ConcludeInput): ConfrontationResult
     const remnant =
         outcome === 'body_destroyed' ? requirement.remnant : null;
     const finished = outcome === 'lethal';
+    // Somebody who went down still standing (who yielded, or whose bar was not yet empty) and was
+    // then finished has an empty bar: the death gate reads the body, and "ending it ends them".
+    if (finished) hp[loserInput.id] = 0;
 
     // A crippling wound in the record turns a beating into something the loser
     // carries. Checked after the outcome so a withdrawal can still be the fight

@@ -12,7 +12,7 @@ import { type DaoAssessment, daoDistance } from '../cultivation/dao.js';
 import type { InsightDomain } from '../../schema/cultivation.js';
 import type { DayIndex } from '../social/common.js';
 import type { ObligationInput } from '../social/grudges.js';
-import { HOUSEHOLD_MIN_AGE } from '../world/the-ties-an-ordinary-life-produces.js';
+import { HOUSEHOLD_MIN_AGE } from '../world/the-age-the-world-pairs-somebody-off.js';
 
 /**
  * Whether an art of this kind could work between two people, on sex alone.

@@ -91,7 +91,8 @@ export const PASSED_OVER_STANDING = -0.3;
 export const SIBLINGS_PER_HOUSEHOLD = 4;
 
 /** Age at which the world will pair somebody off. */
-export const HOUSEHOLD_MIN_AGE = 18;
+import { HOUSEHOLD_MIN_AGE } from './the-age-the-world-pairs-somebody-off.js';
+export { HOUSEHOLD_MIN_AGE };
 
 /**
  * Chance per unattached adult per year of forming a household.
