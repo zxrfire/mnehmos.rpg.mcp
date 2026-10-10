@@ -135,7 +135,10 @@ for (const service of ['carriage', 'ship'] as const) it(`the played ${service} c
         const result = await h.game.act(service === 'ship'
             ? `I take the ship to ${h.to.name}.` : `I buy seats on the carriage to ${h.to.name}.`);
         expect(result.toolCalls.some(call => !call.ok && !call.name.startsWith('narrator.')), JSON.stringify(result.toolCalls)).toBe(false);
-        expect(h.game.currentRun().cultivator.spiritStones).toBe(before.cultivator.spiritStones - stonesFor(h.line.cashPerSeat) * 2);
+        // Arriving at a city that matters, the Jade Register enters you at its gate for the year's fee.
+        const atTheGate = h.game.atHand!.history.facts.filter(fact => fact.data.gateRegistrant === before.cultivator.id)
+            .reduce((sum, fact) => sum + Number(fact.data.stones ?? 0), 0);
+        expect(h.game.currentRun().cultivator.spiritStones).toBe(before.cultivator.spiritStones - stonesFor(h.line.cashPerSeat) * 2 - atTheGate);
         const world = h.game.atHand!;
         const receipt = world.history.facts.find(fact => fact.data.publicPassage === true && fact.data.runId === before.run.id
             && fact.data.fromLocationId === h.from.id && fact.data.toLocationId === h.to.id

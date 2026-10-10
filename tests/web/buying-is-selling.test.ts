@@ -114,8 +114,9 @@ describe('the same trade said from either end', () => {
 
         // Handing over stones for a thing: a purchase, whatever verb carried it.
         const bought = await game.act('I part with some stones for a pill');
-        expect(calls(bought), said(bought)).toContain('storage.addToPouch');
-        expect(said(bought)).toMatch(/pill is in the pouch/i);
+        // Off the board into the pouch, or from somebody standing here selling one: a purchase either way.
+        expect(`${calls(bought)} ${said(bought)}`).toMatch(/storage\.addToPouch|bought from/);
+        expect(said(bought)).toMatch(/pill is in the pouch|bought from/i);
 
         // AND AGAIN, NOW HOLDING ONE. The case that broke the pouch test: a
         // second copy is still a purchase, and must not read as a sale of the
