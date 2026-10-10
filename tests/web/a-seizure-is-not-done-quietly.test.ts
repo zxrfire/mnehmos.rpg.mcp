@@ -100,8 +100,12 @@ async function aSeizure(seed: string, how: 'awarded' | 'lent') {
     harness.repos.sects.addMember(HOUSE.id, cultivator.id, HOUSE.ranks.length - 2);
 
     const world = await harness.game.loadWorld();
+    // Members carrying none of the house's stock on loan: one posted to a capital takes its wares to
+    // the exchange, and what is lent is called in before anything given is seized.
     const ours = world.npcs.filter((npc: any) =>
-        npc.factionId === HOUSE.id && npc.status === 'alive');
+        npc.factionId === HOUSE.id && npc.status === 'alive'
+        && !world.objects.some((object: any) => object.possessorId === npc.id
+            && object.provenance.at(-1)?.how === 'lent'));
     const offender = ours[0];
     const hand = ours[1];
     expect(offender, 'the world seeds this house with people').toBeDefined();
