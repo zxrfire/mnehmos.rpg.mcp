@@ -268,7 +268,9 @@ const PLACE_KIND_BIAS: Readonly<Record<string, Partial<Record<EncounterKind, num
     forbidden_zone: { misfortune: 2, spirit_beast: 1.8, dao_house: 1.5, commerce: 0.1 },
     secret_realm: { ruin: 2.5, opportunity: 2, spirit_beast: 1.6, commerce: 0.05 },
     sealed_domain: { ruin: 2.5, misfortune: 1.5, commerce: 0.05 },
-    region: {},
+    // A province or a stretch of open sea is a container nobody stands in to hold a recruitment
+    // drive: a ship stopped on The Pearl Ocean was offered a house's open intake there.
+    region: { sect_event: 0, commerce: 0.1 },
     portal: {},
     // INTERIORS
     // Being inside a compound is not being on its ground. There are no

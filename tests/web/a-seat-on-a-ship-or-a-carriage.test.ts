@@ -57,6 +57,7 @@ import { stonesFor } from '../../src/engine/world/the-fare-and-calendar-of-a-pas
 import { journeyTimeHasReached, isWater } from '../../src/engine/world/places-on-the-way';
 import { groundOfTheAcceptedCarriage } from '../../src/engine/world/public-carriages';
 import { routineTime } from '../../src/engine/world/npc-routines';
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost';
 import { makeGame } from './harness';
 import { createWorld, resetCultivationWorlds, prepareWorldClockForPreciseSpan } from '../../src/server/state/cultivation-world';
 import { quotePublicPassage, recordPublicPassage } from '../../src/engine/world/public-shipping';
@@ -173,7 +174,8 @@ describe('a seat on a ship or a carriage', () => {
             const after = game.state().cultivator;
 
             expect(after.location).toBe('Emerald Water City');
-            expect(game.state().run.elapsedDays).toBeCloseTo(2 + 1 / 3);
+            // The ride's two days, after the walk across the town to its station (the owner's time rulings).
+            expect(game.state().run.elapsedDays).toBeCloseTo(2 + 1 / 3 + LOCAL_WALK_DAYS);
             expect(after.spiritStones).toBeLessThan(before.spiritStones);
             expect(after.hp).toBe(before.hp);
             expect(after.satiety).toBeGreaterThan(before.satiety);

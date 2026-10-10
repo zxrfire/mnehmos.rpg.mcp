@@ -33,6 +33,7 @@ import {
     groundReachOf
 } from '../data/cultivation/the-three-floors-a-house-admits-at.js';
 import { SENDING_REASONS } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import { COMPETITION_CALENDARS } from '../data/cultivation/competition-calendars.js';
 import {
     CONTINGENCIES,
     OTHERS_WHO_NOTICED
@@ -179,6 +180,39 @@ function sendingsSection(): string {
     <colgroup><col style="width:16%"><col style="width:32%"><col style="width:16%"><col style="width:12%"><col style="width:10%"><col style="width:14%"></colgroup>
     <caption>The errands &middot; commonest first</caption>
     <thead><tr><th>Errand</th><th>What the party is for</th><th>Open to a house with</th><th>Hands</th><th>Ceiling</th><th>At stake</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>
+</section>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHEN THE HOUSES COMPETE
+// ─────────────────────────────────────────────────────────────────────────
+
+const A_COMPETITION_IS: Readonly<Record<string, string>> = {
+    open: 'open: anybody may enter, by realm, at the capital',
+    internal: 'internal: the house\'s own members, at its ground',
+    conclave: 'a conclave: the house\'s seats are contested'
+};
+
+function competitionsSection(): string {
+    const open = COMPETITION_CALENDARS.filter(row => row.open);
+    const rows = COMPETITION_CALENDARS
+        .slice()
+        .sort((a, b) => Number(b.open) - Number(a.open) || a.everyYears - b.everyYears || a.id.localeCompare(b.id))
+        .map(row => `<tr>
+    <td class="nm">${esc(row.venueName ?? (row.houseId ? factionName(row.houseId) : row.id))}</td>
+    <td class="m">${esc(A_COMPETITION_IS[row.purpose] ?? row.purpose)}</td>
+    <td class="n">every ${row.everyYears} years</td>
+    <td class="n">${row.noticeDays} days' notice</td>
+  </tr>`).join('');
+    return `<section class="startfolded">
+  <div class="sh"><h2>When the houses compete</h2><span class="r">${COMPETITION_CALENDARS.length} standing contests &middot; ${open.length} open at a capital</span></div>
+  <p class="note"><strong>Open competitions are held at the capitals and anybody may enter, separated by realm; closed ones are held at a house's own ground.</strong> Each is a calendar date that comes round every so many years, posted ahead, which is part of what draws people to a capital at all.</p>
+  <div class="scroll"><table class="itemtbl">
+    <colgroup><col style="width:30%"><col style="width:40%"><col style="width:15%"><col style="width:15%"></colgroup>
+    <caption>The contests &middot; open ones first</caption>
+    <thead><tr><th>Where, or whose</th><th>What kind</th><th>How often</th><th>Notice</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>
 </section>`;
@@ -408,7 +442,7 @@ function rumoursSection(): string {
 
 /** Factions: the doors into a house, and the errands that come out of it. */
 export function renderHouseDoorsAndErrandsSections(): string {
-    return [floorsSection(), sendingsSection()].join('\n');
+    return [floorsSection(), sendingsSection(), competitionsSection()].join('\n');
 }
 
 /** Ties: one body's standing plan against another, and who else has noticed. */

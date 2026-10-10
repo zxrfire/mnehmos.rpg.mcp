@@ -61,7 +61,8 @@ describe('a ship at sea', () => {
         expect(where).not.toBeNull();
         const [, day, , bound] = where!;
         expect(bound).toBe('Sweet Spring Island');
-        expect(game.state().run.elapsedDays).toBe(Number(day));
+        // Days sailed are whole days; the run's clock also holds the walk to the landing and the hour it left.
+        expect(Math.floor(game.state().run.elapsedDays)).toBe(Number(day));
         expect(['Emerald Water City', 'Sweet Spring Island']).not.toContain(game.state().cultivator.location);
 
         expect((await game.act('look around')).narration).toContain(where![0]);
@@ -76,7 +77,8 @@ describe('a ship at sea', () => {
 
         const elsewhere = await game.act('I go to Cloud Gate');
         expect(elsewhere.narration).toMatch(/puts in nowhere before Sweet Spring Island/);
-        expect(game.state().run.elapsedDays).toBe(Number(day));
+        // Days sailed are whole days; the run's clock also holds the walk to the landing and the hour it left.
+        expect(Math.floor(game.state().run.elapsedDays)).toBe(Number(day));
 
         const waited = await game.act('I wait 2 days');
         expect(AT_SEA.exec(waited.narration)?.[1]).toBe(String(Number(day) + 2));

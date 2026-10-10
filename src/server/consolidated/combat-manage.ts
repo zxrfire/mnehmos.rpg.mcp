@@ -706,6 +706,12 @@ export function settleAFight(input: {
     edges: readonly Edge[];
     /** False where the other side opened the fight. Picks which priced side is whose. */
     playerIsAggressor?: boolean;
+    /**
+     * Somebody at hand who may spend their medicine on a body about to die of a fight it forced
+     * while barely standing (the owner: "medicine from someone at hand may save you"). Read only
+     * for that death, and only by the caller that can see who is standing there.
+     */
+    rescue?: (body: Cultivator) => { lines: string[] } | null;
 }): object {
     const {
         repos, run, cultivator, self, opponent, technique, result, nextTurn, day
@@ -741,6 +747,7 @@ export function settleAFight(input: {
     // engine exists to make impossible. ──
     const combat = new CombatRepository(repos.db);
     let death: { cause: string; description: string } | null = null;
+    let rescued: string[] | null = null;
     let opponentDeath: { cause: string; description: string } | null = null;
     let learned: { name: string; degree: number; deepened: boolean } | null = null;
 
@@ -889,7 +896,9 @@ export function settleAFight(input: {
         const cause = result.outcome === 'body_destroyed' && result.loserId === cultivator.id
             ? 'combat_defeat'
             : evaluateDeathConditions(after, { forcingCombat: input.playerIsAggressor !== false });
-        if (cause) {
+        const saved = cause === 'obviously_fatal_choice' && input.rescue ? input.rescue(after) : null;
+        if (saved) rescued = saved.lines;
+        else if (cause) {
             death = { cause, description: describeDeath(cause, after) };
             repos.cultivators.markDead(cultivator.id, cause, nextTurn, death.description,
                 result.outcome === 'body_destroyed' && result.loserId === cultivator.id);
@@ -959,6 +968,8 @@ export function settleAFight(input: {
         },
         died: death !== null,
         death,
+        // Somebody at hand spent their medicine, and the death above did not happen.
+        ...(rescued ? { rescued } : {}),
         // Kept as separate fields rather than folded into `died`, which has
         // always meant THE PLAYER and is read that way by callers. Both are the
         // survival layer's answer; they are only about different people.

@@ -1,3 +1,4 @@
+import { somebodyAtHandSavesYou } from './somebody-at-hand-saves-you.js';
 import { anArtThatCanBeUsedInAFight } from '../engine/cultivation/an-art-that-can-be-used-in-a-fight.js';
 import { isTheWorldsToMove } from '../engine/world/npc-state.js';
 import { npcCombatArts, writeTheNpcArtsActuallyUsed } from '../engine/world/the-arts-an-npc-actually-uses-in-a-fight.js';
@@ -1361,12 +1362,20 @@ export const combatVerbs = {
             day: Math.floor(run.elapsedDays),
             opponentIdOnRecord: held.opponentIdOnRecord,
             edges: [],
-            playerIsAggressor: held.cameAtYou === undefined
+            playerIsAggressor: held.cameAtYou === undefined,
+            rescue: body => somebodyAtHandSavesYou(this, run, body,
+                held.opponentIdOnRecord ? [held.opponentIdOnRecord] : [])
         });
 
         const execution = this.fromToolResult(
             'combat_manage.resolve', held.verb, settled, held.party.name
         );
+        const rescued = (settled as { rescued?: string[] }).rescued;
+        if (rescued) {
+            execution.facts.lines.push(...rescued);
+            execution.facts.prose = [execution.facts.prose, ...rescued].join('\n\n');
+            execution.calls.push({ name: 'world.somebodyAtHandSavesYou', action: held.verb, summary: rescued.join(' '), ok: true });
+        }
 
         this.whatTheFightBroke(cultivator, held, result, execution);
 

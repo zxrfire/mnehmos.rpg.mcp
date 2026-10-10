@@ -9,7 +9,8 @@ import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { AVoyage } from './a-ship-at-sea.js';
 import { spendWithPhysicalCarrier, type PhysicalCarrier } from './a-physical-span.js';
-import { recordedVoyage, endTheVoyage } from './a-ship-at-sea.js';
+import { whatTheHullFed, whatWasEatenOnBoard } from './what-a-journey-eats.js';
+import { recordedVoyage, endTheVoyage, theVoyageUnderWay, whereTheShipIs } from './a-ship-at-sea.js';
 import { leaveThePaidCarriage, thePaidCarriageClaim } from './a-paid-carriage-on-the-road.js';
 import { publicCarriagePassage, stopPublicCarriage } from '../engine/world/public-carriages.js';
 import { shipPassengerAt, turnBackPublicPassage } from '../engine/world/passenger-on-a-vessel.js';
@@ -204,6 +205,7 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
         game.theWorldMoved();
         return halted;
     }
+    const rationsBefore = game.rationsHeld(body);
     const spent = await spendWithPhysicalCarrier(game, run, body, trip.days,
         trip.focus ?? TRAVEL_FOCUS, source, false, {
             dates, resolvesOnTurn, finishTurn, stop: () => binding?.stop?.() ?? stop, beforeWorld: binding?.beforeWorld,
@@ -235,7 +237,21 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     const fresh = game.currentRun(), actual = source();
     const arrived = fresh.cultivator.alive && !spent.skip.died && !spent.skip.interrupted && !stop
         && actual?.locationId === to.id && journeyTimeHasReached(routineTime(game.atHand!), actual.endsOnDay);
+    // A paid seat was bought off a board, and the ticket names where it goes: the name is read, not guessed.
+    if(!arrived&&!game.canPointAtLocation(fresh.cultivator,to))game.noteEncounter(fresh.cultivator,fresh.run,
+        {kind:'place',id:to.id,name:to.name},'read',`The ticket for the ${trip.service} names ${to.name}.`);
     const destinationKnown=arrived||game.canPointAtLocation(fresh.cultivator,to);
+    // Stopped on the water, the first thing said is where the ship is and where it is bound.
+    const underWay=!arrived&&fresh.cultivator.alive?theVoyageUnderWay(game.db,fresh.cultivator,game.atHand):null;
+    if(underWay)lines.unshift(whereTheShipIs(underWay));
+    // What the passage fed them: a ship's rations and then the pack, or a paid seat's meals.
+    if(fresh.cultivator.alive&&trip.service!=='air'){
+        const rationsLeft=game.rationsHeld(fresh.cultivator);
+        lines.push(trip.sea
+            ? whatTheHullFed(fresh.cultivator,trip.sea.hullRationDays,Math.round(trip.sea.sailed+spent.skip.simulatedDays),
+                Math.max(0,rationsBefore-rationsLeft),rationsLeft)
+            : whatWasEatenOnBoard(fresh.cultivator,rationsLeft));
+    }
     const facts = factsForToolResult(arrived ? trip.to + ', by ' + trip.service + '.' : 'The actual passage stopped.',
         [...lines, ...spent.applied.tollLines, ...spent.world.lines]);
     facts.structure.push(...structure, ...spent.world.structure);

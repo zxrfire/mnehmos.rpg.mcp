@@ -216,7 +216,8 @@ export async function aShipSailsOn(
         sea: voyage,
         ...(how === 'waiting' ? { focus: WAITING_FOCUS } : how === 'sitting' ? { focus: 1 } : {})
     });
-    if (!voyage.receiptId && asked !== null && asked > left && sailed.outcome === 'executed'
+    // Asked for more days than the passage had left, and put ashore: said whichever way the seat was held.
+    if (asked !== null && asked > left && sailed.outcome === 'executed'
         && loosePlaceKey(placeName(game.repos.cultivators.getById(cultivator.id) ?? cultivator))
             === loosePlaceKey(voyage.bound)) {
         shownWithNoModelAfter(sailed.facts, `${howMany(Math.floor(asked), 'day')} were asked for; the ship `
