@@ -531,6 +531,12 @@ export interface StandingFight {
     opponentIdOnRecord: string | null;
     /** Their ordinal as the square reported it, for the fallout layer. */
     standingOrdinal: number | null;
+    /**
+     * A band's man fighting beside its leader, when the band fell on somebody walking alone (the
+     * owner: a band fights as a group even then). Three in a room: you, the leader, and this one;
+     * the rest of the band hangs back. Strikes once a round; see `takeAFightTurnWithTheBand`.
+     */
+    alongside?: { man: import('../engine/cultivation/combat.js').CombatantInput; hangBack: number };
     /** Both bodies as they were priced when it opened. */
     self: import('../engine/cultivation/combat.js').CombatantInput;
     opponent: import('../engine/cultivation/combat.js').CombatantInput;

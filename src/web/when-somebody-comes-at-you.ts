@@ -125,33 +125,22 @@ export function theyCameAtYou(
     const entry = ENCOUNTERS.find(row => row.id === occurrence.entryId);
 
     const techniqueId = service.artTheyWouldFightWith(cultivator) ?? null;
-    let selfBody = combatantFromCultivator(
+    const selfBody = combatantFromCultivator(
         cultivator, service.repos, techniqueId ?? undefined, service.atHand?.objects ?? []
     );
 
     // A BAND IS A BAND WHEN YOU WALK ALONE TOO. The owner: a band fights as a group even
-    // with nobody beside you. Three in a room: you, the leader and one of their men in front,
-    // the rest hanging back. The man closes in first, in one exchange, and the leader's fight
-    // opens on what that left of you.
+    // with nobody beside you. Three in a room: you, the leader and one of their men, who fights
+    // beside the leader in every round; the rest of the band hangs back.
     const theBand = threat.count ?? 1;
     const closedIn: string[] = [];
+    let alongside: StandingFight['alongside'];
     if (!sent && !onTheVehicle && theBand > 1 && entry?.kind === 'bandits') {
         const man = service.theBodyTheyStandIn(run, { id: 'one of the band', name: 'one of the band' }, false,
             threat.threatOrdinal, null);
         if (!isGuidingErrorBody(man)) {
-            const melee = resolveMelee([
-                { id: 'you', name: 'you', members: [selfBody] },
-                { id: 'band', name: 'the band', members: [man] }
-            ], { rng: forStream(run.seed, 'the-band-closes-in', occurrence.absoluteDay), ambient,
-                turn: run.turn + 1, intent: { thrown: AN_ORDINARY_SWING, willWithdraw: true } });
-            const mine = melee.combatants.find(one => one.id === selfBody.id);
-            const theirs = melee.combatants.find(one => one.id !== selfBody.id);
-            if (mine && mine.hp < cultivator.hp) {
-                service.repos.cultivators.applyDeltas(cultivator.id, { hp: mine.hp - cultivator.hp });
-                selfBody = { ...selfBody, hp: mine.hp };
-            }
-            closedIn.push(`One of the leader's men closes in first, ${theirs && theirs.fate !== 'standing' && theirs.fate !== 'bystander'
-                ? 'and is put out of it' : 'and lands what they can'}; ${theBand > 2 ? `the other ${theBand - 2} hang back` : 'the leader comes on'}.`);
+            alongside = { man, hangBack: theBand - 2 };
+            closedIn.push(`One of the leader's men comes on with them${theBand > 2 ? `; the other ${theBand - 2} hang back` : ''}.`);
         }
     }
     const running = service.artTheyWouldRunWith(cultivator);
@@ -200,7 +189,8 @@ export function theyCameAtYou(
         techniqueId,
         terms: 'open',
         verb: 'attack',
-        cameAtYou: { wanted: wantsTheRite ? 'furnace' : null, because }
+        cameAtYou: { wanted: wantsTheRite ? 'furnace' : null, because },
+        ...(alongside ? { alongside } : {})
     };
 
     const whatTheyCameFor = wantsTheRite

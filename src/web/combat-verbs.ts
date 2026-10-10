@@ -27,8 +27,10 @@ import { SECTS, sectThreat } from '../data/cultivation/sects.js';
 import {
     type ConfrontationOutcome,
     type ConfrontationResult,
-    assessPower
+    assessPower,
+    resolveExchange
 } from '../engine/cultivation/combat.js';
+import { forStream } from '../engine/cultivation/rng.js';
 import { rankName, realmIndexOf } from '../engine/cultivation/realms.js';
 import { whatSteppingInCosts } from '../engine/world/a-challenge-is-answered-on-the-yard.js';
 import {
@@ -1162,11 +1164,30 @@ export const combatVerbs = {
 
         this.fight = { ...held, state: turn.fight! };
 
+        // AND THE LEADER'S MAN, beside them, gets one blow in a round. Written into the fight's own
+        // state like every other blow, so nothing is written down until the fight ends. Never the
+        // last blow: the leader's round is what decides the fight.
+        let theMansBlow: string | null = null;
+        if (held.alongside) {
+            const state = this.fight.state;
+            const yourHp = state.hp[cultivator.id] ?? held.self.hp;
+            const blow = resolveExchange(assessPower(held.alongside.man, { ambient }),
+                assessPower({ ...held.self, hp: yourHp }, { ambient }), held.self.maxHp, {
+                    rng: forStream(run.seed, 'the-band-alongside', held.state.id, state.roundsFought), ambient,
+                    turn: run.turn + 1, attackerId: held.alongside.man.id, defenderId: cultivator.id });
+            const left = Math.max(1, yourHp - blow.damage);
+            this.fight = { ...this.fight, state: { ...state, hp: { ...state.hp, [cultivator.id]: left },
+                injuries: blow.injury ? { ...state.injuries, [cultivator.id]: [...(state.injuries[cultivator.id] ?? []), blow.injury] }
+                    : state.injuries } };
+            theMansBlow = yourHp - left > 0 ? `One of the leader's men gets a blow in beside them.`
+                : `One of the leader's men looks for an opening beside them and does not find one.`;
+        }
+
         // WHAT THE ROUND DID, AND WHERE THAT LEAVES THEM
         const where = whereThisFightStands(this.fight.state, ambient);
         const facts = factsForToolResult(
             `${held.party.name}: the exchange goes on.`,
-            [turn.line, where.line]
+            [turn.line, ...(theMansBlow ? [theMansBlow] : []), where.line]
         );
         // ── THE ARITHMETIC IS ENGINE RESULT, NOT SOMETHING A PLAYER IS TOLD ──
         //
