@@ -18668,6 +18668,11 @@ ${fit.line}`;
      */
     canPointAtLocation(cultivator: Cultivator, record: LocationRecord): boolean {
         if (this.knowledge.canPointAt(cultivator.id, 'place', record.id)) return true;
+        // Somebody on a house's roll knows the way home: its ground, the town at its gate, and
+        // its own lower cloisters. Knowledge goes by standing in the world (the owner's ruling).
+        const home = this.repos.sects.getMembership(cultivator.id)?.sectId ?? cultivator.sectId ?? null;
+        const seat = home ? this.atHand?.factions.find(h => h.id === home)?.seatLocationId ?? null : null;
+        if (seat && (record.id === seat || record.data.gateId === seat || record.data.branchOf === seat)) return true;
         const wanted = loosePlaceKey(record.name);
         return this.knowledge
             .awareness(cultivator.id, 'place')

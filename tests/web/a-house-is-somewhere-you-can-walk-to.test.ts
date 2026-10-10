@@ -91,6 +91,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
+import { KnowledgeGate } from '../../src/web/knowledge';
 import { couldHostAGuest } from '../../src/engine/world/standing-at-the-gate-of-a-house';
 import { writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { createDebt } from '../../src/engine/social/grudges';
@@ -184,8 +185,12 @@ describe('a house is somewhere you can walk to', () => {
         const { faction, seat } = found!;
 
         const home = cultivator.location;
-        const road = await game.act(`I travel to the ${faction.name}`);
         const town = world.locations.find(row => row.data.gateOf === faction.id)!;
+        // Told the way, which is what the engine says a stranger must be (the owner's 2026-10-03/06
+        // rulings: a name the player brings from another run never grants the character the route).
+        new KnowledgeGate(game.db).learnIfNew({ holderId: cultivator.id, kind: 'place', id: town.id, name: town.name,
+            onDay: 0, sourceKind: 'told', stage: 'placed', sourceNote: 'Somebody gave directions.' });
+        const road = await game.act(`I travel to the ${faction.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(town.name);
         expect(road.narration).toContain(town.name);
         await game.act('I walk to the gate');

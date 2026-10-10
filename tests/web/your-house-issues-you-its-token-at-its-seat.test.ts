@@ -48,6 +48,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { toldTheWayTo } from './told-the-way';
 import { makeGameInWorld } from './harness';
 import {
     couldLightALamp,
@@ -142,6 +143,7 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(tokenOf(world, cultivator.id), 'a token before arriving').toBeNull();
 
         // NOBODY'S WORD: stopped, and not entered.
+        await toldTheWayTo({ game, db: repos.db }, seat.name);
         const turn = await game.act(`I travel to ${seat.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         const prose = turn.narration ?? '';
@@ -199,6 +201,7 @@ describe('your house issues you its robes and token at its seat', () => {
         repos.sects.addMember(faction!.id, cultivator.id, 0);
         theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction!);
         const seat = game.atHand!.locations.find(l => l.id === faction!.seatLocationId)!;
+        await toldTheWayTo({ game, db: repos.db }, seat.name);
         await game.act(`I travel to ${seat.name}`);
         const rings = () => game.atHand!.objects.filter(o => o.possessorId === cultivator.id && o.tags.includes('storage-ring'));
         expect(rings(), 'a ring with no service behind it').toHaveLength(0);
@@ -217,6 +220,7 @@ describe('your house issues you its robes and token at its seat', () => {
 
         repos.sects.addMember(faction.id, cultivator.id, 0);
         theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction);
+        await toldTheWayTo({ game, db: repos.db }, seat.name);
         await game.act(`I travel to ${seat.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         let world = game.atHand!;
@@ -258,6 +262,7 @@ describe('your house issues you its robes and token at its seat', () => {
         const { faction, seat } = large!;
 
         // Walked there first, so the arrangement is made in the world the read sees.
+        await toldTheWayTo({ game, db: repos.db }, seat.name);
         await game.act(`I travel to ${seat.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         repos.sects.addMember(faction.id, cultivator.id, 0);
@@ -312,6 +317,7 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(house, 'this world has no house that would take them with anybody at its gate').toBeTruthy();
         const { faction, seat } = house!;
 
+        await toldTheWayTo({ game, db: repos.db }, seat.name);
         await game.act(`I travel to ${seat.name}`);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         let world = game.atHand!;

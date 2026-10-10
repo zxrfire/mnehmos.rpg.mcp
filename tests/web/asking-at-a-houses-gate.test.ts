@@ -12,6 +12,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { toldTheWayTo } from './told-the-way';
 import { makeGameInWorld, ScriptedProvider } from './harness';
 import { parseIntent } from '../../src/web/actions';
 
@@ -41,6 +42,7 @@ async function atTheGate(provider?: ScriptedProvider) {
         seed: 'at-the-gate', worldSeed: 'road-world', ...(provider ? { provider } : {})
     });
     await harness.game.newRun('Probe');
+    await toldTheWayTo(harness, HOUSE);
     await harness.game.act(`I travel to the ${HOUSE}`);
     await harness.game.act('I walk to the gate');
     return harness;

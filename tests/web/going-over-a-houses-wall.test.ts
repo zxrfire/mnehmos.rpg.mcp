@@ -23,6 +23,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { toldTheWayTo } from './told-the-way';
 import { makeGameInWorld } from './harness';
 import { parseIntent } from '../../src/web/actions';
 import { theOneWhoSeesThem } from '../../src/web/inside-without-leave';
@@ -85,6 +86,7 @@ describe('who sees somebody going unseen', () => {
 async function atTheGate(seed: string) {
     const harness = await makeGameInWorld({ seed, worldSeed: 'road-world' });
     await harness.game.newRun('Probe');
+    await toldTheWayTo(harness, HOUSE);
     await harness.game.act(`I travel to the ${HOUSE}`);
     await harness.game.act('I go to the gate');
     const world = (await harness.game.loadWorld())!;

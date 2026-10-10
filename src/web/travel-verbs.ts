@@ -627,6 +627,9 @@ export function whereHomeIs(
  */
 export { theMostPeopledPlaceIn } from '../engine/world/public-transport-at-a-place.js';
 
+/** A place this close by road is in sight of where you stand. */
+const IN_PLAIN_SIGHT_DAYS = 0.1;
+
 /** A supplied real name identifies a destination, not a route the body knows. */
 function routeTheyHaveNotLearned(engine: GameService, cultivator: Cultivator,
     destination: string, action: ActionName): Execution | null {
@@ -640,6 +643,10 @@ function routeTheyHaveNotLearned(engine: GameService, cultivator: Cultivator,
     if (!place || (!betweenRoadEndpoints(engine.repos.db, cultivator)
         && worldLocationFor(engine.atHand, cultivator.location)?.id === place.id)
         || engine.canPointAtLocation(cultivator, place)) return null;
+    // What is in plain sight is somewhere you can go, named or not (the owner: you can see a place
+    // before you know it): the town outside a gate, the gate at the end of a town's road.
+    const here = !betweenRoadEndpoints(engine.repos.db, cultivator) ? worldLocationFor(engine.atHand, cultivator.location) : null;
+    if (here?.links.some(link => link.toLocationId === place.id && link.open && link.travelDays <= IN_PLAIN_SIGHT_DAYS)) return null;
     return refused('knowledge.canPointAt', action, factsForRefusal(
         'You do not know the way there.',
         'You can ask somebody here for directions to ' + place.name + '.',
