@@ -68,6 +68,8 @@ function whoLeadsThem(occurrence: EncounterOccurrence): string {
     const many = (occurrence.confrontation?.count ?? 1) > 1;
     const onTheRoad = ENCOUNTERS.find(row => row.id === occurrence.entryId)?.tags.includes('road');
     if (occurrence.kind === 'bandits' && onTheRoad) return many ? 'the leader of the bandits' : 'the bandit';
+    const onTheWater = ENCOUNTERS.find(row => row.id === occurrence.entryId)?.requiresSubstrate === 'water';
+    if (occurrence.kind === 'bandits' && onTheWater) return many ? 'the leader of the water bandits' : 'the water bandit';
     return many ? 'the strongest of them' : 'the cultivator';
 }
 

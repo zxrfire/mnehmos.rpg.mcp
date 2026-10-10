@@ -263,7 +263,8 @@ export function nothingToCarryOnWith(record: WhatTheLastTurnDid | null): string 
             + 'gone, and there is no turn just gone to remember - so say the thing itself and '
             + 'it will run. Nothing was spent finding that out.';
     }
-    if (record.outcome === 'refused' || record.acts.length === 0) {
+    // Only a refusal is called one: an answer in a fight did something and keeps no act to repeat.
+    if (record.outcome === 'refused') {
         return 'There is nothing to repeat. The turn before this one did not do anything - it '
             + 'was refused - so there is no act to carry on with. Say the thing itself and it '
             + 'will run. Nothing was spent finding that out.';

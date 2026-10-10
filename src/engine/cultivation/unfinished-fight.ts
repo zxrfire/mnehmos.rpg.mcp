@@ -552,7 +552,7 @@ export function takeAFightTurn(
                 fleeingToward: null,
                 shout: null,
                 line:
-                    `You stop, and go down. What that is worth is ${theirs.input.name}'s to `
+                    `You stop, and go down. What that is worth is for ${theirs.input.name} to `
                     + 'decide now, and they came here for something.'
             };
         }
@@ -775,7 +775,9 @@ function theRoundAsItHappened(
     return stamped.map(exchange => {
         const struck = exchange.attackerId === fight.playerId;
         const took = exchange.defenderId === fight.playerId;
-        const who = struck ? 'You' : nameOf(exchange.attackerId);
+        // A side the draw named nobody is "the strongest of them", and here it opens the sentence.
+        const attacker = nameOf(exchange.attackerId);
+        const who = struck ? 'You' : attacker.charAt(0).toUpperCase() + attacker.slice(1);
         const at = took ? 'you' : nameOf(exchange.defenderId);
         const lands = struck ? 'land' : 'lands';
         const soul = exchange.result.vector === 'soul' ? ', at the soul' : '';

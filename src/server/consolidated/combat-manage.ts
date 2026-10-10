@@ -413,6 +413,9 @@ function projectPower(power: ReturnType<typeof assessPower>): Record<string, unk
     };
 }
 
+/** The confrontation endings that can be told alongside the player's death without contradicting it. */
+const THE_ENDINGS_A_DEATH_CAN_BE: ReadonlySet<string> = new Set(['lethal', 'body_destroyed', 'no_contest']);
+
 /** Turn an outcome into the honest one-line verdict a narrator renders from. */
 function outcomeLine(outcome: string): string {
     switch (outcome) {
@@ -975,7 +978,9 @@ export function settleAFight(input: {
         // survival layer's answer; they are only about different people.
         opponentDied: opponentDeath !== null,
         opponentDeath,
-        narrationHint: result.narrationHint,
+        // The confrontation can end "taken alive" on a bar the survival layer reads as empty, and
+        // survival has the last word: a death is never also told as an ending somebody walks out of.
+        narrationHint: death && !THE_ENDINGS_A_DEATH_CAN_BE.has(result.outcome) ? undefined : result.narrationHint,
         cultivator: describeCultivator(repos, after, runAfter),
         note:
             'Death is decided by the survival layer, not by this tool. `finished` says the finishing ' +

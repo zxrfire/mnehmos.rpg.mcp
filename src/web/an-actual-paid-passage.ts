@@ -1,3 +1,4 @@
+import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { passageRunMoment, passageCheckFrame } from '../engine/world/passage-moment.js';
 import { projectActualPassengers } from './passengers-at-the-actual-clock.js';
 import { walkingRouteFrom } from '../engine/world/locations.js';
@@ -251,6 +252,10 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     // Stopped on the water, the first thing said is where the ship is and where it is bound.
     const underWay=!arrived&&fresh.cultivator.alive?theVoyageUnderWay(game.db,fresh.cultivator,game.atHand):null;
     if(underWay)lines.unshift(whereTheShipIs(underWay));
+    // Put in at port: how long the whole passage took, from where to where.
+    if(arrived&&trip.sea)lines.push(trip.sea.from===trip.to
+        ? `${howMany(Math.round(trip.sea.days),'day')} at sea, and back into ${trip.to}.`
+        : `${howMany(Math.round(trip.sea.days),'day')} by ship from ${trip.sea.from} to ${trip.to}.`);
     // What the passage fed them: a ship's rations and then the pack, or a paid seat's meals.
     if(fresh.cultivator.alive&&trip.service!=='air'){
         const rationsLeft=game.rationsHeld(fresh.cultivator);

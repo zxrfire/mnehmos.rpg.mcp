@@ -98,7 +98,8 @@ describe('a ship at sea', () => {
         const landed = await game.act('I sail on to Sweet Spring Island');
 
         expect(game.state().cultivator.location).toBe('Sweet Spring Island');
-        const ran = /The ship's rations ran out on day (\d+) of (\d+); ([1-9]\d*) rations? came out of the pack/.exec(landed.narration);
+        // The hull feeds them while its rations last; after that the pack, as much as the belly needs.
+        const ran = /The ship's rations ran out on day (\d+) of (\d+); (\d+) rations? came out of the pack/.exec(landed.narration);
         expect(ran).not.toBeNull();
         expect(Number(ran![1])).toBeLessThan(Number(ran![2]));
         const held = db.prepare("SELECT value FROM cultivator_flags WHERE cultivator_id = ? AND key = 'rations_held'")
@@ -124,8 +125,12 @@ describe('a ship at sea', () => {
         expect(aboard.length).toBeGreaterThan(0);
         expect(aboard.length).toBeLessThanOrEqual(3);
 
-        // "keep going" is the seat taken again, and aboard that is the ship sailing on.
-        await game.act('keep going');
+        // With the crew beaten, the band's leader comes at the passenger, who is no match for them;
+        // water bandits may stop it again on the way. Each time, yield and take the seat again.
+        for (let leg = 0; leg < 4 && game.state().cultivator.location !== 'Cloud Gate'; leg++) {
+            for (let round = 0; round < 3 && game.state().fight; round++) await game.act('I yield');
+            await game.act('sail on');
+        }
         expect(game.state().cultivator.location).toBe('Cloud Gate');
     }, 120_000);
 
@@ -135,6 +140,9 @@ describe('a ship at sea', () => {
         expect(stopped.narration).toMatch(/The crew did not hold the ship\. It turns back for Sweet Spring Island/);
         expect(AT_SEA.exec(stopped.narration)?.[3]).toBe('Sweet Spring Island');
 
+        // With the crew beaten, the band's leader is free to come at the passenger: get clear of
+        // that first, then the ship sails on, back the shorter way.
+        for (let round = 0; round < 6 && game.state().fight; round++) await game.act('I break off');
         const back = await game.act('sail on');
         expect(game.state().cultivator.location).toBe('Sweet Spring Island');
         expect(back.narration).toMatch(/at sea, and back into Sweet Spring Island/);
