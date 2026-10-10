@@ -59,7 +59,12 @@ function theBestGuess(state: WorldState, from: LocationRecord, subject: string):
 }
 
 function whereItIs(game: GameService, cultivator: Cultivator, state: WorldState, here: LocationRecord, subject: string): AnAnswer {
-    const named = resolveAnything(game.repos, subject, cultivator, undefined, whereYouStandOnYourHousesRoll(game, cultivator));
+    const resolved = resolveAnything(game.repos, subject, cultivator, undefined, whereYouStandOnYourHousesRoll(game, cultivator));
+    // The office keeps the world's people, not only the ones on the cultivator table: a name that
+    // is exactly one person's, alive or dead, is theirs.
+    const wantedName = subject.toLowerCase().replace(/^(?:the|a|an)\s+/, '');
+    const byName = resolved ? [] : state.npcs.filter(n => n.name.toLowerCase() === wantedName);
+    const named = resolved ?? (byName.length === 1 ? { kind: 'cultivator' as const, id: byName[0]!.id, name: byName[0]!.name } : null);
     if (named?.kind === 'cultivator') {
         const person = state.npcs.find(n => n.id === named.id);
         if (person?.status === 'alive') {
