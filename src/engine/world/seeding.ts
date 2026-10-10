@@ -116,6 +116,7 @@ import { seedTheKeysThatOpenAHouse } from './the-keys-that-open-a-houses-doors.j
 import { setWhatEverybodyIsAt } from './what-somebody-is-at-when-you-walk-up.js';
 import { seedTownPhysicians, givePhysiciansTheirOpeningWork } from './who-is-actually-seeing-to-wounds.js';
 import { seedTheTempleBranches } from './a-temple-branch.js';
+import { theRollItsPostsNeed } from './what-a-houses-standing-posts-need.js';
 import { addPlacesOnTheWay } from './places-on-the-way.js';
 import { applyPostings } from './the-world-changing-on-its-own.js';
 import { ordinaryAdultsTakeWork } from './the-work-an-ordinary-mortal-does.js';
@@ -2171,7 +2172,8 @@ function seedThePeopleAHouseRaised(
                 ? Number.POSITIVE_INFINITY
                 : (presentDay - faction.foundedOnDay) / DAYS_PER_YEAR
         });
-        const short = wanted - here.length;
+        // A house whose standing posts need more people than its standing does keeps the larger roll.
+        const short = Math.max(wanted, theRollItsPostsNeed(state, faction.id)) - here.length;
         if (short <= 0) continue;
 
         const ladder = faction.ranks.length;

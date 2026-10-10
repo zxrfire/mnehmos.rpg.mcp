@@ -160,8 +160,14 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
                         if (engage) fight = theyCameAtYou(game, fresh.run, adjusted,
                             game.ambientFor(adjusted, fresh.run), { ...single, firstInterruptDay: occurrence.absoluteDay }, true);
                         if (!rest.escortHeld && trip.sea?.receiptId) {
-                            const returned = turnBackPublicPassage(game.atHand!, trip.sea.receiptId, day);
-                            if (returned) lines.push('The surviving actual crew turned this hull back toward its departure port.');
+                            // Short of the middle, the shorter way is home; past it, the shorter way is on.
+                            const sailedNow = trip.sea.sailed + Math.max(0, day - boarded);
+                            if (sailedNow * 2 >= trip.sea.days) {
+                                lines.push('The crew did not hold the ship. It is past the middle of the passage and goes on.');
+                            } else {
+                                const returned = turnBackPublicPassage(game.atHand!, trip.sea.receiptId, day);
+                                if (returned) lines.push(`The crew did not hold the ship. It turns back for ${trip.sea.from}, the shorter way.`);
+                            }
                         }
                         if (engage || !rest.escortHeld) stop = 'The actual attack stopped the passage.';
                     } else if (comesAtYou(occurrence)) {
@@ -238,7 +244,8 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     const arrived = fresh.cultivator.alive && !spent.skip.died && !spent.skip.interrupted && !stop
         && actual?.locationId === to.id && journeyTimeHasReached(routineTime(game.atHand!), actual.endsOnDay);
     // A paid seat was bought off a board, and the ticket names where it goes: the name is read, not guessed.
-    if(!arrived&&!game.canPointAtLocation(fresh.cultivator,to))game.noteEncounter(fresh.cultivator,fresh.run,
+    // Only a bought seat has a ticket: a flight of your own, at random or not, teaches nothing it has not shown.
+    if(trip.service!=='air'&&!arrived&&!game.canPointAtLocation(fresh.cultivator,to))game.noteEncounter(fresh.cultivator,fresh.run,
         {kind:'place',id:to.id,name:to.name},'read',`The ticket for the ${trip.service} names ${to.name}.`);
     const destinationKnown=arrived||game.canPointAtLocation(fresh.cultivator,to);
     // Stopped on the water, the first thing said is where the ship is and where it is bound.

@@ -47,6 +47,7 @@ import { createNpc, setRealm, type NpcRecord } from './npc-state.js';
 import { bindNewbornToHousehold, couldParent, rosterOf, type Roster } from './the-ties-an-ordinary-life-produces.js';
 import { getLocation, type FactionRecord, type WorldState } from './world-state.js';
 import { feederHousesFor } from './what-a-house-answers-to.js';
+import { theRollItsPostsNeed } from './what-a-houses-standing-posts-need.js';
 
 const DAYS_PER_YEAR = 365;
 
@@ -68,7 +69,9 @@ export function vacanciesOnTheRolls(state: WorldState, day: number): Map<string,
             yearsStanding: house.foundedOnDay === null ? Number.POSITIVE_INFINITY
                 : (day - house.foundedOnDay) / DAYS_PER_YEAR
         });
-        return [house.id, Math.max(0, worth - (counts.get(house.id) ?? 0))];
+        // Never smaller than its standing posts need: a full staff on each, and as many at home.
+        const roll = house.dissolvedOnDay === null ? Math.max(worth, theRollItsPostsNeed(state, house.id)) : worth;
+        return [house.id, Math.max(0, roll - (counts.get(house.id) ?? 0))];
     }));
 }
 

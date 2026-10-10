@@ -81,6 +81,41 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tokens: ['count', 'place', 'threatRank', 'stones'],
         tags: ['hostile', 'road', 'negotiable']
     },
+    // WATER BANDITS (水匪). The owner: a crossing interrupted part-way by an attack leaves the ship
+    // in open water on its passage, and a band that only works the water is how that happens. The
+    // road bands above are land-only; these are their counterparts on a lane, and nowhere else.
+    {
+        id: 'enc-water-bandits',
+        requiresSubstrate: 'water',
+        name: 'Water Bandits',
+        kind: 'bandits',
+        simEventKind: 'encounter',
+        weight: 90,
+        minOrdinal: 0,
+        maxOrdinal: 8,
+        interrupts: true,
+        threatOrdinal: 2,
+        summaryTemplate:
+            '{count} water bandits close on the ship from {place} in fast boats. Strongest is {threatRank}. They demand {stones} spirit stones to let it sail on.',
+        tokens: ['count', 'place', 'threatRank', 'stones'],
+        tags: ['hostile', 'negotiable']
+    },
+    {
+        id: 'enc-water-bandit-chief',
+        requiresSubstrate: 'water',
+        name: 'Water Bandit Chief with Cultivation',
+        kind: 'bandits',
+        simEventKind: 'encounter',
+        weight: 40,
+        minOrdinal: 4,
+        maxOrdinal: 14,
+        interrupts: true,
+        threatOrdinal: 9,
+        summaryTemplate:
+            'A band of {count} water bandits boards the ship on {place}, led by a cultivator at {threatRank}, above the rest of them by {gap} ranks.',
+        tokens: ['count', 'place', 'threatRank', 'gap'],
+        tags: ['hostile']
+    },
     {
         id: 'enc-bandit-toll-post',
         requiresSubstrate: 'land',
