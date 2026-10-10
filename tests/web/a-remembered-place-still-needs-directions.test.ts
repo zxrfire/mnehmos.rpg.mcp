@@ -43,8 +43,13 @@ async function fixture(mode: 'placed' | 'named') {
             const speaker = h.game.somebodyAtHand('somebody', visitor);
             if (!speaker || !world.npcs.some(person => person.id === speaker.id && person.status === 'alive')) continue;
             const land = whatThisPersonKnowsOfTheLand(h.game, visitor.id, world, speaker);
+            // Whoever "somebody" turns out to be, everybody standing here knows it the same way.
+            const lands = h.game.present(visitor).map(row => world.npcs.find(person => person.id === row.id))
+                .filter((person): person is NonNullable<typeof person> => person !== undefined)
+                .map(person => whatThisPersonKnowsOfTheLand(h.game, visitor.id, world, person));
             const place = world.locations.find(row => row.kind === 'settlement' && row.id !== venue.id
                 && land.places.some(known => known.name === row.name && known.stage === mode)
+                && lands.every(each => each.places.some(known => known.name === row.name && known.stage === mode))
                 && !h.game.knowledge.isAwareOf(visitor.id, 'place', row.id)
                 && !h.game.knowledge.isAwareOf(visitor.id, 'place', row.name));
             if (!place) continue;
