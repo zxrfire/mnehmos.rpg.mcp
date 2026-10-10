@@ -2,7 +2,6 @@ import type {GameService} from '../../src/web/turn-engine.js';
 import {shipPassengerAt} from '../../src/engine/world/passenger-on-a-vessel.js';
 import {journeyTimeHasReached} from '../../src/engine/world/places-on-the-way.js';
 import {passHours} from '../../src/web/routine-invitations.js';
-import {appendFileSync} from 'node:fs';
 /**
  * A ship's crew are people: a shipmaster and two or three hands, written the first time anybody
  * boards that ship on its lane, then kept.
@@ -57,6 +56,7 @@ import { whatRunsFromHere } from '../../src/web/a-seat-on-a-ship-or-a-carriage';
 import { theVoyageUnderWay } from '../../src/web/a-ship-at-sea';
 import { worldLocationFor } from '../../src/web/entities';
 import { makeGameInWorld } from './harness';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 const THE_CREW = /^npc-crew-/;
 
@@ -86,12 +86,6 @@ async function finishTheAcceptedReturn(game:GameService,expectedPort:string):Pro
         const continued=await passHours(game,before.run,before.cultivator,remaining*24);
         now=game.currentRun();
         const after=shipPassengerAt(world,receiptId,routineTime(world));
-        appendFileSync('.claude/crew-return-native-continuation-20261007-05.jsonl',JSON.stringify({
-            receiptId,vesselId,requestedRemainingDays:remaining,beforeDay:day,afterDay:routineTime(world),
-            finished:continued.finished,bodyAlive:now.cultivator.alive,location:now.cultivator.location,
-            after:after?{vesselId:after.vesselId,toId:after.toId,arrived:after.arrived,remainingDays:after.remainingDays,unavailable:after.unavailable}:null,
-            calls:continued.spent?.calls,skip:continued.spent?.timeSkip?{requestedDays:continued.spent.timeSkip.requestedDays,simulatedDays:continued.spent.timeSkip.simulatedDays,interrupted:continued.spent.timeSkip.interrupted,interruptReason:continued.spent.timeSkip.interruptReason,died:continued.spent.timeSkip.died}:null
-        })+'\n');
         expect(continued.spent?.outcome,JSON.stringify(continued.spent?.calls)).not.toBe('refused');
         expect(now.cultivator.alive).toBe(true);
         expect(now.run.elapsedDays>before.run.elapsedDays,'No real progress: the interruption needs an actual player decision.').toBe(true);
@@ -123,6 +117,9 @@ async function stoppedAtSea() {
         .find(one => one.service === 'ship' && one.lane && one.runsFromDay === null)!;
     const from = worldLocationFor(world, 'Emerald Water City')!;
     const to = worldLocationFor(world, line.to)!;
+    // At the landing already, so the player makes the same sailing the passenger booked: walking
+    // across the city costs time (the owner's time rulings), and a ship does not wait.
+    harness.repos.cultivators.standIn(id, theAreasOf(world, from).areas.find(area => area.for === 'landing')!.id);
     const run = harness.game.currentRun().run;
     const quote = quotePublicPassage(world, from.id, to.id, routineTime(world), 1, [],
         `${run.seed}:${Math.floor(run.elapsedDays)}`);
@@ -166,15 +163,6 @@ describe('the crew of a ship', () => {
 
         const crew = game.atHand!.npcs.filter(npc => THE_CREW.test(npc.id));
         const fought = stopped.narration.split('\n').find(line => /^Around the ship, /.test(line)) ?? '';
-        appendFileSync('.claude/crew-defense-actual-events-20261007-01.jsonl', JSON.stringify({
-            label:'actual-native-crew-defense-before-original-name-assertions',
-            clock:routineTime(game.atHand!), player:game.currentRun(), calls:stopped.toolCalls,
-            narration:stopped.narration, crew:crew.map(one=>({id:one.id,name:one.name,status:one.status,
-                locationId:one.locationId,activity:one.activity})),
-            recentFacts:game.atHand!.history.facts.filter(fact=>fact.day>=game.atHand!.currentDay-30
-                && (fact.actors.some(actor=>crew.some(one=>one.id===actor.id))
-                    || fact.data.publicPassage===true))
-        })+'\n');
         expect(crew.length, JSON.stringify({ calls: stopped.toolCalls, narration: stopped.narration,
             worldDay: game.atHand!.currentDay })).toBeGreaterThanOrEqual(3);
         for (const one of crew) expect(fought, one.name).toContain(one.name);

@@ -10,7 +10,6 @@
  * ScriptedProvider supplies intentions only, not NPC outcomes.
  * This new integrated-source control is unrun; no quiet-arrival or prose claim
  * is inferred from the older standalone conversation evidence. */
-import {appendFileSync} from 'node:fs';
 import {expect,it} from 'vitest';
 import {makeGame,ScriptedProvider} from './harness.js';
 import {ProviderNarrator} from '../../src/web/narrator.js';
@@ -75,7 +74,6 @@ it('talks to an actual unknown fellow carriage passenger and keeps prior company
   expect(game.present(after.cultivator).every(one=>aboardIds.has(one.id))).toBe(true);expect(game.present(after.cultivator).length).toBeLessThanOrEqual(3);
   for(const peer of [passenger,companion])expect(world.npcs.find(one=>one.id===peer.id)?.spiritStones).toBe(peer.spiritStones-fare);
   const arrive=await passHours(game,after.run,after.cultivator,current.remainingDays*24);
-  appendFileSync('.claude/carriage-fellow-passenger-arrival-20261007-01.jsonl',JSON.stringify({receiptId:receipt.id,npcReceipts:receiptIds,leg:quote,arrival:arrive,clock:routineTime(world),body:game.currentRun(),claim:thePaidCarriageClaim(db,body.id),passengers:world.npcs.filter(one=>one.id===passenger.id||one.id===companion.id),present:game.present(game.currentRun().cultivator)})+'\n');
   expect(arrive.finished,JSON.stringify(arrive.spent?.calls)).toBe(true);expect(game.currentRun().cultivator.location).toBe(to.name);
   expect(thePaidCarriageClaim(db,body.id)).toBeNull();expect(world.npcs.find(one=>one.id===passenger.id)?.activity?.vesselId).toBeUndefined();
   expect(game.whoIsWithYouOnTheRoad(game.currentRun().cultivator).map(one=>one.id)).toContain(companion.id);
