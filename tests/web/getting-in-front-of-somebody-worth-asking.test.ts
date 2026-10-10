@@ -187,7 +187,14 @@ describe('getting in front of somebody worth asking', () => {
             `"where can I go" must name ${gate!.name} once the player can point at it`
         ).toContain(gate!.name);
 
-        await say(`I go to ${gate!.name}`);
+        // The road has things on it (the owner: a journey is a multi-part action and an interruption
+        // stops it). Whatever stops them is answered the way a player would, and the road taken up again.
+        let theRoad = 0;
+        for (let leg = 0; leg < 4 && whereTheyAre() !== gate!.name; leg++) {
+            const said = await say(`I go to ${gate!.name}`);
+            if (leg > 0) theRoad++;
+            if (/demand/i.test(said)) { await say('I pay them'); theRoad++; }
+        }
         expect(whereTheyAre(), 'the journey ended at the gate').toBe(gate!.name);
 
         // ── AND SOMETHING IS PUT TO SOMEBODY ─────────────────────────────
@@ -226,7 +233,8 @@ describe('getting in front of somebody worth asking', () => {
         // Five turns. Stated so that a change which makes the route longer is
         // visible rather than silent - this is a bar on the shape of the route,
         // not a performance target.
-        expect(turns.length).toBeLessThanOrEqual(6);
+        // What the road threw at them is not the route's shape, so those turns are not counted.
+        expect(turns.length - theRoad).toBeLessThanOrEqual(6);
     }, 300_000);
 
     /**
