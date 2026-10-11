@@ -17,6 +17,9 @@ import { routineTime } from '../../src/engine/world/npc-routines.js';
  * This control now requires the same canonical moment and actual destination
  * for receipt and body; it retains the complete native elapsed-span check.
  * The Frozen14 repair is pending verification; original horizons are retained.
+ * Oct10 integration: a dead driver's hull is parked at its exact road position,
+ * rather than the corridor's shared display label. The passenger must stand at
+ * that same physical ground; pinning the former coarse name hid this distinction.
  */
 import { expect, it } from 'vitest';
 import { makeGame } from './harness.js';
@@ -102,13 +105,14 @@ it('commits only the real fraction before a driver dies during the requested rep
         expect(reply.spent?.cutShort?.cause).toBe('the_world');
         expect(game.atHand!.currentDay).toBe(quote.departureDay + .0625);
         expect(game.currentRun().run.elapsedDays - before.run.elapsedDays).toBe(.0625);
-        expect(game.currentRun().cultivator.location).toBe(stop.name);
+        const parkedAt = world.objects.find(object => object.id === quote.vesselId)?.locationId;
+        expect(parkedAt).toBeTruthy();
+        expect(game.currentRun().cultivator.location).toBe(world.locations.find(place => place.id === parkedAt)?.name);
         expect(game.currentRun().cultivator.location).not.toBe(to.name);
         expect(game.currentRun().cultivator.alive).toBe(true);
         expect(thePaidCarriageClaim(db, player.id)).toBeNull();
         // Native forgetting may remove the dead row; it must never mint a replacement.
         expect(world.npcs.filter(npc => npc.status === 'alive' && npc.identity.occupation === 'carter')).toHaveLength(0);
-        expect(world.objects.find(object => object.id === quote.vesselId)?.locationId).toBe(stop.id);
         const actualReceipt = world.history.facts.find(fact => fact.id === receipt.id)!;
         expect(actualReceipt.data.vesselId).toBe(quote.vesselId);
         // Forgetting sanitizes obsolete human references; the physical paid leg remains.

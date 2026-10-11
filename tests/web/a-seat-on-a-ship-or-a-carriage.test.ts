@@ -36,7 +36,9 @@
  * and a two-day ride lands on `2 + 1/3`. People are also placed by the hour and
  * sparsely (`npc-routines.ts`): at most one body in this seed's starting area, and
  * the inn is dealt a keeper before the carriage station is (`who-keeps-a-counter-here.ts`),
- * so a test that wants the station's own keeper has to put a second person there itself.
+ * so a test that wants the station's own keeper must arrange actual work at
+ * that station, with the player in the same area. A repository location alone
+ * does not establish a world person's work or the observer's proximity.
  * Road fights now hold the passenger on the actual intermediate ground already
  * reached, rather than leaving their body at the departure town until arrival.
  */
@@ -44,7 +46,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeObject } from '../../src/engine/world/possessions';
-import { makeCultivator } from '../engine/cultivation/fixtures';
 import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
 import { advanceWorldForPlay } from '../../src/engine/world/driver';
@@ -58,6 +59,8 @@ import { journeyTimeHasReached, isWater } from '../../src/engine/world/places-on
 import { groundOfTheAcceptedCarriage } from '../../src/engine/world/public-carriages';
 import { routineTime } from '../../src/engine/world/npc-routines';
 import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { setLocation, PLAYER_ROW_TAG } from '../../src/engine/world/npc-state';
 import { makeGame } from './harness';
 import { createWorld, resetCultivationWorlds, prepareWorldClockForPreciseSpan } from '../../src/server/state/cultivation-world';
 import { quotePublicPassage, recordPublicPassage } from '../../src/engine/world/public-shipping';
@@ -144,15 +147,21 @@ describe('a seat on a ship or a carriage', () => {
     it('reads the carriage station at the town, with who keeps it', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Rider');
-        // The inn is dealt a keeper before the carriage station, and this seed's
-        // starting area holds one body - claimed by the inn. A second body, stood in
-        // the same place, is free to be the station's. `standingIn` lives in a flag
-        // row `create` never touches, so it is set the same way a move sets it.
-        repos.cultivators.create(makeCultivator({
-            id: 'station-clerk-under-test', kind: 'npc', name: 'Second Body',
-            location: cultivator.location
-        }));
-        repos.cultivators.standIn('station-clerk-under-test', cultivator.standingIn ?? null);
+        const world = game.atHand!;
+        const place = worldLocationFor(world, cultivator.location)!;
+        const station = theAreasOf(world, place).areas.find(area => area.for === 'carriage_station')!;
+        expect(station).toBeDefined();
+        const worker = world.npcs.find(person => person.status === 'alive'
+            && person.cultivation.realmOrdinal > 0 && !person.tags.includes(PLAYER_ROW_TAG))!;
+        expect(worker).toBeDefined();
+        const day = routineTime(world);
+        world.npcs[world.npcs.findIndex(person => person.id === worker.id)] = {
+            ...setLocation(worker, place.id, day),
+            activity: { kind: 'trade', note: 'Selling passage at the carriage station.',
+                withIds: [], sinceDay: day, untilDay: null, standingIn: station.id }
+        };
+        repos.cultivators.standIn(cultivator.id, station.id);
+        game.theWorldMoved();
 
         const done = await game.act('what carriages are there');
 
@@ -226,10 +235,11 @@ describe('a seat on a ship or a carriage', () => {
         expect(battleGround?.id).toBe(passage!.data.fromLocationId);
         expect(groundOfTheAcceptedCarriage(game.atHand!, passage!.id, before.cultivator.id,
             routineTime(game.atHand!))).toBe(battleGround?.id);
-        expect(game.currentRun().run.elapsedDays).toBe(before.run.elapsedDays);
-        expect(journeyTimeHasReached(routineTime(game.atHand!), readyDay)).toBe(true);
-        expect(journeyTimeHasReached(readyDay, routineTime(game.atHand!))).toBe(true);
-        expect(game.currentRun().run.turn).toBe(before.run.turn + 1);
+        // The approach to the station is lived time; the interrupted carrier
+        // itself has not advanced beyond its actual departure instant.
+        expect(game.currentRun().run.elapsedDays - before.run.elapsedDays).toBeCloseTo(LOCAL_WALK_DAYS);
+        expect(routineTime(game.atHand!) - readyDay).toBeCloseTo(LOCAL_WALK_DAYS);
+        expect(Number(passage!.data.departureDay)).toBeCloseTo(routineTime(game.atHand!));
         expect(game.currentRun().cultivator.hp).toBe(before.cultivator.hp);
         expect(game.currentRun().cultivator.spiritStones).toBe(before.cultivator.spiritStones
             - Number(passage!.data.fareStones));
