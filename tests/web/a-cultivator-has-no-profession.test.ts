@@ -7,6 +7,9 @@
  *
  * Played through `game.act`, because the ruling is about what the `work` verb
  * offers and takes, and a table can agree with it while the verb does not.
+ * A crossing-watch row now names its actual terminal. Its identity control
+ * supplies that site and also refuses an untargeted watch, rather than testing
+ * a generic line that could never identify which crossing was to be kept.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -95,7 +98,9 @@ describe('the rows behind the wall', () => {
 
     it('reads a line back to the row it was made from', () => {
         for (const mission of HOUSE_MISSIONS) {
-            expect(theMissionBehind(aMissionAsAnOffer(mission, house()).id)?.id).toBe(mission.id);
+            const terminal = mission.at === 'its_public_terminal' ? 'actual-watch-terminal' : undefined;
+            expect(theMissionBehind(aMissionAsAnOffer(mission, house(), terminal ?? null, terminal).id)?.id).toBe(mission.id);
+            if (terminal) expect(theMissionBehind(aMissionAsAnOffer(mission, house()).id)).toBeNull();
         }
         for (const contract of CONTRACTS) {
             expect(theContractBehind(aContractAsAnOffer(contract).id)?.id).toBe(contract.id);
