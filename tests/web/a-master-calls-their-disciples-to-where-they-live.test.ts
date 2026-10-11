@@ -1,6 +1,9 @@
 /**
  * A master calls their own disciples to where they live, and the lesson is held
  * there.
+ * Oct11 integration arranged the placement control at hour zero after a skip.
+ * The disciple's night routine put them in their own quarters. These controls
+ * now arrange a real waking lesson at hour ten; sleep remains ordinary.
  *
  * The design owner: *"closed lectures fall out because the master calls his
  * disciples to his cave abode or room."*
@@ -63,6 +66,8 @@ async function aMasterAndADisciple(seed: string, tieThePlayer: boolean) {
     // lesson is arranged and do not run over it.
     await harness.game.act('I wait for three days');
     const world = harness.game.atHand!;
+    // Arrange the lesson during waking hours, rather than at the skip's midnight.
+    world.currentHour = 10;
     const day = Math.floor(world.currentDay);
     const compounds = whereCompoundsAre(world);
 
