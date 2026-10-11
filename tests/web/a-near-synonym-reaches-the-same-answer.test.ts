@@ -246,6 +246,8 @@ describe('the genre asks for a look in its own words', () => {
  * The gate is untouched. A name still has to be one this cultivator can point
  * at, which is what `somewhereReal` decides; what the refusal now does is read
  * that same gate FORWARDS and hand back the names it would have let through.
+ * The later direction ruling permits an actual northward route attempt;
+ * north is therefore no longer an unknown named-place refusal control.
  */
 describe('a road refused says which roads are not', () => {
     it('names somewhere reachable when the name was not a place', async () => {
@@ -259,7 +261,7 @@ describe('a road refused says which roads are not', () => {
         const places = /Places: ([^\n]+)/.exec(known.narration)?.[1]?.split(', ') ?? [];
         expect(places.length, 'this run knows of nowhere at all').toBeGreaterThan(0);
 
-        for (const said of ['I go north', 'I travel to the capital', 'I go there']) {
+        for (const said of ['I travel to the capital', 'I go there']) {
             const turn = await game.act(said);
             expect(turn.toolCalls.some(call => !call.ok), said).toBe(true);
             expect(
@@ -267,6 +269,15 @@ describe('a road refused says which roads are not', () => {
                 `${said}: the refusal named no road at all - ${turn.narration}`
             ).toBe(true);
         }
+    }, 300000);
+
+    it('attempts an actual direction rather than refusing it as an unknown place', async () => {
+        const { game } = await makeGameInWorld({ seed: 'roads-named', worldSeed: 'roads-world' });
+        await game.newRun('Prober');
+        const before = game.state().run.elapsedDays;
+        const turn = await game.act('I go north');
+        expect(turn.toolCalls.some(call => !call.ok), turn.narration).toBe(false);
+        expect(game.state().run.elapsedDays).toBeGreaterThan(before);
     }, 300000);
 });
 
