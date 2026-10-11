@@ -695,8 +695,13 @@ function afterRound(
     }));
     fight.exchanges.push(...stamped);
     fight.brokenObjects.push(...round.brokenObjects);
-    fight.aggressor = { ...fight.aggressor, input: round.aggressor.input };
-    fight.defender = { ...fight.defender, input: round.defender.input };
+    // By id, not by slot: a round spent on a guard or a shout puts the player first whichever side
+    // they are on, and writing it back by slot swapped the bodies of somebody who was attacked, so
+    // the fight then read the player as the one who started it.
+    const bodyOf = (id: string) =>
+        [round.aggressor.input, round.defender.input].find(input => input.id === id)!;
+    fight.aggressor = { ...fight.aggressor, input: bodyOf(fight.aggressor.input.id) };
+    fight.defender = { ...fight.defender, input: bodyOf(fight.defender.input.id) };
     fight.roundsFought += 1;
 
     const base = {

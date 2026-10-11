@@ -686,3 +686,26 @@ describe('the same seed is the same fight', () => {
         expect(fought.flight!.chance).toBe(view.flight.chance);
     });
 });
+
+describe('somebody who was attacked stays the one attacked', () => {
+    it('a round spent on a guard keeps each body on its own side', () => {
+        // A yield before anything was taken, and a shout nobody answers, both spend the round on a
+        // guard. Those rounds were written back by slot, and the player's body landed on the
+        // attacker's side: a coercion then read as the player's, and a yield ended as a capture.
+        const player = combatant({ id: 'p', name: 'Player', maxHp: 400 });
+        const them = combatant({ id: 'q', name: 'Other', maxHp: 400 });
+        let fight: UnfinishedFight | null = openFight({
+            id: 'fight-attacked', seed: 'seed-attacked',
+            aggressor: side(them), defender: side(player),
+            intent: { thrown: AN_ORDINARY_SWING, toMakeThemComply: true },
+            playerId: player.id, ground: GROUND, turn: 1, ambient: NEUTRAL
+        }).fight;
+        for (const kind of ['yield', 'call_for_help'] as const) {
+            const turn = takeAFightTurn(fight!, { kind }, { ambient: NEUTRAL, turn: 1 });
+            fight = turn.fight;
+            expect(fight, kind).not.toBeNull();
+            expect(fight!.aggressor.input.id, kind).toBe('q');
+            expect(fight!.defender.input.id, kind).toBe('p');
+        }
+    });
+});

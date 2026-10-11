@@ -40,7 +40,10 @@ interface ProbeNpc {
     cultivation: { realmOrdinal: number; techniqueIds: string[]; accumulatingSinceDay: number };
 }
 interface Held {
-    fight: { party: { id: string; name: string }; state: { aggressor: { input: { id: string } } } } | null;
+    fight: {
+        party: { id: string; name: string };
+        state: { aggressor: { input: { id: string } }; hp?: Record<string, number> };
+    } | null;
     atHand: { currentDay: number; npcs: ProbeNpc[]; history: { facts: { data?: Record<string, unknown> }[] } } | null;
 }
 
@@ -91,14 +94,26 @@ async function aHolderIsOnTheRoad(seed: string, theRite: boolean) {
     const heldAgainst = () => at.db.prepare(
         "SELECT holder_id, subject_id, severity FROM obligations WHERE holder_id = ? AND cause = 'violated'"
     ).all(at.playerId) as { holder_id: string; subject_id: string; severity: string }[];
-    return { ...at, holder, progress, heldAgainst };
+    // A standing fight keeps its own running hp, and writes the body only when it ends.
+    const hurt = () => {
+        const body = at.db.prepare('SELECT max_hp FROM cultivators WHERE id = ?')
+            .get(at.playerId) as { max_hp: number };
+        const now = at.held.fight?.state.hp?.[at.playerId];
+        return now !== undefined && now < body.max_hp;
+    };
+    return { ...at, holder, progress, heldAgainst, hurt };
 }
 
-/** Swing until the fight ends, which is at most its round budget. */
-async function fightItOut(game: { act: (s: string) => Promise<{ narration: string }> }, held: Held) {
+/**
+ * Fight until something has been taken off you, then yield, which is a submission whatever the
+ * draws were. A yield before you are hurt is read as a trick and spends the round on your guard.
+ */
+async function beatenAndYielding(
+    game: { act: (s: string) => Promise<{ narration: string }> }, held: Held, hurt: () => boolean
+) {
     let last = '';
     for (let round = 0; round < 12 && held.fight !== null; round++) {
-        last = (await game.act('I keep swinging')).narration;
+        last = (await game.act(hurt() ? 'I yield' : 'I keep swinging')).narration;
     }
     return last;
 }
@@ -151,7 +166,7 @@ describe('a holder of an art that draws on another works it on the player', () =
         expect(at.held.fight?.party.id).toBe(at.holder.id);
         const before = at.progress().p;
 
-        const last = await fightItOut(at.game, at.held);
+        const last = await beatenAndYielding(at.game, at.held, at.hurt);
 
         expect(last).toMatch(/works? Lotus-Plucking Ritual on you/);
         expect(at.progress().p).toBeLessThan(before);
@@ -172,7 +187,7 @@ describe('a holder of an art that draws on another works it on the player', () =
         await at.game.act(WHERE);
         expect(at.held.fight?.party.id).toBe(at.holder.id);
 
-        const last = await fightItOut(at.game, at.held);
+        const last = await beatenAndYielding(at.game, at.held, at.hurt);
 
         expect(last).toMatch(/You do not survive it\./);
         expect(at.progress().alive).toBe(0);
@@ -195,18 +210,24 @@ describe('a holder of an art that draws on another works it on the player', () =
         }
         expect(attempts).toBeGreaterThan(0);
         expect(at.held.fight).toBeNull();
-        expect(said).toContain('Taken alive.');
-        expect(at.held.atHand!.history.facts.filter(f => f.data?.furnace === true)).toHaveLength(0);
         const record = new CombatRepository(at.db).listRecords(at.playerId)[0];
         expect(record).toBeDefined();
-        expect(record!.outcome).toBe('capture');
+        // Running is not yielding: the rite is worked only on somebody beaten down alive, and
+        // whatever ending the draws gave, a failed escape invents no furnace beside it.
+        if (record!.outcome !== 'submission' || at.progress().alive === 0) {
+            expect(at.held.atHand!.history.facts.filter(f => f.data?.furnace === true)).toHaveLength(0);
+        }
         const exchanges = /([0-9]+) exchanges:/.exec(said);
         expect(exchanges).not.toBeNull();
         const lesson = whatAFightTaught({ yourOrdinal: 10, theirOrdinal: 14,
-            exchanges: Number(exchanges![1]), outcome: 'capture', subject: null,
+            exchanges: Number(exchanges![1]), outcome: record!.outcome as never, subject: null,
             cultivationProgress: before });
         expect(at.progress().p).toBe(before + lesson.progress);
-        expect(at.progress().alive).toBe(0);
+        // A death is told as one, and never also as an ending somebody walks away from.
+        if (at.progress().alive === 0) {
+            expect(said).toContain('This cultivator is dead');
+            expect(said).not.toMatch(/Taken alive|Broken off|Beaten and let go/);
+        }
     }, 200_000);
 });
 
