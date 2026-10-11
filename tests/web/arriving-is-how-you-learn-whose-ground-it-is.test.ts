@@ -14,6 +14,9 @@
  *
  * The nomination ask points at the player's OWN house, so the commonest case
  * for the whole verb was the one that could not resolve.
+ * The arrival fixture now really starts at the house's linked gate town. The
+ * former distant start stopped six days into an eight-day road at a registration
+ * gate, correctly learning no ownership of the ground it had not reached.
  */
 
 import { makeGameInWorld } from './harness';
@@ -26,11 +29,15 @@ async function aboutToArriveAtAHeldSeat(worldSeed: string) {
     const { cultivator } = await h.game.newRun('Walker');
     const w = await activeWorld();
     const seat = w.state.locations.find(l => l.controllingFactionId && l.kind === 'sect_seat')!;
-    // Reachable by name, the way being told about a place makes it reachable.
+    const town = w.state.locations.find(l => l.kind === 'settlement' && l.data.gateId === seat.id
+        && seat.links.some(link => link.toLocationId === l.id && link.open));
+    expect(town, 'The arrival control needs the actual open gate road.').toBeDefined();
+    h.repos.cultivators.update(cultivator.id, {location:town!.name});
+    // Arrange the actual linked road, without introducing the ground's owner.
     h.game.knowledge.learnIfNew({
         holderId: cultivator.id, kind: 'place', id: seat.name, name: seat.name,
-        onDay: 0, sourceKind: 'told', sourceNote: 'told about it', stage: 'placed',
-        statement: `${seat.name} is a place.`
+        onDay: w.state.currentDay, sourceKind: 'map', sourceNote: 'the gate road', stage: 'placed',
+        statement: `The open road from ${town!.name} reaches ${seat.name}.`
     });
     return { ...h, cultivator, seat, house: seat.controllingFactionId! };
 }
@@ -41,9 +48,10 @@ describe('walking onto a house\'s ground', () => {
         expect(game.knowledge.stageOf(cultivator.id, 'sect', house)).toBe('unaware');
 
         // NO `look`. The whole point: the player arrives and acts.
-        await game.act(`I travel to ${seat.name}`);
+        const arrived = await game.act(`I travel to ${seat.name}`);
 
-        expect(game.knowledge.isAwareOf(cultivator.id, 'sect', house)).toBe(true);
+        expect(game.currentRun().cultivator.location, arrived.narration).toBe(seat.name);
+        expect(game.knowledge.isAwareOf(cultivator.id, 'sect', house),arrived.narration).toBe(true);
     });
 
     /**
@@ -56,14 +64,16 @@ describe('walking onto a house\'s ground', () => {
      */
     it('grants a name to say, not a dealing', async () => {
         const { game, cultivator, seat, house } = await aboutToArriveAtAHeldSeat('world-arr-1');
-        await game.act(`I travel to ${seat.name}`);
-        expect(game.knowledge.stageOf(cultivator.id, 'sect', house)).toBe('named');
+        const arrived = await game.act(`I travel to ${seat.name}`);
+        expect(game.currentRun().cultivator.location, arrived.narration).toBe(seat.name);
+        expect(game.knowledge.stageOf(cultivator.id, 'sect', house),arrived.narration).toBe('named');
     });
 
     /** And the refusal that blocked the designed verb is gone. */
     it('lets a sentence about the house resolve the house', async () => {
         const { game, seat } = await aboutToArriveAtAHeldSeat('world-arr-1');
-        await game.act(`I travel to ${seat.name}`);
+        const arrived = await game.act(`I travel to ${seat.name}`);
+        expect(game.currentRun().cultivator.location, arrived.narration).toBe(seat.name);
         const asked = await game.act('I ask the elders to put my name forward');
         expect(asked.narration).not.toMatch(/No such door/i);
         expect(asked.narration).not.toMatch(/Unresolved faction/i);
