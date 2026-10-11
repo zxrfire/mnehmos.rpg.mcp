@@ -24,12 +24,18 @@
  * house that exists in every configuration.
  * Name matching must precede the knowledge probe. Probing unrelated houses
  * filled the capped ADMIN receipt before the requested house reached it.
+ *
+ * The later informed-request ruling allows an ordinary player to name a real
+ * house without having heard of it on this life. Naming it supplies neither
+ * admission nor knowledge. The played controls now keep that admission bar
+ * on both ordinary and ADMIN lines; a gated listing measures ADMIN reach.
  */
 
 import { describe, it, expect } from 'vitest';
 
 import { engineCalls, makeGame } from './harness';
 import { KnowledgeGate } from '../../src/web/knowledge';
+import { SECTS } from '../../src/data/cultivation/sects';
 import {
     REACHES_NAMED_IN_A_RECEIPT,
     theOperatorReachesPast,
@@ -118,8 +124,8 @@ describe('the reach is a scope and not a flag', () => {
 // PLAYED
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('an ADMIN line reaches a name ordinary play cannot say', () => {
-    it('refuses the name typed plainly, resolves it typed as ADMIN, and refuses it again after', async () => {
+describe('ADMIN reach leaves admission and ordinary knowledge intact', () => {
+    it('keeps the admission bar before, during and after the ADMIN line', async () => {
         await withAdminMode(true, async () => {
             const { db, game } = makeGame({ adminMode: true, seed: 'reach' });
             const { cultivator } = await game.newRun('Shen Yuan');
@@ -127,8 +133,7 @@ describe('an ADMIN line reaches a name ordinary play cannot say', () => {
 
             // ── BEFORE ──
             const plain = await game.act(`I join ${THE_COURT}`);
-            expect(engineCalls(plain).find(c => c.name === 'engine.resolveSect')?.summary)
-                .toMatch(/no knowledge record/);
+            expect(plain.narration).toMatch(/admits from Void Tribulation/);
 
             // ── THE OPERATOR LINE ──
             const forced = await game.act(`ADMIN sect join ${THE_COURT}`);
@@ -145,8 +150,7 @@ describe('an ADMIN line reaches a name ordinary play cannot say', () => {
             // because a flag was left set. The very next ordinary sentence is
             // refused for the same reason it was refused before the line.
             const after = await game.act(`I join ${THE_COURT}`);
-            expect(engineCalls(after).find(c => c.name === 'engine.resolveSect')?.summary)
-                .toMatch(/no knowledge record/);
+            expect(after.narration).toMatch(/admits from Void Tribulation/);
 
             // And nothing was written. The reach is not knowledge, and the
             // holder's own map of the world is what it was - `grant_knowledge`
@@ -160,14 +164,18 @@ describe('an ADMIN line reaches a name ordinary play cannot say', () => {
         // As loud as the banner over every other admin line. A gate lifted
         // silently is indistinguishable from a gate that was never there.
         await withAdminMode(true, async () => {
-            const { game } = makeGame({ adminMode: true, seed: 'reach' });
-            await game.newRun('Shen Yuan');
-            await game.act(`ADMIN sect join ${THE_COURT}`);
+            const { db, game } = makeGame({ adminMode: true, seed: 'reach' });
+            const { cultivator } = await game.newRun('Shen Yuan');
+            const gate = new KnowledgeGate(db);
+            const unseen = SECTS.find(house => !gate.isAwareOf(cultivator.id, 'sect', house.id));
+            expect(unseen, 'the listing needs an actual unknown house').toBeDefined();
+            await game.act('ADMIN sect list');
 
             const trail = await game.act('ADMIN audit_log');
             expect(trail.narration).toContain('reach.sect');
-            expect(trail.narration).toContain('sect-hollow-court');
+            expect(trail.narration).toContain(unseen!.id);
             expect(trail.narration).toMatch(/no name was learned, no record was written/);
+            expect(gate.isAwareOf(cultivator.id, 'sect', unseen!.id)).toBe(false);
         });
     }, 60_000);
 
