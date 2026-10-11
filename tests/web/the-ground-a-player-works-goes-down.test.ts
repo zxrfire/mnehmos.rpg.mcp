@@ -46,6 +46,9 @@
  * caller's side, so the figure is taken off the WORLD - and off a world
  * reloaded out of SQLite at the end, which is the only read that can tell a
  * write from a write onto a copy.
+ * Oct11's perception read correctly withholds present stock for a remotely
+ * named province. The visible stock control now examines the actual ground
+ * under the player, rather than requiring a remote stock read.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -173,18 +176,14 @@ describe('a player working the ground moves the number', () => {
     }, 120_000);
 
     it('answers what a place still has when the player looks at it', async () => {
-        // The read that stops this being a simulation nobody can see. Asked of
-        // the province, because that is a name that resolves to a place: a
-        // settlement usually shares its name with the house that runs it, and
-        // the house wins the lookup. That is entity resolution's business and
-        // not this file's, but it is why the province is what gets examined.
+        // Point at the actual place, without a house sharing its name or a
+        // remote province being mistaken for the ground the player can see.
         const { game } = await makeGameInWorld({ seed: 'stock-b', worldSeed: WORLD });
         await game.newRun('Surveyor');
-        const { world, place } = await groundUnderThePlayer(game);
-        const province = world.locations.find(l => l.id === place.parentId) ?? place;
+        const { place } = await groundUnderThePlayer(game);
 
-        const said = await game.act(`I examine ${province.name}`) as { narration?: string };
-        expect(said.narration ?? '').toContain(`The ground around ${province.name}`);
+        const said = await game.act('I examine this place') as { narration?: string };
+        expect(said.narration ?? '').toContain(`The ground around ${place.name}`);
     }, 120_000);
 
     it('says so in prose when a district has been worked out', async () => {
