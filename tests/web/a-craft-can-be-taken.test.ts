@@ -37,7 +37,7 @@
  * repo has had to correct twice.
  */
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness.js';
 import { standWhereThePeopleAre } from './standing-where-the-people-are.js';
@@ -51,6 +51,9 @@ import { mintCraft } from '../../src/engine/world/building-a-conveyance-out-of-w
 import { getConveyanceRecipe } from '../../src/data/cultivation/what-a-house-moves-its-people-on.js';
 import { makeObject, type ObjectRecord } from '../../src/engine/world/possessions.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
+import { theOneIdAPersonIsKnownBy } from '../../src/engine/world/a-catalog-person-and-their-world-row.js';
+import { routineTime } from '../../src/engine/world/npc-routines.js';
+import { worldLocationFor } from '../../src/engine/world/place-lookup.js';
 
 const WORLD = 'a-boat-changes-hands';
 
@@ -179,32 +182,11 @@ describe('the lift itself', () => {
 });
 
 describe('played: a boat changes hands', () => {
-    // `ADMIN_MODE` is read at call time, so a test can turn it on and put it
-    // back. Forcing is the scaffolding here and not the subject; see below.
-    let adminBefore: string | undefined;
-    beforeAll(() => {
-        adminBefore = process.env.ADMIN_MODE;
-        process.env.ADMIN_MODE = 'true';
-    });
-    afterAll(() => {
-        if (adminBefore === undefined) delete process.env.ADMIN_MODE;
-        else process.env.ADMIN_MODE = adminBefore;
-    });
-
-    /**
-     * `ADMIN interact <the player's own sentence>` runs the ordinary verb with
-     * the one uncertain question answered - `an_approach_to_somebody` - and
-     * nothing else about the turn is different.
-     *
-     * The landing is scaffolding here, not the subject. What is being measured
-     * is what happens WHEN a theft of a craft lands, and leaving that to a roll
-     * is how two agents in this repo have already pinned a coincidence: the
-     * same sentence typed plainly came back "Cao Nuolin refused" at 37 in a
-     * hundred, and asserting off one draw either way says nothing.
-     */
+    // These controls formerly forced ADMIN acceptance. They now make ordinary
+    // attempts and require an actual landing before checking its consequences.
     async function theTheftLands(seed: string) {
         const { db, game } = await makeGameInWorld({
-            seed, worldSeed: WORLD, adminMode: true
+            seed, worldSeed: WORLD
         });
         const { cultivator } = await game.newRun('Shen Wu');
         db.prepare(
@@ -212,31 +194,61 @@ describe('played: a boat changes hands', () => {
         ).run(cultivator.id);
         await game.act('I look around');
 
-        const known = new KnowledgeGate(db).awareness(cultivator.id)
-            .find(row => row.kind === 'cultivator');
-        expect(known, 'the pinned world opened with nobody the player could name').toBeDefined();
-        // In the part of the town they are in, which the run did not necessarily open in.
-        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, new Set([known!.id]));
-
         const world = await game.loadWorld();
         expect(world, 'the run opened without a world').toBeTruthy();
-        const here = game.state().cultivator.location ?? '';
-        const boat = aSpiritBoatOwnedBy(known!.id, known!.name, here);
+        // Knowledge uses the catalog identity; physical holdings use the actual
+        // world person. The former fixture invented a second owner from that key.
+        const people = new KnowledgeGate(db).awareness(cultivator.id).filter(row => row.kind === 'cultivator');
+        const owner = world!.npcs.find(row => row.status === 'alive'
+            && people.some(known => known.id === theOneIdAPersonIsKnownBy(row.id)))!;
+        expect(owner, 'the known person must have an actual living world body').toBeDefined();
+        const known = people.find(row => row.id === theOneIdAPersonIsKnownBy(owner.id))!;
+        const place = worldLocationFor(world!, game.currentRun().cultivator.location)!;
+        expect(place).toBeDefined();
+        // The fixture is a real owner waiting beside their boat with a purse.
+        // Their character and every ordinary theft draw remain unchanged.
+        owner.locationId = place.id;
+        owner.spiritStones = 420;
+        owner.activity = { kind: 'idle', note: 'Waiting beside their moored boat.',
+            withIds: [cultivator.id], sinceDay: routineTime(world!), untilDay: routineTime(world!) + 30 };
+        game.theWorldMoved();
+        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, new Set([owner.id]));
+        owner.activity.standingIn = game.currentRun().cultivator.standingIn ?? undefined;
+        game.theWorldMoved();
+        expect(game.present(game.currentRun().cultivator).map(row => row.id)).toContain(owner.id);
+        // The last rendered state predates the fixture's physical placement.
+        // Moor against the actual repository body, then persist the real hull.
+        const here = game.currentRun().cultivator.location ?? '';
+        const boat = aSpiritBoatOwnedBy(owner.id, owner.name, here);
         world!.objects.push(boat);
+        game.theWorldMoved();
+        expect(whatIsWithinReachOf(game.atHand, owner.id, game.currentRun().cultivator.location)
+            .some(row => row.object.id === boat.id), JSON.stringify({ boat, body: game.currentRun().cultivator })).toBe(true);
+        expect(parseIntent(`I steal the spirit boat from ${known.name}`).topic).toMatch(/spirit boat/);
 
-        return { db, game, cultivator, known: known!, boat };
+        return { db, game, cultivator, known: { ...known, id: owner.id }, boat };
+    }
+
+    async function takeTheActualBoat(h: Awaited<ReturnType<typeof theTheftLands>>) {
+        let last: Awaited<ReturnType<typeof h.game.act>> | undefined;
+        for (let attempt = 0; attempt < 8; attempt++) {
+            last = await h.game.act(`I steal the spirit boat from ${h.known.name}`);
+            if (h.game.atHand!.objects.find(row => row.id === h.boat.id)?.possessorId === h.cultivator.id) return last;
+        }
+        throw new Error(`No ordinary boat theft landed: ${last?.narration}`);
     }
 
     it('takes the boat, moves no title, and brings the mooring with it', async () => {
-        const { db, game, cultivator, known, boat } = await theTheftLands('lift-a');
+        const h = await theTheftLands('lift-a');
+        const { db, game, cultivator, known, boat } = h;
         const purseBefore = game.state().cultivator.spiritStones;
 
-        await game.act(`ADMIN interact I steal the spirit boat from ${known.name}`);
+        const turn = await takeTheActualBoat(h);
 
         const reloaded = await game.loadWorld();
         expect(reloaded, 'the world went away between turns').toBeTruthy();
         const after = reloaded!.objects.find(row => row.id === boat.id)!;
-        expect(after.possessorId).toBe(cultivator.id);
+        expect(after.possessorId, JSON.stringify({ narration: turn.narration, calls: turn.toolCalls })).toBe(cultivator.id);
         // OWNERSHIP DOES NOT MOVE. `items.md`: a thief who becomes an owner by
         // the act of theft erases the only thread anybody could have followed.
         expect(after.ownerId).toBe(known.id);
@@ -256,10 +268,9 @@ describe('played: a boat changes hands', () => {
     }, 300_000);
 
     it('says what was taken, and says it is still theirs', async () => {
-        const { game, known } = await theTheftLands('lift-b');
-        const said = await game.act(
-            `ADMIN interact I steal the spirit boat from ${known.name}`
-        ) as { narration?: string };
+        const h = await theTheftLands('lift-b');
+        const { game, known } = h;
+        const said = await takeTheActualBoat(h);
         const prose = (said.narration ?? '').toLowerCase();
 
         expect(prose).toContain('spirit boat');
@@ -272,7 +283,12 @@ describe('played: a boat changes hands', () => {
     it('falls back to the purse when the sentence names nothing of theirs', async () => {
         const { game, known, boat } = await theTheftLands('lift-c');
 
-        await game.act(`ADMIN interact I steal from ${known.name}`);
+        const before = game.currentRun().cultivator.spiritStones;
+        let last: Awaited<ReturnType<typeof game.act>> | undefined;
+        for (let attempt = 0; attempt < 8 && game.currentRun().cultivator.spiritStones <= before; attempt++) {
+            last = await game.act(`I steal from ${known.name}`);
+        }
+        expect(game.currentRun().cultivator.spiritStones, `an actual ordinary purse lift must land: ${JSON.stringify({ parsed: parseIntent('I steal from ' + known.name), calls: last?.toolCalls })}\n${last?.narration}`).toBeGreaterThan(before);
 
         const reloaded = await game.loadWorld();
         expect(reloaded, 'the world went away between turns').toBeTruthy();
