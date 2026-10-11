@@ -17,6 +17,11 @@
  * no stop/interruption. The old immutable pilot still referred to the air site.
  * Both prefix and endpoint checks now ask the actual current pilot row.
  * No duration, projection, landing rule or assertion is relaxed.
+ * Oct11's repeated-trip ruling requires the same actual pilot and hull to be
+ * available after landing. The repeated-load control uses ordinary accepted
+ * legs and played waits; each pays its native fuel and real elapsed time.
+ * Its first landing also pays a three-stone Jade Register fee. Both expenses
+ * are read from their actual receipts, so registration is not mistaken for fuel.
  */
 import { expect, it, vi } from 'vitest';
 import { makeGameInWorld } from './harness.js';
@@ -30,7 +35,7 @@ import { quoteAnAirJourney } from '../../src/engine/world/what-an-air-journey-ta
 import { witnessIndexFor } from '../../src/engine/world/witness-reaction-index.js';
 import { LI_PER_WALKING_DAY } from '../../src/engine/world/the-metric-ground-under-a-journey.js';
 import { airPositionAt } from '../../src/engine/world/an-air-course-in-the-world.js';
-import { acceptOwnedPassage, ownedCarrierAt } from '../../src/web/an-owned-passage.js';
+import { acceptOwnedPassage, ownedCarrierAt, peopleUnavailableForOwnedBoarding } from '../../src/web/an-owned-passage.js';
 import { locationOnNpcJourney } from '../../src/engine/world/places-on-the-way.js';
 import { passHours } from '../../src/web/routine-invitations.js';
 
@@ -77,6 +82,56 @@ function actualPilot(h:Awaited<ReturnType<typeof departure>>){
     if(!person)throw new Error('Actual shared hull pilot disappeared from the current world');
     return person;
 }
+
+it('the same actual pilot carries successive ordinary loads after landing', async () => {
+    const h = await departure(true);
+    try {
+        const craft = requireConveyance('conv-spirit-boat');
+        let receiptId = h.receiptId;
+        for (let leg = 0; leg < 3; leg++) {
+            const from = leg % 2 === 0 ? h.from : h.to;
+            const to = leg % 2 === 0 ? h.to : h.from;
+            const world = h.game.atHand!;
+            const day = routineTime(world);
+            const quote = quoteAnAirJourney(world.locations, from.id, to.id, craft, h.boat.power, 2,
+                { facts: witnessIndexFor(world).byId, onDay: day });
+            expect(quote).not.toBeNull();
+            expect(quote!.trips).toBe(1);
+            if (leg > 0) {
+                expect(peopleUnavailableForOwnedBoarding(world, [h.pilot!.id], from.id, day),
+                    JSON.stringify(actualPilot(h).activity)).toEqual([]);
+                const now = h.game.currentRun();
+                const prior = receiptId;
+                receiptId = acceptOwnedPassage(h.game, now.run, now.cultivator, {
+                    vesselId: h.boat.id, pilotId: h.pilot!.id, fromId: from.id, toId: to.id,
+                    walkingDays: quote!.distanceLi / LI_PER_WALKING_DAY, days: quote!.daysOneWay,
+                    conveyanceId: craft.id, power: h.boat.power, companions: [h.pilot!.id],
+                    priorReceiptId: prior, air: true
+                });
+                expect(receiptId).not.toBe(prior);
+            }
+            const before = h.game.currentRun();
+            const beforeFacts = new Set(h.game.atHand!.history.facts.map(fact => fact.id));
+            const turn = await h.game.act(`I wait for ${quote!.daysOneWay} days`);
+            const after = h.game.currentRun();
+            expect(after.cultivator.alive, turn.narration).toBe(true);
+            expect(after.cultivator.location, turn.narration).toBe(to.name);
+            expect(locationOnNpcJourney(h.game.atHand!.locations, actualPilot(h), routineTime(h.game.atHand!))).toBe(to.id);
+            expect(after.run.elapsedDays - before.run.elapsedDays, turn.narration).toBeCloseTo(quote!.daysOneWay, 10);
+            const facts = h.game.atHand!.history.facts;
+            const fuel = facts.filter(fact => fact.data.airFuelPaidFor === receiptId
+                && fact.data.payerId === before.cultivator.id)
+                .reduce((sum, fact) => sum + Number(fact.data.stonesDebited), 0);
+            const registration = facts.filter(fact => !beforeFacts.has(fact.id)
+                && fact.data.gateRegistration === true && fact.data.gateRegistrant === before.cultivator.id)
+                .reduce((sum, fact) => sum + Number(fact.data.stones ?? 0), 0);
+            expect(fuel).toBe(quote!.stonesBurned);
+            expect(before.cultivator.spiritStones - after.cultivator.spiritStones, turn.narration)
+                .toBe(fuel + registration);
+            expect(whoItIsWith(h.game.atHand!.objects.find(object => object.id === h.boat.id)!)).toBe(after.cultivator.id);
+        }
+    } finally { h.db.close(); }
+}, 120_000);
 
 it('actual shared spiritboat has the same airborne body site and reaches its metric endpoint',async()=>{
     const h=await departure(true);
