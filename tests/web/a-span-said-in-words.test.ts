@@ -14,6 +14,8 @@
  * so the article behind it answered instead. A player asking for a millennium
  * of seclusion got a year and was told nothing - the sentence was understood,
  * the number was not, and the turn looked entirely ordinary.
+ * Fractional time now keeps half a year as 182.5 days; the former 183-day
+ * expectation rounded a span the player did not ask to lengthen.
  */
 import { describe, expect, it } from 'vitest';
 import { parseIntent } from '../../src/web/actions';
@@ -47,7 +49,7 @@ describe('a span said in words', () => {
     it('stops an article answering for the word behind it', () => {
         // `a` is in the number table as 1, so it was ending the scan before
         // the `half` in front of it was reached.
-        expect(daysOf('I cultivate for half a year')).toBe(183);
+        expect(daysOf('I cultivate for half a year')).toBe(365 / 2);
     });
 
     it('does not read a bare count as a span', () => {
