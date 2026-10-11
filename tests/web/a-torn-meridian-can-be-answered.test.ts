@@ -8,18 +8,21 @@
  * about one is the most load-bearing question in the game.
  *
  * These assert the routes exist and are honest, not that they are cheap.
+ * The care arms now stand beside an actual working physician in a pinned
+ * world. A wound and money at a birthplace without a clinic do not arrange
+ * a course of treatment; that old fixture correctly refused the missing carer.
  */
 
 import { randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
-import { makeGame, planned, cultivatorRow } from './harness';
+import { planned, cultivatorRow } from './harness';
+import { atAWorkingPhysician } from './at-a-working-physician';
 import { PILLS } from '../../src/data/cultivation/pills';
 import { PRICES } from '../../src/data/cultivation/mortal-world';
 
 /** A cultivator carrying the three wounds the report carried, with money. */
 async function wounded(seed = 'meridian-routes') {
-    const { db, game } = makeGame({ seed, worldEnabled: true });
-    const { cultivator } = await game.newRun('Torn');
+    const { db, game, cultivator } = await atAWorkingPhysician(seed);
     db.prepare('UPDATE cultivators SET spirit_stones = 5000 WHERE id = ?').run(cultivator.id);
     for (const [severity, source] of [
         ['crippling', 'qi_deviation'],
@@ -114,8 +117,7 @@ describe('mortal care and a torn meridian', () => {
 describe('the owner\'s two axes, at the seam where a player meets them', () => {
     /** Restore `hp` full, set a realm, and carry one wound of `severity`. */
     async function carrying(seed: string, ordinal: number, severity: string) {
-        const { db, game } = makeGame({ seed, worldEnabled: true });
-        const { cultivator } = await game.newRun('Hurt');
+        const { db, game, cultivator } = await atAWorkingPhysician(seed);
         db.prepare(
             'UPDATE cultivators SET spirit_stones = 5000, realm_ordinal = ?, max_hp = 200, hp = 200 WHERE id = ?'
         ).run(ordinal, cultivator.id);
