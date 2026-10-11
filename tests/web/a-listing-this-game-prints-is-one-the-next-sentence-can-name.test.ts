@@ -52,11 +52,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
+import { createNpc } from '../../src/engine/world/npc-state';
+import { routineTime } from '../../src/engine/world/npc-routines';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 const WORLD = { seed: 'a-listing-named', worldSeed: 'a-listing-named-world' };
 /**
- * A run that opens among three people it knows. An area holds three at most
- * (`where-in-a-place-somebody-is-standing.ts`), and the run above opens beside one.
+ * This run's birthplace now holds one named person. The two-person reference
+ * controls arrange two cultivators waiting with the player and hear their introductions
+ * through an ordinary greeting before asking for the listing.
  */
 const AMONG_PEOPLE_IT_KNOWS = { seed: 'a-listing-named-5', worldSeed: 'a-listing-named-world' };
 
@@ -80,8 +84,38 @@ function nameOfAPricedRow(row: string): string {
 }
 
 async function playThen(listing: string, followUp: string, world: typeof WORLD = WORLD) {
-    const { game } = await makeGameInWorld(world);
-    await game.newRun('Prober');
+    const { game, repos } = await makeGameInWorld(world);
+    const { cultivator } = await game.newRun('Prober');
+    if (world === AMONG_PEOPLE_IT_KNOWS) {
+        const state = (await game.loadWorld())!;
+        const place = state.locations.filter(row => row.kind === 'settlement')
+            .sort((left, right) => theAreasOf(state, left).whereIs.size - theAreasOf(state, right).whereIs.size)[0]!;
+        expect(theAreasOf(state, place).whereIs.size, 'the waiting group needs room without displacing bystanders')
+            .toBeLessThanOrEqual(1);
+        const names = new Set(state.npcs.map(person => person.name));
+        const people = ['listed-person-1', 'listed-person-2'].map(id => {
+            const person = createNpc(state.seed, { id, takenNames: names, onDay: state.currentDay,
+                bornOnDay: state.currentDay - 30 * 365, locationId: place.id,
+                cultivation: { realmOrdinal: 1 } });
+            names.add(person.name);
+            person.activity = { kind: 'idle', note: 'Waiting with Prober in the public square.',
+                withIds: [cultivator.id],
+                sinceDay: routineTime(state), untilDay: routineTime(state) + 1 };
+            return person;
+        });
+        state.npcs.push(...people);
+        const area = theAreasOf(state, place).areas.find(row => !row.id.includes('#room#'))!;
+        repos.cultivators.update(cultivator.id, { location: place.name });
+        repos.cultivators.standIn(cultivator.id, area.id);
+        game.theWorldMoved();
+        expect(people.every(person => game.present(game.currentRun().cultivator).some(row => row.id === person.id)),
+            'both waiting people must actually stand with the player').toBe(true);
+        const greeted = await game.act('hello');
+        expect(people.every(person => game.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)),
+            JSON.stringify({ narration: greeted.narration, calls: greeted.toolCalls,
+                present: game.present(game.currentRun().cultivator).map(person => person.id) }))
+            .toBe(true);
+    }
     const listed = await game.act(listing);
     const answered = await game.act(followUp);
     return { listed: listed.narration, answered: answered.narration };
