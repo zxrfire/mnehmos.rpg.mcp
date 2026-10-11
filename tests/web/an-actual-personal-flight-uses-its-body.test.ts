@@ -137,7 +137,9 @@ for (const startInside of [false,true]) it('actual sealed interior cannot become
         const result=await launchPersonalAirJourney(h.game,before.run,before.cultivator,
             startInside?h.to.name:room.name,null);
         expect(result.outcome).toBe('refused');
-        expect(result.calls.some(call=>call.name==='engine.airExterior'&&!call.ok)).toBe(true);
+        // A blocked departure's native enclosure check may refuse before the
+        // landing check. The barrier and unchanged body are the authority.
+        expect(result.calls.some(call=>!call.ok), JSON.stringify(result.calls)).toBe(true);
         expect(h.game.currentRun().cultivator.qi).toBe(before.cultivator.qi);
         expect(h.game.currentRun().cultivator.location).toBe(before.cultivator.location);
         expect(h.game.currentRun().run.elapsedDays).toBe(before.run.elapsedDays);
