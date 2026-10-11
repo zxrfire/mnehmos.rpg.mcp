@@ -26,7 +26,8 @@
  * recruiting paper even when there is no seat to walk to.
  * Refusals retain the current clock, including the 08:00 opening fraction;
  * successful journeys must spend additional time rather than merely be after
- * absolute day zero.
+ * absolute day zero. The owner's 2026-10-06 route ruling also means an intake
+ * advertisement does not supply the road to a house that has a real seat.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -72,12 +73,14 @@ describe('a house you were told about stays known when you ask the way', () => {
         // And it repeats what it actually told them, which is the whole point:
         // the intake is the thing they were asking about.
         expect(said).toMatch(/intake|recruit|will hear anybody/i);
-        // A house with a seat has a road. A landless advertiser still has a
-        // known name and its paper; promising arrival would invent its seat.
+        // A real seat does not supply this character's route. A landless
+        // advertiser still has a known name and its paper.
         const destination = game.atHand && theHouseThisNameReaches(game.atHand, house!);
         if (destination) {
-            expect(said).not.toMatch(/You do not have the road/);
-            expect(went.state.run.elapsedDays).toBeGreaterThan(before);
+            expect(game.canPointAtLocation(game.currentRun().cultivator, destination.seat),
+                'the advertisement fixture already supplied the route').toBe(false);
+            expect(said).toMatch(/ask somebody here for directions/i);
+            expect(went.state.run.elapsedDays).toBe(before);
         } else {
             expect(said).toMatch(/You have the name/);
             expect(went.state.run.elapsedDays).toBe(before);

@@ -34,14 +34,11 @@
  * answers - the very shape this sweep exists to find, introduced by the fix for
  * it.
  *
- * `travel` gates on `somewhereReal`, whose third register is *anywhere this
- * cultivator has heard of* - it says outright that *"the player may go where
- * they have been told about"* - while this read is gated on `canPointAt`. A
- * name held without a road is absent from one and reachable by the other, ON
- * PURPOSE. So the read now says the true thing: you have the word and not the
- * way, and setting out is still a sentence you can say. It does not state the
- * DAYS, because that is the knowledge the read is gated on, and handing it over
- * here would make the gate a formality.
+ * The original repair allowed travel to any heard name while this read needed
+ * a known route. The owner's 2026-10-06 ruling changed that: a name supplies
+ * neither a route nor its distance. Both verbs must now say the way is unknown,
+ * without saying the real destination or its road does not exist. An informed
+ * player can ask somebody for directions; asking the distance grants no route.
  *
  * `resolvePlace` cannot be that test: it accepts any string, because *places in
  * this engine are free text*. It answered yes to "the moon" and to "zzzz".
@@ -114,10 +111,8 @@ describe('asking after one place by name', () => {
 
 describe('a name held without a road', () => {
     /**
-     * THE HALF THAT MUST NOT CONTRADICT TRAVEL. See the header: `travel` lets a
-     * cultivator set out for anywhere they have heard of, deliberately, and the
-     * map read is gated tighter. The read may say they do not know the way. It
-     * may not say there is no way.
+     * The read and the journey agree about the missing route. Neither turns a
+     * real name into a nonexistent destination.
      */
     it('says the way is unknown and never that the road does not exist', async () => {
         // `road-1` is the played seed, pinned: it stands the cultivator in Six
@@ -131,11 +126,14 @@ describe('a name held without a road', () => {
         expect(said, said).not.toMatch(/no road|nobody here puts a road/i);
     }, 300_000);
 
-    it('and the road is still walkable, which is why it must not say otherwise', async () => {
+    it('travel also needs the route, and the distance question does not grant it', async () => {
         const game = await standingSomewhere('road-1');
         await game.act('how far is Nine Peaks');
+        const before = game.state().run.elapsedDays;
         const went = (await game.act('i travel to Nine Peaks')).narration ?? '';
-        expect(went, went).toMatch(/took to the road/i);
+        expect(went, went).toMatch(/ask somebody here for directions to Nine Peaks/i);
+        expect(went, went).not.toMatch(/no road|took to the road/i);
+        expect(game.state().run.elapsedDays).toBe(before);
     }, 300_000);
 
     /** And a word that is nowhere at all is told apart from a name that is. */
@@ -152,8 +150,10 @@ describe('and the general read is untouched', () => {
         const said = (await game.act('where can i go')).narration ?? '';
         const rows = (said.match(/^[^\n]+: (?:a |an |site|the )/gm) ?? []).length;
         expect(rows, said).toBeGreaterThan(1);
-        // And what can be seen from up here, which is only offered to the
-        // general question.
-        expect(said, said).toMatch(/You cannot get above it|from up there|the next ridge/i);
+        // The later physical-visibility ruling uses the body's actual view.
+        // This novice sees nearby shapes from the ground, without an aerial view.
+        expect(said, said).toMatch(/visible from where you stand/i);
+        expect(said, said).toMatch(/A sighting gives the shape and bearing of a place/);
+        expect(said, said).toMatch(/It gives no name, owner or contents/);
     }, 300_000);
 });
