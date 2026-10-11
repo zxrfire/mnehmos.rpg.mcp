@@ -11,9 +11,8 @@
  * cannot see who is in the room, and the turn was spent on *"No road goes
  * there. Unresolved destination 'He Xuxue'"*.
  *
- * Going back to somebody you are already standing with is crossing a room. It
- * is not a road: it costs the ordinary quarter-day local walk, not a day on
- * the road. It is also the sentence people open a
+ * Going back to somebody in the same place is a local approach.
+ * Crossing an actual area costs the ordinary quarter day. It is also the sentence people open a
  * parting or an apology with, which is why it is worth a beat rather than a
  * refusal.
  *
@@ -23,11 +22,18 @@
  * to the reader - both `move/travel` - and nothing in the words separates
  * them. Who is standing here is the world's to know, so the answer is where
  * the world is.
+ * Oct11 integration spent that quarter day but could not finish the approach:
+ * the spawned sheet had no chosen area, so its sparse placement changed with
+ * the hour. This control fixes its meeting area through ordinary standingIn
+ * and requires an actual local crossing before measuring its single charge.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
+import { worldLocationFor } from '../../src/web/entities';
+import { peopleInThisPlace } from '../../src/web/hearsay';
+import { crossToWhoeverTheyNamed } from '../../src/web/walking-across-a-place';
 
 function said(result: unknown): string {
     return String((result as { narration?: string }).narration ?? '');
@@ -38,12 +44,22 @@ describe('going back to somebody standing here', () => {
     afterEach(() => { delete process.env.ADMIN_MODE; });
 
     it('crosses to them instead of looking for a road', async () => {
-        const { game } = await makeGameInWorld({
+        const { game, db, repos } = await makeGameInWorld({
             seed: 'crossing', worldSeed: 'parting', adminMode: true
         });
         await game.newRun('Shen Wuyou');
         await game.act('I look around');
         await game.act('ADMIN spawn_encounter ordinal=8 name=He Xuxue');
+
+        const body = game.currentRun().cultivator;
+        const world = game.atHand!;
+        const place = worldLocationFor(world, body.location)!;
+        const person = db.prepare('SELECT id FROM cultivators WHERE name = ?').get('He Xuxue') as { id: string };
+        expect(person).toBeDefined();
+        const meetingArea = peopleInThisPlace(repos, body, world, place).whereIs.get(person.id);
+        expect(meetingArea).toBeDefined();
+        repos.cultivators.standIn(person.id, meetingArea!);
+        expect(crossToWhoeverTheyNamed(game, body, 'He Xuxue', false)).not.toBeNull();
 
         const before = game.state().run.elapsedDays;
         const done = await game.act('I go back to He Xuxue');
@@ -51,11 +67,12 @@ describe('going back to somebody standing here', () => {
         expect(said(done), said(done)).not.toMatch(/No road goes there/i);
         expect(said(done)).not.toMatch(/Unresolved destination/i);
         expect(said(done)).toMatch(/He Xuxue/);
-        // Crossing a room is the one local walk: it must not receive a second
-        // lesser `move` charge after `engine.approachTime` has already paid it.
-        expect(done.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(true);
-        expect(done.toolCalls.some(call => call.name === 'engine.lesserActionTime')).toBe(false);
-        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.25);
+        expect(done.toolCalls.some(call => call.name === 'engine.approachUnfinished')).toBe(false);
+        expect(game.currentRun().cultivator.standingIn).toBe(meetingArea);
+        // A local crossing has one charge and no additional action charge.
+        expect(done.toolCalls.filter(call =>
+            call.name === 'engine.approachTime' || call.name === 'engine.lesserActionTime')).toHaveLength(1);
+        expect(game.state().run.elapsedDays - before, JSON.stringify(done.toolCalls)).toBeCloseTo(0.25);
     }, 120_000);
 
     /**
