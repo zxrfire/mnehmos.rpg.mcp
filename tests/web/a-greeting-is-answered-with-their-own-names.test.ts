@@ -6,12 +6,15 @@
  * nothing, and each of three people answered "with confidence" and dropped a
  * stranger's name. "who are you?" came through as `identity` and went the same
  * way.
+ * The room control now stands in an actual public crowd at waking hours.
+ * Its birthplace had only one person present, so it never tested a room greeting.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld, ScriptedProvider } from './harness';
 import { parseIntent } from '../../src/web/actions';
+import { theAreasOf, npcsInTheArea } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import {
     A_GREETING_TOPIC,
     A_TOPIC_ABOUT_THEMSELVES,
@@ -62,8 +65,17 @@ describe('the words reach the self-question', () => {
 
 describe('played', () => {
     it('"hello" to the room: up to three give their own names, nothing guessed or dropped', async () => {
-        const { game, plans, provider, cultivator } = await withAModel('greet-room');
-        expect(game.present(cultivator).length).toBeGreaterThanOrEqual(2);
+        const { game, plans, provider, cultivator, repos } = await withAModel('greet-room');
+        const world = (await game.loadWorld())!;
+        world.currentHour = 10;
+        const crowd = world.locations.filter(place => place.kind === 'settlement').flatMap(place =>
+            theAreasOf(world, place).areas.filter(area => !area.id.includes('#room#'))
+                .map(area => ({ place, area, people: npcsInTheArea(world, area.id) })))
+            .find(spot => spot.people.length >= 2);
+        expect(crowd, 'the actual world must supply a public room greeting').toBeDefined();
+        repos.cultivators.update(cultivator.id, { location: crowd!.place.name });
+        repos.cultivators.standIn(cultivator.id, crowd!.area.id);
+        expect(game.present(game.currentRun().cultivator).length).toBeGreaterThanOrEqual(2);
         plans.push(JSON.stringify({
             action: 'interact', target: 'everyone_here', intent: 'talk', topic: 'greeting'
         }));
