@@ -28,6 +28,11 @@
  * RED-CHECKED. Dropping the row from the hunt fails every assertion here;
  * restoring `it` to the sparing stop list puts the sentence back to `unclear`.
  *
+ * Oct11 found that the preliminary lethal hunt physically killed the hawk
+ * after its flight costs were wired. The mercy controls now arrange a living
+ * individual through the same native producer, then play the opening exchange
+ * and sparing. The separate hunt, identity and lethal controls remain played.
+ *
  * The arrangement uses ADMIN because a fixture forty played turns deep goes
  * flaky, and the whole chain after it is played.
  *
@@ -47,19 +52,20 @@ import { makeGameInWorld } from './harness.js';
 import { activeWorld } from '../../src/server/state/cultivation-world.js';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo.js';
 import {
+    standUpTheOneOnThisGround,
     theSpeciesItIs,
     whatItIsNow
 } from '../../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { whichWayItPoints } from '../../src/engine/social/grudges.js';
 import { isOnAVein, whatGroundThisIs } from '../../src/engine/world/what-ground-a-place-is.js';
+import { BEASTS } from '../../src/data/cultivation/beasts.js';
+import { peopleInThisPlace } from '../../src/web/hearsay.js';
+import { worldLocationFor } from '../../src/web/entities.js';
 import type { WorldState } from '../../src/engine/world/world-state.js';
 
 /**
- * PINNED, AND THE PAIR IS THE ARRANGEMENT. The run seed fixes the fight and the
- * world seed fixes the ground under it; at this pair the hunt's own exchange
- * breaks off and leaves the hawk standing, which is the state the sparing needs.
- * At other pairs it is finished where it stands, which is the same engine
- * answering a different roll and is what the last case here is for.
+ * Both seeds pin the actual world and ordinary fight streams. A hunt may kill
+ * its subject; it supplies no guaranteed living precondition for mercy.
  */
 const WORLD = 'spare-a-cored-beast';
 
@@ -98,6 +104,28 @@ async function huntOne() {
     return { ...harness, hunted };
 }
 
+/** A living animal on its actual ground, before any lethal hunt. */
+async function meetALivingOne() {
+    const harness = await makeGameInWorld({ seed: WORLD, worldSeed: `${WORLD}-world`, adminMode: true });
+    await harness.game.newRun('Hawk Keeper');
+    const beast = BEASTS.find(row => row.id === 'beast-thunder-hawk')!;
+    await harness.game.act(`ADMIN set my realm to ${beast.ordinal}`);
+    await harness.game.act(`ADMIN set_location location=${await aPeakWithAVeinUnderIt()}`);
+    const world = (await harness.game.loadWorld())!;
+    const me = harness.game.currentRun().cultivator;
+    const place = worldLocationFor(world, me.location)!;
+    const one = standUpTheOneOnThisGround({ beast, locationId: place.id,
+        seed: world.seed, onDay: world.currentDay });
+    world.npcs.push(one);
+    harness.game.atHand = world;
+    harness.game.theWorldMoved();
+    const area = peopleInThisPlace(harness.repos, me, world, place).whereIs.get(one.id);
+    expect(area, 'the living hawk has no actual area').toBeDefined();
+    harness.repos.cultivators.standIn(me.id, area!);
+    expect(harness.game.present(harness.game.currentRun().cultivator).some(row => row.id === one.id)).toBe(true);
+    return harness;
+}
+
 async function beastRows() {
     const handle = await activeWorld() as unknown as { state?: { npcs: unknown[] } };
     const world = (handle.state ?? handle) as { npcs: Parameters<typeof theSpeciesItIs>[0][] };
@@ -133,8 +161,9 @@ describe('something with a core is somebody you can spare', () => {
     });
 
     it('takes "I spare it" with a fight standing, where it used to go blank', async () => {
-        const { game } = await huntOne();
-        await game.act('I attack the Thunder Hawk');
+        const { game } = await meetALivingOne();
+        const opened = await game.act('I attack the Thunder Hawk');
+        expect(game.fight, opened.narration).not.toBeNull();
         const spared = await game.act('I spare it');
 
         // THE BLANK LOOK IS THE FAILURE THIS PINS, so it is read off what the
@@ -144,8 +173,9 @@ describe('something with a core is somebody you can spare', () => {
     });
 
     it('leaves a favour the thing it was done to is owed, held against the player', async () => {
-        const { game, db } = await huntOne();
-        await game.act('I attack the Thunder Hawk');
+        const { game, db } = await meetALivingOne();
+        const opened = await game.act('I attack the Thunder Hawk');
+        expect(game.fight, opened.narration).not.toBeNull();
         await game.act('I spare it');
 
         const beast = (await beastRows() as any[])[0]!;
