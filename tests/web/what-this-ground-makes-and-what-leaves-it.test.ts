@@ -23,6 +23,10 @@
  * derived answer is reported AS derived rather than dressed up as a written
  * craft; and that an inland province gets a true answer rather than an empty
  * one.
+ * Oct11's informed-request ruling permits asking about a real named house's
+ * ordinary public craft before this character has heard of it. The earlier
+ * ignorance refusal is retired; the free read still grants no encounter or
+ * prior dealing and keeps the purse and clock unchanged.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -205,9 +209,15 @@ describe('asked about a house by name', () => {
         });
         const { cultivator } = await game.newRun('Factor');
 
-        // A house nobody has told them of cannot be asked about by name.
-        const unheard = await game.act('what does the Cinnabar Crucible Sect make?');
-        expect(unheard.narration).not.toMatch(/Refining/i);
+        // The player's informed name reaches ordinary public craft information
+        // without inventing a prior introduction for this character.
+        const initial = game.currentRun();
+        expect(game.knowledge.isAwareOf(cultivator.id, 'sect', THE_CRUCIBLE)).toBe(false);
+        const informed = await game.act('what does the Cinnabar Crucible Sect make?');
+        expect(informed.narration).toMatch(/Refining/i);
+        expect(game.knowledge.isAwareOf(cultivator.id, 'sect', THE_CRUCIBLE)).toBe(false);
+        expect(game.currentRun().cultivator.spiritStones).toBe(initial.cultivator.spiritStones);
+        expect(game.currentRun().run.elapsedDays).toBe(initial.run.elapsedDays);
 
         game.knowledge.learnIfNew({
             holderId: cultivator.id, kind: 'sect', id: THE_CRUCIBLE, name: 'Cinnabar Crucible Sect',
