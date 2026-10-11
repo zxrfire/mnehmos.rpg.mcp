@@ -37,6 +37,9 @@
  * The knowledge gate is pinned as an absence, which is the only way it can be:
  * a visitor is handed no room name that carries the house's own rank ladder,
  * whatever the ladder happens to be called in this world.
+ * The later physical-item read can show an elder's tally outside. Its rank
+ * noun is not a hidden room name; the privacy control now checks actual deep
+ * rank-named rooms rather than forbidding the rank word everywhere.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -221,11 +224,14 @@ describe('a bigger house is bigger to stand in', () => {
         const prose = (await game.act('I look at the buildings')).narration ?? '';
         expect(prose.length).toBeGreaterThan(0);
 
-        // The deep ranks. The outermost is what a visitor is standing in and
-        // what the house puts on a recruiting bill, so it is not a secret.
-        for (const rank of house!.ranks.slice(1)) {
-            expect(prose.toLowerCase(), `the visitor was told about the ${rank}`)
-                .not.toContain(rank.toLowerCase());
+        // A visible elder's tally can name a rank without naming a hidden room.
+        const privateRankRooms = world.locations.filter(row =>
+            row.data.factionId === house!.id && Number(row.data.precinctIndex) > 0
+            && house!.ranks.slice(1).some(rank => row.name.toLowerCase().includes(rank.toLowerCase())));
+        expect(privateRankRooms.length, 'The control needs actual rank-named rooms behind the wall.').toBeGreaterThan(0);
+        for (const room of privateRankRooms) {
+            expect(prose.toLowerCase(), `the visitor was told the hidden room ${room.name}:\n${prose}`)
+                .not.toContain(room.name.toLowerCase());
         }
     }, 300_000);
 
