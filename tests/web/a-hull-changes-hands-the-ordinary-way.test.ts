@@ -40,6 +40,8 @@
  * it, and come away owning a boat that has not moved an inch.
  * The barter fixture chooses a mortal-world artifact. Newly catalogued immortal
  * work requires crossing the Lid and cannot precondition a living local buyer.
+ * Oct11: the seller's base compound is not their current room or area. The
+ * played fixture now joins their actual routine before asking and offering.
  *
  * The social roll IS seeded and the outcome here was stable over three
  * consecutive runs of the same two seeds. If it drifts, the thing that moved is
@@ -61,6 +63,8 @@ import { parseIntent } from '../../src/web/actions.js';
 import { ARTIFACTS } from '../../src/data/cultivation/artifacts.js';
 import { FALSE_IMMORTAL_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import { makeObject } from '../../src/engine/world/possessions.js';
+import { whereCompoundsAre, whereTheyAreStanding } from '../../src/engine/world/where-inside-a-house-somebody-is-standing.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { whatACraftWouldFetch } from '../../src/engine/world/a-house-sells-what-it-built.js';
 import {
     theThingAskedFor,
@@ -145,7 +149,9 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
             n => n.factionId === house.id && n.status === 'alive'
                 && n.locationId === house.seatLocationId)!;
         expect(speaker, 'nobody of that house is standing on its own ground').toBeTruthy();
-        const where = world.locations.find(l => l.id === speaker.locationId)!;
+        const where = world.locations.find(l => l.id === whereTheyAreStanding(world, whereCompoundsAre(world),
+            speaker, new Set(world.npcs.map(person => person.id))))!;
+        expect(where, 'the seller must occupy actual ground').toBeDefined();
 
         repos.cultivators.update(cultivator.id, {
             location: where.name,
@@ -153,6 +159,10 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
             // standing otherwise, which is a different rule and not this one.
             realmOrdinal: 30
         });
+        const area = theAreasOf(world, where).whereIs.get(speaker.id);
+        expect(area, 'the real seller has no area on their current ground').toBeDefined();
+        repos.cultivators.standIn(cultivator.id, area!);
+        expect(game.present(game.currentRun().cultivator).map(person => person.id)).toContain(speaker.id);
 
         // ── NO NEW VERB ──────────────────────────────────────────────────
         const sentence = `ask ${speaker.name} what they would take for a spirit boat`;
@@ -179,6 +189,15 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
             ownerName: cultivator.name,
             possessorId: cultivator.id
         }));
+        game.theWorldMoved();
+        const offerGround = world.locations.find(l => l.id === whereTheyAreStanding(world, whereCompoundsAre(world),
+            world.npcs.find(person => person.id === speaker.id)!, new Set(world.npcs.map(person => person.id))))!;
+        expect(offerGround).toBeDefined();
+        repos.cultivators.update(cultivator.id, { location: offerGround.name });
+        const offerArea = theAreasOf(world, offerGround).whereIs.get(speaker.id);
+        expect(offerArea).toBeDefined();
+        repos.cultivators.standIn(cultivator.id, offerArea!);
+        expect(game.present(game.currentRun().cultivator).map(person => person.id)).toContain(speaker.id);
 
         const traded = await game.act(
             `I offer ${speaker.name} ${heavy.name} for a spirit boat`);
