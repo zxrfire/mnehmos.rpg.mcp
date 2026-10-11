@@ -20,6 +20,8 @@
  *   introduce me to the elder" resolves nobody.
  *   SOMETHING ACTUALLY HAPPENS. A take writes the art onto the sheet or the
  *   name into the knowledge table, and a refusal names what would work.
+ * The meeting fixture reads the person's actual routine and area. Their stored
+ * location can be the home they are away from; standing there meets nobody.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -34,7 +36,10 @@ import { TECHNIQUES } from '../../src/data/cultivation/techniques.js';
 import { LEVERAGE_ATTEMPT_CONSTANTS } from '../../src/engine/social-leverage/index.js';
 import { makeGameInWorld, type Harness } from './harness.js';
 import { standWhereThePeopleAre } from './standing-where-the-people-are.js';
+import { routineOf, routineTime } from '../../src/engine/world/npc-routines.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { factsForRequest } from '../../src/web/facts.js';
+import { ledgerAbout } from '../../src/storage/repos/obligation.repo.js';
 import {
     howItHasBeenGoing,
     howOftenThisLands,
@@ -271,7 +276,7 @@ async function anybodyNameable(harness: Harness): Promise<string | null> {
 /** The person's row id, for reading the tables back. */
 function idOf(harness: Harness, name: string): string | null {
     const row = harness.repos.cultivators.roster().find(r => r.name === name);
-    return row?.id ?? null;
+    return row?.id ?? harness.game.atHand?.npcs.find(person => person.name === name)?.id ?? null;
 }
 
 /**
@@ -289,13 +294,7 @@ function idOf(harness: Harness, name: string): string | null {
  * arranged square stays a modest one rather than the busiest place on the map.
  */
 async function squaresWithSomebodyKnownAndAbove(harness: Harness): Promise<string[]> {
-    const world = await (harness.game as unknown as {
-        loadWorld(): Promise<{
-            locations: { id: string; name: string; kind: string }[];
-            npcs: { id: string; locationId: string | null; status: string;
-                cultivation: { realmOrdinal: number } }[];
-        } | null>;
-    }).loadWorld();
+    const world = await harness.game.loadWorld();
     if (!world) return [];
     const me = harness.game.currentRun().cultivator;
     const heardOf = (harness.game as unknown as {
@@ -304,10 +303,11 @@ async function squaresWithSomebodyKnownAndAbove(harness: Harness): Promise<strin
 
     const above = new Map<string, number>();
     for (const npc of world.npcs) {
-        if (npc.status !== 'alive' || npc.locationId === null) continue;
+        const actual = routineOf(world, npc);
+        if (npc.status !== 'alive' || actual.home || actual.locationId === null) continue;
         if (npc.cultivation.realmOrdinal <= me.realmOrdinal) continue;
         if (!heardOf.has(npc.id)) continue;
-        above.set(npc.locationId, (above.get(npc.locationId) ?? 0) + 1);
+        above.set(actual.locationId, (above.get(actual.locationId) ?? 0) + 1);
     }
     // Of the kind a run opens in. A `region` row is a container nobody stands
     // in - `npcsAt` says so - so standing the player on one arranges a
@@ -367,20 +367,20 @@ async function somebodyWorthAsking(harness: Harness): Promise<string> {
     // about the asking is touched, and the unarranged case is still played -
     // `does not answer a request with the roster` reaches its person with
     // nothing arranged at all.
-    const world = await (harness.game as unknown as {
-        loadWorld(): Promise<{
-            locations: { id: string; name: string; kind: string }[];
-            npcs: { id: string; name: string; locationId: string | null; status: string;
-                cultivation: { realmOrdinal: number } }[];
-        } | null>;
-    }).loadWorld();
+    const world = await harness.game.loadWorld();
+    expect(world, 'the meeting needs its actual world').not.toBeNull();
     const mine = harness.game.currentRun().cultivator.realmOrdinal;
     const squares = new Map((world?.locations ?? [])
         .filter(row => row.kind === 'settlement').map(row => [row.id, row.name]));
     const teacher = (world?.npcs ?? [])
-        .filter(npc => npc.status === 'alive'
-            && npc.cultivation.realmOrdinal > mine
-            && npc.locationId !== null && squares.has(npc.locationId))
+        .filter(npc => {
+            if (npc.status !== 'alive' || npc.cultivation.realmOrdinal <= mine) return false;
+            const actual = routineOf(world!, npc);
+            if (actual.home || actual.locationId === null || !squares.has(actual.locationId)) return false;
+            const place = world!.locations.find(row => row.id === actual.locationId);
+            const area = place && theAreasOf(world!, place).whereIs.get(npc.id);
+            return area !== undefined && !area.includes('#room#');
+        })
         .sort((a, b) =>
             a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
             || (a.id < b.id ? -1 : 1))[0];
@@ -400,8 +400,10 @@ async function somebodyWorthAsking(harness: Harness): Promise<string> {
             statement: `${teacher.name} exists.`,
             confidence: 1
         });
-    harness.repos.cultivators.update(me, { location: squares.get(teacher.locationId!)! });
+    harness.repos.cultivators.update(me, { location: squares.get(routineOf(world!, teacher).locationId!)! });
     await standWithWhoTheyKnow(harness);
+    expect(harness.game.present(harness.game.currentRun().cultivator).some(person => person.id === teacher.id),
+        'the named teacher must actually be in the arranged area').toBe(true);
     const found = await anybodyNameable(harness);
     expect(found, 'the roster question will not name somebody it has been told about')
         .not.toBeNull();
@@ -642,6 +644,22 @@ describe('a request reaches the person, played', () => {
         await harness.game.newRun('Asker');
         const { who, art } = await somebodyAndWhatTheyWouldTeach(harness);
         const whoId = idOf(harness, who);
+        expect(whoId).not.toBeNull();
+        const world = (await harness.game.loadWorld())!;
+        const at = world.npcs.findIndex(person => person.id === whoId);
+        const place = world.locations.find(row => row.name === harness.game.currentRun().cultivator.location)!;
+        const selfId = harness.game.currentRun().cultivator.id;
+        const pairRecords = () => ledgerAbout(harness.db, selfId)
+            .filter(record => record.holderId === whoId || record.subjectId === whoId);
+        const beforeRecords = structuredClone(pairRecords());
+        const beforeTies = structuredClone(world.npcs[at]!.relationships.filter(tie => tie.targetId === selfId));
+        // Hold the meeting, not its answer. Otherwise the discovered teacher can
+        // have gone home by the first named ask and none of these is an attempt.
+        world.npcs[at] = { ...world.npcs[at]!, locationId: place.id, activity: {
+            kind: 'idle', note: 'Hearing requests in the square.', withIds: [],
+            sinceDay: routineTime(world), untilDay: routineTime(world) + 6 * 14
+        } };
+        harness.game.theWorldMoved();
 
         for (let i = 0; i < 6; i++) {
             const live = harness.game.currentRun();
@@ -656,16 +674,16 @@ describe('a request reaches the person, played', () => {
             // no record* and is nothing of the kind. Provisioning is a
             // precondition; nothing about the outcome is arranged here.
             harness.repos.cultivators.update(live.cultivator.id, { satiety: 100 });
+            await standWhereThePeopleAre(harness, live.cultivator.id, new Set([whoId!]));
+            expect(harness.game.present(harness.game.currentRun().cultivator).some(person => person.id === whoId)).toBe(true);
             await harness.game.act(`I ask ${who} to teach me the ${art}`);
         }
-        const self = harness.game.currentRun().cultivator.id;
-        const rows = harness.db.prepare(
-            'SELECT COUNT(*) AS n FROM obligations WHERE holder_id = ? OR subject_id = ?'
-        ).get(self, whoId ?? self) as { n: number };
-        const ties = harness.db.prepare(
-            'SELECT COUNT(*) AS n FROM relationships WHERE from_character_id = ? OR to_character_id = ?'
-        ).get(self, whoId ?? self) as { n: number };
-        expect(rows.n + ties.n, 'six attempts left no record of any kind').toBeGreaterThan(0);
+        const afterRecords = pairRecords();
+        const afterTies = harness.game.atHand!.npcs.find(person => person.id === whoId)!.relationships
+            .filter(tie => tie.targetId === selfId);
+        expect(JSON.stringify(afterRecords) !== JSON.stringify(beforeRecords)
+            || JSON.stringify(afterTies) !== JSON.stringify(beforeTies),
+            JSON.stringify({ who, art, whoId, records: afterRecords, log: harness.game.state().log.slice(-4) })).toBe(true);
     }, 60_000);
 });
 
