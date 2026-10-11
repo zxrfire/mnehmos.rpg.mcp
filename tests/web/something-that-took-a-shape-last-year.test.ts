@@ -20,11 +20,17 @@
  * a blunt thing that cannot name a house and a careful one that cannot name a
  * house are two different scenes out of the same missing row.
  *
+ * The 2026-10-11 played control rejected a bystander's name anywhere in the
+ * turn despite its correct addressed reply. Both named and pronoun replies
+ * must start with their actual recipient; other scene facts retain bystanders.
+ *
  * NO MODEL RUNS HERE. Every assertion is on the deterministic channel.
  */
 
 import { describe, it, expect } from 'vitest';
-import { makeGame } from './harness';
+import { makeGameInWorld } from './harness';
+import { peopleInThisPlace } from '../../src/web/hearsay';
+import { worldLocationFor } from '../../src/web/entities';
 import {
     howThisOneDealsWithPeople,
     theSpeciesTheyMeant,
@@ -246,7 +252,7 @@ describe('a house knows what its people know and carries no record of its own', 
 describe('ADMIN stands one up, in the room the player is standing in', () => {
     it('takes the rung off the catalog and will not go below the change', async () => {
         await withAdmin(async () => {
-            const { game } = makeGame({ adminMode: true, seed: 'took-a-shape-1' });
+            const { game } = await makeGameInWorld({ adminMode: true, seed: 'took-a-shape-1', worldSeed: 'took-a-shape-world' });
             await game.newRun('Shen Yuan');
 
             const spawned = await game.act('ADMIN spawn_encounter species=fox');
@@ -269,7 +275,7 @@ describe('ADMIN stands one up, in the room the player is standing in', () => {
         // what is refused here is an animal - the only refusal left - and the
         // line it is under is the change itself.
         await withAdmin(async () => {
-            const { game } = makeGame({ adminMode: true, seed: 'took-a-shape-2' });
+            const { game } = await makeGameInWorld({ adminMode: true, seed: 'took-a-shape-2', worldSeed: 'took-a-shape-world' });
             await game.newRun('Shen Yuan');
             const refused = await game.act('ADMIN spawn_encounter species=thunder-hawk');
             expect(refused.narration).toMatch(/It is an animal/);
@@ -279,7 +285,7 @@ describe('ADMIN stands one up, in the room the player is standing in', () => {
 
     it('emits both axes, and no row was written to say it is ignorant', async () => {
         await withAdmin(async () => {
-            const { game, db } = makeGame({ adminMode: true, seed: 'took-a-shape-3' });
+            const { game, db } = await makeGameInWorld({ adminMode: true, seed: 'took-a-shape-3', worldSeed: 'took-a-shape-world' });
             await game.newRun('Shen Yuan');
             const spawned = await game.act('ADMIN spawn_encounter species=fox');
 
@@ -314,19 +320,33 @@ describe('ADMIN stands one up, in the room the player is standing in', () => {
         // Not a beast bug: any name beginning with "The", asked about in a
         // sentence with no `about` in it. See `matchScore`.
         await withAdmin(async () => {
-            const { game } = makeGame({ adminMode: true, seed: 'took-a-shape-5' });
+            const { game } = await makeGameInWorld({ adminMode: true, seed: 'took-a-shape-5', worldSeed: 'took-a-shape-world' });
             await game.newRun('Shen Yuan');
             await game.act('ADMIN spawn_encounter ordinal=4 name=Tang Xuxue disposition=friendly');
             await game.act('ADMIN spawn_encounter species=fox');
 
+            const meetTheFox = async () => {
+                const me = game.currentRun().cultivator;
+                const world = (await game.loadWorld())!;
+                const place = worldLocationFor(world, me.location)!;
+                const fox = game.repos.cultivators.roster().find(row => row.name === 'The Reader at Burnt Earth')!;
+                const area = peopleInThisPlace(game.repos, me, world, place).whereIs.get(fox.id);
+                expect(area, 'the spawned fox has no actual area').toBeDefined();
+                game.repos.cultivators.standIn(me.id, area!);
+                expect(game.present(game.currentRun().cultivator).some(row => row.id === fox.id)).toBe(true);
+            };
+            await meetTheFox();
             const byName = await game.act(
                 'I ask The Reader at Burnt Earth which house she is from');
             expect(byName.narration).toMatch(/^The Reader at Burnt Earth/);
-            expect(byName.narration).not.toMatch(/Tang Xuxue/);
+            // The addressed reply belongs to the fox; nearby people may still
+            // appear in the same turn's scene facts.
+            expect(byName.narration.split('\n')[0]).not.toMatch(/Tang Xuxue/);
 
             // And the pronoun, which follows whoever was last dealt with.
+            await meetTheFox();
             const byPronoun = await game.act('I ask her about her house');
-            expect(byPronoun.narration).toMatch(/The Reader at Burnt Earth/);
+            expect(byPronoun.narration).toMatch(/^The Reader at Burnt Earth/);
         });
     }, 60_000);
 
@@ -337,7 +357,7 @@ describe('ADMIN stands one up, in the room the player is standing in', () => {
         // asks about the house whose compound it is and an eating house asks
         // about whoever happens to be eating in it.
         await withAdmin(async () => {
-            const { game } = makeGame({ adminMode: true, seed: 'took-a-shape-4' });
+            const { game } = await makeGameInWorld({ adminMode: true, seed: 'took-a-shape-4', worldSeed: 'took-a-shape-world' });
             await game.newRun('Shen Yuan');
 
             // A compound: people on a house's roll, standing here.
