@@ -2,6 +2,9 @@
  * Six documented summit features had no played consumers. These arrange bodies and ground,
  * then type the player's sentences. World and run seeds are both pinned. The assertions
  * cover harm, clocks, circulation, visible works, the Lid, and actual possession transfers.
+ * Finite art cooldowns now make the second round's blows physical. The control
+ * keeps the first elemental reduction and checks that a cooling fire art is
+ * not silently cast again; it does not demand elemental defence on every blow.
  */
 import { describe, it, expect } from 'vitest';
 import { makeGameInWorld } from './harness';
@@ -43,8 +46,18 @@ describe('summit capabilities in play', () => {
         const opened = await h.game.act('I attack someone of my own rank');
         expect(opened.toolCalls.some(c => c.name === 'combat.round')).toBe(true);
         expect(opened.narration).toContain('tribulation body reduced');
+        const casts = () => h.world.history.facts.filter(fact => fact.data.npcCombatArtUse !== undefined
+            && fact.actors.some(actor=>actor.id===opponent.id));
+        expect(casts()).toHaveLength(1);
         const next = await h.game.act('I let him hit me');
-        expect(next.narration).toContain('tribulation body reduced');
+        expect(next.toolCalls.some(c=>c.name==='combat.round'),next.narration).toBe(true);
+        expect(casts()).toHaveLength(1);
+        const blows = h.game.fight!.state.exchanges.slice(-2);
+        expect(blows).toHaveLength(2);
+        for (const blow of blows) {
+            expect(blow.result.harm).toBe('bludgeoning');
+            expect(blow.result.damage).toBeGreaterThan(0);
+        }
     }, 120000);
 
     it('the imperfect elemental stay expires and hands the player back the turn', async () => {
