@@ -5,6 +5,8 @@
  * never a clock reading through rock. Fractional clauses add within a plan.
  * Looking at visible buildings formerly spent a search's half-day. Its read
  * stays free; pricing a sought thing still requires the search's half-day.
+ * Compare actual routine time with the run clock: world days may retain their
+ * fractional part. Midnight changes the day, without requiring integer storage.
  */
 import { describe, expect, it } from 'vitest';
 import { ACTION_NAMES } from '../../src/web/action-set';
@@ -12,7 +14,7 @@ import { LESSER_ACTION_DAYS, lesserActionDays } from '../../src/web/lesser-actio
 import { ScriptedProvider, makeGameInWorld } from './harness';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { worldLocationFor } from '../../src/web/entities';
-import { routineOf } from '../../src/engine/world/npc-routines';
+import { routineOf, routineTime } from '../../src/engine/world/npc-routines';
 import { makeObject } from '../../src/engine/world/possessions';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
@@ -93,6 +95,7 @@ describe('lesser acts spend the same clock', () => {
             const before = repos.runs.getById(game.state().run.id)!;
             const world = game.atHand!;
             const day = world.currentDay;
+            const clock = routineTime(world);
             const streetCount = () => {
                 const read = theAreasOf(game.atHand!, town);
                 const streetIds = read.areas.filter(a => a.for === 'street').map(a => a.id);
@@ -103,7 +106,8 @@ describe('lesser acts spend the same clock', () => {
                 repos.cultivators.applyDeltas(game.state().cultivator.id, { satiety: -50 });
                 await game.act('I eat a meal');
                 expect(repos.runs.getById(before.id)!.elapsedDays - before.elapsedDays).toBeCloseTo((i + 1) / 8);
-                expect(game.atHand!.currentDay).toBe(day);
+                expect(Math.floor(game.atHand!.currentDay)).toBe(Math.floor(day));
+                expect(routineTime(game.atHand!)).toBeCloseTo(clock + (i + 1) / 8);
             }
             expect(game.atHand!.currentHour).toBeCloseTo(23);
             expect(streetCount()).toBeLessThan(morning);
@@ -113,8 +117,8 @@ describe('lesser acts spend the same clock', () => {
             expect(after.elapsedDays - before.elapsedDays).toBeCloseTo(6 / 8);
             expect(game.atHand!.currentHour).toBeCloseTo(2);
             const record = game.atHand!.runs.find(r => r.id === before.id)!;
-            expect(game.atHand!.currentDay).toBe(record.startedOnDay + Math.floor(after.elapsedDays));
-            expect(game.atHand!.currentDay).toBe(day + 1);
+            expect(routineTime(game.atHand!)).toBeCloseTo(record.startedOnDay + after.elapsedDays);
+            expect(Math.floor(game.atHand!.currentDay)).toBe(Math.floor(day) + 1);
         } finally { db.close(); }
     }, 180_000);
 
