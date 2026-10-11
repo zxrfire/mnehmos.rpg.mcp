@@ -22,6 +22,8 @@
  *   province - so the game told a player Iron Crest was eleven days away and then
  *   took them there in one. Every verb here goes through one reader of that
  *   figure, so a fold that saves ten days saves ten days that were spent.
+ *   The later physical-route reader includes the legs to and from a border;
+ *   eleven days for the border alone is not the whole ferry-to-town journey.
  *
  *   A FOLD NEEDS A FIX AND BEING TOLD IS NOT ONE. There are exactly two and
  *   both are things the folder did themselves. A third for having heard about
@@ -78,17 +80,21 @@ describe('the road is as long as the catalog says it is', () => {
     it('spends the stated road on a journey between provinces', async () => {
         // A run seed whose road is not stopped, in the world this arm always used.
         const { game, db, cultivatorId } = await standingAt('Clear River Ferry', 'road-paid-1', 'road-paid-world');
+        const before = game.currentRun();
+        const wholeRoad = game.daysOnTheRoadTo(before.cultivator, 'Iron Crest');
+        expect(wholeRoad, 'the native road reader must price both endpoints').not.toBeNull();
+        expect(wholeRoad!).toBeGreaterThan(BORDER_ROAD);
 
         const result = await game.act('I travel to Iron Crest');
         const after = cultivatorRow(db, cultivatorId);
 
         expect(BORDER_ROAD).toBeGreaterThan(1);
         expect(after.location).toMatch(/iron crest/i);
-        // Age is in years and a road is in days, so the day count is read off
-        // the engine's own account of the skip rather than off the row.
+        expect(game.currentRun().run.elapsedDays - before.run.elapsedDays).toBeCloseTo(wholeRoad!);
+        // The account must report the same whole road the body paid.
         const skip = result.toolCalls.find(call => call.name === 'engine.simulateTimeSkip');
         expect(skip?.summary, 'the journey did not report the days it spent').toMatch(
-            new RegExp(`\\b${BORDER_ROAD}\\b`)
+            new RegExp(`\\b${wholeRoad}\\b`)
         );
     }, 120_000);
 
