@@ -37,6 +37,11 @@
  *
  * Confirmed red before the fix: the third assertion caught
  * "You ask after away" for every seed.
+ *
+ * The later setting-out ruling permits wandering along an actual open road.
+ * Measured on roads-12, "I wander off" walked six days to Tuo's Rampart.
+ * That is an authorised journey rather than a refusal; it still must never
+ * search for a town called "off", and it spends the real travel time.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -95,7 +100,7 @@ describe('leaving without naming anywhere', () => {
         300_000
     );
 
-    it.each(NO_DESTINATION_SAID)(
+    it.each(NO_DESTINATION_SAID.filter(said => said !== 'I wander off'))(
         '"%s" is told where the roads do go',
         async said => {
             const game = await standingSomewhere(`roads-${said.length}`);
@@ -109,6 +114,16 @@ describe('leaving without naming anywhere', () => {
         },
         300_000
     );
+
+    it('wandering takes an actual road and spends its travel time', async () => {
+        const game = await standingSomewhere('roads-12');
+        const before = game.state().run.elapsedDays;
+        const done = await game.act('I wander off');
+        expect(done.toolCalls.some(call => call.action === 'move' && call.ok), done.narration).toBe(true);
+        expect(game.state().run.elapsedDays).toBeGreaterThan(before);
+        expect(done.narration).toMatch(/took to the road/);
+        expect(done.narration).not.toMatch(/ask(?:s|ed)? after off\b/i);
+    }, 300_000);
 
     it('costs no time, because nothing was walked', async () => {
         const game = await standingSomewhere('away-free');
