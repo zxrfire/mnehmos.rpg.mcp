@@ -50,13 +50,23 @@
  *
  *   **A life either names nobody, or names people and says where each of them
  *   is, and every one of those people can be acted on on turn one.**
+ *
+ * The old `hunt-23660` / `kin-10` household fixture now opens at Frostmirror
+ * Court, where the three stored local cultivators stand at 22, 25 and 36;
+ * its native childhood reach is 20. It legitimately finds no parent. The
+ * household controls now arrange one real Foundation adult before opening,
+ * then let the existing birth reader choose and write both halves of the tie.
+ * No family tie, sample or narration is supplied by the fixture.
  */
 
 import type Database from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
-import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
+import { activeWorld, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
+import { WorldStateRepository } from '../../src/storage/repos/world-state.repo';
+import { createNpc, setRealm } from '../../src/engine/world/npc-state';
+import { drawBirth } from '../../src/engine/birth/birth';
 import { whoTheyCarryFor } from '../../src/web/what-a-telling-lands-on';
 import { FOUNDATION_ORDINAL } from '../../src/engine/cultivation/realms';
 
@@ -65,6 +75,25 @@ const WORLDS = ['knows-people-a', 'knows-people-b', 'knows-people-c', 'knows-peo
 
 const THE_PEOPLE_BLOCK = /^People you can already put a name to/;
 const THE_HOUSEHOLD_BLOCK = /^The household, and where each of them is now:/;
+
+/** The old birth seed now meets only people above its childhood reach.
+ * Arrange an actual eligible adult; the opening still chooses and binds kin. */
+async function aBirthWithAnEligibleAdult(worldSeed: string) {
+    const seed = 'hunt-23660';
+    const h = await makeGameInWorld({ worldSeed, seed });
+    const world = (await activeWorld()).state;
+    const birth = drawBirth(seed);
+    const place = world.locations.find(row => row.name === birth.place.name);
+    expect(place, 'the native birthplace must exist in the pinned world').toBeDefined();
+    world.npcs.push(setRealm(createNpc(world.seed, {
+        id: 'household-eligible-adult', locationId: place!.id,
+        bornOnDay: world.currentDay - 60 * 365, onDay: world.currentDay,
+        occupation: 'cultivator'
+    }), FOUNDATION_ORDINAL, world.currentDay));
+    new WorldStateRepository(h.db).saveWorld(world);
+    resetCultivationWorlds();
+    return h;
+}
 
 function theRecap(db: Database.Database): string[] {
     const rows = db
@@ -195,7 +224,7 @@ describe('a life knows people, and where to find them', () => {
         // household` is the test that pins the other side of it. Arranged by
         // seed: a family that cultivates is about three births in a thousand.
         for (const worldSeed of ['kin-10']) {
-            const { db, game } = await makeGameInWorld({ worldSeed, seed: 'hunt-23660' });
+            const { db, game } = await aBirthWithAnEligibleAdult(worldSeed);
             const { cultivator } = await game.newRun('Aspirant');
             const household = linesUnder(theRecap(db), THE_HOUSEHOLD_BLOCK);
             if (household.length === 0) { db.close(); continue; }
@@ -279,7 +308,7 @@ describe('a life knows people, and where to find them', () => {
         // The same cultivating birth, and for the same reason: a mortal
         // household writes no half for anybody to hold.
         for (const worldSeed of ['kin-10']) {
-            const { db, game } = await makeGameInWorld({ worldSeed, seed: 'hunt-23660' });
+            const { db, game } = await aBirthWithAnEligibleAdult(worldSeed);
             const { cultivator } = await game.newRun('Aspirant');
 
             resetCultivationWorlds();
@@ -337,9 +366,7 @@ describe('a life knows people, and where to find them', () => {
      * about three births in a thousand, so waiting for one is not a fixture.
      */
     it('requires a world record of a cultivator kin, and a mention of a mortal one', async () => {
-        const { db, game } = await makeGameInWorld({
-            worldSeed: 'kin-10', seed: 'hunt-23660'
-        });
+        const { db, game } = await aBirthWithAnEligibleAdult('kin-10');
         const { cultivator } = await game.newRun('Aspirant');
 
         resetCultivationWorlds();
