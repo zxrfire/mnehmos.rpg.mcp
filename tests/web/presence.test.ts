@@ -14,6 +14,8 @@
  * These tests are about the join, and about what a player is allowed to see
  * through it: being in the room is permission to SEE somebody, never permission
  * to know who they are.
+ * World-facing controls now pin the world as well as the run: the people and
+ * their placement cannot be pinned by a run seed against a newly minted world.
  */
 
 import { readFileSync } from 'node:fs';
@@ -28,14 +30,14 @@ import { npcsInTheArea } from '../../src/engine/world/where-in-a-place-somebody-
 import { theBusiestAreaOf } from './standing-where-the-people-are';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
-import { makeGame, engineCalls, refusedCall, planned } from './harness';
+import { makeGame, makeGameInWorld, engineCalls, refusedCall, planned } from './harness';
 
 function inWorld(seed: string) {
-    return makeGame({ seed, worldEnabled: true });
+    return makeGameInWorld({ seed, worldSeed: 'presence-world', worldEnabled: true });
 }
 
 /** A place the seeded world actually has people in. */
-async function populatedPlace(game: ReturnType<typeof inWorld>['game']) {
+async function populatedPlace(game: Awaited<ReturnType<typeof inWorld>>['game']) {
     const world = (await game.loadWorld())!;
     const settlements = world.locations
         .map(l => ({ location: l, people: npcsAt(world, l.id) }))
@@ -51,7 +53,7 @@ async function populatedPlace(game: ReturnType<typeof inWorld>['game']) {
 describe('the join between a place name and a world location', () => {
     it('matches the display name the player types', async () => {
         resetCultivationWorlds();
-        const { game } = inWorld('join');
+        const { game } = await inWorld('join');
         await game.newRun('Ke Yan');
         const world = (await game.loadWorld())!;
 
@@ -65,7 +67,7 @@ describe('the join between a place name and a world location', () => {
 
     it('tolerates the article and the keyed form', async () => {
         resetCultivationWorlds();
-        const { game } = inWorld('join2');
+        const { game } = await inWorld('join2');
         await game.newRun('Ke Yan');
         const world = (await game.loadWorld())!;
         const sample = world.locations.find(l => l.kind === 'settlement')!;
@@ -80,7 +82,7 @@ describe('the join between a place name and a world location', () => {
 describe('people are visible where they are standing', () => {
     it('reports who is here rather than an empty square', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('present');
+        const { db, game } = await inWorld('present');
         const { cultivator } = await game.newRun('Ke Yan');
         const { location, area, people } = await populatedPlace(game);
 
@@ -105,7 +107,7 @@ describe('people are visible where they are standing', () => {
 
     it('does not hand over a census', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('census');
+        const { db, game } = await inWorld('census');
         const { cultivator } = await game.newRun('Ke Yan');
         const { location, area, people } = await populatedPlace(game);
         // Three at most stand in front of anybody now; the claim is about what is said of them.
@@ -127,7 +129,7 @@ describe('people are visible where they are standing', () => {
 
     it('names nobody the player has not learned of', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('gate');
+        const { db, game } = await inWorld('gate');
         const { cultivator } = await game.newRun('Ke Yan');
         const { location, area, people } = await populatedPlace(game);
 
@@ -147,7 +149,7 @@ describe('people are visible where they are standing', () => {
 
     it('lets the player approach one of them', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('approach');
+        const { db, game } = await inWorld('approach');
         const { cultivator } = await game.newRun('Ke Yan');
         const { location, area, people } = await populatedPlace(game);
 
@@ -158,7 +160,7 @@ describe('people are visible where they are standing', () => {
         const target = people[0];
         const result = await game.act(`I speak with ${target.name}`);
 
-        expect(planned(result).action).toBe('interact');
+        expect(planned(result).action, JSON.stringify({ target: target.name, plan: planned(result), calls: result.toolCalls })).toBe('interact');
         expect(refusedCall(result)?.name).not.toBe('engine.resolveParty');
         expect(engineCalls(result)[0].summary).toContain(target.name);
 
@@ -169,7 +171,7 @@ describe('people are visible where they are standing', () => {
 
     it('still finds nobody on an empty road', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('road');
+        const { db, game } = await inWorld('road');
         const { cultivator } = await game.newRun('Ke Yan');
         db.prepare("UPDATE cultivators SET location = 'a bend in the road nobody named' WHERE id = ?")
             .run(cultivator.id);
