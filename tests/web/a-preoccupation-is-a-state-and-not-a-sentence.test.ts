@@ -38,15 +38,20 @@
  * of the defect: the split is worth nothing if both ends print the same half.
  * The world is pinned because the square decides who is standing in it, and the
  * test fails loudly rather than vacuously when nobody in it is preoccupied.
+ * The opening town no longer supplies a known preoccupied speaker. Arrange
+ * contact with an actual living borrower from this same world instead; the
+ * carried loan already supplies the fact, without rewriting anybody's life.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld, ScriptedProvider, type Harness } from './harness';
 import { worldLocationFor } from '../../src/web/entities';
-import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { peopleInThisPlace } from '../../src/web/hearsay';
+import { routineLocationOf } from '../../src/engine/world/npc-routines';
+import { whatTheyCarryForSomebodyElse } from '../../src/engine/world/what-somebody-here-is-chewing-on';
 
-/** A pinned world whose opening square has somebody with something on their mind. */
+/** The same pinned world supplies the actual borrower used by both channels. */
 const WORLD = 'chew-a';
 const RUN = 'a-state-not-a-sentence';
 
@@ -59,18 +64,28 @@ function narrationPrompts(provider: ScriptedProvider): string[] {
 }
 
 /**
- * A new run, standing in the area of its town where somebody it can name has something on their
- * mind: a place is read into areas of three at most (`where-in-a-place-somebody-is-standing.ts`).
+ * A new run beside a living person already carrying an actual loan. Introduce
+ * that real person, then read their current area through the native scene reader.
  */
 async function besideSomebodyPreoccupied(harness: Harness) {
     const { cultivator } = await harness.game.newRun('Probe');
     const world = harness.game.atHand!;
-    const place = worldLocationFor(world, cultivator.location)!;
-    for (const area of theAreasOf(world, place).areas) {
-        harness.repos.cultivators.standIn(cultivator.id, area.id);
-        const me = harness.repos.cultivators.getById(cultivator.id)!;
-        if (harness.game.company(me).named.some(person => person.chewing != null)) return me;
-    }
+    const houses = new Set(world.factions.map(house => house.id));
+    const borrower = world.npcs.find(person => person.status === 'alive'
+        && routineLocationOf(world, person) !== null
+        && whatTheyCarryForSomebodyElse(world.objects, person.id, houses) !== null);
+    expect(borrower, 'this world needs an actual living borrower').toBeDefined();
+    const locationId = routineLocationOf(world, borrower!);
+    const place = worldLocationFor(world, locationId)!;
+    expect(place, 'the borrower needs actual ground').toBeTruthy();
+    harness.repos.cultivators.update(cultivator.id, { location: place.name });
+    harness.game.knowledge.learnIfNew({ holderId: cultivator.id, kind: 'cultivator', id: borrower!.id,
+        name: borrower!.name, onDay: 0, sourceKind: 'witnessed', sourceNote: 'An introduction.',
+        stance: 'knows', statement: `${borrower!.name} gave their name.` });
+    const me = harness.repos.cultivators.getById(cultivator.id)!;
+    const area = peopleInThisPlace(harness.repos, me, world, place).whereIs.get(borrower!.id);
+    expect(area, 'the borrower needs an actual area').toBeDefined();
+    harness.repos.cultivators.standIn(cultivator.id, area!);
     return harness.repos.cultivators.getById(cultivator.id)!;
 }
 
