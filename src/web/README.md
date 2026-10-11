@@ -128,6 +128,8 @@ its actual listener. That provider id remains in both physician and house-shelf
 gates; another nearby clinician cannot fulfill a request aimed elsewhere.
 Questions remain information, and the standing-fight guard applies to both routes.
 No second fee, medicine, stock, healing or duration calculation exists.
+Clinical conversation recognition preserves body-condition reads and prices of
+individual medicines on their ordinary status, assessment and market routes.
 
 Clinical care fees pay for care; ordinary provisioning is separately charged
 from the remaining purse. Quotes disclose separately paid provisions; completed

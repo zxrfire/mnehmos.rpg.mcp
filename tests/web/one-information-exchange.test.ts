@@ -5,6 +5,9 @@
  * Ordinary questions to one person must survive as one complete exchange, just
  * as clinical questions do. Actual purchases, treatment and departures remain
  * separate decisions, and this structural reader does not answer the questions.
+ * Oct10 integration reproduced health and medicine-price reads becoming
+ * conversations because their nouns were clinical. A standalone question
+ * carries no greeting/context to combine and retains its ordinary reader.
  */
 import { describe, expect, it } from 'vitest';
 import { parseIntent } from '../../src/web/actions.js';
@@ -49,5 +52,9 @@ describe('one ordinary information exchange', () => {
             expect(theClausesOf(input)).toEqual([question, act]);
         }
         expect(isOneInformationExchange('What are my statistics?')).toBe(false);
+        for (const input of ['How hurt am I?', 'How hurt is he?',
+            'What injuries do I have?', 'How much is a healing pill?']) {
+            expect(isOneInformationExchange(input), input).toBe(false);
+        }
     });
 });
