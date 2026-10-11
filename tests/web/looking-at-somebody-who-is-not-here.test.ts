@@ -32,6 +32,9 @@
  *                             reference axis the look read depends on.
  *   the stage does not MOVE   the same claim, checked against the row rather
  *                             than against the count.
+ * Oct11's route gate stopped the old unlearned journey before the person
+ * became absent. This control now arranges a different actual settlement
+ * and proves the named person is absent before measuring the memory read.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -39,6 +42,8 @@ import { describe, expect, it } from 'vitest';
 import { TIME_CONSUMING_ACTIONS } from '../../src/web/actions';
 import { engineCalls, makeGameInWorld, planned, ScriptedProvider } from './harness';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
+import { worldLocationFor } from '../../src/web/entities';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 /** Every name this cultivator holds for a person, with the id it is filed under. */
 function namesHeld(db: any): Array<{ id: string; name: string }> {
@@ -72,9 +77,20 @@ describe('a name they hold, whose bearer is not standing here', () => {
         const inFront = await game.act(`I look at ${who.name}`);
         expect(engineCalls(inFront).find(c => c.action === 'investigate')?.ok).toBe(true);
 
-        // Over the border, they are not here - and the read that used to be a
-        // place-shaped denial of a record it listed is now about the person.
-        const went = await game.act('I travel to Fourfold Stele');
+        // Arrange absence on actual world ground; an unlearned route is not
+        // proof of having left the person behind.
+        const world = (await game.loadWorld())!;
+        const body = game.currentRun().cultivator;
+        const here = worldLocationFor(world, body.location)!;
+        const elsewhere = world.locations.find(place => place.kind === 'settlement' && place.id !== here.id)!;
+        expect(elsewhere).toBeDefined();
+        game.repos.cultivators.update(body.id, { location: elsewhere.name });
+        game.repos.cultivators.standIn(body.id, theAreasOf(world, elsewhere).areas[0]!.id);
+        // Settle this place's ordinary introduction before measuring a pure
+        // memory read; arrival knowledge is a separate legitimate write.
+        await game.act('I look around');
+        expect(game.present(game.currentRun().cultivator).some(person => person.name === who.name)).toBe(false);
+        const dayBefore = game.state().run.elapsedDays;
         const before = knowledgeRows(db);
         const away = await game.act(`I look at ${who.name}`);
 
@@ -95,8 +111,8 @@ describe('a name they hold, whose bearer is not standing here', () => {
         // Nothing was learned by remembering. This is the guarantee: a
         // `witnessed` row here would promote the stage and falsify the axis.
         expect(knowledgeRows(db), 'a look at somebody absent wrote a record').toBe(before);
-        // And the look cost no time: the road there is whatever it is, and the look adds nothing.
-        expect(away.state.run.elapsedDays).toBe(went.state.run.elapsedDays);
+        // Remembering an absent person adds no elapsed time.
+        expect(away.state.run.elapsedDays).toBe(dayBefore);
     }, 200_000);
 
     /**
