@@ -9,6 +9,9 @@
  *
  * The other half is the constraint: this must not be a second combat system.
  * `theSamePhysicsBothWays` is where that is pinned.
+ * The NPC flight-cost audit also distinguishes an attempted escape from an
+ * attacker stopping when a stronger helper answers. The latter has no chase,
+ * flight damage or movement-art charge; both bodies retain their health.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -554,6 +557,26 @@ describe('calling for help', () => {
             attacker, ctx, w => priceAt(w.realmOrdinal)
         );
         expect(answered.endsIt).toBe(true);
+    });
+
+    it('an attacker who stops at an answered shout has not attempted a flight', () => {
+        const { fight } = open(
+            combatant({ id: 'p', name: 'Player' }),
+            combatant({ id: 'q', name: 'Other' })
+        );
+        const before = { ...fight!.hp };
+        const turn = takeAFightTurn(fight!, { kind: 'call_for_help' }, {
+            ambient: NEUTRAL,
+            turn: 1,
+            couldBeCalled: [who({ standing: 1, realmOrdinal: realmStart(REALM_TIERS[3].key) })],
+            priceThem: w => priceAt(w.realmOrdinal)
+        });
+        expect(turn.shout?.endsIt).toBe(true);
+        expect(turn.fight).toBeNull();
+        expect(turn.finished).not.toBeNull();
+        expect(turn.finished!.hp).toEqual(before);
+        expect(turn.flight).toBeNull();
+        expect(turn.exchanges).toEqual([]);
     });
 
     it('costs the round when nobody ends it', () => {
