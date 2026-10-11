@@ -12,12 +12,17 @@
  * landing and says the way on.
  *
  * Played on `road-world`, where a new run opens at The Furnace Flank, inland.
+ * The later route ruling requires a known road to attempt the inland approach.
+ * A long paid voyage can also stop for a real encounter; arrival requires
+ * continuing that same accepted sailing, without another fare or an assigned port.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
+import { worldLocationFor } from '../../src/web/entities.js';
+import { finishTheAcceptedVoyage } from './finishing-an-accepted-voyage.js';
 
 const WORLD = 'road-world';
 
@@ -51,12 +56,19 @@ describe('the way there is by ship', () => {
     it('from inland, the move walks to the landing and says the way on is by ship', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Rider');
+        const before = game.currentRun();
+        const destination = worldLocationFor(game.atHand!, 'Silver Island')!;
+        expect(destination).toBeDefined();
+        game.knowledge.learn({ holderId: before.cultivator.id, kind: 'place', id: destination.id,
+            name: destination.name, onDay: before.run.elapsedDays, sourceKind: 'read', stage: 'placed',
+            sourceNote: 'Fixture: a map of the road to the island landing and its onward sailing.' });
+        expect(game.canPointAtLocation(before.cultivator, destination)).toBe(true);
 
         const done = await game.act('I go to Silver Island');
 
         const landing = game.state().cultivator.location;
         expect(landing).not.toBe('Silver Island');
-        expect(game.state().run.elapsedDays).toBeGreaterThan(0);
+        expect(game.state().run.elapsedDays).toBeGreaterThan(before.run.elapsedDays);
         expect(done.narration).toMatch(/The way on to Silver Island is by ship from here; .+ sells the seats at the landing\./);
         expect((await game.act('what ships are there')).narration).toMatch(/by ship: \d+ days?/);
         expect(game.state().cultivator.location).toBe(landing);
@@ -106,6 +118,7 @@ describe('the way there is by ship', () => {
         expect(board).not.toContain('The Far Shore by ship');
 
         await game.act('I take the ship to The Far Shore');
+        await finishTheAcceptedVoyage(game, 'The Far Shore');
         expect(game.state().cultivator.location).toBe('The Far Shore');
     }, 120_000);
 
