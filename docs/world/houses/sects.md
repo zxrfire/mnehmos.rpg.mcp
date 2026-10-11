@@ -19,7 +19,7 @@ The catalog that models all of this is
 | [`ancestors.md`](./ancestors.md) | ancestral records, the millennial offering, and how prestige decays |
 | [`standing-powers.md`](./standing-powers.md) | the named powers of the region |
 | [`patronage.md`](./patronage.md) | the pyramid, the feeder relationship, the unbacked, and direct rule |
-| [`offices-and-succession.md`](./offices-and-succession.md) | offices, removal, personal disciples, and who succeeds to what |
+| [`offices-and-succession.md`](./offices-and-succession.md) | offices, the halls and who works them, removal, personal disciples, and who succeeds to what |
 
 ---
 

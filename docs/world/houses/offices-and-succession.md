@@ -236,6 +236,51 @@ ever one or three places.
 **This is also where the world's existing rivalries come from.** The seeded `rival` tie whose
 note reads *"Was the other candidate"* is exactly this: the person who did not get the office.
 
+## A house's halls, and who works them
+
+<!-- tier: 2 trigger="who does the work inside a house, which halls it has, or where its sick are kept" -->
+
+Owner's rulings, 2026-10-10.
+
+**A hall is a group of rooms with one elder responsible for it.** Seven, by the rooms in
+`architecture.ts`:
+
+| Hall | Rooms | Its standing work |
+|---|---|---|
+| Outer Affairs (外务堂) | gatehouse, forecourt, mission hall, audience hall | gate watches; the gate disciple speaks for the house; visitors; the entry log; the notice wall and board; envoys and petitions |
+| Discipline (执法堂) | discipline hall, duelling ground | charges, holding, punishment, night patrols; witnessing duels |
+| Internal Affairs (内务堂) | Life Lamp Hall, quarters, ancestral hall and the chamber under it, refectory, residences, practice yard, lecture hall, meditation cells, vein chamber | the roll and its daily check against the lamps; lamps and tokens; questioning newcomers; beds, meals and the chore rota; incense and tablets; morning forms, talks, the sitting rota |
+| Scripture Pavilion (藏经阁) | scripture pavilion, archive | manuals lent and returned; the house's records, deeds and ledgers |
+| Treasury (库房) | treasury, tribute room | stipends, dues, funding posts and missions; tribute in and out |
+| Alchemy (丹堂) | alchemy hall, cauldron room, infirmary | standing pills and allotments; medicine; the sick |
+| Artifact (器堂) | artifact refining hall, workshop, formation nodes | gear and repair; the buildings; keeping the formations charged |
+
+**Not every house has every hall.** A house has a hall only where it has that hall's rooms, and
+a small house has fewer elders than halls, so one elder answers for several. Discipline, the
+lecture hall and the duelling ground are not among the optional ones: every house with members
+keeps discipline, teaches and has things to settle, whatever its intake. Whether its cells can
+hold a cultivator is a separate matter, decided by its formations.
+
+**The crafts are institutional only where a house backs them.** Anybody in any house who knows a
+craft can work it on their own. An alchemy or artifact hall is the house supporting the craft,
+and only a house focused on it, or large and rich enough, keeps one. Every other house buys its
+pills, medicine and artifacts, and the houses that make them have real buyers.
+
+**Every house has somewhere for its sick,** dedicated or not. Without an infirmary the wounded
+are set down in an ordinary room and tended by whoever in the house heals best, elder or not.
+
+**Halls are worked by people posted there**, counted against the roll like anyone posted, and
+disciples in one hall may do different work. Menial work goes to servants first (the house's
+menial tier, at the bottom of the ladder); the outer disciples' chore rota covers what servants
+do not. **Nobody works for nothing:** rota chores and servants' work pay a little, and posted
+hall work a small, steady amount, both well under board work. The player can be posted or put
+on the rota like any member, and can hire it out.
+
+**A daily duty is settled when something asks, never ticked.** For example, the Life Lamp Hall's
+daily roll check means a staffed house knows of a death by the next day: a name on the roll with
+no lamp in the hall. Whoever is in the hall when a lamp goes to dust sees it at once. An unstaffed
+hall checks nothing.
+
 ## The Protector
 
 <!-- tier: 2 -->

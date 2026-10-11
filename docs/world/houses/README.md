@@ -19,7 +19,7 @@ in fifteen separate files.
 | [`dao-houses.md`](dao-houses.md) | houses that hold a specialisation rather than ground |
 | [`discovery.md`](discovery.md) | how anybody comes to know a thing at all |
 | [`institutions.md`](institutions.md) | what a sect is as a body, and what it is for from the disciple's side |
-| [`offices-and-succession.md`](offices-and-succession.md) | offices, removal, personal disciples, and who succeeds to what |
+| [`offices-and-succession.md`](offices-and-succession.md) | offices, the halls and who works them, removal, personal disciples, and who succeeds to what |
 | [`origin.md`](origin.md) | where a person comes from, and what a birth buys |
 | [`patronage.md`](patronage.md) | the pyramid, the feeder relationship, the unbacked, and direct rule |
 | [`people.md`](people.md) | the individuals: wants, ties, and what they will do |
