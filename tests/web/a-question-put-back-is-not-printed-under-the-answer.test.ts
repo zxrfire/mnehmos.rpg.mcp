@@ -53,10 +53,12 @@ const NOTHING_THE_ENGINE_SAID = 'The ford runs loud enough to swallow half of it
 /** Sentences the engine composes about somebody who was walked up to. */
 const THE_ENGINE_S_OWN = [
     /is here, and reads as/,
-    /They are \d+ years old\./,
     /Last known to be/,
     /could be asked, said the way you would say it/
 ];
+// An introduction no longer reveals an exact birthday. Keep the old leak
+// forbidden in both modes while requiring the actual visible approach facts.
+const AN_UNTOLD_AGE = /They are \d+ years old\./;
 
 async function somebodyToWalkUpTo(provider?: ScriptedProvider) {
     const harness = await makeGameInWorld({ seed: RUN, worldSeed: WORLD, provider });
@@ -79,6 +81,7 @@ describe('a question the engine put back', () => {
         const turn = await game.act(`I talk to ${them}`);
 
         expect(turn.narration).toContain(NOTHING_THE_ENGINE_SAID);
+        expect(turn.narration).not.toMatch(AN_UNTOLD_AGE);
         for (const said of THE_ENGINE_S_OWN) {
             expect(turn.narration, turn.narration).not.toMatch(said);
         }
@@ -89,6 +92,7 @@ describe('a question the engine put back', () => {
 
         const turn = await game.act(`I talk to ${them}`);
 
+        expect(turn.narration).not.toMatch(AN_UNTOLD_AGE);
         for (const said of THE_ENGINE_S_OWN) {
             expect(turn.narration, turn.narration).toMatch(said);
         }
