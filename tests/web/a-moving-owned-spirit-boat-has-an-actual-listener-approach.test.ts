@@ -109,7 +109,9 @@ it('speaks with the actual co-located pilot on the same owned spirit boat', asyn
         expect(h.game.present(h.game.currentRun().cultivator).length).toBeLessThanOrEqual(3);
     } finally { h.db.close(); resetCultivationWorlds(); }
 });
-it('actual hull ruin at a world boundary stops the accepted owned carrier', async () => {
+// Loss at the final instant retains the time already lived. The unavailable
+// hull ends the accepted passage, rather than erasing the completed hours.
+it('actual hull ruin at the final boundary ends the accepted owned passage', async () => {
     const h = await departing(true);
     try {
         const listener = listenerInTheActualCarrierScene(h.game, h.pilot!.id, 'deck');
@@ -125,7 +127,8 @@ it('actual hull ruin at a world boundary stops the accepted owned carrier', asyn
             return result;
         };
         const stopped = await passHours(h.game, listener.before.run, listener.before.cultivator, 3);
-        expect(stopped.finished).toBe(false);
+        expect(stopped.finished).toBe(true);
+        expect(h.game.currentRun().run.elapsedDays - listener.before.run.elapsedDays).toBeCloseTo(3 / 24);
         expect(ownedCarrierAt(h.game.atHand!, claim.receiptId, h.game.currentRun().cultivator,
             routineTime(h.game.atHand!))!.unavailable).not.toBeNull();
         // A ruined object does not kill or silence a genuinely surviving nearby pilot.
@@ -134,5 +137,6 @@ it('actual hull ruin at a world boundary stops the accepted owned carrier', asyn
         expect(h.game.currentRun().cultivator.location).not.toBe(h.to.name);
         expect(h.game.currentRun().run.elapsedDays).toBeGreaterThan(listener.before.run.elapsedDays);
         expect(h.game.currentRun().run.turn).toBe(listener.before.run.turn + 1);
+        expect(ownedPassageClaim(h.db, h.playerId)).toBeNull();
     } finally { h.db.close(); resetCultivationWorlds(); }
 });
