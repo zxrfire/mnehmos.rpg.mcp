@@ -25,10 +25,12 @@
  * standing where is a property of the WORLD seed: run seed alone on a fresh
  * database meets a different several hundred people, and an assertion about
  * which of them the player can name would be pinning a coincidence.
+ * The crowd fixture now reads actual areas and routine placement. A stored
+ * location and a house's roll do not put anybody in front of the player.
  */
 
 import { describe, it, expect } from 'vitest';
-import { npcsAt } from '../../src/engine/world/world-state';
+import { theAreasOf, npcsInTheArea } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { mentionableFor } from '../../src/web/lore';
 import { offerHearing, othersPresent } from '../../src/web/hearsay';
@@ -36,10 +38,11 @@ import { makeGameInWorld, refusedCall } from './harness';
 
 const WORLD_SEED = 'a-name-you-were-told-world';
 
-/** Every place in this world with at least two people standing in it. */
+/** Every actual area in this world with at least two people standing in it. */
 function crowds(world: any) {
     return world.locations
-        .map((location: any) => ({ location, people: npcsAt(world, location.id) }))
+        .flatMap((location: any) => theAreasOf(world, location).areas
+            .map(area => ({ location, area, people: npcsInTheArea(world, area.id) })))
         .filter((spot: any) => spot.people.length >= 2)
         .sort((a: any, b: any) => b.people.length - a.people.length);
 }
@@ -60,11 +63,19 @@ describe('the overheard channel does not name the people in the square', () => {
         // A house's own ground, because that is where the hazard lives: a
         // speaker's working vocabulary is their own roster, and their own
         // roster is standing around them.
-        const spot = crowds(world).find((s: any) => s.location.kind === 'sect_seat')
-            ?? crowds(world)[0];
+        const spot = crowds(world).find((candidate: any) => {
+            repos.cultivators.update(cultivator.id, { location: candidate.location.name });
+            repos.cultivators.standIn(cultivator.id, candidate.area.id);
+            const present = othersPresent(repos, repos.cultivators.getById(cultivator.id)!, world);
+            const names = new Set(present.map(row => row.name.trim().toLowerCase()));
+            return present.some(speaker => mentionableFor({ ordinal: speaker.realmOrdinal, factionId: speaker.sectId })
+                .some(entry => entry.kind === 'cultivator' && names.has(entry.name.trim().toLowerCase())));
+        });
+        expect(spot, 'an actual crowd must contain the named-person leak being tested').toBeDefined();
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(spot.location.name, cultivator.id);
+        repos.cultivators.standIn(cultivator.id, spot.area.id);
         const standing = repos.cultivators.getById(cultivator.id)!;
         const present = othersPresent(repos, standing, world);
         const presentNames = new Set(present.map(row => row.name.trim().toLowerCase()));
@@ -124,6 +135,7 @@ describe('the overheard channel does not name the people in the square', () => {
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(spot.location.name, cultivator.id);
+        repos.cultivators.standIn(cultivator.id, spot.area.id);
         const standing = repos.cultivators.getById(cultivator.id)!;
         const gate = new KnowledgeGate(db);
 
@@ -153,6 +165,7 @@ describe('a refusal never hands over the name it refused to find', () => {
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(spot.location.name, cultivator.id);
+        repos.cultivators.standIn(cultivator.id, spot.area.id);
         const standing = repos.cultivators.getById(cultivator.id)!;
         const present = othersPresent(repos, standing, world);
 
