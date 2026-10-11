@@ -7,6 +7,11 @@
  * drawn from, at every rung and in every house. The whole gathering system
  * could not include the person playing.
  *
+ * Oct11 found the positive service control cloned the player's intentionally
+ * absent location. An ordinary disciple must stand on actual house ground to
+ * take work there; the player's projection stays nowhere. Played arrangements
+ * also pin their world, as well as the run.
+ *
  * Four claims, and the last two are the ones most likely to be silently wrong:
  *
  *   1. The player has a row, and it carries THE SAME ID as the cultivator, so
@@ -22,7 +27,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { makeGame } from './harness';
+import { makeGameInWorld } from './harness';
 import { createWorld, makeFaction, type WorldState } from '../../src/engine/world/world-state.js';
 import { createNpc, setRealm, PLAYER_ROW_TAG, type NpcRecord } from '../../src/engine/world/npc-state.js';
 import { makeLocation } from '../../src/engine/world/locations.js';
@@ -37,7 +42,7 @@ import { creditMerit, meritWith } from '../../src/engine/world/what-a-house-coun
 
 describe('the player is on the roster', () => {
     it('materialises one row, under the cultivator\'s own id', async () => {
-        const { game } = makeGame({ worldEnabled: true, seed: 'invited-1' });
+        const { game } = await makeGameInWorld({ worldEnabled: true, seed: 'invited-1', worldSeed: 'invited-roster-world' });
         const created = await game.newRun('Wei Zhaoxun');
         const world = await game.loadWorld();
         expect(world, 'the world is off').not.toBeNull();
@@ -61,7 +66,7 @@ describe('the player is on the roster', () => {
     }, 120_000);
 
     it('refreshes rather than accumulating, across turns', async () => {
-        const { game } = makeGame({ worldEnabled: true, seed: 'invited-2' });
+        const { game } = await makeGameInWorld({ worldEnabled: true, seed: 'invited-2', worldSeed: 'invited-roster-world' });
         const created = await game.newRun('Wei Zhaoxun');
         await game.act('I look around');
         await game.act('I work for two years');
@@ -281,7 +286,7 @@ describe('the row is not a free agent', () => {
         state.npcs.push({ ...playerRow(state, 10), merit });
         const control: NpcRecord = {
             ...playerRow(state, 10), id: 'npc-served', name: 'An Ordinary Disciple',
-            tags: [], merit: [...merit]
+            locationId: 'seat-house-b', tags: [], merit: [...merit]
         };
         state.npcs.push(control);
 
@@ -315,7 +320,7 @@ describe('the row is not a free agent', () => {
         // The projection, the other half of the guard above: what a promotion
         // comparison, a ruin's shelf and the walk-out pressure read off `merit`
         // for the player is their membership's `contribution` and nothing else.
-        const { game, repos } = makeGame({ worldEnabled: true, seed: 'invited-merit' });
+        const { game, repos } = await makeGameInWorld({ worldEnabled: true, seed: 'invited-merit', worldSeed: 'invited-roster-world' });
         const created = await game.newRun('Wei Zhaoxun');
         repos.sects.addMember('sect-azure-cloud-pavilion', created.cultivator.id, 1);
         repos.sects.addContribution('sect-azure-cloud-pavilion', created.cultivator.id, 120);
