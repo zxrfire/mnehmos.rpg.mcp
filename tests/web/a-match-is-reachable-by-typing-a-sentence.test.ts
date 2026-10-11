@@ -17,6 +17,9 @@
  * subsystems in AGENTS.md's table came to be finished and dead.
  *
  * These tests type the sentence.
+ * A proposal now takes the ordinary eighth-day conversation. Its quote binds
+ * no match and spends no long span. The quote control starts beside its actual
+ * listener, so a walk from another area is not mistaken for negotiation time.
  * A run opens at 08:00 now; refused acts retain the opening clock rather than
  * resetting it to zero. Their unchanged no-time assertions use that baseline.
  *
@@ -29,6 +32,7 @@ import { makeGame, makeGameInWorld } from './harness';
 import { parseIntent } from '../../src/web/actions';
 import { npcsAt } from '../../src/engine/world/world-state';
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
+import { peopleInThisPlace } from '../../src/web/hearsay';
 
 describe('a match is reachable by typing a sentence', () => {
     it('reads the ways somebody would actually say it', () => {
@@ -107,12 +111,12 @@ describe('a match is reachable by typing a sentence', () => {
 });
 
 describe('through the front door', () => {
-    it('answers what a match would take without spending a day', async () => {
+    it('answers what a match would take in one ordinary conversation', async () => {
         resetCultivationWorlds();
-        const { game } = await makeGameInWorld({
+        const { game, repos } = await makeGameInWorld({
             seed: 'a-match', worldSeed: 'world-a-match'
         });
-        await game.newRun('Ke Yan');
+        const { cultivator } = await game.newRun('Ke Yan');
 
         const world = (await game.loadWorld())!;
         // Somebody the game itself would print as standing near, taken from
@@ -122,16 +126,17 @@ describe('through the front door', () => {
             .map(l => ({ location: l, people: npcsAt(world, l.id) }))
             .sort((a, b) => b.people.length - a.people.length)[0];
         expect(square.people.length).toBeGreaterThan(0);
-        await game.act(`I travel to ${square.location.name}`);
-
-        const somebody = npcsAt((await game.loadWorld())!, square.location.id)[0];
+        repos.cultivators.update(cultivator.id, { location: square.location.name });
+        const local = peopleInThisPlace(repos, game.state().cultivator, world, square.location);
+        const somebody = local.people.find(person => local.whereIs.has(person.id));
         expect(somebody, 'nobody at hand to propose to').toBeTruthy();
+        repos.cultivators.standIn(cultivator.id, local.whereIs.get(somebody!.id)!);
+        expect(game.present(game.state().cultivator).some(person => person.id === somebody!.id)).toBe(true);
 
         const dayBefore = (await game.state()).run.elapsedDays;
-        const result = await game.act(`I propose a match to ${somebody.name}`);
+        const result = await game.act(`I propose a match to ${somebody!.name}`);
 
-        // Asking the price is a question. It costs a sentence and no day.
-        expect(result.state.run.elapsedDays).toBe(dayBefore);
+        expect(result.state.run.elapsedDays - dayBefore).toBeCloseTo(0.125);
         const said = JSON.stringify(result).toLowerCase();
         // It says what a house would take, rather than answering yes.
         expect(said).toMatch(/would take|price|put down|rung|match/);

@@ -39,7 +39,8 @@
  * an open account and not on how hard anybody pushed, and nothing is taken off
  * the asker. The cost is real and it is paid on the other side of the table -
  * a wound that does not close, and being known for having taken itself apart
- * because it was asked - which is the giver's, not the asker's clock.
+ * because it was asked. The later lesser-action ruling charges the asker's
+ * ordinary eighth-day conversation, without turning it into a day of pressure.
  *
  * RED-CHECKED by removing the door from `GameService.request`: the ask falls
  * back to a negotiation, the two roads disagree, and the grant arm hands over
@@ -214,12 +215,12 @@ describe('asking for a piece of somebody is one question however it is asked', (
     }, 180_000);
 
     /**
-     * AND IT COSTS THE ASKER NO TIME. The encounter is a question put and an
+     * AND IT TAKES ONLY A CONVERSATION. The encounter is a question put and an
      * answer given; the price is a wound and a shame, and both are the
-     * giver's. Putting the ask on the road that presses somebody and spends a
-     * day would charge the asker for the other party's decision.
+     * giver's. It has the ordinary lesser-action clock, without a day-long
+     * pressure attempt or a wound charged to the asker.
      */
-    it('spends no day of the asker\'s life', async () => {
+    it('takes the ordinary conversation time without a day of pressure', async () => {
         const { game, db, cultivatorId, beast } =
             await standingInFrontOfSomethingThatSpeaks('ask-road-costs-nothing');
         const piece = thePieceTheyAskedFor(beast, null)!;
@@ -232,6 +233,6 @@ describe('asking for a piece of somebody is one question however it is asked', (
             .prepare('SELECT elapsed_days AS d FROM runs WHERE cultivator_id = ?')
             .get(cultivatorId) as { d: number };
 
-        expect(after.d, 'asking pressed somebody and charged a day for it').toBe(before.d);
+        expect(after.d - before.d, 'the ask takes one ordinary conversation').toBeCloseTo(0.125);
     }, 180_000);
 });
