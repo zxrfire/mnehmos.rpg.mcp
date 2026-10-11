@@ -86,12 +86,22 @@
  * licensed - and while it stands, the refusal's own advice to "say it on its
  * own and it will run" is untrue for exactly that clause, since saying it alone
  * reaches nothing either.
+ *
+ * Later rulings removed the costly-act cap and made setting out in a direction
+ * an actual road walk. The corpus above records the earlier measurement, not
+ * those current limits. Oct11 also found the arrival control naming Moraine
+ * Gate without a learned route. It now uses a visible short road in its private
+ * fixture, so a successful move can actually measure where the following look
+ * runs; the separate unknown-destination control still proves interruption.
  */
 
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
 import { ProviderNarrator } from '../../src/web/narrator.js';
 import type { LLMProvider } from '../../src/agent/provider/types.js';
+import { makeLocation } from '../../src/engine/world/locations';
+import { metricGroundRead } from '../../src/engine/world/the-metric-ground-under-a-journey';
+import { worldLocationFor } from '../../src/web/entities';
 
 function planning(plans: string[]): LLMProvider {
     return new ScriptedProvider({ plans, narrations: ['The moment passes.'] });
@@ -176,20 +186,34 @@ describe('going somewhere and then doing something there', () => {
      * have looked identical either way, and only one of the two was true.
      */
     it('does the second thing where the first one left you', async () => {
-        const { game } = await playing([
-            STEPS(
-                { action: 'move', intent: 'travel', target: 'Moraine Gate', said: 'I go to Moraine Gate' },
-                { action: 'look', said: 'look around' }
-            )
-        ]);
+        const plans: string[] = [];
+        const { game } = await playing(plans);
         await game.newRun('Probe');
         const before = game.state().cultivator.location;
+        const world = game.atHand!;
+        const from = worldLocationFor(world, before)!;
+        const point = metricGroundRead(world.locations).point(from.id)!;
+        const destination = makeLocation({ id: 'plan-follow-up-ford', name: 'Reed Lantern Ford',
+            kind: 'settlement', parentId: from.parentId,
+            data: { metricXLi: point.xLi + 2, metricYLi: point.yLi } });
+        expect(world.locations.some(place => place.name === destination.name)).toBe(false);
+        world.locations.push(destination);
+        from.links.push({ toLocationId: destination.id, kind: 'road', travelDays: 0.1,
+            open: true, requiresKeyId: null, note: '' });
+        destination.links.push({ toLocationId: from.id, kind: 'road', travelDays: 0.1,
+            open: true, requiresKeyId: null, note: '' });
+        game.theWorldMoved();
+        plans.push(STEPS(
+            { action: 'move', intent: 'travel', target: destination.name, said: `I go to ${destination.name}` },
+            { action: 'look', said: 'look around' }
+        ));
 
-        const turn = await game.act('I go to Moraine Gate and then look around');
+        const turn = await game.act(`I go to ${destination.name} and then look around`);
 
         expect(ranInOrder(turn)).toEqual(['move', 'look']);
         const after = game.state().cultivator.location;
         expect(after).not.toBe(before);
+        expect(after, turn.narration).toBe(destination.name);
         // The read is of where they now are. Read out of the state rather than
         // hard-coded, because the name is the world's to choose.
         const looked = turn.toolCalls.find(
