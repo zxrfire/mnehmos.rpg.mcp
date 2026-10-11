@@ -119,8 +119,13 @@ describe('a span written in words is the span that was asked for', () => {
      * AND THE ARTICLE, which is one and must stay one - the compound reading
      * must not turn "a day" into anything else.
      */
-    it.each(['I wait a day', 'I wait half a day', 'I wait one day'])('%j is one day', said => {
+    it.each(['I wait a day', 'I wait one day'])('%j is one day', said => {
         expect(parseIntent(said).days).toBe(1);
+    });
+
+    // Fractional time is playable: the article must not erase the requested half.
+    it('"I wait half a day" retains the requested fraction', () => {
+        expect(parseIntent('I wait half a day').days).toBe(0.5);
     });
 
     it('a year is a year', () => {
