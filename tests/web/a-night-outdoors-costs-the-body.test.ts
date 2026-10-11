@@ -12,8 +12,10 @@
  * quarter of the body (`EXPOSURE_FLOOR_FRACTION`), so a year outdoors is sore and
  * not fatal.
  * Runs now open at 08:00. The recovered 2026-10-03 counter audit requires
- * a real quarter-day approach from the square and an eighth-day purchase,
- * without spending the prepaid nights. Measure spans from that clock. A named dawn or morning
+ * a real approach where needed and an eighth-day purchase, without spending
+ * the prepaid nights. The roof controls walk to the inn before starting their
+ * measured span, so a body already at the counter pays no second approach.
+ * A named dawn or morning
  * ends at its hour the following day, rather than silently adding 24 hours.
  */
 
@@ -42,6 +44,7 @@ describe('a night outdoors costs the body', () => {
     it('costs nothing for the same nights under a room at the inn', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Lu Qingmo');
+        await game.act('I walk to the inn');
         const before = game.state().cultivator;
         const openedAt = game.state().run.elapsedDays;
 
@@ -52,18 +55,19 @@ describe('a night outdoors costs the body', () => {
         expect(after.spiritStones).toBeLessThan(before.spiritStones);
         expect(done.narration).toMatch(/room at the inn/i);
         expect(done.narration).not.toMatch(/in the open (?:has|have) worn the body/);
-        expect(game.state().run.elapsedDays - openedAt).toBeCloseTo(30 + LESSER_ACTION_DAYS.move + LESSER_ACTION_DAYS.buy);
+        expect(game.state().run.elapsedDays - openedAt).toBeCloseTo(30 + LESSER_ACTION_DAYS.buy);
     }, 120_000);
 
     it('takes a room without spending the nights, and the nights waited after are roofed', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Lu Qingmo');
+        await game.act('I walk to the inn');
         const before = game.state().cultivator;
         const openedAt = game.state().run.elapsedDays;
 
         const took = await game.act('I take a room at the inn for ten nights');
         expect(took.narration).toMatch(/10 nights/);
-        expect(game.state().run.elapsedDays - openedAt).toBeCloseTo(LESSER_ACTION_DAYS.move + LESSER_ACTION_DAYS.buy);
+        expect(game.state().run.elapsedDays - openedAt).toBeCloseTo(LESSER_ACTION_DAYS.buy);
 
         await game.act('I wait ten days');
         expect(game.state().cultivator.hp).toBe(before.hp);
