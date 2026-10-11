@@ -510,7 +510,11 @@ export function whatCutTheSpanShort(span: {
             askedDays: asked,
             livedDays,
             cause: 'the_body',
-            what: span.skip.interruptReason?.replace(/[_:]/g, ' ')
+            // A code ("provisions_exhausted", "death:old_age") is spelled out; a world summary is
+            // already a sentence, and its colons are its own.
+            what: (span.skip.interruptReason && /^[a-z_]+(?::[a-z_]+)?$/.test(span.skip.interruptReason)
+                ? span.skip.interruptReason.replace(/[_:]/g, ' ')
+                : span.skip.interruptReason?.trim())
                 ?? 'the stretch could not be carried to the end'
         };
     }
@@ -557,7 +561,7 @@ export function whatCutTheSpanShort(span: {
  * The span was cut short, stated for the player. One sentence, no inference.
  */
 export function sayingWhatEndedTheSpan(cut: SpanCutShort, humanise: (days: number) => string): string {
-    return `After ${humanise(cut.livedDays)} of ${humanise(cut.askedDays)}, ${cut.what}.`;
+    return `After ${humanise(cut.livedDays)} of ${humanise(cut.askedDays)}, ${cut.what}${/[.!?]$/.test(cut.what) ? '' : '.'}`;
 }
 
 /**

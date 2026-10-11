@@ -1380,7 +1380,8 @@ export const travelVerbs = {
             const facts = roadSpanFacts();
             const knownEnd=!destination||this.canPointAtLocation(walker,destination);
             const ahead=knownEnd?arrivedAt:'the road ahead';
-            const line = `The road toward ${ahead} stopped short. `
+            // A destination they cannot name is not named, and "the road toward the road ahead" was the gap.
+            const line = (knownEnd ? `The road toward ${arrivedAt} stopped short. ` : 'The road stopped short. ')
                 + (cut ? sayingWhatEndedTheSpan(cut, humanDays) : `${humanDays(skip.simulatedDays)} were spent on it.`)
                 + ` You are not there. The rest of the road is still ahead of you, ${humanDays(remaining)} of it`
                 + ` - say it again and you walk only that.`;
@@ -1411,7 +1412,7 @@ export const travelVerbs = {
                 calls: [{
                     name: 'engine.encounterWindow',
                     action: 'move',
-                    summary: `The road toward ${ahead} was stopped on day ${walked} of `
+                    summary: `The road${knownEnd ? ` toward ${ahead}` : ''} was stopped on day ${walked} of `
                         + `${onTheRoad}. At ${visiblePlace}; ${remaining} day(s) of road remain.`,
                     ok: true
                 }],
