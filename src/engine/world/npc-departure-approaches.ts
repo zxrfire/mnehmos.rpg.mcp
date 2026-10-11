@@ -66,8 +66,7 @@ export function continueNpcDepartureApproach(world:WorldState,npc:NpcRecord,day:
             ...npc.activity!, standingIn: intent.areaId, departureApproach: undefined, capitalMissionId: undefined
         } };
         const vessel = intent.vehicleId ? world.objects.find(object => object.id === intent.vehicleId) : undefined;
-        world.npcs[at] = intent.service === 'gather' ? ready
-            : intent.service === 'ground' || intent.service === 'air' || vessel
+        world.npcs[at] = intent.service === 'ground' || intent.service === 'air' || vessel
                 ? startNpcJourney(world, ready, intent.destinationId, due, intent.purpose, vessel, routes)
                 : bookNpcPassageForRoute(world, ready, intent.destinationId, due, intent.purpose, routes) ?? ready;
         return true;
