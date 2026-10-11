@@ -40,6 +40,11 @@
  *     vouch for it, and says so on the inspector channel.
  *   - **A question about YOURSELF is still about yourself.** `what is my name`
  *     is the status screen and stays there.
+ *
+ * Each reply now takes one eighth of a day. The former three-question played
+ * sequence lost its listener to their routine before the age question. Each
+ * routing control therefore starts beside an actual listener independently;
+ * answering a personal fact does not hold somebody there for further replies.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -162,7 +167,12 @@ describe('what they say, and what the engine is willing to vouch for', () => {
 });
 
 describe('played', () => {
-    it('answers a plain question about somebody standing there', async () => {
+    for (const [question, answer] of [
+        ['are you a girl?', /says they are (a woman|a man)/],
+        ['how old are you?', /puts their own age at \d+/],
+        ['what is your name?', /gives (their name as|the same name)/]
+    ] as const) {
+    it(`answers "${question}" about somebody standing there`, async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'self-play', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Lin Baoqing');
         await game.act('I look around');
@@ -170,15 +180,10 @@ describe('played', () => {
         expect(game.present(game.currentRun().cultivator).length,
             'the question needs somebody in the current area').toBeGreaterThan(0);
 
-        const sex = await game.act('are you a girl?');
-        expect(sex.narration).toMatch(/says they are (a woman|a man)/);
-
-        const age = await game.act('how old are you?');
-        expect(age.narration).toMatch(/puts their own age at \d+/);
-
-        const name = await game.act('what is your name?');
-        expect(String(name.narration)).toMatch(/gives (their name as|the same name)/);
+        const reply = await game.act(question);
+        expect(String(reply.narration)).toMatch(answer);
     }, 120_000);
+    }
 
     /**
      * The refusal that was reported must be gone, and it must be gone because

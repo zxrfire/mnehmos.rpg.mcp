@@ -10,6 +10,8 @@
  * What is pinned here is the SHOWING, not the model's reading of it. What a
  * model does with the square is the model's business and the engine still rules
  * on it; what must not happen again is the square being withheld.
+ * A stranger's exact age is not visible. The later perception ruling removes
+ * that old description assertion while preserving observable descriptions.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -76,7 +78,7 @@ describe('who is standing here', () => {
         }, 6).join(String.fromCharCode(10));
 
         expect(lines).toContain('male');
-        expect(lines).toContain('about 61');
+        expect(lines).not.toContain('61');
         expect(lines).toContain('Sword Elder');
         expect(lines).toContain('DESCRIPTION');
     });
