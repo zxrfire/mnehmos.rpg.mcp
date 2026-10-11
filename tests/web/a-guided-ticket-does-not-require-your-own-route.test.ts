@@ -23,7 +23,9 @@
  * land teacher files its actual display-name key. KnowledgeGate.provenanceOf
  * queries only that supplied claim key; canPointAtLocation resolves both aliases.
  * Read the emitted name-key provenance here and keep native route validation.
- * This successor is uncompiled/unrun; no actual-model acceptance claimed.
+ * Oct11 actual refusal diagnostics show a quarter-day walk from the street to
+ * the station before the counter refuses. This fixture now starts at that real
+ * station area, so the unchanged-body guard measures the counter alone.
  */
 import { expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider, refusedCall } from './harness.js';
@@ -34,6 +36,7 @@ import { prepareWorldClockForPreciseSpan } from '../../src/server/state/cultivat
 import { quotePublicCarriage, commitPublicCarriage } from '../../src/engine/world/public-carriages.js';
 import { routineTime } from '../../src/engine/world/npc-routines.js';
 import { whatStandingHereShows } from '../../src/engine/world/what-somebody-knows-of-the-land.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 async function fixture() {
     const plans: string[] = [];
@@ -58,7 +61,12 @@ async function station() {
             const quote = quotePublicCarriage(h.world, { fromId: from.id, toId: to.id, day: routineTime(h.world),
                 conveyanceId: 'conv-carriage-mortal', passengerIds: [id], fareStones: stonesFor(line.cashPerSeat), hired: false,
                 playedPassenger: { id, locationId: from.id, alive: body.alive } });
-            if (quote) return { ...h, line, to, quote };
+            if (quote) {
+                const counter = theAreasOf(h.world, from).areas.find(area => area.for === 'carriage_station');
+                if (!counter) throw new Error('The actual advertised carriage station has no counter area.');
+                h.repos.cultivators.standIn(id, counter.id);
+                return { ...h, line, to, quote };
+            }
         }
     }
     h.db.close(); throw new Error('No actual available station supplies an unfamiliar native carriage route.');
@@ -108,7 +116,11 @@ it('a real unavailable guided service refuses without fare, new booking or purch
         expect(done.toolCalls.find(row => row.name === 'narrator.plan')?.source).toBe('model');
         expect(done.toolCalls.find(row => row.name === 'narrator.plan')?.action).toBe('ride');
         expect(refusedCall(done)?.name).toBe('engine.publicCarriage');
-        expect(h.game.currentRun().cultivator).toEqual(before.cultivator);
+        const afterBody = h.game.currentRun().cultivator;
+        const changed = Object.entries(before.cultivator).filter(([key, value]) =>
+            JSON.stringify(value) !== JSON.stringify(afterBody[key as keyof typeof afterBody]))
+            .map(([key, value]) => ({ key, before: value, after: afterBody[key as keyof typeof afterBody] }));
+        expect(afterBody, JSON.stringify({ changed, calls: done.toolCalls })).toEqual(before.cultivator);
         expect(h.game.currentRun().run.elapsedDays).toBe(before.run.elapsedDays);
         expect(h.game.atHand!.history.facts.length).toBe(facts);
         const afterKnowledge = h.game.knowledge.provenanceOf(before.cultivator.id, 'place', h.to.name);
