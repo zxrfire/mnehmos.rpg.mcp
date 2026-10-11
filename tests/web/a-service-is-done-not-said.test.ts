@@ -201,7 +201,7 @@ describe('a service, played', () => {
     const day = (db: ReturnType<typeof makeDb>) =>
         (db.prepare('SELECT elapsed_days FROM runs').get() as { elapsed_days: number }).elapsed_days;
 
-    it('opens a term, spends nothing, then serves it out', async () => {
+    it('opens a term through a quick exchange, then serves its actual days', async () => {
         const { game, db } = await makeGameInWorld({ worldSeed: 'the-service-road' });
         const { cultivator } = await game.newRun('Road Finder');
         // Whoever is standing here. Not named: which people a world puts at the
@@ -212,9 +212,9 @@ describe('a service, played', () => {
 
         const given = await game.act('i do him a service');
         expect(given.narration).toMatch(/discharged by the days being served/i);
-        // A WORD COSTS NOTHING TO GIVE. The days are the whole of what a
-        // service is, so spending them at the promise would make it a favour.
-        expect(day(db)).toBe(before);
+        // The old control made a promise free. The later quick-exchange
+        // ruling charges an eighth-day reply, without serving any term days.
+        expect(day(db) - before).toBeCloseTo(1 / 8);
 
         const open = rows(db, cultivator.id);
         expect(open).toHaveLength(1);
@@ -223,9 +223,17 @@ describe('a service, played', () => {
         expect(open[0].status).toBe('open');
         expect(open[0].terms).toMatch(/\d+ days\./);
 
-        const served = await game.act('i do him a service');
+        const term = ledgerAbout(db as unknown as ObligationDb, cultivator.id)
+            .find(row => row.cause === 'service_term')!;
+        const counterpartyId = term.holderId === cultivator.id ? term.subjectId : term.holderId;
+        const counterparty = game.repos.cultivators.getById(counterpartyId)
+            ?? game.atHand!.npcs.find(row => row.id === counterpartyId);
+        expect(counterparty).toBeDefined();
+        expect(given.narration).toContain(counterparty!.name);
+        const afterPromise = day(db);
+        const served = await game.act(`i do a service for ${counterparty!.name}`);
         expect(served.narration).toMatch(/the term is served/i);
-        expect(day(db)).toBeGreaterThan(before);
+        expect(day(db)).toBeGreaterThan(afterPromise);
 
         // ONE ROW, SETTLED. A settlement written against a different day would
         // derive a different id and leave the open one standing for ever, which
