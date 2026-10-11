@@ -235,6 +235,10 @@ describe('emptying ground a house claims is a thing the world contains', () => {
  * nothing about the opponent, the rolls or the wounds is touched.
  * Completed scenarios are cached against the played sources; assertions and
  * hearsay readers still run on independent copies.
+ * The probe now meets a house peer on their actual public routine and finishes
+ * the whole held bout. Repeated spar requests could previously exhaust the
+ * search without completing a fight. The hearsay teller excludes participants
+ * and witnesses, so their repetition really is second-hand.
  */
 describe('a bout that went past what was agreed', () => {
     it('is in the world, on both their records, in front of witnesses', async () => {
