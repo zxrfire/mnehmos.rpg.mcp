@@ -90,6 +90,9 @@
  * would trip the sweep on it.
  *
  * Went red on all nine cases before the fix - every world, every arm.
+ * Since places have actual areas, the opening names the place and a later look
+ * names the area within it. Compare the account of the ground after that heading;
+ * both versions must still address the player and describe the same ground.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -167,10 +170,13 @@ describe('what the engine calls the player when it is the engine talking', () =>
             const { narration } = await h.game.act('I look around');
             const [ground] = narration.split('\n\n');
 
+            expect(ground).toMatch(/\byou\b/i);
             expect(offence(ground, 'the ground read'), ground).toBeNull();
             // And the first screen says the same thing about the same square,
             // rather than a third-person rendering of it.
-            expect(opening, opening).toContain(ground);
+            const address = ground.slice(ground.indexOf('. ') + 2);
+            expect(address.length).toBeGreaterThan(0);
+            expect(opening, opening).toContain(address);
         }, 240_000);
 
         it(`${world}: the life behind the first turn is told to the one who lived it`, async () => {
