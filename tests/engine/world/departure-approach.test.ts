@@ -1,5 +1,7 @@
 /** Indoor departure is a real quarter-day walk. A lock changed during that walk
- * still holds; a due date alone cannot move a body or admit a passenger. */
+ * still holds; a due date alone cannot move a body or admit a passenger.
+ * The finisher ignored currentHour when checking a fractional arrival. The
+ * native control requires completion at the actual hour, not the next day. */
 import { expect, it } from 'vitest';
 import { createWorld } from '../../../src/engine/world/world-state.js';
 import { makeObject } from '../../../src/engine/world/possessions.js';
@@ -36,6 +38,22 @@ it('walks an actual room to its enclosing berth before boarding', () => {
     expect(arrived.actor.locationId).toBe(h.ground.id);
     expect(arrived.actor.activity?.standingIn).toBe(h.request.target.areaId);
     expect(h.world.history.facts).toHaveLength(0);
+});
+it('finishes at the actual hour and refuses a future completion before that hour', () => {
+    const h = scene(), day = h.world.currentDay;
+    h.world.currentHour = 8;
+    const approach = beginActualDepartureApproach(h.world, h.npc.id, h.request, day + 8 / 24);
+    if (approach.kind !== 'approaching') throw Error('Departure walk was not admitted');
+    h.world.npcs[0] = approach.actor;
+    const arrival = approach.actor.activity!.untilDay!;
+    h.world.currentHour = 13;
+    expect(finishActualDepartureApproach(h.world, h.npc.id, h.request, arrival).kind).toBe('waiting');
+    h.world.currentHour = 14;
+    const arrived = finishActualDepartureApproach(h.world, h.npc.id, h.request, arrival);
+    expect(arrived.kind).toBe('ready');
+    if (arrived.kind !== 'ready') throw Error('The actual six-hour walk did not arrive');
+    expect(arrived.actor.locationId).toBe(h.ground.id);
+    expect(arrived.actor.activity?.standingIn).toBe(h.request.target.areaId);
 });
 it('rechecks a door closed during the actual walk and never boards', () => {
     const h = scene(), day = h.world.currentDay;

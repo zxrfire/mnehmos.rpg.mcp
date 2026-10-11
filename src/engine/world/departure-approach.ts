@@ -9,6 +9,7 @@ import { locationOnNpcJourney, journeyTimeHasReached } from './places-on-the-way
 import { actualVesselRooms, vesselRoomChosen, vesselRoomAccess } from './rooms-in-a-vessel.js';
 import { isRuined } from './possessions.js';
 import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
+import { routineTime } from './npc-routines.js';
 
 export interface DepartureApproachRequest {
     intentId: string;
@@ -139,7 +140,7 @@ export function finishActualDepartureApproach(state: WorldState, actorId: string
     if (!actor || actor.status !== 'alive' || actor.activity?.capitalMissionId !== request.intentId)
         return { kind: 'refused' as const, reason: 'The departure intention is no longer held.' };
     if (actor.activity.untilDay != null && !journeyTimeHasReached(onDay, actor.activity.untilDay)
-        || !journeyTimeHasReached(state.currentDay, onDay)) return { kind: 'waiting' as const, actor };
+        || !journeyTimeHasReached(routineTime(state), onDay)) return { kind: 'waiting' as const, actor };
     const read = readActualDepartureApproach(state, actorId, request, onDay,undefined,routes,scene);
     if (read.kind !== 'local_walk' && read.kind !== 'ready') return read;
     return { kind: 'ready' as const, groundId: read.groundId, areaId: read.areaId, actor: {
