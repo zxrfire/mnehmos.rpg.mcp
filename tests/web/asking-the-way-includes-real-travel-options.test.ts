@@ -3,7 +3,7 @@
  * walking days and real available carriage/paid folding options. Source audit:
  * theWayTo reads catalog walking roads but never asks existing service quotes.
  * These controls select an actual present NPC's placed land knowledge, an
- * unfamiliar destination, and genuine local service quotes. Only the player's
+ * unlearned route, and genuine local service quotes. Only the player's
  * scene is arranged; no person, knowledge, counter, fare or outcome is invented.
  * The scripted model supplies intent/prose only. Assertions inspect native
  * narrator facts, actual learned directions, and unchanged purse/location,
@@ -21,8 +21,13 @@
  * and a published destination without demanding old walking-map knowledge.
  * Locals know public hubs as common knowledge even if never passengers; name-only
  * negative now requires no actual locally advertised route to that destination.
- * This package is uncompiled/unrun and test-only; root must establish a
- * meaningful red and review service-information authority before implementing.
+ * Current native diagnostics separated two fixture defects from service reads:
+ * Emerald Water City was already named, but its road was not learned; the fold
+ * scene wrongly required both to be unknown. A stranger's visible description
+ * was also compared with the actual giver's name in private provenance. Read
+ * route knowledge and the actual present world's people instead. The original
+ * missing service connection is now wired; name-only and unoffered controls
+ * continue to guard what the actual speaker cannot give.
  */
 import { expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider, refusedCall } from './harness.js';
@@ -51,7 +56,9 @@ export async function aNativeDirectionsScene(mode: 'carriage' | 'fold' | 'name-o
     h.game.atHand = await prepareWorldClockForPreciseSpan(initial.run, initial.cultivator);
     const world = h.game.atHand;
     if (!world) { h.db.close(); throw new Error('Directions fixture has no actual world.'); }
+    const selection = { venues: 0, present: 0, locals: 0, counters: 0, walking: 0 };
     for (const venue of world.locations.filter(row => mode === 'fold' ? counterPlaceNameAt(row.name) !== null : row.kind === 'settlement')) {
+        selection.venues++;
         const areas = theAreasOf(world, venue);
         for (const area of areas.areas.filter(row => row.for !== 'room')) {
             if (![...areas.whereIs.values()].includes(area.id)) continue;
@@ -59,20 +66,23 @@ export async function aNativeDirectionsScene(mode: 'carriage' | 'fold' | 'name-o
             const body = h.game.currentRun().cultivator;
             const speaker = h.game.somebodyAtHand('somebody', body);
             if (!speaker || !world.npcs.some(person => person.id === speaker.id && person.status === 'alive')) continue;
+            selection.present++;
             const actualSpeaker = world.npcs.find(row => row.id === speaker.id)!;
             if (mode === 'fold' && (actualSpeaker.locationId !== venue.id
                 || howMuchOfTheRoadALifeHasSeen(actualSpeaker.identity.occupation) !== 0)) continue;
+            selection.locals++;
             const land = whatThisPersonKnowsOfTheLand(h.game, body.id, world, speaker);
             const lines = whatRunsFromHere(h.game, body, Math.floor(routineTime(world)));
             const counter = counterPlaceNameAt(venue.name);
             const rate = localPrice(standingOf(body, world).regionId, SPAN_CASH_PER_WALKED_DAY);
             const board = counter ? boardAt(counter, SPAN_ROUTES, rate, Math.floor(h.game.currentRun().run.elapsedDays)) : null;
+            if (board?.lines.length) selection.counters++;
             for (const destination of world.locations.filter(row => (mode === 'fold' || row.kind === 'settlement') && row.id !== venue.id)) {
                 if ((mode !== 'fold' && !land.places.some(row => row.name === destination.name && row.stage === (mode === 'name-only' ? 'named' : 'placed')))
-                    || h.game.knowledge.isAwareOf(body.id, 'place', destination.id)
-                    || h.game.knowledge.isAwareOf(body.id, 'place', destination.name)) continue;
+                    || h.game.canPointAtLocation(body, destination)) continue;
                 const walked = h.game.daysOnTheRoadTo(body, destination.name);
                 if (walked === null || walked <= 0) continue;
+                selection.walking++;
                 const carriage = lines.find(row => row.service === 'carriage' && row.to === destination.name);
                 const carriageQuote = carriage ? quotePublicCarriage(world, {
                     fromId: venue.id, toId: destination.id, day: routineTime(world),
@@ -89,17 +99,13 @@ export async function aNativeDirectionsScene(mode: 'carriage' | 'fold' | 'name-o
                 if (mode === 'carriage' && (!carriageQuote || !carriage)) continue;
                 if (mode === 'fold' && (!foldQuote || !counter)) continue;
                 if ((mode === 'unoffered' || mode === 'name-only') && (lines.some(row => row.to === destination.name) || span)) continue;
-                console.log(JSON.stringify({ directionsFixture: mode, venue: venue.name, speaker: speaker.id,
-                    occupation: actualSpeaker.identity.occupation, target: destination.name,
-                    priorLandStage: land.places.find(row => row.name === destination.name)?.stage ?? null,
-                    counter, carriageQuote, foldQuote }));
-                expect(h.game.present(body).some(row => row.id === speaker.id)).toBe(true);
+                expect(h.game.present(body).some(row => row.id === speaker.id), 'Selected speaker is not present: ' + speaker.id).toBe(true);
                 expect(h.game.canPointAtLocation(body, destination)).toBe(false);
                 return { ...h, plans, provider, world, speaker, destination, walked, carriage, carriageQuote, counter, foldQuote };
             }
         }
     }
-    h.db.close(); throw new Error('No actual informed scene supplies an unfamiliar ' + mode + ' option.');
+    h.db.close(); throw new Error('No actual informed scene supplies an unfamiliar ' + mode + ' option: ' + JSON.stringify(selection));
 }
 
 for (const mode of ['carriage', 'fold'] as const) {
@@ -107,16 +113,15 @@ for (const mode of ['carriage', 'fold'] as const) {
         const h = await aNativeDirectionsScene(mode);
         try {
             const before = h.game.currentRun();
-            expect(h.game.knowledge.isAwareOf(before.cultivator.id, 'place', h.destination.id)).toBe(false);
-            expect(h.game.knowledge.isAwareOf(before.cultivator.id, 'place', h.destination.name)).toBe(false);
+            expect(h.game.canPointAtLocation(before.cultivator, h.destination)).toBe(false);
             const history = h.world.history.facts.filter(row => row.data.publicPassage === true).map(row => row.id);
+            const presentIds = new Set(h.game.present(before.cultivator).map(row => row.id));
+            const presentNames = h.world.npcs.filter(row => presentIds.has(row.id)).map(row => row.name);
             h.plans.push(JSON.stringify({ action: 'interact', target: 'somebody', intent: 'ask',
                 topic: 'the way to ' + h.destination.name }));
             const answered = await h.game.act('I ask somebody how do I get to ' + h.destination.name + '.');
-            console.log(JSON.stringify({ mode, speaker: h.speaker.id, destination: h.destination.name,
-                walked: h.walked, carriageQuote: h.carriageQuote, foldQuote: h.foldQuote, calls: answered.toolCalls }));
             expect(refusedCall(answered)).toBeNull();
-            expect(answered.toolCalls.some(row => row.name === 'engine.theWayTo' && row.ok)).toBe(true);
+            expect(answered.toolCalls.some(row => row.name === 'engine.theWayTo' && row.ok), JSON.stringify(answered.toolCalls)).toBe(true);
             const narrated = [...h.provider.calls].reverse().find(call =>
                 !call.messages.some(message => message.role === 'system' && message.content.startsWith('You are the intent router')));
             if (!narrated) throw new Error('Directions never reached native narrator input.');
@@ -144,9 +149,11 @@ for (const mode of ['carriage', 'fold'] as const) {
             expect(after.cultivator.standingIn).toBe(before.cultivator.standingIn);
             expect(after.cultivator.spiritStones).toBe(before.cultivator.spiritStones);
             expect(h.game.atHand!.history.facts.filter(row => row.data.publicPassage === true).map(row => row.id)).toEqual(history);
-            expect(h.game.canPointAtLocation(after.cultivator, h.destination)).toBe(true);
+            expect(h.game.canPointAtLocation(after.cultivator, h.destination), 'No learned route: ' + JSON.stringify(answered.toolCalls)).toBe(true);
             expect(h.game.knowledge.provenanceOf(before.cultivator.id, 'place', h.destination.id)
-                .some(row => row.sourceKind === 'told' && row.sourceNote.includes(h.speaker.name))).toBe(true);
+                .some(row => row.sourceKind === 'told' && row.stage === 'placed'
+                    && presentNames.some(name => row.sourceNote.startsWith(name + ' gave the way to it at '))),
+                JSON.stringify({ presentNames, provenance: h.game.knowledge.provenanceOf(before.cultivator.id, 'place', h.destination.id) })).toBe(true);
         } finally { h.db.close(); }
     }, 120_000);
 }
