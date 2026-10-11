@@ -5,6 +5,12 @@
  * These go through to the world: the player's progress moves, the subject's
  * clock moves, the ledger opens, and somebody under age is refused before any
  * fight opens.
+ * The old fixture chose whoever the opening routine exposed, so changes in
+ * local work repeatedly changed the id-keyed death and conception samples.
+ * The arrangement now places one ordinary, fixed subject in front of the player.
+ * Native samples measured for that id at run day zero: fixed-1 death 0.0073182;
+ * fixed-7 conception 0.0667397, death 0.3405650; fixed-14 conception 0.0551470,
+ * death 0.1184473. These played cases leave the streams and outcomes untouched.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -20,59 +26,60 @@ import {
 import { advanceWorldForPlay } from '../../src/engine/world/driver.js';
 import { parentsOf } from '../../src/engine/world/lineage.js';
 import type { WorldState } from '../../src/engine/world/world-state.js';
+import { createNpc } from '../../src/engine/world/npc-state.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 const WORLD = 'world-furnace-rite';
-
-interface ProbeNpc {
-    id: string;
-    name: string;
-    status: string;
-    factionId: string | null;
-    factionRankIndex: number;
-    locationId: string | null;
-    relationships: { targetId: string; kind: string; standing: number }[];
-    identity: { sex: 'male' | 'female'; bornOnDay: number; physique: string | null };
-    cultivation: { techniqueIds: string[]; accumulatingSinceDay: number; lastAdvancedOnDay: number };
-}
-interface OpenWorld {
-    atHand: {
-        currentDay: number;
-        npcs: ProbeNpc[];
-        history: { facts: { kind: string; data?: Record<string, unknown> }[] };
-    } | null;
-}
-interface AsksItsOwnRoster { present: (c: unknown) => { id: string; name: string }[] }
 
 /**
  * A player strong enough to end it in one sentence, holding the drawing half,
  * standing in front of somebody who holds no half of it at all: the rite is
  * forced, and forcing it opens the half in them.
  */
-async function standingInFrontOfAFurnace(seed: string, ageYears: number, playerAge = 30) {
+async function standingInFrontOfAFurnace(seed: string, ageYears: number, playerAge = 30, playerSex?: 'male' | 'female') {
     const { db, game, repos } = await makeGameInWorld({ seed, worldSeed: WORLD, adminMode: true });
     const { cultivator } = await game.newRun('Lin Zhaoyi');
     db.prepare(
         'UPDATE cultivators SET realm_ordinal = 29, hp = 9000, max_hp = 9000, age = ? WHERE id = ?'
     ).run(playerAge, cultivator.id);
+    if (playerSex) db.prepare('UPDATE cultivators SET sex = ? WHERE id = ?').run(playerSex, cultivator.id);
     repos.techniques.upsert(getTechnique('lotus-plucking-rite')!);
     repos.techniques.learn(cultivator.id, 'lotus-plucking-rite', 0.5);
     await game.act('I look around');
 
-    const world = (game as unknown as OpenWorld).atHand!;
-    const here = (game as unknown as AsksItsOwnRoster).present(cultivator);
-    const mark = here
-        .map(row => world.npcs.find(npc => npc.id === row.id))
-        .find((npc): npc is ProbeNpc => npc !== undefined)!;
-    expect(mark, `nobody with a world row was standing here on ${seed}`).toBeDefined();
-
+    const world = game.atHand!;
     const today = Math.floor(world.currentDay);
     const player = db.prepare('SELECT sex FROM cultivators WHERE id = ?')
         .get(cultivator.id) as { sex: 'male' | 'female' };
-    mark.identity.sex = player.sex === 'male' ? 'female' : 'male';
-    mark.identity.bornOnDay = today - ageYears * 365 - 30;
-    mark.cultivation.techniqueIds = mark.cultivation.techniqueIds
-        .filter(id => getTechnique(id)?.runsOn !== 'own_lifespan');
+    const body = repos.cultivators.getById(cultivator.id)!;
+    const mark = createNpc(world.seed, { id: 'played-furnace-subject',
+        locationId: game.worldPlaceOf(body), onDay: world.currentDay,
+        bornOnDay: today - ageYears * 365 - 30, sex: player.sex === 'male' ? 'female' : 'male',
+        occupation: 'merchant', cultivation: { realmOrdinal: 8, techniqueIds: [] } });
+    mark.activity = { kind: 'trade', note: 'At the market.', withIds: [], sinceDay: world.currentDay,
+        untilDay: null };
     mark.cultivation.accumulatingSinceDay = today - 2000;
+    world.npcs.push(mark);
+    const place = world.locations.find(row => row.id === mark.locationId)!;
+    const witness = createNpc(world.seed, { id: 'played-furnace-witness', locationId: place.id,
+        onDay: world.currentDay, bornOnDay: today - 30 * 365, occupation: 'merchant' });
+    mark.activity.withIds = [witness.id];
+    witness.activity = { kind: 'trade', note: 'At the market with a companion.', withIds: [mark.id], sinceDay: world.currentDay,
+        untilDay: null };
+    world.npcs.push(witness);
+    const read = theAreasOf(world, place);
+    const area = read.whereIs.get(mark.id);
+    expect(area, 'the actual subject has a projected area').toBeDefined();
+    expect(read.whereIs.get(witness.id), 'their actual company is together').toBe(area);
+    mark.activity.standingIn = area;
+    witness.activity.standingIn = area;
+    repos.cultivators.standIn(body.id, area!);
+    game.theWorldMoved();
+    const standing = repos.cultivators.getById(body.id)!;
+    expect(game.present(standing).some(person => person.id === mark.id), 'the arranged subject is physically present').toBe(true);
+    expect(game.present(standing).some(person => person.id === witness.id), 'the arranged witness is physically present').toBe(true);
+    game.noteEncounter(standing, game.currentRun().run, { kind: 'cultivator', id: mark.id, name: mark.name },
+        'told', 'They gave their name.');
 
     const progress = () => (db.prepare(
         'SELECT cultivation_progress AS p FROM cultivators WHERE id = ?'
@@ -142,9 +149,7 @@ describe('the rite on somebody who has yielded', () => {
      * path: the row is marked dead and the chronicle gets a death fact.
      */
     it('kills through the ordinary killing path when the draw kills', async () => {
-        // Re-pinned from furnace-rite-14 when a place was read into areas of three: who stands in
-        // front of the player moved.
-        const at = await standingInFrontOfAFurnace('furnace-rite-37', 30);
+        const at = await standingInFrontOfAFurnace('furnace-fixed-1', 30);
         const before = at.progress();
 
         const acted = await at.game.act(`I make ${at.mark.name} my furnace`);
@@ -234,16 +239,10 @@ describe('a conception from the rite is a child the world delivers', () => {
      * parents on the lineage.
      */
     it.each([
-        // Today's population pass (seeded ages spread, settlements refill, houses
-        // recruit within their rolls) redraws who `I look around` turns up and every
-        // RNG keyed to their id; furnace-rite-birth-14 no longer lands on a subject
-        // who conceives. Re-pinned from furnace-rite-birth-14, which was itself
-        // re-pinned from furnace-rite-birth-11.
-        ['furnace-rite-birth-25', 'the subject carried'],
-        // Re-pinned from furnace-rite-birth-1 when the game began starting at 18.
-        ['furnace-rite-birth-5', 'the player carried']
-    ])('%s: %s', async (seed) => {
-        const at = await standingInFrontOfAFurnace(seed, 30);
+        ['furnace-fixed-7', 'the subject carried', 'male'],
+        ['furnace-fixed-14', 'the player carried', 'female']
+    ] as const)('%s: %s', async (seed, _case, playerSex) => {
+        const at = await standingInFrontOfAFurnace(seed, 30, 30, playerSex);
         const acted = await at.game.act(`I make ${at.mark.name} my furnace`);
         expect(acted.narration).toMatch(/draw off \d+ days of cultivation/);
         expect(acted.narration).not.toMatch(/does not survive/);
@@ -259,12 +258,16 @@ describe('a conception from the rite is a child the world delivers', () => {
 
         // Counted at the first yearly pass after their sixteenth birthday, so
         // two years past it is past it whatever day of the year they were due.
-        advanceWorldForPlay(world, { days: (THE_AGE_A_CHILD_IS_COUNTED_AT + 2) * 365 });
+        const conception = world.history.facts.find(fact => fact.data.furnace === true
+            && fact.actors.some(actor => actor.id === at.mark.id));
+        expect(conception?.data.conceived, 'the actual rite conceived before the delivery span starts').toBe(1);
+        const advanced = advanceWorldForPlay(world, { days: (THE_AGE_A_CHILD_IS_COUNTED_AT + 2) * 365 });
 
         const births = world.history.facts.filter(f => f.kind === 'birth'
             && f.summary.startsWith('A child was born to')
             && f.actors.some(a => a.id === at.mark.id) && f.actors.some(a => a.id === at.playerId));
-        expect(births, 'no birth on the record').toHaveLength(1);
+        expect(births, `no birth on the record: the rite recorded ${conception?.data.conceived} conceptions; `
+            + `${advanced.daysAdvanced} days advanced; interrupted=${advanced.interrupted}`).toHaveLength(1);
         expect(births[0]!.day).toBe(due);
 
         const children = world.npcs.filter(n => bornTo(world).has(n.id) && !already.has(n.id));
