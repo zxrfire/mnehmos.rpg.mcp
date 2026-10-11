@@ -47,6 +47,10 @@
  *   - putting `addContribution` back in `donate`: the contribution assertion in
  *     the third test still passes, which is why `a-rung-is-not-for-sale.test.ts`
  *     exists as well - this file pins the ROAD and that one pins the PRICE.
+ * Oct11's physical access gate stopped the refusal control at the master's
+ * precinct before the elder could answer. Its refusal scene now meets the
+ * same actual holder in the public forecourt; the offer and decision stay
+ * unchanged. Authority is still read from the existing roll and portfolios.
  */
 
 import { aRecruiterOfTheHouseIsHere, makeGameInWorld } from './harness';
@@ -67,6 +71,9 @@ import { ledgerAbout, writeOneObligation } from '../../src/storage/repos/obligat
 import { baseWeightOf } from '../../src/web/what-a-request-asks-and-of-whom';
 import { requestPutToSomebody } from '../../src/web/what-a-request-asks-and-of-whom';
 import { parseIntent } from '../../src/web/actions';
+import { theOneIdAPersonIsKnownBy } from '../../src/engine/world/a-catalog-person-and-their-world-row';
+import { routineTime } from '../../src/engine/world/npc-routines';
+import { peopleInThisPlace } from '../../src/web/hearsay';
 
 /**
  * A disciple standing in front of the people of their own house.
@@ -223,6 +230,29 @@ describe('a rung is somebody\'s to give', () => {
 
     it('is refused by the person whose call it is, naming what would have worked', async () => {
         const { game, cultivator, held, holder } = await inFrontOfTheHouse(`${SEED}-refused`);
+
+        const world = game.atHand!;
+        const person = world.npcs.find(row => theOneIdAPersonIsKnownBy(row.id) === holder.id)!;
+        const court = world.locations.find(place => place.data.purpose === 'forecourt'
+            && (place.data.factionId === held.sectId || place.controllingFactionId === held.sectId))!;
+        expect(person).toBeDefined();
+        expect(court).toBeDefined();
+        const day = routineTime(world);
+        person.locationId = court.id;
+        person.activity = { kind: 'talking', note: 'Meeting a member in the forecourt.',
+            withIds: [cultivator.id], sinceDay: day, untilDay: day + 1,
+            redirect: { until: day + 1, previous: person.activity, visit: true } };
+        game.repos.cultivators.update(cultivator.id, { location: court.name, standingIn: null });
+        game.theWorldMoved();
+        const body = game.currentRun().cultivator;
+        const meeting = peopleInThisPlace(game.repos, body, world, court);
+        const faced = meeting.people.find(row => row.name === holder.name)!;
+        expect(faced).toBeDefined();
+        const area = meeting.whereIs.get(faced.id)!;
+        expect(area).toBeDefined();
+        person.activity.redirect!.standingIn = area;
+        game.repos.cultivators.standIn(cultivator.id, area);
+        expect(game.present(game.currentRun().cultivator).some(row => row.name === holder.name)).toBe(true);
 
         const acted = await game.act(
             `I bribe ${holder.name} with 4000 spirit stones to promote me`
