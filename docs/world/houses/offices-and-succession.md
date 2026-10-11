@@ -280,6 +280,13 @@ do not. **Nobody works for nothing:** rota chores and servants' work pay a littl
 hall work a small, steady amount, both well under board work. The player can be posted or put
 on the rota like any member, and can hire it out.
 
+**A house's rooms are fixed at its founding, for now.** Not built, and optional: a house that
+grows past what it was founded as builds the hall it now needs (a treasury, an archive), and
+one that shrinks folds a hall's work back into ordinary rooms.
+
+**An apex is more than a big sect.** The houses everybody else answers to are visibly more
+elaborate: every hall a house can have, more than one elder to a hall, and more people in each.
+
 **A daily duty is settled when something asks, never ticked.** For example, the Life Lamp Hall's
 daily roll check means a staffed house knows of a death by the next day: a name on the roll with
 no lamp in the hall. Whoever is in the hall when a lamp goes to dust sees it at once. An unstaffed
