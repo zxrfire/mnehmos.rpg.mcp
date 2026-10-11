@@ -17,6 +17,8 @@
  * 62.1% could not make it at all. That figure is a property of the MAP and this
  * routing does not move it; what the routing changes is whether the 62% are told
  * why.
+ * The later route ruling requires an actual known road before the arrival can
+ * be tested. The fixture supplies a route read from a map, without its schedule.
  *
  * ── WHAT IS PINNED, AND WHAT IS NOT ──────────────────────────────────────
  *
@@ -128,6 +130,10 @@ describe('a door that shuts is said to somebody standing at it', () => {
                 && !isOpenWater(regionCatalogIdOf(loaded!, row.id))
         );
         expect(site, 'this world seeded no ruin on a schedule').toBeTruthy();
+        game.knowledge.learn({ holderId: cultivator.id, kind: 'place', id: site!.id,
+            name: site!.name, onDay: game.currentRun().run.elapsedDays, sourceKind: 'read',
+            sourceNote: 'Fixture: a map of the road to this ruin, without its schedule.', stage: 'placed' });
+        expect(game.canPointAtLocation(game.currentRun().cultivator, site!)).toBe(true);
 
         const turn = await game.act(`I travel to ${site!.name}`);
         expect(
