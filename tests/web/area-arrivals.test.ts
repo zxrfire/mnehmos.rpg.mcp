@@ -57,27 +57,24 @@ describe('arrivals take space in the played roster', () => {
         // (`walking-across-a-place.ts`), and which area a null-`standingIn` body
         // overflows into is drawn per hour (`where-in-a-place-somebody-is-standing.ts`),
         // so the area read before walking there can already be stale by the time
-        // the walk lands. Re-read after moving and correct once if the clock moved
-        // the overflow out from under the first read.
+        // the walk lands. Following the actual occupant needs a fresh read even
+        // when the player reached the formerly advertised area correctly.
         for (let i = 0; i < 5; i++) {
-            const me = repos.cultivators.getById(cultivator.id)!;
-            const placement = peopleInThisPlace(repos, me, world, place);
-            const at = placement.whereIs.get(`visitor-${i}`)!;
-            const area = placement.areas.find(one => one.id === at)!;
-            if (me.standingIn !== at) await game.act(`I move to ${area.name}`);
-
-            const after = repos.cultivators.getById(cultivator.id)!;
-            if (after.standingIn !== at) {
-                const resettled = peopleInThisPlace(repos, after, world, place);
-                const nowAt = resettled.whereIs.get(`visitor-${i}`)!;
-                if (after.standingIn !== nowAt) {
-                    await game.act(`I move to ${resettled.areas.find(one => one.id === nowAt)!.name}`);
-                }
-                expect(repos.cultivators.getById(cultivator.id)!.standingIn).toBe(nowAt);
-            } else {
-                expect(after.standingIn).toBe(at);
+            const visitor = `visitor-${i}`;
+            for (let walk = 0; walk < 8; walk++) {
+                const me = repos.cultivators.getById(cultivator.id)!;
+                if (game.present(me).some(person=>person.id===visitor)) break;
+                const placement = peopleInThisPlace(repos,me,game.atHand!,place);
+                const at = placement.whereIs.get(visitor);
+                expect(at,`${visitor} disappeared from the actual placement`).toBeDefined();
+                const area = placement.areas.find(one=>one.id===at)!;
+                expect(me.standingIn,'The placement and present reader must agree before walking').not.toBe(at);
+                const moved = await game.act(`I move to ${area.name}`);
+                expect(repos.cultivators.getById(me.id)!.standingIn,moved.narration).toBe(at);
+                expect(game.present(repos.cultivators.getById(me.id)!).length).toBeLessThanOrEqual(3);
             }
-            expect(game.present(repos.cultivators.getById(cultivator.id)!).map(n => n.id)).toContain(`visitor-${i}`);
+            expect(game.present(repos.cultivators.getById(cultivator.id)!).map(n=>n.id),
+                `${visitor} was never reached by eight actual walks`).toContain(visitor);
         }
         db.close();
     }, 120_000);
