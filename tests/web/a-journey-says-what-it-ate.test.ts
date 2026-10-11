@@ -10,7 +10,8 @@
  * journey and never a refusal: the player still goes.
  *
  * Played from The Furnace Flank on `road-world`, three days down the arms road to
- * Emerald Water City, and eleven into the Buddha Precipice.
+ * Emerald Water City. The original province control used eleven border days;
+ * the current route includes the actual starting ground and destination legs.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -39,10 +40,14 @@ describe('a journey says what it ate', () => {
         db.prepare('UPDATE cultivators SET satiety = 10 WHERE id = ?').run(id);
         db.prepare("DELETE FROM cultivator_flags WHERE cultivator_id = ? AND key = 'rations_held'").run(id);
         const before = game.state();
+        const endpoint = game.whereTheRoadEndsIn('The Buddha Precipice').name;
+        const road = game.daysOnTheRoadTo(game.currentRun().cultivator, endpoint);
+        expect(road, 'the native reader must price this actual road').not.toBeNull();
 
         const done = await game.act('I travel to the Buddha Precipice');
 
-        expect(done.narration).toMatch(/The pack and the belly hold \d+ days? of food; the road is 11\./);
+        expect(done.narration, JSON.stringify({ road, narration: done.narration, calls: done.toolCalls }))
+            .toMatch(new RegExp(`The pack and the belly hold \\d+ days? of food; the road is ${road}\\.`));
         expect(game.state().run.elapsedDays).toBeGreaterThan(before.run.elapsedDays);
     }, 120_000);
 });
