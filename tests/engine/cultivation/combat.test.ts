@@ -6,6 +6,12 @@
  * module is arithmetic in service of them.
  * Tribulation bodies now close against repeated harms. Late reinforcement is arranged
  * after the prolonged body's fight, rather than assuming eight rounds still finish it.
+ * Automatic withdrawal now pays the player's native flight price. The former
+ * majority-withdrawal assertion relied on a free escape: the same sixty lethal
+ * intent samples now produced twenty withdrawn or crippled and forty lethal endings.
+ * Flight costs and both native outcomes are checked instead of preserving that
+ * old frequency. Reach is measured over one reinforcement window, because a
+ * wider art can finish a fight with fewer total blows.
  */
 
 import {
@@ -529,17 +535,27 @@ describe('resolveConfrontation', () => {
         expect(outcomes).toContain('lethal');
     });
 
-    it('makes breaking off the ordinary end of an even fight, not death', () => {
-        const tally: Record<string, number> = {};
+    it('prices attempted withdrawal in an even lethal-intent fight', () => {
+        let escaped = 0, caught = 0;
         for (let i = 0; i < 60; i++) {
-            const outcome = resolveConfrontation(
+            const result = resolveConfrontation(
                 combatant({ id: 'a', realmOrdinal: 14 }),
                 combatant({ id: 'b', realmOrdinal: 14 }),
                 baseCtx({ rng: rng(`ordinary-${i}`), intent: { thrown: A_BLOW_MEANT_TO_END_IT, willWithdraw: true } })
-            ).outcome;
-            tally[outcome] = (tally[outcome] ?? 0) + 1;
+            );
+            for (const exchange of result.exchanges) {
+                if (!exchange.flight) continue;
+                expect(exchange.flight.damage).toBeGreaterThan(0);
+                if (exchange.flight.escaped) escaped++; else caught++;
+            }
+            if (result.outcome === 'withdrawal') {
+                const leaving = result.exchanges[result.exchanges.length - 1]!;
+                expect(leaving.flight?.escaped).toBe(true);
+                expect(result.hp[result.loserId!]).toBeGreaterThan(0);
+            }
         }
-        expect((tally.withdrawal ?? 0) + (tally.crippled ?? 0)).toBeGreaterThan(tally.lethal ?? 0);
+        expect(escaped).toBeGreaterThan(0);
+        expect(caught).toBeGreaterThan(0);
     });
 
     /**
@@ -1258,11 +1274,12 @@ describe('resolveMelee', () => {
     });
 
     it('widens a strike without granting more of them', () => {
-        // Reach must not touch the numbers budget, or it becomes a second way to
-        // buy strikes and rule 1 goes with it.
+        // Compare the same first-round window. Counting whole fights rewards a
+        // narrower art for taking longer to finish its opponents.
         const measure = (reach: TechniqueReach) => {
             const result = resolveMelee(
-                [armed('a', 18, 6, reach), armed('b', 18, 6, 'single')],
+                [armed('a', 18, 6, reach), { ...armed('b', 18, 6, 'single'),
+                    reinforcement: { holdsFor: 1, note: 'Help reaches this side after one round.' } }],
                 meleeCtx({ rng: rng('budget') })
             );
             const mine = result.exchanges.filter(e => e.attackerId.startsWith('a-'));

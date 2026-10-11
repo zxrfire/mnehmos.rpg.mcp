@@ -18,6 +18,11 @@
  * own nature. There is no will-to-submit number anywhere in the engine and
  * these tests assert there is nowhere for one to hide: the engine takes the
  * answer and never computes it.
+ * Oct11 priced automatic flight can spend the captured person's remaining
+ * body, and a successful escape is now kept by the common conclusion. The
+ * former positive-body and guaranteed-ambush-submission assertions depended
+ * on free withdrawal. Capture preserves the actual costs; an ambush does not
+ * prevent an actual escape or turn one into submission.
  *
  * The consequence bites both ways, which is the point. A fight opened meaning
  * to take somebody alive ends in a body when they would rather die, and the
@@ -190,8 +195,10 @@ describe('forcing somebody to submit', () => {
         expect(result.outcome).toBe('submission');
         expect(result.winnerId).toBe('strong');
         expect(result.loserId).toBe('weak');
-        // The whole point of the outcome: somebody is left standing.
-        expect(result.hp['weak']).toBeGreaterThan(0);
+        // Taken alive does not refund the body spent on trying to get clear.
+        const left = result.exchanges.filter(exchange => exchange.defenderId === 'weak')
+            .reduce((hp, exchange) => Math.max(0, hp - exchange.result.damage - (exchange.flight?.damage ?? 0)), body(9, 'weak').hp);
+        expect(result.hp['weak']).toBe(left);
         expect(result.finished).toBe(false);
     });
 
@@ -360,7 +367,12 @@ describe('opening a fight from concealment', () => {
             body(12, 'hidden'), body(10, 'mark'),
             ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT, opening: 'from_concealment' } })
         );
-        expect(result.outcome).toBe('submission');
+        const gotClear = result.exchanges.some(exchange => exchange.defenderId === 'mark' && exchange.flight?.escaped)
+            && result.hp.mark > 0;
+        if (gotClear) {
+            expect(['withdrawal', 'crippled']).toContain(result.outcome);
+            expect(result.finished).toBe(false);
+        } else expect(result.outcome).toBe('submission');
         expect(result.exchanges[0].result.modifiers.map(m => m.source).join('|'))
             .toMatch(/ambush/);
     });

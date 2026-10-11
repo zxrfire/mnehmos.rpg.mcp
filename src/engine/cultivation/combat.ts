@@ -1343,6 +1343,8 @@ export interface ExchangeRecord {
     result: ExchangeResult;
     /** Only an actual resolved strike has a cast receipt. */
     artUse?: CombatArtUse;
+    /** The defender's actual attempt to leave after this blow. */
+    flight?: FleeResult;
     /** Defender HP after the exchange was applied to the running total. */
     defenderHpAfter: number;
 }
@@ -1623,6 +1625,7 @@ export function resolveConfrontationRound(
     let winnerId: string | null = null;
     let loserId: string | null = null;
     let ending: RoundResult['ending'] = null;
+    const triedToLeave = new Set<string>();
 
     // `assessEdges` de-duplicates, so an aggressor already carrying an ambush
     // edge from somewhere else is not paid for it twice.
@@ -1641,7 +1644,7 @@ export function resolveConfrontationRound(
     for (const aggressorStrikes of order) {
         let striker = aggressorStrikes ? aggressor : defender;
         const target = aggressorStrikes ? defender : aggressor;
-        if (hp[striker.input.id] <= 0) continue;
+        if (hp[striker.input.id] <= 0 || triedToLeave.has(striker.input.id)) continue;
 
         // A guard has no blow in it. That is the whole of what it costs, and it
         // is charged by there being nothing here to resolve - not by a
@@ -1715,13 +1718,18 @@ export function resolveConfrontationRound(
             break;
         }
 
-        // Breaking off is the ordinary end of a cultivation fight. Somebody
-        // decides the price has stopped being worth it and goes.
+        // Turning back costs the same body and wound as an explicit flight.
         if (ctx.willWithdraw && hp[target.input.id] < target.input.maxHp * WITHDRAW_HP_FRACTION) {
-            winnerId = striker.input.id;
-            loserId = target.input.id;
-            ending = 'withdrew';
-            break;
+            const flight = payForFlight(target.input, striker.input, hp, injuries, ctx, target.edges);
+            triedToLeave.add(target.input.id);
+            exchanges[exchanges.length - 1]!.flight = flight;
+            exchanges[exchanges.length - 1]!.defenderHpAfter = hp[target.input.id];
+            if (hp[target.input.id] <= 0 || flight.escaped) {
+                winnerId = striker.input.id;
+                loserId = target.input.id;
+                ending = hp[target.input.id] <= 0 ? 'down' : 'withdrew';
+                break;
+            }
         }
     }
 
@@ -1863,7 +1871,7 @@ export interface ConcludeInput {
     brokenObjects: ConfrontationResult['brokenObjects'];
     winnerId: string;
     loserId: string;
-    /** Down on the ground, or broke off under the floor. */
+    /** Down on the ground, or actually got clear. */
     endedBy: 'down' | 'withdrew';
     /**
      * What the loser's own HP was when the fight OPENED, for the line that says
@@ -1896,12 +1904,11 @@ export function concludeConfrontation(input: ConcludeInput): ConfrontationResult
     // them complying and still standing; whether that is what they get is a
     // fact about the person they beat.
     //
-    // It also overrides a withdrawal, which is the point at which somebody
-    // beaten decides. Left alone, `willWithdraw` would have ended almost every
-    // coercion as somebody running away, which is the one thing a coercion is
-    // not for.
+    // Getting clear is not yielding or being released. A wanted ending cannot
+    // replace the actual escape; coercion reads the person who is still caught.
     const yields = ctx.intent.yields ?? ORDINARILY_YIELDS;
-    const coercing = ctx.intent.toMakeThemComply === true && winnerId === aggressorInput.id;
+    const caught = input.endedBy === 'down';
+    const coercing = caught && ctx.intent.toMakeThemComply === true && winnerId === aggressorInput.id;
     if (coercing) {
         // They yield, or they do not and the fight finishes them. A body the
         // aggressor did not want is the honest price of having gone this far
@@ -1916,7 +1923,7 @@ export function concludeConfrontation(input: ConcludeInput): ConfrontationResult
             ? 'submission'
             : finishOutcome(A_BLOW_MEANT_TO_END_IT, vector, requirement);
         if (!yields.willYield) hp[loserInput.id] = 0;
-    } else if (ctx.intent.toMakeAnExampleOfThem === true && winnerId === aggressorInput.id) {
+    } else if (caught && ctx.intent.toMakeAnExampleOfThem === true && winnerId === aggressorInput.id) {
         // Beaten and let go where it could be seen. Set by whoever decided the
         // gap was wide enough for that to be the point; never by a sentence.
         outcome = 'humiliation';
@@ -2575,6 +2582,23 @@ export function attemptFlight(
               + `${damage} of the body went on the attempt`
               + (injury ? `, and a ${howBadItIsSaid(injury)} injury with it.` : '.')
     };
+}
+
+/** Apply a flight to the actual running bodies, including wounds already taken. */
+function payForFlight(
+    fleeing: CombatantInput, pursuer: CombatantInput,
+    hp: Record<string, number>, injuries: Record<string, Injury[]>,
+    ctx: { rng: CultivationRNG; turn: number; ambient: AmbientQi }, edges: readonly Edge[]
+): FleeResult {
+    const standing = (input: CombatantInput): CombatantPower => assessPower({
+        ...input, hp: hp[input.id], injuries: [...input.injuries, ...injuries[input.id]]
+    }, { ambient: ctx.ambient });
+    const flight = attemptFlight(standing(fleeing), standing(pursuer), {
+        rng: ctx.rng, turn: ctx.turn, maxHp: fleeing.maxHp, edges
+    });
+    hp[fleeing.id] = Math.max(0, hp[fleeing.id] - flight.damage);
+    if (flight.injury) injuries[fleeing.id].push(flight.injury);
+    return flight;
 }
 
 // INITIATIVE
@@ -3245,9 +3269,15 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
                     (targetIntent.willWithdraw ?? true) &&
                     hp[target.input.id] < target.input.maxHp * WITHDRAW_HP_FRACTION
                 ) {
-                    target.state = 'withdrawn';
-                    target.felledBy = striker.input.id;
-                    target.felledVector = vector;
+                    const flight = payForFlight(target.input, striker.input, hp, injuries, ctx, target.edges);
+                    exchanges[exchanges.length - 1]!.flight = flight;
+                    exchanges[exchanges.length - 1]!.defenderHpAfter = hp[target.input.id];
+                    acting.delete(target.input.id);
+                    if (hp[target.input.id] <= 0 || flight.escaped) {
+                        target.state = hp[target.input.id] <= 0 ? 'fallen' : 'withdrawn';
+                        target.felledBy = striker.input.id;
+                        target.felledVector = vector;
+                    }
                 }
             }
 

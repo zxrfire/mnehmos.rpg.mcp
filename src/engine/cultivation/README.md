@@ -2,6 +2,10 @@
 
 # The Cultivation Engine
 
+An actual escape binds the common fight conclusion. Coercion and making an
+example of somebody read the person still caught, so an aggressor's goal cannot
+replace a successful withdrawal for either a player or a world person.
+
 > **Tier 3 - reference.** Design rationale and the contract of the code beside it. Read by
 > humans and by agents doing design or implementation work. Never auto-injected into a
 > narration prompt. The narrator's always-loaded text is
@@ -1333,6 +1337,12 @@ Boundary trial damage is applied by `applyCrossingConsequence` in direct player 
 The proposed a-pill-dose-on-an-actual-body leaf moves native grade-dose and toxicity preparation out of the MCP adapter without adding a dose or draw. Actual actor adapters keep their own resource/item stores. Ordinary NPC recovery uses the same dose, native poison injury and restoration arithmetic; no passive rate is introduced. This preparation remains unvalidated and does not supply missing NPC chaos-sheet effects.
 
 Native art readiness reads the actual cooldown and qi before one debit. Cooldown burn preserves the existing whole elapsed-day rule: independent fractional actions do not accumulate credit; portions of one held receipt use floor(cumulative) minus floor(previous).
+
+Automatic withdrawal in confrontation rounds and melee uses `attemptFlight` and
+pays its body damage and wound against the actual running body. A failed attempt
+spends that person's round and leaves the fight open if they still stand; reaching
+the withdrawal threshold alone does not grant an escape. The exchange carries the
+flight result alongside the actual strike, so held rounds can state its cost.
 
 Implicit fighting arts and numerical cast preparation ask the same authored
 category/damage reader. Offensive and defensive arts retain their existing

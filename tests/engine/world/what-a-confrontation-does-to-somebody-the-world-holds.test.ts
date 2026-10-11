@@ -6,7 +6,7 @@
  *   - the wounds the resolver produced land on the record as ROWS, through the
  *     world's one write path, so the count cannot drift from the list
  *   - a permanent wound gets its day in the ledger; an ordinary one does not
- *   - no hit points are invented anywhere on the record
+ *   - no strike damage is invented; actual flight charges use the native body
  *   - losing opens a rival; being finished or maimed opens an enemy
  *   - a completed finishing requirement is final; bodily destruction resolves
  *     what remains, while an ordinary beating leaves the person alive
@@ -142,7 +142,7 @@ describe('the body', () => {
      * rung through `maxHpForOrdinal`, which is why there is still no `maxHp`
      * anywhere on the row and why this file can still assert that.
      *
-     * WHAT DID NOT: a confrontation still writes no body. What a fight leaves
+     * WHAT DID NOT: without a flight receipt, this writes no body charge. What a fight leaves
      * that the world can hold is WOUNDS, and the two tests above are that. If
      * that ever changes it is a separate design decision with its own
      * measurement, because a world where every bout permanently depletes

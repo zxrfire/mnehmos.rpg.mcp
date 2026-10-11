@@ -37,8 +37,11 @@
  * Measured: an attacker four rungs below their opponent loses in ten exchanges
  * and is left crippled at ordinal 12, at 20, at 28, at 36 and at 42 - the same
  * shape at every altitude, with only the absolute hit points scaling. The same
- * fight at a gap of zero withdraws after thirteen or fourteen exchanges,
- * everywhere.
+ * fight at a gap of zero then withdrew after thirteen or fourteen exchanges.
+ * That measurement predates priced automatic flight and the tribulation body's
+ * harm closure. Those actual body mechanics can change the ending at an equal
+ * gap. The even-gap control now checks the same relative opening force, rather
+ * than requiring the bodies and later flight samples to produce the same fate.
  *
  * This is correct, and it is worth saying why rather than leaving it implicit.
  * `powerMultiplierForOrdinal` multiplies BOTH sides, so a fixed gap is a fixed
@@ -140,9 +143,14 @@ describe('the same seed gives the same fight', () => {
 });
 
 describe('a gap is a gap, at every altitude', () => {
-    it('resolves an even fight the same way high up as low down', () => {
-        const outcomes = ALTITUDES.map(o => fight(o, o).outcome);
-        expect(new Set(outcomes).size, `outcomes: ${outcomes.join(', ')}`).toBe(1);
+    it('prices equal opening force as equal at every altitude', () => {
+        const fights = ALTITUDES.map(o => fight(o, o));
+        for (const result of fights) {
+            expect(result.gap.realmGap).toBe(0);
+            expect(result.gap.powerRatio).toBeCloseTo(1);
+            expect(result.exchanges[0]!.result.advantage)
+                .toBeCloseTo(fights[0]!.exchanges[0]!.result.advantage);
+        }
     });
 
     it('resolves a four-rung gap the same way once both sides are past the early rungs', () => {

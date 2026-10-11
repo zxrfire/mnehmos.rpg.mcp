@@ -419,11 +419,9 @@ export function takeAFightTurn(
             // holds the grudge, exactly as they would have from the one-call path.
             return {
                 fight: null,
-                // Getting clear is not yielding. `concludeConfrontation` turns a
-                // coercer's won withdrawal into a submission, which is right for
-                // somebody beaten past the line and wrong for somebody who got away.
+                // The common conclusion keeps an actual escape, whatever was wanted.
                 finished: concludeFrom(
-                    { ...fight, intent: { ...fight.intent, toMakeThemComply: false } },
+                    fight,
                     theirs.input.id, mine.input.id, 'withdrew', ctx
                 ),
                 playerAct: 'break_off',
@@ -466,11 +464,9 @@ export function takeAFightTurn(
     //
     // `WITHDRAW_HP_FRACTION` is deliberately NOT the gate, and the reason is
     // worth writing down because it looks like the obvious choice. That line
-    // is where `resolveConfrontationRound` makes the beaten side break off, so
-    // a fight ENDS the moment anybody crosses it: a body under it and still
-    // standing in front of you is a state ordinary play cannot reach, and
-    // gating on it would have made this answer unreachable and reviewed as
-    // finished.
+    // is where `resolveConfrontationRound` makes the beaten side attempt flight.
+    // A failed flight may leave them standing, but sparing somebody is already
+    // coherent before they have been driven to that attempt.
     if (answer.kind === 'spare') {
         const mineLeft = fight.hp[mine.input.id] / Math.max(1, mine.input.maxHp);
         const theirsLeft = fight.hp[theirs.input.id] / Math.max(1, theirs.input.maxHp);
@@ -799,7 +795,14 @@ function theRoundAsItHappened(
             : '';
         const resisted = (exchange.result.defenceFactor ?? 1) < 1
             ? ` The tribulation body reduced the ${exchange.result.harm} harm.` : '';
-        return `${cost}${opened}${broke}${resisted}`;
+        const flight = exchange.flight;
+        const leaving = flight
+            ? ` ${took ? 'You' : nameOf(exchange.defenderId)} ${took ? 'try' : 'tries'} to get clear; `
+                + `the attempt costs ${flight.damage} of the body${flight.injury ? ' and a serious injury' : ''}. `
+                + (exchange.defenderHpAfter <= 0 ? 'The body is spent.'
+                    : flight.escaped ? 'The attempt succeeds.' : 'The attempt fails.')
+            : '';
+        return `${cost}${opened}${broke}${resisted}${leaving}`;
     }).join(' ');
 }
 
