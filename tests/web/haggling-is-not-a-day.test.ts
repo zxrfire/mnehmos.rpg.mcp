@@ -32,6 +32,10 @@
  * d&d? heck no"* - so the whole exchange lives on the free side and only
  * acceptance costs anything, at whatever the purchase already charged.
  *
+ * That free-exchange reading predates the clock ruling in houses/people.md:
+ * replies and quick trades spend an eighth of a day, while a price read is
+ * free. The controls now keep that distinction and still require actual prices.
+ *
  * `asking-is-not-doing.test.ts > spends on exactly the intents it says press
  * somebody` holds the other end of this: it plays every interact intent and
  * compares what was spent against the declared set. This file holds the half
@@ -107,7 +111,7 @@ describe('a haggle is not a day', () => {
     /**
      * THE PROPERTY THIS FILE EXISTS FOR, AND THE ONE A FREE ACTION CAN FAKE.
      *
-     * Four sentences, none of which may move the clock. The day is read either
+     * A price read is free; three actual exchanges spend their short spans. The day is read either
      * side of each one rather than once at the end, so the sentence that spent
      * it is named instead of the suite reporting that something did.
      *
@@ -116,29 +120,28 @@ describe('a haggle is not a day', () => {
      * *you had not picked anybody* - so "nothing was spent" on its own would
      * pass against the defect.
      */
-    it('spends no day on any sentence of an exchange, and answers each one', async () => {
+    it('keeps a price read free, prices each exchange, and answers each one', async () => {
         const { game } = await inASquareWithAStall('haggle-costs-nothing');
         const book = onTheStall();
 
-        for (const said of [
-            `how much for the ${book}`,
-            "that's too expensive",
-            'I offer him twenty stones',
-            "I'll give you my sword instead"
-        ]) {
+        for (const [said, days] of [
+            [`how much for the ${book}`, 0],
+            ["that's too expensive", 1 / 8],
+            ['I offer him twenty stones', 1 / 8],
+            ["I'll give you my sword instead", 1 / 8]
+        ] as const) {
             const before = game.state().run.elapsedDays;
             const turn = await game.act(said);
-            expect(game.state().run.elapsedDays, `"${said}" spent a day`).toBe(before);
+            expect(game.state().run.elapsedDays - before, `"${said}" did not spend its actual span`).toBeCloseTo(days);
             expect(read(turn), `"${said}" came back without a figure in it`)
                 .toMatch(/\d+ spirit stones?/);
         }
     }, 180_000);
 
     /**
-     * Free means REPEATABLE. A haggle that cost a tenth of a day would pass the
-     * assertion above and still be a mechanic nobody could use twice.
+     * Each exchange advances the same clock, including repeated counteroffers.
      */
-    it('costs nothing however long the back and forth runs', async () => {
+    it('adds the real spans of repeated back and forth', async () => {
         const { game } = await inASquareWithAStall('haggle-repeats');
         const book = onTheStall();
         await game.act(`how much for the ${book}`);
@@ -147,7 +150,7 @@ describe('a haggle is not a day', () => {
         for (let round = 0; round < 8; round++) {
             await game.act(round % 2 === 0 ? "that's too expensive" : 'I offer three stones');
         }
-        expect(game.state().run.elapsedDays, 'eight rounds of haggling spent time').toBe(before);
+        expect(game.state().run.elapsedDays - before, 'eight actual exchanges have eight short spans').toBeCloseTo(8 / 8);
     }, 180_000);
 
     /**
