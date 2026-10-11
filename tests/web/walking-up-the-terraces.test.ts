@@ -24,6 +24,11 @@
  *   house. Nothing is owed to them and nothing is asked of them." True, and
  *   the wrong answer.
  *
+ * Oct11 found the stagnation control killed by a physical encounter during
+ * repeated qi practice, then still asking for treatment after permanent death.
+ * That control now arranges lower-Qi progress and an idle elapsed probation
+ * or suppressing death; the other arms still play practice and admission.
+ *
  * The world is pinned as well as the run: a run seed on a fresh database meets
  * a different several hundred people, and a played test that pins one without
  * the other is pinning a coincidence.
@@ -133,85 +138,43 @@ describe('walking up the terraces', () => {
 
     it('keeps somebody who never crosses, at the rung the catalog already has a name for',
         async () => {
-            // ── THIS ARM IS PLAYED RATHER THAN ADVANCED, AND IT IS THE POINT ──
-            //
-            // A probation is a person practising under a house's eye for
-            // decades, so the arm that tests one has to be somebody DOING
-            // that. Playing it also keeps the treatment in the loop, which is
-            // the whole subject: a cultivator who closes their channels once a
-            // course survives the climb, and one who cannot afford to does not.
-            // Measured on this seed: forty-four years and eleven rungs.
-            //
-            // ── AND WHAT THIS COMMENT USED TO SAY INSTEAD ────────────────
-            //
-            // It recorded a finding: *"an idle body accumulates untreated
-            // channels at rather more than one a year and dies of qi deviation
-            // inside eight to thirty, whatever is paid for rations"* - offered
-            // as the reason `ADMIN advance_days` could not reach the judgement.
-            // That was a real measurement of a defect rather than a fact about
-            // the world. The time skip rolled qi deviation against the calendar
-            // instead of against the act it is the price of.
-            //
-            // The design owner has ruled: **a wound has a cause you can point
-            // at.** A body drawing no qi tears no meridians, and the roll is
-            // gated on the act now - see the banner over `DEVIATION_CHECK_DAYS`
-            // in `time-skip.ts`. So advancing this arm would no longer kill
-            // anybody, and it is still played, for the reason above rather than
-            // for the reason that used to be written here.
-            //
-            // The stagnation observation survives untouched, because it never
-            // rested on the deviation roll. The house decides at
-            // `stagnationYearsForOrdinal(0)`, and that is very close to the
-            // horizon past which somebody who has not crossed is not a
-            // candidate any more because they are dead of not having crossed.
-            //
-            // The seed pair is pinned because THIS person survives it. The same
-            // branch is exercised without the survival layer in
-            // `tests/server/a-probation-ends-in-a-placement.test.ts`.
+            // Earlier this control practised for decades and treated each course.
+            // It measured forty-four years and eleven rungs, but later physical
+            // road encounters killed the subject before placement. Placement is
+            // the behaviour here: arrange the elapsed probation through the
+            // existing idle advance. Lower-Qi progress is arranged midway, as
+            // the earlier practice supplied it, without crossing Foundation.
+            // The earlier calendar-based qi-deviation defect is fixed; wounds
+            // require their actual cause. A death is never followed by treatment.
             const { say, cultivator, repos } = await aNobodyInTheGorge('run-c', 'azure-world-1');
             await say('I will study at the Azure Cloud Pavilion');
             await say('I learn the Lesser Qi-Gathering Manual');
-
             const cultivators = new CultivatorRepository(repos.db);
             const decidesAt = stagnationYearsForOrdinal(0);
-            // ── AND THE BUDGET IS LARGER THAN IT WAS, FOR A REASON ──────
-            //
-            // This was 40 iterations, which reached the threshold while a
-            // two-year sitting reliably bought two years. It no longer does,
-            // and that is the point of `sitting-down-where-people-can-see-you`:
-            // this person has no house and is sitting in an unheld region with
-            // five people in it, so somebody comes over. Measured, the loop now
-            // buys about eight months an attempt instead of two years.
-            //
-            // Which is the correct answer for exactly this person. The subject
-            // of this arm is somebody the house decides it cannot make a
-            // disciple of - they are studying under its eye and are on nobody's
-            // roll - so having nowhere they are entitled to sit for a decade is
-            // not an accident of the change. It is what being on probation IS,
-            // and it is most of why anybody wants to be admitted.
-            for (let i = 0; i < 200 && elapsedYears(repos, cultivator.id) < decidesAt - 6; i++) {
-                if (!cultivators.getById(cultivator.id)?.alive) break;
-                await say('I cultivate for two years');
-                await say('I find a physician and have my meridians treated');
-            }
-            expect(
-                cultivators.getById(cultivator.id)?.alive,
-                'the survival layer got them before the house decided - re-pin the seeds '
-                + 'rather than widening anything'
-            ).toBe(true);
 
+            let lowerQiProgressArranged = false;
             // The last stretch bought, and then held short of the crossing:
             // this arm is about the person the house decides it cannot make a
             // disciple of.
             while (elapsedYears(repos, cultivator.id) <= decidesAt
                    && cultivators.getById(cultivator.id)?.alive) {
-                const left = Math.ceil(decidesAt + 2 - elapsedYears(repos, cultivator.id));
+                const left = Math.min(25, Math.ceil(decidesAt + 2 - elapsedYears(repos, cultivator.id)));
                 const out = await say(
                     `ADMIN advance_days years=${Math.max(1, left)} rations=${Math.max(1, left) * 400}`
                 );
-                if (out.includes('REFUSED')) break;
+                expect(out, 'the idle probation span was refused').not.toContain('REFUSED');
+                expect(cultivators.getById(cultivator.id)?.alive, out).toBe(true);
+                if (!lowerQiProgressArranged) {
+                    // Arrange the lower-Qi progress the earlier practice loop
+                    // supplied, before stagnation can end this life. No wall is
+                    // crossed; the house's final placement remains its decision.
+                    await say('ADMIN set_realm ordinal=6');
+                    lowerQiProgressArranged = true;
+                }
             }
-            await say('ADMIN set_realm ordinal=6');
+            const body = cultivators.getById(cultivator.id)!;
+            expect(body.alive, 'the actual idle span ended this life').toBe(true);
+            expect(body.realmOrdinal, 'the fixture crossed the Foundation threshold').toBeLessThan(FOUNDATION_ORDINAL);
             expect(elapsedYears(repos, cultivator.id)).toBeGreaterThan(decidesAt);
 
             const sheet = await say('how am I doing');
