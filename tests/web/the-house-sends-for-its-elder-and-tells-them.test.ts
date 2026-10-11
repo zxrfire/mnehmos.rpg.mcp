@@ -204,6 +204,10 @@ describe('the house sends for its elder', () => {
         // *would the house spend this person on this* and the wrong question
         // when the answer is that somebody has to go with the juniors. After:
         // 3 asks, 2 of them an escort.
+        // The present house reaches 41, rather than the formerly measured 28;
+        // its wall pitch and pool changed. Sixty streams now supplied no escort.
+        // This possibility control uses a bounded wider sweep of the same
+        // pinned world, stopping after two actual escorts, without forcing one.
         //
         // NOTHING GENERATES AN ESCORT. The occasion is a posting the board
         // already made at a junior's rung, and the party is `whoTheHouseCanSend`
@@ -213,11 +217,15 @@ describe('the house sends for its elder', () => {
         const at = await anElderOf(A_HOUSE, ABOVE_THE_CATALOGUE);
         const escorts: { party: readonly { name: string; realmOrdinal: number }[];
             spokenBy: string | null; cohort: number }[] = [];
-        for (let i = 0; i < 60; i += 1) {
+        let checked=0;
+        for (let i = 0; i < 600 && escorts.length < 2; i += 1) {
+            checked++;
             const roll = encountersFor(at.deps, {
                 seed: `escort-${i}`, startDay: 100 + i, days: 90,
-                activity: 'labour', cultivator: at.cultivator, locatability: 'public'
-            } as never);
+                // The same known exposure as the ordinary summons controls.
+                // "public" is not an exposure value and reads as private.
+                activity: 'labour', cultivator: at.cultivator, locatability: 'known'
+            });
             for (const occurrence of roll.occurrences) {
                 const duty = occurrence.duty;
                 if (!duty || duty.origin !== 'summons') continue;
@@ -229,7 +237,7 @@ describe('the house sends for its elder', () => {
                 });
             }
         }
-        expect(escorts.length, 'no ask is ever about anybody but the elder').toBeGreaterThan(0);
+        expect(escorts.length, `No actual escort in ${checked} native windows.`).toBeGreaterThan(0);
 
         for (const ask of escorts) {
             // Everybody taken stands under the person taking them. An escort
