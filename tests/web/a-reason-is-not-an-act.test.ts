@@ -24,6 +24,9 @@
  *   AND `so` FIXES THE ORDER even where both halves are real. The existing
  *   purpose clauses run *act, then why*; this is *why, then act*, joined by a
  *   connective people use constantly when they are explaining themselves.
+ * Two needs now retain both acts in their supplied order. A meal has its
+ * fractional span, so the earlier request to choose between two long acts
+ * does not apply to a meal followed by work.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -78,10 +81,8 @@ describe('a stated need, and the act it is the reason for', () => {
             'I need to eat and I need work'
         );
         expect(budget.statedReasons).toHaveLength(0);
-        // Both survive, so the turn asks which comes first - which is right,
-        // because two needs with nothing between them are two things to do and
-        // the choice is the player's.
-        expect(budget.askAbout.map(one => one.action.action)).toEqual(['eat', 'work']);
+        expect(budget.askAbout).toHaveLength(0);
+        expect(budget.toRun.map(one => one.action.action)).toEqual(['eat', 'work']);
     });
 
     it('tells a stated need from an act said plainly', () => {
