@@ -4,6 +4,12 @@ import { withTheAttemptLanding } from '../../src/server/consolidated/forcing-an-
  * and beast contracts described without live effects. These sentences run through
  * the turn engine and assert the resource, progress, rank, and oath changes.
  * A declined offer moves nothing; a once-only resource cannot pay twice.
+ * The realm-release control starts with an ordinary witnessed agreement. Its
+ * old setup selected a consent sample below 0.65, but the actual person's kin
+ * tie stood at 0.5 alongside their ally tie, so that sample legitimately refused.
+ * Creating the already-agreed oath through its native authority tests release
+ * independently of whether somebody accepts a fresh offer; other played cases
+ * still cover the offer and refusal.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, engineCalls } from './harness';
@@ -16,6 +22,7 @@ import { WorldStateRepository } from '../../src/storage/repos/world-state.repo.j
 import type { WorldState } from '../../src/engine/world/world-state.js';
 import type { GameService } from '../../src/web/turn-engine.js';
 import { parseIntent } from '../../src/web/verb-pattern-table.js';
+import { agreeBeastContract } from '../../src/engine/world/beast-cultivation-contracts.js';
 
 async function room(seed: string) {
     const at = await makeGameInWorld({ seed, worldSeed: 'cultivation-agreements-world', adminMode: true });
@@ -198,9 +205,12 @@ describe('a beast cultivation agreement is lived after the conversation', () => 
         at.other.tags.push(`beast:${BEASTS[0]!.id}`);
         at.other.cultivation.realmOrdinal = 29;
         at.other.locationId = at.service.worldPlaceOf(at.player);
-        at.consent('beast-contract-consent', 0.65);
-        const agreed = await at.game.act(`I make a beast cultivation contract with ${at.other.name}`);
-        expect(engineCalls(agreed).some(call => call.name === 'beast.agreeContract' && call.ok), agreed.narration).toBe(true);
+        const witness = at.service.present(at.player).find(person => person.id !== at.other.id && person.id !== at.player.id);
+        expect(witness, 'the existing agreement has an actual witness on its ground').toBeDefined();
+        const self = at.world.npcs.find(person => person.id === at.player.id)!;
+        expect(agreeBeastContract(at.world, { ...self, locationId: at.service.worldPlaceOf(at.player) },
+            at.other, witness!.id, 0.25, Math.floor(at.world.currentDay))).toBe(true);
+        at.service.theWorldMoved();
         at.db.prepare('UPDATE cultivators SET realm_ordinal = 33 WHERE id = ?').run(at.player.id);
         await at.game.act('I look around');
         const bond = at.world.obligations.find(row => row.kind === 'oath' && row.subjectId === at.player.id
