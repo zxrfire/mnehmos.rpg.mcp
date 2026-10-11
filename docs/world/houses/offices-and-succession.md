@@ -255,19 +255,23 @@ Owner's rulings, 2026-10-10.
 | Alchemy (丹堂) | alchemy hall, cauldron room, infirmary | standing pills and allotments; medicine; the sick |
 | Artifact (器堂) | artifact refining hall, workshop, formation nodes | gear and repair; the buildings; keeping the formations charged |
 
-**Not every house has every hall.** A house has a hall only where it has that hall's rooms, and
-a small house has fewer elders than halls, so one elder answers for several. Discipline, the
-lecture hall and the duelling ground are not among the optional ones: every house with members
-keeps discipline, teaches and has things to settle, whatever its intake. Whether its cells can
-hold a cultivator is a separate matter, decided by its formations.
+**The work is universal; a dedicated room is not.** Every house keeps its stones, its records,
+its roll, its sick, its discipline, and feeds its people. A house with the room for it does that
+work there; a house without one does it in an ordinary room, by whoever is best placed. Its
+stones sit in a locked chest in a residence, its records on a shelf, its wounded in a room set
+aside in the quarters with whoever heals best looking after them, elder or not. What a house
+has only by having it is the exception: a vein chamber needs a vein, a tribute room a tribute
+arrangement, an alchemy or artifact hall a craft the house backs.
+
+**So not every house has every hall,** and a small house has fewer elders than halls: one
+elder answers for several, and the work of a hall it lacks falls to whoever answers for that
+work. Discipline, teaching and settling things are kept in every house with members, whatever
+its intake. Whether its cells can hold a cultivator is decided by its formations.
 
 **The crafts are institutional only where a house backs them.** Anybody in any house who knows a
 craft can work it on their own. An alchemy or artifact hall is the house supporting the craft,
 and only a house focused on it, or large and rich enough, keeps one. Every other house buys its
 pills, medicine and artifacts, and the houses that make them have real buyers.
-
-**Every house has somewhere for its sick,** dedicated or not. Without an infirmary the wounded
-are set down in an ordinary room and tended by whoever in the house heals best, elder or not.
 
 **Halls are worked by people posted there**, counted against the roll like anyone posted, and
 disciples in one hall may do different work. Menial work goes to servants first (the house's
