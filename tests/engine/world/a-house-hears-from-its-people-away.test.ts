@@ -132,6 +132,7 @@ import {
 } from '../../../src/engine/world/what-a-house-hears-from-its-people-away.js';
 import { aPostingAsAnOffer, whatAHouseHasOnItsBoard } from '../../../src/engine/encounters/what-a-house-has-on-its-board.js';
 import { peopleTakeWorkOffTheirHousesBoard } from '../../../src/engine/world/a-disciple-takes-work-off-the-board.js';
+import { resolveWithPlayerPresent } from '../../../src/engine/world/background-incident-draw.js';
 import { whatAHousesOwnErrandsBringBack } from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import { createWorld, makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
 
@@ -552,7 +553,10 @@ describe('a sitting between other work', () => {
         const state = build();
         short(state);
         doing(state, 'elder', teaching);
-        peopleTakeWorkOffTheirHousesBoard(state, 200, DAY + 10);
+        // Oct10 baseline: the background board draw legitimately skipped this
+        // four-person house (1 failed, 42 passed). This is the foreground board
+        // wiring control; ordinary contact settles it without a background draw.
+        resolveWithPlayerPresent(state, SEAT, () => peopleTakeWorkOffTheirHousesBoard(state, 200, DAY + 10));
         expect(howManyTheHouseHas(state.objects, HOUSE)).toBeGreaterThan(0);
         expect(state.npcs[at(state, 'elder')]!.activity).toEqual(teaching);
     });
