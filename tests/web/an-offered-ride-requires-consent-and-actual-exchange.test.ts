@@ -43,8 +43,11 @@
  * Operator setup places existing living people and existing tracked goods at
  * an actual advertised route, gives a held ordinary hull and records navigator
  * knowledge. It creates no person, destination, payment goods or arrival fact.
- * The existing attempt control forces only an ordinary acceptance draw; all
+ * The original helper replaced the acceptance sample. It has been removed;
+ * the same pinned people now accept through their ordinary decision. All
  * availability, payment, capacity, custody, time and landfall remain native.
+ * Returning to Emerald Water City also pays the existing Jade registration;
+ * that receipt is distinct from the craft's actual fuel cost.
  * Ride02 also protects explicit selection: asking for passengers with no
  * accepted rider refuses before departure; a promise followed by riding alone
  * neither summons its holder nor exchanges payment. Ride01 stays frozen.
@@ -71,10 +74,10 @@ import { isTracked, isRuined } from '../../src/engine/world/possessions.js';
 import { ownedPassageClaim, acceptOwnedPassage } from '../../src/web/an-owned-passage.js';
 import { passHours } from '../../src/web/routine-invitations.js';
 import { journeyTimeHasReached } from '../../src/engine/world/places-on-the-way.js';
-import { withTheAttemptLanding } from '../../src/server/consolidated/forcing-an-attempt-to-land.js';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo.js';
 import { agreedRideOn } from '../../src/web/an-offered-ride-is-an-agreement.js';
 import { actualBodiesArrivedTogether } from '../../src/engine/world/a-body-that-actually-arrived.js';
+import { getPrice, stonesForACashPrice } from '../../src/data/cultivation/mortal-world.js';
 
 async function scene() {
  const plans:string[]=[];
@@ -120,9 +123,9 @@ async function offer(h:Awaited<ReturnType<typeof scene>>,payment:string,utteranc
  const before=h.game.currentRun(),stones=h.currentRider().spiritStones;
  h.plans.push(JSON.stringify({action:'request',intent:'passage',target:h.rider.name,topic:h.to.name}));
  const said=utterance??('I offer '+h.rider.name+' a '+(payment==='free'?'free ':'')+'ride to '+h.to.name+(payment==='free'?'':' for '+payment)+'.');
- const accepted=await withTheAttemptLanding('request',()=>h.game.act(said));
- expect(accepted.forced.landed).toContain('an_approach_to_somebody');
- expect(accepted.result.toolCalls.some(c=>c.name==='world.agreeToPassage'&&c.ok)).toBe(true);
+ const accepted=await h.game.act(said);
+ expect(accepted.toolCalls.some(c=>c.name==='world.agreeToPassage'&&c.ok),
+  JSON.stringify({calls:accepted.toolCalls,narration:accepted.narration})).toBe(true);
  expect(h.oaths()).toHaveLength(1);expect(h.oaths()[0]!.status).toBe('open');
  expect(h.currentRider().activity?.kind).not.toBe('travelling');expect(h.currentRider().spiritStones).toBe(stones);
  expect(h.game.currentRun().cultivator.spiritStones).toBe(before.cultivator.spiritStones);
@@ -133,7 +136,7 @@ async function land(h:Awaited<ReturnType<typeof scene>>){
  const departed=h.game.currentRun().run.elapsedDays;
  h.plans.push(JSON.stringify({action:'ride',target:h.to.name,topic:'my spirit boat'}));
  const result=await h.game.act('I ride my spirit boat to '+h.to.name+' with passengers.');
- expect(result.toolCalls.some(c=>c.name==='engine.priceJourney'&&c.ok)).toBe(true);
+ expect(result.toolCalls.some(c=>c.name==='engine.priceJourney'&&c.ok),JSON.stringify({calls:result.toolCalls,narration:result.narration})).toBe(true);
  expect(h.game.currentRun().run.elapsedDays-departed).toBeLessThanOrEqual(h.quote.daysOneWay+.25+1e-8);
  const accepted=ownedPassageClaim(h.db,h.game.currentRun().cultivator.id);
  const rider=h.currentRider();
@@ -269,14 +272,15 @@ it('explicit first leg, fuelled return alone and second load are three actual co
   h.repos.cultivators.standIn(body.id,read.whereIs.get(second.id)!);now=h.game.currentRun();h.game.theyGaveTheirName(now.cultivator,now.run,secondRow());
   const h2={...h,rider:second,currentRider:secondRow,oaths:secondOaths};await offer(h2,'free');
   for(const id of [h.from.id,h.from.name])h.game.knowledge.learnIfNew({holderId:body.id,kind:'place',id,name:h.from.name,onDay:now.run.elapsedDays,sourceKind:'witnessed',stage:'encountered'});
-  const start=h.game.currentRun(),started=routineTime(h.game.atHand!);let burned=0,quotedDays=0;
+  const start=h.game.currentRun(),started=routineTime(h.game.atHand!);let burned=0,gatePayments=0,quotedDays=0;
   async function leg(to:typeof h.to,names:string[],alone=false){
    const current=h.game.currentRun(),at=routineTime(h.game.atHand!),from=worldLocationFor(h.game.atHand!,current.cultivator.location)!;
    const quote=quoteAnAirJourney(h.game.atHand!.locations,from.id,to.id,requireConveyance('conv-spirit-boat'),h.boat.power,1+names.length,{facts:witnessIndexFor(h.game.atHand!).byId,onDay:at});
    expect(quote,'actual direct air quote for this explicit leg').not.toBeNull();expect(quote!.trips).toBe(1);
-   const purse=current.cultivator.spiritStones;h.plans.push(JSON.stringify({action:'ride',target:to.name,topic:'my spirit boat'}));
+   const purse=current.cultivator.spiritStones,factsBefore=new Set(h.game.atHand!.history.facts.map(f=>f.id));
+   h.plans.push(JSON.stringify({action:'ride',target:to.name,topic:'my spirit boat'}));
    const result=await h.game.act('I ride my spirit boat to '+to.name+(alone?' alone.':' with '+names.join(' and ')+'.'));
-   expect(result.toolCalls.some(c=>c.name==='engine.priceJourney'&&c.ok)).toBe(true);
+   expect(result.toolCalls.some(c=>c.name==='engine.priceJourney'&&c.ok),JSON.stringify({calls:result.toolCalls,narration:result.narration})).toBe(true);
    for(let i=0;i<12&&ownedPassageClaim(h.db,body.id);i++){
     const claim=ownedPassageClaim(h.db,body.id)!,fact=h.game.atHand!.history.facts.find(f=>f.id===claim.receiptId)!;
     const arrival=Number(fact.data.arrivalDay),moment=routineTime(h.game.atHand!);if(journeyTimeHasReached(moment,arrival))break;
@@ -286,7 +290,13 @@ it('explicit first leg, fuelled return alone and second load are three actual co
    h.plans.push(JSON.stringify({action:'status'}));await h.game.act('I check my status.');
    expect(worldLocationFor(h.game.atHand!,h.game.currentRun().cultivator.location)?.id).toBe(to.id);
    expect(routineTime(h.game.atHand!)-at).toBeGreaterThanOrEqual(quote!.daysOneWay-1e-8);quotedDays+=quote!.daysOneWay;
-   expect(purse-h.game.currentRun().cultivator.spiritStones).toBe(quote!.stonesBurned);burned+=quote!.stonesBurned;
+   const registrations=h.game.atHand!.history.facts.filter(f=>!factsBefore.has(f.id)
+    &&f.data.gateRegistration===true&&f.data.gateRegistrant===body.id&&typeof f.data.stones==='number');
+   for(const registration of registrations)
+    expect(registration.data.stones).toBe(stonesForACashPrice(getPrice('price-gate-registration')!.cash));
+   const fees=registrations.reduce((sum,f)=>sum+Number(f.data.stones),0);
+   expect(purse-h.game.currentRun().cultivator.spiritStones).toBe(quote!.stonesBurned+fees);
+   burned+=quote!.stonesBurned;gatePayments+=fees;
   }
   await leg(h.to,[h.member.name,h.rider.name]);
   expect(h.oaths()[0]!.status).toBe('settled');expect(secondOaths()[0]!.status).toBe('open');
@@ -297,7 +307,7 @@ it('explicit first leg, fuelled return alone and second load are three actual co
   expect(routineOf(h.game.atHand!,first).locationId).toBe(h.to.id);expect(routineOf(h.game.atHand!,member).locationId).toBe(h.to.id);
   expect(secondOaths()[0]!.status).toBe('open');expect(h.party()).toContain(h.member.id);
   await leg(h.to,[second.name]);expect(secondOaths()[0]!.status).toBe('settled');expect(h.oaths()[0]!.status).toBe('settled');
-  expect(start.cultivator.spiritStones-h.game.currentRun().cultivator.spiritStones).toBe(burned);expect(burned).toBeGreaterThan(0);
+  expect(start.cultivator.spiritStones-h.game.currentRun().cultivator.spiritStones).toBe(burned+gatePayments);expect(burned).toBeGreaterThan(0);
   expect(routineTime(h.game.atHand!)-started).toBeGreaterThanOrEqual(quotedDays-1e-8);
   expect(h.game.atHand!.history.facts.filter(f=>f.data?.ownedPassage===true&&f.data.ownerId===body.id&&f.day>=started)).toHaveLength(3);
   expect(h.party()).toContain(h.member.id);expect(h.party()).not.toContain(second.id);

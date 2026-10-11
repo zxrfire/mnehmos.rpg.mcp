@@ -304,14 +304,17 @@ export function npcsStandingIn(
  * room with you.
  */
 export function npcsWithin(
-    state: Pick<WorldState, 'locations' | 'npcs'>,
+    state: Pick<WorldState, 'locations' | 'npcs' | 'seed' | 'currentDay' | 'currentHour'>,
     locationId: string,
     compounds: WhereCompoundsAre = whereCompoundsAre(state)
 ): NpcRecord[] {
     const compound = compounds.bySeat.get(locationId);
     return state.npcs
-        .filter(n => isActing(n.status) && n.locationId !== null
-            && (n.locationId === locationId || (compound?.inside.has(n.locationId) ?? false)))
+        .filter(n => {
+            const at = routineLocationOf(state,n);
+            return isActing(n.status) && at !== null
+                && (at === locationId || (compound?.inside.has(at) ?? false));
+        })
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 }
 

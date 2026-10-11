@@ -2,7 +2,10 @@
  * The ordinary world clock finishes that approach and commits the native hull;
  * closing the room's door during the walk must prevent boarding and payment.
  * Background transport must visit that deadline without turning an unrelated
- * person's practice into an exact appointment. Played advances retain both. */
+ * person's practice into an exact appointment. Played advances retain both.
+ * An explicitly gathered rider is part of that physical departure even when
+ * ordinary proximity does not put them beside the player. Distant settlement
+ * left their completed walk expiring and discarded it at the next check. */
 import {expect,it} from 'vitest';
 import {createWorld} from '../../../src/engine/world/world-state.js';
 import {createNpc,setRealm,PLAYER_ROW_TAG} from '../../../src/engine/world/npc-state.js';
@@ -34,6 +37,34 @@ function scene(){
  world.npcs[0]=approach!;
  return {world,room,passenger,port,destination};
 }
+function gatheredOutsideProximity(){
+ const h=scene();
+ h.world.npcs[1]={...h.world.npcs[1]!,locationId:h.destination.id,activity:null};
+ const person=h.world.npcs[0]!;
+ h.world.npcs[0]={...person,activity:{...person.activity!,departureApproach:{
+  ...person.activity!.departureApproach!,destinationId:h.port.id,service:'gather'}}};
+ h.world.currentDay+=.25;
+ return h;
+}
+it('keeps an explicitly gathered rider at the landing after their walk has finished',()=>{
+ const h=gatheredOutsideProximity();
+ expect(continueNpcDepartureApproach(h.world,h.world.npcs[0]!,h.world.currentDay)).toBe(true);
+ const ready=h.world.npcs[0]!;
+ expect(ready.locationId).toBe(h.port.id);
+ expect(ready.activity?.untilDay).toBeNull();
+ expect(ready.activity?.departureApproach).toBeUndefined();
+ const moved=advanceWorldForPlay(h.world,{days:.125,preciseDays:true,access:{actorId:'observer',
+  locationId:h.destination.id,factionId:null,knowsNpc:()=>false,knowsFaction:()=>false,knowsPlace:()=>false}});
+ const stillThere=moved.state.npcs.find(n=>n.id===ready.id)!;
+ expect(stillThere.activity?.standingIn).toBe(ready.activity?.standingIn);
+ expect(stillThere.activity).not.toBeNull();
+});
+it('keeps a gathered rider behind a door that closed even outside ordinary proximity',()=>{
+ const h=gatheredOutsideProximity();h.room.sealed=true;
+ expect(continueNpcDepartureApproach(h.world,h.world.npcs[0]!,h.world.currentDay)).toBe(true);
+ expect(h.world.npcs[0]!.locationId).toBe(h.room.id);
+ expect(h.world.npcs[0]!.spiritStones).toBe(h.passenger.spiritStones);
+});
 it('keeps transport deadlines exact without enumerating unrelated background practice',()=>{
  const h=scene(),day=h.world.currentDay;
  h.world.npcs.push({...createNpc(h.world.seed,{id:'practising-neighbour',locationId:h.port.id,

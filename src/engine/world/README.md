@@ -2,6 +2,38 @@
 
 # The World Layer
 
+Whole-compound counts read the same actual journey position as its rooms.
+An assigned destination alone neither puts an incoming member inside nor removes
+a departing member before departure; counting does not advance their journey.
+
+A separated presence keeps its own finite qi on its existing object. Player and
+world-person presences share the same sustaining span, combat-art readiness and
+numeric cast writer. Cooldowns derive from that presence's actual cast facts
+through the existing elapsed-day authority; reading never refills its pool or
+charges its maker. A lower presence cannot borrow an art above its own rung.
+
+A separated presence is destroyed when its own body is emptied; losing a fight
+through a surviving flight keeps its charged body and carried sword.
+
+World people retain actual flight charges through the existing body writer after
+ordinary or remote fights. A normalized bout's receipt is translated to that
+person's derived body pool; temporary strike damage keeps its existing contract.
+
+At a disciple's death, `when-a-disciple-dies-their-tokens-go-to-dust.ts` deletes
+their physical identity token, life lamp and keyed communication slips before
+the estate is read. The shared `a-made-token-goes-to-dust.ts` primitive consumes
+rows without an item archive. Actual witnesses carry the ordinary destruction
+fact; the living player receives a carried token's or witnessed lamp's plain
+dust line once. The existing member rows remain the house's roll.
+`what-the-roll-and-the-lamps-say.ts` compares that roll with actual hall lamps.
+Staffed hall postings derive their next daily check from the death and arrival
+dates; an unstaffed or fallen hall performs no background check. No day loop or
+second roll is kept. An explicit later check learns absence, without inventing
+the death hour. A living missing member's burning lamp retains its captive reading.
+When a clerk leaves the post, any unrecorded finding becomes an ordinary roll-check
+event, so ending the duty cannot erase what the house learned. A finding of a
+member's missing lamp is consequential and survives the routine paperwork sweep.
+
 House business has recurring dates on `houseBusinessCalendar`, read from actual
 allies and the catalog's patronage pyramid. Distant appointments resolve through
 a capped draw; player involvement uses the existing exact reader. Envoys, tribute
@@ -128,10 +160,14 @@ mission hall, practice yard, elder offices, alchemy hall, artifact refining hall
 do not invent a second institutional layout. Shared everyday rooms remain reachable by the
 newest members. Rank precincts, keys and sealed doors keep their ordinary restrictions.
 Knowledge of a room never grants its access. Office holders stand outside sealed offices.
-Every house has an ordinary infirmary for the wound medicine it already refines.
-Saved compounds acquire only that missing room through `addMissingInfirmary`, which uses
-their existing outer precinct, construction capacity and style. It does not rebuild old
-rooms or redeal keys and offices; a repeated call changes nothing.
+Institutional craft rooms require a craft focus, or the existing deep-foundation
+bar plus a vein or tribute income. Supported alchemy and specialist care have a
+dedicated infirmary; opening a saved house adds none. Personal crafting has no
+institutional room prerequisite. Discipline, lectures and declared duels serve
+existing members regardless of intake, with newly required rooms appended after
+the old construction. Ordinary house work uses existing rooms when a dedicated
+room is absent. Holding cells separately require working formation nodes at the
+existing integrity bar; dark arrays do not remove the house's discipline work.
 Its current dispenser is read once per compound placement from actual available members doing rank work;
 offices, closed lessons, shared scenes and absence keep their claims on those people.
 A clinic area is the physician’s indoor workspace, distinct from a town street.
@@ -4741,8 +4777,8 @@ identity in secret history for replay safety. A wide volley is one cast, not
 one charge per target. A spent/unready art leaves ordinary physical striking
 available. Held rounds refresh resources from the current actual actor; no
 per-round cooldown clock or passive refill is authored. Precharged PC named
-strikes retain their own writer, and NPC escape/proxy-sustaining art pricing
-remain separate unbuilt seams rather than receiving an invented charge.
+strikes retain their own writer. NPC escape charges retain the native flight
+receipt, and separated presences retain their own actual sustaining resource.
 
 A retained native air return uses its existing bound receipt and actual home
 position before ordinary homegoing reads a walking route. After genuine retained
@@ -4761,6 +4797,9 @@ Admitted carriage vertices compare their scheduled absolute dates before clock
 subtraction, including a driver expiring exactly at an intermediate settlement.
 Capital dispatch selection reads each free member's actual enclosing grounds;
 a member in lodging is at home and still walks the actual departure approach.
+An explicitly gathered rider uses that physical approach even outside the player's
+proximity. The rider waits at the departure after arriving, and the route's actual
+door is checked before arrival; an expired walking activity cannot cancel boarding.
 
 A live house shuttle's first admission requires the actual current world clock.
 Retrospective annual reporting cannot accept a present-body course at an earlier
@@ -4867,3 +4906,9 @@ each query; it does not keep yesterday's geography. A homecoming pass groups
 actual exchange stock by its current carrier before checking each returned
 stint. An admitted paid air return keeps its receipt until actual landfall;
 generic term clearing cannot close the journey on the departure date.
+
+Institutional ordinary pill stocks and yearly wound-medicine batches require an
+actual alchemy hall. Houses without one acquire supplies by trade; assigning care
+to ordinary quarters supplies neither a craft facility nor free medicine. The
+same physical craft-room reader governs house-owned refining vessels. Existing
+personally held medicine and personal crafting keep their ordinary authorities.

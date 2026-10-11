@@ -55,7 +55,9 @@ export function prepareNpcDepartureApproach(world:WorldState,npc:NpcRecord,desti
 export function continueNpcDepartureApproach(world:WorldState,npc:NpcRecord,day:number,routes?:RouteQueries):boolean {
     const intent=npc.activity?.departureApproach,binding=npc.activity?.capitalMissionId;
     if(!intent||!binding)return false;
-    if (!isPlayerInvolved(world, npc)) {
+    // Explicit gathering belongs to the player's physical departure, including
+    // a rider whose company agreement has not begun yet.
+    if (!isPlayerInvolved(world, npc) && intent.service !== 'gather') {
         const due = npc.activity?.untilDay;
         if (due == null || due > day) return true;
         const at = world.npcs.findIndex(person => person.id === npc.id);
