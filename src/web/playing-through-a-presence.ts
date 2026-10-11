@@ -1,6 +1,6 @@
 import { isTheWorldsToMove } from '../engine/world/npc-state.js';
 import { routineTime } from '../engine/world/npc-routines.js';
-import { npcCombatArts, writeTheNpcArtsActuallyUsed } from '../engine/world/the-arts-an-npc-actually-uses-in-a-fight.js';
+import { npcCombatArts, proxyCombatArts, writeTheNpcArtsActuallyUsed } from '../engine/world/the-arts-an-npc-actually-uses-in-a-fight.js';
 /** A player's remote acts use the ordinary scene and the ordinary combat round. */
 import type { GameService } from './turn-engine.js';
 import type { Cultivator, Run, AmbientQi } from '../schema/cultivation.js';
@@ -20,7 +20,7 @@ import { combatantOf } from '../engine/world/gatherings.js';
 import { resolveConfrontation } from '../engine/cultivation/combat.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import { AN_ORDINARY_SWING } from '../engine/cultivation/how-a-blow-was-thrown.js';
-import { whatTheConfrontationDidToThem } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
+import { whatTheConfrontationDidToThem, whatTheirFlightsCost } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
 import { npcsInTheArea, whereInThisPlaceTheyStand, theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
 import { isActing } from '../engine/world/npc-state.js';
@@ -157,6 +157,13 @@ export async function actThroughAPresence(game: GameService, action: PlannedActi
         let line = 'The presence fought.';
         if (fight) {
             for (const side of [fight.aggressor,fight.defender]) {
+                const presence = world.objects.find(object => object.id === side.input.id
+                    && object.tags.includes('acting-proxy'));
+                if (presence) {
+                    const arts = proxyCombatArts(world,presence,routineTime(world));
+                    if (arts) side.input = {...side.input,...arts};
+                    continue;
+                }
                 const npc = world.npcs.find(person=>person.id===side.input.id);
                 if (npc && isTheWorldsToMove(npc)) side.input = {...side.input,...npcCombatArts(npc,routineTime(world))};
             }
@@ -177,10 +184,11 @@ export async function actThroughAPresence(game: GameService, action: PlannedActi
             const remoteTarget = world.objects.find(o => o.id === targetId && o.tags.includes('acting-proxy'));
             if (!remoteTarget) whatTheConfrontationDidToThem(world, { npcId: targetId, byId: body.id, byName: body.name,
                 day: world.currentDay, wounds: settled.injuries[targetId] ?? [], outcome: settled.outcome,
-                lost: settled.loserId === targetId, finished: settled.finished });
+                lost: settled.loserId === targetId, finished: settled.finished,
+                flight: whatTheirFlightsCost(settled.exchanges, targetId, combatantOf(getNpc(world, targetId)!, world).maxHp) });
             line = 'The fight ended.';
             for (const remote of [proxy, remoteTarget].filter(p => !!p)) {
-                if (settled.loserId === remote.id || Number(remote.data.hp) <= 0) line += ` ${endAProxy(world, remote, true)}`;
+                if (Number(remote.data.hp) <= 0) line += ` ${endAProxy(world, remote, true)}`;
             }
             if (!proxy) {
                 for (const wound of settled.injuries[body.id] ?? []) game.repos.cultivators.addInjury(body.id, wound);
@@ -276,12 +284,17 @@ export function settleTheSeparatedBody(game: GameService, beforeDay: number): st
     });
     writeTheNpcArtsActuallyUsed(world,result.exchanges,
         'unguarded-body:'+run.id+':'+body.id+':'+run.turn,routineTime(world));
+    if (attackers[0]) whatTheConfrontationDidToThem(world, { npcId: attacker.id,
+        byId: body.id, byName: body.name, day: world.currentDay,
+        wounds: result.injuries[attacker.id] ?? [], outcome: result.outcome,
+        lost: result.loserId === attacker.id, finished: result.finished,
+        flight: whatTheirFlightsCost(result.exchanges, attacker.id, attacker.maxHp) });
     game.repos.cultivators.update(body.id, { hp: Math.max(0, result.hp[body.id] ?? body.hp) });
     for (const wound of result.injuries[body.id] ?? []) game.repos.cultivators.addInjury(body.id, wound);
     if ((result.hp[body.id] ?? body.hp) <= 0 && result.finished) game.repos.cultivators.markDead(body.id, 'combat_defeat', run.turn, 'The body was destroyed by an assault.', true);
     if (remote) {
         remote.data.hp = result.hp[remote.id] ?? remote.data.hp;
-        if (result.loserId === remote.id) endAProxy(world, remote, true);
+        if (Number(remote.data.hp) <= 0) endAProxy(world, remote, true);
         game.theWorldMoved();
     }
     lines.push(exposed ? 'Somebody attacked the unattended body.' : 'A separated presence attacked the body.');

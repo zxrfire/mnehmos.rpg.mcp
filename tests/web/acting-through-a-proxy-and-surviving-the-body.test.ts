@@ -5,6 +5,11 @@
  * continue; rebuilding a remnant never restores the ended person's identity.
  * Losing that rebuilt body also cannot recover more identity than it held.
  * NPCs use the same recovery attempt, including resistance from the player's soul.
+ * The combat controls now finish the held fight, rather than restart it eight
+ * times after an escape, and read destruction from its actual remaining body.
+ * The reconstruction control stations its actual helper beside the retained
+ * remnant, observes the attempt, and compares its price and result with the
+ * native attempt on the actual settling clock, without searching for a success.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness';
@@ -18,6 +23,10 @@ import { resolveBodilyDestruction, isTheSamePerson, NASCENT_SOUL_ORDINAL } from 
 import { getNpc } from '../../src/engine/world/world-state';
 import { WorldStateRepository } from '../../src/storage/repos/world-state.repo';
 import type { ProviderCallOpts, ProviderCallResult } from '../../src/agent/provider/types';
+import type { UnfinishedFight } from '../../src/engine/cultivation/unfinished-fight';
+import { recoverABody } from '../../src/engine/world/something-acting-in-your-place';
+import { routineTime } from '../../src/engine/world/npc-routines';
+import { makeLocation } from '../../src/engine/world/locations';
 
 class SceneProvider extends ScriptedProvider {
     plan = '{"action":"look"}';
@@ -69,6 +78,24 @@ async function setup(seed: string, ordinal = 29, worldEnabled = true) {
     return { ...h, provider, world, source, destination, cultivator, run, play, material, person, proxy };
 }
 
+/** Follow this actual held bout until it settles or the dated presence ends. */
+async function finishPresenceFight(h: Awaited<ReturnType<typeof setup>>, presence: ReturnType<typeof makeObject>, target: string) {
+    if (typeof presence.data.fight !== 'string') return;
+    const opened = JSON.parse(presence.data.fight) as UnfinishedFight;
+    for (let turn = 0; turn < opened.roundBudget && typeof presence.data.fight === 'string'
+        && presence.data.endedOnDay === undefined; turn++) {
+        const before = JSON.parse(presence.data.fight) as UnfinishedFight;
+        const acted = await h.play(`I attack ${target}`);
+        if (typeof presence.data.fight === 'string' && presence.data.endedOnDay === undefined) {
+            const after = JSON.parse(presence.data.fight) as UnfinishedFight;
+            expect(after.id, JSON.stringify(acted.toolCalls)).toBe(before.id);
+            expect(after.roundsFought, JSON.stringify(acted.toolCalls)).toBeGreaterThan(before.roundsFought);
+        }
+    }
+    expect(presence.data.endedOnDay !== undefined || presence.data.fight == null,
+        'the actual held fight must settle within its native budget').toBe(true);
+}
+
 describe('acting through a persisted presence', () => {
     it.each(['sword', 'clone', 'soul'] as const)('creates a %s, leaves the body and reloads its dated presence', async kind => {
         const h = await setup(`create-${kind}`);
@@ -113,7 +140,7 @@ describe('acting through a persisted presence', () => {
         expect(h.repos.cultivators.getById(h.cultivator.id)?.location).toBe(h.source.name);
     }, 120_000);
 
-    it('loses the sent sword in an ordinary fight, without killing the distant body', async () => {
+    it('keeps the sent sword\'s actual fight result without killing the distant body', async () => {
         const h = await setup('proxy-loss', 15);
         h.world.objects.push(makeObject({ id: 'weak-blade', name: 'A carried sword', kind: 'artifact', power: 15,
             ownerId: h.cultivator.id, possessorId: h.cultivator.id, tags: ['sword'] }));
@@ -121,10 +148,15 @@ describe('acting through a persisted presence', () => {
         await h.play(`I send my sword to ${h.destination.name}`);
         h.proxy().data.standingIn = theAreasOf(h.world, h.destination).whereIs.get(defender.id)!;
         h.game.theWorldMoved();
+        const before = Number(h.proxy().data.hp);
         const fought = await h.play(`I attack ${defender.name}`);
-        for (let turn = 0; turn < 8 && h.proxy().data.endedOnDay === undefined; turn++) await h.play(`I attack ${defender.name}`);
-        expect(h.proxy().data.lost, JSON.stringify(fought.toolCalls)).toBe(true);
-        expect(h.world.objects.find(o => o.id === 'weak-blade')?.tags).toContain('ruined');
+        expect(fought.toolCalls.some(call => call.name === 'world.separatedPresence' && call.action === 'attack' && call.ok),
+            JSON.stringify(fought.toolCalls)).toBe(true);
+        await finishPresenceFight(h, h.proxy(), defender.name);
+        expect(Number(h.proxy().data.hp), 'the sent body must actually bear the fight').toBeLessThan(before);
+        const destroyed = Number(h.proxy().data.hp) <= 0;
+        expect(h.proxy().data.lost === true, JSON.stringify(fought.toolCalls)).toBe(destroyed);
+        expect(h.world.objects.find(o => o.id === 'weak-blade')?.tags.includes('ruined')).toBe(destroyed);
         expect(h.repos.cultivators.getById(h.cultivator.id)?.alive).toBe(true);
     }, 120_000);
 
@@ -245,23 +277,48 @@ describe('surviving and recovering a body', () => {
         expect(saved.history.facts.some(f => f.data.crime === 'possession')).toBe(true);
     }, 120_000);
 
-    it('lets an NPC ally reconstruct a remnant on the world clock', async () => {
+    it('lets an NPC ally attempt reconstruction with its actual price and outcome on the world clock', async () => {
         const h = await setup('npc-reconstruction');
+        const place = makeLocation({ id: 'reconstruction-ground', name: 'A cave above the ford', kind: 'cave' });
+        h.world.locations.push(place);
         const materialId = 'npc-rebuilding-material';
-        const id = Array.from({ length: 100 }, (_, i) => `rebuilding-soul-${i}`).find(id =>
-            forStream(h.world.seed, 'body-recovery', id, materialId, h.world.currentDay + 1).next() < 0.75)!;
-        const remnant = h.person(id, 'Lan Sheng', 29, h.destination.id);
+        const id = 'rebuilding-soul-0';
+        const remnant = h.person(id, 'Lan Sheng', 29, place.id);
         h.world.npcs[h.world.npcs.findIndex(n => n.id === id)] = setExistence(remnant, {
             to: 'remnant', onDay: h.world.currentDay, soulState: 'damaged', identityContinuity: 0.35
         });
-        const helper = h.person('rebuilding-ally', 'Bo Wen', 29);
+        const helper = h.person('rebuilding-ally', 'Bo Wen', 29, place.id);
         helper.cultivation.techniqueIds = ['spring-returning-life-art'];
         Object.assign(helper, upsertRelationship(helper, { targetId: id, targetName: remnant.name, kind: 'ally', standing: 0.8 }, h.world.currentDay));
         h.material(materialId, helper.id);
-        await h.play('I wait one day');
+        for (const person of [getNpc(h.world, id)!, helper]) {
+            person.activity = { kind: 'idle', note: 'Waiting together for the body to be rebuilt',
+                sinceDay: routineTime(h.world), untilDay: routineTime(h.world) + 2,
+                withIds: [id, helper.id, h.cultivator.id].filter(other => other !== person.id) };
+        }
+        const area = theAreasOf(h.world, place).whereIs.get(id)
+            ?? whereInThisPlaceTheyStand(h.world, place, null, getNpc(h.world, id)!.factionId).id;
+        expect(theAreasOf(h.world, place).whereIs.get(helper.id), 'the actual maker must be beside the remnant')
+            .toBe(area);
+        helper.activity!.standingIn = area;
+        h.repos.cultivators.update(h.cultivator.id, { location: place.name });
+        h.repos.cultivators.standIn(h.cultivator.id, area);
+        h.game.theWorldMoved();
+        const expected = structuredClone(h.world);
+        const waited = await h.play('I wait one day');
         const saved = new WorldStateRepository(h.db).loadWorld(h.world.id)!;
-        expect(getNpc(saved, id)?.status).toBe('reconstructed');
-        expect(saved.objects.find(o => o.id === materialId)?.tags).toContain('ruined');
+        expected.currentDay = saved.currentDay;
+        expected.currentHour = saved.currentHour;
+        const attempted = recoverABody(expected, getNpc(expected, id)!, 'reconstructed',
+            expected.objects.find(object => object.id === materialId)!, getNpc(expected, helper.id)!);
+        expect(expected.objects.find(object => object.id === materialId)?.tags,
+            `the paired native control must make an actual attempt: ${attempted.line}`).toContain('ruined');
+        expect(saved.objects.find(o => o.id === materialId)?.tags,
+            JSON.stringify({ calls: waited.toolCalls, remnant: getNpc(saved, id), helper: getNpc(saved, helper.id),
+                day: saved.currentDay, hour: saved.currentHour })).toContain('ruined');
+        expect(getNpc(saved, id)?.status).toBe(getNpc(expected, id)?.status);
+        expect(getNpc(saved, id)?.soulState).toBe(getNpc(expected, id)?.soulState);
+        expect(getNpc(saved, id)?.identityContinuity).toBe(getNpc(expected, id)?.identityContinuity);
         expect(isTheSamePerson({ existenceState: getNpc(saved, id)!.status, identityContinuity: getNpc(saved, id)!.identityContinuity })).toBe(false);
     }, 120_000);
 
@@ -277,12 +334,17 @@ describe('surviving and recovering a body', () => {
         const talked = await h.play(`I talk to ${friend.name}`);
         expect(talked.toolCalls.some(c => c.action === 'interact' && c.ok)).toBe(true);
         const makerHp = getNpc(h.world, friend.id)!.cultivation.hp;
-        await h.play(`I attack ${friend.name}`);
-        for (let turn = 0; turn < 8 && presence.data.endedOnDay === undefined; turn++) await h.play(`I attack ${friend.name}`);
-        expect(presence.data.lost).toBe(true);
+        const before = Number(presence.data.hp);
+        const fought = await h.play(`I attack ${friend.name}`);
+        expect(fought.toolCalls.some(call => call.name === 'world.separatedPresence' && call.action === 'attack' && call.ok),
+            JSON.stringify(fought.toolCalls)).toBe(true);
+        await finishPresenceFight(h, presence, friend.name);
+        expect(Number(presence.data.hp), 'the remote body must actually bear the fight').toBeLessThan(before);
+        const destroyed = Number(presence.data.hp) <= 0;
+        expect(presence.data.lost === true).toBe(destroyed);
         expect(getNpc(h.world, friend.id)?.cultivation.hp).toBe(makerHp);
         expect(getNpc(h.world, friend.id)?.status).toBe('alive');
-        expect(getNpc(h.world, friend.id)?.soulState).toBe('damaged');
+        expect(getNpc(h.world, friend.id)?.soulState).toBe(destroyed ? 'damaged' : 'intact');
     }, 120_000);
 
     it('charges an exposed body the result of an actual assault even when the sword lapses that day', async () => {

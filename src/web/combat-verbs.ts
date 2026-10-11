@@ -81,7 +81,7 @@ import {
     transferPossession
 } from '../engine/world/possessions.js';
 import {
-    whatTheConfrontationDidToThem
+    whatTheConfrontationDidToThem, whatTheirFlightsCost
 } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
 import {
     type AmbientQi,
@@ -1546,7 +1546,7 @@ export const combatVerbs = {
             run, cultivator, held,
             theRiteKilledThem ? { ...(settled as object), finished: true }
                 : theRiteKilledYou ? { ...(settled as object), died: true } : settled,
-            execution
+            execution, whatTheirFlightsCost(result.exchanges, held.opponent.id, held.opponent.maxHp)
         );
         this.whatTheLoserNowHoldsAboutYou(run, cultivator, held, result, done);
         // AFTER the aftermath, which writes the loser's tie for a submission;
@@ -2448,7 +2448,8 @@ export const combatVerbs = {
         cultivator: Cultivator,
         held: StandingFight,
         result: object,
-        execution: Execution
+        execution: Execution,
+        flight?: { cost: number; maxHp: number }
     ): Execution {
         const party = { kind: 'cultivator' as const, id: held.party.id, name: held.party.name };
         const wanted = held.wanted;
@@ -2476,7 +2477,7 @@ export const combatVerbs = {
         const room = this.present(cultivator)
             .filter(row => row.id !== party.id && row.id !== cultivator.id).length;
         const inTheWorld = this.whatItDidToThem(
-            cultivator, held.theirRecord, result, terms, room
+            cultivator, held.theirRecord, result, terms, room, flight
         );
         execution.calls.push(...inTheWorld.calls);
 
@@ -2516,7 +2517,8 @@ export const combatVerbs = {
         /** What the two of them said it was. Carried through, never inferred. */
         terms: BoutTerms = 'open',
         /** How many others were standing there. Priced by the bout module. */
-        witnesses = 0
+        witnesses = 0,
+        flight?: { cost: number; maxHp: number }
     ): {
         died: boolean;
         /**
@@ -2564,6 +2566,7 @@ export const combatVerbs = {
             byName: cultivator.name,
             day: Math.floor(this.atHand.currentDay),
             wounds,
+            flight,
             outcome: outcome as ConfrontationOutcome,
             lost: loserId !== null && theirRollId !== null && loserId === theirRollId,
             finished: body.finished === true,
@@ -2590,8 +2593,8 @@ export const combatVerbs = {
                     ? `, heir=${wrote.handoff.primaryHeirId} inheriting `
                       + `${wrote.handoff.goalsInherited.length} goals`
                     : '')
-                + `. outcome=${outcome}; finished=${body.finished === true}. No hit points are `
-                + 'written back: the world holds a body and this carries only the wounds. See the header.',
+                + `. outcome=${outcome}; finished=${body.finished === true}. Actual flight costs `
+                + 'are written to the body; temporary strike damage is not written back.',
             ok: true
         }];
         if (!parsed.success && Array.isArray(reported) && reported.length > 0) {

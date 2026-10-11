@@ -35,7 +35,9 @@
  *
  * The record now carries a body - `NpcCultivation.hp`, against a pool derived
  * from `maxHpForOrdinal` rather than stored - and this file still does not touch
- * it. That is a decision rather than a leftover.
+ * temporary strike damage. Flight is different: its actual charge is written
+ * through `bodyTaken`, just as the player's flight is charged, using the
+ * supplied combatant pool to translate a normalized bout's receipt.
  *
  * What is on the row exists because a CROSSING costs the body and there was
  * nowhere for the toll to come out of, so it bound the player and nobody else.
@@ -65,7 +67,7 @@
  * `tests/engine/world/nobody-is-invincible.test.ts` so that a change which does
  * make them that frequent fails here rather than being noticed as a mood.
  *
- * WHAT DOES NOT FOLLOW is that THIS file should start writing them. A player
+ * WHAT DOES NOT FOLLOW is that THIS file should start writing strike damage. A player
  * can fight every turn; a circle cannot. The frequency is the whole argument,
  * and it comes out differently on this side.
  *
@@ -73,7 +75,8 @@
  * rows the resolver already produced. So a bout somebody walked away from
  * unmarked leaves their body as it was - which is the honest reading, not a lost
  * write - and a bout that cost them something leaves the thing it cost them, on
- * the record, where the next fight reads it.
+ * the record, where the next fight reads it. Actual flight costs are also retained,
+ * under the later ruling that an NPC pays what the player pays to flee.
  *
  * ── WHAT IT WRITES ───────────────────────────────────────────────────────
  *
@@ -98,12 +101,14 @@
 import type { Injury, SectAlignment } from '../../schema/cultivation.js';
 import { isTheSamePerson } from '../cultivation/existence.js';
 import { ruin } from './possessions.js';
-import type { ConfrontationOutcome } from '../cultivation/combat.js';
+import type { ConfrontationOutcome, ExchangeRecord } from '../cultivation/combat.js';
 import { fillConsequences, makeFact, type HistoricalFact } from './history.js';
 import { GRUDGE_STANDING } from './gatherings.js';
 import {
     carryingWounds,
+    bodyTaken,
     isActing,
+    maxBodyOf,
     markDead,
     upsertRelationship,
     type NpcRecord
@@ -140,6 +145,8 @@ export interface WhatTheFightDecided {
 
     /** The rows `resolveConfrontation` put on them. Applied, never re-derived. */
     wounds: readonly Injury[];
+    /** Actual flight receipts, in the combatant's supplied body pool. */
+    flight?: { cost: number; maxHp: number };
     /** The resolver's own verdict. Read for what it says, never adjusted. */
     outcome: ConfrontationOutcome;
     /** Whether this person is the one the resolver named as having lost. */
@@ -240,6 +247,12 @@ const NOTHING: WhatItDidToThem = {
     opens: [], theyLeft: []
 };
 
+/** Sum only actual native flight receipts; the body pool is supplied by the fight. */
+export function whatTheirFlightsCost(exchanges: readonly ExchangeRecord[], id: string, maxHp: number): { cost: number; maxHp: number } {
+    return { cost: exchanges.reduce((cost, exchange) => cost
+        + (exchange.defenderId === id ? exchange.flight?.damage ?? 0 : 0), 0), maxHp };
+}
+
 /**
  * How badly this went for them, in the one band that decides the account.
  *
@@ -276,6 +289,11 @@ export function whatTheConfrontationDidToThem(
     const day = input.day;
     const facts: HistoricalFact[] = [];
     const lines: string[] = [];
+
+    if (input.flight && input.flight.cost > 0 && input.flight.maxHp > 0) {
+        state.npcs[at] = bodyTaken(state.npcs[at],
+            input.flight.cost * maxBodyOf(state.npcs[at]) / input.flight.maxHp, day);
+    }
 
     const recovery = state.npcs[at].activity;
     if (recovery?.kind === 'mending' && recovery.thingId?.startsWith('repair-')) {

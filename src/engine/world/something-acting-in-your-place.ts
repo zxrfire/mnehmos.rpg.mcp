@@ -1,4 +1,4 @@
-import { writeTheNpcArtsActuallyUsed } from './the-arts-an-npc-actually-uses-in-a-fight.js';
+import { proxyCombatArts, writeTheNpcArtsActuallyUsed } from './the-arts-an-npc-actually-uses-in-a-fight.js';
 /** A remote presence is a dated world object. Its maker's body stays where it was. */
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { NASCENT_SOUL_ORDINAL, hasBody, canEnterExistenceState, isTheSamePerson } from '../cultivation/existence.js';
@@ -14,11 +14,12 @@ import { getNpc, type WorldState } from './world-state.js';
 import { whereInThisPlaceTheyStand, npcsInTheArea, theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
 import { createObligation } from '../social/grudges.js';
-import { whatTheConfrontationDidToThem } from './what-a-confrontation-does-to-somebody-the-world-holds.js';
+import { whatTheConfrontationDidToThem, whatTheirFlightsCost } from './what-a-confrontation-does-to-somebody-the-world-holds.js';
 import { ambientForLocationOnDay } from '../cultivation/ambient.js';
 import type { Party } from '../social-leverage/what-a-deed-leaves.js';
 import { whoTheyLeave } from './who-is-left-when-somebody-dies.js';
 import { settleNpcDeath } from './time.js';
+import { routineTime } from './npc-routines.js';
 
 type ProxyKind = 'sword' | 'clone' | 'soul';
 
@@ -109,14 +110,15 @@ export function sendAProxy(world: WorldState, maker: NpcRecord, requested: Proxy
         possessorId: null, locationId: placeId, power, tags: ['acting-proxy'],
         data: { kind, standingIn: area.id, madeOnDay: world.currentDay,
             lapsesOnDay: world.currentDay + (days ?? reserve), swordId: sword?.id ?? null,
-            hp: maxHpForOrdinal(maker.cultivation.attributes.might, power) }
+            hp: maxHpForOrdinal(maker.cultivation.attributes.might, power),
+            qi: maxHpForOrdinal(maker.cultivation.attributes.might, power) }
     });
     if (sword) { sword.possessorId = null; sword.locationId = placeId; }
     world.objects.push(proxy);
     return { proxy, line: `The ${kind} is at ${place.name}. The body remains where it was.` };
 }
 
-/** Ending a sword loses that sword; ending a separated soul injures its maker. */
+/** Destruction loses the sent sword or injures the separated soul's maker; returning does neither. */
 export function endAProxy(world: WorldState, proxy: ObjectRecord, lost: boolean): string {
     if (proxy.data.endedOnDay !== undefined) return 'The presence has already ended.';
     const maker = getNpc(world, proxy.ownerId ?? '');
@@ -143,11 +145,9 @@ export function proxyCombatant(world: WorldState, proxy: ObjectRecord): Combatan
     const maxHp = maxHpForOrdinal(maker.cultivation.attributes.might, proxy.power ?? 0);
     const sword = world.objects.find(o => o.id === proxy.data.swordId);
     return { ...base, id: proxy.id, name: `A ${proxy.data.kind}`, realmOrdinal: proxy.power ?? 0,
-        hp: Number(proxy.data.hp), maxHp, qi: maxHp, maxQi: maxHp,
-        // A made proxy has its existing separate sustaining resource, not its
-        // maker's bodily cast receipt. That broader art-use seam is unchanged.
-        techniqueCooldowns: undefined,
-        weapon: sword && sword.power !== null ? { ...sword, power: sword.power } : null, technique: proxy.data.kind === 'sword' ? null : base.technique,
+        hp: Number(proxy.data.hp), maxHp,
+        ...proxyCombatArts(world,proxy,routineTime(world))!,
+        weapon: sword && sword.power !== null ? { ...sword, power: sword.power } : null,
         injuries: [], soulState: maker.soulState };
 }
 
@@ -292,7 +292,8 @@ export function advanceSeparatedPresences(world: WorldState, fromDay: number): v
         proxy.data.hp = fight.hp[proxy.id] ?? attacker.hp;
         whatTheConfrontationDidToThem(world, { npcId: target.id, byId: npc.id, byName: npc.name,
             day: world.currentDay, wounds: fight.injuries[target.id] ?? [], outcome: fight.outcome,
-            lost: fight.loserId === target.id, finished: fight.finished });
-        if (fight.loserId === proxy.id || Number(proxy.data.hp) <= 0) endAProxy(world, proxy, true);
+            lost: fight.loserId === target.id, finished: fight.finished,
+            flight: whatTheirFlightsCost(fight.exchanges, target.id, defender.maxHp) });
+        if (Number(proxy.data.hp) <= 0) endAProxy(world, proxy, true);
     }
 }
