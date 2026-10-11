@@ -1,5 +1,7 @@
 /**
  * Ending a master-disciple bond by saying so, rather than by asking to be let go.
+ * A person may also be the player's parent. Read the bond's kind, rather than
+ * the first tie with that person; ending the bond must retain the family tie.
  *
  * ── WHAT WAS THERE BEFORE ────────────────────────────────────────────────
  *
@@ -114,6 +116,8 @@ async function aBondAtHand(seed: string, end: 'master' | 'disciple') {
 describe('saying it', () => {
     it('walks out on a master, and says what it costs rather than refusing it', async () => {
         const h = await aBondAtHand('bond-said-walk-out', 'disciple');
+        const before = h.world.npcs.find(n => n.id === h.cultivator.id)!.relationships
+            .filter(tie => tie.targetId === h.other.id && tie.kind !== 'master');
 
         const turn = await h.game.act(`I walk out on ${h.other.name}`);
 
@@ -123,7 +127,9 @@ describe('saying it', () => {
             row.cause === 'broken_oath' && row.holderId === h.other.id && row.subjectId === h.cultivator.id);
         expect(held, 'the other end holds it against them').toHaveLength(1);
         const mine = h.game.atHand!.npcs.find(n => n.id === h.cultivator.id)!;
-        expect(mine.relationships.find(r => r.targetId === h.other.id)!.kind).toBe('former_master');
+        expect(mine.relationships).toContainEqual(expect.objectContaining({ targetId: h.other.id, kind: 'former_master' }));
+        expect(mine.relationships.some(r => r.targetId === h.other.id && r.kind === 'master')).toBe(false);
+        for (const tie of before) expect(mine.relationships).toContainEqual(tie);
     }, 120_000);
 
     it('casts a disciple out, and both ends keep what they were', async () => {
@@ -134,9 +140,9 @@ describe('saying it', () => {
         expect(turn.toolCalls.some(c => c.name === 'social.endTheBond' && c.ok)).toBe(true);
         const world = h.game.atHand!;
         expect(world.npcs.find(n => n.id === h.cultivator.id)!.relationships
-            .find(r => r.targetId === h.other.id)!.kind).toBe('former_disciple');
+            .find(r => r.targetId === h.other.id && r.kind === 'former_disciple')!.kind).toBe('former_disciple');
         expect(world.npcs.find(n => n.id === h.other.id)!.relationships
-            .find(r => r.targetId === h.cultivator.id)!.kind).toBe('former_master');
+            .find(r => r.targetId === h.cultivator.id && r.kind === 'former_master')!.kind).toBe('former_master');
     }, 120_000);
 
     // SEVERAL MASTERS IS ORDINARY - the design owner: *"you often have more
@@ -160,8 +166,8 @@ describe('saying it', () => {
         await h.game.act(`I walk out on ${second!.name}`);
 
         const mine = h.game.atHand!.npcs.find(n => n.id === h.cultivator.id)!;
-        expect(mine.relationships.find(r => r.targetId === second!.id)!.kind).toBe('former_master');
-        expect(mine.relationships.find(r => r.targetId === h.other.id)!.kind, 'the other one stands')
+        expect(mine.relationships.find(r => r.targetId === second!.id && r.kind === 'former_master')!.kind).toBe('former_master');
+        expect(mine.relationships.find(r => r.targetId === h.other.id && r.kind === 'master')!.kind, 'the other one stands')
             .toBe('master');
     }, 120_000);
 
