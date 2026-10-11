@@ -26,35 +26,57 @@
  *
  * The owner: *"just treat journey as a multi part action ... if you get
  * interrupted in a multi part action, you stop."* Nothing was built for it. A
- * span that is cut short never moves anybody, which was already true of every
- * broken sitting - so a journey stopped on day nine has spent nine days and
- * arrived nowhere, and the rest of the road is still ahead.
+ * Later physical-road and public-endpoint rulings moved the traveller onto the
+ * actual road. This pinned provincial course now accepts sixteen days to Iron
+ * Crest, stops after nine, and can stop again on continuation. The old eleven
+ * day total, two day remainder and unchanged origin assertions no longer
+ * described the accepted journey. These controls read its one durable cursor:
+ * actual progress survives a look or a repeated request, and another encounter
+ * can interrupt what remains.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
+import { stoppedRoadFor, type StoppedRoad } from '../../src/web/a-road-stopped-partway.js';
+
+/** Continuing cannot restart the accepted course or charge more than remains. */
+function continued(before: StoppedRoad, after: StoppedRoad | null, spent: number): void {
+    expect(spent).toBeGreaterThan(0);
+    expect(spent).toBeLessThanOrEqual(before.road - before.walked + 1e-8);
+    if (after) {
+        expect(after.to).toBe(before.to);
+        expect(after.road).toBe(before.road);
+        expect(after.walked).toBeCloseTo(before.walked + spent);
+    } else {
+        expect(spent).toBeCloseTo(before.road - before.walked);
+    }
+}
 
 const WORLD = 'road-world';
 const WHERE = 'I travel to the Buddha Precipice';
 
 describe('a road has things on it', () => {
     /**
-     * THE OWNER'S OWN EXAMPLE, PLAYED. Bandits on day nine of an eleven-day
+     * THE OWNER'S OWN EXAMPLE, PLAYED. Bandits on day nine of the admitted
      * road. Pinned to one seed and one world, because a road that stops is a
      * draw and a test that swept for one would be pinning a rate.
      */
     it('stops a journey where bandits stop it, and it does not arrive', async () => {
-        const { game } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
+        const { game, db } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
         await game.newRun('Traveller');
         const before = game.state();
 
         const done = await game.act(WHERE);
         const after = game.state();
 
-        // Nine days walked of eleven, and still where they set out from.
-        expect(after.run.elapsedDays - before.run.elapsedDays).toBe(9);
-        expect(after.cultivator.location).toBe(before.cultivator.location);
+        const road = stoppedRoadFor(db, after.cultivator, game.atHand)!;
+        expect(road).not.toBeNull();
+        expect(after.run.elapsedDays - before.run.elapsedDays).toBeCloseTo(9);
+        expect(road.walked).toBeCloseTo(after.run.elapsedDays - before.run.elapsedDays);
+        expect(road.walked).toBeLessThan(road.road);
+        expect(after.cultivator.location).not.toBe(before.cultivator.location);
+        expect(after.cultivator.location).not.toBe(road.to);
         expect(done.narration).toMatch(/stopped short/i);
         // THE REST IS STILL AHEAD, in the words the multi-part machinery
         // already uses for anything it held back.
@@ -62,23 +84,24 @@ describe('a road has things on it', () => {
     }, 120_000);
 
     /**
-     * SAYING IT AGAIN WALKS WHAT IS LEFT. Stopped on day nine of eleven, the
-     * next journey to the same place from the same place is two days, not
-     * eleven.
+     * SAYING IT AGAIN WALKS WHAT IS LEFT, including another real interruption.
      */
     it('walks only the rest of a stopped road when it is said again', async () => {
-        const { game } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
+        const { game, db } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
         await game.newRun('Traveller');
         const before = game.state();
 
         await game.act(WHERE);
         const stoppedAt = game.state();
-        expect(stoppedAt.run.elapsedDays - before.run.elapsedDays).toBe(9);
+        expect(stoppedAt.run.elapsedDays - before.run.elapsedDays).toBeCloseTo(9);
+        const road = stoppedRoadFor(db, stoppedAt.cultivator, game.atHand)!;
+        expect(road).not.toBeNull();
 
         await game.act(WHERE);
         const after = game.state();
 
-        expect(after.run.elapsedDays - stoppedAt.run.elapsedDays).toBe(2);
+        continued(road, stoppedRoadFor(db, after.cultivator, game.atHand),
+            after.run.elapsedDays - stoppedAt.run.elapsedDays);
         expect(after.cultivator.location).not.toBe(before.cultivator.location);
     }, 120_000);
 
@@ -88,7 +111,7 @@ describe('a road has things on it', () => {
      */
     it.each(['keep going', 'press on', 'continue onwards'])(
         'walks the rest of a stopped road on "%s"', async said => {
-            const { game } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
+            const { game, db } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
             await game.newRun('Traveller');
             const before = game.state();
 
@@ -96,10 +119,13 @@ describe('a road has things on it', () => {
             // What stopped it is said as what it was, not as a stranger arriving.
             expect(stopped.narration).not.toMatch(/somebody reached you/i);
             const stoppedAt = game.state();
+            const road = stoppedRoadFor(db, stoppedAt.cultivator, game.atHand)!;
+            expect(road).not.toBeNull();
 
             await game.act(said);
             const after = game.state();
-            expect(after.run.elapsedDays - stoppedAt.run.elapsedDays).toBe(2);
+            continued(road, stoppedRoadFor(db, after.cultivator, game.atHand),
+                after.run.elapsedDays - stoppedAt.run.elapsedDays);
             expect(after.cultivator.location).not.toBe(before.cultivator.location);
         }, 120_000);
 
@@ -108,32 +134,43 @@ describe('a road has things on it', () => {
      * road - here, a look round - does not undo the days already walked.
      */
     it('still has only the rest of the road ahead after something else was done there', async () => {
-        const { game } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
+        const { game, db } = await makeGameInWorld({ seed: 'road-17', worldSeed: WORLD });
         await game.newRun('Traveller');
 
         await game.act(WHERE);
         await game.act('I look around');
         const between = game.state();
+        const road = stoppedRoadFor(db, between.cultivator, game.atHand)!;
+        expect(road).not.toBeNull();
 
         await game.act(WHERE);
         const after = game.state();
 
-        expect(after.run.elapsedDays - between.run.elapsedDays).toBe(2);
+        continued(road, stoppedRoadFor(db, after.cultivator, game.atHand),
+            after.run.elapsedDays - between.run.elapsedDays);
     }, 120_000);
 
     /**
-     * AND A ROAD WALKED TO ITS END STILL ARRIVES, with what it met on the way.
-     * A merchant on the road is not a reason to stop.
+     * The former merchant-only seed now meets an actual intermediate gate.
+     * That stop also preserves the accepted course and its unwalked span.
      */
-    it('arrives at the end of a road that only met a merchant', async () => {
-        const { game } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
+    it('keeps the accepted course after an intermediate gate stops it', async () => {
+        const { game, db } = await makeGameInWorld({ seed: 'road-5', worldSeed: WORLD });
         await game.newRun('Traveller');
         const before = game.state();
 
         await game.act(WHERE);
         const after = game.state();
 
-        expect(after.run.elapsedDays - before.run.elapsedDays).toBe(11);
+        const road = stoppedRoadFor(db, after.cultivator, game.atHand)!;
+        expect(road).not.toBeNull();
+        expect(road.walked).toBeCloseTo(after.run.elapsedDays - before.run.elapsedDays);
+        expect(road.walked).toBeGreaterThan(0);
+        expect(road.walked).toBeLessThan(road.road);
         expect(after.cultivator.location).not.toBe(before.cultivator.location);
+        await game.act('keep going');
+        const next = game.state();
+        continued(road, stoppedRoadFor(db, next.cultivator, game.atHand),
+            next.run.elapsedDays - after.run.elapsedDays);
     }, 120_000);
 });

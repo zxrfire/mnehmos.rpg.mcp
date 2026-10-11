@@ -13,6 +13,21 @@ import { shipPassengerAt } from '../../src/engine/world/passenger-on-a-vessel.js
  * Paid-carriage coverage originally walked after the benign contact and missed
  * the lost ticket. The rider must now continue the actual bought carriage,
  * retain its one fare and its original journey horizon, with an actual driver.
+ * Journeys begin at the actual fractional world clock. An integer-day fixture
+ * leaves its traveller ahead of the player before either road is walked.
+ * The air control supplies actual metric ground and reads its native quote.
+ * It formerly expected a road contact aboard an aircraft; actual air travel now
+ * passes over that walker. A different carter on the road is likewise not a
+ * passenger on the player's paid carriage. Presence keeps the actual hull.
+ * Same-departure paid controls
+ * start at the real counter and use the native hull quote; counter approaches
+ * are separate time, not time in that departure's leg.
+ * Continuing to the town reaches the actual endpoint. The return control walks
+ * that learned road directly; asking to revisit the reached midpoint is another
+ * actual trip, rather than a free test of an unknown destination.
+ * A native fight can interrupt the return; its recorded round spends the ordinary
+ * attack span in addition to the eight days walked. Arrival at the Jade gate
+ * likewise pays registration separately from the already paid carriage fare.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
@@ -24,7 +39,8 @@ import { routineOf } from '../../src/engine/world/npc-routines.js';
 import { HOME_REGION_ID } from '../../src/data/cultivation/regions/region-ids.js';
 import { A_SPIRIT_BOAT_ANSWERS_TO, aVehicleOf } from '../../src/engine/world/a-vehicle.js';
 import { stonesFor, whatRunsFromHere } from '../../src/web/a-seat-on-a-ship-or-a-carriage.js';
-import { provisionForLane, resolveCrossing } from '../../src/engine/world/what-a-sea-crossing-costs.js';
+import { quotePublicPassage } from '../../src/engine/world/public-shipping.js';
+import { commitNpcPublicPassage } from '../../src/engine/world/ship-crew.js';
 import { theVoyageUnderWay } from '../../src/web/a-ship-at-sea.js';
 import { worldLocationFor } from '../../src/web/entities.js';
 import { thePaidCarriageClaim } from '../../src/web/a-paid-carriage-on-the-road.js';
@@ -32,6 +48,12 @@ import { publicCarriagePassage } from '../../src/engine/world/public-carriages.j
 import { routineTime } from '../../src/engine/world/npc-routines.js';
 import { prepareWorldClockForPreciseSpan } from '../../src/server/state/cultivation-world.js';
 import { passHours } from '../../src/web/routine-invitations.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
+import { LI_PER_WALKING_DAY } from '../../src/engine/world/the-metric-ground-under-a-journey.js';
+import { quoteAnAirJourney } from '../../src/engine/world/what-an-air-journey-takes.js';
+import { requireConveyance } from '../../src/data/cultivation/what-a-house-moves-its-people-on.js';
+import { stoppedRoadFor } from '../../src/web/a-road-stopped-partway.js';
+import { LESSER_ACTION_DAYS } from '../../src/web/lesser-action-costs.js';
 
 /** Review-only capture of actual authority; never creates or changes a row. */
 function observeTransport(game: Awaited<ReturnType<typeof makeGameInWorld>>['game'], label: string,
@@ -52,7 +74,7 @@ function observeTransport(game: Awaited<ReturnType<typeof makeGameInWorld>>['gam
     mkdirSync(dirname(file), { recursive: true });
     appendFileSync(file, JSON.stringify({ label, result, body: now.cultivator,
         elapsedDays: now.run.elapsedDays, worldDay: world.currentDay, hour: world.currentHour,
-        actualMoment: routineTime(world), claims: { road, ship, owned },
+        actualMoment: routineTime(world), claims: { road, ship, owned, foot: stoppedRoadFor(game.db, now.cultivator, world) },
         sources: { road: roadSource, ship: shipSource, owned: ownSource },
         actors: actual.map(person => ({ id: person.id, name: person.name, status: person.status,
             rawGround: person.locationId, routine: routineOf(world, person), activity: person.activity })) }) + '\n');
@@ -61,15 +83,18 @@ function observeTransport(game: Awaited<ReturnType<typeof makeGameInWorld>>['gam
 async function prepared(contact = true) {
     const { game, db } = await makeGameInWorld({ seed: 'real-road-contact', worldSeed: 'real-road-contact-world' });
     await game.newRun('Walker');
+    game.atHand = await prepareWorldClockForPreciseSpan(game.currentRun().run, game.currentRun().cultivator);
     const world = game.atHand!;
     const region = world.locations.find(place => place.kind === 'region' && place.data.catalogRegionId === HOME_REGION_ID)!;
-    const from = makeLocation({ id: 'road-test-from', name: 'Road departure', kind: 'settlement', parentId: region.id });
-    const to = makeLocation({ id: 'road-test-to', name: 'Road destination', kind: 'settlement', parentId: region.id });
+    const from = makeLocation({ id: 'road-test-from', name: 'Road departure', kind: 'settlement', parentId: region.id,
+        data: { metricXLi: 0, metricYLi: 0 } });
+    const to = makeLocation({ id: 'road-test-to', name: 'Road destination', kind: 'settlement', parentId: region.id,
+        data: { metricXLi: 8 * LI_PER_WALKING_DAY, metricYLi: 0 } });
     linkLocations(from, to, 'road', 8);
     const locations = [region, from, to];
     addPlacesOnTheWay(locations);
     world.locations = locations;
-    const day = world.currentDay;
+    const day = routineTime(world);
     const npc = startNpcJourney(world, createNpc(world.seed, { id: 'road-test-person',
         name: 'Fixture traveller', locationId: from.id, onDay: day, bornOnDay: day - 20 * 365,
         occupation: 'merchant' }), to.id, day, 'Taking goods to the destination market.');
@@ -81,6 +106,8 @@ async function prepared(contact = true) {
     game.theWorldMoved();
     game.noteEncounter(game.state().cultivator, game.currentRun().run,
         { kind: 'place', id: to.name, name: to.name }, 'told', 'The road is known.');
+    game.noteEncounter(game.state().cultivator, game.currentRun().run,
+        { kind: 'place', id: from.name, name: from.name }, 'told', 'The return road is known.');
     return { game, db, world, from, to, npc, stop: locations.find(place => place.tags.includes(ROUTE_STOP))! };
 }
 
@@ -95,30 +122,36 @@ describe('real travellers on the played road', () => {
         expect(game.state().cultivator.location).toBe(from.name);
         expect(routineOf(game.atHand!, game.atHand!.npcs.find(person => person.id === npc.id)!).locationId).toBe(to.id);
     }, 120_000);
-    it('meets the actual walker while piloting an owned spirit boat, burning only the flown leg', async () => {
+    it('flies the quoted leg while an independent walker stays on the road', async () => {
         const { game, world, from, to, npc, stop } = await prepared();
         game.atHand = await prepareWorldClockForPreciseSpan(game.currentRun().run, game.currentRun().cultivator);
         const me = game.state().cultivator;
         game.repos.cultivators.update(me.id, { realmOrdinal: A_SPIRIT_BOAT_ANSWERS_TO });
-        world.objects.push(aVehicleOf({ id: 'player-road-boat', conveyanceId: 'conv-spirit-boat',
-            ownerId: me.id, ownerName: me.name, at: from.id }));
-        world.npcs = [{ ...npc, activity: { ...npc.activity!, sinceDay: world.currentDay - 3,
-            untilDay: world.currentDay + 5 } }];
+        const boat = aVehicleOf({ id: 'player-road-boat', conveyanceId: 'conv-spirit-boat',
+            ownerId: me.id, ownerName: me.name, at: from.id });
+        world.objects.push(boat);
+        const quote = quoteAnAirJourney(world.locations, from.id, to.id,
+            requireConveyance('conv-spirit-boat'), boat.power);
+        expect(quote).not.toBeNull();
+        const departedAt = routineTime(world);
+        world.npcs = [{ ...npc, activity: { ...npc.activity!, sinceDay: departedAt - 3,
+            untilDay: departedAt + 5 } }];
+        const berth = theAreasOf(world, from).areas.find(area => area.for === 'spirit_berth');
+        expect(berth, 'the flight control starts at its actual departure berth').toBeDefined();
+        game.repos.cultivators.standIn(me.id, berth!.id);
         game.theWorldMoved();
         const before = game.state().run.elapsedDays;
         const stones = game.state().cultivator.spiritStones;
         const flown = await game.act(`I fly my spirit boat to ${to.name}`);
         observeTransport(game, 'owned road contact', flown, [npc.id]);
-        expect(game.state().cultivator.location).toBe(stop.name);
-        expect(game.state().run.elapsedDays - before).toBeCloseTo(1, 10);
-        expect(game.state().cultivator.spiritStones).toBeLessThan(stones);
-        expect(game.present(game.state().cultivator).map(person => person.id)).toContain(npc.id);
-        await game.act(`I fly my spirit boat to ${to.name}`);
         expect(game.state().cultivator.location).toBe(to.name);
-        expect(game.state().run.elapsedDays - before).toBeCloseTo(2, 10);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(quote!.daysOneWay, 10);
+        expect(game.state().cultivator.spiritStones).toBeLessThan(stones);
+        expect(game.present(game.state().cultivator).map(person => person.id)).not.toContain(npc.id);
+        expect(routineOf(game.atHand!, game.atHand!.npcs.find(person => person.id === npc.id)!).locationId).toBe(stop.id);
     }, 120_000);
 
-    it('buys a carriage seat and meets a real independently departing carter between towns', async () => {
+    it('buys a carriage seat and reaches the same road as an independently departing carter', async () => {
         const { game, db } = await makeGameInWorld({ seed: 'road-5', worldSeed: 'road-world' });
         await game.newRun('Rider');
         const me = game.state().cultivator;
@@ -128,17 +161,21 @@ describe('real travellers on the played road', () => {
         const line = whatRunsFromHere(game, me, 0).find(one => one.service === 'carriage' && one.days > 1)!;
         const from = worldLocationFor(world, me.location)!;
         const to = worldLocationFor(world, line.to)!;
+        const station = theAreasOf(world, from).areas.find(area => area.for === 'carriage_station');
+        expect(station).toBeDefined();
+        game.repos.cultivators.standIn(me.id, station!.id);
+        const departedAt = routineTime(world);
         const driver = createNpc(world.seed, { id: 'independent-carter', name: 'Fixture carter',
             locationId: from.id, onDay: world.currentDay, bornOnDay: world.currentDay - 20 * 365 });
         const carriage = aVehicleOf({ id: 'carter-carriage', conveyanceId: 'conv-carriage-mortal',
             ownerId: driver.id, ownerName: driver.name, at: from.id });
         world.objects.push(carriage);
-        const traveller = startNpcJourney(world, driver, to.id, world.currentDay,
+        const traveller = startNpcJourney(world, driver, to.id, departedAt,
             'Taking a load to the next town.', carriage);
         world.npcs = [traveller];
         game.theWorldMoved();
         const contact = firstTravellerOnTheWay({ locations: world.locations, npcs: [traveller],
-            fromId: from.id, toId: to.id, onDay: world.currentDay, days: line.days });
+            fromId: from.id, toId: to.id, onDay: departedAt, days: line.days });
         expect(contact).not.toBeNull();
         const fareBefore = game.state().cultivator.spiritStones;
         const beganAt = game.state().run.elapsedDays;
@@ -146,7 +183,8 @@ describe('real travellers on the played road', () => {
         observeTransport(game, 'paid road boarding', attempted, [traveller.id]);
         expect(game.state().cultivator.spiritStones).toBeLessThan(fareBefore);
         expect(game.state().cultivator.location, JSON.stringify(attempted)).toBe(contact!.place.name);
-        expect(game.present(game.state().cultivator).map(person => person.id)).toContain(traveller.id);
+        expect(routineOf(game.atHand!, game.atHand!.npcs.find(person => person.id === traveller.id)!).locationId).toBe(contact!.place.id);
+        expect(game.present(game.state().cultivator).map(person => person.id)).not.toContain(traveller.id);
         const claim = thePaidCarriageClaim(db, me.id)!;
         expect(claim).not.toBeNull();
         const booked = publicCarriagePassage(game.atHand!, claim.receiptId, me.id, routineTime(game.atHand!))!;
@@ -157,11 +195,16 @@ describe('real travellers on the played road', () => {
         // The same fractional boundary used by conversation carries the body,
         // instead of parking an independent driver for as long as we talk.
         await passHours(game, game.currentRun().run, game.state().cultivator, 4);
+        observeTransport(game, 'paid road after four hours', null, [traveller.id]);
         expect(game.state().cultivator.location).toBe(game.atHand!.locations.find(place =>
             place.id === routineOf(game.atHand!, game.atHand!.npcs.find(person => person.id === booked.driver.id)!).locationId)!.name);
-        await game.act(`I travel to ${line.to}`);
+        const continued = await game.act(`I travel to ${line.to}`);
+        observeTransport(game, 'paid road continued', continued, [traveller.id]);
         expect(game.state().cultivator.location).toBe(line.to);
-        expect(game.state().cultivator.spiritStones).toBe(paidOnce);
+        const arrivalCharges = game.atHand!.history.facts.filter(fact => fact.data.gateRegistration === true
+            && fact.data.gateRegistrant === me.id && fact.day >= Math.floor(departedAt));
+        expect(game.state().cultivator.spiritStones).toBe(paidOnce
+            - arrivalCharges.reduce((sum, fact) => sum + Number(fact.data.stones ?? 0), 0));
         expect(game.state().run.elapsedDays - beganAt).toBeCloseTo(booked.leg.arrivalDay - booked.leg.departureDay, 10);
         expect(thePaidCarriageClaim(db, me.id)).toBeNull();
         expect(routineOf(game.atHand!, game.atHand!.npcs.find(person => person.id === booked.driver.id)!).locationId).toBe(to.id);
@@ -180,17 +223,24 @@ describe('real travellers on the played road', () => {
             .find(one => one.service === 'ship' && one.lane && one.runsFromDay === null)!;
         const from = worldLocationFor(world, 'Emerald Water City')!;
         const to = worldLocationFor(world, line.to)!;
+        const landing = theAreasOf(world, from).areas.find(area => area.for === 'landing');
+        expect(landing).toBeDefined();
+        game.repos.cultivators.standIn(me.id, landing!.id);
         const run = game.currentRun().run;
-        const crossing = resolveCrossing(`${run.seed}:0`, line.lane!, provisionForLane(line.lane!, 1), 1);
+        const departedAt = routineTime(world);
+        const quote = quotePublicPassage(world, from.id, to.id, departedAt, 1, [],
+            `${run.seed}:${Math.floor(run.elapsedDays)}`);
+        expect(quote, 'the independently booked passenger uses the actual hull quote').not.toBeNull();
         const fare = stonesFor(line.cashPerSeat);
         const passenger = createNpc(world.seed, { id: 'booked-passenger', name: 'Fixture passenger',
             locationId: from.id, spiritStones: fare + 10, onDay: world.currentDay,
             bornOnDay: world.currentDay - 20 * 365 });
         const booked = startNpcPassage(world.locations, passenger, { lane: line.lane!, destinationId: to.id,
-            onDay: world.currentDay, days: crossing.daysTaken, fareStones: fare,
+            onDay: departedAt, days: quote!.days, fareStones: quote!.fareStones,
             purpose: 'Taking the ship to the island market.' })!;
         expect(booked.spiritStones).toBe(passenger.spiritStones - fare);
         world.npcs = [booked];
+        expect(commitNpcPublicPassage(world, booked)).toBe(true);
         game.theWorldMoved();
         const attempted = await game.act(`I take the ship to ${line.to}`);
         observeTransport(game, 'paid same-hull boarding', attempted, [booked.id]);
@@ -235,7 +285,7 @@ describe('real travellers on the played road', () => {
         expect(game.state().run.elapsedDays - before).toBeCloseTo(8, 10);
     }, 120_000);
 
-    it('chooses the ordinary intermediate place again and walks back toward departure', async () => {
+    it('returns on the road it actually walked', async () => {
         const { game, from, to, npc, stop } = await prepared();
         const before = game.state().run.elapsedDays;
         await game.act(`I travel to ${to.name}`);
@@ -243,13 +293,21 @@ describe('real travellers on the played road', () => {
         await game.act(`I travel to ${to.name}`);
         expect(game.state().cultivator.location).toBe(to.name);
         const routes = await game.act('Where can I go?');
-        expect(routes.narration).toContain(stop.name);
-        const returned = await game.act(`I travel to ${stop.name}`);
-        observeTransport(game, 'chosen intermediate return', returned, [npc.id]);
-        expect(game.state().cultivator.location).toBe(stop.name);
-        await game.act(`I travel to ${from.name}`);
+        expect(routes.narration).not.toContain(stop.name);
+        expect(game.canPointAtLocation(game.state().cultivator, to)).toBe(true);
+        expect(game.canPointAtLocation(game.state().cultivator, from)).toBe(true);
+        const returned = await game.act(`I travel to ${from.name}`);
+        observeTransport(game, 'known road return', returned, [npc.id]);
+        const returnTurns = [returned];
+        // The world can interrupt the return too. Repeating the destination walks its remainder.
+        for (let attempts = 0; attempts < 8 && game.state().cultivator.location !== from.name; attempts++) {
+            const next = await game.act(`I travel to ${from.name}`);
+            returnTurns.push(next);
+            observeTransport(game, 'known road return resumed', next, [npc.id]);
+        }
         expect(game.state().cultivator.location).toBe(from.name);
-        expect(game.state().run.elapsedDays - before).toBeCloseTo(16, 10);
+        const fightRounds = returnTurns.flatMap(turn => turn.toolCalls).filter(call => call.name === 'combat.round').length;
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(16 + fightRounds * LESSER_ACTION_DAYS.attack, 10);
     }, 120_000);
 
     it('pilots the privately owned spirit boat across actual open water and lands at its port', async () => {
