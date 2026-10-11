@@ -32,6 +32,10 @@
  *   PLAYED: a yes writes the activity and writes no roster; the party is on the
  *   status read with its term; travelling carries them; a fold will not.
  *
+ * Oct11 found that eighty repeated stranger asks gained no company. The played
+ * arrangements now meet an actual friend on equal footing in their current
+ * routine area. The ordinary decision still decides each invitation.
+ *
  * They do NOT pin who says yes, how likely one is, or any name or place: all
  * four are the world's and the resolver's, and pinning any of them would fail
  * the next time a seed moves somebody.
@@ -61,6 +65,9 @@ import { whatItWouldCostThem } from '../../src/web/what-asking-this-person-for-t
 import { LEVERAGE_ATTEMPT_CONSTANTS } from '../../src/engine/social-leverage/index.js';
 import { A_SEASON_ON_THE_ROAD } from '../../src/engine/world/who-is-on-the-road-with-you.js';
 import { makeGameInWorld, type Harness } from './harness.js';
+import { recordABondBothWays } from '../../src/web/encounters.js';
+import { routineOf } from '../../src/engine/world/npc-routines.js';
+import { peopleInThisPlace } from '../../src/web/hearsay.js';
 
 describe('the sentence that asks somebody to come', () => {
     it('reads as its own kind of ask, whoever it names', () => {
@@ -256,17 +263,39 @@ async function anybodyNameable(harness: Harness): Promise<string | null> {
 /**
  * Ask until one lands.
  *
- * The odds start near the floor for a nobody asking a stranger for a real
- * favour, which is the design rather than a bug, so this asks repeatedly rather
- * than pinning a roll. What is asserted is what happens WHEN one lands.
+ * Arrange an established friendship and actual contact before asking. The
+ * ordinary decision retains its roll; the control observes an accepted
+ * invitation without forcing one or changing the person's character.
  */
-async function untilSomebodyComes(harness: Harness, sentence: string): Promise<{
+async function untilSomebodyComes(harness: Harness, sentence: string, name: string): Promise<{
     yes: { narration?: string; toolCalls: { name: string; summary: string; ok: boolean }[] } | null;
     no: { narration?: string } | null;
 }> {
+    const me = harness.game.currentRun().cultivator;
+    const person = harness.game.atHand!.npcs.find(row => row.name === name)!;
+    expect(person, 'the named companion is not a world body').toBeDefined();
+    // Company is the behaviour under test. Arrange two established friends on
+    // the same footing, rather than relying on a stranger's floor-chance roll.
+    harness.repos.cultivators.advanceRealm(me.id, person.cultivation.realmOrdinal);
+    recordABondBothWays(harness.repos, [
+        { fromId: me.id, toId: person.id, type: 'friend', strength: 0.8 },
+        { fromId: person.id, toId: me.id, type: 'friend', strength: 0.8 }
+    ], Math.floor(harness.game.currentRun().run.elapsedDays), 'Established friends before the invitation.');
     let yes = null;
     let no = null;
     for (let i = 0; i < 80; i++) {
+        const world = (await harness.game.loadWorld())!;
+        const companion = world.npcs.find(row => row.id === person.id)!;
+        expect(companion.status, 'the companion died before contact').toBe('alive');
+        const actual = routineOf(world, companion);
+        const place = world.locations.find(row => row.id === actual.locationId)!;
+        expect(place, 'the companion has no actual location').toBeDefined();
+        harness.repos.cultivators.update(me.id, { location: place.name });
+        const body = harness.game.currentRun().cultivator;
+        const area = peopleInThisPlace(harness.repos, body, world, place).whereIs.get(person.id);
+        expect(area, 'the companion has no actual area').toBeDefined();
+        harness.repos.cultivators.standIn(me.id, area!);
+        expect(harness.game.present(harness.game.currentRun().cultivator).some(row => row.id === person.id)).toBe(true);
         const live = harness.game.currentRun();
         if (live.run.status !== 'active' || !live.cultivator.alive) break;
         // ARRANGED, NOT PLAYED. Eighty asks is eight months, and a cultivator
@@ -295,9 +324,9 @@ describe('asking somebody along, played', () => {
         expect(who, 'the pinned world put nobody nameable in the square').not.toBeNull();
 
         const { yes, no } = await untilSomebodyComes(
-            harness, `I ask ${who} to come with me for five days`
+            harness, `I ask ${who} to come with me for five days`, who!
         );
-        expect(yes, 'nobody agreed in eighty asks').not.toBeNull();
+        expect(yes, `nobody agreed in eighty asks; first answer: ${no?.narration?.slice(0, 1400)}`).not.toBeNull();
 
         // WHAT ACTUALLY HAPPENED, on the channel that shows the engine's own
         // account. The claim this design rests on is in it.
@@ -339,11 +368,16 @@ describe('asking somebody along, played', () => {
         const who = await anybodyNameable(harness);
         expect(who).not.toBeNull();
 
-        const { yes } = await untilSomebodyComes(
-            harness, `I ask ${who} to come with me for five days`
+        const { yes, no } = await untilSomebodyComes(
+            harness, `I ask ${who} to come with me for five days`, who!
         );
-        expect(yes, 'nobody agreed in eighty asks').not.toBeNull();
+        expect(yes, `nobody agreed in eighty asks; first answer: ${no?.narration?.slice(0, 1400)}`).not.toBeNull();
 
+        const destination = harness.game.atHand!.locations.find(place => place.name === 'Bronze Gong Cliff')!;
+        expect(destination, 'the named fold destination has no world row').toBeDefined();
+        harness.game.knowledge.learnIfNew({ holderId: harness.game.currentRun().cultivator.id,
+            kind: 'place', id: destination.id, name: destination.name, onDay: 0,
+            stage: 'placed', sourceKind: 'told', sourceNote: 'An arranged known road for the fold control.' });
         const folded = await harness.game.act('I fold space to Bronze Gong Cliff') as {
             narration?: string;
         };
