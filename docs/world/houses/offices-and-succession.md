@@ -284,8 +284,12 @@ on the rota like any member, and can hire it out.
 grows past what it was founded as builds the hall it now needs (a treasury, an archive), and
 one that shrinks folds a hall's work back into ordinary rooms.
 
+**A hall has one elder, always.** That elder may ask other elders for help, including ones
+with no office, and asking is a favour: it spends face and leaves something owed.
+
 **An apex is more than a big sect.** The houses everybody else answers to are visibly more
-elaborate: every hall a house can have, more than one elder to a hall, and more people in each.
+elaborate: every hall a house can have, more people posted in each, and more elders, with and
+without an office, for a hall's elder to call on.
 
 **A daily duty is settled when something asks, never ticked.** For example, the Life Lamp Hall's
 daily roll check means a staffed house knows of a death by the next day: a name on the roll with
