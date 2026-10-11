@@ -22,6 +22,9 @@
  * WORLD PINNED. A played test that pins a run seed and not a world seed is
  * pinning a coincidence - the world is minted from `randomUUID()` otherwise,
  * and travel resolution consults it for whether a name is a place at all.
+ * The return control now starts at the actual ford and reads its signs before
+ * walking back. The old first journey did not reach the ford and left the
+ * body at its birthplace. Fractional clock sums use close comparison.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -30,6 +33,8 @@ import { makeGameInWorld } from './harness';
 import { PLACE } from '../../src/data/cultivation/place-names.js';
 import { placeRoadDays } from '../../src/data/cultivation/regions.js';
 import { SHORT_ACTION_DAYS } from '../../src/web/turn-constants.js';
+import { worldLocationFor } from '../../src/web/entities.js';
+import { whereInThisPlaceTheyStand } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 const WORLD = 'place-road-probe-world';
 
@@ -63,7 +68,7 @@ describe('a road inside a province costs what the catalog says', () => {
 
         const spent = await daysSpentOn(game, `I travel to ${PLACE.STONE_FORD}`);
         expect((await game.state()).cultivator.location).toContain(PLACE.STONE_FORD);
-        expect(spent).toBe(stated);
+        expect(spent).toBeCloseTo(stated!);
     });
 
     it('walks it back for the same price, off the one row the catalog states', async () => {
@@ -72,15 +77,19 @@ describe('a road inside a province costs what the catalog says', () => {
         // observable, and a one-way road is a bug `linkLocations` already
         // names as one.
         // A run seed whose road back is not stopped.
-        const { game } = await makeGameInWorld({ seed: 'place-road-back-1', worldSeed: WORLD });
-        await game.newRun('Probe');
-
-        await game.act(`I travel to ${PLACE.STONE_FORD}`);
+        const { game, repos } = await makeGameInWorld({ seed: 'place-road-back-1', worldSeed: WORLD });
+        const { cultivator } = await game.newRun('Probe');
+        const world = (await game.loadWorld())!;
+        const ford = worldLocationFor(world, PLACE.STONE_FORD)!;
+        expect(ford, 'the road must have its actual ford endpoint').toBeDefined();
+        repos.cultivators.update(cultivator.id, { location: ford.name });
+        repos.cultivators.standIn(cultivator.id, whereInThisPlaceTheyStand(world, ford, null, null).id);
+        await game.act('I look around');
         expect((await game.state()).cultivator.location).toContain(PLACE.STONE_FORD);
 
         const back = await daysSpentOn(game, `I travel to ${PLACE.GREEN_FALL}`);
-        expect(back).toBe(placeRoadDays(PLACE.STONE_FORD, PLACE.GREEN_FALL));
-        expect(back).toBe(placeRoadDays(PLACE.GREEN_FALL, PLACE.STONE_FORD));
+        expect(back).toBeCloseTo(placeRoadDays(PLACE.STONE_FORD, PLACE.GREEN_FALL)!);
+        expect(back).toBeCloseTo(placeRoadDays(PLACE.GREEN_FALL, PLACE.STONE_FORD)!);
     });
 
     it('reaches a place the roads do not name by way of the ones they do', () => {

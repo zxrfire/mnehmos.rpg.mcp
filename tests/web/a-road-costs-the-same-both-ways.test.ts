@@ -5,6 +5,9 @@
  * road back seventeen. The gazetteer does not name a house's grounds, so
  * `standingOf` put anybody standing there in the home province, and the road
  * out was priced from a province they were not in.
+ * The quote control now places the body at each actual endpoint. Its earlier
+ * preliminary journey could be refused or stopped, leaving the
+ * first quote priced from the birthplace instead of Moraine Gate.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -13,6 +16,8 @@ import { HOME_REGION_ID, REGIONS } from '../../src/data/cultivation/regions.js';
 import { getSect } from '../../src/data/cultivation/sects.js';
 import { standingOf } from '../../src/server/consolidated/where-a-cultivator-is-standing.js';
 import type { Cultivator } from '../../src/schema/cultivation.js';
+import { worldLocationFor } from '../../src/web/entities.js';
+import { whereInThisPlaceTheyStand } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 const OASIS = 'Tranquil Oasis Sect';
 
@@ -33,12 +38,19 @@ describe('the road to a house and back', () => {
             worldSeed: 'walking-up-the-terraces-world', seed: 'a-road-both-ways'
         });
         const { cultivator } = await game.newRun('Shen Ruo');
-        await game.act('I travel to Moraine Gate');
+        const world = (await game.loadWorld())!;
+        const standAt = (name: string) => {
+            const place = worldLocationFor(world, name);
+            expect(place, `the quoted road needs its actual endpoint ${name}`).not.toBeNull();
+            repos.cultivators.update(cultivator.id, { location: place!.name });
+            repos.cultivators.standIn(cultivator.id, whereInThisPlaceTheyStand(world, place!, null, null).id);
+        };
+        standAt('Moraine Gate');
 
         // Priced both ways off where they stand. Walked, the road is long enough - two borders,
         // see `provinceRoadDays` - that a player with no food starves on it before arriving.
         const there = game.daysOnTheRoadTo(repos.cultivators.getById(cultivator.id)!, `${OASIS} grounds`);
-        repos.cultivators.update(cultivator.id, { location: `${OASIS} grounds` });
+        standAt(`${OASIS} grounds`);
         const back = game.daysOnTheRoadTo(repos.cultivators.getById(cultivator.id)!, 'Moraine Gate');
         expect(there).not.toBeNull();
         expect(there!).toBeGreaterThan(1);
