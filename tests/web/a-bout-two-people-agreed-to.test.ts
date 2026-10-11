@@ -30,11 +30,13 @@
  * population to a minted one and a seed pinned without a world is a
  * coincidence pinned.
  *
- * The sweep stays anyway, because it is measuring something a single seed
- * cannot say. What these assert is a RATE - a peer bout goes past what was
- * agreed in the large majority of runs - and one pinned seed would only ever
- * report that one bout did. So these ask for the event across a handful of
- * seeds and assert what the ledger holds once it happens.
+ * The original header described a rate measurement, but these assertions
+ * search for an actual breach and then check what the ledger holds. They do
+ * not establish how often a peer bout breaches its terms. The existing seed
+ * sets are retained. Held fights now finish all their rounds. The house-account
+ * arm meets an existing ranked house member on their actual public routine
+ * and matches the player's rung to theirs before preparing the player's body;
+ * a starting-rung rogue with no people cannot supply a house account.
  * The ordinary-fight arm starts with a real peer in the same area and lets
  * the fight continue across rounds; birthplace and one-shot resolution were
  * stale premises for that comparison.
@@ -45,13 +47,16 @@
  * body-derived round budget. Every exchange must advance that same fight or
  * conclude it: repeating a peer-selection sentence can refuse after routines
  * move the peer, leaving a non-null fight without making any combat progress.
+ * The aggressor arm also has to finish each held bout. All arms meet a real
+ * public peer at their current routine location, rather than at their home row.
  */
 
 import { readFileSync } from 'node:fs';
 
 import { parseIntent, validatePlan } from '../../src/web/actions';
-import { makeGameInWorld, cultivatorRow } from './harness';
+import { makeGameInWorld, cultivatorRow, type Harness } from './harness';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { routineOf } from '../../src/engine/world/npc-routines';
 
 interface OpenAccount {
     kind: string;
@@ -66,6 +71,57 @@ function obligations(db: { prepare: (sql: string) => { all: () => unknown[] } })
     return db.prepare(
         'SELECT kind, severity, cause, tags, holder_id, subject_id FROM obligations'
     ).all() as OpenAccount[];
+}
+
+/** The fixture meets somebody where their actual day puts them, then plays every round. */
+async function meetAPeer(h: Pick<Harness, 'game' | 'repos'>, ofAHouse = false) {
+    const me = h.game.currentRun().cultivator;
+    const world = (await h.game.loadWorld())!;
+    const candidates = ofAHouse ? [...world.npcs].sort((a, b) =>
+        Math.abs(a.cultivation.realmOrdinal - me.realmOrdinal) - Math.abs(b.cultivation.realmOrdinal - me.realmOrdinal))
+        : world.npcs;
+    for (const peer of candidates) {
+        if (peer.status !== 'alive' || peer.id === me.id
+            || !ofAHouse && peer.cultivation.realmOrdinal !== me.realmOrdinal) continue;
+        if (ofAHouse && (!peer.factionId || peer.factionRankIndex < 0
+            || !world.factions.some(house => house.id === peer.factionId && house.dissolvedOnDay === null))) continue;
+        const actual = routineOf(world, peer);
+        const place = world.locations.find(row => row.id === actual.locationId && row.kind === 'settlement');
+        if (actual.home || !place) continue;
+        const area = theAreasOf(world, place).whereIs.get(peer.id);
+        if (!area || area.includes('#room#')) continue;
+        if (ofAHouse && peer.cultivation.realmOrdinal !== me.realmOrdinal) {
+            h.repos.cultivators.advanceRealm(me.id, peer.cultivation.realmOrdinal - me.realmOrdinal);
+        }
+        h.repos.cultivators.update(me.id, { location: place.name });
+        h.repos.cultivators.standIn(me.id, area);
+        if (!h.game.present(h.game.currentRun().cultivator).some(person => person.id === peer.id)) continue;
+        h.game.theyGaveTheirName(h.game.currentRun().cultivator, h.game.currentRun().run, peer);
+        return peer;
+    }
+    throw new Error('The arranged world has no public peer to meet at this hour.');
+}
+
+async function playTheWholeFight(h: Pick<Harness, 'game' | 'db'>, sentence: string) {
+    let acted = await h.game.act(sentence);
+    expect(acted.toolCalls.some(call => call.ok && ['combat.round', 'combat_manage.resolve'].includes(call.name)),
+        JSON.stringify(acted.toolCalls)).toBe(true);
+    const remaining = h.game.fight === null ? 0
+        : h.game.fight.state.roundBudget - h.game.fight.state.roundsFought;
+    for (let exchange = 0; exchange < remaining && h.game.fight !== null
+        && h.game.currentRun().cultivator.alive; exchange++) {
+        const fightId = h.game.fight.state.id;
+        const roundsBefore = h.game.fight.state.roundsFought;
+        acted = await h.game.act('I keep swinging');
+        expect(acted.toolCalls.some(call => call.ok && ['combat.round', 'combat_manage.resolve'].includes(call.name)),
+            JSON.stringify(acted.toolCalls)).toBe(true);
+        if (h.game.fight !== null) {
+            expect(h.game.fight.state.id).toBe(fightId);
+            expect(h.game.fight.state.roundsFought).toBeGreaterThan(roundsBefore);
+        }
+    }
+    expect(h.game.state().fight, 'the fight ends within its own round budget').toBeNull();
+    return acted;
 }
 
 describe('the agreement is carried, and it is carried as a closed value', () => {
@@ -227,13 +283,16 @@ describe('and the world answers', () => {
             let held: OpenAccount[] = [];
             for (let bouts = 0; bouts < 20 && held.length === 0; bouts++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
+                // The account needs an actual house member. Meet one, and match
+                // their rung before preparing the player's body for the search.
+                const peer = await meetAPeer({ game, repos }, true);
                 db.prepare(
                     'UPDATE cultivators SET hp = 5000, max_hp = 5000, battles_survived = 400 '
                     + 'WHERE id = ?'
                 ).run(cultivator.id);
                 db.prepare('DELETE FROM cultivator_injuries WHERE cultivator_id = ?')
                     .run(cultivator.id);
-                await game.act('I spar with someone of my own rank');
+                await playTheWholeFight({ game, db }, `I spar with ${peer.name}`);
                 // ── THE ROW THIS TEST IS ABOUT, SELECTED BY WHAT IT IS ───
                 //
                 // A fight now writes two kinds of account about the loser and
@@ -264,7 +323,7 @@ describe('and the world answers', () => {
             };
         }
 
-        expect(found, 'no agreed bout across thirty seeds ever landed on the player').not.toBeNull();
+        expect(found, 'no agreed bout across eighty arranged worlds opened its house account').not.toBeNull();
         const opened = found!.rows[0];
         // Held by their people, about the player. Never the other way round.
         expect(opened.holder_id).not.toBe(found!.playerId);
@@ -304,34 +363,8 @@ describe('and the world answers', () => {
 
             for (let bouts = 0; bouts < 8; bouts++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
-                const me = repos.cultivators.getById(cultivator.id)!;
-                const world = (await game.loadWorld())!;
-                const peer = world.npcs.find(n => n.status === 'alive' && n.id !== me.id
-                    && n.locationId !== null && n.cultivation.realmOrdinal === me.realmOrdinal)!;
-                expect(peer, 'a real peer must be available for the agreed bout').toBeDefined();
-                const place = world.locations.find(l => l.id === peer.locationId)!;
-                repos.cultivators.update(me.id, { location: place.name });
-                repos.cultivators.standIn(me.id, theAreasOf(world, place).whereIs.get(peer.id) ?? null);
-                expect(game.present(repos.cultivators.getById(me.id)!).some(p => p.id === peer.id)).toBe(true);
-                let acted = await game.act('I spar with someone of my own rank');
-                expect(acted.toolCalls.some(c => c.ok && ['combat.round', 'combat_manage.resolve'].includes(c.name)),
-                    'the agreed bout must actually open or resolve').toBe(true);
-                const remaining = game.fight === null ? 0
-                    : game.fight.state.roundBudget - game.fight.state.roundsFought;
-                for (let exchange = 0; exchange < remaining && game.fight !== null
-                    && cultivatorRow(db, cultivator.id).alive; exchange++) {
-                    const held = game.fight;
-                    const fightId = held.state.id;
-                    const roundsBefore = held.state.roundsFought;
-                    acted = await game.act('I keep swinging');
-                    expect(acted.toolCalls.some(c => c.ok && ['combat.round', 'combat_manage.resolve'].includes(c.name)),
-                        'continuing a bout must resolve an exchange, not refuse or select another peer').toBe(true);
-                    if (game.fight !== null) {
-                        expect(game.fight.state.id, 'the same agreed bout must continue').toBe(fightId);
-                        expect(game.fight.state.roundsFought, 'the combat round must advance').toBeGreaterThan(roundsBefore);
-                    }
-                }
-                expect(game.state().fight, 'the bout must end within its own round budget').toBeNull();
+                const peer = await meetAPeer({ game, repos });
+                const acted = await playTheWholeFight({ game, db }, `I spar with ${peer.name}`);
                 const held = obligations(db)
                     .filter(row => row.holder_id === 'house-immovable-mountain' && row.kind === 'blood_feud');
                 if (held.length > 0) {
@@ -376,17 +409,13 @@ describe('and the world answers', () => {
             const { cultivator } = await game.newRun('Brawler');
             repos.sects.addMember('house-immovable-mountain', cultivator.id, 1);
             // A real peer in the same area, independent of the birth province.
-            const world = game.atHand!;
-            const peer = world.npcs.find(n => n.status === 'alive' && n.id !== cultivator.id
-                && n.locationId !== null && n.cultivation.realmOrdinal === cultivator.realmOrdinal)!;
-            const place = world.locations.find(l => l.id === peer.locationId)!;
-            repos.cultivators.update(cultivator.id, { location: place.name });
-            repos.cultivators.standIn(cultivator.id, theAreasOf(world, place).whereIs.get(peer.id) ?? null);
+            await meetAPeer({ game, repos });
             await game.act('I look around');
 
             for (let fights = 0; fights < 40 && rows.length === 0; fights++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
-                await game.act('I attack someone of my own rank');
+                const peer = await meetAPeer({ game, repos });
+                await playTheWholeFight({ game, db }, `I attack ${peer.name}`);
                 // The terms row, selected by the tag that is its content. A
                 // fight now writes two kinds of account about the loser - see
                 // the note in the agreed-bout case above - and a bare
