@@ -37,6 +37,9 @@
 
 import { describe, expect, it } from 'vitest';
 
+// A house threat now reaches the institutional path. Its refusal must still
+// distinguish a house from nearby people without disclosing an unknown house.
+
 import { SECTS } from '../../src/data/cultivation/index';
 import { makeGameInWorld } from './harness';
 
@@ -73,13 +76,13 @@ describe('a name that belongs to a body', () => {
     it('is never answered with a list of the people standing here', async () => {
         const { harness, unheardOf } = await aFreshCultivatorAndAHouseTheyDoNotKnow('body-1');
 
-        // Straight at the interact path, which is where phase 1 puts a
-        // person-shaped act and where the corpus failure landed.
+        // A named house may reach its institutional declaration path. Either
+        // that path or the party refusal must distinguish it from a person.
         const answer = await harness.game.act(`I threaten ${unheardOf.name}`);
         const heard = said(answer);
 
         expect(heard).not.toMatch(/which of them you meant|which of it you meant/i);
-        expect(heard).toMatch(/a body rather than a person|not somebody standing here/i);
+        expect(heard).toMatch(/a body rather than a person|not somebody standing here|a war is a thing between two houses/i);
     }, 200_000);
 
     /**
