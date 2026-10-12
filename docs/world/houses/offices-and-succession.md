@@ -302,7 +302,12 @@ organising an expedition into a ruin or a forbidden ground and taking their pers
 along to temper them (历练), "to broaden their horizons". That is private, the elder's own, and
 earns no merit; the experience party a house posts on its board, with a senior leading
 disciples for merit, is the house's. An elder who knows another is going may ask, as a favour,
-for somebody of theirs to be taken along.
+for somebody of theirs to be taken along. What the expedition finds is the elder's to keep or
+share, and the choice moves their face: what is beneath the elder usually goes to the disciples
+who found it, and keeping that from them is mean.
+
+**In a party of equals, finders keep what they find.** Anybody may ask a finder to trade for it,
+in goods or in favours, the ordinary way.
 
 **An elder's private business is separate from the board.** Anything an elder does on their own
 decision and their own purse is theirs, not the house's: paying a few disciples to gather what
