@@ -42,6 +42,10 @@
  *
  * Preconditions are arranged where playing to them would be the flaky part:
  * what somebody is at is their activity row, which the world writes the same way.
+ * A missing teacher's lookup spends the ordinary request time; a busy teacher
+ * declines before the resolver. After a span or a changed activity, stand beside
+ * the teacher's current area again. A rogue teaching on house-owned public
+ * ground cannot stand in for that house's people when nobody of it is listening.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -56,6 +60,7 @@ import type { Cultivator } from '../../src/schema/cultivation';
 import { aVehicleOf } from '../../src/engine/world/a-vehicle';
 import { routineOf } from '../../src/engine/world/npc-routines';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { LESSER_ACTION_DAYS } from '../../src/web/lesser-action-costs';
 import type { WorldState } from '../../src/engine/world/world-state';
 import type { NpcRecord } from '../../src/engine/world/npc-state';
 
@@ -127,7 +132,7 @@ function theOddsOf(turn: Turn): number {
 }
 
 /** GIVEN a fresh run standing somewhere, fed, and somebody above them here. */
-async function somebodyAboveHere(seed: string, opts: { atLeast?: number; company?: boolean } = {}) {
+async function somebodyAboveHere(seed: string, opts: { atLeast?: number; company?: boolean; rogueOnly?: boolean } = {}) {
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD, adminMode: true });
     await harness.game.newRun('Prober');
     await harness.game.act('I buy a year of provisions');
@@ -144,6 +149,7 @@ async function somebodyAboveHere(seed: string, opts: { atLeast?: number; company
     // area; only the resulting capped roster is the scene this file measures.
     const eligible = world.npcs
         .filter(npc => npc.status === 'alive' && npc.cultivation.realmOrdinal > me.realmOrdinal
+            && (!opts.rogueOnly || npc.factionId === null && !harness.repos.sects.getMembership(npc.id))
             && (inATown(world, npc)?.company ?? -1) >= (opts.company ? 1 : 0))
         .sort((a, b) => a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
             || (a.id < b.id ? -1 : 1));
@@ -287,7 +293,7 @@ describe('a master may say no', () => {
         const turn = await harness.game.act('I ask my master to guide my cultivation for 10 days') as Turn;
         expect(turn.narration).toMatch(/master to you.*not standing here/i);
         expect(turn.toolCalls.map(call => call.name)).not.toContain('engine.resolveAttempt');
-        expect(harness.game.currentRun().run.elapsedDays).toBe(before);
+        expect(harness.game.currentRun().run.elapsedDays).toBeCloseTo(before + LESSER_ACTION_DAYS.request, 8);
     }, 180_000);
 
     it('writes their attention on a yes, reads it over the span, and ends it after', async () => {
@@ -340,6 +346,7 @@ describe('a master may say no', () => {
         expect(world.npcs[at]!.relationships[tieAt]?.lastAttentionOnDay,
             'the master\'s side of the tie does not remember the span').toEqual(expect.any(Number));
 
+        await backToThem(harness, me.id, teacher.id);
         const soSoon = await harness.game.act(asked) as Turn;
         const withTheTime = theOddsOf(soSoon);
         expect(everythingSaid(soSoon)).toMatch(/given you their time within the year/);
@@ -349,6 +356,7 @@ describe('a master may say no', () => {
         relationships[tieAt] = { ...relationships[tieAt]!, lastAttentionOnDay: null };
         world.npcs[at] = { ...world.npcs[at]!, relationships };
         harness.game.theWorldMoved();
+        await standWhereThePeopleAre(harness, me.id, new Set([teacher.id]));
         const withoutTheTime = theOddsOf(await harness.game.act(asked) as Turn);
 
         console.log(`GUIDANCE ODDS, TIME GIVEN WITHIN THE YEAR: without ${withoutTheTime}, with ${withTheTime}`);
@@ -524,6 +532,7 @@ describe('being taught an art is a span with the teacher at your elbow', () => {
             }
         };
         harness.game.theWorldMoved();
+        await standWhereThePeopleAre(harness, harness.game.currentRun().cultivator.id, new Set([teacher.id]));
         const before = harness.game.currentRun().run.elapsedDays;
 
         const turn = await harness.game.act(`I ask ${teacher.name} to teach me Swallow-Skimming Step`) as Turn;
@@ -552,7 +561,7 @@ describe('being taught an art is a span with the teacher at your elbow', () => {
 
 describe('somebody already teaching the room', () => {
     it('is sat in on without asking, for less than a sole student gets, and the set is put back', async () => {
-        const { harness, world, me, teacher, others } = await somebodyAboveHere('sat-in', { company: true });
+        const { harness, world, me, teacher, others } = await somebodyAboveHere('sat-in', { company: true, rogueOnly: true });
         expect(others.length, 'nobody else here to be in front of the teacher').toBeGreaterThan(0);
         const today = Math.floor(world.currentDay);
         const at = world.npcs.findIndex(npc => npc.id === teacher.id);
@@ -565,6 +574,7 @@ describe('somebody already teaching the room', () => {
         };
         harness.game.theWorldMoved();
         const terms: Terms[] = [];
+        await standWhereThePeopleAre(harness, me.id, new Set([teacher.id]));
         watchTheRate(harness, terms);
 
         const turn = await harness.game.act(`I sit in on ${teacher.name}'s talk`) as Turn;

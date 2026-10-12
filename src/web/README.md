@@ -2,6 +2,102 @@
 
 # The Web Front Door
 
+A carriage ticket purchase leaves its physical passage tally in the pack and
+the buyer at the counter, free to spend the wait. A full load sells the next
+ordinary run after the actual return; its board names that leaving time and
+fare before purchase without publishing a job. Boarding is a separate act:
+the real driver takes the held tally, then it is deleted from that possession.
+A later tally cannot displace an earlier load, and missing the actual departure
+produces the existing once-only dust notice. Folding counters retain their
+immediate crossing path.
+Buying a tally alone does not move its holder or require an immediately boardable
+load. Handing it in uses the same personal carrying admission as an immediate
+seat; an oversized load cannot board by presenting a paid token.
+
+Public carriage and ship fares transfer to the actual service owner's purse
+through the same cash writer as gifts and agreed rides. The accepted boarding
+receipt and fare are required, and repeating that payment cannot charge twice.
+The keeper receives the fare at the counter on behalf of that service.
+Immediate public boarding issues each paid seat's physical passage tally in
+the native boarding commit, before hand-in and departure expiry. The passenger
+hands it to the actual driver or crew member; deletion follows that transfer.
+An entire hired carriage keeps its existing whole-vehicle payment.
+The current holder of an issued tally uses that seat without paying again.
+Only passengers lacking a tally are billed; custody also works after a gift
+or theft. Losing routine purchase paperwork does not invalidate the physical item.
+
+Carrier scene, journey and landing reads use the actual current operator from
+the world. A passenger's old booking does not move them without that driver.
+
+A handler that ends the run retains its resolved result. The generic lesser-action
+clock charges only an active run with a living body.
+
+An arrival names the actual companions still under their agreement at that
+destination, including those whose journey clock has already placed them there.
+
+A ledger question keeps the conjunction naming its other party. A later
+requested act remains a separate call in the plan.
+
+A pronoun restraint such as "take it alive" stays on the preceding hunt or blow
+through clause composition and plan validation. Separate acts retain their order;
+the native resolver decides whether the restrained attempt succeeds.
+
+A bare request to walk to the gate uses ordinary movement. Already standing
+outside a house's gate reads its actual watch without another journey or charge;
+an explicit inspection of an old ruin gate retains the site's exterior read.
+
+An arrival reads the body's actual area after its gate admits or stops it,
+so introductions concern the people faced there rather than its former berth.
+
+Held remote fights refresh the presence's actual qi and cooldowns before the next
+round, using the same finite-resource reader as world-person proxy fights.
+
+An owned craft's ordinary trip names its actual driver in the resolved facts,
+including the physical passage path used by a novice travelling with a pilot.
+
+Commission work starts and settles on the actual world clock, so a day's work
+lasts a day from the agreement rather than ending at the next midnight.
+The busy maker reports the actual time left through the shared span formatter.
+
+Inn payment requires a real living keeper, including a repository keeper in
+the world-off tier. Missing world geometry never supplies a missing payee.
+
+Resolved local exchanges use the existing scene reaction reader before their
+lesser-action clock charge; subsequent routines still follow the advanced clock.
+
+World digest log entries contain only news that reached the player, using the
+same facts as narration. Unheard counts remain in the native digest.
+
+Post-fight care states physical cultivation impairment. Death facts report goods
+and their destinations; cache identifiers and write diagnostics remain in the
+native settlement result, and missing carried items are stated in ordinary words.
+
+The public action barrel forwards the inert fallback directly from the closed
+action set, preserving its value for callers through the pattern-table split.
+
+Owned passage fuel charges reach both the narrator's facts and the engine-only
+answer through the existing late-fact helper; narration keeps its own phrasing.
+
+A proxy that escapes with body remaining survives the fight, including an
+assault on an unattended body. Its actual emptied body decides destruction.
+
+An explicit conversation or trade uses its addressing verb, so a word inside
+the listener's name does not turn the exchange into another act.
+
+Completed fights carry the NPC's actual flight receipts to the world body writer,
+including fights through a separated presence or against an unattended body.
+
+Claimed house authority stays attached to its subordinate order across a comma,
+so the ordinary decree check judges it. A later independent act stays separate.
+Physical herb stocks use their existing catalog identity and herb/recipe reader.
+Nearby physical ground remains visible with zero aerial reach and is described
+from the body's actual position; a named-place question stays local.
+
+Physical made-token lapses are delivered once
+from the witnessed event, including another member's token carried in the pack.
+The delivery stamp records whether the line was delivered, rather than keeping
+another copy of the item or its owner's life.
+
 A senior completing ordinary duty with its named juniors earns the lecture's
 face and merit through `whatLeadingDisciplesIsWorth`, scaled by the actual
 elapsed undertaking and the juniors' existing mission danger. The ordinary
@@ -165,6 +261,8 @@ chronological ages; the body and private mechanics keep their authoritative age.
 the engine's capped area placement. Presence, scene cards, named walks and offers
 read it together. Compound entry counts the arrival area; local teachers, gate
 hosts, trespass witnesses and overheard speakers come from the same roster.
+The lecturer can speak for the house in a trespass read only if they belong to it.
+A rogue teaching on its public ground does not supply a missing house witness.
 Other rooms and decks remain part of their place, without becoming talk targets.
 Each `peopleInThisPlace` observation computes active proxies by owner once, using
 the same surviving-object predicate as `whereYouCanActFrom` and preserving its
@@ -952,7 +1050,8 @@ resolve; a model's ordered plan or explicit player order is already an answer.
 
 An information exchange is one conversation: greeting, origin and questions to
 one person reach one full-topic interact. `one-information-exchange.ts` supplies
-the shared bounded read and the ordered questions; an explicit
+the shared bounded read and the ordered questions. Clause splitting also asks
+the existing terms reader to keep the wanted object with its price question; an explicit
 purchase, treatment, payment or movement remains a separate requested act. The
 model must preserve every decision without treating punctuation as another action.
 The shared sentence-field merge restores this full topic after model
@@ -3312,6 +3411,10 @@ before selecting endpoint counters, learning board destinations, quoting/debitin
 fare or realising a carrier. A real reached vertex, including an ordinary advertised
 wayside service, follows the original counter rules. Matched moving people remain
 in the actual road scene; meeting one does not supply an unreached station.
+
+Private duty hiring uses the existing commitment reader. A dated idle interval
+does not itself bind the worker to other work; their actual duties and making
+still do, before the ordinary price and consent decision is reached.
 
 A stop-only final held-body checkpoint commits native completion and reconciled
 body results without reapplying the departed course ground. Actual boundary

@@ -1,6 +1,10 @@
 /**
  * Discovery has a second channel, and this file is the guard on the line
  * between them.
+ * Oct11 measured one locally visible place out of 351 at ordinal zero. The
+ * former unconditional refusal ignored ordinary ground sight. That place is
+ * visible without flight, and the aerial horizon stays zero. Played controls
+ * now pin their world too.
  *
  *   "at higher ranks you should just be able to fly and look around. why should
  *    the entire thing be dependent on asking? that's a mortal's POV."
@@ -30,7 +34,7 @@ import {
     type Sighting
 } from '../../src/web/what-you-can-see-from-up-there';
 import { MAX_ORDINAL, realmForOrdinal } from '../../src/engine/cultivation/realms';
-import { makeGame, makeGameInWorld } from './harness';
+import { makeGameInWorld } from './harness';
 
 it('sees local ground without a flight grant, name, or remote sight',()=>{
  const local:Sighting={locationId:'visible-town',kind:'settlement',bearing:'east',days:.05,
@@ -259,22 +263,19 @@ describe('what a look from up there comes back with', () => {
 
 describe('played at two heights', () => {
     /**
-     * The bottom of the ladder is unchanged, which is the constraint that makes
-     * this a design rather than a hole. A starting cultivator asking where they
-     * could go gets what they always got, plus a refusal that says why there is
-     * no more of it and what would change that.
+     * Nearby physical ground is visible from the ground. Seeing it does not
+     * give a starting body the aerial reach of somebody who can fly.
      */
-    it('a starting cultivator is still refused, and told what would work', async () => {
-        const { game } = makeGame({ worldEnabled: true, seed: 'horizon-low' });
+    it('a starting cultivator sees nearby ground with zero aerial reach', async () => {
+        const { game } = await makeGameInWorld({ worldSeed: 'horizon-world', seed: 'horizon-low' });
         await game.newRun('Wei Zhaoxun');
 
         const where = await game.act('where can I go');
         const said = where.narration ?? '';
-
-        expect(said).toContain('You cannot get above it');
-        expect(said).toContain('Ask, and keep asking');
-        expect(said).not.toContain('day of road away');
-        expect(said).not.toContain('days of road away');
+        const sight = where.toolCalls.find(call => call.name === 'engine.whatCanBeSeenFromUpThere');
+        expect(sight?.summary).toContain('horizon of 0.0 travel days');
+        expect(said).toContain('visible from where you stand');
+        expect(said).not.toMatch(/things down there|One thing down there/);
     }, 60_000);
 
     /**
@@ -283,7 +284,7 @@ describe('played at two heights', () => {
      * rungs, and what is being measured is the read rather than the climb.
      */
     it('a high cultivator sees ground nobody ever told them about', async () => {
-        const { game, repos } = makeGame({ worldEnabled: true, seed: 'horizon-high' });
+        const { game, repos } = await makeGameInWorld({ worldSeed: 'horizon-world', seed: 'horizon-high' });
         const created = await game.newRun('Wei Zhaoxun');
         repos.cultivators.update(created.cultivator.id, { realmOrdinal: 30 } as never);
 
@@ -327,7 +328,7 @@ describe('played at two heights', () => {
      * may as well be told what it is called.
      */
     it('prints no name it was not already going to print', async () => {
-        const { game, repos } = makeGame({ worldEnabled: true, seed: 'horizon-names' });
+        const { game, repos } = await makeGameInWorld({ worldSeed: 'horizon-world', seed: 'horizon-names' });
         const created = await game.newRun('Wei Zhaoxun');
 
         const before = await game.act('where can I go');

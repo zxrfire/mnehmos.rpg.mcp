@@ -6,6 +6,8 @@
  * around it, every one of them "here". The owner: "AT MOST 3 people per room, 3 NPCs", and a
  * house's gate "ALWAYS has a disciple of that house on watch"; somebody the gate turned away is
  * outside it, not in the grounds.
+ * The world clock now carries the same fractional walk as the run clock. The
+ * gate control starts on its actual grounds; unknown roads are tested elsewhere.
  *
  * What is pinned, in the words a player would use:
  *
@@ -37,6 +39,7 @@ import { isTheWorldsToMove } from '../../src/engine/world/npc-state';
 import { thePeopleHere } from '../../src/web/the-narrator-plays-the-world';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { theAreaTheyAreIn } from '../../src/web/walking-across-a-place';
+import { routineTime } from '../../src/engine/world/npc-routines';
 
 const ids = (rows: readonly { id: string }[]) => rows.map(row => row.id).sort();
 const GATE_WORLD = 'a-house-you-can-walk-to';
@@ -73,7 +76,7 @@ describe('a place is read into areas of at most three', () => {
         expect(ids(whereItOpened)).toEqual(ids(npcsInTheArea(world, opened.id)));
         expect(opened.id, 'the test walks to the inn from somewhere else').not.toBe(inn.id);
 
-        const day = world.currentDay;
+        const day = routineTime(world);
         const before = game.currentRun().run.elapsedDays;
         const walked = await game.act('I go to the inn');
         expect(walked.toolCalls.map(call => call.name)).toContain('world.walkAcrossThePlace');
@@ -81,7 +84,7 @@ describe('a place is read into areas of at most three', () => {
         expect(inside.standingIn).toBe(inn.id);
         expect(inside.location).toBe(cultivator.location);
         expect(ids(game.present(inside))).toEqual(ids(npcsInTheArea(world, inn.id)));
-        expect((await game.loadWorld())!.currentDay).toBe(day);
+        expect(routineTime((await game.loadWorld())!) - day).toBeCloseTo(1 / 4);
         expect(game.currentRun().run.elapsedDays - before).toBeCloseTo(1 / 4);
 
         await game.act('I go back out to the street');
@@ -135,12 +138,17 @@ describe('a place is read into areas of at most three', () => {
     it('stands a stranger outside a house\'s gate with the one on watch, unnamed until known', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-stranger', worldSeed: GATE_WORLD });
         const { cultivator } = await game.newRun('Stranger');
-        const { faction, seat } = aSeatedHouse((await game.loadWorld())!)!;
-
-        await game.act(`I travel to the ${faction.name}`);
+        const world = (await game.loadWorld())!;
+        const { faction, seat } = aSeatedHouse(world)!;
+        repos.cultivators.update(cultivator.id,{location:seat.name});
+        const gate = theAreasOf(world,seat).areas.find(area=>area.for==='gate');
+        expect(gate,'The actual compound has no outside gate area.').toBeDefined();
+        repos.cultivators.standIn(cultivator.id,gate!.id);
+        const before = game.currentRun().run.elapsedDays;
+        const cash = repos.cultivators.getById(cultivator.id)!.spiritStones;
         const turn = await game.act('I go to the gate');
         const me = repos.cultivators.getById(cultivator.id)!;
-        expect(me.location).toBe(seat.name);
+        expect(me.location,turn.narration).toBe(seat.name);
         expect(theAreaTheyAreIn((await game.loadWorld())!, me)?.area.for,
             'the gate turned them away and put them inside').toBe('gate');
 
@@ -152,6 +160,8 @@ describe('a place is read into areas of at most three', () => {
         // Played blind: the narrator wrote "She is Weng Er" before she had said her name.
         expect(said).toContain(`A disciple of ${faction.name} is on watch at the gate.`);
         expect(said).not.toContain(onWatch!.name);
+        expect(game.currentRun().run.elapsedDays).toBe(before);
+        expect(me.spiritStones).toBe(cash);
     }, 300_000);
 
     it('lets somebody of the house the gate knows into the forecourt', async () => {

@@ -6,6 +6,7 @@ import type Database from 'better-sqlite3';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
+import { whatThisThingIs } from '../engine/world/what-a-house-gives-merit-for.js';
 import { keptAs, type ObjectRecord } from '../engine/world/possessions.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import { MARKET_CATEGORIES, quotedBy } from './market-prices.js';
@@ -968,6 +969,11 @@ export function resolveObject(
 
     const thing = named ?? byHolder;
     if (!thing) return null;
+
+    // A physical herb stock is read through the same catalog as a loose herb.
+    const herbId = thing.kind === 'material' ? whatThisThingIs(thing)?.kindId : undefined;
+    const herb = herbId === undefined ? undefined : HERBS.find(row => row.id === herbId);
+    if (herb) return resolveHerb(herb.name);
 
     const read = whatTheyRecogniseAboutIt(thing, {
         id: self.id,

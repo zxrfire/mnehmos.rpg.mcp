@@ -23,6 +23,8 @@ import { appendFileSync } from 'node:fs';
  * Refused rental keeps its real approach but cannot turn into a night's sleep.
  */
 import { describe, expect, it } from 'vitest';
+// The world-off booking charged a bed without any keeper. Repository people
+// can be read in that tier; payment still requires an actual living person.
 import { makeGame, makeGameInWorld } from './harness';
 import { takeARoom, whereTheyAreLodged } from '../../src/web/a-room-at-an-inn';
 import { theAreaTheyAreIn, theAreaNamed } from '../../src/web/walking-across-a-place';

@@ -1,6 +1,9 @@
 /**
  * A question about a named thing has a route, and it is the route that already
  * existed.
+ * Oct11 integration found physical Grave Lily consignments reaching artifact
+ * recognition and losing the ordinary herb and recipe read. A stocked herb
+ * retains the same catalog identity and uses as a loose herb.
  *
  * ── THE FIVE MEASUREMENTS THIS FILE EXISTS FOR ───────────────────────────
  *
@@ -347,7 +350,7 @@ describe('played, through the whole service', () => {
             .toMatch(/to a technique/);
     }, 200_000);
 
-    /** A herb says which pills it goes into, off the recipe catalog. */
+    /** A herb says which pills it goes into, including an actual stocked herb object. */
     it('says what a herb is made into', async () => {
         const { game } = await makeGameInWorld({ seed: 'asked-a-herb', worldSeed: 'world-asked-about' });
         await game.newRun('Wen Shuyi');
@@ -355,7 +358,7 @@ describe('played, through the whole service', () => {
         const result = await game.act('tell me about the Grave Lily');
 
         const read = engineCalls(result).find(call => call.action === 'investigate');
-        expect(read?.summary).toMatch(/to a herb/);
+        expect(read?.summary).toMatch(/Resolved "Grave Lily"/);
         expect(result.narration).toMatch(/Alchemists put it into the [^.]*Soul-Quenching Pill/);
     }, 200_000);
 

@@ -15,7 +15,11 @@ import {
 import type { EngineFacts } from './facts.js';
 import { isDayLongAct } from './lesser-action-costs.js';
 import { isOneInformationExchange } from './one-information-exchange.js';
+import { askingWhatItWouldTake } from './what-a-request-asks-and-of-whom.js';
+import { SECT_SUBORDINATE_NOUNS } from './sect-phrasings.js';
 import { theFragmentIsOnlyTheDeclaration } from './what-you-are-not-showing.js';
+import { parseIntent } from './verb-pattern-table.js';
+import { theFragmentRestrainsTheBlow } from './how-they-said-they-swung.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // A STEP
@@ -235,11 +239,12 @@ function spansInTheTail(spans: readonly ExplicitNameSpan[], offset: number): rea
 }
 
 export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan[] = []): string[] {
-    if (isOneInformationExchange(input)) return [input.trim()];
+    // A terms question keeps its named object; a comma does not order a purchase.
+    if (isOneInformationExchange(input) || askingWhatItWouldTake(input)) return [input.trim()];
     // "It wasn't me, it was X" is one account, a blame; split at the comma it became a bare denial.
     if (deedAccountInWords(input) === 'blame') return [input.trim()];
     // Keep the conversational prefix together when a distinct decision follows.
-    // This applies only to the bounded information exchange, never arbitrary acts.
+    // Bounded information and terms questions qualify, never arbitrary acts.
     for (const boundary of input.matchAll(/\band(?:\s+then)?\b|\bthen\b|;/gi)) {
         if (insideAnExplicitName(boundary.index!, boundary[0].length, nameSpans)) continue;
         const before = input.slice(0, boundary.index).trim();
@@ -247,7 +252,7 @@ export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan
         // A further question belongs to this exchange; keep looking for the
         // boundary where an independently requested act actually starts.
         if (/^(?:what|who|where|when|how|which|whether|your name|can you|could you|do you|would you)\b/i.test(after)) continue;
-        if (after && isOneInformationExchange(before)) {
+        if (after && (isOneInformationExchange(before) || askingWhatItWouldTake(before))) {
             return [before, ...theClausesOf(after, spansInTheTail(nameSpans, input.indexOf(after, boundary.index! + boundary[0].length)))];
         }
     }
@@ -255,15 +260,36 @@ export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan
     let begin = 0;
     for (const boundary of input.matchAll(CLAUSE_SEPARATOR)) {
         if (insideAnExplicitName(boundary.index!, boundary[0].length, nameSpans)) continue;
-        parts.push(input.slice(begin, boundary.index));
+        const before = input.slice(begin, boundary.index);
+        // The conjunction supplies the other party in a ledger question.
+        // Its ordinary parser owns that reading; later acts still split.
+        if (/^and$/i.test(boundary[0]) && /\bbetween\s+(?:me|us)\s*$/i.test(before)) {
+            const question = parseIntent(before);
+            if (question.action === 'oath' && question.intent === 'read') continue;
+        }
+        parts.push(before);
         begin = boundary.index! + boundary[0].length;
     }
     parts.push(input.slice(begin));
+    const clauses = parts.map(part => part.trim())
+        .filter(part => part.split(/\s+/).filter(Boolean).length >= 2);
+    for (let i = 1; i < clauses.length; i++) {
+        if (theFragmentRestrainsTheBlow(clauses[i]!)
+            && ['hunt', 'attack', 'coerce'].includes(parseIntent(clauses[i - 1]!).action)) {
+            clauses.splice(i - 1, 2, `${clauses[i - 1]} and ${clauses[i]}`);
+            i--;
+        }
+    }
+    for (let i = 0; i + 1 < clauses.length; i++) {
+        // This prefix claims authority for the subordinate order beside it.
+        // The ordinary decree reader must receive both, before judging the claim.
+        if (ON_WHOSE_AUTHORITY.test(clauses[i]!) && !SECT_SUBORDINATE_NOUNS.test(clauses[i]!)
+            && SECT_SUBORDINATE_NOUNS.test(clauses[i + 1]!)) {
+            clauses.splice(i, 2, `${clauses[i]}, ${clauses[i + 1]}`);
+        }
+    }
     return whatFollowsAnIntentionIsStillTheIntention(
-        parts.map(part => part.trim())
-            .filter(part => part.split(/\s+/).filter(Boolean).length >= 2)
-            .filter(part => !thisFragmentModifiesTheActBesideIt(part))
-    );
+        clauses.filter(part => !thisFragmentModifiesTheActBesideIt(part)));
 }
 
 /**
@@ -332,7 +358,7 @@ const A_SENTENCE_THAT_STATES_AN_INTENTION =
  */
 function thisFragmentModifiesTheActBesideIt(part: string): boolean {
     return HOW_LONG_THE_ACT_RUNS.test(part)
-        || ON_WHOSE_AUTHORITY.test(part)
+        || (ON_WHOSE_AUTHORITY.test(part) && !SECT_SUBORDINATE_NOUNS.test(part))
         // What you are showing while you do it, which is the third thing a
         // person puts beside an act rather than instead of one. Owned by
         // `what-you-are-not-showing.ts` because the leverage path reads the

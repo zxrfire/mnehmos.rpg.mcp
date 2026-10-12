@@ -749,7 +749,8 @@ export const attentionVerbs = {
         const today = Math.floor(world.currentDay);
         const teacher = scene.frontOfTheRoom;
         const ofTheHouse = scene.witnesses.filter(npc => npc.factionId === house);
-        const witnesses = ofTheHouse.length > 0 ? ofTheHouse : teacher !== null ? [teacher] : [];
+        const witnesses = ofTheHouse.length > 0 ? ofTheHouse
+            : teacher?.factionId === house ? [teacher] : [];
         if (witnesses.length === 0) return { caught: null, passed: null };
 
         // HOW EACH OF THEM READS THE FACE. `howTheirPeopleSeeYourFace`, which the

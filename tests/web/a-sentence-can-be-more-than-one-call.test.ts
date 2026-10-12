@@ -10,6 +10,9 @@
  * The played half - that a plan actually reaches the engine, in order, and that
  * unresolved fallback ordering asks a question - is in
  * `tests/web/a-sentence-that-contains-a-plan.test.ts`.
+ * Oct11 integration found a claimed house order losing its authority at the
+ * comma and becoming the player's own gathering trip. That claim must reach
+ * the ordinary decree check, with a later independent act still separate.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -44,6 +47,17 @@ import {
 } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 import { ACTION_NAMES, parseIntent, type ActionName, type PlannedAction } from '../../src/web/actions.js';
 import { costsTheAskerNothing } from '../../src/web/asking-is-not-doing.js';
+
+describe('the authority claimed for an order survives the comma', () => {
+    it('keeps the claim with the subordinate order and retains a later act', () => {
+        const order = 'By order of the Sect, the disciples are to gather herbs';
+        expect(parseIntent(order)).toMatchObject({ action: 'sect', intent: 'decree' });
+        expect(theClausesOf(order)).toEqual([order]);
+        expect(theClausesOf(`${order} and then I leave`)).toEqual([order, 'I leave']);
+        const complete = 'By order of the Sect the disciples are to gather herbs';
+        expect(theClausesOf(`${complete} and then I leave`)).toEqual([complete, 'I leave']);
+    });
+});
 
 function step(action: ActionName, extra: Partial<PlanStep['action']> = {}, said?: string): PlanStep {
     return { action: { action, ...extra }, ...(said ? { said } : {}) };

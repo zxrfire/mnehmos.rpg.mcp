@@ -43,6 +43,13 @@
  * and both the sparing and the favour assertions fail. Restoring the old
  * `howMuchWasBehindIt` ordering (killing words above restraint) fails the
  * reader arm on the two negated sentences.
+ *
+ * A later native clause reader split "and take it alive" away from the hunt.
+ * The full sentence's parser still passed, while the played hunt destroyed
+ * its quarry's body. Restraint now stays on that blow through composition and
+ * validation. The player is arranged at the mortal ceiling; a True Immortal
+ * cannot hunt on provincial ground. A crossed beast's own name is read from
+ * its actual row rather than required to remain its species name.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -57,7 +64,9 @@ import { beastsOnThisGround, hasACore } from '../../src/engine/world/hunting-a-s
 import { isOnAVein, isSealedOn, whatGroundThisIs }
     from '../../src/engine/world/what-ground-a-place-is';
 import { idOfTheOneOnThisGround } from '../../src/engine/world/a-beast-with-a-core-is-somebody-in-particular';
-import { MAX_ORDINAL } from '../../src/engine/cultivation/realms';
+import { FALSE_IMMORTAL_ORDINAL } from '../../src/engine/cultivation/realms';
+import { DeterministicNarrator } from '../../src/web/narrator';
+import { validatePlan } from '../../src/web/planned-action';
 
 const read = (turn: { narration?: string | null }): string => turn.narration ?? '';
 
@@ -105,6 +114,18 @@ describe('the reader hears a hunt that is not meant to finish anything', () => {
         expect(howTheySaidTheySwung('I kill him').force).toBe('everything');
         expect(howTheySaidTheySwung('I hunt it', 'everything').force).toBe('everything');
     });
+
+    it.each(['and take it alive', 'but I do not kill it', 'without killing it'])(
+        'keeps %s on the ordinary hunt plan', async tail => {
+            const plan = await new DeterministicNarrator().plan(`I hunt the ${theOneWithACore.name} ${tail}`);
+            expect(plan.steps ?? [{ action: plan.action }]).toHaveLength(1);
+            expect(plan.action.action).toBe('hunt');
+            expect(plan.action.thrown?.force).toBe('committed');
+            const validated = validatePlan(plan.action);
+            expect(validated.ok).toBe(true);
+            if (validated.ok) expect(validated.action.thrown).toEqual(plan.action.thrown);
+        }
+    );
 });
 
 describe('a hunt can leave something beaten and alive, and it can be let up', () => {
@@ -145,23 +166,30 @@ describe('a hunt can leave something beaten and alive, and it can be let up', ()
         expect(place, 'the pinned world has no ground one of these could hold').toBeDefined();
         expect(itsSpecies, 'no cored species can stand anywhere in this world').toBeDefined();
 
-        // ARRANGED FAST, at the top of the ladder, because what is being
+        // ARRANGED FAST, at the top of the mortal ladder, because what is being
         // measured is the ENDING of a fight and not whether it can be won.
         // `docs/admin.md`'s rule: arrange the situation, assert the outcome.
         db.prepare(
             'UPDATE cultivators SET location = ?, realm_ordinal = ?, hp = 9000, max_hp = 9000 '
             + 'WHERE id = ?'
-        ).run(place!.name, MAX_ORDINAL, cultivator.id);
+        ).run(place!.name, FALSE_IMMORTAL_ORDINAL, cultivator.id);
 
-        const hunted = read(await game.act(
+        const hunting = await game.act(
             `I hunt the ${itsSpecies!.name} and take it alive`
-        ));
+        );
+        const hunted = read(hunting);
         expect(hunted, 'the hunt did not reach the one that was named')
             .toContain(itsSpecies!.name);
         // The engine's own statement that the thing is dead, which is what a
         // hunt told to stop short must not be able to produce.
         expect(hunted, 'a hunt told to stop short still came back with a body')
             .not.toContain(`${itsSpecies!.name} is down.`);
+        expect(hunting.toolCalls.some(call => call.name === 'engine.whoHasYieldedToYou'),
+            `the ordinary hunt must actually take its quarry alive: ${hunted}`).toBe(true);
+        const quarry = (await game.loadWorld())!.npcs.find(npc =>
+            npc.id === idOfTheOneOnThisGround(itsSpecies!.id, place!.id));
+        expect(quarry?.status).toBe('alive');
+        expect(hunted).toContain(`${quarry!.name} is down and is not dead.`);
 
         // AND THE SENTENCE ANYBODY WOULD TYPE NEXT. `it` is the only pronoun
         // people use for one of these, and it used to reach nothing at all

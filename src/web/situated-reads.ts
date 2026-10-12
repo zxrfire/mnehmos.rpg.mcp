@@ -917,8 +917,8 @@ export const situatedReads = {
                 // `at ordinal N` is an internal scale. The rung has a name.
                 + `horizon of ${horizonInDays(cultivator.realmOrdinal).toFixed(1)} travel days for a `
                 + `${theRung(cultivator.realmOrdinal)}. Perception, not knowledge: no name, `
-                + `holder or ceiling crosses this channel, and below `
-                + `${theRung(LEAVES_THE_GROUND)} it returns nothing at all.`,
+                + `holder or ceiling crosses this channel. Aerial reach begins at `
+                + `${theRung(LEAVES_THE_GROUND)}; locally visible ground remains visible.`,
             // A COUNT IS NOT A SUCCESS FLAG. This was `overlook.seen > 0`, and
             // the channel returns nothing at all below `LEAVES_THE_GROUND` - so
             // every cultivator under that rung filed a refusal for correctly

@@ -287,6 +287,12 @@ const HARD =
 const HELD_SHORT_OF_THE_KILL =
     /\b(?:(?:do(?:es)?\s+not|don'?t|won'?t|will\s+not|rather\s+than|without|instead\s+of)\s+(?:kill\w*|slay\w*|finish\w*)|not\s+to\s+kill|alive|captures?|capturing|subdues?|knock\s+(?:him|her|them|it)\s+out|spares?\s+(?:him|her|them|it)|drive\s+(?:him|her|them|it)\s+off|non-?lethal)\b/i;
 
+/** A pronoun restraint qualifies the preceding blow, rather than starting another act. */
+export function theFragmentRestrainsTheBlow(said: string): boolean {
+    return HELD_SHORT_OF_THE_KILL.test(said)
+        && /^(?:i\s+)?(?:(?:take|keep|leave)\s+(?:him|her|them|it)\s+alive|(?:do not|don't|will not|won't)\s+(?:kill|slay|finish)\s+(?:him|her|them|it)|without\s+(?:killing|slaying|finishing)\s+(?:him|her|them|it))[.!?]*$/i.test(said.trim());
+}
+
 /**
  * How much was behind it.
  *

@@ -281,9 +281,11 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
     );
 
     return {
-        headline: seen.length === 1
-            ? 'One thing down there you have never been told about.'
-            : `${seen.length} things down there nobody has told you about.`,
+        headline: horizon <= 0
+            ? seen.length === 1 ? 'One place is visible from where you stand.'
+                : `${seen.length} places are visible from where you stand.`
+            : seen.length === 1 ? 'One thing down there you have never been told about.'
+                : `${seen.length} things down there nobody has told you about.`,
         lines: [
             ...(horizon>0?howHighTheyGet(input.ordinal):[]),
             ...[...grouped].map(([line, count]) => count === 1 ? line : `${line} ${andAgain(count)}`),

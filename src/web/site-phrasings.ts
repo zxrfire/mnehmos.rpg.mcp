@@ -258,6 +258,8 @@ export function siteNamed(text: string): string | undefined {
 
 export function siteStep(text: string, input: string): PlannedAction | null {
     if (WEIGHING_RATHER_THAN_GOING.test(text)) return null;
+    // A bare local gate walk is movement; the world's actual gate decides access.
+    if (/^(?:i\s+)?(?:go|walk|head|move)(?:\s+back)?\s+(?:to|toward|towards)\s+(?:the\s+)?gates?\s*[.!?]*$/.test(text)) return null;
 
     if (/\b(?:i )?(?:delve|go deeper)(?: into| in)?\b/.test(text)) {
         return { action: 'site', intent: 'delve', target: namedAfter(input, 'delve into|delve|go deeper into|go deeper') };

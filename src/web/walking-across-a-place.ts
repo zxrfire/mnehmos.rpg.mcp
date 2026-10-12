@@ -271,6 +271,14 @@ export async function aWalkAcrossThePlace(
     ));
 
     if (destination.id === here.area.id) {
+        const house = destination.for === 'gate' && /^(?:gate|gates|outside the gate)$/.test(asAnAreaIsNamed(said))
+            ? theHouseWhoseGateThisIs(world, here.place.name) : null;
+        if (house) {
+            const watch = theWatchAtTheGate(game, cultivator, house.seat, house.factionName);
+            const facts = factsForToolResult('You are already outside the gate.', [watch.line]);
+            facts.structure.push(watch.structure);
+            return { ...game.freeAction(run, 'move', facts), timeDisposition: 'free_read' };
+        }
         // "Out" from where a road arrives is out of the place, which is the road's to answer.
         if (destination.for === 'street' || destination.for === 'gate' || destination.for === 'here') return null;
         return refused('engine.walkAcrossThePlace', 'move', factsForRefusal(

@@ -8,6 +8,8 @@
  * Oct10 integration reproduced health and medicine-price reads becoming
  * conversations because their nouns were clinical. A standalone question
  * carries no greeting/context to combine and retains its ordinary reader.
+ * A cure-price inquiry also lost its named object at the comma: stating what
+ * is needed supplies the question's context, not a separate action.
  */
 import { describe, expect, it } from 'vitest';
 import { parseIntent } from '../../src/web/actions.js';
@@ -19,6 +21,16 @@ import { ScriptedProvider } from './harness.js';
 const question = 'I greet the member working in this hall. May I ask your name, and where a new member goes to take work?';
 
 describe('one ordinary information exchange', () => {
+    it('keeps a price question with its named object without swallowing a later act', () => {
+        for (const object of ['a Meridian Rebirth Pill', 'a sword', 'passage to the capital']) {
+            const input = `I need ${object}, what's your price?`;
+            expect(parseIntent(input)).toMatchObject({ action: 'request', intent: 'weigh' });
+            expect(theClausesOf(input)).toEqual([input]);
+            expect(theClausesOf(`${input} and then I leave`)).toEqual([input, 'I leave']);
+        }
+        expect(theClausesOf("I buy a sword, what's your price?")).toHaveLength(2);
+    });
+
     it('keeps the full topic and each question in order', () => {
         expect(parseIntent(question).topic).toBe(question);
         expect(theClausesOf(question)).toEqual([question]);

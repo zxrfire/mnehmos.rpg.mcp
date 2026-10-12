@@ -48,4 +48,6 @@
 // AGENTS.md is the authority for both halves of this: name a file after what is
 // in it, and rename by re-export rather than by rewriting importers.
 
+// Forward the inert fallback directly from the module that owns it.
+export { FALLBACK_ACTION } from './action-set.js';
 export * from './verb-pattern-table.js';

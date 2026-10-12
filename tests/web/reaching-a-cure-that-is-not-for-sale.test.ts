@@ -1,5 +1,9 @@
 /**
  * THE ACCEPTANCE TEST FOR THE BARTER TIER, PLAYED.
+ * Holder selection now asks the actual routine and presence reader; a stored
+ * home location does not put a travelling or absent supplier in the room.
+ * The fixture still must find a present supplier whose ordinary answer offers
+ * terms, and complete the real exchange.
  *
  * Every heaven-grade and above cure in the catalog was unobtainable in play,
  * and the game said so in a sentence nothing accepted. `see a physician` on a
@@ -36,6 +40,7 @@ import { makeGameInWorld } from './harness';
 import { TECHNIQUES } from '../../src/data/cultivation/techniques';
 import { heldByTheirHouse } from '../../src/web/what-a-holder-would-take-for-it';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
+import { routineOf } from '../../src/engine/world/npc-routines.js';
 
 const WORLD = 'a-cure-that-is-not-for-sale';
 const THE_CURE = 'pill-meridian-rebirth';
@@ -52,13 +57,13 @@ async function standWithSpeaker(
 ): Promise<boolean> {
     const world = (await game.loadWorld())!;
     const speaker = world.npcs.find(n => n.id === speakerId && n.status === 'alive');
-    const place = world.locations.find(l => l.id === speaker?.locationId);
+    const actual = speaker ? routineOf(world, speaker) : null;
+    const place = world.locations.find(l => l.id === actual?.locationId);
     if (!speaker || !place) return false;
     game.repos.cultivators.update(playerId, { location: place.name });
     const area = theAreasOf(world, place).whereIs.get(speaker.id);
     if (area) game.repos.cultivators.standIn(playerId, area);
-    expect(game.present(game.repos.cultivators.getById(playerId)!).map(n => n.id)).toContain(speakerId);
-    return true;
+    return game.present(game.repos.cultivators.getById(playerId)!).some(n => n.id === speakerId);
 }
 
 /**
@@ -178,8 +183,6 @@ describe('reaching a cure that is not for sale', () => {
         const traded = holders.find(h => h.ownerId === theirHouse);
         expect(traded, 'the willing speaker speaks for no house holding one').toBeDefined();
 
-        // The sentence the design owner actually wrote, which names nobody and
-        // is said to whoever you are dealing with.
         // The sentence the design owner actually wrote. It names nobody, so it
         // lands on whoever the player could walk up to - which is the person
         // just spoken to, standing in the same square.

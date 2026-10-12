@@ -21,11 +21,18 @@
  *
  * ADMIN sets a rung and puts somebody there. Every row read back was written by
  * an ordinary verb.
+ *
+ * Oct11 integration split "between me and Mo Lanzhi" at its conjunction. The
+ * direct parser kept the named party, but the native plan listed everybody's
+ * account. The relation's conjunction must stay with its question; an act
+ * requested afterwards remains a separate call.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions';
+import { DeterministicNarrator } from '../../src/web/narrator';
+import { theClausesOf, stepsOfThePlan } from '../../src/web/a-sentence-can-be-more-than-one-call';
 import { makeGameInWorld } from './harness';
 import { howFarOff } from '../../src/web/facts';
 import {
@@ -94,6 +101,20 @@ describe('asking what the ledger holds', () => {
             expect(parseIntent(sentence).target, sentence).toBeUndefined();
         }
         expect(parseIntent('what stands between me and Wen Shuyi').target).toBe('Wen Shuyi');
+    });
+
+    it.each(['stands', 'is', 'lies'])('keeps the other party in the native "%s between" question', async verb => {
+        const question = `what ${verb} between me and Mo Lanzhi`;
+        expect(theClausesOf(question)).toEqual([question]);
+        const narrator = new DeterministicNarrator();
+        expect((await narrator.plan(question)).action).toMatchObject({
+            action: 'oath', intent: 'read', target: 'Mo Lanzhi'
+        });
+        const sentence = `${question} and then I look around`;
+        expect(theClausesOf(sentence)).toEqual([question, 'I look around']);
+        const steps = stepsOfThePlan(await narrator.plan(sentence));
+        expect(steps.map(step => step.action.action)).toEqual(['oath', 'look']);
+        expect(steps[0]!.action.target).toBe('Mo Lanzhi');
     });
 
     /** And the oath verb still swears and still breaks. */

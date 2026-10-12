@@ -325,11 +325,13 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // letting it ride along would put a word in the ledger that means nothing.
     if (terms && name === 'attack') action.terms = terms;
 
-    // The swing, kept on the one verb that can throw one. A model is not
+    // The swing, kept on the verbs that can throw one. A model is not
     // expected to fill this in - the parser reads it off the sentence, and the
     // merge below carries it across - but a model that does say how somebody
     // struck has said something true, and dropping it would cost the reading.
-    if (parsed.data.thrown && name === 'attack') action.thrown = parsed.data.thrown;
+    if (parsed.data.thrown && (name === 'attack' || name === 'hunt' || name === 'coerce')) {
+        action.thrown = parsed.data.thrown;
+    }
     if (parsed.data.withArt && (name === 'attack' || name === 'coerce')) {
         action.withArt = parsed.data.withArt;
     }
