@@ -304,6 +304,12 @@ earns no merit; the experience party a house posts on its board, with a senior l
 disciples for merit, is the house's. An elder who knows another is going may ask, as a favour,
 for somebody of theirs to be taken along.
 
+**An elder's private business is separate from the board.** Anything an elder does on their own
+decision and their own purse is theirs, not the house's: paying a few disciples to gather what
+they need, hiring an escort, commissioning a refiner, having somebody found, sponsoring a
+promising junior, a little trade on the side. It is offered person to person, paid in stones,
+pills or favours, and earns no merit. Only what the house posts is board work.
+
 **An apex is more than a big sect.** The houses everybody else answers to are visibly more
 elaborate: every hall a house can have, more people posted in each, and more elders, with and
 without an office, for a hall's elder to call on.
