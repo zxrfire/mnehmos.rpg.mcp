@@ -293,6 +293,15 @@ disciple. Where grouping rooms put two existing office holders in one hall, the 
 the chair order heads it, and the other keeps their seat and standing without the hall,
 usually the first the head asks.
 
+**An elder with no office does what a cultivator does.** Doing the work of their rank means
+their own cultivation, in their residence or in seclusion; their personal disciples; the people
+who come to them for favours; their craft, if they have one. And their own ventures, on their
+own decision and their own purse: going to an auction to hunt an artifact they want, or
+organising an expedition into a ruin or a forbidden ground and taking their personal disciples
+along to temper them (历练), "to broaden their horizons". That is private, the elder's own; the
+experience party a house posts on its board, with a senior leading disciples for merit, is the
+house's.
+
 **An apex is more than a big sect.** The houses everybody else answers to are visibly more
 elaborate: every hall a house can have, more people posted in each, and more elders, with and
 without an office, for a hall's elder to call on.
