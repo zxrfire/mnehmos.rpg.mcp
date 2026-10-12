@@ -306,7 +306,7 @@ for somebody of theirs to be taken along.
 
 **An elder's private business is separate from the board.** Anything an elder does on their own
 decision and their own purse is theirs, not the house's: paying a few disciples to gather what
-they need, hiring an escort, commissioning a refiner, having somebody found, sponsoring a
+they need, paying someone to guard a relative on the road, commissioning a refiner, having somebody found, sponsoring a
 promising junior, a little trade on the side. It is offered person to person, paid in stones,
 pills or favours, and earns no merit. Only what the house posts is board work.
 
