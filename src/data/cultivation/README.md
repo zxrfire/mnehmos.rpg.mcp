@@ -11,7 +11,10 @@
 
 # Cultivation Content Catalogs
 
-`why-a-house-puts-a-party-on-the-road.ts` includes 贡行 (Tribute Carriage)
+The tribute-delivery handle names the actual carrying job in its posted task,
+without naming a conveyance the party may not use.
+
+`why-a-house-puts-a-party-on-the-road.ts` includes 贡行 (Tribute Delivery)
 and 扬威巡行 (Display of Strength) as ordinary sending reasons. Their real
 parent or counterpart requirements, service spans and hands enter the existing
 posting and board readers. House calendars derive allies and patronage from

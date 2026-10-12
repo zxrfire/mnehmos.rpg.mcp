@@ -395,9 +395,9 @@ export const SENDING_REASONS: readonly SendingReason[] = [
     },
     {
         id: 'sending-to-carry-tribute',
-        name: '贡行 Tribute Carriage',
-        said: 'tribute carriage',
-        task: 'Carry the tribute of {house} to {place} for the next {term}',
+        name: '贡行 Tribute Delivery',
+        said: 'tribute delivery',
+        task: 'Make the tribute delivery from {house} to {place} for the next {term}',
         what: 'The grant names a receiving house and an annual payment. Its own '
             + 'people carry the payment to that house and return with the receipt.',
         needs: 'a_parent', ceilingOrdinal: null, floorOrdinal: null, makes: null,

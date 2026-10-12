@@ -10,6 +10,8 @@
  * A title is the whole task now - "Keep the quay watch at <town> for the next 30
  * days" - and nobody types all of it. Each row carries a handle, the words
  * people say, which its title contains; the handle is what is matched.
+ * The tribute task used to omit its "tribute carriage" handle, which also
+ * parsed as taking a physical carriage. It now names the actual tribute delivery.
  */
 
 import { describe, expect, it } from 'vitest';
