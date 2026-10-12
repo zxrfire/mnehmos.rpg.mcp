@@ -259,7 +259,7 @@ Owner's rulings, 2026-10-10.
 its roll, its sick, its discipline, and feeds its people. A house with the room for it does that
 work there; a house without one does it in an ordinary room, by whoever is best placed. Its
 stones sit in a locked chest in a residence, its records on a shelf, its wounded in a room set
-aside in the quarters with whoever heals best looking after them, elder or not. What a house
+aside in the quarters, looked after by whoever the house's management puts to it. What a house
 has only by having it is the exception: a vein chamber needs a vein, a tribute room a tribute
 arrangement, an alchemy or artifact hall a craft the house backs.
 
@@ -285,7 +285,12 @@ grows past what it was founded as builds the hall it now needs (a treasury, an a
 one that shrinks folds a hall's work back into ordinary rooms.
 
 **A hall has one elder, always.** That elder may ask other elders for help, including ones
-with no office, and asking is a favour: it spends face and leaves something owed.
+with no office, and asking is a favour: it spends face and leaves something owed. Elders keep
+their own ties, so they call in favours from whichever elder is better at the thing in hand,
+for themselves or for somebody they answer for: a master asks another elder to see to their
+disciple. Where grouping rooms put two existing office holders in one hall, the stronger by
+the chair order heads it, and the other keeps their seat and standing without the hall,
+usually the first the head asks.
 
 **An apex is more than a big sect.** The houses everybody else answers to are visibly more
 elaborate: every hall a house can have, more people posted in each, and more elders, with and
