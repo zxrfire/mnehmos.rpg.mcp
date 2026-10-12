@@ -259,7 +259,7 @@ Owner's rulings, 2026-10-10.
 its roll, its sick, its discipline, and feeds its people. A house with the room for it does that
 work there; a house without one does it in an ordinary room, by whoever is best placed. Its
 stones sit in a locked chest in a residence, its records on a shelf, its wounded in a room set
-aside in the quarters, looked after by whoever the house's management puts to it. What a house
+aside in the quarters, looked after by whoever Internal Affairs puts to it. What a house
 has only by having it is the exception: a vein chamber needs a vein, a tribute room a tribute
 arrangement, an alchemy or artifact hall a craft the house backs.
 
@@ -274,7 +274,8 @@ and only a house focused on it, or large and rich enough, keeps one. Every other
 pills, medicine and artifacts, and the houses that make them have real buyers.
 
 **Halls are worked by people posted there**, counted against the roll like anyone posted, and
-disciples in one hall may do different work. Menial work goes to servants first (the house's
+disciples in one hall may do different work. Internal Affairs is the house's personnel office:
+it posts people to halls, keeps the rota, and appoints to standing duties such as tending the sick. Menial work goes to servants first (the house's
 menial tier, at the bottom of the ladder); the outer disciples' chore rota covers what servants
 do not. **Nobody works for nothing:** rota chores and servants' work pay a little, and posted
 hall work a small, steady amount, both well under board work. The player can be posted or put
