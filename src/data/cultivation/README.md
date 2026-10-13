@@ -11,6 +11,11 @@
 
 # Cultivation Content Catalogs
 
+The plague encounter is an inert tagged local report. Its actual recorder opens
+the outbreak and body mechanics decide infection, treatment and named outcomes.
+The report invents no casualty count, guaranteed cure or institutional response,
+and the catalog supplies no independent plague resistance or realm cutoff.
+
 The tribute-delivery handle names the actual carrying job in its posted task,
 without naming a conveyance the party may not use.
 

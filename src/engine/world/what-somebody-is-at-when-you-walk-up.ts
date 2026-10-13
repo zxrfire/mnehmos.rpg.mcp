@@ -182,6 +182,8 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
             : `${withNames.slice(0, -1).join(', ')} and ${withNames[withNames.length - 1]!}`;
 
     switch (activity.kind) {
+        case 'closed_door_cultivation':
+            return 'in closed-door cultivation';
         case 'their_own_business':
             return `about something of their own: ${activity.note}`;
         case 'mending':
@@ -264,6 +266,8 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
  */
 export function whetherTheyWouldLookUp(kind: ActivityKind): boolean {
     switch (kind) {
+        case 'closed_door_cultivation':
+            return false;
         case 'trade':
         case 'waiting_for_a_departure':
         case 'mustering':

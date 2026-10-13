@@ -201,7 +201,7 @@ export function locationOfNpcOnItsJourney(world: { locations: readonly LocationR
 export function roadPositionOfNpc(locations: readonly LocationRecord[], npc: NpcRecord,
     day: number, routes?: RouteQueries, currentNpc?:(id:string)=>NpcRecord|undefined): RoadPosition | null {
     const stopped=stoppedRoadPoint(locations,npc.locationId);
-    if(stopped)return stopped;
+    if(stopped && !(npc.activity?.kind === 'travelling' && npc.activity.admittedRoad))return stopped;
     // A carried party with no admitted route has only a coarse marker here.
     // Its actual leader position must be supplied by the adapter that owns it.
     if (npc.activity?.kind === 'out_with_a_party' && npc.activity.fromLocationId == null

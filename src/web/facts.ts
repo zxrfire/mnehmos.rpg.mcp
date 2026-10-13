@@ -229,6 +229,7 @@ export const DEATH_IN_WORLD: Record<DeathCause, string> = {
     // ledger written before the ruling still renders. See `docs/world/climbing/injuries.md`.
     untreated_injuries: 'the meridians gave out, untreated',
     starvation: 'starved - the flesh keeps its mortal arithmetic',
+    plague: 'died of plague',
     failed_breakthrough: 'the meridians ruptured mid-breakthrough',
     qi_deviation: 'qi deviation',
     heavenly_tribulation: 'destroyed by heavenly tribulation'

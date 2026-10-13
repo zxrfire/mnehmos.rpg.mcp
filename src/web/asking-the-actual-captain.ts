@@ -1,4 +1,5 @@
 import {quoteOwnedSeaCourseChange,changeOwnedSeaCourse} from './changing-the-owned-sea-course.js';
+import {quoteOwnedRoadCourseChange,changeOwnedRoadCourse} from './changing-the-owned-road-course.js';
 import {quoteOwnedAirCourseChange,changeOwnedAirCourse} from './changing-the-owned-air-course.js';
 import { captainPaymentSaid, preparePrivateOperatorTerms } from './negotiating-with-an-actual-private-operator.js';
 import { bindAgreedRide, type AgreedRideTerms } from './an-offered-ride-is-an-agreement.js';
@@ -64,6 +65,8 @@ export function requestedCaptainCourse(game:GameService,body:Cultivator,
   if(direct)return {...common,kind:'return',availableReturnDays:direct.quote.daysOneWay,reason:null};
   const sea=target&&quoteOwnedSeaCourseChange(game,body,target.id);
   if(sea)return {...common,kind:'return',availableReturnDays:sea.days,reason:null};
+  const road=target&&quoteOwnedRoadCourseChange(game,body,target.id);
+  if(road)return {...common,kind:'return',availableReturnDays:road.days,reason:null};
   if(target && quotePilotsOnward(world,body,privateClaim.receiptId,target.id,Number(privateData.arrivalDay)))
    return {...common,kind:'onward',availableReturnDays:null,reason:null};
   return {...common,kind:'unsupported',availableReturnDays:null,reason:'The actual privately held craft supplies no admitted onward course, capable pilot, available seats or fuel for that destination.'};
@@ -119,7 +122,8 @@ export function carryOutCaptainCourse(game:GameService,body:Cultivator,request:C
  };
  if(request.kind==='return' && request.destinationId && request.service==='owned'){
   const changed=changeOwnedAirCourse(game,body,request.destinationId,request.operatorId)
-    ??changeOwnedSeaCourse(game,body,request.destinationId,request.operatorId);
+    ??changeOwnedSeaCourse(game,body,request.destinationId,request.operatorId)
+    ??changeOwnedRoadCourse(game,body,request.destinationId,request.operatorId);
   return completePrivateEffect(changed?{ok:true,lines:['The actual pilot accepted the changed destination on the same privately held craft.',
     'The old historical course and its caused stop remain. The new accepted course starts at the actual current reached point; nobody was landed at an endpoint.']}
    :{ok:false,lines:['The actual pilot, craft, point, available capacity or native fuel changed. No changed course began.']});

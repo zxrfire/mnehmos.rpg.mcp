@@ -23,6 +23,12 @@ import { finishTheAcceptedVoyage } from './finishing-an-accepted-voyage.js';
  * turnback. The defense control uses the measured attacking return. A held fight
  * cannot be skipped, and a requested port cannot replace the actual destination.
  *
+ * Merge validation also observed the original master die of plague ashore on day
+ * 365024.3333333333. The ordinary mortal-dead sweep then removed the person and
+ * their death fact. The continuity control observes the existing world-boundary
+ * callback before that sweep and accepts only an actual dated, named death receipt;
+ * a predicted fatal date is not a death. Surviving crew must still be the same people.
+ *
  * Interrupted voyages continue their actual accepted remainder through passHours.
  * No second fare, disabled encounter, assigned endpoint or forced outcome is used.
  */
@@ -194,9 +200,22 @@ describe('the crew of a ship', () => {
         const { game, crew, from, to } = await stoppedAtSea();
         const first = crew().map(npc => ({ id: npc.id, name: npc.name }));
         expect(first.length).toBeGreaterThanOrEqual(3);
+        const namedPlagueDeaths = new Set<string>();
+        const advance = game.advanceWorld.bind(game);
+        // Observe the real receipt before the ordinary mortal-dead pruning.
+        // The original advance and its boundary callback still run unchanged.
+        game.advanceWorld = (days, body, run, options = {}) => advance(days, body, run, {
+            ...options, atWorldBoundary: (state, day) => {
+                options.atWorldBoundary?.(state, day);
+                for (const person of first) if (state.history.facts.some(fact => fact.day <= day
+                    && fact.data.plagueDeath === true && fact.summary.includes(person.name)
+                    && fact.actors.some(actor => actor.id === person.id && actor.role === 'died')))
+                    namedPlagueDeaths.add(person.id);
+            }
+        });
 
-        await game.act('I wait until we arrive');
-        await finishTheAcceptedVoyage(game,to.name,true);
+        const outward = await game.act('I wait until we arrive');
+        const outwardContinued = await finishTheAcceptedVoyage(game,to.name,true);
         const firstPort=worldLocationFor(game.atHand!,game.state().cultivator.location)!;
         expect(crew().every(npc => npc.locationId === firstPort.id)).toBe(true);
 
@@ -204,9 +223,10 @@ describe('the crew of a ship', () => {
         const returned = await game.act(`I take the ship to ${nextPort.name}`);
         const continued = await finishTheAcceptedVoyage(game,nextPort.name,true);
         const actualPort=worldLocationFor(game.atHand!,game.state().cultivator.location)!;
-        const fallen = namedAsFallen([returned.narration, ...continued].join('\n'), first);
+        const fallen = namedAsFallen([outward.narration, ...outwardContinued, returned.narration, ...continued].join('\n'), first);
         expect(crew().filter(npc => npc.status === 'alive').map(npc => npc.id).sort(), returned.narration)
-            .toEqual(first.filter(person => !fallen.some(dead => dead.id === person.id)).map(person => person.id).sort());
+            .toEqual(first.filter(person => !fallen.some(dead => dead.id === person.id)
+                && !namedPlagueDeaths.has(person.id)).map(person => person.id).sort());
         expect(crew().every(npc => npc.locationId === actualPort.id),returned.narration).toBe(true);
     }, 120_000);
 

@@ -15,7 +15,8 @@ import { quoteAnAirJourney } from '../engine/world/what-an-air-journey-takes.js'
 import { beginAnAirCourse, stopAnAirCourse } from '../engine/world/an-air-course-in-the-world.js';
 import { writeFlag } from '../server/consolidated/cultivation-support.js';
 
-export function quoteOwnedAirCourseChange(game:GameService,body:Cultivator,targetId:string){
+export function quoteOwnedAirCourseChange(game:GameService,body:Cultivator,targetId:string,
+    known?: (target: import('../engine/world/locations.js').LocationRecord) => boolean){
  const world=game.atHand,claim=ownedPassageClaim(game.db,body.id);
  const fresh=game.repos.cultivators.getById(body.id);
  if(!world||!claim||!fresh?.alive)return null;
@@ -26,7 +27,7 @@ export function quoteOwnedAirCourseChange(game:GameService,body:Cultivator,targe
   ||!source||source.unavailable||!site?.tags.includes('air-course')||source.locationId!==site.id
   ||day>=source.endsOnDay||targetId===d.toLocationId)return null;
  const target=world.locations.find(p=>p.id===targetId);
- if(!target||!game.canPointAtLocation(fresh,target))return null;
+ if(!target||!(known ? known(target) : game.canPointAtLocation(fresh,target)))return null;
  const people=world.npcs.filter(n=>n.status==='alive'&&n.activity?.kind==='travelling'
   &&n.activity.vesselId===d.vesselId&&n.activity.sinceDay===d.departureDay&&n.activity.untilDay===d.arrivalDay
   &&n.activity.airCourseLocationId===site.id);
@@ -41,8 +42,9 @@ export function quoteOwnedAirCourseChange(game:GameService,body:Cultivator,targe
 
 /** The caller either is the actual PC operator or has resolved NPC consent.
  * There is no await between the final physical quote and its acceptance. */
-export function changeOwnedAirCourse(game:GameService,body:Cultivator,targetId:string,operatorId:string){
- const read=quoteOwnedAirCourseChange(game,body,targetId),world=game.atHand;
+export function changeOwnedAirCourse(game:GameService,body:Cultivator,targetId:string,operatorId:string,
+    known?: (target: import('../engine/world/locations.js').LocationRecord) => boolean){
+ const read=quoteOwnedAirCourseChange(game,body,targetId,known),world=game.atHand;
  if(!read||!world||read.pilotId!==operatorId)return null;
  const run=game.currentRun().run;
  const accepted=beginAnAirCourse(world,{bodyId:body.id,bodyName:read.body.name,fromId:read.site.id,

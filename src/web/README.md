@@ -1,5 +1,16 @@
 <!-- tier: 3 -->
 
+Plague contact and real clause/span boundaries read the actual SQL body.
+New infection interrupts a held span, and a death already due prevents another
+act or medicine purchase before the ordinary estate/run closer. The existing
+pill writer consumes a real dose; a working physician administers reachable
+paid medicine before its existing stay, with its actual fee and separate food.
+Tagged plague reports open a real local outbreak. They assert no fictional
+casualty count, guaranteed cure or institutional response. Immune players can
+encounter the report without becoming susceptible. Ordinary held spans use
+actual foreground contact and bounded world appointments, rather than treating
+distant people's daily activity deadlines as player ticks.
+
 # The Web Front Door
 
 Public passage tallies and personal rides remain separate authorities. A tally
@@ -103,6 +114,12 @@ Physical made-token lapses are delivered once
 from the witnessed event, including another member's token carried in the pack.
 The delivery stamp records whether the line was delivered, rather than keeping
 another copy of the item or its owner's life.
+Closed-door cultivation removes a world person's body from ordinary listeners.
+A local member asking for a known secluded person receives the actual remaining
+span. The absence reader resolves remembered names only for that answer; those
+rows never become visible scene occupants. Requests cannot reach that closed
+door through a remembered name. The same timed activity decides availability in
+the world layer.
 
 A senior completing ordinary duty with its named juniors earns the lecture's
 face and merit through `whatLeadingDisciplesIsWorth`, scaled by the actual
@@ -3856,8 +3873,24 @@ continues through the same settlement implementation.
 
 The captain request path uses its current physical course adapter, with
 scripted/component controls rather than a live-model prose acceptance claim.
-Environmental relief weighting remains unbuilt: no emergency
-goal, forecast storm, arrival healing or unexecuted NPC harm is inferred.
+An actual NPC operator can notice serious depleted-body wounds, active plague,
+or a current passage-blocking danger. Their duty, ties, obligations and character
+enter the ordinary decision path. An accepted response changes the actual hull's
+course: public returns, private sea returns, nearest reachable air landings or
+private road continuations. Ground holds retain the admitted road point and pace;
+water holds retain the actual ship and sailed distance. A real lifting or review
+can resume the course. Original boarding causes govern once-heard passenger
+notices, including holds whose new departure lies ahead. Notices interrupt the
+actual span, and the SQL body follows its real carrier without another fare.
+Active foreground fights preserve their operator and scene.
+
+An actually admitted other vessel can meet at a canonical dated water crossing.
+The contacted person's visible trouble enters the same duty decision. Aid spends
+an actual held dose through ordinary disposal and treatment authorities; agreeing
+to help supplies no cure. Physical public and owned sources expose held departure
+and admitted road vertex dates. These played controls cover actual bodies and
+receipts; they make no live-model prose acceptance claim. No forecast danger or
+unexecuted harm is inferred.
 
 NPC combat pricing reads the actual finite qi and held-art readiness map.
 Fresh numeric exchange receipts write each actual cast before mortality,
@@ -3884,6 +3917,10 @@ A private ride settles only on the actual owned course that admitted both people
 A consenting native-party follower admitted by name to its leader's own craft uses the existing free ride agreement. Native air admission reads the player's actual SQL contact rather than moving the world mirror. Joint actual private landfall settles that agreement. The follower reuses the owned carrier's custody and pilot checks; a lost craft or stopped air course cannot become a generic moving party leg. Public party passages issue no personal ride agreement.
 
 An explicitly accepted NPC-led party is bound through `bindFollowingParty`: its existing itinerary and runtime admission name the consenting player, and both real bodies share the boarding ground. The SQL body follows outward travel, the work and the return at the actual clock; its world mirror remains location-less. Every member answers a held route question, and the player can be outvoted or leave. A real crossing, encounter or question interrupts the span. Explicit independent travel leaves at the actual road point; an accepted individual carrier releases the binding before its own body projection. A public captain continues an already admitted passenger after the party leader dies, using that passenger's real receipt rather than a removed dead row. Private ownership and free terms name the actual vehicle owner, who need not lead the party. A held combat round spends ordinary body time, while the party's existing fight hold retains the reached ground.
+
+An answered rest remains a stationary phase of that actual follower source.
+At dawn its Native course resumes within the requested body span. An unanswered
+route question still holds the decision; waiting supplies no player vote.
 
 An attacked party uses the same unfinished melee as other groups: the real leader
 or a companion stands beside the player, and the other real members fight in the

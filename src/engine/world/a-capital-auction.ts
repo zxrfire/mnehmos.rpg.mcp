@@ -18,9 +18,15 @@ import type { WorldState } from './world-state.js';
 import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { routeQueriesFor } from './locations.js';
 import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
+import { theGradeItWasMadeAt } from './a-house-mends-what-it-owns.js';
+import { whatACommissionComesTo } from '../social-leverage/commissioning-a-craft.js';
+import { isAVehicle } from './a-vehicle.js';
+import { isAStorageRing } from './a-storage-ring.js';
 
 function saleValue(object: ObjectRecord): number | null {
     if (isRuined(object) || object.kind === 'manual') return null;
+    if (object.kind === 'artifact' && !isAVehicle(object))
+        return whatACommissionComesTo(theGradeItWasMadeAt(object), isAStorageRing(object), object.power ?? undefined);
     const thing = whatThisThingIs(object);
     if (!thing || thing.marketStones === null) return null;
     const pill = object.kind === 'pill' ? getPill(thing.kindId) : undefined;
@@ -191,7 +197,8 @@ function settleThem(state: WorldState, day: number,
         for (const npc of possible.filter(person => selected.has(person.id) || isPlayerInvolved(state, person))) {
             if (npc.id === lot.data.sellerId || npc.id === lot.data.payeeId) continue;
             const rng = forStream(state.seed, 'auction-bid', lot.id, npc.id);
-            const interested = npc.goals.some(g => g.status === 'active' && (g.kind === 'wealth' || g.kind === 'cultivation'));
+            const interested = npc.goals.some(g => g.status === 'active'
+                && (g.targetId === object?.id || g.kind === 'wealth' || g.kind === 'cultivation'));
             if (!rng.chance(interested ? 0.65 : 0.35)) continue;
             const ceiling = Math.floor(Number(lot.data.reserve) * rng.float(1, interested ? 1.8 : 1.3));
             const amount = Math.min(npc.spiritStones, ceiling);

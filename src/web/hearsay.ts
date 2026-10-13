@@ -24,6 +24,7 @@ import { AT_MOST_IN_AN_AREA, theAreasOf, whereInThisPlaceTheyStand, type APlaceR
 import { activeProxiesByOwner } from '../engine/world/something-acting-in-your-place.js';
 import { isActing } from '../engine/world/npc-state.js';
 import { routineOf, routineTime } from '../engine/world/npc-routines.js';
+import { inClosedDoorCultivation } from '../engine/world/closed-door-cultivation.js';
 import { npcJourneyOnDay } from '../engine/world/places-on-the-way.js';
 import { worldLocationFor } from './entities.js';
 import {
@@ -268,7 +269,8 @@ function readOthersPresent(
         ?? (betweenRoadEndpoints(repos.db, cultivator) || failedPublicPassageScene(repos,cultivator,world,routineTime(world)) ? read.areas.find(one => one.for !== 'room')?.id
             : whereInThisPlaceTheyStand(world, place, cultivator.standingIn, cultivator.sectId,
                 cultivator.standingIn == null ? read.areas : undefined).id);
-    return read.people.filter(row => read.whereIs.get(row.id) === area);
+    return read.people.filter(row => read.whereIs.get(row.id) === area
+        && !world.npcs.some(npc => npc.id === row.id && inClosedDoorCultivation(npc, routineTime(world))));
 }
 
 /** One placement for world people, run sheets and separated presences. */

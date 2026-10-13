@@ -575,11 +575,18 @@ export function applyWhatThePartyCarriedOut(
         house: { id: string; name: string; seatLocationId: string | null } | null;
         /** Who went, as world rows. Whoever can open a book is the one who did. */
         readers: readonly NpcRecord[];
+        /** Private parties read the actual finder; house collections retain their ordinary carrier. */
+        carrierFor?: (object: ObjectRecord, survivors: readonly NpcRecord[]) => NpcRecord;
+        /** Actual goods from another source, such as a body cut on this same ground. */
+        extraGoods?: readonly ObjectRecord[];
         onDay: number;
     }
 ): CameOutOfTheGround[] {
     const found = booksLyingIn(state, input.locationId);
-    const goods = goodsLyingIn(state, input.locationId);
+    const extraIds = new Set(input.extraGoods?.map(object => object.id) ?? []);
+    const goods = [...new Map([...goodsLyingIn(state, input.locationId), ...state.objects.filter(object => extraIds.has(object.id))]
+        .filter(object => object.possessorId === null && object.locationId === input.locationId && !isRuined(object))
+        .map(object => [object.id, object])).values()];
     if (found.length === 0 && goods.length === 0) return [];
     const alive = input.readers
         .map(r => state.npcs.find(n => n.id === r.id) ?? r)
@@ -593,6 +600,7 @@ export function applyWhatThePartyCarriedOut(
     const out: CameOutOfTheGround[] = [];
     const readThisTrip = new Set<string>();
     for (const object of found) {
+        const carrier = input.carrierFor && alive.length ? input.carrierFor(object, alive) : strongest(alive);
         const techniqueId = manualIdOf(object);
         if (techniqueId === null) continue;
         const manual = manualOf(techniqueId);
@@ -613,7 +621,8 @@ export function applyWhatThePartyCarriedOut(
         state.objects[at] = carriedTo(object, input, carrier!.id, carrier!.name, carrier!.locationId, false);
         const merit = house === null ? 0 : whatTheHouseMakesOf(state, house.id, state.objects[at]!).merit;
 
-        const couldRead = alive.filter(r => !readThisTrip.has(r.id) && manual.cap > manualCeilingOf(r));
+        const couldRead = alive.filter(r => (!input.carrierFor || r.id === carrier?.id)
+            && !readThisTrip.has(r.id) && manual.cap > manualCeilingOf(r));
         let reader = whoOfThemCouldOpenIt(
             house === null
                 ? couldRead
@@ -678,6 +687,7 @@ export function applyWhatThePartyCarriedOut(
     // strongest of them on its roll is credited for it; whoever carried the
     // rest out keeps it. Nothing here sells anything.
     for (const object of goods) {
+        const carrier = input.carrierFor && alive.length ? input.carrierFor(object, alive) : strongest(alive);
         const at = state.objects.findIndex(o => o.id === object.id);
         if (at < 0) continue;
         if (house !== null && carrier === null) {

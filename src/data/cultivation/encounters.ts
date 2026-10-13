@@ -1622,13 +1622,13 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         simEventKind: 'npc_event',
         weight: 18,
         minOrdinal: 0,
-        maxOrdinal: 18,
+        maxOrdinal: MAX_ORDINAL,
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
             'People at {place} report an outbreak of plague.',
         tokens: ['place'],
-        tags: ['social', 'reputation', 'support', 'avoidable']
+        tags: ['social', 'reputation', 'support', 'avoidable', 'plague']
     },
     {
         id: 'enc-robbed-in-seclusion',
@@ -1873,4 +1873,3 @@ export function fillSummary(entry: EncounterEntry, values: Record<string, string
         return value === undefined ? whole : String(value);
     });
 }
-

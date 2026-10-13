@@ -457,17 +457,29 @@ export const DeathCauseSchema = z.enum([
      */
     'untreated_injuries',
     'starvation',
+    'plague',
     'failed_breakthrough',
     'qi_deviation',
     'heavenly_tribulation'
 ]);
 export type DeathCause = z.infer<typeof DeathCauseSchema>;
 
+/** The one disease's real bodily course. Absence means no active plague. */
+export const PlagueStateSchema = z.object({
+    outbreakId: z.string(),
+    contractedOnDay: z.number(),
+    endsOnDay: z.number(),
+    fatalOnDay: z.number().nullable(),
+    treatedOnDay: z.number().nullable().default(null)
+});
+export type PlagueState = z.infer<typeof PlagueStateSchema>;
+
 export const CultivatorKindSchema = z.enum(['pc', 'npc', 'enemy', 'neutral']);
 
 export const CultivatorSchema = z.object({
     id: z.string(),
     runId: z.string().optional().describe('Permadeath run this cultivator belongs to'),
+    plague: PlagueStateSchema.nullable().optional(),
     name: z.string().min(1).max(100),
     kind: CultivatorKindSchema.default('pc'),
 

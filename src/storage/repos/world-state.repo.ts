@@ -232,7 +232,7 @@ export class WorldStateRepository {
                 occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 wounds, technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
-                accumulating_since_day, bonded_cultivation_days, hp, qi, technique_cooldowns, insights, achievements, body_on_day, qi_seal,
+                accumulating_since_day, bonded_cultivation_days, hp, qi, technique_cooldowns, insights, achievements, body_on_day, qi_seal, plague,
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
@@ -243,7 +243,7 @@ export class WorldStateRepository {
                 @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @wounds, @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
-                @accumulatingSinceDay, @bondedCultivationDays, @hp, @qi, @techniqueCooldowns, @insights, @achievements, @bodyOnDay, @qiSeal,
+                @accumulatingSinceDay, @bondedCultivationDays, @hp, @qi, @techniqueCooldowns, @insights, @achievements, @bodyOnDay, @qiSeal, @plague,
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
@@ -956,6 +956,7 @@ export class WorldStateRepository {
                 qiSeal: npc.cultivation.seal === null
                     ? null
                     : JSON.stringify(npc.cultivation.seal),
+                plague: npc.cultivation.plague === undefined ? null : JSON.stringify(npc.cultivation.plague),
                 locationId: npc.locationId,
                 layer: npc.layer,
                 factionId: npc.factionId,
@@ -1633,7 +1634,8 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
             ...(row.insights === null ? {} : { insights: parseArray(row.insights) }),
             ...(row.achievements === null ? {} : { achievements: parseArray(row.achievements) }),
             bodyOnDay: row.body_on_day || row.last_advanced_on_day,
-            seal: parseSeal(row.qi_seal)
+            seal: parseSeal(row.qi_seal),
+            ...(row.plague === null ? {} : { plague: JSON.parse(row.plague) })
         },
         locationId: row.location_id,
         layer: toLayerKey(row.layer),
@@ -2218,6 +2220,7 @@ interface NpcRow {
     achievements: string | null;
     body_on_day: number;
     qi_seal: string | null;
+    plague: string | null;
     location_id: string | null;
     layer: string;
     faction_id: string | null;

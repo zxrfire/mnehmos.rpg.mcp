@@ -101,7 +101,7 @@ export async function spendFootJourneyAtItsChecks(game: GameService, run: Run, b
                     spiritStones: adjusted.spiritStones - current.cultivator.spiritStones });
                 const actual = game.currentRun();
                 const fact = recordEncounters(game.knowledge, actual.cultivator, actual.run.elapsedDays,
-                    single, game.repos, actual.run.elapsedDays);
+                    single, game.repos, actual.run.elapsedDays, () => game.plagueEncounterAtTheBody());
                 recorded.events.push(...fact.events); recorded.lines.push(...fact.lines);
                 recorded.structure.push(...fact.structure); recorded.learned.push(...fact.learned); recorded.met.push(...fact.met);
                 if (comesAtYou(occurrence)) {

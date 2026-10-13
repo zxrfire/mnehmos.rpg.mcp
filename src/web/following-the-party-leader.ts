@@ -158,11 +158,13 @@ export function partyFollowerSource(db: Database.Database, world: WorldState, bo
         endsOnDay: privateCarrier?.endsOnDay ?? activity.untilDay,
         boardingMoment: moment, vertexDates: route ? roadVertexMoments(route, activity.sinceDay,
             activity.untilDay - activity.sinceDay, activity.admittedRoad?.initialTravelDays ?? 0) : [],
+        // An answered rest is a stationary phase; its dawn boundary resumes
+        // this same physical source before the remaining requested span.
         boardedOnDay: activity.sinceDay, unavailable: privateAdmissionMissing
             ? 'The private craft has not boarded you on this actual leg.'
-            : privateLeg && !privateCarrier ? 'The actual private carrier owner is no longer available.' : privateCarrier?.unavailable ?? (activity.partyFightId ? 'The party is in a fight.' : activity.partyQuestionId
-            ? activity.redirect?.previous ? 'The party is resting until the next dawn.'
-                : 'The party leader has put continuing, resting or turning back to the party.' : null) };
+            : privateLeg && !privateCarrier ? 'The actual private carrier owner is no longer available.' : privateCarrier?.unavailable ?? (activity.partyFightId ? 'The party is in a fight.'
+            : activity.partyQuestionId && !activity.redirect?.previous
+                ? 'The party leader has put continuing, resting or turning back to the party.' : null) };
 }
 
 /** This writer projects SQL, including when the native itinerary replaces a world mirror. */

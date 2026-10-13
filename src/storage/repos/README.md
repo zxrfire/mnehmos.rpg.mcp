@@ -1,5 +1,10 @@
 <!-- tier: 3 -->
 
+Plague courses round-trip through the existing cultivator and native NPC
+body writers. Optional absence and explicit clearing remain distinct; actual
+SQL player health and illness are never read from a world mirror. The native
+body's current course supplies its derived calendar dates.
+
 # The repositories
 
 One class per table, each owning the SQL for it. Nothing above this layer writes SQL, and
@@ -8,13 +13,18 @@ holds.
 
 `WorldStateRepository` persists physical deletion on ordinary append writes:
 an absent object and its claims and provenance disappear in the same transaction.
-This includes consumed passage tallies and crumbled disciple tokens. History
-remains independent of the physical object; other collections retain their
-existing checkpoint deletion contract.
+This includes consumed passage tallies, crumbled disciple tokens and collected
+unheld cheap objects; they cannot return on reopening. History remains
+independent of physical inventory. Other removed collections retain their
+existing full-snapshot deletion contract.
 
-NPC Dao insights and their supporting achievements round-trip through the
-existing cultivation row, including later deepening and explicitly empty lists.
-Loading does not create understanding that was never recorded.
+NPC Dao insights and supporting achievements round-trip through the existing
+cultivation row, including deepening and explicitly empty lists. Absent optional
+fields remain absent; loading creates no understanding that was not recorded.
+
+`a-merged-world-keeps-bodies-and-object-deletions.test.ts` checks these combined
+append/snapshot contracts with an arranged world, including plague, finite body
+fields, insight deepening and clearing, and removed object children.
 
 `SectRepo.addMember` stores `joinedOnDay` once on entry. Rank and contribution
 updates preserve it; leaving and rejoining starts a new tenure. An explicit day

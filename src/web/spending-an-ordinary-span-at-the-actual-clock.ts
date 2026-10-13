@@ -15,6 +15,11 @@ import { firstTravellerOnTheWay, roadPositionOfNpc } from '../engine/world/place
 import { sameRoadPosition } from '../engine/world/road-course.js';
 import { peopleInThisPlace } from './hearsay.js';
 import { worldLocationFor } from './entities.js';
+import { activePlague, plagueSusceptibility } from '../engine/cultivation/plague.js';
+import { isStatusRunningOn } from '../engine/world/what-is-true-of-a-place-right-now.js';
+import { resolveWithPlayerPresent } from '../engine/world/background-incident-draw.js';
+import { standInTheWorld } from './the-player-as-a-row-the-world-can-invite.js';
+import { whereInThisPlaceTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 
 /** Only actual services read by the held native iterator; no GameService construction. */
 export type OrdinarySpanServices = Pick<GameService,
@@ -23,7 +28,7 @@ export type OrdinarySpanServices = Pick<GameService,
     (Pick<GameService, 'groundFor' | 'rateTermsFor'> | {
         sceneForSpan(body: Cultivator, context: TimeSkipContext):
             Partial<import('../engine/cultivation/time-skip.js').TimeSkipScene>;
-    });
+    }) & Partial<Pick<GameService, 'settlePlagueAtTheBodyBoundary'>>;
 
 /** The caller prepares its body, encounters and context AFTER clock promotion. */
 export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServices, run: Run,
@@ -32,7 +37,14 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
     resolvesOnTurn = run.turn + 1, groundAt?: (elapsed: number) => string | undefined,
     checks?: { dates: readonly number[]; afterBoundary(): void | Promise<void>; stop(): string | null },
     finishTurn = true) {
-    const active = game.worldEnabled && game.atHand?.npcs.some(n => n.activity?.retrievalRequestId);
+    const startingPlagueLines = game.settlePlagueAtTheBodyBoundary?.() ?? [];
+    initial = game.repos.cultivators.getById(initial.id) ?? initial;
+    const originalPlague = initial.plague;
+    const now = game.atHand ? routineTime(game.atHand) : run.elapsedDays;
+    const active = game.worldEnabled && (game.atHand?.npcs.some(n => n.activity?.retrievalRequestId)
+        || plagueSusceptibility(initial) > 0
+        || game.atHand?.statuses.some(status => status.kind === 'plague' && isStatusRunningOn(status, now)));
+    if (active) context = { ...context, startDay: now };
     const stationary = !groundAt && game.worldEnabled
         ? stoppedRoadFor(game.repos.db, initial, game.atHand)?.position : null;
     // Ordinary nonintegral spans use the same held native body as appointments.
@@ -50,7 +62,7 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
         return { skip, applied: { ...applied, cultivator: body, run: currentRun }, world };
     }
     const start = game.atHand ? routineTime(game.atHand) : run.elapsedDays;
-    const world: WorldReport = { lines: [], structure: [] };
+    const world: WorldReport = { lines: startingPlagueLines, structure: [] };
     let meeting: ReturnType<typeof firstTravellerOnTheWay> = null;
     let contact: string | null = null;
     let unopened = context.rations ?? 0;
@@ -80,9 +92,21 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
                 ? firstTravellerOnTheWay({ locations: state.locations, npcs: state.npcs,
                     fromId: initial.location ?? '', toId: initial.location ?? '', stationaryAt: stationary,
                     onDay: start + elapsed, days: requested - elapsed, exceptIds: new Set([initial.id]) }) : null;
-            const next = game.atHand && nextWorldClockBoundary(game.atHand,
+            const boundary = () => state && nextWorldClockBoundary(state,
                 start + elapsed, start + requested, [...(checks?.dates ?? []),
-                    ...(meeting ? [start + elapsed + meeting.afterDays] : [])]);
+                    ...(meeting ? [start + elapsed + meeting.afterDays] : [])], {}, 'foreground');
+            // A distant person's next ordinary work hour is not this body's tick.
+            // Actual nearby people and the bounded world queue retain their dates.
+            const place = state && body && !stoppedRoadFor(game.repos.db, body, state)
+                ? worldLocationFor(state, body.location) : null;
+            const membership = body && game.repos.sects.getMembership(body.id);
+            const person = state && body && standInTheWorld({ ...state, npcs: state.npcs.slice() }, body,
+                { factionId: membership?.sectId ?? null, rankIndex: membership?.rankIndex ?? -1,
+                    contribution: membership?.contribution ?? 0 }, start + elapsed);
+            const next = state && place && person ? resolveWithPlayerPresent(state, {
+                placeId: place.id, areaId: whereInThisPlaceTheyStand(state, place,
+                    body!.standingIn, membership?.sectId ?? null).id, person
+            }, boundary, start + elapsed) : boundary();
             return next ? next.onDay - start : null;
         },
         commitProvisions: cumulative => {
@@ -98,6 +122,7 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
             world.lines.push(...report.lines); world.structure.push(...report.structure);
             // Cursor checkpoint and native world consequences precede current check input.
             await checks?.afterBoundary();
+            world.lines.push(...(game.settlePlagueAtTheBodyBoundary?.() ?? []));
             const state = game.atHand, body = game.repos.cultivators.getById(initial.id);
             const npc = meeting && state?.npcs.find(person => person.id === meeting!.npc.id);
             if (stationary && state && body?.alive && npc?.status === 'alive'
@@ -115,7 +140,10 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
         },
         whatStopsTheSpan: () => {
             const fresh = game.repos.cultivators.getById(initial.id);
-            return !fresh?.alive ? 'The actual body can no longer continue this span.' : checks?.stop() ?? contact;
+            const caught = fresh && activePlague(fresh, game.atHand ? routineTime(game.atHand) : run.elapsedDays);
+            return !fresh?.alive ? 'The actual body can no longer continue this span.'
+                : checks?.stop() ?? (caught && (caught.outbreakId !== originalPlague?.outbreakId
+                    || caught.contractedOnDay !== originalPlague?.contractedOnDay) ? 'Plague has begun weakening your body.' : contact);
         },
         sceneNow: () => {
             const fresh = game.repos.cultivators.getById(initial.id) ?? initial;

@@ -19,6 +19,9 @@
 import { quoteSale } from '../cultivation/market.js';
 import { earningsPerYear } from '../cultivation/origin.js';
 import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
+import type { CultivationRNG } from '../cultivation/rng.js';
+import { openHandednessOf } from '../social-leverage/how-freely-somebody-parts-with-what-they-have.js';
+import { faceOf as howMuchFaceMatters } from '../social-leverage/how-much-their-face-matters.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT IS BEING READ
@@ -178,6 +181,20 @@ export function itIsTheThingTheyAreStillUsing(
     thing: Pick<AThingInSomebodysHands, 'usableFrom' | 'usefulUntil'>
 ): boolean {
     return thing.usableFrom <= who.ordinal && who.ordinal < thing.usefulUntil;
+}
+
+/** A person's own disposal choice. A request to buy it still uses the ordinary trade/favour resolver. */
+export function whetherTheyGiveItAway(who: SomebodyStandingHere, input: {
+    outgrown: boolean; recipientStanding: number; withholdingCostsFace: boolean; rng: CultivationRNG;
+}): boolean {
+    const hand = openHandednessOf(who.id);
+    const face = (1 + howMuchFaceMatters(who.id)) / 2;
+    const close = Math.max(0, Math.min(1, input.recipientStanding));
+    // Positive floors keep traits as weights, including at either end of their axis.
+    const give = Math.max(0.1, 1 + hand) * (1 + close) * (input.outgrown ? 2 : 1)
+        * (1 + (input.withholdingCostsFace ? face : 0));
+    const keep = Math.max(0.1, 1 - hand) * (input.outgrown ? 1 : 2) * (theirPurseIsThin(who) ? 2 : 1);
+    return input.rng.chance(give / (give + keep));
 }
 
 // ─────────────────────────────────────────────────────────────────────────

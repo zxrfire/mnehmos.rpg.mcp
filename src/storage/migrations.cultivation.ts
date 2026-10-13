@@ -610,6 +610,10 @@ function addCultivationColumns(db: Database.Database): void {
         console.error('[Migration] Adding qi_seal column to cultivators table');
         db.exec('ALTER TABLE cultivators ADD COLUMN qi_seal TEXT;');
     }
+    if (!cultivatorColumns.includes('plague')) {
+        console.error('[Migration] Adding plague course to cultivators table');
+        db.exec('ALTER TABLE cultivators ADD COLUMN plague TEXT;');
+    }
 
     if (!cultivatorColumns.includes('achievements')) {
         console.error('[Migration] Adding achievements column to cultivators table');

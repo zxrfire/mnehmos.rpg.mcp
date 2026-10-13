@@ -1,3 +1,5 @@
+import { refineChance, REFINE_SUPPLEMENT_CAP } from '../../engine/cultivation/the-odds-a-refinement-holds.js';
+export { REFINE_REALM_MARGIN_PER_ORDINAL, REFINE_REALM_MARGIN_CAP, REFINE_INSIGHT_PER_POINT, REFINE_SUPPLEMENT_CAP, MIN_REFINE_CHANCE, MAX_REFINE_CHANCE } from '../../engine/cultivation/the-odds-a-refinement-holds.js';
 /**
  * Consolidated Alchemy Tool - `alchemy_manage`
  */
@@ -5,7 +7,8 @@
 import { z } from 'zod';
 import { preparePillDose,preparePillToxicity,qiRestoredByDose,TOXICITY_TOLERANCE } from '../../engine/cultivation/a-pill-dose-on-an-actual-body.js';
 export { TOXICITY_TOLERANCE } from '../../engine/cultivation/a-pill-dose-on-an-actual-body.js';
-import { theseDaysPassedInTheWorldToo, worldForRun } from '../state/cultivation-world.js';
+import { theseDaysPassedInTheWorldToo, worldForRun, saveWorldForRun } from '../state/cultivation-world.js';
+import { recordAnActualPrivateRefinement } from '../../engine/world/private-work-at-a-cauldron.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
@@ -55,9 +58,12 @@ import {
 } from '../../data/cultivation/pills.js';
 import { RECIPES, getRecipe } from '../../data/cultivation/recipes.js';
 import { getHerb } from '../../data/cultivation/herbs.js';
-import { whatThisCauldronAddsFor } from '../../engine/cultivation/what-you-refine-in.js';
+import { treatPlague } from '../../engine/cultivation/plague.js';
+import type { PlagueState } from '../../schema/cultivation.js';
+import { routineTime } from '../../engine/world/npc-routines.js';
+
 import { theBestVesselToHand } from '../../engine/world/the-vessel-somebody-works-at.js';
-import type { TechniqueGrade, Cultivator, Run } from '../../schema/cultivation.js';
+import type { Cultivator, Run } from '../../schema/cultivation.js';
 import {
     howYouWouldComeByIt,
     whatAnIngredientIs
@@ -122,18 +128,6 @@ type AlchemyAction = typeof ACTIONS[number];
 // TUNING
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Odds gained per realm ordinal above the recipe's requirement. */
-export const REFINE_REALM_MARGIN_PER_ORDINAL = 0.015;
-/** Ceiling on that margin. Standing above a formula stops helping eventually. */
-export const REFINE_REALM_MARGIN_CAP = 0.2;
-/** Odds gained per point of Insight above the 2-point pivot. */
-export const REFINE_INSIGHT_PER_POINT = 0.03;
-/** Ceiling on the contribution of supplementary herbs. */
-export const REFINE_SUPPLEMENT_CAP = 0.15;
-
-/** Mirrors the breakthrough clamp: never certain, never hopeless. */
-export const MIN_REFINE_CHANCE = 0.02;
-export const MAX_REFINE_CHANCE = 0.97;
 
 /**
  * Accumulated toxicity the body absorbs before a meridian gives out.
@@ -245,56 +239,6 @@ export async function handleListRecipes(
     };
 }
 
-/** The itemised odds. Exposed the same way breakthrough odds are: in full. */
-function refineChance(
-    baseRate: number,
-    ordinal: number,
-    requiredOrdinal: number,
-    insight: number,
-    supplementBonus: number,
-    /**
-     * What they are actually refining IN, or null for the clay pot everybody
-     * has. `recipes.ts` has named cauldron quality as an input to a refinement
-     * since the file was written - *"the floor the engine starts from before
-     * alchemy skill, CAULDRON QUALITY, spirit root and ambient qi are
-     * applied"* - and until now there was no cauldron, so every alchemist in
-     * the world worked out of the same nothing.
-     */
-    cauldron: TechniqueGrade | null = null
-): { chance: number; modifiers: Array<{ source: string; delta: number }> } {
-    const modifiers: Array<{ source: string; delta: number }> = [
-        { source: 'recipe_base', delta: baseRate }
-    ];
-
-    const margin = Math.min(
-        REFINE_REALM_MARGIN_CAP,
-        Math.max(0, ordinal - requiredOrdinal) * REFINE_REALM_MARGIN_PER_ORDINAL
-    );
-    modifiers.push({ source: 'realm_margin', delta: margin });
-    modifiers.push({ source: 'insight', delta: (insight - 2) * REFINE_INSIGHT_PER_POINT });
-    // THE FURNACE, AND ONLY WHERE THE HAND CAN WORK IT. A great cauldron held
-    // by somebody who cannot work its materials is a great cauldron full of
-    // slag, so `whatThisCauldronAddsFor` returns nothing below the rung rather
-    // than a bonus that could not have been earned. Nothing is subtracted for
-    // the clay pot: it is the baseline every `baseSuccessRate` was written
-    // against, and taxing it would silently reprice the whole table.
-    if (cauldron !== null) {
-        const fromTheFurnace = whatThisCauldronAddsFor(cauldron, ordinal);
-        if (fromTheFurnace !== 0) {
-            modifiers.push({ source: `cauldron:${cauldron}`, delta: fromTheFurnace });
-        }
-    }
-    if (supplementBonus !== 0) {
-        modifiers.push({ source: 'supplementary_herbs', delta: supplementBonus });
-    }
-
-    const raw = modifiers.reduce((sum, m) => sum + m.delta, 0);
-    const clamped = Math.max(MIN_REFINE_CHANCE, Math.min(MAX_REFINE_CHANCE, raw));
-    if (clamped !== raw) {
-        modifiers.push({ source: clamped > raw ? 'clamp:floor' : 'clamp:ceiling', delta: clamped - raw });
-    }
-    return { chance: clamped, modifiers };
-}
 
 /** Readiness is the same read for MCP refinement and a played approach to a cauldron. */
 export interface RefinePreparation {
@@ -494,6 +438,9 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
     });
     persist();
 
+    if (succeeded && worldHere && recordAnActualPrivateRefinement(worldHere, cultivator, recipe.id, routineTime(worldHere))) {
+        await saveWorldForRun(run);
+    }
     return {
         refined: true,
         succeeded,
@@ -617,7 +564,8 @@ export async function handleConsumePill(
             holderId: cultivator.id,
             realmOrdinal: cultivator.realmOrdinal
         },
-        count => whichRng.int(0, Math.max(0, count - 1))
+        count => whichRng.int(0, Math.max(0, count - 1)),
+        worldHere ? routineTime(worldHere) : day
     );
 
     // ── Toxicity: the medicine keeps its own ledger. ──
@@ -635,6 +583,7 @@ export async function handleConsumePill(
         }
 
         if (effect.deltas) repos.cultivators.applyDeltas(cultivator.id, effect.deltas);
+        if (effect.plague !== undefined) repos.cultivators.update(cultivator.id, { plague: effect.plague });
         for (const injuryId of effect.treatedInjuryIds) {
             repos.cultivators.treatInjury(injuryId, nextTurn);
         }
@@ -866,6 +815,7 @@ interface PillApplication {
     treatedInjuries: ReturnType<typeof treatWorstInjury>['injuries'];
     flags: Record<string, string>;
     pendingPill: PendingPill | null;
+    plague?: PlagueState;
 }
 
 /**
@@ -890,7 +840,8 @@ function resolvePillEffect(
      * takes one: the caller owns the seeding and this owns the choosing, so a
      * turn replays the same way from its seed.
      */
-    drawOneOf: (count: number) => number = () => 0
+    drawOneOf: (count: number) => number = () => 0,
+    plagueDay = currentDay
 ): PillApplication {
     const base: PillApplication = {
         summary: '',
@@ -957,6 +908,7 @@ function resolvePillEffect(
             };
         }
         case 'treat_injury': {
+            const plague = treatPlague(cultivator, pill, plagueDay);
             // THE GRADE HAS TO REACH THE WOUND, AND IT USED NOT TO
             const count = Math.max(1, Math.round(pill.potency));
             const reaches = (severity: InjurySeverity): boolean =>
@@ -1016,9 +968,10 @@ function resolvePillEffect(
 
             return {
                 ...base,
+                ...(plague ? { plague } : {}),
                 treatedInjuryIds: treated.map(t => t.id),
                 treatedInjuries: treated,
-                summary
+                summary: plague ? (treated.length ? `${summary} Plague treated.` : 'Plague treated.') : summary
             };
         }
         // THE ONE EFFECT THAT REACHES A WOUND NOTHING ELSE CLOSES.

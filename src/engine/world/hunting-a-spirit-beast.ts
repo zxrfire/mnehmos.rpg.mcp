@@ -13,6 +13,9 @@ import {
     type BeastAbility,
     type BeastMaterial
 } from '../../data/cultivation/beasts.js';
+
+/** Days spent finding a moving beast; the player's ordinary hunt and private companies share this duration. */
+export const HUNTING_DAYS = 10;
 import type { HerbBiome } from '../../data/cultivation/herbs.js';
 import { asItStandsNow } from './a-beast-climbs-by-sitting-where-it-is.js';
 import { MAX_ORDINAL, rankName } from '../cultivation/realms.js';

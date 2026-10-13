@@ -24,6 +24,10 @@ import { passHours } from '../../src/web/routine-invitations.js';
 import {ProviderNarrator} from '../../src/web/narrator.js';
 import {withTheAttemptLanding} from '../../src/server/consolidated/forcing-an-attempt-to-land.js';
 import {metricGroundRead} from '../../src/engine/world/the-metric-ground-under-a-journey.js';
+import {createInjury} from '../../src/engine/cultivation/injuries.js';
+import {forStream} from '../../src/engine/cultivation/rng.js';
+import {bodilyTroubleAboard} from '../../src/engine/world/a-captain-answers-trouble.js';
+import {actualPersonFor} from '../../src/web/the-actual-person-behind-a-world-row.js';
 
 async function departure(companion:boolean) {
     const plans:string[]=[];
@@ -66,6 +70,35 @@ async function departure(companion:boolean) {
     return {...h,plans,world,day,from,to:choice.to,quote:choice.quote,boat,pilot,receiptId,site};
 }
 
+
+it('an actual NPC pilot notices serious injury and diverts the same craft to a known nearby landing',async()=>{
+ const h=await departure(true);try{
+  const now=h.game.currentRun(),day=routineTime(h.world);
+  const pilot=h.world.npcs.find(person=>person.id===h.pilot!.id)!;
+  pilot.homeLocationId=h.from.id;
+  const wound=createInjury({severity:'serious',source:'combat',turn:now.run.turn},forStream(h.world.seed,'captain-air-injury'));
+  h.repos.cultivators.addInjury(now.cultivator.id,wound);
+  h.repos.cultivators.update(now.cultivator.id,{hp:Math.floor(now.cultivator.maxHp*.6)});
+  const patient=actualPersonFor(h.game,now.cultivator.id)!;
+  const trouble=bodilyTroubleAboard(patient,day)!;
+  expect(trouble).not.toBeNull();
+  for(let sample=0;sample<10000;sample++){
+   const seed=`pilot-diverts-${sample}`;
+   if(forStream(seed,'captain-duty-decision',pilot.id,trouble.key).next()<.01){h.world.seed=seed;break;}
+  }
+  h.plans.push(JSON.stringify({action:'look'}));
+  const said=await h.game.act('I look around');
+  expect(said.narration).toContain('for care');
+  const claim=ownedPassageClaim(h.db,now.cultivator.id)!;
+  expect(claim.receiptId).not.toBe(h.receiptId);
+  const changed=witnessIndexFor(h.world).byId.get(claim.receiptId)!;
+  expect(changed.data.vesselId).toBe(h.boat.id);
+  expect(changed.data.pilotId).toBe(pilot.id);
+  expect(changed.data.fromLocationId).toBe(h.site.id);
+  expect(h.game.currentRun().cultivator.location).not.toBe(h.from.name);
+  expect(h.game.currentRun().cultivator.injuries.some(injury=>injury.id===wound.id&&!injury.treated)).toBe(true);
+ }finally{h.db.close();}
+},120_000);
 
 it('the actual PC steers the owned craft through the played frontdoor without an NPC captain or self-consent',async()=>{
  const h=await departure(false);try{

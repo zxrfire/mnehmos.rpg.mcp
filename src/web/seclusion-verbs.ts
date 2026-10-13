@@ -515,7 +515,8 @@ export const seclusionVerbs = {
         // in phase 2. Phase 3 then only ever gets a licence to mention something
         // that is already true.
         const enc2 = recordEncounters(
-            this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos
+            this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos, undefined,
+            () => this.plagueEncounterAtTheBody()
         );
         this.pendingArrivals = consumeArrivals(this.pendingArrivals, happened);
 
@@ -1117,7 +1118,8 @@ export const seclusionVerbs = {
         this.handBackWhatNeverHappened(applied.cultivator, enc, happened);
 
         const enc2 = recordEncounters(
-            this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos
+            this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos, undefined,
+            () => this.plagueEncounterAtTheBody()
         );
         this.pendingArrivals = consumeArrivals(this.pendingArrivals, happened);
 

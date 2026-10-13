@@ -4,6 +4,8 @@ import { isAMortalPhysician, physicianIsWorking, whoDispensesAtTheHouse } from '
 import { countedWoundMedicine, onTheShelf, whatTheShelfChargesAMember, whatTheShelfGivesAMember }
     from '../engine/world/house-wound-medicine.js';
 import { medicineReaches } from '../engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
+import { activePlague, treatPlagueWithMedicineGrade } from '../engine/cultivation/plague.js';
+import { routineTime } from '../engine/world/npc-routines.js';
 import { isPermanentWound } from '../data/cultivation/wounds.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
@@ -32,6 +34,9 @@ export function askingAboutCareHere(game: GameService, cultivator: Cultivator, a
         lines.push('Asking has bought no course, spent nothing and promised no completed treatment.');
         lines.push('Ordinary care does not reach every wound or every body. Stronger injuries need medicine of a grade that reaches them.');
         lines.push('This describes the physician\'s care, not what other medicines may be kept here.');
+        if (activePlague(cultivator, routineTime(world))) lines.push(treatPlagueWithMedicineGrade(cultivator, 'mortal', routineTime(world))
+            ? `This physician can administer mortal medicine for your plague before the stay, for ${quote.perWound} spirit stones; food remains separately paid.`
+            : 'This physician\'s mortal medicine does not reach your plague. Stronger wound medicine is needed.');
         const wounds = cultivator.injuries.filter(w => !w.treated);
         if (wounds.length) {
             const reachable = wounds.filter(w => !isPermanentWound(w.woundType)

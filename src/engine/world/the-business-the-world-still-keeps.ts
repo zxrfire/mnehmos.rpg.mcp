@@ -9,6 +9,7 @@ import { factsWithData, referenceKeys, witnessHistoryWasPruned, witnessIndexFor 
 import type { HistoricalFact } from './history.js';
 import type { WorldState } from './world-state.js';
 import { missingMembersInRollCheck } from './life-lamp-roll-check-findings.js';
+import { collectUnheldCheapObjects } from './an-unheld-cheap-object-is-forgotten.js';
 
 const SWEPT = new WeakMap<WorldState, number>();
 const routinePassageLoss = (fact: HistoricalFact): boolean => fact.data.missedDeparture === true
@@ -52,7 +53,9 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
         'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived', 'gateRegistration',
         'passageTallyPurchase', 'missedDeparture', 'unusedPassageTally'].some(key => factsWithData(state, key).some(fact => fact.day <= cutoff))
         && ![...MUNDANE].some(kind => (index.byKind.get(kind) ?? [])
-            .some(fact => fact.day <= cutoff))) return;
+            .some(fact => fact.day <= cutoff))) {
+        collectUnheldCheapObjects(state); return;
+    }
     const exact = new Set(state.npcs.filter(person => isPlayerInvolved(state, person)).map(person => person.id));
     const alive = new Set(state.npcs.filter(person => person.status === 'alive').map(person => person.id));
     // Forgotten: a mundane event nobody alive took part in or witnessed.
@@ -96,6 +99,7 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
         for (const value of Object.values(fact.data)) if (typeof value === 'string') protectedObjects.add(value);
     }
     const stacks = new Map<string, number>();
+    collectUnheldCheapObjects(state, protectedObjects);
     const aliases = new Map<string, string>();
     const objects: WorldState['objects'] = [];
     let shortened = false;

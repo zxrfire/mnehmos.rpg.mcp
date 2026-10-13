@@ -14,6 +14,10 @@ import { advancePublicCapitalMission } from '../../src/engine/world/capital-miss
  * The money controls include those reported engine deltas; following itself
  * buys no second fare. A standing gate comes from its real authority, not a
  * random registration catalog row. Group fights are covered in entry 131.
+ * Merge validation found an accepted rest falling through to an ordinary
+ * six-day wait: the Native party returned while the SQL follower stayed behind.
+ * A rest keeps the physical binding through dawn and the resumed real course;
+ * an unanswered question still requires the player's voice.
  */
 import { ruin } from '../../src/engine/world/possessions';
 import { aVehicleOf, takeItAlong } from '../../src/engine/world/a-vehicle';

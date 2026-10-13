@@ -3,6 +3,7 @@ import {ownedSeaGround,readAcceptedSeaLane,quoteOwnedSeaDeparture} from '../engi
 import type {SeaLane} from '../engine/world/what-a-sea-crossing-costs.js';
 import {changeOwnedAirCourse} from './changing-the-owned-air-course.js';
 import { beginAnAirCourse, airPositionAt, stopAnAirCourse, actualNpcPilotOfAirCourse, recordPaidAirCourseFuel, paidAirCourseThrough } from '../engine/world/an-air-course-in-the-world.js';
+import {roadVertexMoments} from '../engine/world/road-course.js';
 import { arrivalCourseOfFact, recordActualBodyArrival } from '../engine/world/a-body-that-actually-arrived.js';
 
 import { companyDuringPassage } from '../engine/world/company-during-a-passage.js';
@@ -100,7 +101,10 @@ export function ownedCarrierAt(world: WorldState, receiptId: string, body: Pick<
             ? 'The actual pilot cannot guide the craft.' : null;
     return { locationId: pilot && (pilotOnThisLeg || pilotArrived)
             ? locationOfNpcOnItsJourney(world, pilot, onDay) : location,
-        endsOnDay: data.arrivalDay, boardedOnDay: data.departureDay, boardingMoment: passageRunMoment(world, receiptId), unavailable };
+        endsOnDay: data.arrivalDay, boardedOnDay: data.departureDay, boardingMoment: passageRunMoment(world, receiptId), unavailable,
+        vertexDates:[data.departureDay,...(pilot?.activity?.admittedRoad
+            ?roadVertexMoments(pilot.activity.admittedRoad.route,data.departureDay,data.arrivalDay-data.departureDay,
+                pilot.activity.admittedRoad.initialTravelDays):[])] };
 }
 
 export function projectOwnedPassenger(db: Database.Database, world: WorldState, playerId: string, onDay: number): void {
