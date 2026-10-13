@@ -144,7 +144,11 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     for (let at = 0; at < pending.length; at++) {
         const fact = index.byId.get(pending[at]!);
         if (!fact) continue;
-        for (const id of referenceKeys(fact)) if (index.byId.has(id) && !held.has(id)) {
+        // A retained lot needs its actual closing receipt. Removing only that
+        // receipt makes the ledger's ordinary pending-lot read reopen a sale
+        // that already ended. Its original settlement remains the authority.
+        const closing = fact.data.auctionLot === true ? index.auctionResults.get(fact.id) ?? [] : [];
+        for (const id of [...referenceKeys(fact), ...closing]) if (index.byId.has(id) && !held.has(id)) {
             held.add(id); pending.push(id);
         }
     }

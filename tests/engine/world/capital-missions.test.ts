@@ -22,28 +22,64 @@
  * without a pilot or an air receipt. Actual house flight is covered by the shuttle
  * controls; this file keeps the refusal and moves its cargo/fare/arrival checks
  * onto the admitted public mission. Capital travel has one actual itinerary.
- * The owner allows thirty minutes for this census. Both horizons use the
- * canonical demography soakedWorld cache; no claim walks a separate century.
+ * Both original horizons use canonical demography soakedWorld snapshots.
+ * The focused factor scenario uses isAnActualCapitalFactor; reachability
+ * samples demography at 10/100 and drift-guard at 100, and the contract sends
+ * a real factor through that same offer scenario. No claim rewalks a century.
  * Each unchanged snapshot shares its route read for physical census placement.
+ * Completed business dockets are swept after a year. The original/current-source
+ * demography control observed business in 8-10 years per capital over a decade,
+ * while both final ledgers retained only year nine's business. Count actual
+ * dispatches at native world boundaries before that sweep; the original two-year
+ * and three-house minima remain. This observer owns its short decade walk,
+ * while all aged reachability and contract instances remain source-keyed samples.
  * Owner correction: the former majority-home assertion was the coordinator's
  * wording. Actual business may take many members away; an absence without an
  * activity is wrong. The full decade census checks every checkpoint's reasons.
  */
 import { describe, expect, it } from 'vitest';
-import { soakedWorld } from '../../support/soaked-world.js';
+import { capitalDispatchesDuring } from '../../support/capital-dispatch-window.js';
+import { sampledWorld } from '../../support/sampled-world.js';
 import { capitalPlaces } from '../../../src/engine/world/capital-missions-and-calendar.js';
 import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import { PROVINCIAL_CAPITALS } from '../../../src/data/cultivation/regions.js';
 import { locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
 import { routeQueriesFor } from '../../../src/engine/world/locations.js';
 import { exteriorGroundOfDeparture } from '../../../src/engine/world/departure-approach.js';
+import { isAnActualCapitalFactor } from '../../support/capital-precondition.js';
+import { anActualCapitalFactorOffersItsCargo } from '../../support/capital-scenario.js';
 
 /** Native journey controls moved unchanged to capital-mission-journeys.test.ts.
  * The cached decade census keeps its original assertions and canonical seed. */
 describe('capital missions', () => {
+    // Presence/diversity bands below remain the original acceptance. This
+    // sampled reachability/contract pair connects them to the focused counter
+    // scenario in a-capital-factor-offers-its-actual-cargo.test.ts.
+    const samples = [['demography', 10], ['demography', 100], ['drift-guard', 100]] as const;
+    it('finds real physically working visiting factors across cached ages and seeds', async () => {
+        let reached = false;
+        for (const [seed, years] of samples) {
+            const state = await sampledWorld(seed, { years });
+            reached ||= state.npcs.some(person => !!person.locationId && isAnActualCapitalFactor(state, person.id, person.locationId));
+        }
+        expect(reached).toBe(true);
+    }, 3_600_000);
+
+    it('passes a real visiting factor into the same focused offer scenario', async () => {
+        for (const [seed, years] of samples) {
+            const state = await sampledWorld(seed, { years });
+            const factor = state.npcs.find(person => !!person.locationId && isAnActualCapitalFactor(state, person.id, person.locationId));
+            if (!factor) continue;
+            anActualCapitalFactorOffersItsCargo(state, factor.id, factor.locationId!);
+            return;
+        }
+        throw new Error('No reachable actual capital factor');
+    }, 120_000);
+
     it('keeps every capital occupied by residents and several visiting houses over a decade', async () => {
-        const opened = await soakedWorld('demography', { years: 0 });
-        const lived = await soakedWorld('demography', { years: 10 });
+        const opened = await sampledWorld('demography', { years: 0 });
+        const lived = await sampledWorld('demography', { years: 10 });
+        const sentDuringDecade = capitalDispatchesDuring(await sampledWorld('demography', { years: 0 }), 10 * 365);
         for (const state of [opened, lived]) {
             const alive = state.npcs.filter(n => n.status === 'alive');
             const routes = routeQueriesFor(state.locations);
@@ -73,7 +109,7 @@ describe('capital missions', () => {
                     .map(n => n.factionId));
                 expect(visitingHouses.size, `${city.name}: visiting houses`).toBeGreaterThanOrEqual(3);
                 if (state === lived) {
-                    const dispatches = state.history.facts.filter(f => f.data.destinationId === city.id &&
+                    const dispatches = sentDuringDecade.filter(f => f.data.destinationId === city.id &&
                         f.data.capitalMission === true && f.day >= opened.currentDay);
                     expect(new Set(dispatches.flatMap(f => f.factionIds)).size,
                         `${city.name}: houses sending missions`).toBeGreaterThanOrEqual(3);

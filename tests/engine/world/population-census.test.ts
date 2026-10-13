@@ -16,9 +16,15 @@
  * over the control's last two centuries. Both source arms ran in one command.
  * The 0-40 yearly band rejects
  * the original spike; the century ratios reject ongoing drain or growth.
- * Annual membership censuses count entries and exits separately; a round trip
- * between censuses is not counted. The paired probe runs both source arms in
- * one command, including the five-seed pyramid acceptance test.
+ * The behavior half, local-replacement-uses-the-actual-vacancy.test.ts, arranges
+ * full global population beside a local vacancy. This reachability half uses
+ * the same hasLocalReplacementSituation predicate and source-keyed checkpoints
+ * at 100/200/300/400/500 years. Century population bands and retained ratios
+ * keep their original assertions. Five-year windows at each age measure annual
+ * entry/exit flows separately; their diagnostics are windows, not century totals.
+ * The first thirty years retain every year's original old-age-cohort check.
+ * A contract takes a real full/vacant pair out of the aged census and runs
+ * the same focused birth appointment as the small arrangement.
  * Births are the driver's demographic count. Entries and deaths reconcile
  * successive annual living censuses, including house people brought forward.
  * Timing covers five actual advances from year 400; no clone or census read.
@@ -34,6 +40,10 @@ import { isTerminal } from '../../../src/engine/cultivation/existence.js';
 import { walkingDaysFrom } from '../../../src/engine/world/locations.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import { serializedFixture } from '../../support/serialized-fixture.js';
+import { sampledWorld } from '../../support/sampled-world.js';
+import { hasLocalReplacementSituation } from '../../support/population-precondition.js';
+import { populationWeightOf } from '../../../src/engine/world/locations.js';
+import { localVacanciesCanReplaceResidents } from '../../support/population-scenario.js';
 import * as npcState from '../../../src/engine/world/npc-state.js';
 import * as crossings from '../../../src/engine/world/recording-what-a-crossing-did.js';
 import * as seeding from '../../../src/engine/world/seeding.js';
@@ -50,7 +60,7 @@ interface Census {
     marks: Record<string, Record<string, Bucket>>;
     pyramid: Record<string, number>;
     recruits: number;
-    centuries: Record<string, { births: number; entrants: number; deaths: number; otherExits: number }>;
+    windows: Record<string, { births: number; entrants: number; deaths: number; otherExits: number }>;
     cost400: { living: number; rows: number; milliseconds: number[] };
     cohort: { size: number; attempted: number; succeeded: number; extended: number;
         recordedAttempted: number; recordedSucceeded: number; stampedSucceeded: number;
@@ -61,81 +71,77 @@ interface Census {
 
 async function census(): Promise<Census> {
     const bytes = await serializedFixture('population-census', [
-        'src/engine/world/catalog.ts', 'src/engine/world/seeding.ts', 'src/engine/world/driver.ts'
-    ], { seed: SEED, census: 'bounded-annual-v2' }, async () => {
-        const state = seedWorld({ seed: SEED, catalog: await loadCultivationCatalog() }).state;
-        const start = state.currentDay;
+        'tests/engine/world/population-census.test.ts'
+    ], { seed: SEED, census: 'sampled-checkpoints-v3' }, async () => {
+        // Thirty years is the named opening cohort's lifespan window, not a
+        // route to an old world. Its death distribution still uses every year.
+        const early = await sampledWorld(SEED, { years: 0 });
+        const start = early.currentDay;
         const deaths = Array<number>(31).fill(0);
-        const marks: Census['marks'] = {};
-        const flows = new Map<string, { inflow: number; outflow: number }>();
-        const seeded = new Set(state.npcs.map(n => n.id));
-        const centuries: Census['centuries'] = {};
-        const cost400: Census['cost400'] = { living: 0, rows: 0, milliseconds: [] };
-        const membership = () => {
-            const places = new Map(state.locations.map(l => [l.id, kind(l)]));
-            return new Map(state.npcs.filter(n => n.status === 'alive').map(n => [n.id, places.get(n.locationId ?? '') ?? 'nowhere']));
-        };
-        const record = (year: number) => {
-            const rows: Record<string, Bucket> = {};
-            for (const place of state.locations) {
-                const k = kind(place);
-                rows[k] ??= { places: 0, volume: 0, inflow: flows.get(k)?.inflow ?? 0, outflow: flows.get(k)?.outflow ?? 0 };
-                rows[k].places++;
-            }
-            for (const k of membership().values()) {
-                rows[k] ??= { places: 0, volume: 0, inflow: flows.get(k)?.inflow ?? 0, outflow: flows.get(k)?.outflow ?? 0 };
-                rows[k].volume++;
-            }
-            marks[year] = rows;
-        };
-        let previous = membership();
-        record(0);
-        for (let year = 1; year <= 500; year++) {
-            if (year === 401) {
-                cost400.living = previous.size;
-                cost400.rows = state.npcs.length;
-            }
-            const started = performance.now();
-            const advanced = advanceWorldForPlay(state, { days: 365, stopOnInterrupt: false });
-            if (year >= 401 && year <= 405) cost400.milliseconds.push(performance.now() - started);
-            for (const death of advanced.time.deaths) {
+        const seeded = new Set(early.npcs.map(person => person.id));
+        for (let year = 1; year <= 30; year++) {
+            const result = advanceWorldForPlay(early, { days: 365, stopOnInterrupt: false });
+            for (const death of result.time.deaths) {
                 const at = Math.ceil((death.onDay - start) / 365);
                 if (at >= 0 && at <= 30) deaths[at]++;
             }
-            const next = membership();
-            const century = Math.ceil(year / 100);
-            const totals = centuries[century] ??= { births: 0, entrants: 0, deaths: 0, otherExits: 0 };
-            totals.births += advanced.born;
-            totals.entrants += [...next.keys()].filter(id => !previous.has(id)).length;
-            const dead = new Set(advanced.deaths.map(d => d.deceasedId));
-            const rows = new Map(state.npcs.map(n => [n.id, n]));
-            for (const id of previous.keys()) {
-                if (next.has(id)) continue;
-                const row = rows.get(id);
-                if (dead.has(id) || !row || isTerminal(row.status)) totals.deaths++;
-                else totals.otherExits++;
+        }
+        const marks: Census['marks'] = {};
+        const windows: Census['windows'] = {};
+        const cost400: Census['cost400'] = { living: 0, rows: 0, milliseconds: [] };
+        let final: WorldState | undefined;
+        for (const year of [0, 100, 200, 300, 400, 500]) {
+            const state = await sampledWorld(SEED, { years: year });
+            expect(state.currentDay).toBe(start + year * 365);
+            const membership = () => {
+                const places = new Map(state.locations.map(place => [place.id, kind(place)]));
+                return new Map(state.npcs.filter(person => person.status === 'alive')
+                    .map(person => [person.id, places.get(person.locationId ?? '') ?? 'nowhere']));
+            };
+            const previous = membership();
+            const rows: Record<string, Bucket> = {};
+            for (const place of state.locations) {
+                const k = kind(place);
+                (rows[k] ??= { places: 0, volume: 0, inflow: 0, outflow: 0 }).places++;
             }
-            for (const [id, k] of previous) if (next.get(id) !== k) {
-                const f = flows.get(k) ?? { inflow: 0, outflow: 0 }; f.outflow++; flows.set(k, f);
+            for (const k of previous.values()) (rows[k] ??= { places: 0, volume: 0, inflow: 0, outflow: 0 }).volume++;
+            marks[year] = rows;
+            if (year === 500) final = state;
+            if (!year) continue;
+            const totals = windows[year / 100] = { births: 0, entrants: 0, deaths: 0, otherExits: 0 };
+            let before = previous;
+            if (year === 400) { cost400.living = before.size; cost400.rows = state.npcs.length; }
+            // Five consecutive annual censuses measure flow from each genuine
+            // age checkpoint. These are sampled windows, never century totals.
+            for (let window = 0; window < 5; window++) {
+                const began = performance.now();
+                const advanced = advanceWorldForPlay(state, { days: 365, stopOnInterrupt: false });
+                if (year === 400) cost400.milliseconds.push(performance.now() - began);
+                const next = membership(), dead = new Set(advanced.deaths.map(death => death.deceasedId));
+                const currentRows = new Map(state.npcs.map(person => [person.id, person]));
+                totals.births += advanced.born;
+                totals.entrants += [...next.keys()].filter(id => !before.has(id)).length;
+                for (const [id, k] of before) if (next.get(id) !== k) rows[k].outflow++;
+                for (const [id, k] of next) if (before.get(id) !== k) (rows[k] ??= { places: 0, volume: 0, inflow: 0, outflow: 0 }).inflow++;
+                for (const id of before.keys()) if (!next.has(id)) {
+                    const person = currentRows.get(id);
+                    if (dead.has(id) || !person || isTerminal(person.status)) totals.deaths++; else totals.otherExits++;
+                }
+                before = next;
             }
-            for (const [id, k] of next) if (previous.get(id) !== k) {
-                const f = flows.get(k) ?? { inflow: 0, outflow: 0 }; f.inflow++; flows.set(k, f);
-            }
-            previous = next;
-            if (year % 50 === 0) record(year);
-            if (year % 25 === 0) process.stdout.write(`[census-progress] ${process.env.POPULATION_ARM ?? 'live'} ${year}\n`);
+            // Keep the final population at the census clock, before its window.
+            if (year === 500) final = await sampledWorld(SEED, { years: 500 });
         }
         const pyramid: Record<string, number> = {};
-        for (const n of state.npcs.filter(n => n.status === 'alive')) {
-            const k = realmForOrdinal(n.cultivation.realmOrdinal).key;
-            pyramid[k] = (pyramid[k] ?? 0) + 1;
+        for (const person of final!.npcs.filter(person => person.status === 'alive')) {
+            const realm = realmForOrdinal(person.cultivation.realmOrdinal).key;
+            pyramid[realm] = (pyramid[realm] ?? 0) + 1;
         }
-        const recruits = state.npcs.filter(n => !seeded.has(n.id) && n.factionId !== null && n.tags.some(t => t.startsWith('region:'))).length;
-        return Buffer.from(JSON.stringify({ deaths, marks, pyramid, recruits, centuries, cost400 }));
+        const recruits = final!.npcs.filter(person => !seeded.has(person.id) && person.factionId !== null
+            && person.tags.some(tag => tag.startsWith('region:'))).length;
+        return Buffer.from(JSON.stringify({ deaths, marks, pyramid, recruits, windows, cost400 }));
     });
     const result = JSON.parse(bytes.toString('utf8')) as Census;
-    // The age derivation runs trials without writing crossing facts.
-    // Observe its forward trials alongside the recorded wall strikes.
     result.cohort = await nearEndCohort();
     return result;
 }
@@ -265,6 +271,32 @@ let measured: Promise<Census> | undefined;
 const measuredCensus = () => measured ??= census();
 const collectingControl = () => process.env.POPULATION_ARM === 'before'
     && process.env.POPULATION_ASSERT_CONTROL !== '1';
+
+it('reaches the arranged local-replacement situation in sampled lived worlds', async () => {
+    for (const [seed, years] of [[SEED, 100], [SEED, 500], ['demography', 100]] as const) {
+        const world = await sampledWorld(seed, { years });
+        const present = new Map<string, number>();
+        for (const person of world.npcs) if (person.status === 'alive' && person.locationId) {
+            present.set(person.locationId, (present.get(person.locationId) ?? 0) + 1);
+        }
+        const settlements = world.locations.filter(place => place.kind === 'settlement' && populationWeightOf(place) > 0);
+        const full = settlements.filter(place => (present.get(place.id) ?? 0) >= populationWeightOf(place));
+        const vacant = settlements.filter(place => (present.get(place.id) ?? 0) < populationWeightOf(place));
+        expect(full.some(a => vacant.some(b => hasLocalReplacementSituation(world, a.id, b.id))),
+            `${seed} at ${years} years has the same replacement precondition`).toBe(true);
+    }
+}, 3_600_000);
+
+it('passes a real local replacement situation into the same birth scenario', async () => {
+    const world = await sampledWorld(SEED, { years: 100 });
+    const settlements = world.locations.filter(place => place.kind === 'settlement' && populationWeightOf(place) > 0);
+    for (const full of settlements) for (const vacant of settlements) {
+        if (!hasLocalReplacementSituation(world, full.id, vacant.id)) continue;
+        localVacanciesCanReplaceResidents(world, full.id, vacant.id);
+        return;
+    }
+    throw new Error('No reachable local replacement situation');
+}, 120_000);
 
 it('keeps the early old-age cohort without a single-year spike', async () => {
     const result = await measuredCensus();
