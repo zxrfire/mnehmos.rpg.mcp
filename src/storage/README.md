@@ -8,6 +8,10 @@
 SQLite is the source of truth. Migration conventions, the idempotent-ALTER pattern, and
 repository conventions. Read this before adding a table, a column, or a repo.
 
+World NPC understanding and its supporting achievements persist as nullable JSON
+on the existing person row. An older absent field stays absent; an actual learned
+insight or emptied list survives reopening.
+
 `sect_members.joined_on_day` stores the world day of joining. Wall-clock `joined_at`
 remains audit metadata. Existing memberships without a recoverable game date start
 their measurable tenure at upgrade, using the persisted world clock.

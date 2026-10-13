@@ -105,6 +105,10 @@ export class WorldStateRepository {
     private readonly selectOpportunitiesStmt: Database.Statement;
     private readonly selectAreaStatusesStmt: Database.Statement;
     private readonly selectObjectsStmt: Database.Statement;
+    private readonly selectObjectIdsStmt: Database.Statement;
+    private readonly deleteObjectStmt: Database.Statement;
+    private readonly deleteObjectClaimsStmt: Database.Statement;
+    private readonly deleteObjectProvenanceStmt: Database.Statement;
     private readonly selectClaimsStmt: Database.Statement;
     private readonly selectProvenanceStmt: Database.Statement;
     private readonly selectAbsencesStmt: Database.Statement;
@@ -228,7 +232,7 @@ export class WorldStateRepository {
                 occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 wounds, technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
-                accumulating_since_day, bonded_cultivation_days, hp, qi, technique_cooldowns, body_on_day, qi_seal,
+                accumulating_since_day, bonded_cultivation_days, hp, qi, technique_cooldowns, insights, achievements, body_on_day, qi_seal,
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
@@ -239,7 +243,7 @@ export class WorldStateRepository {
                 @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @wounds, @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
-                @accumulatingSinceDay, @bondedCultivationDays, @hp, @qi, @techniqueCooldowns, @bodyOnDay, @qiSeal,
+                @accumulatingSinceDay, @bondedCultivationDays, @hp, @qi, @techniqueCooldowns, @insights, @achievements, @bodyOnDay, @qiSeal,
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
@@ -468,6 +472,10 @@ export class WorldStateRepository {
             'SELECT * FROM world_area_statuses WHERE world_id = ? ORDER BY rowid ASC'
         );
         this.selectObjectsStmt = db.prepare('SELECT * FROM world_objects WHERE world_id = ? ORDER BY rowid ASC');
+        this.selectObjectIdsStmt = db.prepare('SELECT id FROM world_objects WHERE world_id = ?');
+        this.deleteObjectStmt = db.prepare('DELETE FROM world_objects WHERE world_id = ? AND id = ?');
+        this.deleteObjectClaimsStmt = db.prepare('DELETE FROM world_object_claims WHERE world_id = ? AND object_id = ?');
+        this.deleteObjectProvenanceStmt = db.prepare('DELETE FROM world_object_provenance WHERE world_id = ? AND object_id = ?');
         this.selectClaimsStmt = db.prepare('SELECT * FROM world_object_claims WHERE world_id = ? ORDER BY rowid ASC');
         this.selectProvenanceStmt = db.prepare(
             'SELECT * FROM world_object_provenance WHERE world_id = ? ORDER BY object_id ASC, seq ASC'
@@ -524,8 +532,8 @@ export class WorldStateRepository {
      * cost in this layer. Everything genuinely mutable is upserted, because any of
      * it can change without changing its id and the engine has no dirty flag.
      *
-     * Rows removed from the state are NOT pruned by this path - that is what makes
-     * it cheap, and it is why `saveWorld` exists.
+     * Physical objects removed from the state are pruned with their claim and
+     * provenance rows. Other removed collections still require `saveWorld`.
      */
     appendWorld(state: WorldState): void {
         const write = this.db.transaction((s: WorldState) => {
@@ -942,6 +950,8 @@ export class WorldStateRepository {
                 qi: npc.cultivation.qi ?? null,
                 techniqueCooldowns: npc.cultivation.techniqueCooldowns === undefined ? null
                     : JSON.stringify(npc.cultivation.techniqueCooldowns),
+                insights: npc.cultivation.insights === undefined ? null : JSON.stringify(npc.cultivation.insights),
+                achievements: npc.cultivation.achievements === undefined ? null : JSON.stringify(npc.cultivation.achievements),
                 bodyOnDay: npc.cultivation.bodyOnDay,
                 qiSeal: npc.cultivation.seal === null
                     ? null
@@ -1111,6 +1121,15 @@ export class WorldStateRepository {
     }
 
     private writeObjects(s: WorldState): void {
+        // Objects are a current inventory, not append-only history. Handed-in
+        // or crumbled tokens must not return when this world is reopened.
+        const present = new Set(s.objects.map(object => object.id));
+        for (const stored of this.selectObjectIdsStmt.all(s.id) as { id: string }[]) {
+            if (present.has(stored.id)) continue;
+            this.deleteObjectClaimsStmt.run(s.id, stored.id);
+            this.deleteObjectProvenanceStmt.run(s.id, stored.id);
+            this.deleteObjectStmt.run(s.id, stored.id);
+        }
         for (const object of s.objects) {
             this.insertObjectStmt.run({
                 id: object.id,
@@ -1611,6 +1630,8 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
             ...(row.qi === null ? {} : { qi: row.qi }),
             ...(row.technique_cooldowns === null ? {} : {
                 techniqueCooldowns: parseRecord<number>(row.technique_cooldowns) }),
+            ...(row.insights === null ? {} : { insights: parseArray(row.insights) }),
+            ...(row.achievements === null ? {} : { achievements: parseArray(row.achievements) }),
             bodyOnDay: row.body_on_day || row.last_advanced_on_day,
             seal: parseSeal(row.qi_seal)
         },
@@ -2193,6 +2214,8 @@ interface NpcRow {
     hp: number;
     qi: number | null;
     technique_cooldowns: string | null;
+    insights: string | null;
+    achievements: string | null;
     body_on_day: number;
     qi_seal: string | null;
     location_id: string | null;

@@ -8,6 +8,27 @@ import { advanceWorldYears } from '../support/advance-world-years';
 import { enshrineRun, recordRun, runSeedFor, type WorldRun } from '../../src/engine/world/legacy';
 import { addGoal, setRealm, upsertRelationship } from '../../src/engine/world/npc-state';
 import { cloneWorld, type WorldState } from '../../src/engine/world/world-state';
+import { isDeepStrictEqual } from 'node:util';
+
+/** Keep a large round-trip failure readable in the captured JSON reporter. */
+function firstDifference(actual: unknown, expected: unknown, path = 'world'): string {
+    if (isDeepStrictEqual(actual, expected)) return '';
+    if (actual && expected && typeof actual === 'object' && typeof expected === 'object') {
+        const a = actual as Record<string, unknown>, b = expected as Record<string, unknown>;
+        if (Array.isArray(actual) && Array.isArray(expected) && actual.length !== expected.length)
+            return `${path}.length: actual=${actual.length}, expected=${expected.length}`;
+        for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+            // toEqual permits an omitted optional field and an undefined field.
+            if (a[key] === undefined && b[key] === undefined) continue;
+            if (!Object.hasOwn(a, key) || !Object.hasOwn(b, key))
+                return `${path}.${key}: property present in actual=${Object.hasOwn(a, key)}, expected=${Object.hasOwn(b, key)}`;
+            const difference = firstDifference(a[key], b[key], `${path}.${key}`);
+            if (difference) return difference;
+        }
+        return '';
+    }
+    return `${path}: actual=${JSON.stringify(actual)}, expected=${JSON.stringify(expected)}`;
+}
 
 const YEAR = 365;
 
@@ -209,7 +230,7 @@ describe('WorldStateRepository', () => {
             repo.saveWorld(advanced);
             const loaded = repo.loadWorld(advanced.id)!;
 
-            expect(loaded).toEqual(advanced);
+            expect(loaded, firstDifference(loaded, advanced)).toEqual(advanced);
             expect(loaded.history.facts.length).toBe(advanced.history.facts.length);
             expect(loaded.history.nextFactSeq).toBe(advanced.history.nextFactSeq);
             expect(loaded.memories.nextSeq).toBe(advanced.memories.nextSeq);
@@ -240,7 +261,7 @@ describe('WorldStateRepository', () => {
             expect(continued.npcs.map(n => n.status)).toEqual(straightThrough.npcs.map(n => n.status));
             // The whole point of deriving randomness from the stored seed:
             // a reload is not a fork.
-            expect(continued).toEqual(straightThrough);
+            expect(continued, firstDifference(continued, straightThrough)).toEqual(straightThrough);
 
             db.close();
         });

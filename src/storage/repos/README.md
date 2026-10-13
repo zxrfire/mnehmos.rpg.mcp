@@ -6,6 +6,16 @@ One class per table, each owning the SQL for it. Nothing above this layer writes
 nothing here decides anything: a repository stores what it is given and returns what it
 holds.
 
+`WorldStateRepository` persists physical deletion on ordinary append writes:
+an absent object and its claims and provenance disappear in the same transaction.
+This includes consumed passage tallies and crumbled disciple tokens. History
+remains independent of the physical object; other collections retain their
+existing checkpoint deletion contract.
+
+NPC Dao insights and their supporting achievements round-trip through the
+existing cultivation row, including later deepening and explicitly empty lists.
+Loading does not create understanding that was never recorded.
+
 `SectRepo.addMember` stores `joinedOnDay` once on entry. Rank and contribution
 updates preserve it; leaving and rejoining starts a new tenure. An explicit day
 is accepted, with the persisted world clock supplying callers that omit it.
