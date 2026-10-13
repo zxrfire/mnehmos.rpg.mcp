@@ -459,6 +459,31 @@ not the rank"* and passes through every reshuffle.
   it covers and confirm it goes red. Several tests in this repo were written that way and
   say so in their headers.
 
+### A long walk is two tests: what happens from a state, and that the state is reachable
+
+> **Never walk a world for centuries to reach the moment a test is about. Arrange the moment,
+> and prove separately that real worlds get there.**
+
+A test that runs a world for a thousand years and then checks one rule is slow, and when
+it fails it does not say whether the rule broke or the world wandered somewhere odd in
+year four hundred. There is no property that "only shows over an unbroken walk"; it only
+looks that way until its preconditions are written down. Split it:
+
+- **The behaviour test** arranges the state the walk would have produced (a house in
+  decline, a ladder of that shape, the history the rule reads), through the engine's own
+  writers, and checks what happens from there.
+- **The reachability test** checks, on worlds that really ran that long, that states like
+  the arranged one occur. Those worlds are walked once and kept: the soaked-world cache
+  (`tests/support/soaked-world.ts`) keys them on the source of the simulation, so an engine
+  change walks them fresh and nothing stale is served. A sample of checkpoints across seeds
+  is enough.
+
+**Both halves read the same state.** Write the precondition once, as one predicate
+(`isADyingHouse(world, houseId)`): the behaviour test asserts its arranged world passes it,
+and the reachability test asserts walked worlds pass it. If the arrangement adds anything
+the predicate does not cover, the two halves no longer connect, and the pair proves less
+than the walk did. The headers say which property is checked where.
+
 ## Tests are living documentation
 
 > **A test's header is where this repo keeps its reasons. It is a first class
