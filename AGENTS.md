@@ -1661,6 +1661,9 @@ first two by reading the knowledge table, and only knows about sects.
 > *"I would have made it shorter, but I did not have the time."*
 > - Pascal
 
+**This holds for every word in the repo,** not only comments: docs, READMEs, test headers,
+commit messages and this file. Say a thing once, in the fewest words that keep it true.
+
 **Code should be self-documenting.** Name things so the code says what it does, and reserve
 comments for what the code cannot say: an exception, a measurement, a defect the shape was
 chosen against, an ordering that is load-bearing, a thing the next person will otherwise
