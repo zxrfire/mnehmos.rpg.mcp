@@ -742,6 +742,8 @@ export function describeDeath(
             return `${who}: carried ${CRIPPLING_UNTREATED_INJURIES} or more untreated meridian injuries. The meridians gave out.`;
         case 'starvation':
             return `${who}: starved to death after ${STARVATION_TURNS} turns without food.`;
+        case 'plague':
+            return `${who}: died of plague.`;
         case 'failed_breakthrough':
             return `${who}: died attempting a breakthrough. The meridians ruptured.`;
         case 'qi_deviation':

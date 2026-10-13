@@ -9,6 +9,7 @@ import { routineTime } from '../engine/world/npc-routines.js';
 import { spendAtWorldBoundaries, type ASpentWorldSpan } from './a-span-spent-at-world-boundaries.js';
 import { daoHeartConditions, tollConditionsFor } from '../server/consolidated/cultivation-support.js';
 import { PLAYER_ROLL_IDENTITY } from './encounters.js';
+import { activePlague } from '../engine/cultivation/plague.js';
 
 /** A transient read of existing accepted journey/object authority, never a new position store. */
 export interface PhysicalCarrier {
@@ -35,10 +36,13 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
         finishTurn?: boolean;
     } = {}): Promise<ASpentWorldSpan & { world: WorldReport }> {
     game.atHand = await prepareWorldClockForPreciseSpan(run, body);
+    const startingPlagueLines = [...game.settlePlagueAtTheBodyBoundary(), ...game.settleCaptainTroubleAtTheBodyBoundary()];
+    let captainStop: string | null = null;
     body = game.repos.cultivators.getById(body.id) ?? body;
+    const originalPlague = body.plague;
     run = game.repos.runs.getById(run.id) ?? run;
     const start = routineTime(game.atHand);
-    const world: WorldReport = { lines: [], structure: [] };
+    const world: WorldReport = { lines: startingPlagueLines, structure: [] };
     const actualGround = (elapsed: number): string | undefined => {
         const id = source(start + elapsed)?.locationId;
         const place = id ? game.atHand?.locations.find(place => place.id === id) : null;
@@ -87,10 +91,18 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
                 });
                 world.lines.push(...report.lines); world.structure.push(...report.structure);
                 events.afterBoundary?.();
+                world.lines.push(...game.settlePlagueAtTheBodyBoundary());
+                const captainLines = game.settleCaptainTroubleAtTheBodyBoundary();
+                world.lines.push(...captainLines);
+                if (captainLines.length) captainStop = captainLines.join(' ');
             },
             whatStopsTheSpan: () => {
                 const current = source();
-                return events.stop?.() ?? (!current ? 'The accepted physical carrier is no longer available.' : current.unavailable);
+                const fresh = game.repos.cultivators.getById(body.id);
+                const caught = fresh && activePlague(fresh, routineTime(game.atHand!));
+                return events.stop?.() ?? captainStop ?? (caught && (caught.outbreakId !== originalPlague?.outbreakId
+                    || caught.contractedOnDay !== originalPlague?.contractedOnDay) ? 'Plague has begun weakening your body.'
+                    : !current ? 'The accepted physical carrier is no longer available.' : current.unavailable);
             },
             groundAt: actualGround,
             sceneNow: actualScene,

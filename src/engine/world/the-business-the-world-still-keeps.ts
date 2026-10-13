@@ -8,6 +8,7 @@ import { noteLedgerPruned } from './a-fact-that-keeps-happening-is-one-row.js';
 import { factsWithData, referenceKeys, witnessHistoryWasPruned, witnessIndexFor } from './witness-reaction-index.js';
 import type { HistoricalFact } from './history.js';
 import type { WorldState } from './world-state.js';
+import { collectUnheldCheapObjects } from './an-unheld-cheap-object-is-forgotten.js';
 
 const SWEPT = new WeakMap<WorldState, number>();
 const routine = (fact: HistoricalFact): boolean => {
@@ -45,7 +46,9 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     if (!['publicMission', 'exchangeConsignment', 'exchangeReturn', 'exchangeSale', 'exchangeHandover',
         'auctionLot', 'auctionBid', 'auctionResult', 'capitalCompetition', 'capitalOccasion',
         'houseProgress', 'houseBusiness', 'openCompetition', 'actualBodyArrival', 'postRelief',
-        'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived', 'gateRegistration'].some(key => factsWithData(state, key).some(fact => fact.day < cutoff))) return;
+        'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived', 'gateRegistration'].some(key => factsWithData(state, key).some(fact => fact.day < cutoff))) {
+        collectUnheldCheapObjects(state); return;
+    }
     const exact = new Set(state.npcs.filter(person => isPlayerInvolved(state, person)).map(person => person.id));
     const alive = new Set(state.npcs.filter(person => person.status === 'alive').map(person => person.id));
     // Forgotten: a mundane event nobody alive took part in or witnessed.
@@ -86,6 +89,7 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
         for (const value of Object.values(fact.data)) if (typeof value === 'string') protectedObjects.add(value);
     }
     const stacks = new Map<string, number>();
+    collectUnheldCheapObjects(state, protectedObjects);
     const aliases = new Map<string, string>();
     const objects: WorldState['objects'] = [];
     let shortened = false;

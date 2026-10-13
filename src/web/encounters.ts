@@ -3,6 +3,7 @@ import { journeyTimeHasReached } from '../engine/world/places-on-the-way.js';
 import { whatLeadingDisciplesIsWorth } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { theirFaceMoves } from '../engine/world/what-a-face-is-worth.js';
 import { regardFor } from '../engine/cultivation/regard.js';
+import { getEncounter } from '../data/cultivation/encounters.js';
 /**
  * The turn loop's adapter onto `src/engine/encounters/`.
  */
@@ -727,12 +728,17 @@ export function recordEncounters(
      */
     repos?: CultivationRepos,
     /** Actual current run-relative hearing day for a streamed occurrence. Offsets stay intact. */
-    actualOccurrenceOnDay?: number
+    actualOccurrenceOnDay?: number,
+    plagueContact?: () => string[]
 ): RecordedEncounters {
     const learned: string[] = [];
     const met: string[] = [];
+    const bodilyLines: string[] = [];
 
     for (const occurrence of roll.occurrences) {
+        if (occurrence.entryId && getEncounter(occurrence.entryId)?.tags.includes('plague')) {
+            bodilyLines.push(...(plagueContact?.() ?? []));
+        }
         // The tie moves BEFORE anything is narrated, for the same reason a
         // knowledge grant does: phase 3 gets a licence to mention something the
         // database already holds, never the other way round.
@@ -787,7 +793,7 @@ export function recordEncounters(
 
     return {
         events: roll.occurrences.map(o => o.event),
-        lines: roll.occurrences.map(o => o.event.summary),
+        lines: [...roll.occurrences.map(o => o.event.summary), ...bodilyLines],
         structure: roll.occurrences.map(o =>
             `Day ${o.dayOffset}: ${o.kind.replace(/_/g, ' ')}, ${VALENCE_IN_WORDS[o.valence]} `
             + `(catalog row ${o.id}).`

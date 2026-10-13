@@ -196,7 +196,10 @@ export async function aShipSailsOn(
     asked: number | null,
     how: HowTheDaysAboardGo
 ): Promise<Execution> {
-    const left = Math.max(0, voyage.days - voyage.sailed);
+    const actualPosition = voyage.receiptId && game.atHand
+        ? shipPassengerAt(game.atHand,voyage.receiptId,routineTime(game.atHand)) : null;
+    const left = actualPosition ? Math.max(0,actualPosition.arrivalDay-routineTime(game.atHand!))
+        : Math.max(0, voyage.days - voyage.sailed);
     if (voyage.receiptId && game.atHand) {
         const actual = shipPassengerAt(game.atHand, voyage.receiptId, game.atHand.currentDay);
         if (!actual || actual.unavailable) return refused('engine.actualShipPassage', 'passage', factsForRefusal(

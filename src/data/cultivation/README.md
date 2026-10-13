@@ -11,6 +11,11 @@
 
 # Cultivation Content Catalogs
 
+The plague encounter is an inert tagged local report. Its actual recorder opens
+the outbreak and body mechanics decide infection, treatment and named outcomes.
+The report invents no casualty count, guaranteed cure or institutional response,
+and the catalog supplies no independent plague resistance or realm cutoff.
+
 `why-a-house-puts-a-party-on-the-road.ts` includes 贡行 (Tribute Carriage)
 and 扬威巡行 (Display of Strength) as ordinary sending reasons. Their real
 parent or counterpart requirements, service spans and hands enter the existing

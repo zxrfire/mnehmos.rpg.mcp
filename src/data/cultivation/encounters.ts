@@ -1627,13 +1627,13 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         simEventKind: 'npc_event',
         weight: 18,
         minOrdinal: 0,
-        maxOrdinal: 18,
+        maxOrdinal: MAX_ORDINAL,
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
-            'A plague has taken hold at {place}; {count} dead so far. A healing art or {loot} would stop it. {faction} has not sent anyone.',
-        tokens: ['place', 'count', 'loot', 'faction'],
-        tags: ['social', 'reputation', 'support', 'avoidable']
+            'People at {place} report plague. Those who still need food can contract it; medicine can treat a stricken person.',
+        tokens: ['place'],
+        tags: ['social', 'reputation', 'support', 'avoidable', 'plague']
     },
     {
         id: 'enc-robbed-in-seclusion',
@@ -1878,4 +1878,3 @@ export function fillSummary(entry: EncounterEntry, values: Record<string, string
         return value === undefined ? whole : String(value);
     });
 }
-

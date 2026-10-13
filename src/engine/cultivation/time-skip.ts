@@ -1,4 +1,5 @@
 import { applyCrossingConsequence } from './what-goes-wrong-at-a-realm-boundary.js';
+import { activePlague, plagueHealthCeiling, plagueHasBecomeFatal } from './plague.js';
 /**
  * The long-simulation primitive.
  *
@@ -613,6 +614,7 @@ export function* simulateTimeSkipParts(
         physique: cultivator.physique,
         name: cultivator.name,
         injuries,
+        plague: cultivator.plague,
         hp,
         maxHp: cultivator.maxHp,
         satiety,
@@ -625,7 +627,7 @@ export function* simulateTimeSkipParts(
     });
 
     const checkDeath = (): boolean => {
-        const cause = evaluateDeathConditions(
+        const cause = plagueHasBecomeFatal(snapshot(), startDay + elapsed) ? 'plague' : evaluateDeathConditions(
             snapshot(),
             hpDepletedBy ? { hpDepletedBy } : {}
         );
@@ -754,6 +756,7 @@ export function* simulateTimeSkipParts(
         }
 
         const absDay = startDay + elapsed;
+        if (plagueHasBecomeFatal(snapshot(), absDay) && checkDeath()) break;
 
         // 1. Breakthrough, if the accumulated progress permits one.
         const rankDay = Math.floor(absDay);
@@ -1132,8 +1135,11 @@ export function* simulateTimeSkipParts(
             hostileExposure = 0;
             chargedExposure = 0;
         }
-        const chunk = boundaries ? Math.min(naturalChunkEnd - elapsed,
-            requestedDays - elapsed, boundary === null ? Infinity : boundary - elapsed) : naturalChunk;
+        const plague = activePlague(snapshot(), absDay);
+        const plagueBoundary = plague ? Math.min(plague.endsOnDay,
+            plague.fatalOnDay ?? Infinity) - absDay : Infinity;
+        const chunk = Math.min(plagueBoundary, boundaries ? Math.min(naturalChunkEnd - elapsed,
+            requestedDays - elapsed, boundary === null ? Infinity : boundary - elapsed) : naturalChunk);
         const elapsedBefore = elapsed;
 
         // 3. Apply the chunk.
@@ -1260,7 +1266,7 @@ export function* simulateTimeSkipParts(
             const whole = Math.floor(mending);
             if (whole > 0) {
                 mending -= whole;
-                hp = Math.min(cultivator.maxHp, hp + whole);
+                hp = Math.min(plagueHealthCeiling(cultivator.maxHp, { realmOrdinal: ordinal, injuries, plague: cultivator.plague }, startDay + elapsed), hp + whole);
             }
         }
 

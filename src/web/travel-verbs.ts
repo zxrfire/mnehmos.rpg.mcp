@@ -1311,7 +1311,8 @@ export const travelVerbs = {
         const happened = footChecks?.roll ?? cutTo(enc, startDay, skip.simulatedDays);
         if (!footChecks) this.handBackWhatNeverHappened(applied.cultivator, enc, happened);
         const onTheWay = footChecks?.recorded ?? recordEncounters(
-            this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos
+            this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos, undefined,
+            () => this.plagueEncounterAtTheBody()
         );
 
         // THE ROAD'S NIGHTS AND ITS MEALS. Charged here rather than after the
@@ -3158,7 +3159,8 @@ export const travelVerbs = {
             const ground = worldLocationFor(this.atHand, atSea);
             if (ground) standWithTheTraveller(this, cultivator.id, meeting.npc.id, ground);
         }
-        const onTheWay = recordEncounters(this.knowledge, fed, applied.run.elapsedDays, happened, this.repos);
+        const onTheWay = recordEncounters(this.knowledge, fed, applied.run.elapsedDays, happened, this.repos,
+            undefined, () => this.plagueEncounterAtTheBody());
         const rationsLeft = everythingInThePouch(this.db, fed.id)
             .find(entry => entry.kind === 'ration')?.quantity ?? 0;
         const whatWasEaten = voyage

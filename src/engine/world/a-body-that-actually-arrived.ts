@@ -6,6 +6,7 @@ import type { WorldState } from './world-state.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { factsWithDataValue } from './witness-reaction-index.js';
 import { journeyTimeHasReached } from './places-on-the-way.js';
+import { spreadPlagueAfterArrival } from './plague-in-a-place.js';
 
 /** Snapshot of the actual accepted finite leg, not another current course. */
 export interface ActualArrivalCourse {
@@ -89,8 +90,10 @@ export function recordNpcActualArrival(world: WorldState, npc: NpcRecord, leg: N
             const accepted = arrivalCourseOfFact(fact);
             return accepted !== null && sameActualArrivalCourse(course, accepted);
         }) : undefined;
-    return recordActualBodyArrival(world, { id: npc.id, name: npc.name, alive: npc.status === 'alive',
+    const arrival = recordActualBodyArrival(world, { id: npc.id, name: npc.name, alive: npc.status === 'alive',
         locationId: npc.locationId }, course, onDay, cause);
+    if (arrival) spreadPlagueAfterArrival(world, npc.id, onDay, course.toLocationId);
+    return arrival;
 }
 
 /** An oath names its bodies and destination once; this reader asks only what actually arrived. */

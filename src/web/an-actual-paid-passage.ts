@@ -1,6 +1,8 @@
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { passageRunMoment, passageCheckFrame } from '../engine/world/passage-moment.js';
 import { projectActualPassengers } from './passengers-at-the-actual-clock.js';
+import { aidAtAnActualWaterContact } from '../engine/world/a-captain-aids-a-vessel-they-met.js';
+import { captainDecisionHeard } from './a-captain-sees-trouble-aboard.js';
 import { walkingRouteFrom } from '../engine/world/locations.js';
 import { roadVertexMoments } from '../engine/world/road-course.js';
 import { accountsComingDue } from './who-comes-to-settle-an-account.js';
@@ -43,16 +45,17 @@ export function paidCarrierSource(game: Pick<GameService, 'atHand'>, playerId: s
     if (roadReceiptId) {
         const actual = publicCarriagePassage(state, roadReceiptId, playerId, onDay);
         return actual ? { locationId: actual.locationId, endsOnDay: actual.leg.arrivalDay, boardedOnDay: actual.leg.departureDay,
-            vertexDates: actual.driver.activity?.admittedRoad
+            vertexDates: [actual.leg.departureDay,...(actual.driver.activity?.admittedRoad
                 ? roadVertexMoments(actual.driver.activity.admittedRoad.route,actual.leg.departureDay,
                     actual.leg.arrivalDay-actual.leg.departureDay,actual.driver.activity.admittedRoad.initialTravelDays)
                 : roadVertexMoments(walkingRouteFrom(state.locations,actual.leg.fromId,actual.leg.toId)??[],
-                    actual.leg.departureDay,actual.leg.arrivalDay-actual.leg.departureDay),
+                    actual.leg.departureDay,actual.leg.arrivalDay-actual.leg.departureDay))],
             boardingMoment: passageRunMoment(state, roadReceiptId), providedFoodUntilDay: actual.leg.arrivalDay, unavailable: null } : null;
     }
     if (sea?.receiptId) {
         const actual = shipPassengerAt(state, sea.receiptId, onDay);
         return actual ? { locationId: actual.locationId, endsOnDay: actual.arrivalDay, boardedOnDay: actual.boardedOnDay,
+            vertexDates:[actual.departureDay],
             boardingMoment: passageRunMoment(state, sea.receiptId),
             providedFoodUntilDay: Math.min(actual.arrivalDay, actual.boardedOnDay + sea.hullRationDays), unavailable: actual.unavailable } : null;
     }
@@ -89,12 +92,18 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     const waterId = trip.sea && state.locations.find(place => place.tags.includes('openWater'))?.id;
     const waterGround = trip.sea && source(start + Math.min(trip.days, .125))?.locationId;
     const justBoarded = trip.sea && shipPassengerAt(state, trip.sea.receiptId!, start)?.sailed === 0;
-    const meeting = binding?.airborne ? null : trip.sea && !justBoarded ? null : trip.sea && (waterGround || waterId)
+    const companion = binding?.airborne ? null : trip.sea && !justBoarded ? null : trip.sea && (waterGround || waterId)
         ? firstTravellerOnTheWater({ locations: state.locations, npcs: state.npcs,
             waterId: waterGround ?? waterId!, vesselId: shipPassengerAt(state, trip.sea.receiptId!, start)!.vesselId,
             onDay: start, days: trip.days, exceptIds })
         : firstTravellerOnTheWay({ locations: state.locations, npcs: state.npcs,
             fromId: from.id, toId: to.id, onDay: start, days: trip.days, exceptIds, overWater: binding?.overWater ?? false });
+    const sailing = trip.sea?.receiptId ? shipPassengerAt(state, trip.sea.receiptId, start) : null;
+    const crossing = sailing && firstTravellerOnTheWay({ locations: state.locations,
+        npcs: state.npcs.filter(person => !!person.activity?.vesselId && person.activity.vesselId !== sailing.vesselId),
+        fromId: sailing.fromId, toId: sailing.toId, onDay: start, days: trip.days, exceptIds, overWater: true,
+        journey: { sinceDay: sailing.departureDay, untilDay: sailing.arrivalDay } });
+    const meeting = crossing && (!companion || crossing.afterDays < companion.afterDays) ? crossing : companion;
     // Current physical position and the original window share one actual clock.
     // A caused changed-course receipt still reads the original accepted boarding.
     const frame = passageCheckFrame(source()!.boardingMoment ?? null, start, run.elapsedDays, trip.days);
@@ -145,7 +154,7 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
                     game.repos.cultivators.applyDeltas(body.id, { hp: adjusted.hp - fresh.cultivator.hp,
                         spiritStones: adjusted.spiritStones - fresh.cultivator.spiritStones });
                     const recorded = recordEncounters(game.knowledge, adjusted, fresh.run.elapsedDays,
-                        single, game.repos, fresh.run.elapsedDays);
+                        single, game.repos, fresh.run.elapsedDays, () => game.plagueEncounterAtTheBody());
                     lines.push(...recorded.lines); structure.push(...recorded.structure);
                     if (met.attacking) {
                         const engage = met.attacking.confrontation?.engageable === true;
@@ -227,9 +236,13 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
                     if (actual?.status === 'alive' && locationOnNpcJourney(game.atHand!.locations, actual, day)
                         === source()?.locationId) {
                         const place = game.atHand!.locations.find(row => row.id === source()!.locationId)!;
-                        if (binding?.overWater && binding.vesselId && isWater(place)
-                            && actual.activity?.vesselId !== binding.vesselId) {
+                        if (isWater(place) && actual.activity?.vesselId
+                            && actual.activity.vesselId !== (sailing?.vesselId ?? binding?.vesselId)) {
                             lines.push('Another real travelling vessel crosses this water.');
+                            if (trip.sea?.receiptId) {
+                                const answer = aidAtAnActualWaterContact(game.atHand!, trip.sea.receiptId, actual, day);
+                                if (answer) { const heard = captainDecisionHeard(game, answer); lines.push(heard); stop = heard; game.theWorldMoved(); }
+                            }
                             return;
                         }
                         const observer = game.repos.cultivators.getById(body.id);

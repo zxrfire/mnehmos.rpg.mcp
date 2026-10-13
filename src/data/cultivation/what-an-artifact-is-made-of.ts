@@ -19,10 +19,13 @@
  * part of the same species exists at two grades and the set behind a slot moves
  * on its own.
  *
- * The only two axes both catalogs carry are GRADE and whether the thing was
+ * The ordinary artifact slots read GRADE and whether the thing was
  * GROWN or TAKEN OFF SOMETHING. That is enough, and nothing here invents a
- * third: there is no element on a herb and no element on a beast material, so a
+ * element axis: there is no element on a herb and no element on a beast material, so a
  * fire slot would be a classification this file made up.
+ * Private alchemy now passes the exact ingredient id already named by its
+ * catalog formula through this same matcher/spender. It adds no ingredient
+ * catalog and does not narrow ordinary artifact substitutions.
  *
  * ── AND THE RECIPE TAKES WHAT IT NAMES ───────────────────────────────────
  *
@@ -70,6 +73,8 @@ export interface ASlot {
     readonly grade: TechniqueGrade;
     /** Where it has to have come from, or null where either will do. */
     readonly from: WhereAMaterialComesFrom | null;
+    /** Some recipes name an exact ingredient instead of allowing substitutes. */
+    readonly materialId?: string;
 }
 
 export type Recipe = readonly ASlot[];
@@ -184,11 +189,12 @@ export function whatWouldFill(slot: ASlot): readonly WhatTheCauldronIsBeingHande
     return everyIngredientThatIs({
         grade: slot.grade,
         ...(slot.from === null ? {} : { from: slot.from })
-    });
+    }).filter(row => slot.materialId === undefined || row.id === slot.materialId);
 }
 
 /** Whether this material is one of the things that fills this slot. */
 export function fillsTheSlot(slot: ASlot, materialId: string): boolean {
+    if (slot.materialId !== undefined && slot.materialId !== materialId) return false;
     const row = whatAnIngredientIs(materialId);
     if (row === null) return false;
     if (row.grade !== slot.grade) return false;

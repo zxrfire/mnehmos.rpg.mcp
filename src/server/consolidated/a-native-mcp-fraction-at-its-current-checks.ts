@@ -6,7 +6,7 @@ import type { WorldState } from '../../engine/world/world-state.js';
 import { routineTime } from '../../engine/world/npc-routines.js';
 import { journeyTimeHasReached } from '../../engine/world/places-on-the-way.js';
 import { encountersAtChecks } from '../../engine/encounters/window.js';
-import { advanceWorldForCultivator, worldForRun, type WorldAdvance } from '../state/cultivation-world.js';
+import { advanceWorldForCultivator, worldForRun, saveWorldForRun, type WorldAdvance } from '../state/cultivation-world.js';
 import type { CultivationRepos } from './cultivation-support.js';
 import { KnowledgeGate } from '../../web/knowledge.js';
 import { encounterInputFor, recordEncounters, withEncounterDeltas, PLAYER_ROLL_IDENTITY,
@@ -17,6 +17,10 @@ import { paidCarrierSource } from '../../web/an-actual-paid-passage.js';
 import { thePaidCarriageClaim } from '../../web/a-paid-carriage-on-the-road.js';
 import { recordedVoyage } from '../../web/a-ship-at-sea.js';
 import { drawFromPack, putBackWhatWasNotEaten, rationsHeld } from '../../web/rations-in-the-actual-pack.js';
+import { settlePlagueOnActualBody, plagueEncounterAtActualBody, type ActualPlagueServices } from '../../web/plague-on-the-actual-body.js';
+import { worldLocationFor } from '../../web/entities.js';
+import { betweenRoadEndpoints } from '../../web/a-road-stopped-partway.js';
+import { npcsWhereTheyStand } from '../../engine/world/where-in-a-place-somebody-is-standing.js';
 
 export interface McpCurrentFraction {
     repos: CultivationRepos;
@@ -62,8 +66,7 @@ export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFracti
         // The SQL body has already been projected by the native passenger boundary.
         // Preserve the caller's effective ground/ambient alias instead of replacing
         // it with a second independently chosen location id.
-        return { ...scene, providedFoodUntilDay: carrier?.providedFoodUntilDay === undefined ? undefined
-            : actualRun.elapsedDays + carrier.providedFoodUntilDay - routineTime(actualWorld) };
+        return { ...scene, providedFoodUntilDay: carrier?.providedFoodUntilDay };
     };
     let scene = await readScene(body, run);
     const portions: WorldAdvance[] = [];
@@ -76,6 +79,20 @@ export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFracti
         const liveBody = repos.cultivators.getById(body.id), liveRun = repos.runs.getById(run.id);
         if (!liveBody || !liveRun) throw new Error('A native MCP fraction lost its actual body or run.');
         return { body: liveBody, run: liveRun };
+    };
+    let plagueMoved = false;
+    const plagueServices: ActualPlagueServices = {
+        repos, db: repos.db,
+        get atHand() { return actualWorld; }, set atHand(state) { actualWorld = state; },
+        currentRun: () => ({ run: current().run, cultivator: current().body }),
+        worldPlaceOf: person => actualWorld && !betweenRoadEndpoints(repos.db, person)
+            ? worldLocationFor(actualWorld, person.location)?.id ?? null : null,
+        theWorldMoved: () => { plagueMoved = true; },
+        present: person => {
+            const placeId = plagueServices.worldPlaceOf(person);
+            const place = actualWorld?.locations.find(place => place.id === placeId);
+            return actualWorld && place ? npcsWhereTheyStand(actualWorld, place, person.standingIn, { id: person.id }) : [];
+        }
     };
     const inputNow = () => encounterInputFor({ repos, knowledge, world: actualWorld }, {
         seed: run.seed, startDay: run.elapsedDays, days, activity: input.activity,
@@ -114,7 +131,7 @@ export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFracti
                     spiritStones: changed.spiritStones - before.body.spiritStones });
                 const after = current();
                 const receipt = recordEncounters(knowledge, after.body, after.run.elapsedDays,
-                    single, repos, after.run.elapsedDays);
+                    single, repos, after.run.elapsedDays, () => plagueEncounterAtActualBody(plagueServices));
                 recorded.events.push(...receipt.events); recorded.lines.push(...receipt.lines);
                 recorded.structure.push(...receipt.structure); recorded.learned.push(...receipt.learned);
                 recorded.met.push(...receipt.met);
@@ -134,6 +151,7 @@ export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFracti
     scene = await readScene(initial.body, initial.run);
     const service: OrdinarySpanServices = {
         repos, worldEnabled: actualWorld !== null,
+        settlePlagueAtTheBodyBoundary: () => settlePlagueOnActualBody(plagueServices),
         get atHand() { return actualWorld; }, set atHand(state) { actualWorld = state; },
         drawFromPack: (person, span) => drawFromPack(repos.db, person, span),
         putBackWhatWasNotEaten: (person, skip) => putBackWhatWasNotEaten(repos.db, person, skip),
@@ -169,5 +187,6 @@ export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFracti
             const fresh = current();
             if (fresh.body.alive) scene = await readScene(fresh.body, fresh.run);
         }, stop: () => stop });
+    if (plagueMoved) await saveWorldForRun(current().run);
     return { ...spent, roll, recorded, portions, digest: nativeDigestOfThePortions(portions), worldError };
 }

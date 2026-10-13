@@ -68,6 +68,8 @@ export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries,
         return { activity: npc.activity, home: false, standingIn: redirect.standingIn ?? null, locationId: npc.locationId };
     }
     const ordinary = redirect ? redirect.previous : npc.activity;
+    if (ordinary?.kind === 'closed_door_cultivation' && ordinary.untilDay != null && now < ordinary.untilDay)
+        return { activity: ordinary, home: true, standingIn: ordinary.standingIn ?? null, locationId: npc.locationId };
     const journeyActivity = ordinary && state.locations && npcIsTravellingOnDay(state.locations, npc, now, routes)
         ? { ...ordinary, kind: 'travelling' as const } : ordinary;
     if (redirect && (redirect.returnDays === null || now < redirect.until + (redirect.returnDays ?? 0))) {

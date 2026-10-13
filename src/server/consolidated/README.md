@@ -2,6 +2,13 @@
 
 # The MCP tool surface
 
+Native cultivation reuses the held current-check adapter for fractions,
+susceptible bodies and enabled encounters. Its shared SQL plague reader uses
+the actual world clock, real local outbreaks and the existing graded medicine
+writer. Provided-food dates stay on that same grid. An immune person can hear
+a real plague report without catching it. The body projection exposes past
+contraction/treatment dates, withholding sampled future death or recovery.
+
 Provision pricing lives once in `what-a-ration-costs.ts`, a dependency leaf.
 `cultivation-manage` re-exports it for compatibility; `cultivation-mortal`
 reads the leaf directly. Native GameService import otherwise reached the eager
@@ -156,4 +163,3 @@ held native body span owns completion once. This option is not a tool-schema
 field or an action-router SessionContext callback.
 
 The proposed pill-dose extraction preserves PC consume_pill stream names, draw order, grade consequences, poisoning, stock debit and repository effects. Only pure dose/toxicity/restoration reads move into an engine leaf. An NPC adapter must consume finite actual medicine and persist its actual body effects; creating a second SQL cultivator for it is not an adapter. Preparation not yet runtime verified.
-

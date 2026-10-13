@@ -53,7 +53,8 @@ describe('an actual public carriage', () => {
         expect(locationOnNpcJourney(world.locations, driver, 100)).toBe(from.id);
         expect(locationOnNpcJourney(world.locations, driver, 101)).toBe(stop.id);
         expect(publicCarriageGround(world, world.objects[0]!, 101)).toBe(stop.id);
-        expect(locationOnNpcJourney(world.locations, passenger, 101)).toBe(stop.id);
+        expect(locationOnNpcJourney(world.locations, passenger, 101, undefined, undefined,
+            id => world.npcs.find(person => person.id === id))).toBe(stop.id);
         expect(publicCarriageGround(world, world.objects[0]!, quote.arrivalDay)).toBe(to.id);
         expect(publicCarriagePassage(world, receipt.id, passenger.id, 101)?.leg).toEqual({
             vesselId: quote.vesselId, driverId: quote.driverId, fromId: from.id, toId: to.id,

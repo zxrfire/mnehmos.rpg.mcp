@@ -1,3 +1,4 @@
+export { pouchQuantity, addToPouch, removeFromPouch } from '../../storage/cultivator-pouch.js';
 import { applyCrossingConsequence } from '../../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { evaluateDeathConditions, describeDeath } from '../../engine/cultivation/survival.js';
 import type { BreakthroughResult } from '../../schema/cultivation.js';
@@ -469,35 +470,6 @@ function allPouchRows(db: Database.Database, cultivatorId: string): PouchEntry[]
     }));
 }
 
-export function pouchQuantity(
-    db: Database.Database,
-    cultivatorId: string,
-    itemId: string
-): number {
-    const row = db
-        .prepare('SELECT quantity FROM cultivator_pouch WHERE holder_id = ? AND item_id = ?')
-        .get(cultivatorId, itemId) as { quantity: number } | undefined;
-    return row ? row.quantity : 0;
-}
-
-export function addToPouch(
-    db: Database.Database,
-    cultivatorId: string,
-    itemId: string,
-    kind: PouchItemKind,
-    quantity: number
-): void {
-    const amount = Math.max(0, Math.floor(quantity));
-    if (amount === 0) return;
-    db.prepare(`
-        INSERT INTO cultivator_pouch (holder_id, item_id, item_kind, quantity, updated_at)
-        VALUES (?, ?, ?, ?, datetime('now'))
-        ON CONFLICT(holder_id, item_id) DO UPDATE SET
-            quantity = cultivator_pouch.quantity + excluded.quantity,
-            updated_at = excluded.updated_at
-    `).run(cultivatorId, itemId, kind, amount);
-}
-
 /**
  * The best rated object this cultivator is carrying, or null for none.
  */
@@ -515,24 +487,6 @@ export function carriedArtifact(
         }
     }
     return best;
-}
-
-/** Remove stock. Returns false and writes nothing when the pouch is short. */
-export function removeFromPouch(
-    db: Database.Database,
-    cultivatorId: string,
-    itemId: string,
-    quantity: number
-): boolean {
-    const amount = Math.max(0, Math.floor(quantity));
-    if (amount === 0) return true;
-    const held = pouchQuantity(db, cultivatorId, itemId);
-    if (held < amount) return false;
-    db.prepare(`
-        UPDATE cultivator_pouch SET quantity = quantity - ?, updated_at = datetime('now')
-        WHERE holder_id = ? AND item_id = ?
-    `).run(amount, cultivatorId, itemId);
-    return true;
 }
 
 // AMBIENT QI
@@ -1392,6 +1346,9 @@ export function describeCultivator(
         kind: cultivator.kind,
         alive: cultivator.alive,
         deathCause: cultivator.deathCause,
+        // Report what this body has undergone, never its sampled future outcome.
+        plague: cultivator.plague ? { contractedOnWorldDay: cultivator.plague.contractedOnDay,
+            treatedOnWorldDay: cultivator.plague.treatedOnDay } : null,
         realm: {
             ordinal: cultivator.realmOrdinal,
             name: rankName(cultivator.realmOrdinal),

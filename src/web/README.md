@@ -1,6 +1,24 @@
 <!-- tier: 3 -->
 
+Plague contact and real clause/span boundaries read the actual SQL body.
+New infection interrupts a held span, and a death already due prevents another
+act or medicine purchase before the ordinary estate/run closer. The existing
+pill writer consumes a real dose; a working physician administers reachable
+paid medicine before its existing stay, with its actual fee and separate food.
+Tagged plague reports open a real local outbreak. They assert no fictional
+casualty count, guaranteed cure or institutional response. Immune players can
+encounter the report without becoming susceptible. Ordinary held spans use
+actual foreground contact and bounded world appointments, rather than treating
+distant people's daily activity deadlines as player ticks.
+
 # The Web Front Door
+
+Closed-door cultivation removes a world person's body from ordinary listeners.
+A local member asking for a known secluded person receives the actual remaining
+span. The absence reader resolves remembered names only for that answer; those
+rows never become visible scene occupants. Requests cannot reach that closed
+door through a remembered name. The same timed activity decides availability in
+the world layer.
 
 A senior completing ordinary duty with its named juniors earns the lecture's
 face and merit through `whatLeadingDisciplesIsWorth`, scaled by the actual
@@ -3747,8 +3765,24 @@ continues through the same settlement implementation.
 
 The captain request path uses its current physical course adapter, with
 scripted/component controls rather than a live-model prose acceptance claim.
-Environmental relief weighting remains unbuilt: no emergency
-goal, forecast storm, arrival healing or unexecuted NPC harm is inferred.
+An actual NPC operator can notice serious depleted-body wounds, active plague,
+or a current passage-blocking danger. Their duty, ties, obligations and character
+enter the ordinary decision path. An accepted response changes the actual hull's
+course: public returns, private sea returns, nearest reachable air landings or
+private road continuations. Ground holds retain the admitted road point and pace;
+water holds retain the actual ship and sailed distance. A real lifting or review
+can resume the course. Original boarding causes govern once-heard passenger
+notices, including holds whose new departure lies ahead. Notices interrupt the
+actual span, and the SQL body follows its real carrier without another fare.
+Active foreground fights preserve their operator and scene.
+
+An actually admitted other vessel can meet at a canonical dated water crossing.
+The contacted person's visible trouble enters the same duty decision. Aid spends
+an actual held dose through ordinary disposal and treatment authorities; agreeing
+to help supplies no cure. Physical public and owned sources expose held departure
+and admitted road vertex dates. These played controls cover actual bodies and
+receipts; they make no live-model prose acceptance claim. No forecast danger or
+unexecuted harm is inferred.
 
 NPC combat pricing reads the actual finite qi and held-art readiness map.
 Fresh numeric exchange receipts write each actual cast before mortality,

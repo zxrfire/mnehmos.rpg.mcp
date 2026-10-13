@@ -127,7 +127,7 @@ export const DEFAULT_CULTIVATION_DAYS = 30;
 export const TRAINING_DAYS = 7;
 
 /** Days a stretch of foraging consumes. */
-export const GATHERING_DAYS = 7;
+export { FORAGE_BASE_DAYS as GATHERING_DAYS } from '../data/cultivation/herbs.js';
 
 /**
  * Days a stretch of hunting consumes.
@@ -137,7 +137,7 @@ export const GATHERING_DAYS = 7;
  * reliable tell is absence - how far out the ordinary animals have gone -
  * and reading that is walking, not digging.
  */
-export const HUNTING_DAYS = 10;
+export { HUNTING_DAYS } from '../engine/world/hunting-a-spirit-beast.js';
 
 /** Days a burial takes when no duration is named. A week with a spade. */
 export const DEFAULT_BURIAL_DAYS = 7;

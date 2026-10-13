@@ -1,5 +1,9 @@
+import { finishPrivatePartyHunt } from './private-party-hunt.js';
 /** Cities receive dated house business; attendance is a stint, never a new home. */
 import { loadExchangeConsignment } from './wares-at-a-capital-exchange.js';
+import { collectPrivatePartyFinds } from './private-party-finds.js';
+import { privateWorkTerms, settlePrivateWork } from './private-paid-work.js';
+import { servePrivateWork } from './private-work-is-served.js';
 import { COMPETITION_CALENDARS } from '../../data/cultivation/competition-calendars.js';
 import { whatKindOfPlace } from '../../data/cultivation/regions.js';
 import { theDayItFallsIn } from './a-competition-anybody-may-enter.js';
@@ -45,6 +49,8 @@ import { DAO_HOUSES } from '../../data/cultivation/sects.js';
 import { withAttentionRecorded } from './who-is-given-attention-this-year.js';
 import { landSuccessfulHouseWork } from './the-world-changing-on-its-own.js';
 import { whoTheySayTookThemOn } from './a-house-expects-somebody-it-took-on.js';
+import { pathTo, reachThrough } from './architecture.js';
+import { theDoorKeysTheyActuallyCarry } from './door-key-custody.js';
 
 export interface CapitalOccasion {
     venueId: string;
@@ -56,7 +62,7 @@ export interface CapitalOccasion {
 }
 
 interface MissionLeg { fromId: string; toId: string; by: 'land' | 'ship' }
-type MissionService = { days: number } | { untilDay: number; eventDay: number };
+type MissionService = ({ days: number } | { untilDay: number; eventDay: number }) & { returnByDay?: number };
 type PublicRoutesInOnePass = Map<string, MissionLeg[] | null>;
 type PublicDockRead = { ports: LocationRecord[];
     lines: Map<string, { toId: string; days: number }[]> };
@@ -190,6 +196,11 @@ function listedRouteFare(state: WorldState, legs: readonly MissionLeg[], day: nu
     return fare;
 }
 
+function openPrivateWorkReference(state: WorldState, activity: NpcActivity | null | undefined): string | undefined {
+    const id = activity?.privateWorkId ?? activity?.passageCompany?.privateWorkId;
+    return id && state.obligations.some(word => word.id === id && word.status === 'open') ? id : undefined;
+}
+
 /** A mission's paid ship seats and ordinary walking legs share one dated itinerary. */
 function startPublicMissionLeg(state: WorldState, missionId: string,
     members: NpcRecord[], legs: readonly MissionLeg[], step: number, day: number,
@@ -200,6 +211,9 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
     const from = state.locations.find(place => place.id === leg.fromId);
     const to = state.locations.find(place => place.id === leg.toId);
     if (!from || !to) return false;
+    const purpose = `${typeof witnessIndexFor(state).byId.get(missionId)?.data.privateSponsorId === 'string'
+        ? 'Travelling' : 'On house business'} to ${to.name}.`;
+    const privateWordOf = (activity: NpcActivity | null | undefined) => openPrivateWorkReference(state, activity);
     if (!members.some(member => isPlayerInvolved(state, member))) {
         const line = leg.by === 'ship'
             ? publicShipLinesFrom(state, from.name, day, graph).find(row => row.to === to.name) : undefined;
@@ -213,7 +227,8 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
             const at = state.npcs.findIndex(n => n.id === member.id);
             state.npcs[at] = { ...setLocation(member, from.id, day), activity: {
                 kind: 'travelling', capitalMissionId: missionId, capitalMissionLeg: missionStep,
-                note: `On house business to ${to.name}.`, withIds: members.filter(n => n.id !== member.id).map(n => n.id),
+                privateWorkId: privateWordOf(member.activity),
+                note: purpose, withIds: members.filter(n => n.id !== member.id).map(n => n.id),
                 sinceDay: leaves, untilDay: due, fromLocationId: from.id, returnTo: to.id,
                 seaLaneId: line?.lane.id
             } };
@@ -235,6 +250,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
             if(result.kind==='waiting'){walking=true;onDue?.(result.actor.id,result.actor.activity!.untilDay!);}
             if(result.kind==='approaching'){
                 walking=true;state.npcs[at]={...result.actor,activity:{...result.actor.activity!,
+                    privateWorkId: privateWordOf(members.find(member => member.id === result.actor.id)?.activity),
                     capitalMissionLeg:missionStep,capitalMissionWaiting:true}};
                 onDue?.(result.actor.id,result.actor.activity!.untilDay!);
             }else if(result.kind==='ready')state.npcs[at]=result.actor;
@@ -266,6 +282,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
                 const at = state.npcs.findIndex(n => n.id === member.id);
                 state.npcs[at] = { ...setLocation(member, from.id, day), activity: { kind: 'out_with_a_party',
                     capitalMissionId: missionId, capitalMissionLeg: missionStep, capitalMissionWaiting: true,
+                    privateWorkId: privateWordOf(member.activity),
                     note: `Waiting for a ship to ${to.name}.`, withIds: members.filter(n => n.id !== member.id).map(n => n.id),
                     standingIn: station?.id ?? null, sinceDay: day, untilDay: departure } };
                 onDue?.(member.id, departure);
@@ -279,6 +296,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
                 const at = state.npcs.findIndex(n => n.id === member.id);
                 state.npcs[at] = { ...setLocation(member, from.id, day), activity: { kind: 'out_with_a_party',
                     capitalMissionId: missionId, capitalMissionLeg: missionStep, capitalMissionWaiting: true,
+                    privateWorkId: privateWordOf(member.activity),
                     note: `Waiting for a ship to ${to.name}.`, withIds: members.filter(n => n.id !== member.id).map(n => n.id),
                     standingIn: station?.id ?? null, sinceDay: day, untilDay: retry } };
                 onDue?.(member.id, retry);
@@ -297,12 +315,13 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
         const at = state.npcs.findIndex(n => n.id === member.id);
         const peers = members.filter(n => n.id !== member.id).map(n => n.id);
         const moved = quote
-            ? onSponsoredPublicPassage(state, member, quote, `On house business to ${to.name}.`, peers)
-            : { ...member, activity: { kind: 'travelling' as const, note: `On house business to ${to.name}.`,
+            ? onSponsoredPublicPassage(state, member, quote, purpose, peers)
+            : { ...member, activity: { kind: 'travelling' as const, note: purpose,
                 withIds: peers, fromLocationId: from.id, returnTo: to.id, sinceDay: day, untilDay: due } };
         if (!moved?.activity) return false;
         state.npcs[at] = { ...setLocation(moved, to.id, day), activity: {
-            ...moved.activity, capitalMissionId: missionId, capitalMissionLeg: missionStep } };
+            ...moved.activity, capitalMissionId: missionId, capitalMissionLeg: missionStep,
+            ...(!moved.activity.passageCompany?.privateWorkId ? { privateWorkId: privateWordOf(member.activity) } : {}) } };
         onDue?.(member.id, due);
     }
     if (quote) recordPublicPassage(state, quote, day, from.id, members.map(n => n.id),undefined,undefined,
@@ -311,16 +330,20 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
 }
 
 /** A house mission uses the same paid outward, service and home itinerary. */
-export function sendHouseMission(state: WorldState, house: FactionRecord, venue: LocationRecord,
+export function sendHouseMission(state: WorldState, house: FactionRecord | null, venue: LocationRecord,
     party: NpcRecord[], reason: string, day: number, service: MissionService,
     onDue?: (memberId: string, day: number) => void, graph?: RouteQueries,
-    routes?: PublicRoutesInOnePass, business?: Record<string, string | number | boolean | null>): HistoricalFact | null {
-    if (!house.seatLocationId || !party.length) return null;
+    routes?: PublicRoutesInOnePass, business?: Record<string, string | number | boolean | null>,
+    personalSponsor?: NpcRecord): HistoricalFact | null {
+    if (!party.length || !house && !personalSponsor) return null;
     graph ??= routeQueriesFor(state.locations);
+    const originId = personalSponsor?.locationId
+        ? exteriorGroundOfDeparture(state, personalSponsor.locationId, graph.places)?.id : house?.seatLocationId;
+    if (!originId) return null;
     routes ??= routesOnThisGraph(state, graph);
-    const route = publicRoute(state, house.seatLocationId, venue.id, graph, routes);
+    const route = publicRoute(state, originId, venue.id, graph, routes);
     if (!route) return null;
-    const purse = Number(house.resources.spirit_stones ?? 0);
+    const purse = personalSponsor ? personalSponsor.spiritStones : Number(house!.resources.spirit_stones ?? 0);
     if (listedRouteFare(state, route, day, party.length, graph)
         + listedRouteFare(state, homeRoute(route), day, party.length, graph) > purse) return null;
     const departureGround = state.locations.find(place => place.id === route[0]?.fromId);
@@ -335,7 +358,7 @@ export function sendHouseMission(state: WorldState, house: FactionRecord, venue:
     const initialWalk = approaches.some(read => read.kind === 'local_walk') ? LOCAL_WALK_DAYS : 0;
     const considered: PublicPassageQuote[] = [];
     const batch: Parameters<typeof earliestQuotedPublicPassage>[8] = {};
-    const lifespan = Math.min(...party.map(member => member.cultivation.lifespanEndsOnDay));
+    const lifespan = Math.min(...party.map(member => member.cultivation.lifespanEndsOnDay), service.returnByDay ?? Infinity);
     const outwardDeadline = 'eventDay' in service ? Math.min(service.eventDay, lifespan)
         : lifespan - service.days;
     const arrived = quotedRoute(state, route, day, party.length, considered, outwardDeadline, graph, initialWalk,batch,party);
@@ -347,12 +370,18 @@ export function sendHouseMission(state: WorldState, house: FactionRecord, venue:
         : listedRouteFare(state, route, day, party.length, graph)
             + listedRouteFare(state, homeRoute(route), serviceEnd, party.length, graph);
     if (fare > purse) return null;
-    house.resources.spirit_stones = purse - fare;
-    const dispatch = appendWorldFact(state, makeFact({ day, kind: 'gathering', visibility: 'faction',
-        summary: `${house.name} sent ${party.length} to ${venue.name} for ${reason}.`,
-        locationId: house.seatLocationId, factionIds: [house.id],
+    if (personalSponsor) {
+        const at = state.npcs.findIndex(person => person.id === personalSponsor.id);
+        if (at < 0 || !isTheWorldsToMove(personalSponsor)) return null;
+        state.npcs[at] = { ...state.npcs[at]!, spiritStones: purse - fare };
+    } else house!.resources.spirit_stones = purse - fare;
+    const dispatch = appendWorldFact(state, makeFact({ day, kind: 'gathering', visibility: personalSponsor ? 'secret' : 'faction',
+        summary: personalSponsor ? `${personalSponsor.name} set out with ${party.length} to ${venue.name} for ${reason}.`
+            : `${house!.name} sent ${party.length} to ${venue.name} for ${reason}.`,
+        locationId: originId, factionIds: personalSponsor ? [] : [house!.id],
         actors: party.map(n => ({ id: n.id, name: n.name, role: business?.leaderId === n.id ? 'leader' : 'delegate' })),
-        data: { ...business, capitalMission: !business, publicMission: true, destinationId: venue.id, reason,
+        data: { ...business, ...(personalSponsor ? { privateSponsorId: personalSponsor.id } : {}),
+            capitalMission: !business, publicMission: true, destinationId: venue.id, reason,
             publicRoute: JSON.stringify(route), publicServiceEnd: serviceEnd,
             publicServiceDays: 'days' in service ? service.days : null,
             publicReservations: JSON.stringify(considered.map(leg => ({
@@ -362,8 +391,8 @@ export function sendHouseMission(state: WorldState, house: FactionRecord, venue:
             publicFareStones: fare, plannedReturnDay: home } }), { recur: false });
     const ready = party.map(member => state.npcs.find(n => n.id === member.id)!);
     if (!startPublicMissionLeg(state, dispatch.id, ready, route, 0, day, onDue, 0, graph, scene))
-        throw new Error(`The paid route from ${house.seatLocationId} to ${venue.id} could not begin.`);
-    if (!business) for (const member of party) {
+        throw new Error(`The paid route from ${originId} to ${venue.id} could not begin.`);
+    if (!business && !personalSponsor) for (const member of party) {
         const at = state.npcs.findIndex(n => n.id === member.id);
         loadExchangeConsignment(state, state.npcs[at]!, day, graph);
     }
@@ -464,12 +493,24 @@ function advanceMissionStep(state: WorldState, personId: string, day: number,
     const home = homeRoute(route);
     const n = route.length;
     const step = activity.capitalMissionLeg ?? 0;
-    if (!mission.factionIds[0] || !n) return false;
-    const members = state.npcs.filter(npc => npc.status === 'alive'
+    if ((!mission.factionIds[0] && typeof mission.data.privateSponsorId !== 'string') || !n) return false;
+    let members = state.npcs.filter(npc => npc.status === 'alive'
         && npc.activity?.capitalMissionId === mission.id && npc.activity.capitalMissionLeg === step
         && npc.activity.untilDay != null && npc.activity.untilDay <= day);
     if (!members.length) return false;
     if (!graph || graph.locations !== state.locations) graph = routeQueriesFor(state.locations);
+    const expectedEndpoint = step < n ? route[step]?.toId
+        : step === n ? mission.data.destinationId : home[step-n-1]?.toId;
+    if (activity.kind === 'travelling' && activity.vesselId && typeof expectedEndpoint === 'string'
+        && activity.returnTo !== expectedEndpoint) {
+        for (const member of members) {
+            const at = state.npcs.findIndex(person => person.id === member.id);
+            const reached = locationOnNpcJourney(state.locations, member, day, graph);
+            state.npcs[at] = { ...(isTheWorldsToMove(member) ? setLocation(member,reached,day) : member),activity: { ...member.activity!,
+                kind:'their_own_business',untilDay:null,note:'The carrier reached another endpoint; the original undertaking is waiting.' } };
+        }
+        return false;
+    }
     if (activity.capitalMissionWaiting) {
         const returning = step > n;
         const legs = returning ? home : route;
@@ -479,11 +520,19 @@ function advanceMissionStep(state: WorldState, personId: string, day: number,
         return true;
     }
     if (activity.kind === 'travelling') {
-        for (const member of members) recordNpcActualArrival(state, member, member.activity!, day);
         const reached=graph.places.get(activity.returnTo ?? '');
         if (reached && mission.data.houseBusiness === 'progress') recordHouseProgress(state,mission,members,reached,day);
     }
     if (step < n - 1) {
+        if (activity.kind === 'travelling') {
+            const origin = route[step + 1]!.fromId;
+            for (const member of members) {
+                const at = state.npcs.findIndex(row => row.id === member.id);
+                state.npcs[at] = setLocation(state.npcs[at]!, origin, day);
+            }
+            for (const member of members) recordNpcActualArrival(state, state.npcs.find(row => row.id === member.id)!, member.activity!, day);
+            members = members.map(member => state.npcs.find(row => row.id === member.id)!);
+        }
         startPublicMissionLeg(state, mission.id, members, route, step + 1, day, onDue, step + 1, graph);
         return true;
     }
@@ -497,24 +546,42 @@ function advanceMissionStep(state: WorldState, personId: string, day: number,
                     kind: 'travelling', note: `Arrived at ${venue.name}.`, withIds: [],
                     fromLocationId: venue.id, returnTo: venue.id, sinceDay: day, untilDay: day } };
             }
+            for (const member of members) recordNpcActualArrival(state, state.npcs.find(row => row.id === member.id)!, member.activity!, day);
             return false;
         }
         const untilDay = typeof mission.data.publicServiceDays === 'number'
             ? day + mission.data.publicServiceDays
             : Math.max(day + 1, Number(mission.data.publicServiceEnd ?? day + 1));
+        const blocked = privateMissionObstacle(state, mission, members, venue, day);
+        if (blocked) recordPrivateMissionObstacle(state, mission, members, venue, day, blocked.reason);
+        const groundId = blocked ? state.locations.find(place => place.id === blocked.stoppedAt)?.parentId ?? venue.id : venue.id;
         for (const member of members) {
             const at = state.npcs.findIndex(npc => npc.id === member.id);
-            state.npcs[at] = { ...setLocation(member, venue.id, day), activity: {
+            state.npcs[at] = { ...setLocation(member, groundId, day), activity: {
                 kind: 'out_with_a_party', capitalMissionId: mission.id, capitalMissionLeg: n,
-                note: `On ${mission.data.reason} at ${venue.name}.`,
+                privateWorkId: openPrivateWorkReference(state, member.activity),
+                note: blocked ? `Stopped at the entrance to ${venue.name}: ${blocked.reason}` : `On ${mission.data.reason} at ${venue.name}.`,
                 withIds: members.filter(npc => npc.id !== member.id).map(npc => npc.id),
                 sinceDay: day, untilDay } };
             onDue?.(member.id, untilDay);
         }
+        for (const member of members) recordNpcActualArrival(state, state.npcs.find(row => row.id === member.id)!, member.activity!, day);
+        members = members.map(member => state.npcs.find(row => row.id === member.id)!);
         receiveMissionParty(state, mission, members, venue, day);
+        serveMissionPrivateWork(state, mission, day);
         return true;
     }
     if (step === n || step < n * 2) {
+        if (activity.kind === 'travelling') {
+            const origin = home[step - n]!.fromId;
+            for (const member of members) {
+                const at = state.npcs.findIndex(row => row.id === member.id);
+                state.npcs[at] = setLocation(state.npcs[at]!, origin, day);
+            }
+            for (const member of members) recordNpcActualArrival(state, state.npcs.find(row => row.id === member.id)!, member.activity!, day);
+            members = members.map(member => state.npcs.find(row => row.id === member.id)!);
+        }
+        if (step === n) serveMissionPrivateWork(state, mission, day);
         const next = step === n ? 0 : step - n;
         const returning = step === n ? finishMissionWork(state, mission, members, day) : members;
         if (!returning.length) return false;
@@ -535,13 +602,29 @@ function advanceMissionStep(state: WorldState, personId: string, day: number,
         const paid = mission.data.boardEntryId ? whatFinishingBoardWorkPays(current,
             { ...activity, untilDay: Number(mission.data.plannedReturnDay) },
             factsWithDataValue(state,'missionWork',mission.id).some(fact => fact.data.finished === true)) ?? current : current;
+        const privateWork = typeof mission.data.privateWorkId === 'string'
+            ? state.obligations.find(term => term.id === mission.data.privateWorkId && term.status === 'open') : null;
         state.npcs[at] = { ...setLocation(paid, homeId, day), activity: {
-            kind: mission.data.boardEntryId ? 'travelling' : 'out_with_a_party', note: `Returned from ${mission.data.reason}.`,
+            kind: mission.data.boardEntryId || mission.data.privateSponsorId ? 'travelling' : 'out_with_a_party', note: `Returned from ${mission.data.reason}.`,
             withIds: members.filter(npc => npc.id !== member.id).map(npc => npc.id),
             sinceDay: mission.day, untilDay: day, returnTo: homeId,
-            ...(mission.data.boardEntryId ? { fromLocationId: homeId } : {}) } };
+            ...(mission.data.boardEntryId || mission.data.privateSponsorId ? { fromLocationId: homeId } : {}),
+            privateWorkId: openPrivateWorkReference(state, current.activity),
+            ...(privateWork ? { kind: 'their_own_business', privateWorkId: privateWork.id,
+                sinceDay: day, untilDay: privateWork.dueOnDay } : {}) } };
     }
+    for (const member of members) recordNpcActualArrival(state, state.npcs.find(row => row.id === member.id)!, member.activity!, day);
+    serveMissionPrivateWork(state, mission, day);
     return false;
+}
+
+function serveMissionPrivateWork(state: WorldState, mission: HistoricalFact, day: number): void {
+    const term = state.obligations.find(word => word.id === mission.data.privateWorkId && word.status === 'open');
+    const offer = term && witnessIndexFor(state).byId.get(term.triggeringEventId ?? '');
+    const terms = offer && privateWorkTerms(offer);
+    if (!term || !offer || !terms) return;
+    servePrivateWork(state, offer, term, terms, day);
+    settlePrivateWork(state, day, undefined, new Set([term.holderId]));
 }
 
 /** The geography reader includes capitals whose catalog kind is a market town. */
@@ -704,19 +787,34 @@ function receiveMissionParty(state: WorldState, mission: HistoricalFact, members
 }
 
 function finishMissionWork(state: WorldState, mission: HistoricalFact, members: NpcRecord[], day: number): NpcRecord[] {
-    if (typeof mission.data.boardEntryId !== 'string') return members;
-    const reason = theReasonBehind(mission.data.boardEntryId);
-    const house = state.factions.find(row => row.id === mission.factionIds[0]);
+    if (mission.data.privateHunt === true) {
+        const venue = state.locations.find(place => place.id === mission.data.destinationId);
+        return venue ? finishPrivatePartyHunt(state, mission, members, venue, day) : members;
+    }
+    const privateVenture = mission.data.privateVenture === true;
+    if (typeof mission.data.boardEntryId !== 'string' && !privateVenture) return members;
+    const reason = privateVenture ? getSendingReason(String(mission.data.privateReasonId))
+        : theReasonBehind(String(mission.data.boardEntryId));
+    const house = privateVenture ? state.npcs.find(row => row.id === mission.data.privateSponsorId)
+        : state.factions.find(row => row.id === mission.factionIds[0]);
     const venue = state.locations.find(place => place.id === mission.data.destinationId);
     if (!reason || !house || !venue) return members;
+    if (privateVenture) {
+        if (factsWithDataValue(state, 'privateVentureBlocked', mission.id).length) return members;
+        const blocked = privateMissionObstacle(state, mission, members, venue, day);
+        if (blocked) {
+            recordPrivateMissionObstacle(state, mission, members, venue, day, blocked.reason);
+            return members;
+        }
+    }
     const posting = postingFor({ reason, house, locationId: venue.id, pitchOrdinal: Number(mission.data.pitchOrdinal),
         hands: members.length });
     const result = resolveSending({ posting: { ...posting, days: Number(mission.data.dutyDays) },
         party: members.map(member => ({ id: member.id, name: member.name, ordinal: member.cultivation.realmOrdinal })),
         departsOnDay: day - Number(mission.data.dutyDays), location: venue,
         rng: forStream(state.seed, 'board-mission-work', mission.id) });
-    appendWorldFact(state, makeFact({ day, kind: reason.factKind, visibility: 'faction', locationId: venue.id,
-        factionIds: [house.id], causes: [mission.id], actors: members.map(member => ({ id: member.id, name: member.name,
+    appendWorldFact(state, makeFact({ day, kind: reason.factKind, visibility: privateVenture ? 'secret' : 'faction', locationId: venue.id,
+        factionIds: privateVenture ? [] : [house.id], causes: [mission.id], actors: members.map(member => ({ id: member.id, name: member.name,
             role: result.lost.some(lost => lost.id === member.id) ? 'did not return from the work' : 'worked' })),
         summary: `${house.name}'s ${reason.name.toLowerCase()} ${result.outcome === 'finished' ? 'was completed' : 'was not completed'}.`,
         data: { missionWork: mission.id, finished: result.outcome === 'finished' } }), { recur: false });
@@ -725,7 +823,10 @@ function finishMissionWork(state: WorldState, mission: HistoricalFact, members: 
         state.npcs[at] = theWorldLoses(state.npcs[at]!, day, `Lost on ${reason.name.toLowerCase()}.`) ?? state.npcs[at]!;
     }
     const returned = members.filter(member => !result.lost.some(lost => lost.id === member.id));
-    if (result.outcome === 'finished' && mission.data.houseBusiness === 'experience') {
+    if (privateVenture && result.outcome === 'finished')
+        collectPrivatePartyFinds(state, venue.id, returned, typeof mission.data.leaderId === 'string' ? mission.data.leaderId : null,
+            day, mission.id, mission.data.privateElderExpedition === true);
+    if (result.outcome === 'finished' && (mission.data.houseBusiness === 'experience' || privateVenture)) {
         const senior = returned.find(member => member.id === mission.data.leaderId);
         if (senior) for (const disciple of returned.filter(member => member.id !== senior.id)) {
             const at = state.npcs.findIndex(person => person.id === disciple.id);
@@ -748,6 +849,26 @@ function finishMissionWork(state: WorldState, mission: HistoricalFact, members: 
         }
     }
     return returned.map(member => state.npcs.find(person => person.id === member.id)!);
+}
+
+function privateMissionObstacle(state: WorldState, mission: HistoricalFact, members: NpcRecord[],
+    venue: LocationRecord, day: number) {
+    if (mission.data.privateVenture !== true) return null;
+    const path = pathTo(state.locations, venue.id);
+    for (const member of members) {
+        const access = reachThrough(path, { realmOrdinal: member.cultivation.realmOrdinal, onDay: day,
+            keyIds: theDoorKeysTheyActuallyCarry(state.objects, member.id) });
+        if (access.stoppedAt !== null) return access;
+    }
+    return null;
+}
+
+function recordPrivateMissionObstacle(state: WorldState, mission: HistoricalFact, members: NpcRecord[],
+    venue: LocationRecord, day: number, reason: string): void {
+    appendWorldFact(state, makeFact({ day, kind: 'opportunity', visibility: 'secret', locationId: venue.id,
+        causes: [mission.id], actors: members.map(person => ({ id: person.id, name: person.name, role: 'stopped' })),
+        summary: `The private expedition could not enter ${venue.name}. ${reason}`,
+        data: { privateVentureBlocked: mission.id, missionWork: mission.id, finished: false } }), { recur: false });
 }
 
 function rewardMissionLeadership(state: WorldState, mission: HistoricalFact, members: NpcRecord[], day: number): void {

@@ -1,6 +1,15 @@
 import { aRetainedMemberActuallyServed, aRetainedMemberActuallyReturned, stillOnThisRetainedSending,
     stillOnAnActualRetainedReturn, actualRetainedReturnDay, retainedAirReturnBoundary, continueActualRetainedAirReturns } from './a-retained-sending-has-actually-served.js';
 import { initializeMetricGround } from './the-metric-ground-under-a-journey.js';
+import { closedDoorCultivationThisYear, inClosedDoorCultivation, settleClosedDoorCultivation } from './closed-door-cultivation.js';
+import { privateVenturesThisYear } from './private-ventures.js';
+import { closePeopleThisYear } from './close-people-go-together.js';
+import { plagueAppointments, plagueOutbreaksThisYear, withPlagueAppointments } from './plague-in-a-place.js';
+import { privatePaidWorkThisYear, settlePrivateWork, privateWorkAppointment } from './private-paid-work.js';
+import { publicCaptainsAtTheirAppointments,publicCaptainHoldAppointments } from './a-public-captain-protects-their-passengers.js';
+import { captainWaterAppointments } from './a-captain-aids-a-vessel-they-met.js';
+import { nativePilotsAtTheirAppointments } from './a-native-pilot-answers-trouble.js';
+import { routineTime } from './npc-routines.js';
 import { settleWorldAirTravellers } from './an-air-course-in-the-world.js';
 import { recordNpcActualArrival } from './a-body-that-actually-arrived.js';
 import {continueActualHouseAirShuttle,beginHouseSendingAssembly,settleHouseShuttleOnContact} from './a-house-party-takes-an-actual-air-shuttle.js';
@@ -462,6 +471,7 @@ export type PressureKind =
     | 'vein_given_up'
     | 'vein_granted'
     | 'elder_died'
+    | 'plague'
     | 'killing'
     | 'ruin_opened'
     | 'opportunity_taken'
@@ -615,7 +625,13 @@ function pressureTasksForYear(state: WorldState, year: number,
     const peopleWalkOut = opts.peopleWalkOutOnTheirOwnAccount ?? true;
     const completed = new Set(cursor.completed);
     const tasks: { key: string; day: number; checkpoint?: boolean; run: (day: number) => void }[] = [];
-    let schedulePostingDay: (key: string, day: number) => void = () => {};
+    let schedulePostingDay: (key: string, day: number, run?: () => void) => void = () => {};
+    for (const appointment of plagueAppointments(state, year * DAYS_PER_YEAR, (year + 1) * DAYS_PER_YEAR))
+        tasks.push({ key: appointment.key, day: appointment.day, run: appointment.run });
+    for (const appointment of captainWaterAppointments(state, year*DAYS_PER_YEAR, (year+1)*DAYS_PER_YEAR))
+        tasks.push({key:appointment.key,day:appointment.day,run:appointment.run});
+    for (const appointment of publicCaptainHoldAppointments(state,year*DAYS_PER_YEAR,(year+1)*DAYS_PER_YEAR))
+        tasks.push({key:appointment.key,day:appointment.day,run:appointment.run});
     let appointmentRoutes:RouteQueries|undefined;
     const selectedForAFeeder = new Set(factsWithDataValue(state, 'feederSelection', true)
         .map(f => f.data.selectedId).filter((id): id is string => typeof id === 'string'));
@@ -623,9 +639,26 @@ function pressureTasksForYear(state: WorldState, year: number,
         if (due.day >= year * DAYS_PER_YEAR && due.day < (year + 1) * DAYS_PER_YEAR)
             tasks.push({ key: due.key, day: due.day, checkpoint: true, run: () => {} });
     }
+    for (const word of state.obligations) {
+        if (word.status !== 'open' || !word.tags.includes('private-paid-work') || word.dueOnDay == null) continue;
+        if (word.dueOnDay >= year * DAYS_PER_YEAR && word.dueOnDay < (year + 1) * DAYS_PER_YEAR)
+            tasks.push({ key: `private-work-deadline:${word.id}`, day: word.dueOnDay, checkpoint: true, run: () => {} });
+    }
     for (const npc of state.npcs) {
         if (!isTheWorldsToMove(npc) || npc.activity?.untilDay == null) continue;
+        const privateDue = privateWorkAppointment(state, npc);
+        if (privateDue != null) {
+            const due = privateDue;
+            if (due >= year * DAYS_PER_YEAR && due < (year + 1) * DAYS_PER_YEAR)
+                tasks.push({ key: `private-work:${npc.id}:${due}`, day: due, checkpoint: true, run: () => {} });
+            continue;
+        }
         if (!isPlayerInvolved(state, npc)) continue;
+        if (npc.activity.kind === 'closed_door_cultivation') {
+            const due = npc.activity.untilDay;
+            if (due >= year * DAYS_PER_YEAR && due < (year + 1) * DAYS_PER_YEAR)
+                tasks.push({ key: `closed-door:${npc.id}:${due}`, day: due, checkpoint: true, run: () => {} });
+        }
         if (npc.activity.capitalMissionId) {
             const due = npc.activity.untilDay;
             if (due >= year * DAYS_PER_YEAR && due < (year + 1) * DAYS_PER_YEAR)
@@ -834,6 +867,8 @@ function pressureTasksForYear(state: WorldState, year: number,
     tasks.push({ key: 'area-statuses', day: year * 365 + 65, run: (onDay: number) => {
         applyAreaStatuses(state, year, onDay);
     } });
+    tasks.push({ key: 'plague-outbreaks', day: year * DAYS_PER_YEAR + 65.5,
+        run: day => plagueOutbreaksThisYear(state, year, day) });
     tasks.push({ key: 'resettlement', day: year * 365 + 70, run: (onDay: number) => {
         applyResettlement(state, year, onDay);
     } });
@@ -884,6 +919,21 @@ function pressureTasksForYear(state: WorldState, year: number,
     } });
     tasks.push({ key: 'advancement', day: year * 365 + 120, run: (onDay: number) => {
         applyAdvancement(state, year, onDay, opts.visitingPresence);
+    } });
+    tasks.push({ key: 'closed-door-entry', day: year * DAYS_PER_YEAR + 122, run: day => {
+        for (const id of closedDoorCultivationThisYear(state, year, day)) {
+            const due = state.npcs.find(person => person.id === id)?.activity?.untilDay;
+            if (due != null) schedulePostingDay(`closed-door:${id}:${due}`, due);
+        }
+    } });
+    tasks.push({ key: 'private-ventures', day: year * DAYS_PER_YEAR + 20.5, run: day => {
+        privateVenturesThisYear(state, year, day, (id, due) => schedulePostingDay(`capital-mission:${id}:${due}`, due));
+    } });
+    tasks.push({ key: 'private-paid-work', day: year * DAYS_PER_YEAR + 40.5, run: day => {
+        privatePaidWorkThisYear(state, year, day, (id, due) => schedulePostingDay(`private-work:${id}:${due}`, due));
+    } });
+    tasks.push({ key: 'close-private-company', day: year * DAYS_PER_YEAR + 60.5, run: day => {
+        closePeopleThisYear(state, year, day, (id, due) => schedulePostingDay(`capital-mission:${id}:${due}`, due));
     } });
     tasks.push({ key: 'dao-ground-stints', day: year * 365 + 121, run: (onDay: number) => {
         applyDaoGroundStints(state, onDay);
@@ -1037,15 +1087,15 @@ function pressureTasksForYear(state: WorldState, year: number,
     tasks.sort((a, b) => a.day - b.day);
     const scheduled = new Set(tasks.map(task => task.key));
     let nextTask = 0;
-    schedulePostingDay = (key: string, day: number) => {
+    schedulePostingDay = (key: string, day: number, run?: () => void) => {
         const personId = key.slice(key.indexOf(':') + 1, key.lastIndexOf(':'));
         const person = state.npcs.find(npc => npc.id === personId);
-        if (person && !isPlayerInvolved(state, person)) return;
+        if (person && !isPlayerInvolved(state, person) && !key.startsWith('private-work:') && !key.startsWith('plague-')) return;
         if (day < year * DAYS_PER_YEAR || day > yearEndsOn
             || completed.has(key) || scheduled.has(key)) return;
         let at = nextTask;
         while (at < tasks.length && tasks[at]!.day <= day) at++;
-        tasks.splice(at, 0, { key, day, checkpoint: true, run: () => {} });
+        tasks.splice(at, 0, { key, day, checkpoint: run === undefined, run: run ?? (() => {}) });
         scheduled.add(key);
     };
     return {
@@ -1058,9 +1108,16 @@ function pressureTasksForYear(state: WorldState, year: number,
             if (completed.has(task.key) || task.day < fromDay || task.day > toDay) continue;
             // Consecutive empty appointments at one moment share their completed sweep.
             if (!task.checkpoint || checkpointDay !== task.day) {
-                bringHomeWhoeverIsDue(state, task.day, schedulePostingDay);
-                finishStructuralRecoveries(state, task.day);
-                resolveWithPlayerPresent(state, opts.visitingPresence, () => task.run(task.day), task.day);
+                withPlagueAppointments(state, appointment => schedulePostingDay(appointment.key, appointment.day, appointment.run),
+                    event => events.push(event), () => {
+                        bringHomeWhoeverIsDue(state, task.day, schedulePostingDay);
+                        finishStructuralRecoveries(state, task.day);
+                        resolveWithPlayerPresent(state, opts.visitingPresence, () => task.run(task.day), task.day);
+                        for (const appointment of captainWaterAppointments(state,task.day,(year+1)*DAYS_PER_YEAR))
+                            schedulePostingDay(appointment.key,appointment.day,appointment.run);
+                        for (const appointment of publicCaptainHoldAppointments(state,task.day,(year+1)*DAYS_PER_YEAR))
+                            schedulePostingDay(appointment.key,appointment.day,appointment.run);
+                    });
             }
             checkpointDay = task.checkpoint ? task.day : undefined;
             cursor.completed.push(task.key);
@@ -1766,13 +1823,16 @@ function reviewSlot(id: string, period: number): number {
 
 /** Practice skipped by the background draw is reviewed once before a person's card. */
 export function settlePracticeOnContact(state: WorldState, personIds: ReadonlySet<string>): boolean {
+    const privateWork = settlePrivateWork(state, routineTime(state), undefined, personIds).length;
+    const seclusion = settleClosedDoorCultivation(state, routineTime(state),
+        (id, day) => applyAdvancement(state, Math.floor(day / DAYS_PER_YEAR), day, undefined, new Set([id])), personIds);
     const shuttle = settleHouseShuttleOnContact(state, personIds);
     const travel = settleNpcTravelOnContact(state, personIds) || shuttle;
     const year = Math.floor(state.currentDay / 365);
-    if (year <= Math.floor(theDayTheWorldOpened(state) / 365)) return travel;
+    if (year <= Math.floor(theDayTheWorldOpened(state) / 365)) return travel || seclusion > 0 || privateWork > 0;
     const due = new Set([...personIds].filter(id => !factsWithDataValue(state, 'contactReviewFor', id)
         .some(fact => fact.data.reviewYear === year)));
-    if (due.size === 0) return travel;
+    if (due.size === 0) return travel || seclusion > 0 || privateWork > 0;
     applyAdvancement(state, year, Math.floor(state.currentDay), undefined, due);
     for (const id of due) {
         const person = state.npcs.find(npc => npc.id === id);
@@ -1798,6 +1858,7 @@ function applyAdvancement(state: WorldState, year: number, day: number, visitor?
         // - worse, because a refresh cannot undo it - write a breakthrough into
         // the world's chronicle that the character never made.
         if (!isTheWorldsToMove(npc)) continue;
+        if (inClosedDoorCultivation(npc, day)) continue;
         if (contactIds ? !contactIds.has(npc.id)
             : !isPlayerInvolved(state, npc) && reviewSlot(npc.id, ADVANCEMENT_REVIEW_YEARS) !== slot) continue;
         if (npc.activity?.kind === 'mending' && npc.activity.thingId?.startsWith('repair-')
@@ -4611,7 +4672,7 @@ function whatInternalAffairsNotices(state: WorldState, day: number): PressureEve
         const npc = state.npcs[i];
         if (npc === undefined || npc.status === 'physically_dead') continue;
         const doing = npc.activity;
-        if (!doing || !isAwayOnSomething(doing.kind)) continue;
+        if (!doing || doing.kind === 'closed_door_cultivation' || !isAwayOnSomething(doing.kind)) continue;
         if (doing.untilDay === null || doing.untilDay === undefined) continue;
 
         const term = Math.max(1, doing.untilDay - doing.sinceDay);
@@ -4999,7 +5060,7 @@ function theRegionUnder(state: WorldState, locationId: string | null): string | 
  * possible peers on one paid hull. It authorizes no new relief or duty term. */
 function anAwayTermDueToClose(state:WorldState,npc:NpcRecord,day:number,reliefDays:ReadonlyMap<string,number>):(NpcActivity & {untilDay:number})|null {
     const doing=npc.activity;
-    if(npc.status!=='alive'||doing?.retrievalRequestId||!doing
+    if(npc.status!=='alive'||doing?.retrievalRequestId||doing?.privateWorkId||!doing
         ||(!isAwayOnSomething(doing.kind)&&theBoardWorkTheyAreOn(npc,doing.untilDay)===null)
         ||doing.untilDay==null||day<doing.untilDay)return null;
     const comingHome=doing.returnTo!==null
@@ -5012,14 +5073,19 @@ function anAwayTermDueToClose(state:WorldState,npc:NpcRecord,day:number,reliefDa
 function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
     schedule?: (key: string, day: number) => void): number {
     const day = onDay;
+    settleClosedDoorCultivation(state, day, (id, due) =>
+        applyAdvancement(state, Math.floor(due / DAYS_PER_YEAR), due, undefined, new Set([id])));
     // Only the geographic graph is shared; every iteration reads the current row.
     const routes = routeQueriesFor(state.locations);
     settleHiredDuties(state, day);
+    settlePrivateWork(state, day, undefined, undefined, (id, due) => schedule?.(`private-work:${id}:${due}`, due));
+    publicCaptainsAtTheirAppointments(state, day);
+    nativePilotsAtTheirAppointments(state, day);
     const reliefDays = new Map<string, number>();
     const reliefFacts = new Map<string, (typeof state.history.facts)[number]>();
     const readReliefs = () => {
         for (const person of state.npcs) {
-            if (person.status !== 'alive' || person.activity?.kind !== 'stationed') continue;
+            if (person.status !== 'alive' || person.activity?.kind !== 'stationed' || person.activity.privateWorkId) continue;
             for (const fact of factsWithDataValue(state, 'outgoingId', person.id)) {
                 if (fact.data.postRelief !== true || fact.day < (reliefDays.get(person.id) ?? -Infinity)) continue;
                 reliefDays.set(person.id, fact.day);
@@ -5032,6 +5098,7 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
     const dueHouses = new Set<string>();
     for (const n of state.npcs) {
         if (n.status === 'alive' && n.factionId !== null && n.activity?.kind === 'stationed'
+            && !n.activity.privateWorkId
             && n.activity.untilDay != null && n.activity.untilDay <= day && !isLostTrackOf(state, n)
             && isPlayerInvolved(state, n)
             && (reliefDays.get(n.id) ?? -Infinity) < n.activity.sinceDay) dueHouses.add(n.factionId);
@@ -5091,6 +5158,10 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
         let day = onDay;
         let npc = state.npcs[i];
         if (npc === undefined || npc.status !== 'alive') continue;
+        const privateAppointment = privateWorkAppointment(state, npc);
+        if (privateAppointment != null && privateAppointment > day)
+            schedule?.(`private-work:${npc.id}:${privateAppointment}`, privateAppointment);
+        if (npc.activity?.privateWorkId && npc.activity.departureApproach) continue;
         if(continueNpcDepartureApproach(state,npc,day,routes))continue;
         // Actual-clock continuation owns linked work, including an unladen return.
         if (npc.activity?.retrievalRequestId) continue;
@@ -5108,6 +5179,8 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
             && npc.activity.untilDay <= day) {
             const continuing = advancePublicCapitalMission(state, npc.id, day,
                 (id, due) => schedule?.(`capital-mission:${id}:${due}`, due), routes);
+            const privateDue = privateWorkAppointment(state, state.npcs[i]!);
+            if (privateDue != null && privateDue > day) schedule?.(`private-work:${npc.id}:${privateDue}`, privateDue);
             if (continuing) continue;
             npc = state.npcs[i]!;
         }

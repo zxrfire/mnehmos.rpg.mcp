@@ -1,5 +1,9 @@
 import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
+import { inClosedDoorCultivation } from '../engine/world/closed-door-cultivation.js';
 import { settleAgreedRides } from './an-offered-ride-is-an-agreement.js';
+import { settlePlagueOnActualBody, plagueEncounterAtActualBody } from './plague-on-the-actual-body.js';
+import { captainSeesTroubleAboard } from './a-captain-sees-trouble-aboard.js';
+import { activePlague, treatPlagueWithMedicineGrade } from '../engine/cultivation/plague.js';
 import { transferActualSpiritStones } from './transferring-actual-spirit-stones.js';
 
 import { attemptWasAccepted } from '../engine/social-leverage/an-attempt-to-move-somebody.js';
@@ -2762,8 +2766,9 @@ export class GameService {
 
         const ambient = this.ambientFor(asStored, run);
         this.atHand = await this.loadWorld();
+        const plagueOnEntry = [...this.settlePlagueAtTheBodyBoundary(), ...this.settleCaptainTroubleAtTheBodyBoundary()];
         // Read against the world this turn is played in, not whatever was at hand before it.
-        const cultivator = this.withoutAStaleArea(asStored);
+        const cultivator = this.withoutAStaleArea(this.repos.cultivators.getById(asStored.id) ?? asStored);
 
         // THE PLAYER IS ON THE ROSTER, AND THE SHEET IS THE SOURCE
         invitationsDue(this, cultivator);
@@ -3474,6 +3479,8 @@ export class GameService {
             if (this.atHand.history.facts.length > factsBefore) this.theWorldMoved();
         }
         const rides = settleAgreedRides(this, this.currentRun().cultivator);
+        for (const line of this.settlePlagueAtTheBodyBoundary()) sayThisWhateverTheNarratorDoes(execution.facts, line);
+        for (const line of plagueOnEntry) sayThisWhateverTheNarratorDoes(execution.facts, line);
         if (rides) {
             execution.facts.lines.push(...rides.lines); execution.facts.structure.push(...rides.structure);
             execution.calls.push({ name: 'world.settleAgreedPassage', action: 'ride', ok: true, summary: rides.lines.join(' ') });
@@ -4125,6 +4132,7 @@ export class GameService {
                 theClauseThisStepQuotes(step, rawInput) ?? rawInput
             );
             // Returning in a later clause does not erase leaving an actual post.
+            for (const line of this.settlePlagueAtTheBodyBoundary()) sayThisWhateverTheNarratorDoes(one.facts, line);
             const heldPost = settleTheMissionPostTheyHold(this, this.currentRun().cultivator);
             if (heldPost) {
                 one.calls.push({name: 'world.settleTheMissionPostTheyHold', action: 'sect', ok: true,
@@ -4366,6 +4374,8 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
+        if (!this.repos.cultivators.getById(cultivator.id)?.alive) return refused('world.actualBody', action.action,
+            factsForRefusal('This life has ended.', 'The actual body cannot perform this act. Nothing spent and no time passed.'));
         let done = await this.executeAction(action, run, cultivator, ambient, rawInput);
         // A reply belongs to the moment its handler resolved it. Capture the card
         // after that handler's immediate writes, while the person is still in the
@@ -7049,11 +7059,13 @@ ${noticed}`;
         // A recognized ordinary role with no unique actual listener must not
         // fall through to a fuzzy name or an unrelated person.
         if (!pointedAt && theOrdinaryRoleNamed(query)) return null;
-        return pointedAt
+        const party = pointedAt
             ? resolveCultivator(
                 this.repos, pointedAt.name, cultivator.id, scope, cultivator.realmOrdinal
             )
             : resolveParty(this.repos, query, cultivator, scope);
+        const row = this.atHand?.npcs.find(person => person.id === party?.id);
+        return row && this.atHand && inClosedDoorCultivation(row, routineTime(this.atHand)) ? null : party;
     }
 
     /**
@@ -7070,6 +7082,29 @@ ${noticed}`;
         rawInput?: string
     ): Execution {
         const here = this.present(cultivator);
+        const knownClosed = this.atHand?.npcs.filter(person => inClosedDoorCultivation(person, routineTime(this.atHand!))
+            && this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)) ?? [];
+        // These rows resolve a remembered name for the refusal only; they are never scene occupants.
+        const closed = this.atHand && resolveCultivator(this.repos, query, cultivator.id,
+            { ...scope, present: knownClosed.map(person => worldRosterRow(person, this.atHand!.currentDay, this.atHand!)) },
+            cultivator.realmOrdinal);
+        const person = closed && this.atHand?.npcs.find(row => row.id === closed.id);
+        if (person && this.atHand && inClosedDoorCultivation(person, routineTime(this.atHand))) {
+            const house = this.atHand.factions.find(row => row.id === person.factionId);
+            const place = this.atHand.locations.find(row => row.id === cultivator.location || row.name === cultivator.location);
+            const local = place && (place.id === person.locationId
+                || house && (place.id === house.seatLocationId || place.controllingFactionId === house.id));
+            const informed = cultivator.sectId === person.factionId && person.factionId !== null
+                || here.some(row => row.sectId === person.factionId && person.factionId !== null);
+            if (local && informed) {
+                const line = `${person.name} is in closed-door cultivation, expected to finish in `
+                    + `${Math.ceil(person.activity!.untilDay! - routineTime(this.atHand))} days.`;
+                return this.freeAction(this.currentRun().run, action, {
+                    headline: 'The door is closed.', lines: [line], prose: line,
+                    structure: ['No meeting, request or dispatch reached the person behind the closed door.']
+                });
+            }
+        }
 
         // ── A BODY IS NOT SOMEBODY STANDING HERE ─────────────────────────
         //
@@ -13235,6 +13270,13 @@ ${opened.text}` : receipt,
 
         // WHAT A PHYSICIAN IS ACTUALLY FOR
         const battered = cultivator.hp < cultivator.maxHp;
+        const plagueDay = careWorld ? routineTime(careWorld) : run.elapsedDays;
+        const plague = activePlague(cultivator, plagueDay);
+        const plagueCare = treatPlagueWithMedicineGrade(cultivator, 'mortal', plagueDay);
+        if (plague && !plagueCare) return refused('engine.medicineReaches', 'treat', factsForRefusal(
+            'This physician\'s medicine does not reach your plague.',
+            'Seek wound medicine of a grade that reaches your body. Nothing spent and no time passed.',
+            'Mortal care cannot treat this actual plague course.'));
 
         // WHAT A PHYSICIAN CAN ACTUALLY REACH, PRICED BEFORE IT IS SOLD
         const reachable = hurt.filter(injury =>
@@ -13291,7 +13333,7 @@ ${opened.text}` : receipt,
             ));
         }
 
-        if (hurt.length === 0 && !battered) {
+        if (hurt.length === 0 && !battered && !plagueCare) {
             return refused('engine.untreatedInjuries', 'treat', factsForRefusal(
                 'Nothing to see to.',
                 'You take stock of yourself and find nothing anybody could charge you for. '
@@ -13308,7 +13350,7 @@ ${opened.text}` : receipt,
         // second one.
         // Priced on what can be REACHED, not on what is being carried: a wound
         // past mortal grade is not a course anybody is going to sell.
-        const dueNow = reachable.length === 0 ? restingPrice : perWound;
+        const dueNow = reachable.length === 0 && !plagueCare ? restingPrice : perWound;
 
         if (cultivator.spiritStones < dueNow) {
             return refused('engine.localPrice', 'treat', factsForRefusal(
@@ -13327,8 +13369,8 @@ ${opened.text}` : receipt,
         // How many meridians get closed, and what the whole stay costs. A stay
         // with no wounds in it still costs the visit: somebody was paid to keep
         // a body alive for a month.
-        const courses = Math.min(reachable.length, Math.floor(cultivator.spiritStones / perWound));
-        const cost = Math.max(restingPrice, courses * perWound);
+        const courses = Math.min(reachable.length, Math.floor(cultivator.spiritStones / perWound) - Number(!!plagueCare));
+        const cost = Math.max(restingPrice, (courses + Number(!!plagueCare)) * perWound);
 
         // A month under somebody's roof, fed out of the purse the same way a
         // seclusion is. The clock runs through it: the world moves, the food
@@ -13340,7 +13382,10 @@ ${opened.text}` : receipt,
         // first could therefore buy food with stones already owed for care.
         const forCare = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -cost });
         if (!forCare) throw new GameError('Cultivator vanished on the physician\'s table.', 500);
-        const provisioning = this.buyProvisions(forCare, TREATMENT_DAYS);
+        // The paid medicine is administered now, before the stay's actual danger dates.
+        if (plagueCare) this.repos.cultivators.update(cultivator.id, { plague: plagueCare });
+        const provisioning = this.buyProvisions(this.repos.cultivators.getById(cultivator.id)!, TREATMENT_DAYS);
+        const plagueTreatmentLine = plagueCare ? 'Mortal medicine was administered for your plague before the stay began.' : null;
         const paid = provisioning.cultivator;
         // The service was bought from this actual person. It is their purse,
         // not wealth removed from circulation by an imaginary counter.
@@ -13401,6 +13446,7 @@ ${opened.text}` : receipt,
         // of a death.
         if (!applied.cultivator.alive) {
             const dead = factsForTimeSkip(paid, applied.cultivator, skip, ambient, 'Under a physician');
+            if (plagueTreatmentLine) sayThisWhateverTheNarratorDoes(dead, plagueTreatmentLine);
             dead.lines.unshift(provisioning.line);
             dead.lines.push(
                 `The ${cost} spirit stone${cost === 1 ? '' : 's'} for the care was paid up front and `
@@ -13418,6 +13464,7 @@ ${opened.text}` : receipt,
 
         if (!stillServing) {
             const interrupted = factsForTimeSkip(paid, applied.cultivator, skip, ambient, 'Care interrupted');
+            if (plagueTreatmentLine) sayThisWhateverTheNarratorDoes(interrupted, plagueTreatmentLine);
             interrupted.lines.unshift(provisioning.line);
             const unfinishedCare = 'The physician is no longer seeing to patients here. The fee was paid up front; '
                 + 'the unfinished care closes no wounds and restores no HP of its own.';
@@ -13477,6 +13524,7 @@ ${opened.text}` : receipt,
         facts.lines.unshift(provisioning.line);
 
         // WHAT THE STAY COULD NOT REACH, AND WHAT WOULD
+        if (plagueTreatmentLine) sayThisWhateverTheNarratorDoes(facts, plagueTreatmentLine);
         const beyond = untreatedInjuries(after.injuries)
             .filter(injury => !isPermanentWound(injury.woundType))
             .filter(injury => !medicineReaches('mortal', injury.severity, after.realmOrdinal));
@@ -21557,6 +21605,18 @@ ${fit.line}`;
             && throughPresence.standingIn === cultivator.standingIn;
         if (!actualProxyScene && betweenRoadEndpoints(this.repos.db, cultivator)) return null;
         return worldLocationFor(this.atHand, cultivator.location)?.id ?? null;
+    }
+
+    settlePlagueAtTheBodyBoundary(): string[] {
+        return settlePlagueOnActualBody(this);
+    }
+
+    settleCaptainTroubleAtTheBodyBoundary(): string[] {
+        return captainSeesTroubleAboard(this);
+    }
+
+    plagueEncounterAtTheBody(): string[] {
+        return plagueEncounterAtActualBody(this);
     }
 
     /**

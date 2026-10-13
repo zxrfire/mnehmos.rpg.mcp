@@ -2,6 +2,12 @@
 
 # The schemas
 
+`PlagueStateSchema` is the optional dated course on an actual body's record.
+It carries infection, treatment, end and sampled fatal dates; it is not another
+injury or a general illness catalog. Plague has its own death cause. Readers
+derive current weakness, immunity and outcomes from that course and the body's
+existing hunger/injury rules.
+
 Zod schemas and the types derived from them. These are the shapes that cross a boundary -
 into the database, out to a tool, or back from a model - and they are the reason a model
 cannot widen what the engine accepts.

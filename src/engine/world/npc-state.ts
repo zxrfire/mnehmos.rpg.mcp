@@ -37,6 +37,8 @@ import {
     type AQiSeal
 } from '../cultivation/a-qi-seal-is-put-on-a-person.js';
 import { HP_RECOVERY_FRACTION_PER_DAY, type Injury, type Insight, type Achievement } from '../../schema/cultivation.js';
+import type { PlagueState } from '../../schema/cultivation.js';
+import { plagueHealthCeiling } from '../cultivation/plague.js';
 import { personName } from './history.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 
@@ -252,6 +254,7 @@ export interface NpcIdentity {
  * other lines, and no code anywhere else.
  */
 export type ActivityKind =
+    | 'closed_door_cultivation'
     /** Chasing a thing they need. */
     | 'their_own_business'
     /** Open channels, and nothing else worth doing until they close. */
@@ -401,6 +404,8 @@ export interface NpcActivity {
     kind: ActivityKind;
     /** The actual accepted request behind ordinary physical store travel/work. */
     retrievalRequestId?: string;
+    /** Accepted personal work on the ordinary obligation ledger. */
+    privateWorkId?: string;
     /** The one dispatch receipt behind this timed capital errand. */
     capitalMissionId?: string;
     /** Current leg of that receipt's outward, service and home itinerary. */
@@ -507,6 +512,8 @@ export interface NpcCultivation {
      * WHAT THEY ARE ACTUALLY CARRYING, as rows rather than as a number.
      */
     injuries: Injury[];
+    /** The one illness's actual course, read with the same hunger susceptibility as the player. */
+    plague?: PlagueState | null;
     /**
      * WHAT IS STANDING IN THE BODY, as of `bodyOnDay`.
      */
@@ -1003,19 +1010,14 @@ export function setLocation(npc: NpcRecord, locationId: string | null, onDay: nu
 }
 
 /**
- * The activities that take somebody away and end on a day.
- *
- * One predicate rather than a comparison at each site: an errand, a station and
- * a journey are all "gone, until", and every pass that brings people home,
- * notices they have not come home, or asks where home is asks the same question
- * of all three. `travelling` with a term is a recruit who has been to the house
- * that took them to be entered on its roll and is walking home
- * (`a-recruit-is-given-their-lamp-at-the-house.ts`); the return pass is what
- * gets them there. The term-less `travelling` seeding writes for somebody on a
- * road is never ended by anything, and now also reads as away.
+ * Activities that keep somebody unavailable for ordinary work.
+ * Travel uses its own physical itinerary; closed-door cultivation retains home.
+ * Their separate deadline writers settle each. Only actual absences enter the
+ * overdue reader in `the-world-changing-on-its-own.ts`.
  */
 export function isAwayOnSomething(kind: NpcActivity['kind']): boolean {
-    return kind === 'out_with_a_party' || kind === 'stationed' || kind === 'travelling';
+    return kind === 'out_with_a_party' || kind === 'stationed' || kind === 'travelling'
+        || kind === 'closed_door_cultivation';
 }
 
 /**
@@ -1071,7 +1073,9 @@ export function maxBodyOf(npc: NpcRecord): number {
  * What is actually standing in the body on a given day.
  */
 export function bodyStandingOn(npc: NpcRecord, day: number): number {
-    const max = maxBodyOf(npc);
+    const whole = maxBodyOf(npc);
+    const max = npc.cultivation.plague
+        ? plagueHealthCeiling(whole, { ...npc.cultivation, injuries: woundsCarriedBy(npc) }, day) : whole;
     // A record with no body on it reads as WHOLE, never as empty. Saves written
     // before the world held one load that way out of the repository, and a
     // fixture assembled by hand in a test has the same nothing on it - and the

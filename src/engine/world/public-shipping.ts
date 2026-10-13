@@ -646,7 +646,8 @@ export function recordPublicPassage(world: WorldState, leg: PublicPassageLeg,
             || onwardAgreementId && typeof parent.data.arrivalDay==='number'
                 && journeyTimeHasReached(leg.departureDay,parent.data.arrivalDay) && parent.data.toLocationId===leg.fromId)
         && parent.day <= onDay
-        && typeof parent.data.departureDay === 'number' && parent.data.departureDay <= leg.departureDay
+        && typeof parent.data.departureDay === 'number' && (parent.data.departureDay <= leg.departureDay
+            || typeof parent.data.heldForStatusId === 'string' && parent.day <= leg.departureDay)
         ? parent : undefined;
     const previous = validParent ?? factsWithDataValue(world, 'vesselId', leg.vesselId)
         .filter(fact => fact.data.publicPassage === true && fact.data.departureDay === leg.departureDay)
@@ -656,10 +657,13 @@ export function recordPublicPassage(world: WorldState, leg: PublicPassageLeg,
         const npc=world.npcs.find(person=>person.id===id);
         return named || npc ? [{id,name:named?.name ?? npc!.name,role:'aboard'}] : [];
     });
+    const resumingHeld = !!validParent && typeof validParent.data.heldForStatusId==='string'
+        && !lost && leg.departureDay<=onDay;
     // A supplied historic parent establishes lineage, not uniqueness. Repeated
     // settlement asks the same existing receipt identity, including its actors.
     const existing = factsWithDataValue(world, 'vesselId', leg.vesselId).find(candidate =>
         candidate.data.publicPassage === true && candidate.data.departureDay === leg.departureDay
+        && (!resumingHeld || candidate.id!==validParent!.id&&candidate.causes.includes(validParent!.id))
         && (!validParent || candidate.id === validParent.id || candidate.causes.includes(validParent.id))
         && (!lost || candidate.data.publicPassageLost === true)
         && actors.every(actor => candidate.actors.some(prior => prior.id === actor.id))
@@ -669,7 +673,8 @@ export function recordPublicPassage(world: WorldState, leg: PublicPassageLeg,
         && (!boardingMoment || candidate.data.runId === boardingMoment.runId
             && candidate.data.boardingRunElapsedDays === boardingMoment.elapsedDays));
     if (existing) return existing;
-    if (previous && (!lost || previous.data.publicPassageLost===true) && actors.every(actor=>previous.actors.some(prior=>prior.id===actor.id))
+    if (previous && (!resumingHeld || previous.id!==validParent!.id)
+        && (!lost || previous.data.publicPassageLost===true) && actors.every(actor=>previous.actors.some(prior=>prior.id===actor.id))
         && (!boardingPeople?.length || previous.data.actualBoarding===true)
         && previous.data.fromLocationId === leg.fromId && previous.data.toLocationId === leg.toId
         && previous.data.arrivalDay === leg.arrivalDay && previous.data.seaLaneId === leg.lane.id

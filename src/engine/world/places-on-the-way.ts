@@ -188,7 +188,7 @@ export function locationOnNpcJourney(
 export function roadPositionOfNpc(locations: readonly LocationRecord[], npc: NpcRecord,
     day: number, routes?: RouteQueries, currentNpc?:(id:string)=>NpcRecord|undefined): RoadPosition | null {
     const stopped=stoppedRoadPoint(locations,npc.locationId);
-    if(stopped)return stopped;
+    if(stopped && !(npc.activity?.kind === 'travelling' && npc.activity.admittedRoad))return stopped;
     // A carried party with no admitted route has only a coarse marker here.
     // Its actual leader position must be supplied by the adapter that owns it.
     if (npc.activity?.kind === 'out_with_a_party' && npc.activity.fromLocationId == null
@@ -457,6 +457,8 @@ export function firstTravellerOnTheWay(input: {
     exceptIds?: ReadonlySet<string>;
     /** Already priced canonical endpoint course, including an admitted partial edge. */
     route?: NonNullable<ReturnType<typeof walkingRouteFrom>>;
+    /** The original admitted clock remains authoritative in resumed windows. */
+    journey?: { sinceDay: number; untilDay: number; initialTravelDays?: number };
     /** A body staying on its actual stretch has zero velocity. */
     stationaryAt?: RoadPosition;
     /** A flying craft can share the ordinary water beneath its route. */
@@ -468,16 +470,21 @@ export function firstTravellerOnTheWay(input: {
     if (!route) return null;
     const total = route.at(-1)!.days;
     if (total <= 0) return null;
+    const journey = input.journey ?? { sinceDay: input.onDay, untilDay: input.onDay + input.days };
+    const initialDays = journey.initialTravelDays ?? 0;
+    const stops = route.filter(stop => initialDays > 0 || stop.days > 0);
+    const dates = roadVertexMoments(route, journey.sinceDay, journey.untilDay - journey.sinceDay, initialDays);
     const byId = new Map(input.locations.map(place => [place.id, place]));
     // These are intervals on two routes, not independent encounter rolls.
     // Each candidate is considered at the moment the player reaches that ground.
-    for (const stop of route) {
+    for (const [index, stop] of stops.entries()) {
         const place = byId.get(stop.locationId);
         if (!place || (!place.tags.includes(ROUTE_STOP) && !(input.overWater && isWater(place)))
             || place.id === input.fromId) continue;
-        const afterDays = Math.max(1, Math.ceil(input.days * stop.days / total));
-        if (afterDays >= input.days) continue;
-        const day = input.onDay + afterDays;
+        const day = dates[index];
+        if (day == null) continue;
+        const afterDays = day - input.onDay;
+        if (afterDays <= 0 || journeyTimeHasReached(afterDays, input.days)) continue;
         const npc = input.npcs.find(person => person.status === 'alive'
             && !input.exceptIds?.has(person.id) && npcIsTravellingOnDay(input.locations, person, day)
             && locationOnNpcJourney(input.locations, person, day,undefined,undefined,id=>input.npcs.find(one=>one.id===id)) === place.id

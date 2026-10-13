@@ -1,10 +1,21 @@
 <!-- tier: 3 -->
 
+Plague courses round-trip through the existing cultivator and native NPC
+body writers. Optional absence and explicit clearing remain distinct; actual
+SQL player health and illness are never read from a world mirror. The native
+body's current course supplies its derived calendar dates.
+
 # The repositories
 
 One class per table, each owning the SQL for it. Nothing above this layer writes SQL, and
 nothing here decides anything: a repository stores what it is given and returns what it
 holds.
+
+Physical objects are the current inventory. `appendWorld` reconciles removed
+object ids and deletes their claim and provenance children in the same transaction;
+they cannot return on reopening. NPC insights and achievements retain their
+existing sparse records, with absent optional fields remaining absent. Other
+removed records still follow the full-snapshot contract below.
 
 `SectRepo.addMember` stores `joinedOnDay` once on entry. Rank and contribution
 updates preserve it; leaving and rejoining starts a new tenure. An explicit day

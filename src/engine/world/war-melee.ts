@@ -1,4 +1,5 @@
 import { writeTheNpcArtsActuallyUsed } from './the-arts-an-npc-actually-uses-in-a-fight.js';
+import { interruptClosedDoorCultivation } from './closed-door-cultivation.js';
 /**
  * A war between two houses, which is a group fight and nothing else.
  */
@@ -254,6 +255,10 @@ export function fightTheWarsThisYear(
     const settled: WarSettlement[] = [];
 
     for (const war of liveWars(state)) {
+        const cause = state.history.facts.find(fact => fact.kind === 'war'
+            && fact.factionIds.includes(war.a.id) && fact.factionIds.includes(war.b.id)
+            && fact.day === war.openedOnDay);
+        if (cause) for (const house of [war.a, war.b]) interruptClosedDoorCultivation(state, house.id, day, cause.id);
         if (war.dueOnDay <= day) {
             const done = settleOneWar(state, war, day, rng);
             if (done) settled.push(done);

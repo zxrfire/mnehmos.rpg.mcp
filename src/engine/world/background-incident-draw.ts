@@ -5,6 +5,7 @@ import type { WorldState } from './world-state.js';
 import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 import { getLocation } from './world-state.js';
 import { whereYouCanActFrom } from './something-acting-in-your-place.js';
+import { witnessIndexFor } from './witness-reaction-index.js';
 
 type ContactPlace = string | { placeId: string; areaId: string; person?: NpcRecord };
 const PLAYER_PLACES = new WeakMap<WorldState, { place?: ContactPlace; players: NpcRecord[]; nearby?: Set<string>; day: number }>();
@@ -19,10 +20,24 @@ export function resolveWithPlayerPresent<T>(world: WorldState, place: ContactPla
     }
 }
 
+/** The player's actual foreground contact, when an event needs a physical witness. */
+export function playerAtTheContact(world: WorldState): { id: string; placeId: string; areaId: string | null } | null {
+    const contact = PLAYER_PLACES.get(world);
+    const place = contact?.place;
+    const player = typeof place === 'object' ? place.person ?? contact?.players[0] : contact?.players[0];
+    if (!player || !place) return null;
+    return { id: player.id, placeId: typeof place === 'string' ? place : place.placeId,
+        areaId: typeof place === 'string' ? null : place.areaId };
+}
+
 export function isPlayerInvolved(world: WorldState, person: NpcRecord): boolean {
     if (!isTheWorldsToMove(person)) return true;
     const context = PLAYER_PLACES.get(world);
     const players = context?.players ?? world.npcs.filter(n => !isTheWorldsToMove(n));
+    const privateWorkId = person.activity?.privateWorkId ?? person.activity?.passageCompany?.privateWorkId ?? (person.activity?.capitalMissionId
+        ? witnessIndexFor(world).byId.get(person.activity.capitalMissionId)?.data.privateWorkId : null);
+    if (typeof privateWorkId === 'string' && world.obligations.some(term => term.id === privateWorkId && term.status === 'open'
+        && players.some(player => player.id === term.subjectId || player.id === term.holderId))) return true;
     const place = context?.place;
     if (context && typeof place === 'object' && context.nearby === undefined) {
         const location = getLocation(world, place.placeId);

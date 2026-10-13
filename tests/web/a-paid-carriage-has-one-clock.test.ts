@@ -30,6 +30,9 @@ import { addPlacesOnTheWay, ROUTE_STOP, journeyTimeHasReached } from '../../src/
 import { quotePublicCarriage, commitPublicCarriage, publicCarriagePassage, publicCarriageGround } from '../../src/engine/world/public-carriages.js';
 import { keepThePaidCarriage, thePaidCarriageClaim, continueThePaidCarriage } from '../../src/web/a-paid-carriage-on-the-road.js';
 import { passHours } from '../../src/web/routine-invitations.js';
+import { makeAreaStatus, liftStatus, STOPS_PASSAGE } from '../../src/engine/world/what-is-true-of-a-place-right-now.js';
+import { forStream } from '../../src/engine/cultivation/rng.js';
+import { roadPositionOfNpc } from '../../src/engine/world/places-on-the-way.js';
 
 async function boarded() {
     const { game, db } = makeGame({ seed: 'physical-road-run', worldEnabled: true });
@@ -59,6 +62,38 @@ async function boarded() {
     return { game, db, world, quote, receipt, player, from, to,
         stop: world.locations.find(place => place.tags.includes(ROUTE_STOP))! };
 }
+
+it('a driver holds at the real road point for a reported danger, then resumes without another fare',async()=>{
+ const h=await boarded();try{
+  const before=h.game.currentRun();
+  await passHours(h.game,before.run,before.cultivator,3);
+  const world=h.game.atHand!,day=routineTime(world),actual=publicCarriagePassage(world,h.receipt.id,h.player.id,day)!;
+  const point=roadPositionOfNpc(world.locations,actual.driver,day);
+  const band=createNpc(world.seed,{id:'actual-roadblock-bandit',name:'The roadblock keeper',occupation:'bandit',
+   onDay:day,bornOnDay:day-30*365,locationId:actual.locationId});world.npcs.push(band);
+  const status=makeAreaStatus({id:'actual-roadblock-warning',areaId:actual.locationId,kind:'roadblock',
+   statement:'A person blocks passage on this road.',cause:{what:'The actual roadblock.',decidedById:band.id,factId:null},
+   beganOnDay:day,reviewOnDay:day+2,stops:[STOPS_PASSAGE],causeKnownLocally:true});world.statuses.push(status);
+  const key=`passage:${status.id}:${status.reviewOnDay}`;
+  for(let sample=0;sample<10000;sample++){
+   const seed=`driver-holds-${sample}`;
+   if(forStream(seed,'captain-duty-decision',actual.driver.id,key).next()<.01){world.seed=seed;break;}
+  }
+  const purse=h.game.currentRun().cultivator.spiritStones;
+  const held=await h.game.act('I look around');
+  expect(held.narration).toContain('hold the carriage');
+  const waiting=publicCarriagePassage(world,h.receipt.id,h.player.id,routineTime(world))!;
+  expect(roadPositionOfNpc(world.locations,waiting.driver,routineTime(world))).toEqual(point);
+  expect(h.game.currentRun().cultivator.spiritStones).toBe(purse);
+  world.statuses[world.statuses.indexOf(status)]=liftStatus(status,routineTime(world));
+  const resumed=await h.game.act('I look around');
+  expect(resumed.narration).toContain('resumed the accepted voyage');
+  const current=h.game.currentRun();
+  const moved=await passHours(h.game,current.run,current.cultivator,3);
+  expect(moved.finished).toBe(true);
+  expect(roadPositionOfNpc(world.locations,world.npcs.find(person=>person.id===actual.driver.id)!,routineTime(world))).not.toEqual(point);
+ }finally{h.db.close();}
+},120_000);
 
 it('carries a .125-day reply and the exact remainder on the same paid passage', async () => {
     const { game, db, world, quote, receipt, player, stop, to } = await boarded();

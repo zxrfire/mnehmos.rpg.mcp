@@ -1150,6 +1150,16 @@ function addWorldColumns(db: Database.Database): void {
         console.error('[Migration] Adding qi_seal column to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN qi_seal TEXT;');
     }
+    if (!npcColumns.includes('plague')) {
+        console.error('[Migration] Adding plague course to world_npcs table');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN plague TEXT;');
+    }
+    if (!npcColumns.includes('insights')) {
+        db.exec('ALTER TABLE world_npcs ADD COLUMN insights TEXT;');
+    }
+    if (!npcColumns.includes('achievements')) {
+        db.exec('ALTER TABLE world_npcs ADD COLUMN achievements TEXT;');
+    }
 
     if (!npcColumns.includes('bloodline_species')) {
         console.error('[Migration] Adding bloodline columns to world_npcs table');

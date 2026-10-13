@@ -2,6 +2,14 @@
 
 # The Cultivation Engine
 
+`plague.ts` reads susceptibility only through `satietyBurnMultiplier` and
+immunity only through `stillNeedsToEat`, with actual injuries. The wound that
+restores hunger therefore restores susceptibility. There is no parallel realm
+table or cutoff. A dated course limits available health while active; ordinary
+mending cannot erase it. The existing medicine-grade reader decides treatment,
+and actual body spans reach a sampled fatal date before further advancement.
+Those future outcomes remain engine state, not character testimony.
+
 An actual escape binds the common fight conclusion. Coercion and making an
 example of somebody read the person still caught, so an aggressor's goal cannot
 replace a successful withdrawal for either a player or a world person.

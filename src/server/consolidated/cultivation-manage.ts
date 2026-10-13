@@ -1,5 +1,6 @@
 import { projectActualPassengers } from '../../web/passengers-at-the-actual-clock.js';
 import { routineTime } from '../../engine/world/npc-routines.js';
+import { plagueSusceptibility } from '../../engine/cultivation/plague.js';
 import { spendMcpFractionAtItsCurrentChecks } from './a-native-mcp-fraction-at-its-current-checks.js';
 import { prepareWorldClockForPreciseSpan } from '../state/cultivation-world.js';
 import type { TimeSkipContext } from '../../engine/cultivation/time-skip.js';
@@ -548,7 +549,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
     }
 
     let preciseWorld: Awaited<ReturnType<typeof worldForRun>> | null = null;
-    if (!Number.isInteger(days)) {
+    const heldBody = !Number.isInteger(days) || plagueSusceptibility(cultivator) > 0 || args.randomEvents !== false;
+    if (heldBody) {
         try {
             preciseWorld = await prepareWorldClockForPreciseSpan(run, cultivator);
         } catch (error) {
@@ -571,7 +573,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
 
     // A named destination does not remove an actual passenger from its carrier.
     // Fractional spans project canonical custody again after the legacy move input.
-    if (!Number.isInteger(days) && preciseWorld) {
+    if (heldBody && preciseWorld) {
         projectActualPassengers(repos.db, preciseWorld, cultivator.id, routineTime(preciseWorld));
         const projected = repos.cultivators.getById(cultivator.id);
         if (!projected) throw new Error('The actual passenger body was lost before its span.');
@@ -670,7 +672,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
     let arrivals: ReturnType<typeof encountersFor> | null = null;
     let lived = days;
     let arrivingCultivator = cultivator;
-    if (Number.isInteger(days) && (args.randomEvents ?? true)) {
+    if (!heldBody && (args.randomEvents ?? true)) {
         try {
             arrivals = encountersFor(
                 {
@@ -731,7 +733,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
         randomEvents: args.randomEvents ?? true,
         understanding: discovery.context
     };
-    const fraction = !Number.isInteger(days) ? await spendMcpFractionAtItsCurrentChecks({
+    const fraction = heldBody ? await spendMcpFractionAtItsCurrentChecks({
         repos, run, body: cultivator, days, world: worldHere, context, activity,
         randomEvents: args.randomEvents ?? true,
         sceneFor: async (person, actualRun) => {

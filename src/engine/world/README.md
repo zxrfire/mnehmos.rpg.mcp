@@ -2,6 +2,36 @@
 
 # The World Layer
 
+Plague is the world's only illness. An optional dated course belongs to the
+actual native or SQL body; an area status holds each outbreak. Background
+infections are capped rate draws. Actual contacts and arrivals resolve named
+people, and a stricken arrival can carry plague to new ground. Course and
+outbreak dates supply calendar appointments, with ordinary named deaths and
+estates. Real graded medicine is consumed; a reachable donor decides through
+the existing gift/favour path. Recovery and immunity clear the course. No
+ordinary sickness or second body record is introduced.
+
+The yearly business sweep silently collects an unheld object only after a year,
+when no fact, account, search, delivery, estate, auction, scheduled work or other
+object points at it. `CHEAP_UNHELD_VALUE` is the catalog's cheapest positive herb
+value (currently two spirit stones); the complete stack must fit that floor.
+Unknown worth and valuable objects remain. Actual custody, storage, abodes,
+graves, the player's property and the player's actual contact ground are protected.
+Age comes from the last actual transfer, or the first observation where the date
+is unknown. Collection emits neither a fact nor a line. The ordinary object
+writer preserves deletion, including claim and provenance children, on reopening.
+
+`closed-door-cultivation.ts` gives world people paid, dated cultivation in
+their assigned lodging or actual private residence. The existing activity holds
+the span and its room. Ordinary routines keep them at home; work, teaching,
+parties and requests respect the closed door. It is excluded from the overdue
+absence reader. Entry uses bounded annual rates, with exact player involvement.
+The deadline settles once through the existing advancement and crossing writer;
+contact uses the actual fractional clock. The native seclusion provision rate
+charges the person's own purse. An actual recorded war can call members out
+before fighting, returning their unused provisions. No extra advancement bonus
+or parallel cultivation progression is stored.
+
 Whole-compound counts read the same actual journey position as its rooms.
 An assigned destination alone neither puts an incoming member inside nor removes
 a departing member before departure; counting does not advance their journey.
@@ -4912,3 +4942,49 @@ actual alchemy hall. Houses without one acquire supplies by trade; assigning car
 to ordinary quarters supplies neither a craft facility nor free medicine. The
 same physical craft-room reader governs house-owned refining vessels. Existing
 personally held medicine and personal crafting keep their ordinary authorities.
+
+Captain emergencies are acts of the actual driver, pilot or master. Visible
+serious depleted-body wounds, active plague and a current passage-blocking status
+enter the ordinary favour/duty decision with their existing character, company,
+ties and obligations. Stable old wounds and future death dates are not distress.
+Plague still reads the hunger authority. Accepted decisions use actual public
+return/hold receipts, private air landing/fuel quotes or private sea/ground course
+continuations. A hold preserves sailed distance or the admitted road point and
+pace; lifting or reviewing its real status can resume the actual course. Public
+resumption is a distinct caused receipt even at the exact review date. A diverted
+private undertaking waits at its actual arrival instead of completing planned
+work or awarding finds. No emergency weighting table, fare or merit is added.
+
+Native public operators, held-course reviews, owned air pilots and admitted
+water crossings act at existing dated appointments. Contact requires two actual
+courses to meet at a canonical water vertex; merely sharing an ocean is not aid.
+Only the named contacted person's actual trouble is read. Medicine is real held
+stock, transferred and consumed through existing disposal/treatment authorities.
+Foreground SQL passengers use the same decisions and actual course writers;
+Native activity is never substituted for moving the player's real body. Captain
+facts record what was decided, and actual passengers hear them once at their
+boarding. Native private ground/water course creation remains the transport
+producer's responsibility; no independent daily-person transport loop is added.
+
+Native private business uses the person's purse and the existing paid outward,
+work and return itinerary. Officeless elders choose known auctions or accessible
+ruins/forbidden ground, invite actual personal pupils and can answer another
+elder's favour request. Their own bid enters the capital auction authority.
+Private work supplies no merit or contribution. Each expedition find has an actual
+finder; the elder's ordinary disposal decision may keep or share it and moves
+face where keeping from their pupils matters. Equals retain what they pick up.
+
+A Native private paid word is offered directly to a reachable person and enters
+the ordinary decision path, never a house board. Gathering, delivery, bench work
+and pill refinement produce actual completion/custody receipts before wages.
+Stones, held medicine and favours settle once; missed work or unpaid completion
+creates the existing grievance. Private refinement uses the shared actual recipe,
+material, duration and odds authorities. These Native/direct-work authorities do
+not silently perform a SQL player's work or resolve their party combat.
+
+Close Native people can organise their own private journey or hunt through that
+same itinerary, capacity and risk machinery. Any close tie can supply company;
+sworn siblings are called first. Mutual brotherhood enters the ordinary oath
+ledger and sworn-sibling lineage edges. Native-only hunt resolution excludes a
+party containing the player; actual player following and common foreground risk
+remain the separate transport/admission integration.

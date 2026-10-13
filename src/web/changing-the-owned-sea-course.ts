@@ -16,7 +16,8 @@ import {makeFact} from '../engine/world/history.js';
 import {appendWorldFact} from '../engine/world/who-was-there-when-it-happened.js';
 import {writeFlag} from '../server/consolidated/cultivation-support.js';
 
-export function quoteOwnedSeaCourseChange(game:GameService,body:Cultivator,targetId:string){
+export function quoteOwnedSeaCourseChange(game:GameService,body:Cultivator,targetId:string,
+ known?:(place:import('../engine/world/locations.js').LocationRecord)=>boolean){
  const world=game.atHand,claim=ownedPassageClaim(game.db,body.id),fresh=game.repos.cultivators.getById(body.id);
  if(!world||!claim||!fresh?.alive)return null;
  const fact=witnessIndexFor(world).byId.get(claim.receiptId),d=fact?.data,day=routineTime(world);
@@ -27,7 +28,7 @@ export function quoteOwnedSeaCourseChange(game:GameService,body:Cultivator,targe
  const lane=readAcceptedSeaLane(d.seaLane),source=ownedCarrierAt(world,fact.id,fresh,day);
  if(!lane||!source||source.unavailable||!source.locationId)return null;
  const target=world.locations.find(p=>p.id===targetId);
- if(!target||!game.canPointAtLocation(fresh,target))return null;
+ if(!target||!(known?known(target):game.canPointAtLocation(fresh,target)))return null;
  const people=world.npcs.filter(n=>n.status==='alive'&&n.activity?.kind==='travelling'
   &&n.activity.vesselId===d.vesselId&&n.activity.fromLocationId===d.fromLocationId&&n.activity.returnTo===d.toLocationId
   &&n.activity.sinceDay===d.departureDay&&n.activity.untilDay===d.arrivalDay);
@@ -39,8 +40,9 @@ export function quoteOwnedSeaCourseChange(game:GameService,body:Cultivator,targe
 
 /** Fresh same-source revalidation follows either PC steering or ordinary NPC
  * consent. No await separates this check from acceptance. No public fare debit. */
-export function changeOwnedSeaCourse(game:GameService,body:Cultivator,targetId:string,operatorId:string){
- const read=quoteOwnedSeaCourseChange(game,body,targetId),world=game.atHand;
+export function changeOwnedSeaCourse(game:GameService,body:Cultivator,targetId:string,operatorId:string,
+ known?:(place:import('../engine/world/locations.js').LocationRecord)=>boolean){
+ const read=quoteOwnedSeaCourseChange(game,body,targetId,known),world=game.atHand;
  if(!read||!world||read.pilotId!==operatorId)return null;
  const run=game.currentRun().run;
  const receipt=appendWorldFact(world,makeFact({day:read.day,kind:'gathering',locationId:read.fromId,
