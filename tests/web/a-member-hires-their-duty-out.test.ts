@@ -9,15 +9,20 @@
  * each now stays open or settles according to its own contractor's term.
  * Hiring and accepting a chore now spend the member's conversational eighth
  * of a day; the contractor still carries the remaining work, not the member.
+ * The meeting now supplies the worker's actual idle availability. Hiring once
+ * refused that worker merely because the idle interval had an end date; the
+ * existing commitment reader, rather than any dated activity, decides what
+ * work cannot be put down. No consent or price outcome is forced.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { parseIntent } from '../../src/web/actions';
-import { createNpc } from '../../src/engine/world/npc-state';
+import { createNpc, markDead } from '../../src/engine/world/npc-state';
 import { ledgerAbout, writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { acceptDuty, type DatabaseHandle } from '../../src/web/encounters';
 import type { Duty } from '../../src/engine/encounters/types';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { routineTime } from '../../src/engine/world/npc-routines';
 import { hireForYourDuty, settleTheMissionPostTheyHold, theMissionPostOnTheSheet } from '../../src/web/holding-a-mission-post';
 import { theFirstRungOf } from '../../src/engine/encounters/what-a-house-has-on-its-board';
 
@@ -32,7 +37,9 @@ async function atAPost() {
     h.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: 1000 });
     const worker = { ...createNpc(world.seed, { id: 'npc-worker', name: 'Worker',
         bornOnDay: world.currentDay - 20 * 365, onDay: world.currentDay }),
-        locationId: place.id, factionId: house.id, factionRankIndex: 1, activity: null };
+        locationId: place.id, factionId: house.id, factionRankIndex: 1,
+        activity: { kind: 'idle' as const, note: 'Available for a duty hire.', withIds: [],
+            sinceDay: routineTime(world), untilDay: routineTime(world) + 30 } };
     world.npcs = [worker];
     h.game.atHand = world;
     h.repos.cultivators.standIn(cultivator.id, theAreasOf(world, place).whereIs.get(worker.id)!);
@@ -131,9 +138,11 @@ describe('a member hires their duty out', () => {
     }, 120_000);
     it('writes a failed hire on the member and pays no contribution', async () => {
         const h = await atAPost();
-        hireForYourDuty(h.game, h.run, h.person(), h.worker.name);
+        expect(hireForYourDuty(h.game, h.run, h.person(), h.worker.name).outcome).toBe('executed');
         const world = h.game.atHand!;
-        world.npcs[0] = { ...world.npcs[0]!, status: 'physically_dead', diedOnDay: world.currentDay };
+        const at = world.npcs.findIndex(person => person.id === h.worker.id);
+        expect(at).toBeGreaterThanOrEqual(0);
+        world.npcs[at] = markDead(world.npcs[at]!, world.currentDay, 'Died before completing the hired post.');
         expect(settleTheMissionPostTheyHold(h.game, h.person())).toBeNull();
         world.currentDay += h.oath.dueOnDay! - Math.floor(h.run.elapsedDays);
         h.db.prepare('UPDATE runs SET elapsed_days = ? WHERE id = ?').run(h.oath.dueOnDay, h.run.id);

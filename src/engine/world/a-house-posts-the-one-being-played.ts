@@ -51,7 +51,7 @@ import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js
 import { getSendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
-import { locationOnNpcJourney, physicalJourneyDays } from './places-on-the-way.js';
+import { physicalJourneyDays, locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { isPlayerInvolved } from './background-incident-draw.js';
 import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { RouteQueries } from './locations.js';
@@ -59,6 +59,7 @@ import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.
 import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { keepTheTwins, takeOffTheStack, howManyTheHouseHas } from './a-communication-talisman-carries-word-home.js';
 import { whereThisHouseBurnsItsLamps } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { keepTheirHallCheckOnLeaving } from './what-the-roll-and-the-lamps-say.js';
 import {
     isAwayOnSomething,
     isTheWorldsToMove,
@@ -221,12 +222,12 @@ export function theyAreRelieved(state: WorldState, input: {
     const npc = state.npcs[at];
     const doing = npc?.activity;
     if (!npc || npc.status !== 'alive' || doing?.kind !== 'stationed'
-        || locationOnNpcJourney(state.locations, npc, input.today, routes) !== input.townId) return false;
+        || locationOfNpcOnItsJourney(state, npc, input.today, routes) !== input.townId) return false;
     if (factsWithDataValue(state, 'outgoingId', npc.id).some(f => f.data.postRelief === true
         && f.day >= doing.sinceDay)) return false;
     const replacement = state.npcs.find(n => n.id !== npc.id && n.factionId === npc.factionId
         && n.status === 'alive' && n.activity?.kind === 'stationed'
-        && locationOnNpcJourney(state.locations, n, input.today, routes) === input.townId
+        && locationOfNpcOnItsJourney(state, n, input.today, routes) === input.townId
         && (!input.replacementId || n.id === input.replacementId));
     if (!replacement) return false;
     if (!isPlayerInvolved(state, npc) && !isPlayerInvolved(state, replacement)) {
@@ -316,6 +317,7 @@ export function theOneBeingPlayedLeavesThePost(
     const at = state.npcs.findIndex(n => n.id === input.playerId);
     const npc = state.npcs[at];
     if (!npc || npc.activity?.kind !== 'stationed') return false;
+    keepTheirHallCheckOnLeaving(state, npc, input.today);
     state.npcs[at] = { ...npc, activity: null, updatedOnDay: input.today };
     return true;
 }

@@ -2369,7 +2369,7 @@ ${done.span.facts.prose}`;
         const makerRow = this.atHand?.npcs.find(row => row.id === party.id) ?? null;
         const alreadyMaking = makerRow === null || !this.atHand
             ? null
-            : whatTheMakerIsAlreadyMaking(makerRow, Math.floor(this.atHand.currentDay));
+            : whatTheMakerIsAlreadyMaking(makerRow, routineTime(this.atHand));
         if (alreadyMaking !== null) {
             return refused('engine.whatTheMakerIsAlreadyMaking', 'request', factsForRefusal(
                 `${party.name} is already at work.`,

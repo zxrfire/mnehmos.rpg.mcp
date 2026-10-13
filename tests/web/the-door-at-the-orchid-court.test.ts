@@ -15,12 +15,18 @@
  * a closed door a delay rather than a fact. A refusal that named a rung would
  * be the wrong refusal even though it would read as a refusal.
  *
+ * Oct11 found the stair control still naming a remote terrace from birth
+ * without a learned route. It now starts on the actual terrace with its
+ * actual stair learned; the played leg measures that stair, not discovery
+ * or an unrelated journey across the world.
+ *
  * WORLD PINNED, because sex is dealt at birth and the door reads it.
  */
 
 import { describe, it, expect } from 'vitest';
 
 import { makeGameInWorld } from './harness';
+import { worldLocationFor } from '../../src/web/entities.js';
 import { PLACE } from '../../src/data/cultivation/place-names.js';
 import { placeRoadDays } from '../../src/data/cultivation/regions.js';
 import {
@@ -68,18 +74,24 @@ describe('a player can find the valley and walk to it', () => {
     });
 
     it('takes somebody there and spends the day the catalog states', async () => {
-        // A run seed whose roads are not stopped.
+        // Arrange the start of the stair whose native duration is measured.
         const { game } = await makeGameInWorld({ seed: 'orchid-door-2', worldSeed: 'orchid-world' });
-        await game.newRun('Probe');
-
-        await game.act(`I travel to ${PLACE.ORCHID_TERRACE}`);
-        expect((await game.state()).cultivator.location).toContain(PLACE.ORCHID_TERRACE);
+        const { cultivator } = await game.newRun('Probe');
+        const world = (await game.loadWorld())!;
+        const terrace = worldLocationFor(world, PLACE.ORCHID_TERRACE)!;
+        const valley = worldLocationFor(world, PLACE.ORCHID_VALLEY)!;
+        expect(terrace, 'the terrace has no world row').not.toBeNull();
+        expect(valley, 'the valley has no world row').not.toBeNull();
+        game.repos.cultivators.update(cultivator.id, { location: terrace.name, standingIn: null });
+        game.knowledge.learnIfNew({ holderId: cultivator.id, kind: 'place', id: valley.id,
+            name: valley.name, onDay: 0, stage: 'placed', sourceKind: 'told',
+            sourceNote: 'The stair is known before the duration control starts.' });
 
         const before = (await game.state()).run.elapsedDays;
         await game.act(`I travel to ${PLACE.ORCHID_VALLEY}`);
         const after = await game.state();
         expect(after.cultivator.location).toContain(PLACE.ORCHID_VALLEY);
-        expect(after.run.elapsedDays - before).toBe(1);
+        expect(after.run.elapsedDays - before).toBeCloseTo(1, 10);
     });
 });
 

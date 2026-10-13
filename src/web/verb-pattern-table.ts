@@ -377,12 +377,12 @@ import {
 /**
  * The steps at a counter, in the order they are tested.
  *
- * `board` is the discoverability half and is a read. `buy` moves a body for a
- * fare, and `hire` takes a whole carriage at a station; both spend.
+ * `board` reads the notice board. `ticket` buys a held tally; `embark` hands
+ * one in. `buy` takes immediate passage and `hire` takes a whole carriage.
  */
-export type PassageIntent = 'hire' | 'buy' | 'board';
+export type PassageIntent = 'hire' | 'buy' | 'board' | 'ticket' | 'embark';
 
-export const PASSAGE_INTENTS: readonly PassageIntent[] = ['hire', 'buy', 'board'] as const;
+export const PASSAGE_INTENTS: readonly PassageIntent[] = ['hire', 'buy', 'board', 'ticket', 'embark'] as const;
 
 /**
  * What a sentence about a counter means when it names no step.
@@ -3032,6 +3032,8 @@ export const BOOKING_A_PLACE = 'book|books|booking|booked';
  * is only taken is `ride`, which falls through to a seat when they own none.
  */
 const A_SHIP_OR_A_CARRIAGE_FROM_HERE = new RegExp([
+    String.raw`\b(?:read|check|look at)\b[^.!?]{0,25}\bcarriage\s+(?:board|timetable|departures)\b`,
+    String.raw`\b(?:board|boards|boarding|get aboard)\s+(?:a\s+|an\s+|the\s+)?(?:public\s+)?(?:carriage|coach)\b`,
     String.raw`\b(?:take|takes|taking|took|board|boards|boarding|catch|catches|catching|get on|gets on|sail|sails|sailing|go by|goes by|travel by)\s+(?:a\s+|an\s+|the\s+)?ships?\b`,
     String.raw`\b(?:hire|hires|hiring|hired|charter|charters|chartering|chartered)\s+(?:a\s+|an\s+|the\s+)?(?:(?:drawn|shod|iron-rimmed|whole)\s+)?(?:carriage|coach|cart|wagon|boat|skiff|ship)\b`,
     String.raw`\b(?:what|which|where|when|any|is there|are there)\b[^.?!]{0,40}\b(?:ships?|boats?|ferry|ferries|carriages?|coaches?)\b[^.?!]{0,30}\b(?:go|goes|run|runs|sail|sails|leave|leaves|depart|departs|there|here|to)\b`,
@@ -3051,6 +3053,8 @@ const STAYING_AT_THE_INN =
     /\b(?:stay|stays|staying|stayed|lodge|lodges|lodging|lodged|put up|puts up|putting up|spend|spends|spending|spent|pass|passes)\b[^.!?]{0,30}\b(?:at|in)\s+(?:the|an|this|that)\s+inn\b/;
 
 const PASSAGE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
+    ['ticket', /\b(?:buy|buys|buying|purchase|purchases|book)\b[^.!?]{0,55}\b(?:tickets?|(?:passage )?tall(?:y|ies)|boarding jade)\b/],
+    ['embark', /\b(?:board|boards|boarding|get aboard)\s+(?:a\s+|an\s+|the\s+)?(?:public\s+)?(?:ship|boat|carriage|coach)\b|\bhand\s+in\b[^.!?]{0,35}\b(?:tickets?|(?:passage )?tall(?:y|ies)|boarding jade)\b/],
     // A whole carriage, ahead of a seat, because hiring one is also buying one.
     ['hire', /\b(?:hire|hires|hiring|hired|charter|charters|chartering|chartered)\b|\b(?:a|the)\s+whole\s+(?:carriage|coach|cart)\b/],
     // Buying, first, because a sentence about buying one contains every word a
@@ -4602,6 +4606,9 @@ function withoutWhatOnlyFillsTheFront(input: string): string {
 
 export function parseIntent(rawInput: string): PlannedAction {
     const input = withoutWhatOnlyFillsTheFront(inTheCharactersThePatternsUse(rawInput));
+    if (/^(?:i\s+)?(?:leave|quit|depart from)\s+(?:the|this|our)\s+party[.!]?$/i.test(input)
+        || /^(?:i\s+)?(?:tell|ask)\s+(?:the|our)\s+party\s+(?:to\s+)?(?:continue|press on|rest|turn back)[.!]?$/i.test(input))
+        return { action: 'interact' };
     const plan = readTheSentence(input);
     if (plan.action !== FALLBACK_ACTION) return plan;
 
@@ -7438,8 +7445,9 @@ function planIntent(input: string): PlannedAction {
     }
 
     // ── investigate: examining, reading, searching a place ──
+    const addressedInteraction = /^(?:i\s+)?(?:speak|talk|trade|barter|haggle)\s+(?:with|to)\b/.exec(text);
     if (/\b(?:investigate|examine|inspect|study|decipher|appraise|look into|find out about|go looking for|goes looking for|went looking for|search|scour|comb|explore|delve|survey|read the|check the|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look (?:over|through)|go through|walk the|climb (?:into|down into)|venture into|case the|scavenge|loot|salvage)\b/.test(text)
-        && !GOING_THROUGH_WHAT_THEY_CARRY.test(text)) {
+        && !addressedInteraction && !GOING_THROUGH_WHAT_THEY_CARRY.test(text)) {
         return {
             action: 'investigate',
             target: extractSubject(input, /investigate|examine|inspect|study|decipher|appraise|look into|find out about|go looking for|goes looking for|went looking for|search|scour|comb|explore|delve|survey|read|check|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look over|look through|go through|walk|climb into|venture into|case|scavenge|loot|salvage/)
@@ -7561,7 +7569,7 @@ function planIntent(input: string): PlannedAction {
     }
 
     // ── interact: everything done to or with a person or a faction ──
-    const interactIntent = theInteractIntent(text);
+    const interactIntent = theInteractIntent(addressedInteraction?.[0] ?? text);
     if (interactIntent) {
         const leverage = LEVERAGE_BEHIND_INTENT[interactIntent];
         const subject = extractSubject(input, INTERACT_SUBJECT_VERBS);

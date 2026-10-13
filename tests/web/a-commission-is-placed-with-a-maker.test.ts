@@ -34,8 +34,11 @@ import { whatIsBeingMade } from '../../src/engine/world/where-inside-a-house-som
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { worldLocationFor } from '../../src/web/entities';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
+import { routineTime } from '../../src/engine/world/npc-routines';
 
 const WORLD = 'a-commission-is-placed';
+// A late-day order finished at midnight because both ends floored the clock.
+// Keep the actual agreed work span, including the pre-completion cancellation.
 
 type Turn = { narration: string; toolCalls: { summary: string }[] };
 
@@ -125,14 +128,16 @@ describe('a commission placed with a maker', () => {
         expect(found, 'nobody else here would take the work').not.toBeNull();
         const maker = found!;
         const one = placed().find(p => p.makerId === maker.id)!;
+        expect(one.held, 'the interruption must precede completion').toBe(false);
+        expect(one.dueOnDay - one.placedOnDay).toBe(1);
         const at = world().npcs.findIndex(n => n.id === maker.id);
-        const today = Math.floor(world().currentDay);
+        const today = routineTime(world());
         world().npcs[at] = {
             ...maker,
             activity: { kind: 'out_with_a_party', note: 'Sent out with a party.', withIds: [], sinceDay: today, untilDay: today + 90 }
         };
         const turn = await h.game.act('I look around');
-        expect(said(turn)).toMatch(/set down the work/);
+        expect(said(turn), JSON.stringify({ actualMaker: row(maker.id), commission: one, calls: (turn as unknown as Turn).toolCalls })).toMatch(/set down the work/);
         expect(placed().some(p => p.thingId === one.thingId)).toBe(false);
         const owed = h.db.prepare('SELECT COUNT(*) AS n FROM obligations WHERE holder_id = ? AND subject_id = ?')
             .get(cultivatorId, maker.id) as { n: number };

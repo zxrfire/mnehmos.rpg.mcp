@@ -15,7 +15,7 @@ import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { isRuined, transferPossession, type ObjectRecord } from './possessions.js';
 import type { CapitalOccasion } from './capital-missions-and-calendar.js';
 import type { WorldState } from './world-state.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { routeQueriesFor } from './locations.js';
 import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 
@@ -33,6 +33,11 @@ export function capitalAuctionLots(state: WorldState, venueId: string, day: numb
     return pendingAuctionLots(state, venueId).filter(f => f.day <= day && Number(f.data.closesOnDay) >= day);
 }
 
+function theLotIsStillHeld(object: ObjectRecord | undefined, lot: HistoricalFact, seller: NpcRecord | undefined): boolean {
+    return seller !== undefined && object !== undefined && !isRuined(object) && object.possessorId === seller.id
+        && object.ownerId === lot.data.payeeId;
+}
+
 /** The ordinary store approval releases house property; a personal owner decides by their ordinary sale read. */
 export function consignCapitalAuction(state: WorldState, occasion: CapitalOccasion,
     day = occasion.opensOnDay): void {
@@ -41,7 +46,7 @@ export function consignCapitalAuction(state: WorldState, occasion: CapitalOccasi
     const holder = state.factions.find(h => h.id === occasion.hostId);
     const routes = routeQueriesFor(state.locations);
     const present = state.npcs.filter(n => n.status === 'alive' && isTheWorldsToMove(n)
-        && locationOnNpcJourney(state.locations, n, day, routes) === venue.id);
+        && locationOfNpcOnItsJourney(state, n, day, routes) === venue.id);
     const distant = present.filter(person => !isPlayerInvolved(state, person));
     const selected = new Set((distant.length <= 4 ? distant : drawBackgroundIncidents(
         distant.map(value => ({ value, rate: 1 })), forStream(state.seed, 'background-auction-sellers', venue.id, day), 4))
@@ -122,11 +127,13 @@ export function bidAtCapitalAuction(state: WorldState, bidder: NpcRecord, venueI
     positions?: ReadonlyMap<string, string | null>): HistoricalFact | null {
     if (!Number.isSafeInteger(stones) || stones <= 0 || bidder.status !== 'alive'
         || (isTheWorldsToMove(bidder)
-            ? positions?.has(bidder.id) ? positions.get(bidder.id) : locationOnNpcJourney(state.locations, bidder, day)
+            ? positions?.has(bidder.id) ? positions.get(bidder.id) : locationOfNpcOnItsJourney(state, bidder, day)
             : playerLocationId) !== venueId) return null;
     const lot = capitalAuctionLots(state, venueId, day).find(f => f.id === lotId);
     if (!lot || bidder.id === lot.data.sellerId || bidder.id === lot.data.payeeId
         || stones < Number(lot.data.reserve) || stones > bidder.spiritStones) return null;
+    if (!theLotIsStillHeld(state.objects.find(object => object.id === lot.data.objectId), lot,
+        state.npcs.find(person => person.id === lot.data.sellerId))) return null;
     const bids = factsWithDataValue(state, 'lotId', lotId).filter(f => f.data.auctionBid === true);
     if (bids.some(f => Number(f.data.stones) >= stones)) return null;
     const committed = new Map<string, number>();
@@ -160,7 +167,7 @@ function settleThem(state: WorldState, day: number,
         // Somebody with no activity is where their row says (`projectNpcJourney` returns it); only a
         // person who is doing something can be somewhere else on the day, so only they are projected.
         if (!positions.has(npc.id)) positions.set(npc.id, npc.activity
-            ? locationOnNpcJourney(state.locations, npc, onDay, routes) : npc.locationId);
+            ? locationOfNpcOnItsJourney(state, npc, onDay, routes) : npc.locationId);
         return positions.get(npc.id) ?? null;
     };
     const lots = pendingAuctionLots(state).filter(f => Number(f.data.closesOnDay) <= day);
@@ -171,9 +178,10 @@ function settleThem(state: WorldState, day: number,
         const objectAt = state.objects.findIndex(o => o.id === lot.data.objectId);
         const object = state.objects[objectAt];
         const seller = state.npcs.find(n => n.id === lot.data.sellerId);
-        const participants = state.npcs.filter(n => n.status === 'alive'
+        const available = theLotIsStillHeld(object, lot, seller);
+        const participants = available ? state.npcs.filter(n => n.status === 'alive'
             && (n.id === playerAt?.id ? playerAt.locationId
-                : positionOn(n, closes)) === lot.locationId);
+                : positionOn(n, closes)) === lot.locationId) : [];
         const previous = Math.max(Number(lot.data.reserve) - 1, ...bids.map(b => Number(b.data.stones)));
         const possible = participants.filter(isTheWorldsToMove);
         const distant = possible.filter(person => !isPlayerInvolved(state, person));
@@ -193,8 +201,7 @@ function settleThem(state: WorldState, day: number,
                 undefined, positionsByDay.get(closes));
             if (bid) bids.push(bid);
         }
-        const valid = object && !isRuined(object) && object.possessorId === seller?.id
-            && object.ownerId === lot.data.payeeId
+        const valid = available
             ? bids.sort((a, b) => Number(b.data.stones) - Number(a.data.stones) || a.id.localeCompare(b.id))
                 .find(b => participants.some(n => n.id === b.actors[0]?.id && n.spiritStones >= Number(b.data.stones))) : undefined;
         const winner = valid ? participants.find(n => n.id === valid.actors[0]?.id) : undefined;

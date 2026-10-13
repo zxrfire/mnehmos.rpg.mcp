@@ -63,6 +63,10 @@ export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries,
     activity: NpcActivity | null; home: boolean; standingIn: string | null; locationId: string | null;
 } {
     const now = routineTime(state);
+    if (npc.status === 'alive' && (npc.activity?.partyQuestionId || npc.activity?.partyFightId)) return { activity: {
+        ...npc.activity, note: npc.activity.partyFightId ? 'Facing an attack on the party.' : npc.activity.redirect?.previous
+            ? 'Resting with the party until dawn.' : 'Discussing the party\'s route.' }, home: false,
+        standingIn: npc.activity.standingIn ?? null, locationId: npc.locationId };
     const redirect = npc.activity?.redirect;
     if (redirect && now < redirect.until) {
         return { activity: npc.activity, home: false, standingIn: redirect.standingIn ?? null, locationId: npc.locationId };

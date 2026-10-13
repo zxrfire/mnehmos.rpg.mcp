@@ -1,5 +1,6 @@
 import { activityForVerb } from './encounters.js';
 import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
+import { spendFollowingParty } from './following-the-party-leader.js';
 import { spendOnOwnedPassage } from './an-owned-passage.js';
 import { spendAboardTheShip, spendAboardTheCarriage } from './an-actual-paid-passage.js';
 import { thePaidCarriageClaim } from './a-paid-carriage-on-the-road.js';
@@ -91,6 +92,9 @@ export async function passHours(game: GameService, run: Run, cultivator: Cultiva
         const pastTheEnd = aSpanPastTheEndOfThisLife(cultivator, days);
         if (pastTheEnd) return { finished: false, spent: refused('engine.aSpanPastTheEnd', 'wait', factsForRefusal(
             'Longer than the life asking for it.', pastTheEnd.line, 'Nothing spent.')) };
+        const party = game.worldEnabled
+            ? await spendFollowingParty(game, run, cultivator, days, resolvesOnTurn, finishTurn) : null;
+        if (party) return { spent: party, finished: party.outcome === 'executed' && !party.cutShort && !party.timeSkip?.interrupted };
         const flying = game.worldEnabled
             ? await spendOnPersonalAirCourse(game, run, cultivator, days, resolvesOnTurn, finishTurn) : null;
         if (flying) {

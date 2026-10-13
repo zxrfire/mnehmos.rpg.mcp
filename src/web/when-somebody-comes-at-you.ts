@@ -1,3 +1,10 @@
+import { actualCarrierScene } from './the-actual-carrier-scene.js';
+import { theEncounterBeasts } from './the-beasts-in-an-actual-encounter.js';
+import { whatAPlayedGroupFightLeft } from './what-a-party-fight-leaves-on-its-people.js';
+import { followedParty, holdTheFollowingPartyForAFight } from './following-the-party-leader.js';
+import { routineTime } from '../engine/world/npc-routines.js';
+import { locationOfNpcOnItsJourney } from '../engine/world/places-on-the-way.js';
+import { worldLocationFor } from './entities.js';
 import { writeTheNpcArtsActuallyUsed } from '../engine/world/the-arts-an-npc-actually-uses-in-a-fight.js';
 /**
  * Somebody on a road or at a cave door comes at the player, and it is a fight.
@@ -51,7 +58,7 @@ export function comesAtYou(occurrence: EncounterOccurrence): boolean {
     if (occurrence.account) return true;
     if (occurrence.scene || occurrence.duty) return false;
     const entry = ENCOUNTERS.find(row => row.id === occurrence.entryId);
-    if (!entry || !needsToFindYou(entry)) return false;
+    if (!entry || (!needsToFindYou(entry) && entry.kind !== 'spirit_beast')) return false;
     const tags = new Set(entry.tags);
     return tags.has('hostile') && !tags.has('reward') && !tags.has('feud');
 }
@@ -66,6 +73,8 @@ export function comesAtYou(occurrence: EncounterOccurrence): boolean {
  */
 function whoLeadsThem(occurrence: EncounterOccurrence): string {
     const many = (occurrence.confrontation?.count ?? 1) > 1;
+    const entry = ENCOUNTERS.find(row => row.id === occurrence.entryId);
+    if (entry?.kind === 'spirit_beast') return entry.name.replace(/ Pack$/i, '');
     const onTheRoad = ENCOUNTERS.find(row => row.id === occurrence.entryId)?.tags.includes('road');
     if (occurrence.kind === 'bandits' && onTheRoad) return many ? 'the leader of the bandits' : 'the bandit';
     const onTheWater = ENCOUNTERS.find(row => row.id === occurrence.entryId)?.requiresSubstrate === 'water';
@@ -84,7 +93,8 @@ export function theyCameAtYou(
     ambient: AmbientQi,
     happened: EncounterRoll,
     /** A band that attacked the vehicle they ride in is a fight they are in, walking away or not. */
-    onTheVehicle = false
+    onTheVehicle = false,
+    carrierCompany: readonly NpcRecord[] = []
 ): Execution | null {
     const occurrence = happened.occurrences.find(one => one.interrupts);
     if (!occurrence) return null;
@@ -93,11 +103,14 @@ export function theyCameAtYou(
 
     // WHO: the person the ledger sent, or the strongest of whoever the draw put
     // in the road, at the rung the draw gave them.
+    const beasts = theEncounterBeasts(service, occurrence);
+    if (beasts && !beasts.length) return null;
+    const actualBeast = beasts?.[0] ?? null;
     const sent = occurrence.account?.sent ?? null;
-    const party = sent
+    const party = actualBeast ? { id: actualBeast.id, name: actualBeast.name } : sent
         ? { id: sent.id, name: sent.name }
         : { id: `encounter:${occurrence.id}:${occurrence.absoluteDay}`, name: whoLeadsThem(occurrence) };
-    const theirRecord = sent ? service.atHand?.npcs.find(npc => npc.id === sent.id) ?? null : null;
+    const theirRecord = actualBeast ?? (sent ? service.atHand?.npcs.find(npc => npc.id === sent.id) ?? null : null);
     const onRecord = sent !== null && !theirRecord && service.repos.cultivators.getById(sent.id) != null;
     const theirBody = service.theBodyTheyStandIn(
         run, party, onRecord, sent?.realmOrdinal ?? threat.threatOrdinal, theirRecord
@@ -134,10 +147,35 @@ export function theyCameAtYou(
     // A BAND IS A BAND WHEN YOU WALK ALONE TOO. The owner: a band fights as a group even
     // with nobody beside you. Three in a room: you, the leader and one of their men, who fights
     // beside the leader in every round; the rest of the band hangs back.
+    const world = service.atHand, day = world ? routineTime(world) : occurrence.absoluteDay;
+    const following = world && followedParty(service.db, world, cultivator.id, day);
+    const groundHere = world && worldLocationFor(world, cultivator.location)?.id;
+    const scene = world && actualCarrierScene(service.repos, cultivator, world, day);
+    const roadCompany = world ? (following ? following.members : service.whoIsWithYouOnTheRoad(cultivator))
+        .filter(person => person.status === 'alive' && (scene?.accepts(person)
+            || locationOfNpcOnItsJourney(world, person, day) === groundHere)) : [];
+    const crewHere = world && scene && (roadCompany.length || carrierCompany.length) ? world.npcs.filter(person => scene.accepts(person)
+        && person.tags.includes('crew-of:' + scene.vesselId)) : [];
+    const company = [...new Map([...roadCompany, ...carrierCompany, ...crewHere]
+        .filter(person => person.status === 'alive').map(person => [person.id, person])).values()];
+    const partyFightFactId = company.length && following
+        ? holdTheFollowingPartyForAFight(service, cultivator, occurrence.id, day) : null;
+    const grouped = company.length ? theRestOfTheFight(service, run, occurrence, company.length, ambient,
+        'party', true, company, following ? following.leader.id : undefined, true) : null;
+    const allyPerson = [...company].sort((a,b) => following
+        ? Number(b.id === following.leader.id) - Number(a.id === following.leader.id) : 0)[0];
+    const allyBody = allyPerson ? service.theBodyTheyStandIn(run, { id: allyPerson.id, name: allyPerson.name },
+        false, null, allyPerson) : null;
     const theBand = threat.count ?? 1;
+    const second = allyBody && !isGuidingErrorBody(allyBody) && theBand > 1
+        ? service.theBodyTheyStandIn(run, beasts?.[1] ? { id: beasts[1].id, name: beasts[1].name }
+            : { id: `encounter:${occurrence.id}:${occurrence.absoluteDay}:second`, name: 'one of the band' }, false,
+            threat.threatOrdinal, beasts?.[1] ?? null) : null;
+    const foregroundParty = allyBody && !isGuidingErrorBody(allyBody) ? { ally: allyBody,
+        ...(second && !isGuidingErrorBody(second) ? { secondAttacker: second } : {}), state: null, result: null } : null;
     const closedIn: string[] = [];
     let alongside: StandingFight['alongside'];
-    if (!sent && !onTheVehicle && theBand > 1 && entry?.kind === 'bandits') {
+    if (!sent && !onTheVehicle && company.length === 0 && theBand > 1 && entry?.kind === 'bandits') {
         const man = service.theBodyTheyStandIn(run, { id: 'one of the band', name: 'one of the band' }, false,
             threat.threatOrdinal, null);
         if (!isGuidingErrorBody(man)) {
@@ -166,7 +204,8 @@ export function theyCameAtYou(
         playerId: cultivator.id,
         ground,
         turn,
-        ambient
+        ambient,
+        inGroup: foregroundParty !== null
     });
 
     const because = occurrence.event.summary;
@@ -192,7 +231,10 @@ export function theyCameAtYou(
         terms: 'open',
         verb: 'attack',
         cameAtYou: { wanted: wantsTheRite ? 'furnace' : null, because },
-        ...(alongside ? { alongside } : {})
+        ...(alongside ? { alongside } : {}),
+        ...(partyFightFactId ? { partyFightFactId } : {}),
+        ...(foregroundParty ? { foregroundParty } : {}),
+        ...(grouped ? { partyBackground: grouped } : {})
     };
 
     const whatTheyCameFor = wantsTheRite
@@ -213,6 +255,7 @@ export function theyCameAtYou(
     if (opened.settled) {
         service.fight = null;
         const settled = service.concludeTheFight(run, cultivator, held, opened.settled);
+        if (grouped) settled.facts.lines.unshift(...grouped.lines);
         settled.facts.structure.unshift(
             `${party.name} came at this cultivator and the gap settled it before anybody moved. `
             + whatTheyCameFor
@@ -233,7 +276,7 @@ export function theyCameAtYou(
         ? `${party.name} came over the account ${account.holderIsAHouse ? `${account.holderName} holds` : 'they hold'} `
           + `against you: ${account.what.trim()}`
         : null;
-    const said = [throughTheDoor, owed, ...closedIn, line].filter((one): one is string => one !== null);
+    const said = [throughTheDoor, owed, ...(grouped?.lines ?? []), ...closedIn, line].filter((one): one is string => one !== null);
     const facts = factsForToolResult(`${party.name} attacks.`, said);
     facts.required = said;
     if (door) {
@@ -288,10 +331,17 @@ export function theRestOfTheFight(
     ambient: AmbientQi,
     vehicle: string,
     thePlayerFightsTheLeader: boolean,
-    crew: readonly NpcRecord[] | null = null
+    crew: readonly NpcRecord[] | null = null,
+    foregroundAllyId?: string,
+    sharedForeground = false
 ): { lines: string[]; escortHeld: boolean; fallen: string[] } {
     const band = occurrence.confrontation?.count ?? 1;
     const bandRung = occurrence.confrontation?.threatOrdinal ?? 0;
+    const beast = occurrence.kind === 'spirit_beast';
+    const enemyName = beast ? whoLeadsThem(occurrence) : 'bandit';
+    const enemyGroup = beast ? 'the beasts' : 'the band';
+    const oursGroup = vehicle === 'party' ? 'party' : 'crew';
+    const persistentLines: string[] = [], actualDead = new Set<string>();
     const guardRung = getContract('contract-escort')?.minOrdinal ?? 0;
     const body = (who: string, rung: number) => {
         const made = service.theBodyTheyStandIn(run, { id: who, name: who }, false, rung, null);
@@ -306,11 +356,15 @@ export function theRestOfTheFight(
         })
         .filter((one): one is NonNullable<typeof one> => one !== null);
     const fight = (escort: ReturnType<typeof bodies>, bandits: number, stream: string) => {
-        const them = bodies('bandit', bandits, bandRung);
+        const actualBeasts = theEncounterBeasts(service, occurrence);
+        const start = stream === 'the-rest-of-the-fight' && thePlayerFightsTheLeader ? Math.min(2, band)
+            : stream === 'a-guard-beside-you' ? 1 : 0;
+        const them = actualBeasts ? theirOwn(actualBeasts.slice(start, start + bandits))
+            : bodies(enemyName, bandits, bandRung);
         if (escort.length === 0 || them.length === 0) return null;
         const result = resolveMelee([
             { id: 'escort', name: 'the escort', members: escort },
-            { id: 'band', name: 'the band', members: them }
+            { id: 'band', name: enemyGroup, members: them }
         ], {
             rng: forStream(run.seed, stream, occurrence.absoluteDay),
             ambient,
@@ -318,7 +372,13 @@ export function theRestOfTheFight(
             intent: { thrown: AN_ORDINARY_SWING, willWithdraw: true }
         });
         if (service.atHand) writeTheNpcArtsActuallyUsed(service.atHand,result.exchanges,
-            'escort:'+run.id+':'+stream+':'+occurrence.absoluteDay,occurrence.absoluteDay);
+            'escort:'+run.id+':'+stream+':'+occurrence.absoluteDay,routineTime(service.atHand));
+        if (crew && service.atHand) {
+            const left = whatAPlayedGroupFightLeft(service, result, [...escort, ...them],
+                routineTime(service.atHand), worldLocationFor(service.atHand, service.currentRun().cultivator.location)?.id ?? null);
+            persistentLines.push(...left.lines);
+            for (const id of left.dead) actualDead.add(id);
+        }
         return result;
     };
     const named = (ids: readonly string[]) => (crew ?? []).filter(person => ids.includes(person.id)).map(person => person.name);
@@ -326,12 +386,12 @@ export function theRestOfTheFight(
         const escort = result.sides.find(side => side.id === 'escort')!;
         const them = result.sides.find(side => side.id === 'band')!;
         const how = result.winningSideId === 'escort' ? `${who} held`
-            : result.winningSideId === 'band' ? 'the band had the better of it' : 'neither side broke';
+            : result.winningSideId === 'band' ? `${enemyGroup} had the better of it` : 'neither side broke';
         const ours = crew
-            ? `of the crew ${named(escort.fallen).join(' and ') || 'nobody'} fell and `
+            ? `of the ${oursGroup} ${named(escort.fallen).join(' and ') || 'nobody'} fell and `
                 + `${named(escort.withdrawn).join(' and ') || 'nobody'} broke off`
             : `of the guards ${escort.fallen.length} fell and ${escort.withdrawn.length} broke off`;
-        return `${how}: ${ours}; of the band ${them.fallen.length} fell and ${them.withdrawn.length} broke off.`;
+        return `${how}: ${ours}; of ${enemyGroup} ${them.fallen.length} fell and ${them.withdrawn.length} broke off.`;
     };
 
     const lines: string[] = [];
@@ -339,17 +399,21 @@ export function theRestOfTheFight(
     const inFront = thePlayerFightsTheLeader ? Math.min(2, band) : 0;
     // Beside the player, a hand before the shipmaster, who keeps the ship.
     const side = crew
-        ? [...crew].sort((a, b) => Number(a.identity.occupation === 'shipmaster') - Number(b.identity.occupation === 'shipmaster'))
+        ? [...crew].sort((a, b) => foregroundAllyId
+            ? Number(b.id === foregroundAllyId) - Number(a.id === foregroundAllyId)
+            : Number(a.identity.occupation === 'shipmaster') - Number(b.identity.occupation === 'shipmaster'))
         : null;
-    const besideYou = inFront === 2 && (side === null || side.length > 0) ? 1 : 0;
-    const beside = besideYou === 1
+    const besideYou = inFront >= 1 && (side === null || side.length > 0) ? 1 : 0;
+    const beside = !sharedForeground && inFront === 2 && besideYou === 1
         ? fight(side ? theirOwn(side.slice(0, 1)) : bodies('guard', 1, guardRung), 1, 'a-guard-beside-you')
         : null;
     if (beside) {
         const who = side ? side[0]!.name : 'the guard';
         fallen.push(...beside.sides.find(one => one.id === 'escort')!.fallen);
-        lines.push(`${side ? who : 'A guard'} fights beside you against a second of the band, and ${said(beside, who)}`);
+        lines.push(`${side ? who : 'A guard'} fights beside you against a second of ${enemyGroup}, and ${said(beside, who)}`);
     }
+    if (sharedForeground && besideYou && side)
+        lines.push(`${side[0]!.name} fights beside you against ${inFront} of ${enemyGroup}.`);
     const rest = side ? side.slice(besideYou) : null;
     const guards = rest ? rest.length : escortHeads - besideYou;
     const behind = fight(rest ? theirOwn(rest) : bodies('guard', guards, guardRung), band - inFront, 'the-rest-of-the-fight');
@@ -357,15 +421,15 @@ export function theRestOfTheFight(
         fallen.push(...behind.sides.find(one => one.id === 'escort')!.fallen);
         lines.push(`Around the ${vehicle}, `
             + (rest ? `${rest.map(person => person.name).join(', ')}` : howMany(guards, 'guard'))
-            + ` and ${band - inFront} of the band fight it out, and ${said(behind, rest ? 'the crew' : 'the escort')}`);
+            + ` and ${band - inFront} of ${enemyGroup} fight it out, and ${said(behind, rest ? `the ${oursGroup}` : 'the escort')}`);
     } else if (rest && rest.length === 0 && band - inFront > 0) {
-        lines.push(`Nobody of the crew is left to stand against the rest of the band around the ${vehicle}.`);
+        lines.push(`Nobody of the ${oursGroup} is left to stand against the rest of the band around the ${vehicle}.`);
     }
     const nobodyToHoldIt = rest !== null && rest.length === 0 && band - inFront > 0;
     return {
-        lines,
+        lines: [...lines, ...persistentLines],
         escortHeld: !nobodyToHoldIt && (behind === null || behind.winningSideId !== 'band'),
-        fallen: crew ? fallen.filter(id => crew.some(person => person.id === id)) : []
+        fallen: crew ? [...actualDead].filter(id => crew.some(person => person.id === id)) : []
     };
 }
 

@@ -7,7 +7,7 @@ import type {WorldState} from './world-state.js';
 import type {NpcRecord} from './npc-state.js';
 import {isRuined,type ObjectRecord} from './possessions.js';
 import type {PublicPassageLeg} from './public-shipping.js';
-import {locationOnNpcJourney} from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 
 /** The exact existing crew-factory stream, shared for cold berth admission. */
 export function shipHandsForHull(seed:string,vesselId:string):number {
@@ -22,7 +22,7 @@ export function publicShipHullCanBeBoarded(world: {objects:readonly WorldState['
     if (isRuined(hull) || hull.data?.conveyanceId!=='conv-water-ship') return false;
     const operator=read?read.operator:world.npcs.find(npc=>npc.status==='alive' && npc.tags.includes('crew-of:'+leg.vesselId)
         && npc.identity.occupation==='shipmaster');
-    return !!operator && (!atDeparture || locationOnNpcJourney(world.locations,operator,leg.departureDay)===leg.fromId)
+    return !!operator && (!atDeparture || locationOfNpcOnItsJourney(world,operator,leg.departureDay)===leg.fromId)
         && (hull.possessorId===operator.id || hull.possessorId===null && whoItIsWith(hull)===operator.id);
 }
 

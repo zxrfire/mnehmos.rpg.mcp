@@ -1,3 +1,6 @@
+/** Public-service tallies and personal rides are separate authorities. A free
+ * owned ride produces no tally or public fare; even a paid carried public tally
+ * cannot replace a person's consent to board this privately held craft. */
 /** Guard02 native57434 measured the real quote and exchange at landfall:
  * driver100000/rider1000/open oath became driver100005/rider993/settled once.
  * Direct metric air duration .5771698190364987 days burns2 stones; the fixture's
@@ -75,8 +78,18 @@ import { ownedPassageClaim, acceptOwnedPassage } from '../../src/web/an-owned-pa
 import { passHours } from '../../src/web/routine-invitations.js';
 import { journeyTimeHasReached } from '../../src/engine/world/places-on-the-way.js';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo.js';
+import { realiseAcceptedPublicShipHull } from '../../src/engine/world/a-public-ship-hull.js';
+import { publicShipLinesFrom, quotePublicPassage, recordPublicPassage, activityOfAPublicPassage } from '../../src/engine/world/public-shipping.js';
+import { ensureShipCrew, bindShipCrewToPassage, placeShipCrew } from '../../src/engine/world/ship-crew.js';
+import { buyTalliesForActualPublicBoarding } from '../../src/web/buying-the-tallies-for-an-actual-public-boarding.js';
+import { recordActualBodyArrival, arrivalCourseOfFact, actualBodiesArrivedTogether } from '../../src/engine/world/a-body-that-actually-arrived.js';
+import { offerTheNextPublicCarriage, acceptPublicCarriageOffer } from '../../src/engine/world/the-next-public-carriage-is-an-ordinary-trip.js';
+import { publicTransportFrom } from '../../src/engine/world/public-transport-at-a-place.js';
+import { makePassageTally } from '../../src/engine/world/a-passage-tally-is-the-seat-you-own.js';
+import { makeFact } from '../../src/engine/world/history.js';
+import { appendWorldFact } from '../../src/engine/world/who-was-there-when-it-happened.js';
+import { transferActualSpiritStones } from '../../src/web/transferring-actual-spirit-stones.js';
 import { agreedRideOn } from '../../src/web/an-offered-ride-is-an-agreement.js';
-import { actualBodiesArrivedTogether } from '../../src/engine/world/a-body-that-actually-arrived.js';
 import { getPrice, stonesForACashPrice } from '../../src/data/cultivation/mortal-world.js';
 
 async function scene() {
@@ -164,6 +177,11 @@ for(const payment of ['free','7 spirit stones','goods'] as const){
    await offer(h,payment==='goods'?h.goods.name:payment);
    const cash=h.currentRider().spiritStones;
    await land(h);expect(h.oaths()[0]!.status).toBe('settled');
+   if(payment==='free'){
+    expect(h.game.atHand!.objects.filter(object=>object.tags.includes('passage-tally')&&object.data.vesselId===h.boat.id)).toEqual([]);
+    expect(h.game.atHand!.history.facts.filter(fact=>fact.data.vesselId===h.boat.id
+     && (fact.data.publicPassage===true||fact.data.passageTallyPurchase===true))).toEqual([]);
+   }
    if(payment==='7 spirit stones'){
     expect(h.currentRider().spiritStones).toBe(cash-7);
     expect(h.game.currentRun().cultivator.spiritStones).toBe(before-h.quote.stonesBurned+7);
@@ -313,3 +331,74 @@ it('explicit first leg, fuelled return alone and second load are three actual co
   expect(h.party()).toContain(h.member.id);expect(h.party()).not.toContain(second.id);
  }finally{h.db.close();resetCultivationWorlds();}
 },240000);
+
+it("a paid public tally in the pack does not obtain consent for someone else\'s private craft",async()=>{
+ const h=await scene();try{
+  const world=h.game.atHand!,day=routineTime(world),rider=h.currentRider();
+  const line=publicTransportFrom(world,h.from.name,day).find(line=>line.service==='carriage')!;
+  expect(line,'the ticket names an actual advertised public road service').toBeDefined();
+  const destination=world.locations.find(place=>place.name===line.to)!;
+  const offer=offerTheNextPublicCarriage(world,h.from.id,destination.id,rider.id)!;
+  expect(offer).not.toBeNull();
+  const driver=acceptPublicCarriageOffer(world,offer)!;
+  expect(driver).not.toBeNull();
+  const terms={...offer.departure.terms,seat:offer.seat,fareStones:offer.departure.fareStones};
+  expect(transferActualSpiritStones(h.game,rider.id,driver.id,terms.fareStones).ok).toBe(true);
+  const purchase=appendWorldFact(world,makeFact({day,kind:'gathering',locationId:h.from.id,
+   summary:'A public passage seat was bought.',actors:[{id:rider.id,name:rider.name,role:'buyer'},
+    {id:driver.id,name:driver.name,role:'carrier'}],data:{passageTallyPurchase:true,
+     service:terms.service,vesselId:terms.vesselId,fromLocationId:terms.fromId,toLocationId:terms.toId,
+     departureDay:terms.departureDay,seat:terms.seat,fareStones:terms.fareStones}}),{bystanders:false,recur:false});
+  const tally=makePassageTally({terms,buyer:rider,fromName:h.from.name,
+   toName:world.locations.find(place=>place.id===terms.toId)!.name,onDay:day,purchase});
+  world.objects.push(tally);h.game.theWorldMoved();
+  const before=h.game.currentRun();
+  h.plans.push(JSON.stringify({action:'ride',target:h.to.name,topic:'my spirit boat'}));
+  const refused=await h.game.act('I ride my spirit boat to '+h.to.name+' with '+rider.name+'.');
+  expect(refused.toolCalls.some(call=>call.name==='world.availableForOwnedBoarding'&&!call.ok),refused.narration).toBe(true);
+  expect(h.oaths()).toHaveLength(0);expect(ownedPassageClaim(h.db,before.cultivator.id)).toBeNull();
+  expect(h.game.currentRun().run.elapsedDays).toBe(before.run.elapsedDays);
+  expect(world.objects.find(object=>object.id===tally.id)?.possessorId).toBe(rider.id);
+  expect(h.currentRider().activity?.vesselId).not.toBe(h.boat.id);
+ }finally{h.db.close();resetCultivationWorlds();}
+},180000);
+
+/** A public landfall is an arranged payment-scene precondition, never a private ride outcome. */
+it('a shared public arrival does not complete or charge an earlier private ride agreement',async()=>{
+ const h=await scene();try{
+  await offer(h,'7 spirit stones');
+  const before=h.game.currentRun(),world=h.game.atHand!,day=routineTime(world),rider=h.currentRider();
+  const line=publicShipLinesFrom(world,h.from.name,day).find(line=>line.to===h.to.name)!;
+  expect(line,'the payment scene follows a real public lane').toBeDefined();
+  const quote=quotePublicPassage(world,h.from.id,h.to.id,day,2)!;
+  expect(quote).not.toBeNull();
+  const crew=ensureShipCrew(world,quote.lane,h.from.id,day);
+  const operator=crew.find(person=>person.identity.occupation==='shipmaster')!;
+  bindShipCrewToPassage(world,quote);
+  expect(realiseAcceptedPublicShipHull(world,quote,world.npcs.find(person=>person.id===operator.id)!)).not.toBeNull();
+  const passengers=[{id:before.cultivator.id,name:before.cultivator.name},{id:rider.id,name:rider.name}];
+  const receipt=recordPublicPassage(world,quote,day,h.from.id,
+   [...passengers.map(person=>person.id),...crew.map(person=>person.id)],undefined,
+   {runId:before.run.id,elapsedDays:before.run.elapsedDays,boardedOnDay:day},passengers,undefined,false,
+   accepted=>{expect(buyTalliesForActualPublicBoarding(h.game,accepted,before.cultivator,passengers,quote.fareStones),
+    'actual public tally purchase at the real carrier').toBe(true);});
+  // This control starts its observation with both bodies already at the public landing.
+  // The canonical writer accepts only their actual destination and the finite quoted date.
+  world.currentDay=Math.floor(quote.arrivalDay);world.currentHour=(quote.arrivalDay-world.currentDay)*24;
+  placeShipCrew(world,quote.lane,h.to.id,quote.arrivalDay);
+  const at=world.npcs.findIndex(person=>person.id===rider.id);
+  world.npcs[at]=setLocation({...world.npcs[at]!,activity:{...activityOfAPublicPassage(quote,'The paid public passage ended.'),
+   untilDay:quote.arrivalDay}},h.to.id,quote.arrivalDay);
+  h.game.repos.cultivators.update(before.cultivator.id,{location:h.to.name,standingIn:null,
+   age:before.cultivator.age+quote.days/365});
+  h.game.repos.runs.advanceDays(before.run.id,quote.days);
+  const bodies=passengers.map(person=>({...person,alive:true,locationId:h.to.id}));
+  for(const body of bodies)expect(recordActualBodyArrival(world,body,arrivalCourseOfFact(receipt),quote.arrivalDay,receipt)).not.toBeNull();
+  expect(actualBodiesArrivedTogether(world,bodies,h.to.id,day),'the two canonical public arrivals share their actual course').toBe(true);
+  h.game.theWorldMoved();
+  const seen=await h.game.act('I look around');
+  expect(h.oaths()).toHaveLength(1);
+  expect(h.oaths()[0]!.status,seen.narration).toBe('open');
+  expect(seen.narration).not.toContain('paid the agreed 7 spirit stones');
+ }finally{h.db.close();resetCultivationWorlds();}
+});

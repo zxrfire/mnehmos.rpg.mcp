@@ -2,6 +2,56 @@
 
 # The World Layer
 
+Accepted public carriage trips use finite ordinary appointments on one actual
+driver and hull. Buying the next load can also accept its necessary empty return;
+each leg uses the native route, capacity and elapsed travel. The driver's current
+appointment prevents a later load from boarding over an earlier trip. Actual
+departure consumes unused tallies and retires that appointment from the queue.
+No unattended repeating route or second passenger roster is maintained.
+
+Native mission walking quotes and foreground/background legs use the route's
+actual walking duration. A short road gains no minimum whole day; real local
+departure walks and the mission's actual service still add their own time.
+
+An accepted quoted public ship receipt retains its actual fare. The played
+counter transfers that fare to the actual service owner's purse; a passage
+receipt alone does not assert that money changed hands.
+
+Passage tallies are tracked token objects naming the paid route, departure and
+seat. The public counter can issue paid tallies inside native boarding before
+hand-in. Boarding transfers the tally to a living person at that departure,
+then deletes it from the receiver's possession; an absent receiver cannot take
+it. The actual departure dusts its
+unused tallies. Its printed day alone does not expire it. The holder's secret
+missed-departure fact uses ordinary provenance and receipt costs; player dust
+delivery reads that witness once. The routine fact ages out at the yearly sweep
+after a year, including for a living player, unless a real hold remains. A
+settled grievance and the holder's career list alone do not retain it.
+Native ship and carriage capacity includes unused physical tallies, including
+lost items. A boarding body uses one tally in its own custody; extra tallies
+continue to reserve their seats. The issued item supplies its authority even
+after routine purchase paperwork is gone. A sparse, transient item-position
+index reads current custody without a second departure or passenger roster.
+An unused extra tally lapses even when its holder boarded on another seat;
+that event does not claim they missed the voyage. Both routine losses age out
+under the same yearly rule and genuine evidence holds.
+
+World journey reads supply the current operator from the same NPC rows. A
+carriage passenger follows that body; a missing or dead driver supplies no
+independent passenger journey. Pure route readers retain their explicit actor
+callback when the caller owns only a route and a body.
+Before a later carriage departure, passengers of the completed old leg are
+settled on its reached landfall. They do not follow that driver's later work.
+The same native quote and commit permit an unladen, unpaid leg on an existing
+actual service hull; an empty request cannot mint a carrier or buy a seat.
+
+The yearly sweep can forget an old mundane event without an unrelated business
+docket. Living participants or witnesses, and actual references such as a
+grievance, retain its evidence through the existing hold.
+
+A Life Lamp Hall draws its clerk from available members through the ordinary
+posting pass even where the house has no market town or public crossing watch.
+
 Whole-compound counts read the same actual journey position as its rooms.
 An assigned destination alone neither puts an incoming member inside nor removes
 a departing member before departure; counting does not advance their journey.
@@ -4912,3 +4962,14 @@ actual alchemy hall. Houses without one acquire supplies by trade; assigning car
 to ordinary quarters supplies neither a craft facility nor free medicine. The
 same physical craft-room reader governs house-owned refining vessels. Existing
 personally held medicine and personal crafting keep their ordinary authorities.
+
+Road contacts use `roadVertexMoments` at their fractional dates. `firstTravellerOnTheWay` can read a native journey's original departure, arrival and admitted partial-edge duration while searching only the requested observation window. It neither rounds a crossing to a whole day nor treats a short observation window as the whole dated leg.
+
+A native party's held course question is answered by all its current members. The settled choice resumes its admitted geometry, rests until dawn, or uses the actual partial road home. Its player remains a runtime member without a fabricated world location; the web follower projects the stored body at the actual clock. A stopped air course and a held party fight cannot advance to an obsolete planned endpoint. The legacy `publicMission` itinerary marker also identifies accepted person-funded parties; it does not turn their private ride into a public service.
+
+A foreground party fight writes each actual world person's paid body, arts,
+withdrawal and death through the ordinary consequence path. A completed fight
+aboard an admitted carrier is put to the party on its real landing boundary,
+before its itinerary advances; the carrier's own course keeps running. Tracked
+beast remains use the existing body-material objects and are left for someone
+to take through ordinary possession.

@@ -47,7 +47,7 @@ import {
     whoHousesCannotAccountFor,
     whoTheHouseHasLostTrackOf
 } from './who-a-house-has-lost-track-of.js';
-import { whoHasALampBurningIn } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
+import { whenTheHallKnowsTheirLampIsGone } from './what-the-roll-and-the-lamps-say.js';
 import { handBackWhatTheyNoLongerBelongTo } from './a-recruit-is-given-their-lamp-at-the-house.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -612,24 +612,23 @@ export function whatHousesLearnOfTheirOwn(state: WorldState, onDay: number): Wha
             state.factions[h] = house;
             continue;
         }
-        const lamps = whoHasALampBurningIn(state.objects, house.id);
         for (const one of lost) {
             const person = byId.get(one.personId);
             const sinceYear = yearOfDay(one.sinceDay);
             if (!person || person.status !== 'alive') {
+                const knownOnDay = person ? whenTheHallKnowsTheirLampIsGone(state, house.id, person, onDay) : null;
+                if (knownOnDay === null) continue;
                 house = theHouseKnowsAgain(house, one.personId);
                 settled.add(one.personId);
                 learned.theLampWentOut++;
                 const name = person?.name ?? 'somebody of the house';
                 appendWorldFact(state, makeFact({
-                    day: Math.max(one.sinceDay, person?.diedOnDay ?? onDay),
+                    day: Math.max(one.sinceDay, knownOnDay),
                     kind: 'said_in_public',
                     scale: 'personal',
                     visibility: 'faction',
                     magnitude: 0.3,
-                    summary: lamps.has(one.personId)
-                        ? `The life lamp of ${name} went out in the hall of ${house.name}. Nobody of the house had known where they were since year ${sinceYear}.`
-                        : `${house.name} learned that ${name}, whom nobody of the house had known the whereabouts of since year ${sinceYear}, is dead.`,
+                    summary: `${house.name} found the life lamp of ${name} absent from its hall. Nobody of the house had known where they were since year ${sinceYear}.`,
                     actors: person ? [{ id: person.id, name: person.name, role: 'lost to the house' }] : [],
                     locationId: house.seatLocationId,
                     factionIds: [house.id],

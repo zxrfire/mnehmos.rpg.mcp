@@ -23,7 +23,7 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { theWakeOfADeath, whatADeathIsWorth, whatTheyHeldUp } from './what-a-death-at-this-height-is-worth.js';
 import { recordMasterLost } from './recording-where-somebody-stands-in-a-house.js';
 import { openingsBetween, type LocationRecord } from './locations.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 // The two standings at which the world calls a tie something. Imported from
 // where they are defined rather than retyped here: `gatherings.ts` states in
 // its own comment that `FRIENDSHIP_STANDING` is the bar `settleNpcDeath` uses
@@ -45,9 +45,9 @@ import {
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
 import { heirsOf, type HeirRef } from './lineage.js';
 import {
-    isAStackOfCommunicationTalismans,
-    theirSlipsBreak
+    isAStackOfCommunicationTalismans
 } from './a-communication-talisman-carries-word-home.js';
+import { theirIdentityGoesToDust } from './when-a-disciple-dies-their-tokens-go-to-dust.js';
 import { theirJadeBreaks } from './a-pair-of-communication-jade.js';
 import {
     isOpportunityOpen,
@@ -386,7 +386,7 @@ export function advanceTime(
         const rank = rankName(npc.cultivation.realmOrdinal);
         // Death records the living body's actual ground at its true boundary.
         // Once terminal, obsolete journey dates must never move the corpse.
-        const deathGround = locationOnNpcJourney(state.locations, npc, onDay);
+        const deathGround = locationOfNpcOnItsJourney(state, npc, onDay);
         const dying = deathGround && deathGround !== npc.locationId
             ? setLocation(npc, deathGround, onDay) : npc;
         const dead = theWorldEnds(
@@ -920,8 +920,9 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // THEIR SLIPS BREAK WITH THEIR LAMP. A communication talisman sends word as
     // the person it is keyed to, so both halves of their pairs go when they do,
     // here and before anybody goes through the body: there is nothing for a
-    // looter to take. See `theirSlipsBreak`.
-    theirSlipsBreak(state.objects, deceased.id, null, onDay, read?.keyed(deceased.id));
+    // looter to take. The identity token and life lamp crumble at the same death.
+    theirIdentityGoesToDust(state, deceased.id, onDay,
+        read?.keyed(deceased.id).map(at => state.objects[at]!));
     // And any pair of communication jade they were half of, both halves, which
     // answer to nothing once one end of them is gone and are collected rather
     // than left in the world's things. Before the estate, so nobody inherits

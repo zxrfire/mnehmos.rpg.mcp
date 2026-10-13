@@ -41,9 +41,13 @@ import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-wor
  */
 
 import { publicShipLinesFrom, quotePublicPassage } from '../engine/world/public-shipping.js';
-import { assessPublicCarriage, commitPublicCarriage } from '../engine/world/public-carriages.js';
+import { assessPublicCarriage, commitPublicCarriage, carriageIdForRoad } from '../engine/world/public-carriages.js';
+import { shipIdForLane } from '../engine/world/the-ship-on-a-lane.js';
+import { passageTalliesForDeparture, passageTallyTerms } from '../engine/world/a-passage-tally-is-the-seat-you-own.js';
+import { publicCarriageTalliesAtCounter, publicCarriageDepartureNotice } from './public-carriage-tallies-at-the-counter.js';
 import { routineTime } from '../engine/world/npc-routines.js';
 import { keepThePaidCarriage } from './a-paid-carriage-on-the-road.js';
+import { buyTalliesForActualPublicBoarding } from './buying-the-tallies-for-an-actual-public-boarding.js';
 import { monthOf, stonesFor } from '../engine/world/the-fare-and-calendar-of-a-passage.js';
 import { daysOfABookedPassage } from '../engine/world/places-on-the-way.js';
 import { worldLocationFor } from './entities.js';
@@ -232,10 +236,19 @@ export async function aSeatOnAShipOrACarriage(
     /** What the sentence said it was riding, where it said: "an iron-rimmed carriage". */
     askedIn = ''
 ): Promise<Execution> {
-    if (game.worldEnabled && (intent === 'buy' || intent === 'hire')) {
+    if (game.worldEnabled && ['buy', 'hire', 'ticket', 'embark'].includes(intent)) {
         game.atHand = await prepareWorldClockForPreciseSpan(run, cultivator);
         cultivator = game.repos.cultivators.getById(cultivator.id) ?? cultivator;
         run = game.repos.runs.getById(run.id) ?? run;
+    }
+    if (intent === 'embark' && !target && game.atHand) {
+        const here = worldLocationFor(game.atHand, cultivator.location);
+        const ground = here && exteriorGroundOfDeparture(game.atHand, here.id);
+        const held = game.atHand.objects.filter(object => object.possessorId === cultivator.id)
+            .map(object => passageTallyTerms(object)).filter(terms => terms && terms.fromId === ground?.id)
+            .sort((a, b) => a!.departureDay - b!.departureDay)[0];
+        if (held) { target = game.atHand.locations.find(place => place.id === held.toId)?.name;
+            service = held.service === 'carriage' || held.service === 'ship' ? held.service : service; }
     }
     if ((betweenRoadEndpoints(game.db, cultivator) || !!game.atHand && aboardAnUnfinishedRoad(game.repos,cultivator,game.atHand,routineTime(game.atHand)))) return refused('engine.passageCounterReach', 'passage', factsForRefusal(
         'The landing or station has not been reached.',
@@ -252,7 +265,7 @@ export async function aSeatOnAShipOrACarriage(
                 'An agreed traveller is absent, no longer alive, or already on another actual passage. Nothing spent.',
                 'Party membership does not recall a body or replace its accepted course.'));
         const offered=ground&&theLineTo(whatRunsFromHere(game,{...cultivator,location:ground.name},Math.floor(game.atHand.currentDay)),target,service);
-        if(ground&&offered?.service==='carriage'){
+        if(ground&&offered?.service==='carriage' && intent === 'hire'){
             const to=worldLocationFor(game.atHand,offered.to),grade=intent==='hire'?theGradeAskedFor(`${target} ${askedIn}`):null;
             const hired=grade?theHireOf(offered,grade):null;
             const ids=[cultivator.id,...companions],fare=hired?stonesFor(hired.cash):stonesFor(offered.cashPerSeat)*ids.length;
@@ -295,13 +308,14 @@ export async function aSeatOnAShipOrACarriage(
 
     const wanted = (target ?? '').trim();
     const line = wanted.length >= 2 ? theLineTo(lines, wanted, service) : null;
-    const reading = intent !== 'buy' && intent !== 'hire';
+    const reading = !['buy', 'hire', 'ticket', 'embark'].includes(intent);
     if (reading || line === null) {
         const displayed = theNearestOf(lines);
         const board = [
             ...(landing ? [`${landing.name} keeps the landing.`] : []),
             ...(station ? [`${station.name} keeps the carriage station.`] : []),
-            ...displayed.shown.map(sayTheLine),
+            ...displayed.shown.flatMap(one => [sayTheLine(one),
+                ...(one.service === 'carriage' ? publicCarriageDepartureNotice(game, cultivator, one.to) : [])]),
             ...(displayed.more > 0 ? [`And ${displayed.more} more, further off, sold by name.`] : [])
         ];
         if (!reading && wanted.length >= 2) {
@@ -319,6 +333,33 @@ export async function aSeatOnAShipOrACarriage(
         return game.freeAction(run, 'passage', facts);
     }
 
+    const hiring = intent === 'hire';
+    const grade = hiring ? theGradeAskedFor(`${wanted} ${askedIn}`) : null;
+    const hired = grade ? theHireOf(line, grade) : null;
+    const loadAdmission = (purchases: readonly string[] = []) => {
+        const carrying = whatStopsTheLoad(game, cultivator, grade?.conveyanceId ?? null);
+        if (carrying.stops === null) return null;
+        const why = carrying.stops === 'too_heavy' ? 'more weight' : 'more bulk';
+        const cheapest = line.service === 'carriage' ? theHireOf(line, A_HIRED_CARRIAGE_BY_GRADE[0]!) : null;
+        const facts = factsForRefusal(
+            hired ? `More than ${hired.name} holds.` : 'More than a passenger brings aboard.',
+            hired
+                ? `Hired whole, ${hired.name} holds what you carry and its hold besides; you have ${why} than that.`
+                : `A seat carries you and what you can carry on your own person, and you have ${why} than `
+                  + 'that. ' + (cheapest
+                    ? `Hired whole, ${cheapest.name} carries the rest: ${stonesFor(cheapest.cash)} stones to ${line.to}.`
+                    : 'Nobody at the landing hires out a hull.'),
+            `a-seat-on-a-ship-or-a-carriage: load ${carrying.load.volume}L/${carrying.load.weight} is `
+            + `${carrying.stops}. ` + (purchases.length ? 'The paid tally remains in its holder\'s possession.' : 'Nothing spent.')
+        );
+        facts.lines.unshift(...purchases);
+        return refused('engine.whatStopsThemCarryingIt', 'passage', facts);
+    };
+    if (line.service === 'carriage') {
+        const tallies = await publicCarriageTalliesAtCounter(game, run, cultivator, line.to, intent, askedIn, station?.id, loadAdmission);
+        if (tallies) return tallies;
+    }
+
     if (line.runsFromDay !== null) {
         return refused('engine.laneIsOpenInMonth', 'passage', factsForRefusal(
             `No ship sails for ${line.to} yet.`,
@@ -328,7 +369,6 @@ export async function aSeatOnAShipOrACarriage(
         ));
     }
 
-    const hiring = intent === 'hire';
     if (hiring && line.service === 'ship') {
         return refused('engine.theHireOf', 'passage', factsForRefusal(
             'Nobody hires out a ship.',
@@ -336,24 +376,8 @@ export async function aSeatOnAShipOrACarriage(
             'a-seat-on-a-ship-or-a-carriage: hire is carriages only. Nothing spent.'
         ));
     }
-    const grade = hiring ? theGradeAskedFor(`${wanted} ${askedIn}`) : null;
-    const hired = grade ? theHireOf(line, grade) : null;
-    const carrying = whatStopsTheLoad(game, cultivator, grade?.conveyanceId ?? null);
-    if (carrying.stops !== null) {
-        const why = carrying.stops === 'too_heavy' ? 'more weight' : 'more bulk';
-        const cheapest = line.service === 'carriage' ? theHireOf(line, A_HIRED_CARRIAGE_BY_GRADE[0]!) : null;
-        return refused('engine.whatStopsThemCarryingIt', 'passage', factsForRefusal(
-            hired ? `More than ${hired.name} holds.` : 'More than a passenger brings aboard.',
-            hired
-                ? `Hired whole, ${hired.name} holds what you carry and its hold besides; you have ${why} than that.`
-                : `A seat carries you and what you can carry on your own person, and you have ${why} than `
-                  + 'that. ' + (cheapest
-                    ? `Hired whole, ${cheapest.name} carries the rest: ${stonesFor(cheapest.cash)} stones to ${line.to}.`
-                    : 'Nobody at the landing hires out a hull.'),
-            `a-seat-on-a-ship-or-a-carriage: load ${carrying.load.volume}L/${carrying.load.weight} is `
-            + `${carrying.stops}. Nothing spent.`
-        ));
-    }
+    const loadRefusal = loadAdmission();
+    if (loadRefusal) return loadRefusal;
 
     const fromDock = game.atHand && worldLocationFor(game.atHand, here);
     const toDock = game.atHand && worldLocationFor(game.atHand, line.to);
@@ -366,8 +390,14 @@ export async function aSeatOnAShipOrACarriage(
         'Your agreed company cannot board here together.',
         'An agreed traveller is absent, no longer alive, or already on another actual passage. Nothing spent.',
         'Party membership does not recall a body or replace its accepted course.'));
-    const cash = hired ? hired.cash : line.cashPerSeat * passengerIds.length;
-    const stones = hired ? stonesFor(cash) : stonesFor(line.cashPerSeat) * passengerIds.length;
+    const held = !hiring && game.atHand && fromDock && toDock ? passageTalliesForDeparture(game.atHand, {
+        service: line.service, fromId: fromDock.id, toId: toDock.id,
+        vesselId: line.lane ? shipIdForLane(line.lane) : carriageIdForRoad(fromDock.id, toDock.id, THE_DRAWN_CARRIAGE),
+        departureDay: routineTime(game.atHand) }) : [];
+    const prepaidIds = new Set(held.map(tally => tally.possessorId).filter(id => id && passengerIds.includes(id)));
+    const unpaidHeads = passengerIds.length - prepaidIds.size;
+    const cash = hired ? hired.cash : line.cashPerSeat * unpaidHeads;
+    const stones = hired ? stonesFor(cash) : stonesFor(line.cashPerSeat) * unpaidHeads;
     const what = hired ? `${hired.name[0]!.toUpperCase()}${hired.name.slice(1)}, hired whole,`
         : passengerIds.length === 1 ? `A seat on the ${line.service}`
         : `${howMany(passengerIds.length, 'seat')} on the ${line.service}`;
@@ -395,7 +425,7 @@ export async function aSeatOnAShipOrACarriage(
         'Its source carriage, driver or remaining berths are unavailable. Nothing spent.',
         'The advertised road service does not recall its actual vehicle from elsewhere.'));
     const publicQuote = line.lane && game.atHand && fromDock && toDock
-        ? quotePublicPassage(game.atHand, fromDock.id, toDock.id, game.atHand.currentDay,
+        ? quotePublicPassage(game.atHand, fromDock.id, toDock.id, routineTime(game.atHand),
             passengerIds.length, [], `${run.seed}:${weatherDay}`, passengerIds) : null;
     if (line.lane && game.atHand && !publicQuote) {
         return refused('engine.takeTheSeat', 'passage', factsForRefusal(
@@ -452,8 +482,12 @@ export async function aSeatOnAShipOrACarriage(
             const accepted = recordPublicPassage(game.atHand!, publicQuote, publicQuote.departureDay,
                 publicQuote.fromId, [...passengerIds, ...crew.map(person => person.id)], undefined,
                 { runId: game.currentRun().run.id, elapsedDays: game.currentRun().run.elapsedDays },
-                [{id:current.id,name:current.name},...companions.map(person=>({id:person.id,name:person.name}))]);
-            game.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
+                [{id:current.id,name:current.name},...companions.map(person=>({id:person.id,name:person.name}))],
+                undefined, false, receipt => {
+                    if (!buyTalliesForActualPublicBoarding(game, receipt, current,
+                        [current, ...companions], stones))
+                        throw new Error('The accepted public ship purchase has no actual payee or tally receiver.');
+                });
             voyage.receiptId = accepted.id; voyage.crew = crew.length;
             writeTheVoyage(game.db, cultivator.id, voyage);
             return accepted;
@@ -469,9 +503,13 @@ export async function aSeatOnAShipOrACarriage(
             const current = game.repos.cultivators.getById(cultivator.id);
             if (!current?.alive || current.spiritStones < stones || placeName(current) !== here
                 || peopleUnavailableForOwnedBoarding(game.atHand!, companionIds, roadQuote.fromId, roadQuote.departureDay).length > 0) return null;
-            const accepted = commitPublicCarriage(game.atHand!, roadQuote, { runId: game.currentRun().run.id, elapsedDays: game.currentRun().run.elapsedDays });
+            const accepted = commitPublicCarriage(game.atHand!, roadQuote,
+                { runId: game.currentRun().run.id, elapsedDays: game.currentRun().run.elapsedDays }, undefined, receipt => {
+                    const companions = companionIds.map(id => game.atHand!.npcs.find(person => person.id === id)!);
+                    if (!buyTalliesForActualPublicBoarding(game, receipt, current, [current, ...companions], stones))
+                        throw new Error('The accepted public carriage purchase has no actual payee or tally receiver.');
+                });
             if (!accepted) return null;
-            game.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
             keepThePaidCarriage(game.db, cultivator.id, accepted.id);
             return accepted;
         })();
@@ -492,6 +530,7 @@ export async function aSeatOnAShipOrACarriage(
         escort: line.service === 'ship' ? THE_ESCORT.ship : 0,
         ...(roadReceiptId ? { roadReceiptId } : {}),
         bought: `${what} from ${here} to ${line.to}: ${howMany(stones, 'spirit stone')}`
-            + `${keeper ? `, paid to ${theKeeperAsTheyAreKnown(game, cultivator, keeper, line.service === 'ship' ? 'landing' : 'carriage_station')}` : ''}.`
+            + `${stones > 0 && keeper ? `, paid to ${theKeeperAsTheyAreKnown(game, cultivator, keeper, line.service === 'ship' ? 'landing' : 'carriage_station')}` : ''}.`
+            + (prepaidIds.size ? ` ${howMany(prepaidIds.size, 'paid passage tally')} handed in.` : '')
     });
 }

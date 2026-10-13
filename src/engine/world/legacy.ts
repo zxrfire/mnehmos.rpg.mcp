@@ -54,6 +54,7 @@ import {
     upsertRelationship
 } from './npc-state.js';
 import { andTheOtherEnd } from './a-tie-has-two-ends.js';
+import { theirIdentityGoesToDust } from './when-a-disciple-dies-their-tokens-go-to-dust.js';
 import { theFoundersOf } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { rememberFact } from './memory.js';
 import { makeObject, transferPossession, type ObjectRecord } from './possessions.js';
@@ -179,6 +180,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
         ...(deceased.status === 'remnant' ? deceased : markDead(deceased, onDay, input.causeNote)),
         spiritStones: 0
     };
+    theirIdentityGoesToDust(state, deceased.id, onDay);
 
     // ── The grave ────────────────────────────────────────────────────────
     let grave: LocationRecord | null = null;

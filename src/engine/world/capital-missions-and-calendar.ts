@@ -1,3 +1,4 @@
+import { putTheRouteToTheParty } from './a-party-answers-its-leader.js';
 /** Cities receive dated house business; attendance is a stint, never a new home. */
 import { loadExchangeConsignment } from './wares-at-a-capital-exchange.js';
 import { COMPETITION_CALENDARS } from '../../data/cultivation/competition-calendars.js';
@@ -12,10 +13,11 @@ import { isBelowTheLid } from './layers.js';
 import { isAwayOnSomething, isTheWorldsToMove, setLocation, type NpcRecord, type NpcActivity } from './npc-state.js';
 import { routeQueriesFor, walkingDaysFrom, walkingRouteFrom, type RouteQueries } from './locations.js';
 import { departureSceneFor, beginActualDepartureApproach, finishActualDepartureApproach, readActualDepartureApproach, exteriorGroundOfDeparture } from './departure-approach.js';
+import { roadContinuationTo } from './road-course.js';
 import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
 import { stonesFor } from './the-fare-and-calendar-of-a-passage.js';
 import { departureAreaAt } from './where-in-a-place-somebody-is-standing.js';
-import { journeyNeedsWater, locationOnNpcJourney } from './places-on-the-way.js';
+import { journeyNeedsWater, locationOfNpcOnItsJourney, roadPositionOfNpc } from './places-on-the-way.js';
 import { earliestQuotedPublicPassage, onSponsoredPublicPassage, publicShipLinesFrom,
     quotePublicPassage, recordPublicPassage, thePortsShipsPutInAt,
     type PublicPassageLeg, type PublicPassageQuote } from './public-shipping.js';
@@ -26,7 +28,7 @@ import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { LocationRecord } from './locations.js';
 import type { FactionRecord, WorldState } from './world-state.js';
-import { isPlayerInvolved, drawBackgroundIncidents } from './background-incident-draw.js';
+import { isPlayerInvolved, drawBackgroundIncidents, playerAtTheContact } from './background-incident-draw.js';
 import { alliesOf, circleCandidatesFor, receiveHouseVisitors } from './gatherings.js';
 import { theBodyItAnswersTo } from '../../data/cultivation/governance-and-water-rights.js';
 import { getSendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
@@ -155,7 +157,7 @@ function quotedRoute(state: WorldState, legs: readonly MissionLeg[], fromDay: nu
         if (leg.by === 'land') {
             const distance = graph.treeFrom(leg.fromId).days.get(leg.toId);
             if (distance === undefined || journeyNeedsWater(state.locations, leg.fromId, leg.toId, graph)) return null;
-            day += Math.max(1, Math.ceil(distance));
+            day += distance;
             if (day > latestArrival) return null;
             continue;
         }
@@ -208,7 +210,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
         if (leg.by === 'ship' ? !line : walking === undefined) return false;
         const transfer = leg.by === 'ship' && step > 0 && legs[step - 1]?.by === 'land' ? LOCAL_WALK_DAYS : 0;
         const leaves = line ? Math.max(day + transfer, line.runsFromDay ?? day) : day;
-        const due = leaves + (line?.days ?? Math.max(1, Math.ceil(walking!)));
+        const due = leaves + (line?.days ?? walking!);
         for (const member of members) {
             const at = state.npcs.findIndex(n => n.id === member.id);
             state.npcs[at] = { ...setLocation(member, from.id, day), activity: {
@@ -225,9 +227,13 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
     {
         const request={intentId:missionId,target:{locationId:from.id,areaId:station?.id}};
         const scene=readScene??departureSceneFor(state,graph);
+        const contact = playerAtTheContact(state);
         const arrivals=members.map(member=>member.activity?.note==='Walking to the departure point.'&&member.activity.capitalMissionId===missionId
             ?finishActualDepartureApproach(state,member.id,request,day,graph,scene)
-            :beginActualDepartureApproach(state,member.id,request,day,member,graph,scene));
+            :beginActualDepartureApproach(state,member.id,request,day,
+                contact?.id === member.id ? { ...member, locationId: contact.placeId,
+                    activity: member.activity ? { ...member.activity, standingIn: contact.areaId } : null } : member,
+                graph,scene));
         if(arrivals.some(result=>result.kind==='refused'||result.kind==='needs_geographic_leg'))return false;
         let walking=false;
         for(const result of arrivals)if('actor' in result){
@@ -242,7 +248,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
         if(walking)return true;
         members=members.map(member=>state.npcs.find(n=>n.id===member.id)!);
     }
-    if(members.some(member => locationOnNpcJourney(state.locations, member, day, graph) !== from.id))return false;
+    if(members.some(member => locationOfNpcOnItsJourney(state, member, day, graph) !== from.id))return false;
     let due: number;
     let quote: PublicPassageQuote | null = null;
     if (leg.by === 'land') {
@@ -250,7 +256,7 @@ function startPublicMissionLeg(state: WorldState, missionId: string,
             ? graph.treeFrom(from.id).days.get(to.id)
             : walkingDaysFrom(state.locations, from.id).get(to.id);
         if (distance === undefined || journeyNeedsWater(state.locations, from.id, to.id, graph)) return false;
-        due = day + Math.max(1, Math.ceil(distance));
+        due = day + distance;
     } else {
         const line = publicShipLinesFrom(state, from.name, day,graph).find(row => row.to === to.name);
         if (!line) return false;
@@ -375,7 +381,7 @@ export function journeySelectedToHouseSeat(state: WorldState, house: FactionReco
     npc: NpcRecord, day: number): NpcRecord | null {
     if (!house.seatLocationId || !npc.locationId) return null;
     const graph = routeQueriesFor(state.locations);
-    const physical = locationOnNpcJourney(state.locations, npc, day, graph);
+    const physical = locationOfNpcOnItsJourney(state, npc, day, graph);
     const from = physical && exteriorGroundOfDeparture(state, physical,graph.places)?.id;
     if (!from) return null;
     if (from === house.seatLocationId && physical === npc.locationId && (npc.activity?.kind !== 'travelling'
@@ -388,7 +394,7 @@ export function journeySelectedToHouseSeat(state: WorldState, house: FactionReco
     const takenOn = whoTheySayTookThemOn(npc, house.id);
     const recruiter = takenOn && isTheWorldsToMove(npc) ? state.npcs.find(person => person.id === takenOn.recruiterId
         && person.status === 'alive' && person.factionId === house.id && isTheWorldsToMove(person)
-        && locationOnNpcJourney(state.locations, person, day, graph) === physical) : undefined;
+        && locationOfNpcOnItsJourney(state, person, day, graph) === physical) : undefined;
     const available = Math.max(purse, personalPurse, recruiter?.spiritStones ?? 0);
     if (listedRouteFare(state, route, day, 1, graph) > available) return null;
     const departureGround = state.locations.find(place => place.id === from)!;
@@ -440,6 +446,27 @@ export function advancePublicCapitalMission(state: WorldState, personId: string,
     onDue?: (memberId: string, day: number) => void, graph?: RouteQueries): boolean {
     let person = state.npcs.find(n => n.id === personId);
     if (!person?.activity?.capitalMissionId) return false;
+    if (person.activity.partyFightId) return true;
+    const airSite = person.activity.airCourseLocationId
+        && state.locations.find(place => place.id === person!.activity!.airCourseLocationId);
+    if (airSite && typeof airSite.data.airStoppedFactId === 'string') return true;
+    if (person.activity.partyQuestionId) {
+        if (!applyPartyCourseDecision(state, person.id, day, onDue, graph)) return true;
+        person = state.npcs.find(n => n.id === personId)!;
+        if (person.activity?.untilDay != null && person.activity.untilDay > day) return true;
+    }
+    const actualCourse = person.activity;
+    if (actualCourse && (actualCourse.vesselId || actualCourse.airCourseLocationId)
+        && actualCourse.untilDay != null && actualCourse.untilDay <= day) {
+        for (const event of factsWithDataValue(state, 'itineraryFactId', actualCourse.capitalMissionId!)) {
+            if (event.data.partyFight !== true || typeof event.data.leaderId !== 'string'
+                || typeof event.data.playerId !== 'string'
+                || !factsWithDataValue(state, 'partyFightEnded', event.id).length
+                || factsWithDataValue(state, 'partyQuestionEvent', event.id).length) continue;
+            if (putTheRouteToTheParty(state, event.data.leaderId, event.data.playerId, day,
+                event.id, "The party's fight ended.")) return true;
+        }
+    }
     recordProgressAlongRoad(state,person,day,graph);
     if (isPlayerInvolved(state, person)) return advanceMissionStep(state, personId, day, onDue, graph);
     // An offscreen itinerary catches up at its own dates in one read.
@@ -451,6 +478,78 @@ export function advancePublicCapitalMission(state: WorldState, personId: string,
         if (person.activity === previous) break;
     }
     return true;
+}
+
+/** Settle the chosen course at its real held point, using the existing itinerary. */
+export function applyPartyCourseDecision(state: WorldState, memberId: string, day: number,
+    onDue?: (memberId: string, day: number) => void, graph?: RouteQueries): boolean {
+    const member = state.npcs.find(person => person.id === memberId && person.status === 'alive');
+    const questionId = member?.activity?.partyQuestionId;
+    if (!questionId) return false;
+    const question = witnessIndexFor(state).byId.get(questionId);
+    const decision = factsWithDataValue(state, 'partyQuestionDecided', questionId)[0];
+    const leader = state.npcs.find(person => person.id === question?.data.leaderId && person.status === 'alive');
+    if (!question || !decision || !leader?.activity || leader.activity.partyQuestionId !== questionId) return false;
+    const people = state.npcs.filter(person => person.status === 'alive' && person.activity?.partyQuestionId === questionId);
+    const choice = decision.data.choice;
+    if (choice === 'rest' && typeof decision.data.resumeOnDay === 'number' && day < decision.data.resumeOnDay) {
+        for (const person of people) {
+            if (person.activity!.redirect?.previous) continue;
+            const previous = person.activity!;
+            const at = state.npcs.findIndex(row => row.id === person.id);
+            state.npcs[at] = { ...person, activity: { kind: 'their_practice', note: 'Resting with the party until dawn.',
+                withIds: previous.withIds, sinceDay: day, untilDay: decision.data.resumeOnDay,
+                capitalMissionId: previous.capitalMissionId, capitalMissionLeg: previous.capitalMissionLeg,
+                partyQuestionId: questionId, redirect: { until: decision.data.resumeOnDay, previous } } };
+            onDue?.(person.id, decision.data.resumeOnDay);
+        }
+        return false;
+    }
+    const activity = leader.activity.redirect?.previous ?? leader.activity;
+    const mission = activity.capitalMissionId && witnessIndexFor(state).byId.get(activity.capitalMissionId);
+    if (!mission || typeof mission.data.publicRoute !== 'string') return false;
+    const route = JSON.parse(mission.data.publicRoute) as MissionLeg[], step = activity.capitalMissionLeg ?? 0;
+    if (!route.length || !['continue', 'rest', 'turn_back'].includes(String(choice))) return false;
+    const reversePoint = choice === 'turn_back' && step < route.length && route[step]!.by === 'land'
+        ? roadPositionOfNpc(state.locations, leader, day) : null;
+    const homeward = reversePoint && roadContinuationTo(state.locations, reversePoint, route[step]!.fromId);
+    if (reversePoint && (!homeward || journeyNeedsWater(state.locations, homeward.endpointId, route[step]!.fromId))) return false;
+    const delay = Math.max(0, day - question.day);
+    for (const person of people) {
+        const previous = person.activity!.redirect?.previous ?? person.activity!;
+        const { partyQuestionId: held, ...resumed } = previous;
+        const at = state.npcs.findIndex(row => row.id === person.id);
+        state.npcs[at] = { ...(person.id !== question.data.playerId && resumed.kind === 'travelling' && resumed.returnTo
+            ? setLocation(person, resumed.returnTo, day) : person), activity: { ...resumed,
+            sinceDay: resumed.sinceDay + delay,
+            untilDay: resumed.untilDay == null ? null : resumed.untilDay + delay,
+            partyCourseDecisionId: decision.id } };
+        if (state.npcs[at]!.activity!.untilDay != null) onDue?.(person.id, state.npcs[at]!.activity!.untilDay!);
+    }
+    if (choice !== 'turn_back' || step > route.length) return true;
+    const returning = people.map(person => state.npcs.find(row => row.id === person.id)!);
+    const n = route.length, index = step === n ? 0 : n - 1 - step;
+    if (step < n && route[step]!.by === 'land') {
+        // The held ground is an immutable road point, so reversal cannot teleport to an endpoint.
+        if (!homeward) return false;
+        for (const person of returning) {
+            const at = state.npcs.findIndex(row => row.id === person.id);
+            state.npcs[at] = { ...(person.id === question.data.playerId ? person
+                : setLocation(person, route[step]!.fromId, day)), activity: { kind: 'travelling', note: 'Returning with the party.',
+                withIds: person.activity!.withIds, sinceDay: day, untilDay: day + homeward.days,
+                fromLocationId: question.locationId, returnTo: route[step]!.fromId,
+                capitalMissionId: mission.id, capitalMissionLeg: n + 1 + index,
+                partyCourseDecisionId: decision.id,
+                ...(person.id === leader.id ? { admittedRoad: { position: homeward.position,
+                    route: homeward.route, initialTravelDays: homeward.partialDays } } : { carrierOperatorId: leader.id }) } };
+            onDue?.(person.id, day + homeward.days);
+        }
+        return true;
+    }
+    const started = startPublicMissionLeg(state, mission.id, returning, homeRoute(route), index, day,
+        onDue, n + 1 + index, graph);
+    if (!started) for (const person of people) state.npcs[state.npcs.findIndex(row => row.id === person.id)] = person;
+    return started;
 }
 
 function advanceMissionStep(state: WorldState, personId: string, day: number,
@@ -616,7 +715,7 @@ export function capitalCalendar(state: WorldState, year: number): CapitalOccasio
 function spareFor(state: WorldState, house: FactionRecord, day: number,graph:RouteQueries): NpcRecord[] {
     const roll = state.npcs.filter(n => n.status === 'alive' && n.factionId === house.id && isTheWorldsToMove(n));
     const grounds = new Map(roll.map(n => {
-        const physical = locationOnNpcJourney(state.locations,n,day,graph);
+        const physical = locationOfNpcOnItsJourney(state,n,day,graph);
         return [n.id,physical ? exteriorGroundOfDeparture(state,physical,graph.places)?.id : null];
     }));
     const rooms = portfoliosIn({ locations: state.locations, sectId: house.id,

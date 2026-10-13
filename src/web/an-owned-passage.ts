@@ -9,7 +9,7 @@ import { companyDuringPassage } from '../engine/world/company-during-a-passage.j
 import { actualCarrierScene, selectedAreaOnActualCarrier } from './the-actual-carrier-scene.js';
 import { loosePlaceKey } from './knowledge.js';
 import { worldLocationFor } from './entities.js';
-import { factsForRefusal } from './facts.js';
+import { factsForRefusal, shownWithNoModelAfter } from './facts.js';
 import { refused } from './tool-result-prose.js';
 /** A held private craft's active claim refers to one accepted historical leg. */
 import type Database from 'better-sqlite3';
@@ -22,7 +22,7 @@ import { witnessIndexFor, factsWithDataValue } from '../engine/world/witness-rea
 import { passageRunMoment } from '../engine/world/passage-moment.js';
 import { makeFact } from '../engine/world/history.js';
 import { appendWorldFact } from '../engine/world/who-was-there-when-it-happened.js';
-import { locationOnRoute, locationOnNpcJourney, journeyTimeHasReached } from '../engine/world/places-on-the-way.js';
+import { locationOnRoute, journeyTimeHasReached, locationOfNpcOnItsJourney } from '../engine/world/places-on-the-way.js';
 import { leaveItHere, takeItAlong, whoItIsWith, itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from '../engine/world/a-vehicle.js';
 import { isRuined } from '../engine/world/possessions.js';
 import { requireConveyance } from '../data/cultivation/what-a-house-moves-its-people-on.js';
@@ -46,7 +46,7 @@ export function peopleUnavailableForOwnedBoarding(world: WorldState, ids: readon
     return [...new Set(ids)].filter(id => {
         const person = world.npcs.find(npc => npc.id === id);
         return !person || person.status !== 'alive' || person.activity?.kind === 'travelling'
-            || (()=>{const physical=locationOnNpcJourney(world.locations, person, onDay);
+            || (()=>{const physical=locationOfNpcOnItsJourney(world, person, onDay);
                 return physical!==fromId&&(!approaching||!physical||exteriorGroundOfDeparture(world,physical)?.id!==fromId);})();
     });
 }
@@ -58,7 +58,7 @@ function heldPrivateCraft(world: WorldState, ownerId: string, vesselId: string) 
         && craft.ownerId === ownerId && whoItIsWith(craft) === ownerId ? craft : null;
 }
 
-export function ownedCarrierAt(world: WorldState, receiptId: string, body: Cultivator, onDay: number): PhysicalCarrier | null {
+export function ownedCarrierAt(world: WorldState, receiptId: string, body: Pick<Cultivator, 'id' | 'alive' | 'realmOrdinal'>, onDay: number): PhysicalCarrier | null {
     const fact = witnessIndexFor(world).byId.get(receiptId), data = fact?.data;
     if (!data || data.ownedPassage !== true || data.ownerId !== body.id || typeof data.vesselId !== 'string'
         || typeof data.fromLocationId !== 'string' || typeof data.toLocationId !== 'string'
@@ -87,7 +87,7 @@ export function ownedCarrierAt(world: WorldState, receiptId: string, body: Culti
         Math.max(0, onDay - data.departureDay), data.arrivalDay - data.departureDay,
         kind.crossesGroundThatCannotBeWalked);
     const pilotArrived = pilot?.status === 'alive' && journeyTimeHasReached(onDay, data.arrivalDay)
-        && locationOnNpcJourney(world.locations, pilot, onDay) === data.toLocationId
+        && locationOfNpcOnItsJourney(world, pilot, onDay) === data.toLocationId
         && pilot.updatedOnDay >= data.arrivalDay;
     const pilotOnThisLeg = pilot?.activity?.vesselId === data.vesselId
         && pilot.activity.sinceDay === data.departureDay && pilot.activity.untilDay === data.arrivalDay;
@@ -99,7 +99,7 @@ export function ownedCarrierAt(world: WorldState, receiptId: string, body: Culti
         : itWantsAPilot(kind) && (pilot?.cultivation.realmOrdinal ?? body.realmOrdinal) < A_SPIRIT_BOAT_ANSWERS_TO
             ? 'The actual pilot cannot guide the craft.' : null;
     return { locationId: pilot && (pilotOnThisLeg || pilotArrived)
-            ? locationOnNpcJourney(world.locations, pilot, onDay) : location,
+            ? locationOfNpcOnItsJourney(world, pilot, onDay) : location,
         endsOnDay: data.arrivalDay, boardedOnDay: data.departureDay, boardingMoment: passageRunMoment(world, receiptId), unavailable };
 }
 
@@ -120,7 +120,7 @@ export function projectOwnedPassenger(db: Database.Database, world: WorldState, 
             const kind = typeof data?.conveyanceId === 'string' ? requireConveyance(data.conveyanceId) : null;
             const surviving = pilot?.status === 'alive' && pilot.activity?.vesselId === craft.id
                 && pilot.activity.sinceDay === data?.departureDay && pilot.activity.untilDay === data?.arrivalDay
-                && locationOnNpcJourney(world.locations, pilot, onDay) === ground
+                && locationOfNpcOnItsJourney(world, pilot, onDay) === ground
                 && kind && (!itWantsAPilot(kind) || pilot.cultivation.realmOrdinal >= A_SPIRIT_BOAT_ANSWERS_TO);
             if (surviving && !isRuined(craft)) takeItAlong(world.objects, craft, pilot.id);
             else leaveItHere(world.objects, craft, ground);
@@ -182,15 +182,18 @@ export function acceptOwnedPassage(game: OwnedPassagePort, run: Run, body: Culti
         || prior.data.vesselId !== input.vesselId || prior.data.toLocationId !== input.fromId
         || typeof prior.data.arrivalDay !== 'number' || !journeyTimeHasReached(departure, prior.data.arrivalDay)))
         throw new Error('The prior actual private course has not reached this boarding endpoint.');
+    const passengers = [body, ...input.companions.map(id => world.npcs.find(person => person.id === id)!)];
     const acceptedAir = input.air ? beginAnAirCourse(world, { bodyId: body.id, bodyName: body.name,
         fromId: input.fromId, toId: input.toId, conveyanceId: input.conveyanceId, power: input.power,
         vesselId: input.vesselId, artId: null, onDay: departure, runId: run.id, runElapsedDays: run.elapsedDays,
-        heads: 1 + input.companions.length, owned: { ownerId: body.id, pilotId: input.pilotId }, priorReceiptId:prior?.id }) : null;
+        heads: passengers.length, owned: { ownerId: body.id, pilotId: input.pilotId }, priorReceiptId:prior?.id,
+        actualLoad: passengers.map(person => ({ id: person.id, name: person.name })),
+        actualPlayerContact: { id: body.id, name: body.name, alive: body.alive, locationId: input.fromId } }) : null;
     if (input.air && !acceptedAir) throw new Error('Actual owned air endpoints lost their accepted quote');
     const receipt = acceptedAir?.fact ?? appendWorldFact(world, makeFact({ day: departure, kind: 'gathering', causes: prior ? [prior.id] : [],
 
         locationId: input.fromId, visibility: 'secret', summary: 'A private craft began its actual passage.',
-        actors: [{ id: body.id, name: body.name, role: 'pilot_or_passenger' }],
+        actors: passengers.map(person => ({ id: person.id, name: person.name, role: 'pilot_or_passenger' })),
         data: { ownedPassage: true, ownerId: body.id, vesselId: input.vesselId, pilotId: input.pilotId,
             fromLocationId: input.fromId, toLocationId: input.toId, departureDay: departure,
             arrivalDay: departure + input.days, conveyanceId: input.conveyanceId, conveyancePower: input.power,
@@ -278,7 +281,7 @@ export async function spendOnOwnedPassage(game: GameService, run: Run, body: Cul
                 execution.cutShort?.what ?? execution.timeSkip?.interruptReason ?? 'The actual craft stopped at its paid point.');
     }
     const fuelLine = (burned - paidBefore) + ' spirit stones burned in the actual craft during this span.';
-    execution.facts.lines.push(fuelLine);
+    shownWithNoModelAfter(execution.facts, fuelLine);
     execution.calls.push({ name: 'engine.priceJourney', action: 'ride', ok: true, summary: fuelLine });
     return execution;
 }

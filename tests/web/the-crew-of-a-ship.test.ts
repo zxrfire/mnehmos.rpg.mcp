@@ -1,3 +1,5 @@
+/** A public sailing remains a paid service. Personal free-ride terms cannot
+ * replace its real carrier's receipt, fare or physical tally hand-in. */
 import { finishTheAcceptedVoyage } from './finishing-an-accepted-voyage.js';
 /**
  * A ship's crew are real people kept from one voyage to the next. Before this
@@ -25,6 +27,10 @@ import { finishTheAcceptedVoyage } from './finishing-an-accepted-voyage.js';
  * No second fare, disabled encounter, assigned endpoint or forced outcome is used.
  */
 
+import { preparePrivateOperatorTerms } from '../../src/web/negotiating-with-an-actual-private-operator';
+import { requestedCaptainCourse } from '../../src/web/asking-the-actual-captain';
+import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
+import { agreedRideOn } from '../../src/web/an-offered-ride-is-an-agreement';
 import { describe, expect, it } from 'vitest';
 
 import { whatSomebodyKnowsOfTheLand } from '../../src/engine/world/what-somebody-knows-of-the-land';
@@ -94,6 +100,24 @@ async function stoppedAtSea(seed = 'booth-1') {
 }
 
 describe('the crew of a ship', () => {
+    it('a public captain cannot replace the booked service with a personal free-ride agreement', async () => {
+        const h = await stoppedAtSea(), body = h.game.currentRun().cultivator;
+        const captain = h.crew().find(person => person.identity.occupation === 'shipmaster')!;
+        expect(h.game.present(body).some(person => person.id === captain.id)).toBe(true);
+        const before = body.spiritStones, fare = captain.spiritStones;
+        const refused = preparePrivateOperatorTerms(h.game, body, captain.id, h.from.id, 'free');
+        expect('reason' in refused).toBe(true);
+        const request = requestedCaptainCourse(h.game, body, captain.id,
+            'take me back to ' + h.from.name + ' for free',
+            'I ask ' + captain.name + ' to take me back to ' + h.from.name + ' for free.')!;
+        expect(request.kind).toBe('unsupported');
+        expect(request.reason).toContain('public quoted coin fare');
+        expect(ledgerAbout(h.db, body.id).filter(row => agreedRideOn(row))).toEqual([]);
+        expect(h.game.currentRun().cultivator.spiritStones).toBe(before);
+        expect(h.crew().find(person => person.id === captain.id)!.spiritStones).toBe(fare);
+        expect(theVoyageUnderWay(h.db, body, h.game.atHand)?.receiptId).toBe(h.voyage.receiptId);
+    }, 120_000);
+
     it('defend the ship themselves, by name, when a band attacks it', async () => {
         const { game, crew, from, to } = await stoppedAtSea('booth-0');
         await game.act('I wait until we arrive');

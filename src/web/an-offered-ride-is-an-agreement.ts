@@ -143,7 +143,10 @@ export function settleAgreedRides(game: GameService, body: Cultivator): { lines:
         if (!terms || oath.status !== 'open' || terms.driverId === terms.riderId
             || (terms.driverId !== body.id && terms.riderId !== body.id)) continue;
         const driver = actualRideBody(game, terms.driverId), rider = actualRideBody(game, terms.riderId);
-        if (!driver || !rider || !actualBodiesArrivedTogether(world, [driver, rider], terms.toId, terms.acceptedWorldDay)) continue;
+        if (!driver || !rider || !actualBodiesArrivedTogether(world, [driver, rider], terms.toId, terms.acceptedWorldDay,
+            course => course.data.ownedPassage === true && course.data.publicPassage !== true
+                && course.data.ownerId === terms.driverId
+                && [driver.id, rider.id].every(id => course.actors.some(actor => actor.id === id)))) continue;
         const closed = settleObligation(oath, { resolution: 'oath_fulfilled', onDay: routineTime(world),
             byId: driver.id, note: 'Actual individual shared-course arrival and agreed exchange completed.' });
         if (terms.payment.kind === 'stones') {

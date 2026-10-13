@@ -881,7 +881,7 @@ export function settleAFight(input: {
             opponentName: opponent.name,
             opponentOrdinal: opponent.realmOrdinal,
             outcome: result.outcome,
-            won: result.winnerId === cultivator.id,
+            won: result.playerSideWon ?? result.winnerId === cultivator.id,
             realmGap: result.gap.realmGap,
             edges: [...input.edges],
             onDay: run.elapsedDays,

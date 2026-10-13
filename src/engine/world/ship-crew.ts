@@ -10,7 +10,7 @@ import { years } from './opportunities.js';
 import type { WorldState } from './world-state.js';
 import { npcsAt } from './world-state.js';
 import { activityOfAPublicPassage, publicShipLinesFrom, recordPublicPassage, type PublicPassageLeg } from './public-shipping.js';
-import { journeyTimeHasReached, locationOnNpcJourney } from './places-on-the-way.js';
+import { journeyTimeHasReached, locationOfNpcOnItsJourney } from './places-on-the-way.js';
 type CrewWorld = Pick<WorldState, 'seed' | 'npcs'> & Partial<Pick<WorldState, 'locations'>>;
 
 /** Who works a ship, by the ship's id. */
@@ -75,7 +75,7 @@ export function bindShipCrewToPassage(world: CrewWorld, leg: PublicPassageLeg, o
         && journeyTimeHasReached(priorDepartureDay, npc.activity.sinceDay)
         ? npc.activity.standingIn ?? null : null;
     const ids = crew.map(npc => npc.id);
-    const physical=(crew[0]&&world.locations?locationOnNpcJourney(world.locations,crew[0],onDay):crew[0]?.locationId)??leg.fromId;
+    const physical=(crew[0]&&world.locations?locationOfNpcOnItsJourney({locations:world.locations,npcs:world.npcs},crew[0],onDay):crew[0]?.locationId)??leg.fromId;
     const passengers = npcsAt({...world,currentDay:onDay},physical).filter(npc => npc.status === 'alive' && !ids.includes(npc.id)
         && npc.activity?.kind === 'travelling' && npc.activity.vesselId === leg.vesselId
         && npc.activity.seaLaneId === leg.lane.id

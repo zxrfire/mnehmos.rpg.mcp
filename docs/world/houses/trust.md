@@ -312,7 +312,13 @@ works on a province and fails in a room containing one well-connected old man.**
 
 <!-- tier: 2 trigger="somebody is carrying a house's token that is not theirs, or a house notices one of its own has stopped answering" -->
 
-**A house keeps a life lamp burning for each of its disciples in its Life Lamp Hall, and the lamp goes out when they die.**
+**A house keeps a life lamp burning for each of its disciples in its Life Lamp Hall. When they die, the lamp and identity token go to dust.**
+
+The house's member rows are its physical disciple roll. The hall's disciples
+compare that roll with its lamps daily under the Internal Affairs Elder: a
+missing lamp is found at the next staffed check. An empty or fallen hall checks
+nothing until somebody reads it. Somebody in the hall can also see a lamp go
+to dust and knows the hour; a later check establishes absence, not that hour.
 The disciple's own token goes with them. Nothing about this is subtle and every consequence
 below falls straight out of it:
 

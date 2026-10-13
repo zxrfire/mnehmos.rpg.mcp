@@ -8,8 +8,11 @@ import { noteLedgerPruned } from './a-fact-that-keeps-happening-is-one-row.js';
 import { factsWithData, referenceKeys, witnessHistoryWasPruned, witnessIndexFor } from './witness-reaction-index.js';
 import type { HistoricalFact } from './history.js';
 import type { WorldState } from './world-state.js';
+import { missingMembersInRollCheck } from './life-lamp-roll-check-findings.js';
 
 const SWEPT = new WeakMap<WorldState, number>();
+const routinePassageLoss = (fact: HistoricalFact): boolean => fact.data.missedDeparture === true
+    || fact.data.unusedPassageTally === true;
 const routine = (fact: HistoricalFact): boolean => {
     const data = fact.data;
     return !('deedWeight' in data) && (data.publicMission === true || data.exchangeConsignment === true
@@ -23,7 +26,8 @@ const routine = (fact: HistoricalFact): boolean => {
         || data.actualBodyArrival === true || data.postRelief === true || data.postServiceReceipt === true
         || data.publicPassage === true || data.capitalMission === true || data.tributeReceived === true
         // A gate entry is a docket; a year's registration has run out by the time it is a year old.
-        || data.gateRegistration === true);
+        || data.gateRegistration === true || data.passageTallyPurchase === true
+        || data.missedDeparture === true || data.unusedPassageTally === true);
 };
 
 /**
@@ -31,7 +35,7 @@ const routine = (fact: HistoricalFact): boolean => {
  * still points at them (owner, 2026-10-09). Consequential kinds (deaths, wars, inheritances, marriages,
  * finds, forbidden ground, grudges, prices) are not on this list: they leave evidence and causes.
  */
-const MUNDANE = new Set(['said_in_public', 'opportunity', 'grant_renewed', 'spirit_tide', 'gave_up_waiting', 'promotion']);
+const MUNDANE = new Set<HistoricalFact['kind']>(['said_in_public', 'opportunity', 'grant_renewed', 'spirit_tide', 'gave_up_waiting', 'promotion']);
 
 /** The yearly boundary shares the dead-row sweep's index and reference hooks. */
 export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
@@ -45,31 +49,38 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     if (!['publicMission', 'exchangeConsignment', 'exchangeReturn', 'exchangeSale', 'exchangeHandover',
         'auctionLot', 'auctionBid', 'auctionResult', 'capitalCompetition', 'capitalOccasion',
         'houseProgress', 'houseBusiness', 'openCompetition', 'actualBodyArrival', 'postRelief',
-        'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived', 'gateRegistration'].some(key => factsWithData(state, key).some(fact => fact.day < cutoff))) return;
+        'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived', 'gateRegistration',
+        'passageTallyPurchase', 'missedDeparture', 'unusedPassageTally'].some(key => factsWithData(state, key).some(fact => fact.day <= cutoff))
+        && ![...MUNDANE].some(kind => (index.byKind.get(kind) ?? [])
+            .some(fact => fact.day <= cutoff))) return;
     const exact = new Set(state.npcs.filter(person => isPlayerInvolved(state, person)).map(person => person.id));
     const alive = new Set(state.npcs.filter(person => person.status === 'alive').map(person => person.id));
     // Forgotten: a mundane event nobody alive took part in or witnessed.
     const forgotten = (fact: HistoricalFact): boolean => MUNDANE.has(fact.kind)
+        && !(fact.data.lampRollCheck === true && missingMembersInRollCheck(fact).length > 0)
         && fact.actors.every(actor => !alive.has(actor.id)) && fact.witnessIds.every(id => !alive.has(id));
     const disposable = (fact: HistoricalFact): boolean => routine(fact) || forgotten(fact);
     const players = new Set(state.npcs.filter(person => !isTheWorldsToMove(person)).map(person => person.id));
+    const foregroundKeeps = (fact: HistoricalFact): boolean => !routinePassageLoss(fact)
+        && (fact.actors.some(actor => exact.has(actor.id)) || fact.witnessIds.some(id => players.has(id)));
     const held = new Set<string>();
     const objectIds = new Set(state.objects.map(object => object.id));
     const protectedObjects = new Set<string>();
-    const hold = (value: unknown): void => {
+    const hold = (value: unknown, keepMissedDeparture = true): void => {
         if (typeof value === 'string') {
-            if (index.byId.has(value)) held.add(value);
+            const fact = index.byId.get(value);
+            if (fact && (keepMissedDeparture || !routinePassageLoss(fact))) held.add(value);
             if (objectIds.has(value)) protectedObjects.add(value);
         }
-        else if (Array.isArray(value)) for (const part of value) hold(part);
-        else if (value && typeof value === 'object') for (const part of Object.values(value)) hold(part);
+        else if (Array.isArray(value)) for (const part of value) hold(part, keepMissedDeparture);
+        else if (value && typeof value === 'object') for (const part of Object.values(value)) hold(part, keepMissedDeparture);
     };
     for (const person of state.npcs) {
         hold(person.activity);
-        if (exact.has(person.id)) { hold(person.historyFactIds); hold(person.relationships); }
+        if (exact.has(person.id)) { hold(person.historyFactIds, false); hold(person.relationships); }
         hold(person.goals);
     }
-    hold(state.obligations);
+    for (const obligation of state.obligations) hold(obligation, obligation.status === 'open');
     hold(state.memories.records);
     hold(state.schedule);
     hold(state.opportunities);
@@ -81,8 +92,7 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     for (const place of state.locations) { hold(place.data); hold(place.changes); }
     for (const lot of index.openAuctionLots) held.add(lot.id);
 
-    for (const fact of state.history.facts) if (!disposable(fact) || fact.day >= cutoff
-        || fact.actors.some(actor => exact.has(actor.id)) || fact.witnessIds.some(id => players.has(id))) {
+    for (const fact of state.history.facts) if (!disposable(fact) || fact.day > cutoff || foregroundKeeps(fact)) {
         for (const value of Object.values(fact.data)) if (typeof value === 'string') protectedObjects.add(value);
     }
     const stacks = new Map<string, number>();
@@ -127,10 +137,9 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     const living = exact;
     for (let at = previous.length - 1; at >= 0; at--) {
         const fact = previous[at]!;
-        if (!disposable(fact) || fact.day >= cutoff || fact.actors.some(actor => exact.has(actor.id))
-            || fact.witnessIds.some(id => players.has(id))) { held.add(fact.id); continue; }
+        if (!disposable(fact) || fact.day > cutoff || foregroundKeeps(fact)) { held.add(fact.id); continue; }
         let visit = false;
-        if (fact.locationId || fact.factionIds.length) for (const id of new Set([
+        if (!routinePassageLoss(fact) && (fact.locationId || fact.factionIds.length)) for (const id of new Set([
             ...fact.actors.map(actor => actor.id), ...fact.witnessIds
         ])) {
             if (!living.has(id)) continue;
@@ -144,7 +153,9 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
     for (let at = 0; at < pending.length; at++) {
         const fact = index.byId.get(pending[at]!);
         if (!fact) continue;
-        for (const id of referenceKeys(fact)) if (index.byId.has(id) && !held.has(id)) {
+        // A retained consignment keeps its closing receipt; dropping only the receipt reopens it.
+        const closingReceipts = index.auctionResults.get(fact.id) ?? [];
+        for (const id of [...referenceKeys(fact), ...closingReceipts]) if (index.byId.has(id) && !held.has(id)) {
             held.add(id); pending.push(id);
         }
     }

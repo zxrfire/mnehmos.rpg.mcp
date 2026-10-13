@@ -41,6 +41,7 @@ import type { NpcRecord } from './npc-state.js';
 import { howMuchAGradeIsWorthTracking, makeObject, type ObjectRecord } from './possessions.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { WorldState } from './world-state.js';
+import { madeTokensGoToDust } from './a-made-token-goes-to-dust.js';
 
 /** The tag both halves carry. */
 export const A_COMMUNICATION_JADE = 'communication-jade';
@@ -303,14 +304,7 @@ export function theirJadeBreaks(objects: ObjectRecord[], personId: string, _onDa
         if (typeof twinId === 'string') gone.add(twinId);
     }
     if (gone.size === 0) return 0;
-    let collected = 0;
-    for (let i = objects.length - 1; i >= 0; i--) {
-        const o = objects[i]!;
-        if (!isAJadeHalf(o) || !gone.has(o.id)) continue;
-        objects.splice(i, 1);
-        collected++;
-    }
-    return collected;
+    return madeTokensGoToDust(objects, gone).length;
 }
 
 /** Whether a master would give this disciple a half: a hand for the grade, and a disciple they value. */

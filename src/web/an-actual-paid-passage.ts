@@ -1,7 +1,9 @@
+import { followedParty } from './the-party-you-actually-follow.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { passageRunMoment, passageCheckFrame } from '../engine/world/passage-moment.js';
 import { projectActualPassengers } from './passengers-at-the-actual-clock.js';
-import { walkingRouteFrom } from '../engine/world/locations.js';
+import type { NpcRecord } from '../engine/world/npc-state.js';
+import { walkingRouteFrom, type LocationRecord } from '../engine/world/locations.js';
 import { roadVertexMoments } from '../engine/world/road-course.js';
 import { accountsComingDue } from './who-comes-to-settle-an-account.js';
 /** Accepted public transport executes body/world/encounter effects in actual date order. */
@@ -16,7 +18,7 @@ import { leaveThePaidCarriage, thePaidCarriageClaim } from './a-paid-carriage-on
 import { publicCarriagePassage, stopPublicCarriage } from '../engine/world/public-carriages.js';
 import { shipPassengerAt, turnBackPublicPassage } from '../engine/world/passenger-on-a-vessel.js';
 import { routineTime } from '../engine/world/npc-routines.js';
-import { locationOnNpcJourney, firstTravellerOnTheWay, firstTravellerOnTheWater, journeyTimeHasReached, isWater } from '../engine/world/places-on-the-way.js';
+import { firstTravellerOnTheWay, firstTravellerOnTheWater, journeyTimeHasReached, isWater, locationOfNpcOnItsJourney } from '../engine/world/places-on-the-way.js';
 import { peopleInThisPlace } from './hearsay.js';
 import { PLAYER_ROLL_IDENTITY, encounterInputFor, recordEncounters, withEncounterDeltas } from './encounters.js';
 import { encountersAtChecks } from '../engine/encounters/window.js';
@@ -29,7 +31,7 @@ import { TRAVEL_FOCUS } from './turn-constants.js';
 import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-world.js';
 
 export interface ActualPaidTrip {
-    service: 'ship' | 'carriage' | 'air'; to: string; days: number; walkingDays: number;
+    service: 'ship' | 'carriage' | 'air' | 'party'; to: string; days: number; walkingDays: number;
     stones: number; escort: number; bought: string; sea?: AVoyage; roadReceiptId?: string; focus?: number;
     /** Supplied only by the successful new boarding caller; no durable duplicate marker. */
     departureOccasion?: boolean;
@@ -63,7 +65,7 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     trip: ActualPaidTrip, afterArrival?: (body: Cultivator, run: Run, execution: Execution) => void,
     binding?: { source: (onDay?: number) => PhysicalCarrier | null; overWater: boolean;
         crew: () => import('../engine/world/npc-state.js').NpcRecord[];
-        beforeWorld?(onDay: number): void; stop?(): string | null; vesselId?: string; airborne?: boolean },
+        beforeWorld?(onDay: number): void; contact?(onDay: number, days: number): ReturnType<typeof firstTravellerOnTheWay>; stop?(): string | null; atStop?(reason: string): readonly string[]; vesselId?: string; airborne?: boolean },
     resolvesOnTurn = run.turn + 1, finishTurn = true): Promise<Execution> {
     // Promotion resolves real legacy-clock effects before choosing a contact or spending.
     game.atHand = await prepareWorldClockForPreciseSpan(run, body);
@@ -89,7 +91,7 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     const waterId = trip.sea && state.locations.find(place => place.tags.includes('openWater'))?.id;
     const waterGround = trip.sea && source(start + Math.min(trip.days, .125))?.locationId;
     const justBoarded = trip.sea && shipPassengerAt(state, trip.sea.receiptId!, start)?.sailed === 0;
-    const meeting = binding?.airborne ? null : trip.sea && !justBoarded ? null : trip.sea && (waterGround || waterId)
+    let meeting: { npc: NpcRecord; afterDays: number; place?: LocationRecord } | null = binding?.contact ? binding.contact(start, trip.days) : binding?.airborne ? null : trip.sea && !justBoarded ? null : trip.sea && (waterGround || waterId)
         ? firstTravellerOnTheWater({ locations: state.locations, npcs: state.npcs,
             waterId: waterGround ?? waterId!, vesselId: shipPassengerAt(state, trip.sea.receiptId!, start)!.vesselId,
             onDay: start, days: trip.days, exceptIds })
@@ -116,13 +118,14 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     });
     let nextCheck = cadence.next();
     const lines = [trip.bought], structure: string[] = [];
+    const encounterEvents: import('../schema/cultivation.js').SimEvent[] = [];
     let stop: string | null = null, contactReached = false;
     let fight: Execution | null = null;
     const dates: number[] = [];
     const refreshDates = () => {
         dates.length = 0;
         if (!nextCheck.done && nextCheck.value.kind === 'check') dates.push(boarded + nextCheck.value.dayOffset);
-        if (meeting && !contactReached) dates.push(start + meeting.afterDays);
+        if (!binding?.contact && meeting && !contactReached) dates.push(start + meeting.afterDays);
     };
     const resolveChecksHere = () => {
         const day = routineTime(game.atHand!);
@@ -138,7 +141,7 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
                     if (!actualNow.cultivator.alive || actualNow.run.status !== 'active' || stop) break;
                     const crew = crewNow();
                     const single = { ...resolved.value.roll, occurrences: [occurrence], firstInterruptDay: null };
-                    const met = whatTheEscortMet(single, crew.length);
+                    const met = trip.service === 'party' ? { attacking: null, withdrew: [] } : whatTheEscortMet(single, crew.length);
                     if (met.withdrew.length) { lines.push('A band withdrew from the actual carrier.'); continue; }
                     const fresh = game.currentRun();
                     const adjusted = withEncounterDeltas(fresh.cultivator, single);
@@ -147,10 +150,15 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
                     const recorded = recordEncounters(game.knowledge, adjusted, fresh.run.elapsedDays,
                         single, game.repos, fresh.run.elapsedDays);
                     lines.push(...recorded.lines); structure.push(...recorded.structure);
+                    encounterEvents.push(...recorded.events);
                     if (met.attacking) {
                         const engage = met.attacking.confrontation?.engageable === true;
-                        const rest = theRestOfTheFight(game, fresh.run, met.attacking, crew.length,
-                            game.ambientFor(adjusted, fresh.run), trip.service, engage, crew);
+                        const hasParty = !!followedParty(game.db, game.atHand!, body.id, day);
+                        if (engage && hasParty) fight = theyCameAtYou(game, fresh.run, adjusted,
+                            game.ambientFor(adjusted, fresh.run), { ...single, firstInterruptDay: occurrence.absoluteDay }, true, crew);
+                        const rest = hasParty && game.fight?.partyBackground ? game.fight.partyBackground
+                            : theRestOfTheFight(game, fresh.run, met.attacking, crew.length,
+                                game.ambientFor(adjusted, fresh.run), trip.service, engage, crew);
                         theCrewWhoFell(game, rest.fallen, day, 'at the actual passage boundary');
                         lines.push(...rest.lines);
                         if (!rest.escortHeld && trip.roadReceiptId) {
@@ -158,7 +166,7 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
                             if (road) stopPublicCarriage(game.atHand!, road.leg, day);
                             leaveThePaidCarriage(game.db, body.id);
                         }
-                        if (engage) fight = theyCameAtYou(game, fresh.run, adjusted,
+                        if (engage && !hasParty) fight = theyCameAtYou(game, fresh.run, adjusted,
                             game.ambientFor(adjusted, fresh.run), { ...single, firstInterruptDay: occurrence.absoluteDay }, true);
                         if (!rest.escortHeld && trip.sea?.receiptId) {
                             // Short of the middle, the shorter way is home; past it, the shorter way is on.
@@ -178,7 +186,9 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
                         const current = game.currentRun();
                         fight = theyCameAtYou(game, current.run, current.cultivator,
                             game.ambientFor(current.cultivator, current.run),
-                            { ...single, firstInterruptDay: occurrence.absoluteDay });
+                            { ...single, firstInterruptDay: occurrence.absoluteDay },
+                            !!(trip.sea || trip.roadReceiptId || binding?.airborne || binding?.vesselId),
+                            trip.service === 'party' ? [] : crewNow());
                         stop = occurrence.event.summary;
                     } else if (occurrence.interrupts) stop = occurrence.event.summary;
                     if (!game.currentRun().cultivator.alive || game.currentRun().run.status !== 'active') break;
@@ -200,8 +210,8 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
         const why = stop ?? 'The actual body can no longer undertake the passage.';
         const facts = factsForToolResult('The passage was interrupted at departure.', lines);
         facts.structure.push(...structure);
-        const halted: Execution = { facts, timeSkip: null, events: [], breakthrough: null,
-            outcome: 'executed', nights: binding?.airborne && !binding.vesselId ? 'in_the_open' : 'under_a_roof', calls: [{ name: 'engine.encounterWindow',
+        const halted: Execution = { facts, timeSkip: null, events: encounterEvents, breakthrough: null,
+            outcome: 'executed', nights: trip.service === 'party' && !binding?.vesselId || binding?.airborne && !binding.vesselId ? 'in_the_open' : 'under_a_roof', calls: [{ name: 'engine.encounterWindow',
                 action: 'passage', ok: true, summary: 'Interrupted at actual departure; no travel time was spent.' }],
             cutShort: { askedDays: trip.days, livedDays: 0, cause: 'the_world', what: why } };
         if (finishTurn && body.alive && run.status === 'active' && run.turn < resolvesOnTurn) {
@@ -215,17 +225,23 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     const rationsBefore = game.rationsHeld(body);
     const spent = await spendWithPhysicalCarrier(game, run, body, trip.days,
         trip.focus ?? TRAVEL_FOCUS, source, false, {
-            dates, resolvesOnTurn, finishTurn, stop: () => binding?.stop?.() ?? stop, beforeWorld: binding?.beforeWorld,
+            dates: binding?.contact ? onDay => {
+                const contact = binding.contact!(onDay, Math.max(0, start + trip.days - onDay));
+                meeting = contact ? { ...contact, afterDays: onDay - start + contact.afterDays } : null;
+                contactReached = false;
+                return [...dates, ...(meeting ? [start + meeting.afterDays] : [])];
+            } : dates, resolvesOnTurn, finishTurn, stop: () => binding?.stop?.() ?? stop, beforeWorld: binding?.beforeWorld,
             afterBoundary: () => {
                 const current = source();
                 if (!current || current.unavailable || !game.currentRun().cultivator.alive) return;
                 const day = routineTime(game.atHand!);
                 resolveChecksHere();
-                if (meeting && !contactReached && journeyTimeHasReached(day, start + meeting.afterDays)) {
+                const contact = meeting;
+                if (contact && !contactReached && journeyTimeHasReached(day, start + contact.afterDays)) {
                     contactReached = true;
-                    const actual = game.atHand!.npcs.find(person => person.id === meeting.npc.id);
-                    if (actual?.status === 'alive' && locationOnNpcJourney(game.atHand!.locations, actual, day)
-                        === source()?.locationId) {
+                    const actual = game.atHand!.npcs.find(person => person.id === contact.npc.id);
+                    if (actual?.status === 'alive' && locationOfNpcOnItsJourney(game.atHand!, actual, day)
+                        === source()?.locationId && (!contact.place || source()?.locationId === contact.place.id)) {
                         const place = game.atHand!.locations.find(row => row.id === source()!.locationId)!;
                         if (binding?.overWater && binding.vesselId && isWater(place)
                             && actual.activity?.vesselId !== binding.vesselId) {
@@ -242,11 +258,12 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
             }
         });
     const fresh = game.currentRun(), actual = source();
-    const arrived = fresh.cultivator.alive && !spent.skip.died && !spent.skip.interrupted && !stop
+    const stopped = binding?.stop?.() ?? stop;
+    const arrived = fresh.cultivator.alive && !spent.skip.died && !spent.skip.interrupted && !stopped
         && actual?.locationId === to.id && journeyTimeHasReached(routineTime(game.atHand!), actual.endsOnDay);
     // A paid seat was bought off a board, and the ticket names where it goes: the name is read, not guessed.
     // Only a bought seat has a ticket: a flight of your own, at random or not, teaches nothing it has not shown.
-    if(trip.service!=='air'&&!arrived&&!game.canPointAtLocation(fresh.cultivator,to))game.noteEncounter(fresh.cultivator,fresh.run,
+    if(trip.service!=='air'&&trip.service!=='party'&&!arrived&&!game.canPointAtLocation(fresh.cultivator,to))game.noteEncounter(fresh.cultivator,fresh.run,
         {kind:'place',id:to.id,name:to.name},'read',`The ticket for the ${trip.service} names ${to.name}.`);
     const destinationKnown=arrived||game.canPointAtLocation(fresh.cultivator,to);
     // Stopped on the water, the first thing said is where the ship is and where it is bound.
@@ -257,12 +274,16 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
         ? `${howMany(Math.round(trip.sea.days),'day')} at sea, and back into ${trip.to}.`
         : `${howMany(Math.round(trip.sea.days),'day')} by ship from ${trip.sea.from} to ${trip.to}.`);
     // What the passage fed them: a ship's rations and then the pack, or a paid seat's meals.
-    if(fresh.cultivator.alive&&trip.service!=='air'){
+    if(fresh.cultivator.alive&&trip.service!=='air'&&trip.service!=='party'){
         const rationsLeft=game.rationsHeld(fresh.cultivator);
         lines.push(trip.sea
             ? whatTheHullFed(fresh.cultivator,trip.sea.hullRationDays,Math.round(trip.sea.sailed+spent.skip.simulatedDays),
                 Math.max(0,rationsBefore-rationsLeft),rationsLeft)
             : whatWasEatenOnBoard(fresh.cultivator,rationsLeft));
+    }
+    if (stopped && !fight) {
+        if (!lines.includes(stopped)) lines.push(stopped);
+        lines.push(...(binding?.atStop?.(stopped) ?? []));
     }
     const facts = factsForToolResult(arrived ? trip.to + ', by ' + trip.service + '.' : 'The actual passage stopped.',
         [...lines, ...spent.applied.tollLines, ...spent.world.lines]);
@@ -272,8 +293,8 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
         facts.structure=facts.structure.map(line=>line.split(to.name).join('the ground ahead'));
         facts.prose=facts.prose.split(to.name).join('the ground ahead');
     }
-    const execution: Execution = { facts, timeSkip: spent.skip, events: spent.skip.events, breakthrough: null,
-        outcome: 'executed', nights: binding?.airborne && !binding.vesselId ? 'in_the_open' : 'under_a_roof', calls: [...skipCalls('passage', spent.skip, null), ...worldCalls(spent.world)],
+    const execution: Execution = { facts, timeSkip: spent.skip, events: [...spent.skip.events, ...encounterEvents], breakthrough: null,
+        outcome: 'executed', nights: trip.service === 'party' && !binding?.vesselId || binding?.airborne && !binding.vesselId ? 'in_the_open' : 'under_a_roof', calls: [...skipCalls('passage', spent.skip, null), ...worldCalls(spent.world)],
         cutShort: spent.skip.interrupted ? { askedDays: trip.days, livedDays: spent.skip.simulatedDays,
             cause: 'the_world', what: spent.skip.interruptReason ?? stop ?? 'The real carrier stopped.' } : null };
     if (arrived) {

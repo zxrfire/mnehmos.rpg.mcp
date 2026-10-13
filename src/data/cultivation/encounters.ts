@@ -33,6 +33,8 @@ export const EncounterEntrySchema = z.object({
     id: z.string(),
     name: z.string().min(1),
     kind: EncounterKindSchema,
+    /** A literal animal reads its existing species rather than a cultivator template. */
+    beastId: z.string().optional(),
     /** The SimEvent kind the engine should emit when this entry fires. */
     simEventKind: SimEventKindSchema,
     /** Relative draw weight among eligible entries. */
@@ -296,6 +298,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'enc-spirit-wolf-pack',
+        beastId: 'beast-grey-wolf-pack',
         name: 'Spirit Wolf Pack',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
@@ -311,6 +314,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-ironhide-boar',
+        beastId: 'beast-ironhide-boar',
         name: 'Ironhide Boar',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
@@ -326,6 +330,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-mist-serpent',
+        beastId: 'beast-mist-serpent',
         name: 'Venomous Mist Serpent',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
@@ -357,6 +362,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-thunder-hawk',
+        beastId: 'beast-thunder-hawk',
         name: 'Thunder Hawk',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
@@ -372,6 +378,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-glacier-lynx',
+        beastId: 'beast-glacier-lynx',
         name: 'Glacier Lynx',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
@@ -387,6 +394,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-earth-dragon-juvenile',
+        beastId: 'beast-earth-dragon',
         name: 'Juvenile Earth Dragon',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
@@ -402,6 +410,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-abyssal-kun',
+        beastId: 'beast-abyss-kun',
         name: 'Abyssal Kun',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
@@ -468,6 +477,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-beast-hunting-cultivators',
+        beastId: 'beast-core-taker',
         name: 'The Core-Eater',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
@@ -1295,21 +1305,6 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['dao-house', 'civil', 'fate', 'timed', 'avoidable']
     },
     {
-        id: 'enc-held-names-registration',
-        name: 'Registration at the Gate',
-        kind: 'dao_house',
-        simEventKind: 'npc_event',
-        weight: 50,
-        minOrdinal: 0,
-        maxOrdinal: 24,
-        interrupts: true,
-        threatOrdinal: null,
-        summaryTemplate:
-            'The gate at {place} admits nobody unregistered. {faction} takes the name, holds it, and charges {stones} spirit stones a year. Unregistered parties may not trade, testify, inherit or be buried inside the walls.',
-        tokens: ['place', 'faction', 'stones'],
-        tags: ['dao-house', 'civil', 'names', 'ordinary', 'avoidable']
-    },
-    {
         id: 'enc-quiet-cut-offer',
         name: 'An Offer to Cut',
         kind: 'dao_house',
@@ -1631,8 +1626,8 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
-            'A plague has taken hold at {place}; {count} dead so far. A healing art or {loot} would stop it. {faction} has not sent anyone.',
-        tokens: ['place', 'count', 'loot', 'faction'],
+            'People at {place} report an outbreak of plague.',
+        tokens: ['place'],
         tags: ['social', 'reputation', 'support', 'avoidable']
     },
     {

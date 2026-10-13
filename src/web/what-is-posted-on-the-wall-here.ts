@@ -57,10 +57,9 @@ import {
 } from '../engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import type { AtStake } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import {
-    theOnesNobodyCanFind,
-    whatTheHallSays,
-    whoHasALampBurningIn
+    theOnesNobodyCanFind
 } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
+import { readTheRollAgainstTheHall } from '../engine/world/what-the-roll-and-the-lamps-say.js';
 import type { KnowledgeGate } from './knowledge.js';
 import { thePapersStillUp } from '../engine/world/a-house-puts-a-price-on-somebody.js';
 
@@ -191,9 +190,9 @@ export function housesWithSomethingToSay(
  * missing-person notices on it - which is correct rather than convenient: with
  * no world there is no roll and nobody has gone anywhere.
  *
- * The gate is the lamp in the hall. `whatTheHallSays` reads only people a
- * lamp burns for, so a house that never lit one for somebody posts no search
- * for them: it does not know one of its own is gone.
+ * The hall compares eligible member rows with physical lamps. A witnessed lapse
+ * or an actual staffed roll check can supply the dead reading after deletion;
+ * somebody the house could never issue a lamp for is not read through a lamp.
  */
 export function whoEachHouseIsLookingFor(
     world: WorldState | null | undefined
@@ -226,20 +225,10 @@ export function whoEachHouseIsLookingFor(
     }
 
     for (const [houseId, members] of byHouse) {
-        const lit = whoHasALampBurningIn(world.objects, houseId);
         const house = world.factions.find(f => f.id === houseId);
         const lostSince = new Map((house ? whoTheHouseHasLostTrackOf(house) : []).map(x => [x.personId, x.sinceDay] as const));
-        const looking = theOnesNobodyCanFind(whatTheHallSays({
-            roll: members.map(npc => ({
-                memberId: npc.id,
-                memberName: npc.name,
-                theyHaveALamp: lit.has(npc.id),
-                holderIsAlive: npc.status === 'alive',
-                daysSinceAnybodySawThem: lostSince.has(npc.id)
-                    ? Math.max(0, world.currentDay - lostSince.get(npc.id)!)
-                    : 0
-            }))
-        }));
+        const looking = theOnesNobodyCanFind(readTheRollAgainstTheHall(world, houseId,
+            { members, unseenSince: lostSince }));
         if (looking.length === 0) continue;
         // A HOUSE SENDS ITS OWN FIRST. Paper in a town is what it does when it
         // cannot: nobody free, everybody out, or too few to spare. So a search

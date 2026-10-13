@@ -4,7 +4,7 @@ import { makeFact } from './history.js';
 import type { NpcActivity, NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
-import { factsWithDataValue } from './witness-reaction-index.js';
+import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js';
 import { journeyTimeHasReached } from './places-on-the-way.js';
 
 /** Snapshot of the actual accepted finite leg, not another current course. */
@@ -95,11 +95,17 @@ export function recordNpcActualArrival(world: WorldState, npc: NpcRecord, leg: N
 
 /** An oath names its bodies and destination once; this reader asks only what actually arrived. */
 export function actualBodiesArrivedTogether(world: WorldState, bodies: readonly ActualArrivalBody[],
-    destinationId: string, acceptedOnDay: number): boolean {
+    destinationId: string, acceptedOnDay: number, acceptsCourse?: (fact: HistoricalFact) => boolean): boolean {
     if (!Number.isFinite(acceptedOnDay) || bodies.length === 0 || new Set(bodies.map(body => body.id)).size !== bodies.length
         || bodies.some(body => !body.alive || body.locationId !== destinationId)) return false;
     const receipts = bodies.map(body => factsWithDataValue(world, 'bodyId', body.id).flatMap(fact => {
         const course = arrivalCourseOfFact(fact);
+        if (acceptsCourse && (!course || !fact.causes.some(id => {
+            const accepted = witnessIndexFor(world).byId.get(id);
+            const original = accepted && arrivalCourseOfFact(accepted);
+            return !!accepted && accepted.data.actualBodyArrival !== true && !!original
+                && sameActualArrivalCourse(course, original) && acceptsCourse(accepted);
+        }))) return [];
         return fact.data.actualBodyArrival === true && course && course.toLocationId === destinationId
             && fact.day >= acceptedOnDay && !journeyTimeHasReached(acceptedOnDay, course.arrivalDay) ? [course] : [];
     }));

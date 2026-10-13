@@ -582,6 +582,10 @@ export interface StandingFight {
      * somebody holding an art that draws on another - and null for a beating.
      */
     cameAtYou?: { wanted: 'furnace' | null; because: string };
+    /** The ordinary reached-ground group fight behind a later leader question. */
+    partyFightFactId?: string;
+    foregroundParty?: import('./a-party-stands-in-the-foreground.js').ForegroundPartyFight;
+    partyBackground?: { lines: string[]; escortHeld: boolean; fallen: string[] };
 }
 
 /** Whether a fight the service is holding is still this run's and this body's. */

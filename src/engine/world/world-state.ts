@@ -77,7 +77,7 @@ import type { AreaStatus } from './what-is-true-of-a-place-right-now.js';
 import type { Absence } from './when-somebody-does-not-come-back.js';
 import type { Posting, Candidate } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import type { GroundThatPays } from './what-a-house-does-when-it-cannot-pay.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // FACTIONS
@@ -506,7 +506,7 @@ export function npcsAt(state: Pick<WorldState, 'npcs'> & Partial<Pick<WorldState
     locationId: string): NpcRecord[] {
     return state.npcs
         .filter(n => isActing(n.status) && (state.locations && state.currentDay !== undefined
-            ? locationOnNpcJourney(state.locations, n, state.currentDay) : n.locationId) === locationId)
+            ? locationOfNpcOnItsJourney({ locations: state.locations, npcs: state.npcs }, n, state.currentDay) : n.locationId) === locationId)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 }
 

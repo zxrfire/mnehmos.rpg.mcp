@@ -2,6 +2,12 @@
 
 # The Web Front Door
 
+Public passage tallies and personal rides remain separate authorities. A tally
+supplies its public departure seat, never consent to board a privately held
+craft. Private boarding issues and consumes no tally. Personal operator terms
+require an owned passage and cannot replace a public service's quoted fare.
+An ordinary private cart does not qualify as an existing public service hull.
+
 A carriage ticket purchase leaves its physical passage tally in the pack and
 the buyer at the counter, free to spend the wait. A full load sells the next
 ordinary run after the actual return; its board names that leaving time and
@@ -3864,3 +3870,28 @@ existing sustaining resource contract. This does not add flee costs or a
 new NPC HP model.
 
 A canonical province approach may resolve to the settlement the body already occupies. Its native zero-day course uses the existing quarter-day local walk before any stopped-road cursor is written. A stopped road remains strictly positive; every positive fractional continuation still uses native foot checks and its sole physical cursor. Combat15 diagnostic51857 measured different printed names resolving to the same Iron Crest endpoint, producing road0 rejected by its own cursor reader. No road geometry, route knowledge, world interruption or encounter rule changes.
+
+Actual passage results retain the encounter recorder's existing events and money deltas alongside their factual lines. A binding's actual journey-ending reason is included when that reason stops its held span. Following buys no additional fare.
+
+Played group fights use the encounter coordinate for their RNG stream, and the current absolute world day for NPC art use, wounds, depleted bars and death. The common consequence writer reads the actual fight ground; a surviving person's itinerary endpoint remains available to its journey geometry.
+
+The follower selector reads its existing binding fact and the admitted native itinerary once, in `the-party-you-actually-follow.ts`. Actual carrier scenes also read that selector: a live follower on its real hull sees the actual operator and hull areas, and its SQL area follows the ordinary carrier-area reader. This scene read creates no booking, payment, tally or personal ride agreement.
+
+A physical span accepts a derived boundary-date callback alongside its existing date array. The follower contact callback refreshes from the native party's current phase, excludes its actual company and hull occupants, and reads the original dated route. A real crossing stops the SQL body there and puts the leader's course question to the party. The requested wait never rescales the whole itinerary into that window.
+
+A private ride settles only on the actual owned course that admitted both people, read through their physical arrival facts. A shared public landing cannot settle that personal agreement or collect its private payment. Private boarding names its actual load; a public tally remains authority only for its public departure.
+
+A consenting native-party follower admitted by name to its leader's own craft uses the existing free ride agreement. Native air admission reads the player's actual SQL contact rather than moving the world mirror. Joint actual private landfall settles that agreement. The follower reuses the owned carrier's custody and pilot checks; a lost craft or stopped air course cannot become a generic moving party leg. Public party passages issue no personal ride agreement.
+
+An explicitly accepted NPC-led party is bound through `bindFollowingParty`: its existing itinerary and runtime admission name the consenting player, and both real bodies share the boarding ground. The SQL body follows outward travel, the work and the return at the actual clock; its world mirror remains location-less. Every member answers a held route question, and the player can be outvoted or leave. A real crossing, encounter or question interrupts the span. Explicit independent travel leaves at the actual road point; an accepted individual carrier releases the binding before its own body projection. A public captain continues an already admitted passenger after the party leader dies, using that passenger's real receipt rather than a removed dead row. Private ownership and free terms name the actual vehicle owner, who need not lead the party. A held combat round spends ordinary body time, while the party's existing fight hold retains the reached ground.
+
+An attacked party uses the same unfinished melee as other groups: the real leader
+or a companion stands beside the player, and the other real members fight in the
+background. Guarding spends the player's round without preventing the companion's
+blow. Each body, art cost, withdrawal, death and broken object remains that person's.
+The surviving leader puts the next course to the party; an aboard discussion waits
+for actual landfall and cannot stop the captain's course. Finds remain with whoever
+takes them through ordinary possession.
+
+The unfinished fight is stored in the existing character flags, scoped to its run.
+Service recreation reads that same round; ending clears it. No battle archive is kept.

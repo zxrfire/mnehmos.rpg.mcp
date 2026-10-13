@@ -19,7 +19,7 @@ import type { SeaLane } from './what-a-sea-crossing-costs.js';
 import { shipIdForLane } from './the-ship-on-a-lane.js';
 import { activityOfAPublicPassage, publicShipLinesFrom, quotePublicPassage } from './public-shipping.js';
 import { isTerminal } from '../cultivation/existence.js';
-import type { WorldState } from './world-state.js';
+import { rowById, type WorldState } from './world-state.js';
 import { prepareNpcDepartureApproach } from './npc-departure-approaches.js';
 import { exteriorGroundOfDeparture } from './departure-approach.js';
 import { stonesFor } from './the-fare-and-calendar-of-a-passage.js';
@@ -163,6 +163,10 @@ export function locationOnNpcJourney(
     capture?: (position: RoadPosition) => void, currentNpc?: (id:string)=>NpcRecord|undefined
 ): string | null {
     const doing=npc.activity;
+    if ((doing?.partyQuestionId || doing?.partyFightId) && !isTerminal(npc.status)) {
+        if (npc.locationId) capture?.({ kind: 'place', locationId: npc.locationId, originLocationId: npc.locationId });
+        return npc.locationId;
+    }
     if(!isTerminal(npc.status)&&doing?.kind==='travelling'&&doing.carrierOperatorId&&doing.carrierOperatorId!==npc.id){
         const source=currentNpc?.(doing.carrierOperatorId),on=source?.activity;
         if(!source||source.status!=='alive')return null;
@@ -182,6 +186,15 @@ export function locationOnNpcJourney(
     });
     if (!captured && location) capture({ kind: 'place', locationId: location, originLocationId: location });
     return location;
+}
+
+/** World readers supply the actual driver whose body carries a passenger. */
+export function locationOfNpcOnItsJourney(world: { locations: readonly LocationRecord[];
+    npcs?: readonly NpcRecord[] }, npc: NpcRecord, day: number, routes?: RouteQueries,
+    capture?: (position: RoadPosition) => void): string | null {
+    const people = world.npcs;
+    return locationOnNpcJourney(world.locations, npc, day, routes, capture,
+        people ? id => rowById(people, id) ?? undefined : undefined);
 }
 
 /** Exact geometry comes from the same capability-guarded route read as physical ground. */
@@ -288,6 +301,15 @@ function heldWalkingRoute(locations: readonly LocationRecord[], from: string, to
 }
 
 /** A live posting has one initial passage. Its term never starts a return trip. */
+/** The date a held posting's ordinary outward passage reaches its actual work site. */
+export function whenTheyReachTheirPost(locations: readonly LocationRecord[], npc: NpcRecord,
+    routes?: RouteQueries): number | null {
+    if (npc.activity?.kind !== 'stationed') return null;
+    if (npc.activity.fromLocationId == null) return npc.activity.sinceDay;
+    const passage = passageToAPost(locations, npc, routes);
+    return passage ? npc.activity.sinceDay + passage.days : null;
+}
+
 function passageToAPost(locations: readonly LocationRecord[], npc: NpcRecord, routes?: RouteQueries) {
     const doing = npc.activity;
     if (doing?.kind !== 'stationed' || doing.fromLocationId == null || npc.locationId == null) return null;
@@ -457,6 +479,8 @@ export function firstTravellerOnTheWay(input: {
     exceptIds?: ReadonlySet<string>;
     /** Already priced canonical endpoint course, including an admitted partial edge. */
     route?: NonNullable<ReturnType<typeof walkingRouteFrom>>;
+    /** Original native leg dates; the requested window may begin partway through it. */
+    journey?: { sinceDay: number; untilDay: number; initialTravelDays?: number };
     /** A body staying on its actual stretch has zero velocity. */
     stationaryAt?: RoadPosition;
     /** A flying craft can share the ordinary water beneath its route. */
@@ -468,16 +492,21 @@ export function firstTravellerOnTheWay(input: {
     if (!route) return null;
     const total = route.at(-1)!.days;
     if (total <= 0) return null;
+    const journey = input.journey ?? { sinceDay: input.onDay, untilDay: input.onDay + input.days };
+    const initialDays = journey.initialTravelDays ?? 0;
+    const stops = route.filter(stop => initialDays > 0 || stop.days > 0);
+    const dates = roadVertexMoments(route, journey.sinceDay, journey.untilDay - journey.sinceDay, initialDays);
     const byId = new Map(input.locations.map(place => [place.id, place]));
     // These are intervals on two routes, not independent encounter rolls.
     // Each candidate is considered at the moment the player reaches that ground.
-    for (const stop of route) {
+    for (const [index, stop] of stops.entries()) {
         const place = byId.get(stop.locationId);
         if (!place || (!place.tags.includes(ROUTE_STOP) && !(input.overWater && isWater(place)))
             || place.id === input.fromId) continue;
-        const afterDays = Math.max(1, Math.ceil(input.days * stop.days / total));
-        if (afterDays >= input.days) continue;
-        const day = input.onDay + afterDays;
+        const day = dates[index];
+        if (day == null) continue;
+        const afterDays = day - input.onDay;
+        if (afterDays <= 0 || journeyTimeHasReached(afterDays, input.days)) continue;
         const npc = input.npcs.find(person => person.status === 'alive'
             && !input.exceptIds?.has(person.id) && npcIsTravellingOnDay(input.locations, person, day)
             && locationOnNpcJourney(input.locations, person, day,undefined,undefined,id=>input.npcs.find(one=>one.id===id)) === place.id
@@ -574,7 +603,7 @@ export function firstTravellerOnTheWater(input: {
         const npc = input.npcs.find(person => person.status === 'alive'
             && !input.exceptIds?.has(person.id) && person.activity?.vesselId === input.vesselId
             && npcIsTravellingOnDay(input.locations, person, day)
-            && locationOnNpcJourney(input.locations, person, day) === input.waterId);
+            && locationOfNpcOnItsJourney(input, person, day) === input.waterId);
         if (npc) return { npc, afterDays };
     }
     return null;

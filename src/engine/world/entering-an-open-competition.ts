@@ -19,7 +19,7 @@ import { theHouseWasSeenToWin } from './what-being-seen-to-do-well-is-worth.js';
 import { feederHousesFor } from './what-a-house-answers-to.js';
 import { handOverExchangeConsignment, hasExchangeConsignment } from './wares-at-a-capital-exchange.js';
 import { vacanciesOnTheRolls } from './a-house-takes-in-one-of-its-own.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { routeQueriesFor } from './locations.js';
 
 function entriesFor(state: WorldState, hostId: string, day: number, venueId: string): HistoricalFact[] {
@@ -116,7 +116,7 @@ function settleTheOpenCompetitions(state: WorldState, fromDay: number, toDay: nu
             const routes = routeQueriesFor(state.locations);
             const positions = new Map<string, string | null>();
             const positionOf = (npc: NpcRecord) => {
-                if (!positions.has(npc.id)) positions.set(npc.id, locationOnNpcJourney(state.locations, npc, day, routes));
+                if (!positions.has(npc.id)) positions.set(npc.id, locationOfNpcOnItsJourney(state, npc, day, routes));
                 return positions.get(npc.id) ?? null;
             };
             const isHere = (npc: NpcRecord) => {

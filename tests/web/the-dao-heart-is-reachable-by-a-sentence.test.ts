@@ -19,6 +19,12 @@
  * the accumulator, and the reprisals not killing the subject before the wall.
  * Nothing here forces an outcome; the obligations asserted on are the ones the
  * ordinary path wrote.
+ *
+ * On 2026-10-11 the played wall attempt died by failed breakthrough, then the
+ * generic lesser-action clock tried to mutate that dead body and threw before
+ * returning the crossing's account. A fatal handler must return its actual
+ * result without charging another span. The attempt below keeps that outcome
+ * under the ordinary resolver.
  */
 
 import { describe, expect, it, afterAll, beforeAll } from 'vitest';

@@ -3,6 +3,11 @@
  * isn't infinite storage tho", "like try something like 20 swords, you couldn't fit 20 on your
  * person but in a cart for sure", "once you max out a cart you gotta do a spirit boat", and "don't
  * forget to test loading a carriage and loading a spirit boat".
+ * Owned travel now reports fuel in the actual craft during the resolved span.
+ * The fuel control reads that positive paid receipt rather than the former
+ * chest wording, and still requires a real arrival and a smaller purse.
+ * This exposed a real missing report: the paid fuel line was added after the
+ * answer was composed, so the engine-only player never saw the charge.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -69,7 +74,10 @@ describe('what a carriage and a spirit boat hold', () => {
         repos.cultivators.update(cultivator.id, { spiritStones: 100 });
         const flown = await game.act('I fly my spirit boat to Silver Island');
         expect(where().location).toBe('Silver Island');
-        expect(flown.narration).toMatch(/\d+ spirit stones burned in its chest/);
+        const fuel = flown.toolCalls.find(call => call.name === 'engine.priceJourney' && call.ok);
+        expect(fuel, JSON.stringify(flown.toolCalls)).toBeDefined();
+        expect(Number(/^([\d.]+) spirit stones burned/.exec(fuel!.summary)?.[1])).toBeGreaterThan(0);
+        expect(flown.narration).toMatch(/[\d.]+ spirit stones burned/);
         expect(where().spiritStones).toBeLessThan(100);
     }, 180_000);
 

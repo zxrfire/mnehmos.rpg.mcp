@@ -304,6 +304,10 @@ export interface FightTurnContext {
      */
     couldBeCalled?: readonly CouldBeCalled[];
     priceThem?: (who: CouldBeCalled) => CombatantPower;
+    /** A real group's round uses the same answer gates and action costs. */
+    resolveRound?: typeof resolveConfrontationRound;
+    roundConclusion?: () => ConfrontationResult | null;
+    otherCombatants?: readonly CombatantInput[];
 }
 
 /**
@@ -319,6 +323,8 @@ export function openFight(input: {
     ground: FightGround;
     turn: number;
     ambient: AmbientQi;
+    /** The actual group, rather than this pair alone, decides its gap. */
+    inGroup?: boolean;
 }): { fight: UnfinishedFight | null; settled: ConfrontationResult | null; gap: GapAssessment } {
     const powerCtx: PowerContext = { ambient: input.ambient };
     const aggressor = assessPower(input.aggressor.input, powerCtx);
@@ -337,7 +343,7 @@ export function openFight(input: {
     // The same question `resolveConfrontation` asks first, asked first here.
     // A fight nobody can have must not be held open for eight turns of the
     // player typing at it.
-    const settled = theGapDecidesItAlone(
+    const settled = input.inGroup ? null : theGapDecidesItAlone(
         input.aggressor.input, input.defender.input, aggressor, defender, gap,
         { rng: forStream(input.seed, 'fight', input.id, 'gap'), ambient: input.ambient,
             turn: input.turn, intent: input.intent },
@@ -440,7 +446,7 @@ export function takeAFightTurn(
 
         // They did not get clear, and turning your back cost them the round. The
         // other side gets its blow with nothing in the way of it.
-        const caught = resolveConfrontationRound(
+        const caught = (ctx.resolveRound ?? resolveConfrontationRound)(
             asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard', fight.hp),
             asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct, fight.hp),
             fight.hp, fight.injuries,
@@ -507,7 +513,7 @@ export function takeAFightTurn(
 
         // Nothing to let go of yet. The round is spent with the hand held, and
         // they take it.
-        const held = resolveConfrontationRound(
+        const held = (ctx.resolveRound ?? resolveConfrontationRound)(
             asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard', fight.hp),
             asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct, fight.hp),
             fight.hp, fight.injuries,
@@ -555,7 +561,7 @@ export function takeAFightTurn(
 
         // Nothing has been taken off you yet, so there is nothing to give in.
         // The round is spent with the hand held, and they take it.
-        const held = resolveConfrontationRound(
+        const held = (ctx.resolveRound ?? resolveConfrontationRound)(
             asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard', fight.hp),
             asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct, fight.hp),
             fight.hp, fight.injuries,
@@ -598,7 +604,7 @@ export function takeAFightTurn(
 
         // Nobody who ends it. The round was still spent on a shout, so the
         // other side swings into somebody who is not swinging back.
-        const shouted = resolveConfrontationRound(
+        const shouted = (ctx.resolveRound ?? resolveConfrontationRound)(
             asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard', fight.hp),
             asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct, fight.hp),
             fight.hp, fight.injuries,
@@ -616,7 +622,7 @@ export function takeAFightTurn(
         ? answer.vector ?? mine.vector
         : mine.vector;
 
-    const round = resolveConfrontationRound(
+    const round = (ctx.resolveRound ?? resolveConfrontationRound)(
         asRound(fight.aggressor, playerIsAggressor ? minePower : theirPower,
             playerIsAggressor ? act : theirAct, fight.hp,
             playerIsAggressor ? vector : fight.aggressor.vector),
@@ -710,6 +716,12 @@ function afterRound(
     };
     const preamble = extra.preamble ? `${extra.preamble} ` : '';
 
+    if (ctx.roundConclusion) {
+        const finished = ctx.roundConclusion();
+        return { ...base, fight: finished ? null : fight, finished,
+            line: preamble + theRoundAsItHappened(fight, stamped, ctx.otherCombatants) };
+    }
+
     if (round.winnerId !== null) {
         return {
             ...base,
@@ -767,9 +779,10 @@ function afterRound(
  */
 function theRoundAsItHappened(
     fight: UnfinishedFight,
-    stamped: readonly ExchangeRecord[]
+    stamped: readonly ExchangeRecord[],
+    others: readonly CombatantInput[] = []
 ): string {
-    const sides = [fight.aggressor.input, fight.defender.input];
+    const sides = [fight.aggressor.input, fight.defender.input, ...others];
     const nameOf = (id: string): string =>
         sides.find(side => side.id === id)?.name ?? 'somebody';
 

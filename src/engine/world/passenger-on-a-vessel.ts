@@ -10,7 +10,7 @@ import { canTurnBack } from './what-a-sea-crossing-costs.js';
 import { bindShipCrewToPassage } from './ship-crew.js';
 import { witnessIndexFor, factsWithDataValue } from './witness-reaction-index.js';
 import { publicShipLinesFrom, recordPublicPassage, type PublicPassageLeg } from './public-shipping.js';
-import { journeyTimeHasReached, locationOnNpcJourney } from './places-on-the-way.js';
+import { journeyTimeHasReached, locationOfNpcOnItsJourney } from './places-on-the-way.js';
 
 export interface ShipPassengerPosition {
     receipt: HistoricalFact;
@@ -83,7 +83,7 @@ export function shipPassengerAt(world: WorldState, receiptId: string, onDay: num
         && fact.day<=onDay && fact.causes.includes(receipt.id));
     const locationId = data.publicPassageLost===true ? data.toLocationId
         : lost && lostOnDay===undefined ? null
-        : leftThisLandfall ? data.toLocationId : source ? locationOnNpcJourney(world.locations, source, actualEnd)
+        : leftThisLandfall ? data.toLocationId : source ? locationOfNpcOnItsJourney(world, source, actualEnd)
         : last?.locationId ?? (data.toLocationId !== origin.toLocationId ? data.toLocationId : null);
     const atPort = !lost && arrived && locationId === data.toLocationId && (!!source || leftThisLandfall);
     return { receipt, vesselId: origin.vesselId, seaLaneId: origin.seaLaneId,
@@ -145,7 +145,7 @@ function settleRuinedPublicHulls(world:WorldState,day:number):void {
    const from=world.locations.find(p=>p.id===f.data.fromLocationId);
    return from?publicShipLinesFrom(world,from.name,typeof f.data.departureDay==='number'?f.data.departureDay:doing.sinceDay):[];
   }).find(line=>line.lane.id===doing.seaLaneId)?.lane;
-  const ground=locationOnNpcJourney(world.locations,doingCrew,loss.onDay);
+  const ground=locationOfNpcOnItsJourney(world,doingCrew,loss.onDay);
   if(!parent||!lane||!ground)continue;
   const matched=world.npcs.filter(n=>n.status==='alive'&&n.activity?.kind==='travelling'
    &&n.activity.vesselId===hull.id&&n.activity.seaLaneId===doing.seaLaneId

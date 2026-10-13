@@ -548,3 +548,9 @@ An authored on-site duty remains per actual body when its transport needs
 several loads. A hull pilot serving as transport does not earn the post term
 while away fetching the rest; actual final delivery starts that service. This
 changes no authored duty days or whole-away reason semantics.
+
+Standing gate registration comes from the actual gate, clerk and house-price authority, not a random encounter template. A local plague encounter reports plague; actual disease, death and house-response readers supply casualties, remedies and institutional decisions. The template does not invent those facts.
+
+A catalog beast encounter may name its existing species with beastId. Actual
+contact realizes its counted animals as real world people through the existing
+beast factory; their bodies and remains use the ordinary group fight machinery.

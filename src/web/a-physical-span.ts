@@ -26,7 +26,7 @@ export interface PhysicalCarrier {
 export async function spendWithPhysicalCarrier(game: GameService, run: Run, body: Cultivator,
     days: number, focus: number, source: (onDay?: number) => PhysicalCarrier | null,
     grainAbstinence = false, events: {
-        dates?: readonly number[];
+        dates?: readonly number[] | ((onDay: number) => readonly number[]);
         afterBoundary?(): void;
         beforeWorld?(onDay: number): void;
         stop?(): string | null;
@@ -69,8 +69,9 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
                 const state = game.atHand;
                 if (!state) return null;
                 const leg = source();
+                const dated = typeof events.dates === 'function' ? events.dates(start + elapsed) : events.dates ?? [];
                 const next = nextWorldClockBoundary(state, start + elapsed, start + requested,
-                    [...(leg ? [leg.endsOnDay, ...(leg.vertexDates ?? [])] : []), ...(events.dates ?? [])]);
+                    [...(leg ? [leg.endsOnDay, ...(leg.vertexDates ?? [])] : []), ...dated]);
                 return next ? next.onDay - start : null;
             },
             commitProvisions: cumulative => {

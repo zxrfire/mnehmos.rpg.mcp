@@ -1,3 +1,5 @@
+/** A friend's private cart does not become a public service when passed to
+ * the public quoting adapter; its physical owner/custody remain unchanged. */
 /**
  * Actual paid-road inspection found a benign fellow-traveller stop discarding
  * the purchased carriage: its remaining leg became a walk, and three unnamed
@@ -10,13 +12,17 @@
  * Root diagnostic83273 found a one-ULP clock sum already at canonical landfall
  * while the carriage receipt still reported a positive remainder. A genuinely
  * unfinished one-day leg must stay unfinished; no clock is snapped by a read.
+ * A passenger follows its actual driver's current body. A low-level journey
+ * read therefore receives that live driver rather than projecting a second
+ * independent carriage route from the passenger's booking.
  */
+import { aVehicleOf, takeItAlong } from '../../../src/engine/world/a-vehicle.js';
 import { describe, expect, it } from 'vitest';
 import { createWorld, theWorldForgetsTheMortalDead } from '../../../src/engine/world/world-state.js';
 import { createNpc, markDead, setLocation } from '../../../src/engine/world/npc-state.js';
 import { makeLocation, linkLocations } from '../../../src/engine/world/locations.js';
 import { addPlacesOnTheWay, ROUTE_STOP } from '../../../src/engine/world/places-on-the-way.js';
-import { publicCarriageGround, quotePublicCarriage, commitPublicCarriage, publicCarriagePassage,
+import { publicCarriageGround, quotePublicCarriage, quotePublicCarriageOnActualHull, commitPublicCarriage, publicCarriagePassage,
     settlePublicCarriages, stopPublicCarriage } from '../../../src/engine/world/public-carriages.js';
 import { journeyTimeHasReached, locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
 
@@ -37,6 +43,17 @@ function fixture() {
 }
 
 describe('an actual public carriage', () => {
+    it('a held private cart cannot be quoted into a public ticketed service', () => {
+        const h = fixture(), friend = h.world.npcs[1]!;
+        const cart = aVehicleOf({ id: 'a-friends-own-cart', conveyanceId: h.input.conveyanceId,
+            ownerId: friend.id, ownerName: friend.name, at: h.from.id });
+        h.world.objects.push(cart); takeItAlong(h.world.objects, cart, friend.id);
+        const before = structuredClone(h.world.objects), facts = h.world.history.facts.length;
+        expect(quotePublicCarriageOnActualHull(h.world, cart.id, h.input)).toBeNull();
+        expect(h.world.objects).toEqual(before);
+        expect(h.world.history.facts).toHaveLength(facts);
+    });
+
     it('realises only an accepted booking and carries the same body A to B without the player', () => {
         const { world, from, to, input, stop } = fixture();
         const count = world.npcs.length, facts = world.history.facts.length;
@@ -53,7 +70,8 @@ describe('an actual public carriage', () => {
         expect(locationOnNpcJourney(world.locations, driver, 100)).toBe(from.id);
         expect(locationOnNpcJourney(world.locations, driver, 101)).toBe(stop.id);
         expect(publicCarriageGround(world, world.objects[0]!, 101)).toBe(stop.id);
-        expect(locationOnNpcJourney(world.locations, passenger, 101)).toBe(stop.id);
+        expect(locationOnNpcJourney(world.locations, passenger, 101, undefined, undefined,
+            id => world.npcs.find(person => person.id === id))).toBe(stop.id);
         expect(publicCarriageGround(world, world.objects[0]!, quote.arrivalDay)).toBe(to.id);
         expect(publicCarriagePassage(world, receipt.id, passenger.id, 101)?.leg).toEqual({
             vesselId: quote.vesselId, driverId: quote.driverId, fromId: from.id, toId: to.id,

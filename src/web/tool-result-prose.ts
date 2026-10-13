@@ -438,7 +438,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         const crippledAt = mine?.mortality?.crippledInjuryThreshold;
         const rateLoss = mine?.mortality?.injuryRatePenalty;
         const cost = typeof rateLoss === 'number' && rateLoss > 0
-            ? ` They are taking ${Math.round(rateLoss * 100)}% of the cultivation rate.`
+            ? ' They impair cultivation.'
             : '';
         if (typeof carried === 'number' && typeof crippledAt === 'number' && carried > 0) {
             lines.push(
@@ -907,7 +907,7 @@ function hearingFact(hearing: Hearing): string {
 export interface WorldReport {
     /** Narratable. Every line is already safe to name what it names. */
     lines: string[];
-    /** Inspector only: the shape of what was withheld. */
+    /** Public log facts; hidden digest counts stay in the native digest. */
     structure: string[];
 }
 
@@ -918,28 +918,12 @@ export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
     if (!digest || digest.lines.length === 0) {
         return {
             lines: [],
-            structure: digest
-                ? [`World digest: nothing reached this cultivator. ${digest.unheard} event(s) passed unheard.`]
-                : []
+            structure: []
         };
     }
 
-    // ONE LINE PER THING THAT HAPPENED, whatever reached them about it.
-    //
-    // The digest groups by kind and channel, which is what the inspector below
-    // wants: hearing the same death from a house and from a passing trader is
-    // two facts about how news moves. It is one fact about the world, and the
-    // player was reading it twice -
-    //
-    //   Year 1000: A holding up the valley has changed hands within a family.
-    //   Year 1000: A house has been in white for a month. (2 times over the span)
-    //   Year 1000: A holding up the valley has changed hands within a family.
-    //   Year 1000: A house has been in white for a month. (2 times over the span)
-    //
-    // - which reads as the engine stuttering, and is worse than an unheard
-    // event because the player cannot tell it from two similar things
-    // happening. Collapsed on the rendered text, so the count says what the
-    // repetitions were and the structure channel keeps every row.
+    // Collapse repeated news in both visible channels. The native digest keeps
+    // how each report travelled; unread events are not player knowledge.
     const byText = new Map<string, { year: number; text: string; occurrences: number }>();
     for (const line of digest.lines) {
         const key = `${line.year}|${line.text}`;
@@ -948,26 +932,13 @@ export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
         else byText.set(key, { year: line.year, text: line.text, occurrences: line.occurrences });
     }
 
-    return {
-        lines: [...byText.values()].map(line => {
-            if (line.occurrences <= 1) return `Year ${line.year}: ${line.text}`;
-            // A PARENTHETICAL IS A FORM FIELD. This read "(2 times over the
-            // span)" hung off the end of a sentence somebody is meant to be
-            // told, which is how you annotate a row rather than how you say a
-            // thing happened twice. The text carries its own full stop.
-            const howOften = line.occurrences === 2 ? 'twice' : `${line.occurrences} times`;
-            const said = line.text.replace(A_CLOSING_STOP, '');
-            return `Year ${line.year}: ${said}, ${howOften} over the span.`;
-        }),
-        structure: [
-            `World digest: ${digest.lines.length} line(s) reached this cultivator; ` +
-            `${digest.unheard} event(s) reached them by no channel at all.`,
-            ...digest.lines.map(line =>
-                `  A ${line.kind.replace(/_/g, ' ')} reached them via ${line.channel}, in `
-                + `${line.form} form, at magnitude ${line.magnitude}`
-                + `${line.occurrences === 1 ? '.' : `, ${line.occurrences} times over the span.`}`)
-        ]
-    };
+    const lines = [...byText.values()].map(line => {
+        if (line.occurrences <= 1) return `Year ${line.year}: ${line.text}`;
+        const howOften = line.occurrences === 2 ? 'twice' : `${line.occurrences} times`;
+        const said = line.text.replace(A_CLOSING_STOP, '');
+        return `Year ${line.year}: ${said}, ${howOften} over the span.`;
+    });
+    return { lines, structure: [...lines] };
 }
 
 /**

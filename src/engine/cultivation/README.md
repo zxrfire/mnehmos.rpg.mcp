@@ -1350,3 +1350,9 @@ confrontation projection, as do other actual damage-bearing workings. A
 partner ritual, cultivation manual or noncombat service does not become a
 cast merely because its holder punches. Their existing named use paths
 remain separate; no qi or cooldown is charged for imaginary combat work.
+
+The ordinary melee can be advanced one real round at a time. Its serializable
+unfinished state retains the same bodies, initiative, adaptations, exchanges and
+round budget used by the whole-melee wrapper. Per-actor guarding and posture use
+the existing action and exchange rules; a party victory keeps the actual winner's
+identity while reporting whether the player's side won.

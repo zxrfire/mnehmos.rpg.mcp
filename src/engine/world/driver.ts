@@ -1,4 +1,5 @@
 import { isTerminal } from '../cultivation/existence.js';
+import { settleDuePublicCarriages } from './the-next-public-carriage-is-an-ordinary-trip.js';
 import { journeyTimeHasReached } from './places-on-the-way.js';
 import { spendNpcArtInterval } from './the-arts-an-npc-has-spent.js';
 import type { AnArtUseInterval } from '../cultivation/an-art-that-is-ready-to-use.js';
@@ -199,7 +200,8 @@ export function advanceWorldForPlay(
 
 function advanceAtHand(state: WorldState, opts: AdvanceForPlayOptions): PlayAdvanceResult {
     const fromDay = state.currentDay;
-    const transportClock = () => resolveWithPlayerPresent(state, opts.pressure?.visitingPresence,
+    const transportClock = () => state.schedule.some(effect => !effect.fired && effect.data.publicCarrierDeparture === true)
+        || resolveWithPlayerPresent(state, opts.pressure?.visitingPresence,
         () => state.npcs.some(npc => npc.status === 'alive' && isPlayerInvolved(state, npc)
             && (npc.activity?.departureApproach || npc.activity?.capitalMissionId
                 || npc.activity?.airCourseLocationId || npc.activity?.vesselId
@@ -354,6 +356,8 @@ function advanceAtHand(state: WorldState, opts: AdvanceForPlayOptions): PlayAdva
         }
         settleNpcPilotedAirCourses(state, state.currentDay);
         settleWorldAirTravellers(state, state.currentDay);
+        if (effectivePrecision) state.currentHour = (state.currentDay - Math.floor(state.currentDay)) * 24;
+        settleDuePublicCarriages(state, state.currentDay);
         opts.atWorldBoundary?.(state, state.currentDay);
         theWorldForgetsTheMortalDead(state);
         keepTheBusinessStillOnTheBooks(state);

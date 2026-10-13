@@ -198,7 +198,7 @@ export function issueTo(input: {
 export type WhatTheLampSays =
     /** Burning. They are alive, wherever they are. */
     | 'they_live'
-    /** Gone out. They are dead, and the house learned it the moment it went out. */
+    /** Their lamp went to dust; a witness or a roll check tells the house. */
     | 'they_are_dead';
 
 /**
@@ -309,9 +309,9 @@ export interface WhatTheHallSays {
  * lose a disciple and the engine did not notice, which is the one fact
  * `docs/world/houses/trust.md` says a house cannot miss.
  *
- * A DERIVATION AND NOT AN EVENT. Nothing is written and nothing is notified.
- * The hall is recomputed from the roll every time it is asked, which is why
- * there is no call site that can forget to put a lamp out.
+ * This pure reading retains the life check. Physical death consumes the lamp;
+ * `readTheRollAgainstTheHall` reads member rows against the remaining objects
+ * and the hall's actual checks or witnesses.
  *
  * AND ONLY THE PEOPLE WITH A LAMP BURNING. A house reads its lamps, so
  * somebody it never lit one for is not on the list at all - which is how a house

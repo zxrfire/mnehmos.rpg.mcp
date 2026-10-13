@@ -8,7 +8,7 @@ import { type NpcRecord, type NpcActivity, setLocation } from './npc-state.js';
 import { type ObjectRecord, type HowItIsHad, isRuined, hadAs, transferPossession } from './possessions.js';
 import { type HistoricalFact, type HistoricalActor, type PendingFact, makeFact } from './history.js';
 import { walkingDaysFrom, walkingRouteFrom, type RouteQueries } from './locations.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { readPhysicalRetrievals, type PhysicalRetrievalRead } from './reading-a-physical-store-retrieval.js';
 
 export interface RetrievalIntent {
@@ -119,7 +119,7 @@ function mayStart(state: WorldState, actor: NpcRecord, intent: RetrievalIntent,
     if (actor.id !== intent.carrierId || actor.status !== 'alive') return false;
     const a = actor.activity;
     if (a && (a.kind !== 'the_work_of_their_rank' || a.thingId || a.redirect || a.withIds.length)) return false;
-    const actual = locationOnNpcJourney(state.locations, actor, at, routes);
+    const actual = locationOfNpcOnItsJourney(state, actor, at, routes);
     const object = state.objects.find(o => o.id === intent.objectId);
     const store = state.locations.find(l => l.id === intent.storeId);
     if (!actual || actual !== intent.meetingId || authority.carrierArea(state, actor, at) !== intent.meetingAreaId
@@ -161,7 +161,7 @@ export function continuePhysicalRetrieval(state: WorldState, actor: NpcRecord, a
     if (read.closed.has(id)) {
         if (doing?.thingId !== null || actor.status !== 'alive') return none();
         if (doing.untilDay != null && at < doing.untilDay) return none();
-        const ground = locationOnNpcJourney(state.locations, actor, at, routes);
+        const ground = locationOfNpcOnItsJourney(state, actor, at, routes);
         if (!ground) return none();
         const intent = intentOfRetrieval(read.byId.get(id) ?? null);
         if (!intent || ground === intent.meetingId) return withPerson(none(), finished(actor, ground, at));
@@ -178,7 +178,7 @@ export function continuePhysicalRetrieval(state: WorldState, actor: NpcRecord, a
     // This inward ordinary leg was admitted at departure from its real outside
     // ground. A later door closure cannot eject an already admitted traveller.
     // The NEXT edge gets a new reachThrough/enteredAt read before it starts.
-    const ground = locationOnNpcJourney(state.locations, actor, at, routes);
+    const ground = locationOfNpcOnItsJourney(state, actor, at, routes);
     if (!ground) return none();
     const actualActor = setLocation(actor, ground, at);
     const request = read.byId.get(id) ?? null;

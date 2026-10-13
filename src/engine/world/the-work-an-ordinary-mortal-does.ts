@@ -7,7 +7,7 @@ import { ageInYears, isAwayOnSomething, type NpcRecord } from './npc-state.js';
 import type { LocationRecord } from './locations.js';
 import type { WorldState } from './world-state.js';
 import { HOUSEHOLD_MIN_AGE } from './the-ties-an-ordinary-life-produces.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 
 /** The world seeder's settlement tags, read through the existing settlement catalog. */
 export function ordinarySettlementKind(place: Pick<LocationRecord, 'kind' | 'tags'>): Settlement['kind'] | null {
@@ -39,7 +39,7 @@ export function ordinaryAdultsTakeWork(state: WorldState, onDay: number): number
         if (npc.status !== 'alive') continue;
         const job = ordinaryProfessionOf(npc);
         if (!job) continue;
-        const place = locationOnNpcJourney(state.locations, npc, onDay);
+        const place = locationOfNpcOnItsJourney(state, npc, onDay);
         if (place) {
             const key = `${place}\u0000${job.id}`;
             counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -52,7 +52,7 @@ export function ordinaryAdultsTakeWork(state: WorldState, onDay: number): number
         const activity = npc.activity;
         if (activity && (isAwayOnSomething(activity.kind) || activity.redirect || activity.thingId
             || activity.withIds.length > 0 || (activity.untilDay != null && activity.untilDay > onDay))) continue;
-        const locationId = locationOnNpcJourney(state.locations, npc, onDay);
+        const locationId = locationOfNpcOnItsJourney(state, npc, onDay);
         const place = locationId ? places.get(locationId) : undefined;
         const kind = place ? ordinarySettlementKind(place) : null;
         if (!place || !kind) continue;

@@ -11,17 +11,25 @@ export function stoppedRoadPoint(locations:readonly LocationRecord[],id:string|n
    &&Number.isFinite(p.fraction)&&p.fraction>0&&p.fraction<1&&Number.isFinite(p.admittedDays)&&p.admittedDays>0?p:null;
  }catch{return null;}
 }
-export function groundWhereACarriageStopped(world:Pick<WorldState,'locations'>,vesselId:string,departureDay:number,day:number,point:RoadPosition,coarseId:string):string {
+function groundWhereTheJourneyStopped(world:Pick<WorldState,'locations'>,vesselId:string,departureDay:number,day:number,point:RoadPosition,coarseId:string,kind:'carriage'|'party'):string {
  if(point.kind==='place')return point.locationId;
  const shared=world.locations.find(row=>sameRoadPosition(stoppedRoadPoint(world.locations,row.id),point));
  if(shared)return shared.id;
- const id='loc-carriage-stop:'+JSON.stringify([vesselId,departureDay,day]);
+ const id='loc-'+kind+'-stop:'+JSON.stringify([vesselId,departureDay,day]);
  if(world.locations.some(row=>row.id===id))return id;
  const from=world.locations.find(row=>row.id===point.fromId),to=world.locations.find(row=>row.id===point.toId),ground=world.locations.find(row=>row.id===coarseId);
  if(!from||!to||!ground)throw Error('An admitted road point must retain its real ground and endpoints.');
  const stop=makeLocation({id,name:'On the road between '+from.name+' and '+to.name+' ('+String(point.fraction*100)+'% from '+from.name+')',kind:'wilds',layer:ground.layer,parentId:null,
-  ambient:ground.ambient,qiDensity:ground.qiDensity,hazards:[...ground.hazards],tags:['route-stop','stopped-carriage'],
+  ambient:ground.ambient,qiDensity:ground.qiDensity,hazards:[...ground.hazards],tags:['route-stop','stopped-'+kind],
   data:{stoppedRoadPoint:JSON.stringify(point),vesselId,departureDay,stoppedOnDay:day},
   links:[]});
  world.locations.push(stop);return id;
+}
+
+export function groundWhereACarriageStopped(world:Pick<WorldState,'locations'>,vesselId:string,departureDay:number,day:number,point:RoadPosition,coarseId:string):string {
+ return groundWhereTheJourneyStopped(world,vesselId,departureDay,day,point,coarseId,'carriage');
+}
+/** A party stopping on foot occupies its admitted road fraction. */
+export function groundWhereAPartyStopped(world:Pick<WorldState,'locations'>,leaderId:string,departureDay:number,day:number,point:RoadPosition,coarseId:string):string {
+ return groundWhereTheJourneyStopped(world,leaderId,departureDay,day,point,coarseId,'party');
 }

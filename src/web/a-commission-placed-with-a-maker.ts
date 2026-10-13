@@ -35,7 +35,8 @@
  * owes the thing.
 */
 import { theirFaceMoves, whatBeingWatchedIsWorth } from '../engine/world/what-a-face-is-worth.js';
-import { routineOf } from '../engine/world/npc-routines.js';
+import { routineOf, routineTime } from '../engine/world/npc-routines.js';
+import { humanDays } from '../engine/encounters/how-a-task-is-worded.js';
 
 import { isAWorkedGrade, whatItIsMadeOf } from '../data/cultivation/what-an-artifact-is-made-of.js';
 import { forStream } from '../engine/cultivation/rng.js';
@@ -134,9 +135,9 @@ function keepTheList(game: GameService, cultivatorId: string, list: readonly ACo
  */
 export function whatTheMakerIsAlreadyMaking(npc: Pick<NpcRecord, 'activity' | 'name'>, today: number): string | null {
     if (!isMakingSomething(npc.activity, today)) return null;
-    const days = Math.max(1, (npc.activity!.untilDay ?? today) - today);
-    return `${npc.name} is at work already: ${npc.activity!.note} It is done in ${days} `
-        + `day${days === 1 ? '' : 's'}, and nothing else is taken on before then.`;
+    const left = humanDays(npc.activity!.untilDay! - today);
+    return `${npc.name} is at work already: ${npc.activity!.note} It is done in ${left}, `
+        + 'and nothing else is taken on before then.';
 }
 
 /**
@@ -161,7 +162,7 @@ export function placeTheCommission(input: {
     const at = world.npcs.findIndex(row => row.id === input.makerId);
     if (at < 0) return null;
     const maker = world.npcs[at]!;
-    const today = Math.floor(world.currentDay);
+    const today = routineTime(world);
     const lines: string[] = [];
     const structure: string[] = [];
 
@@ -232,7 +233,7 @@ export function placeTheCommission(input: {
             ? { twin: whoTheTwinIsFor(input.said ?? ask.named, { id: maker.id, name: maker.name }, world) }
             : {})
     }]);
-    lines.push(`${maker.name} has set to it. It is done on day ${dueOnDay}, ${days} day${days === 1 ? '' : 's'} from now.`);
+    lines.push(`${maker.name} has set to it. It is done ${days} day${days === 1 ? '' : 's'} from now.`);
     structure.push(
         `placeTheCommission: ${maker.id} at the_work_of_their_rank on ${thingId} from day ${today} to `
         + `${dueOnDay}; ${paid} stone(s) paid.`
@@ -250,7 +251,7 @@ export function settleWhatWasPlacedWithAMaker(game: GameService, cultivator: Cul
     const placed = theList(game, cultivator.id);
     if (placed.length === 0) return null;
 
-    const today = Math.floor(world.currentDay);
+    const today = routineTime(world);
     const here = new Set(game.present(cultivator).map(row => row.id));
     const lines: string[] = [];
     const structure: string[] = [];

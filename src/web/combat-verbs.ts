@@ -1,3 +1,6 @@
+import { takeTheForegroundPartyRound } from './a-party-stands-in-the-foreground.js';
+import { whatAPlayedGroupFightLeft } from './what-a-party-fight-leaves-on-its-people.js';
+import { theFollowingPartyAfterAFight } from './following-the-party-leader.js';
 import { somebodyAtHandSavesYou } from './somebody-at-hand-saves-you.js';
 import { anArtThatCanBeUsedInAFight } from '../engine/cultivation/an-art-that-can-be-used-in-a-fight.js';
 import { isTheWorldsToMove } from '../engine/world/npc-state.js';
@@ -348,7 +351,7 @@ export const combatVerbs = {
             : undefined;
         if (theirRecord && this.atHand) {
             return { ...combatantOf(theirRecord, this.atHand),
-                hp: bodyStandingOn(theirRecord, this.atHand.currentDay), maxHp: maxBodyOf(theirRecord),
+                hp: bodyStandingOn(theirRecord, routineTime(this.atHand)), maxHp: maxBodyOf(theirRecord),
                 ...(bearing ? { bearing } : {}) };
         }
         return combatantFromOpponent(
@@ -1133,7 +1136,7 @@ export const combatVerbs = {
                 if (npc && isTheWorldsToMove(npc)) side.input = { ...side.input, ...npcCombatArts(npc,routineTime(this.atHand)) };
             }
         }
-        const turn = takeAFightTurn(held.state, answer, {
+        const turn = (held.foregroundParty ? (_state: typeof held.state, answer: FightAnswer, ctx: Parameters<typeof takeAFightTurn>[2]) => takeTheForegroundPartyRound(held, answer, ctx) : takeAFightTurn)(held.state, answer, {
             ambient,
             turn: run.turn + 1,
             couldBeCalled: answer.kind === 'call_for_help'
@@ -1222,6 +1225,8 @@ export const combatVerbs = {
         const sideName = (id: string): string =>
             id === cultivator.id ? cultivator.name
                 : id === held.party.id ? held.party.name
+                    : held.foregroundParty?.ally.id === id ? held.foregroundParty.ally.name
+                    : held.foregroundParty?.secondAttacker?.id === id ? held.foregroundParty.secondAttacker.name
                     : 'the other';
         const inWords = (key: string): string => key.replace(/[_:]+/g, ' ').trim();
         facts.structure.push(
@@ -1398,7 +1403,24 @@ export const combatVerbs = {
             execution.calls.push({ name: 'world.somebodyAtHandSavesYou', action: held.verb, summary: rescued.join(' '), ok: true });
         }
 
+        if (held.foregroundParty?.result && this.atHand) {
+            writeTheNpcArtsActuallyUsed(this.atHand, held.foregroundParty.result.exchanges,
+                'played:'+held.runId+':'+held.state.id, routineTime(this.atHand));
+            const left = whatAPlayedGroupFightLeft(this, held.foregroundParty.result,
+                [held.self, held.opponent, held.foregroundParty.ally,
+                    ...(held.foregroundParty.secondAttacker ? [held.foregroundParty.secondAttacker] : [])],
+                routineTime(this.atHand), held.state.ground.locationId);
+            execution.facts.lines.push(...left.lines);
+            execution.facts.prose = [execution.facts.prose, ...left.lines].join('\n');
+            this.theWorldMoved();
+        }
         this.whatTheFightBroke(cultivator, held, result, execution);
+        if (held.partyFightFactId) {
+            const question = theFollowingPartyAfterAFight(this,
+                this.repos.cultivators.getById(cultivator.id) ?? cultivator, held.partyFightFactId);
+            execution.facts.lines.push(...question);
+            execution.facts.required = [...(execution.facts.required ?? []), ...question];
+        }
 
         // ── AND NOT TO SOMEBODY WHO IS NOT GOING TO GET ANOTHER TURN ─────
         //
@@ -1533,6 +1555,9 @@ export const combatVerbs = {
                 );
             }
         }
+
+        // The actual shared melee already wrote each person's own consequences.
+        if (held.foregroundParty) return execution;
 
         // LAST, and the order is load-bearing. `afterAFight` writes the accounts a
         // bout opens because it went past what was agreed, and

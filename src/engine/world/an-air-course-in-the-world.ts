@@ -1,5 +1,6 @@
+import type { ActualArrivalBody } from './a-body-that-actually-arrived.js';
 import type { NpcRecord } from './npc-state.js';
-import { setLocation, isTheWorldsToMove } from './npc-state.js';
+import { setLocation, isTheWorldsToMove, PLAYER_ROW_TAG } from './npc-state.js';
 import { whoItIsWith, itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from './a-vehicle.js';
 import { isRuined,transferPossession } from './possessions.js';
 import { journeyTimeHasReached } from './places-on-the-way.js';
@@ -40,6 +41,7 @@ export function readAnAirCourseAdmission(world: WorldState, input: {
     houseDutyFunding?: { houseId: string; returnStones: number };
     houseDutyReturnOf?: string;
     actualLoad?: readonly {id:string;name:string}[];
+    actualPlayerContact?: ActualArrivalBody;
     houseDutyDispatchId?: string;
     dutyCauses?: readonly string[];
     houseDutyPhase?: 'delivery'|'collecting'|'homebound'|'reloading';
@@ -60,7 +62,9 @@ export function readAnAirCourseAdmission(world: WorldState, input: {
     if(input.actualLoad&&(input.actualLoad.length!==input.heads||new Set(input.actualLoad.map(person=>person.id)).size!==input.heads
         ||!input.actualLoad.some(person=>person.id===input.bodyId)
         ||input.actualLoad.some(person=>!world.npcs.some(npc=>npc.id===person.id&&npc.status==='alive'
-            &&npc.locationId===from.id))))return null;
+            &&(npc.locationId===from.id || npc.tags.includes(PLAYER_ROW_TAG)
+                &&input.actualPlayerContact?.id===npc.id &&input.actualPlayerContact.alive
+                &&input.actualPlayerContact.locationId===from.id)))))return null;
     const prior=input.priorReceiptId?witnessIndexFor(world).byId.get(input.priorReceiptId):null;
     if(input.priorReceiptId&&(!prior||prior.data.ownedPassage!==true
         ||prior.data.ownerId!==input.owned?.ownerId||prior.data.vesselId!==input.vesselId

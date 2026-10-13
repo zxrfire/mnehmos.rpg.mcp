@@ -120,7 +120,8 @@ export async function spendFootJourneyAtItsChecks(game: GameService, run: Run, b
             const current = game.currentRun(), npc = game.atHand!.npcs.find(row => row.id === options.meeting!.npc.id);
             const cursor = stoppedRoadFor(game.db, current.cultivator, game.atHand);
             if (npc?.status === 'alive' && sameRoadPosition(cursor?.position ?? null,
-                roadPositionOfNpc(game.atHand!.locations, npc, day))) {
+                roadPositionOfNpc(game.atHand!.locations, npc, day, undefined,
+                    id => game.atHand!.npcs.find(person => person.id === id)))) {
                 const place = worldLocationFor(game.atHand!, current.cultivator.location);
                 const area = place && peopleInThisPlace(game.repos, current.cultivator, game.atHand!, place).whereIs.get(npc.id);
                 if (area) {

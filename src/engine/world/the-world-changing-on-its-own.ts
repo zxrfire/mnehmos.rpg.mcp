@@ -29,7 +29,8 @@ import { WHAT_SCALE_DECIDES } from '../../data/cultivation/inheritance-trials.js
 import { findMedicineOnAnotherErrand } from './immortal-medicine.js';
 import { practiceAmongNeighbours, type VisitingPresence } from './summit-world.js';
 import { roadObjectsFor } from './how-a-cultivator-comes-by-a-road.js';
-import { theDayTheWorldOpened } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { theDayTheWorldOpened, whereThisHouseBurnsItsLamps } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { keepTheirHallCheckOnLeaving } from './what-the-roll-and-the-lamps-say.js';
 import { whereCompoundsAre } from './where-inside-a-house-somebody-is-standing.js';
 /**
  * Pressure: the world changing on its own.
@@ -264,7 +265,7 @@ import { theWanderersGoAbout } from './the-wanderer-the-catalog-names-is-somebod
 import { peopleWithNoHouseMoveOn } from './where-somebody-with-no-house-goes.js';
 import { applyDaoGroundStints, startNpcJourney } from './dao-ground-stints.js';
 import { commitNpcPublicPassage } from './ship-crew.js';
-import { aPostingThatCanReachItsGround, journeyNeedsWater, locationOnNpcJourney, physicalJourneyDays, journeyTimeHasReached } from './places-on-the-way.js';
+import { aPostingThatCanReachItsGround, journeyNeedsWater, locationOnNpcJourney, physicalJourneyDays, journeyTimeHasReached, locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { woundsCloseThisYear } from './what-a-house-does-about-its-people-being-hurt.js';
 import {
     A_ROOM_SAW_IT,
@@ -4103,7 +4104,7 @@ function resolveRetainedSendings(state: WorldState, day: number): void {
                 const current = state.npcs[at]!;
                 const returnedOn = actualRetainedReturnDay(state, current, row, routes);
                 if (returnedOn !== null) state.npcs[at] = {
-                    ...setLocation(current, locationOnNpcJourney(state.locations, current, state.currentDay, routes), returnedOn),
+                    ...setLocation(current, locationOfNpcOnItsJourney(state, current, state.currentDay, routes), returnedOn),
                     activity: companyAfterPassage(current, returnedOn)
                 };
             }
@@ -4139,7 +4140,7 @@ function resolveRetainedSendings(state: WorldState, day: number): void {
             const returnedOn = actualRetainedReturnDay(state, current, row,routes);
             if (returnedOn !== null) {
                 // Commit the proven ground before discarding the route that derives it.
-                const ground = locationOnNpcJourney(state.locations, current, state.currentDay, routes);
+                const ground = locationOfNpcOnItsJourney(state, current, state.currentDay, routes);
                 state.npcs[at] = { ...setLocation(current, ground, returnedOn),
                     activity: companyAfterPassage(current, returnedOn) };
             }
@@ -4748,7 +4749,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
     // when their catalog location is a ruin. Ordinary empty ruins stay excluded.
     routes ??= routeQueriesFor(state.locations);
     const watches = publicWatchTargetsTogether(state,routes);
-    if (towns.length === 0 && watches.size === 0) return 0;
+    // The house's own hall still needs a posted clerk when no outward site exists.
     if (!routes || routes.locations !== state.locations) routes = routeQueriesFor(state.locations);
 
     // THE ROLLS, GATHERED ONCE. This was two `state.npcs.filter` sweeps per
@@ -4858,7 +4859,9 @@ export function applyPostings(state: WorldState, year: number, day: number,
             if (at) held.set(at, (held.get(at) ?? 0) + 1);
         }
         // One empty slot per place a house is short of its people, standing sites first.
-        const empty = [...shopfronts, ...branches, ...posts].flatMap(t =>
+        const lampHallId = whereThisHouseBurnsItsLamps(state.locations, faction.id);
+        const lampHall = lampHallId === null ? undefined : state.locations.find(place => place.id === lampHallId);
+        const empty = [...(lampHall ? [lampHall] : []), ...shopfronts, ...branches, ...posts].flatMap(t =>
             Array.from({ length: Math.max(0, (holds.get(t.id) ?? 1) - (held.get(t.id) ?? 0)) }, () => t));
         if (empty.length === 0) continue;
 
@@ -4901,7 +4904,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
                 const water = journeyNeedsWater(state.locations, from, town.id, routes)
                     || journeyNeedsWater(state.locations, town.id, home, routes);
                 const purse = Number(faction.resources.spirit_stones ?? 0);
-                taking = bestForThisRoad(whatThisHouseCouldTakeOut(state, faction, craftPositions),
+                taking = town.id === lampHallId ? null : bestForThisRoad(whatThisHouseCouldTakeOut(state, faction, craftPositions),
                     Math.max(outward, returning), 1, water, purse / 2);
                 const refusedCrafts=new Set<string>();
                 while(taking?.conveyance.crossesGroundThatCannotBeWalked) {
@@ -4934,7 +4937,8 @@ export function applyPostings(state: WorldState, year: number, day: number,
                 ...setLocation(state.npcs[index]!, town.id, day),
                 activity: {
                     kind: 'stationed',
-                    note: (watches.get(faction.id) ?? []).some(place=>place.id===town.id)?`Serving the crossing watch at ${town.name}.`
+                    note: town.id === lampHallId ? 'Reading the disciple roll against the life lamps each day.'
+                        : (watches.get(faction.id) ?? []).some(place=>place.id===town.id)?`Serving the crossing watch at ${town.name}.`
                         : branches.some(place=>place.id===town.id)?`Serving at ${town.name}.`
                         : shopfronts.some(place=>place.id===town.id)?`Keeping the house's shopfront at ${town.name}.`
                         : `Serving a house posting at ${town.name}.`,
@@ -5049,7 +5053,7 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
         postedHere = new Map();
         for (const person of state.npcs) {
             if (person.status !== 'alive' || person.activity?.kind !== 'stationed' || !person.locationId) continue;
-            const place = locationOnNpcJourney(state.locations, person, day, routes);
+            const place = locationOfNpcOnItsJourney(state, person, day, routes);
             if (place !== person.locationId) continue;
             const key = `${person.factionId}|${place}`;
             const group = postedHere.get(key) ?? [];
@@ -5092,6 +5096,8 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
         let npc = state.npcs[i];
         if (npc === undefined || npc.status !== 'alive') continue;
         if(continueNpcDepartureApproach(state,npc,day,routes))continue;
+        // The accepted public appointment owns boarding and the carrier's next run.
+        if (npc.activity?.publicDepartureId || npc.activity?.passageTallyId) continue;
         // Actual-clock continuation owns linked work, including an unladen return.
         if (npc.activity?.retrievalRequestId) continue;
         const shuttle=npc.activity?.capitalMissionId&&sendingsOf.get(npc.id)?.find(row=>row.dispatchFactId
@@ -5163,6 +5169,7 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
         // this person home is let close like any other; a term that goes
         // anywhere else is still refused.
 
+        keepTheirHallCheckOnLeaving(state, npc, day);
         const back = doing.returnTo ?? null;
         if (doing.kind === 'stationed' && back && npc.locationId && back !== npc.locationId) {
             const distance = walkingDaysFrom(state.locations, npc.locationId, undefined, routes).get(back);

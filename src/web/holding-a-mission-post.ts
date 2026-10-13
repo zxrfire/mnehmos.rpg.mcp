@@ -388,8 +388,7 @@ export function hireForYourDuty(game: GameService, run: Run, cultivator: Cultiva
     const worker = world.npcs[workerAt];
     if (!worker || worker.id === cultivator.id || worker.status !== 'alive'
         || !game.present(cultivator).some(p => p.id === worker.id)) return no('The person you would hire is not here.');
-    if (whatTheyCannotPutDown(worker, cultivator.id, Math.floor(world.currentDay))
-        || (worker.activity?.untilDay != null && worker.activity.untilDay > world.currentDay)) {
+    if (whatTheyCannotPutDown(worker, cultivator.id, Math.floor(world.currentDay))) {
         return no('They are already committed to other work.');
     }
     const { place, title, houseName, mission } = thePost(world, record);

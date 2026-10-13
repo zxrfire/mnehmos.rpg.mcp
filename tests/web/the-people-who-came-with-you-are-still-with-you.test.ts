@@ -36,6 +36,11 @@
  * `travel-verbs.ts` is the single answer, and a term in days is what a caller
  * passes.
  *
+ * Oct11 found both companions alive at the requested destination under their
+ * agreement, but omitted from the arrival account: the journey clock had
+ * already moved them, so the last position delta was empty. Arrival names
+ * come from the actual present companions, whether moved now or earlier.
+ *
  * RED-CHECKED. With the `theyArrivedWithYou` call removed from `move`, the
  * arrival assertion fails on the companion still standing at the place they
  * started from; with `whoIsWithYouOnTheRoad` returning `[]` in `fold`, the fold

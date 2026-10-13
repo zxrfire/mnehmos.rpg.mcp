@@ -19,6 +19,16 @@ export function resolveWithPlayerPresent<T>(world: WorldState, place: ContactPla
     }
 }
 
+/** The player's actual foreground contact, when an event needs a physical witness. */
+export function playerAtTheContact(world: WorldState): { id: string; placeId: string; areaId: string | null } | null {
+    const contact = PLAYER_PLACES.get(world);
+    const place = contact?.place;
+    const player = typeof place === 'object' ? place.person ?? contact?.players[0] : contact?.players[0];
+    if (!player || !place) return null;
+    return { id: player.id, placeId: typeof place === 'string' ? place : place.placeId,
+        areaId: typeof place === 'string' ? null : place.areaId };
+}
+
 export function isPlayerInvolved(world: WorldState, person: NpcRecord): boolean {
     if (!isTheWorldsToMove(person)) return true;
     const context = PLAYER_PLACES.get(world);

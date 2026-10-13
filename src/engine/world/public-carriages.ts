@@ -1,14 +1,14 @@
 import { positionOnRoad, roadContinuationTo, positionOnAdmittedRoad, continuationOfAdmittedRoad, type RoadContinuation, type RoadPosition } from './road-course.js';
 import {walkingRouteFrom} from './locations.js';
 import { groundWhereACarriageStopped } from './where-a-carriage-stopped.js';
-import { companyDuringPassage, companyAfterPassage } from './company-during-a-passage.js';
+import { companyDuringPassage, companyAfterPassage, companyAgreement } from './company-during-a-passage.js';
 /** Advertised road passage on one ordinary carriage and its actual driver. */
 import { createNpc, setLocation, PLAYER_ROW_TAG, type NpcRecord } from './npc-state.js';
 import { aVehicleOf, isWithThem, leaveItHere, whoItIsWith, whereItStands } from './a-vehicle.js';
 import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import { daysByConveyance } from './what-a-conveyance-does-to-a-journey.js';
 import { walkingDaysFrom } from './locations.js';
-import { locationOnNpcJourney, roadPositionOfNpc, journeyNeedsWater, journeyTimeHasReached } from './places-on-the-way.js';
+import { roadPositionOfNpc, journeyNeedsWater, journeyTimeHasReached, locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { isTerminal } from '../cultivation/existence.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -17,6 +17,7 @@ import { isRuined, type ObjectRecord } from './possessions.js';
 import type { PassageRunMoment } from './passage-moment.js';
 import type { WorldState } from './world-state.js';
 import { routineTime } from './npc-routines.js';
+import { handInPassageTally, unusedPassageTalliesGoToDust, passageTallySeatsForBoarding, theHeldPassageTally } from './a-passage-tally-is-the-seat-you-own.js';
 
 const PUBLIC_ROAD = 'public-road-service';
 
@@ -32,6 +33,10 @@ export interface PublicRoadLeg {
 }
 
 export interface PublicRoadQuote extends PublicRoadLeg {
+    /** Accepted ordinary appointment; no forecast authorizes a physical boarding. */
+    publicDepartureId?: string;
+    /** The original appointment printed on a tally when actual departure is delayed. */
+    tallyDepartureDay?: number;
     /** Immutable purchase inputs; the station has already quoted this price. */
     fareStones: number;
     passengerIds: readonly string[];
@@ -55,7 +60,7 @@ function vehicleFor(world: WorldState, id: string): ObjectRecord | undefined {
 export function publicCarriageGround(world: WorldState, vehicle: ObjectRecord, day: number): string | null {
     const withId = vehicle.possessorId ?? whoItIsWith(vehicle);
     const holder = withId ? world.npcs.find(npc => npc.id === withId) : undefined;
-    return holder ? locationOnNpcJourney(world.locations, holder, day) : whereItStands(vehicle);
+    return holder ? locationOfNpcOnItsJourney(world, holder, day) : whereItStands(vehicle);
 }
 
 function legOf(fact: HistoricalFact): PublicRoadLeg | null {
@@ -101,10 +106,13 @@ function activeReceipts(world: WorldState, vehicleId: string, day: number): Hist
 
 /** Pure preflight: no actor, object, receipt, purse or timetable is changed. */
 export interface PublicRoadQuoteInput {
+    publicDepartureId?: string;
+    tallyDepartureDay?: number;
     fromId: string; toId: string; day: number; conveyanceId: string;
     passengerIds: readonly string[]; fareStones: number; hired: boolean;
     playedPassenger?: { id: string; locationId: string; alive: boolean };
-    /** A real existing service hull, never permission to mint one at another road. */
+    /** A real existing service hull, never permission to mint one at another road.
+     * With no passengers, this is its actual driver's unpaid, unladen service leg. */
     actualVesselId?: string;
 }
 export type PublicRoadAssessment = { quote: PublicRoadQuote; refusal: null } | {
@@ -125,11 +133,24 @@ export function quotePublicCarriageOnActualHull(world:WorldState,vesselId:string
     return assessPublicCarriage(world,{...input,actualVesselId:vesselId}).quote;
 }
 
+/** The existing route and conveyance arithmetic, also used for an offered appointment. */
+export function publicCarriageRoadTerms(world: Pick<WorldState, 'locations'>,
+    fromId: string, toId: string, conveyanceId: string) {
+    const conveyance = getConveyance(conveyanceId);
+    if (!conveyance || conveyance.crossesGroundThatCannotBeWalked
+        || journeyNeedsWater(world.locations, fromId, toId)) return null;
+    const walkingDays = walkingDaysFrom(world.locations, fromId).get(toId);
+    return walkingDays === undefined || walkingDays <= 0 ? null
+        : { walkingDays, days: daysByConveyance(walkingDays, conveyance), conveyance };
+}
+
 /** Native availability and refusal counts come from this one reservation/source resolver. */
 export function assessPublicCarriage(world: WorldState, input: PublicRoadQuoteInput): PublicRoadAssessment {
     const conveyance = getConveyance(input.conveyanceId);
     const passengers = [...new Set(input.passengerIds)];
-    if (!conveyance || conveyance.crossesGroundThatCannotBeWalked || passengers.length === 0) return { quote: null, refusal: { kind: 'unavailable' } };
+    if (!conveyance || conveyance.crossesGroundThatCannotBeWalked
+        || (!passengers.length && (!input.actualVesselId || input.fareStones !== 0 || input.hired)))
+        return { quote: null, refusal: { kind: 'unavailable' } };
     if (passengers.length + 1 > conveyance.heads) return { quote: null, refusal: { kind: 'capacity',
         requestedPassengers: passengers.length, remainingPassengers: Math.max(0, conveyance.heads - 1) } };
     if (!Number.isFinite(input.fareStones) || input.fareStones < 0
@@ -140,17 +161,18 @@ export function assessPublicCarriage(world: WorldState, input: PublicRoadQuoteIn
             const played = input.playedPassenger;
             if (!played || played.id !== id || !played.alive || played.locationId !== input.fromId) return { quote: null, refusal: { kind: 'unavailable' } };
         } else if (person && (person.status !== 'alive'
-            || locationOnNpcJourney(world.locations, person, input.day) !== input.fromId)) return { quote: null, refusal: { kind: 'unavailable' } };
+            || locationOfNpcOnItsJourney(world, person, input.day) !== input.fromId)) return { quote: null, refusal: { kind: 'unavailable' } };
     }
-    const walking = walkingDaysFrom(world.locations, input.fromId).get(input.toId);
-    if (walking === undefined || walking <= 0) return { quote: null, refusal: { kind: 'unavailable' } };
+    const road = publicCarriageRoadTerms(world, input.fromId, input.toId, input.conveyanceId);
+    if (!road) return { quote: null, refusal: { kind: 'unavailable' } };
+    const walking = road.walkingDays;
     const vesselId = input.actualVesselId ?? carriageIdForRoad(input.fromId, input.toId, conveyance.id);
     const carriage = vehicleFor(world, vesselId);
     if(input.actualVesselId && (!carriage || carriage.data.conveyanceId!==conveyance.id))
         return {quote:null,refusal:{kind:'unavailable'}};
     let driverId = `${vesselId}:driver:${world.history.nextFactSeq}`;
     let departureDay = input.day;
-    let arrivalDay = input.day + daysByConveyance(walking, conveyance);
+    let arrivalDay = input.day + road.days;
     if (carriage) {
         if (carriage.possessorId !== null || isRuined(carriage)
             || publicCarriageGround(world, carriage, input.day) !== input.fromId) return { quote: null, refusal: { kind: 'unavailable' } };
@@ -159,6 +181,8 @@ export function assessPublicCarriage(world: WorldState, input: PublicRoadQuoteIn
             if (driver.status !== 'alive' || driver.id !== carriage.ownerId
                 || !isWithThem(carriage, driver.id, input.fromId)) return { quote: null, refusal: { kind: 'unavailable' } };
             driverId = driver.id;
+            const appointed = driver.activity?.publicDepartureId;
+            if (appointed && appointed !== input.publicDepartureId) return { quote: null, refusal: { kind: 'unavailable' } };
             const doing = driver.activity;
             if (doing?.kind === 'travelling' && doing.untilDay != null && !journeyTimeHasReached(input.day,doing.untilDay)) {
                 if (doing.vesselId !== vesselId || doing.fromLocationId !== input.fromId
@@ -170,41 +194,32 @@ export function assessPublicCarriage(world: WorldState, input: PublicRoadQuoteIn
         } else if (whoItIsWith(carriage) !== null) return { quote: null, refusal: { kind: 'unavailable' } };
     }
     const reservations = activeReceipts(world, vesselId, input.day);
+    if (!passengers.length && reservations.length) return { quote: null, refusal: { kind: 'unavailable' } };
     if (reservations.some(receipt => receipt.data.hired === true || input.hired)) return { quote: null, refusal: { kind: 'unavailable' } };
     const already = new Set(reservations.flatMap(receipt => receipt.actors
         .filter(actor => actor.role === 'passenger').map(actor => actor.id)));
     if (passengers.some(id => already.has(id))) return { quote: null, refusal: { kind: 'unavailable' } };
-    if (already.size + passengers.length + 1 > conveyance.heads) return { quote: null, refusal: { kind: 'capacity',
-        requestedPassengers: passengers.length, remainingPassengers: Math.max(0, conveyance.heads - already.size - 1) } };
+    const tallySeats = passageTallySeatsForBoarding(world, { service: 'carriage', vesselId,
+        fromId: input.fromId, toId: input.toId, departureDay: input.tallyDepartureDay ?? departureDay }, new Set(passengers)).other;
+    if (already.size + tallySeats + passengers.length + 1 > conveyance.heads) return { quote: null, refusal: { kind: 'capacity',
+        requestedPassengers: passengers.length, remainingPassengers: Math.max(0, conveyance.heads - already.size - tallySeats - 1) } };
     return { quote: { vesselId, driverId, fromId: input.fromId, toId: input.toId,
         departureDay, arrivalDay, conveyanceId: conveyance.id,
         fareStones: input.fareStones, passengerIds: passengers, hired: input.hired, walkingDays: walking,
+        ...(input.publicDepartureId ? { publicDepartureId: input.publicDepartureId } : {}),
+        ...(input.tallyDepartureDay !== undefined ? { tallyDepartureDay: input.tallyDepartureDay } : {}),
         ...(input.playedPassenger ? { playedPassenger: input.playedPassenger } : {}) }, refusal: null };
 }
 
-/** Commit synchronously, after rechecking source and seats, before the caller pays. */
-export function commitPublicCarriage(world: WorldState, quote: PublicRoadQuote, boardingMoment?: PassageRunMoment,
-    onward?:{receiptId:string;agreementId:string}): HistoricalFact | null {
-    const now = routineTime(world);
-    if (!journeyTimeHasReached(now, quote.departureDay) || !journeyTimeHasReached(quote.departureDay, now)) return null;
-    const fresh = quotePublicCarriage(world, { fromId: quote.fromId, toId: quote.toId,
-        day: quote.departureDay, conveyanceId: quote.conveyanceId, passengerIds: quote.passengerIds,
-        fareStones: quote.fareStones, hired: quote.hired, playedPassenger: quote.playedPassenger,
-        ...(quote.vesselId!==carriageIdForRoad(quote.fromId,quote.toId,quote.conveyanceId)?{actualVesselId:quote.vesselId}:{}) });
-    if (!fresh || fresh.vesselId !== quote.vesselId || fresh.driverId !== quote.driverId
-        || fresh.arrivalDay !== quote.arrivalDay) return null;
-    const prior=onward?publicCarriagePassage(world,onward.receiptId,quote.passengerIds[0]!,now):null;
-    if(onward && (!prior?.arrived||prior.leg.vesselId!==quote.vesselId||prior.leg.toId!==quote.fromId))return null;
-    const predecessors=prior?factsWithDataValue(world,'vesselId',quote.vesselId).filter(fact=>{
-        const leg=legOf(fact);return leg && leg.driverId===prior.leg.driverId
-            && leg.departureDay===prior.leg.departureDay && leg.arrivalDay===prior.leg.arrivalDay
-            && leg.fromId===prior.leg.fromId && leg.toId===quote.fromId;
-    }).map(fact=>fact.id):[];
+/** Accepting a sale realises the same source that accepted immediate boarding does. */
+export function realiseAcceptedPublicCarriageSource(world: WorldState, quote: PublicRoadQuote): {
+    carriage: ObjectRecord; driver: NpcRecord
+} {
     let carriage = vehicleFor(world, quote.vesselId);
     let driver = world.npcs.find(npc => npc.id === quote.driverId);
     if (!driver) {
         driver = createNpc(world.seed, { id: quote.driverId, locationId: quote.fromId,
-            onDay: quote.departureDay, bornOnDay: quote.departureDay - 30 * 365,
+            onDay: routineTime(world), bornOnDay: routineTime(world) - 30 * 365,
             occupation: 'carter', takenNames: new Set(world.npcs.map(npc => npc.name)),
             tags: [`crew-of:${quote.vesselId}`] });
         world.npcs.push(driver);
@@ -221,29 +236,90 @@ export function commitPublicCarriage(world: WorldState, quote: PublicRoadQuote, 
             data: { ...carriage.data, withId: driver.id, mooredAt: '' } };
         world.objects[at] = carriage;
     }
+    return { carriage, driver };
+}
+
+/** Commit synchronously after rechecking source and seats; the counter pays before hand-in. */
+export function commitPublicCarriage(world: WorldState, quote: PublicRoadQuote, boardingMoment?: PassageRunMoment,
+    onward?:{receiptId:string;agreementId:string}, beforeHandIn?: (receipt: HistoricalFact) => void): HistoricalFact | null {
+    const now = routineTime(world);
+    const appointment = quote.publicDepartureId ? world.schedule.find(effect => effect.id === quote.publicDepartureId
+        && effect.data.publicCarrierDeparture === true && effect.data.service === 'carriage'
+        && effect.data.vesselId === quote.vesselId && effect.data.operatorId === quote.driverId
+        && effect.data.fromLocationId === quote.fromId && effect.data.toLocationId === quote.toId
+        && effect.dueOnDay === (quote.tallyDepartureDay ?? quote.departureDay)) : undefined;
+    const early = appointment && now < quote.departureDay;
+    if (quote.publicDepartureId && !appointment) return null;
+    if (appointment && quote.passengerIds.some(id => !theHeldPassageTally(world, id,
+        { ...quote, service: 'carriage', departureDay: quote.tallyDepartureDay ?? quote.departureDay }))) return null;
+    if (!early && (!journeyTimeHasReached(now, quote.departureDay) || !journeyTimeHasReached(quote.departureDay, now))) return null;
+    if (early) {
+        const source = vehicleFor(world, quote.vesselId);
+        if (!source || publicCarriageGround(world, source, now) !== quote.fromId) return null;
+    }
+    const fresh = quotePublicCarriage(world, { fromId: quote.fromId, toId: quote.toId,
+        day: quote.departureDay, conveyanceId: quote.conveyanceId, passengerIds: quote.passengerIds,
+        fareStones: quote.fareStones, hired: quote.hired, playedPassenger: quote.playedPassenger,
+        publicDepartureId: quote.publicDepartureId, tallyDepartureDay: quote.tallyDepartureDay,
+        ...(!quote.passengerIds.length || quote.vesselId!==carriageIdForRoad(quote.fromId,quote.toId,quote.conveyanceId)
+            ?{actualVesselId:quote.vesselId}:{}) });
+    if (!fresh || fresh.vesselId !== quote.vesselId || fresh.driverId !== quote.driverId
+        || fresh.arrivalDay !== quote.arrivalDay) return null;
+    const prior=onward?publicCarriagePassage(world,onward.receiptId,quote.passengerIds[0]!,now):null;
+    if(onward && (!prior?.arrived||prior.leg.vesselId!==quote.vesselId||prior.leg.toId!==quote.fromId))return null;
+    const predecessors=prior?factsWithDataValue(world,'vesselId',quote.vesselId).filter(fact=>{
+        const leg=legOf(fact);return leg && leg.driverId===prior.leg.driverId
+            && leg.departureDay===prior.leg.departureDay && leg.arrivalDay===prior.leg.arrivalDay
+            && leg.fromId===prior.leg.fromId && leg.toId===quote.fromId;
+    }).map(fact=>fact.id):[];
+    const { carriage, driver } = realiseAcceptedPublicCarriageSource(world, quote);
+    const previous = driver.activity;
+    const joining = previous?.kind === 'travelling' && previous.vesselId === quote.vesselId
+        && previous.sinceDay === quote.departureDay && previous.untilDay === quote.arrivalDay
+        && previous.returnTo === quote.toId;
+    // The reached old landfall belongs to its passengers before this driver
+    // departs again. Their bodies no longer depend on a later carrier course.
+    if (!joining && previous?.kind === 'travelling' && previous.vesselId === quote.vesselId
+        && previous.returnTo === quote.fromId && previous.untilDay != null
+        && journeyTimeHasReached(quote.departureDay, previous.untilDay)) {
+        for (let at = 0; at < world.npcs.length; at++) {
+            const person = world.npcs[at]!, doing = person.activity;
+            if (person.status !== 'alive' || person.tags.includes(PLAYER_ROW_TAG) || doing?.kind !== 'travelling'
+                || doing.carrierOperatorId !== driver.id || doing.vesselId !== quote.vesselId
+                || doing.sinceDay !== previous.sinceDay || doing.untilDay !== previous.untilDay
+                || doing.returnTo !== quote.fromId) continue;
+            world.npcs[at] = { ...setLocation(person, quote.fromId, quote.departureDay),
+                activity: companyAfterPassage(person, quote.departureDay) };
+        }
+    }
+    const company = joining || previous?.kind !== 'travelling' ? previous?.withIds ?? []
+        : companyAgreement(previous, quote.departureDay)?.withIds ?? [];
     const index = world.npcs.findIndex(npc => npc.id === driver!.id);
-    world.npcs[index] = { ...setLocation(driver, quote.fromId, quote.departureDay), activity: companyDuringPassage(driver.activity, { ...driver.activity,
-        kind: 'travelling', note: 'Driving the carriage on its paid road passage.',
-        withIds: [...new Set([...(driver.activity?.withIds ?? []), ...quote.passengerIds])], fromLocationId: quote.fromId,
+    world.npcs[index] = { ...setLocation(driver, quote.fromId, now), activity: companyDuringPassage(driver.activity, { ...driver.activity,
+        kind: 'travelling', note: early ? 'Receiving passengers before the carriage departure.' : 'Driving the carriage on its paid road passage.',
+        withIds: [...new Set([...company, ...quote.passengerIds])], fromLocationId: quote.fromId,
         returnTo: quote.toId, sinceDay: quote.departureDay, untilDay: quote.arrivalDay,
         conveyanceId: quote.conveyanceId, conveyancePower: carriage.power, vesselId: quote.vesselId,
         admittedRoad:{position:{kind:'place',locationId:quote.fromId,originLocationId:quote.fromId},
             route:walkingRouteFrom(world.locations,quote.fromId,quote.toId)!,initialTravelDays:0} }, quote.departureDay),
-        updatedOnDay: quote.departureDay };
+        updatedOnDay: now };
     for (const id of quote.passengerIds) {
         const at = world.npcs.findIndex(npc => npc.id === id && !npc.tags.includes(PLAYER_ROW_TAG));
         const person = world.npcs[at];
         if (!person) continue;
-        world.npcs[at] = { ...setLocation(person, quote.fromId, quote.departureDay), activity: companyDuringPassage(person.activity, { ...person.activity,
+        world.npcs[at] = { ...setLocation(person, quote.fromId, now), activity: companyDuringPassage(person.activity, { ...person.activity,
             kind: 'travelling', note: person.activity?.kind === 'travelling'
                 ? person.activity.note : 'Travelling on the paid carriage to its destination.',
             withIds: [...new Set([...(person.activity?.withIds ?? []), driver.id])],
             fromLocationId: quote.fromId, returnTo: quote.toId,
             sinceDay: quote.departureDay, untilDay: quote.arrivalDay,
             conveyanceId: quote.conveyanceId, conveyancePower: carriage.power,
-            vesselId: quote.vesselId,carrierOperatorId:driver.id }, quote.departureDay), updatedOnDay: quote.departureDay };
+            vesselId: quote.vesselId,carrierOperatorId:driver.id,
+            publicDepartureId: undefined, passageTallyId: undefined }, quote.departureDay), updatedOnDay: now };
     }
-    return appendWorldFact(world, makeFact({ day: quote.departureDay, kind: 'gathering',
+    const departure = { ...quote, service: 'carriage' as const,
+        departureDay: quote.tallyDepartureDay ?? quote.departureDay };
+    const receipt = appendWorldFact(world, makeFact({ day: now, kind: 'gathering',
         locationId: quote.fromId, visibility: 'secret', summary: 'An accepted public carriage passage.',
         causes:predecessors,
         actors: quote.passengerIds.map(id => ({ id,
@@ -252,10 +328,21 @@ export function commitPublicCarriage(world: WorldState, quote: PublicRoadQuote, 
             driverId: driver.id, fromLocationId: quote.fromId, toLocationId: quote.toId,
             departureDay: quote.departureDay, arrivalDay: quote.arrivalDay,
             conveyanceId: quote.conveyanceId, fareStones: quote.fareStones, hired: quote.hired, walkingDays:quote.walkingDays,
+            ...(quote.publicDepartureId ? { publicDepartureId: quote.publicDepartureId } : {}),
+            ...(quote.tallyDepartureDay !== undefined ? { tallyDepartureDay: quote.tallyDepartureDay } : {}),
             ...(onward ? {onwardAgreementId:onward.agreementId} : {}),
             ...(boardingMoment ? { runId: boardingMoment.runId,
                 boardingRunElapsedDays: boardingMoment.elapsedDays } : {}) }
     }), { recur: false, bystanders: false });
+    beforeHandIn?.(receipt);
+    const seats: { passengerId: string; seat: number }[] = [];
+    for (const id of quote.passengerIds) {
+        const terms = handInPassageTally(world, id, departure, driver.id);
+        if (terms) seats.push({ passengerId: id, seat: terms.seat });
+    }
+    if (seats.length) receipt.data.passageTallySeats = JSON.stringify(seats);
+    if (!early) unusedPassageTalliesGoToDust(world, departure, now);
+    return receipt;
 }
 
 /** A later actual admitted course at B proves completion, never a reservation. */
@@ -281,7 +368,7 @@ export function publicCarriagePassage(world: WorldState, receiptId: string, pass
     if(completed && vehicle && driver)return {leg,receipt,vehicle,driver,locationId:leg.toId,remainingDays:0,arrived:true};
     if (!vehicle || !driver || isRuined(vehicle) || vehicle.possessorId !== null || vehicle.ownerId !== driver.id
         || whoItIsWith(vehicle) !== driver.id || driver.status !== 'alive') return null;
-    const locationId = locationOnNpcJourney(world.locations, driver, day);
+    const locationId = locationOfNpcOnItsJourney(world, driver, day);
     if (!locationId) return null;
     const doing = driver.activity;
     const arrived = journeyTimeHasReached(day, leg.arrivalDay) && locationId === leg.toId;
@@ -304,7 +391,7 @@ export function settlePublicCarriages(world: WorldState, day: number): void {
                 fromId: doing.fromLocationId, toId: doing.returnTo,
                 departureDay: doing.sinceDay, arrivalDay: doing.untilDay,
                 conveyanceId: String(vehicle.data.conveyanceId) }, driver.diedOnDay ?? day);
-        } else leaveItHere(world.objects, vehicle, locationOnNpcJourney(world.locations, driver, day));
+        } else leaveItHere(world.objects, vehicle, locationOfNpcOnItsJourney(world, driver, day));
     }
 }
 
@@ -317,8 +404,9 @@ export function stopPublicCarriage(world: WorldState, leg: PublicRoadLeg, day: n
     // Read the admitted course at the actual loss instant even after markDead;
     // this changes no status or body and does not resurrect its operator.
     const physical:NpcRecord=isTerminal(driver.status)?{...driver,status:'alive'}:driver;
-    const coarse = locationOnNpcJourney(world.locations, physical, day);
-    const point = roadPositionOfNpc(world.locations, physical, day);
+    const coarse = locationOfNpcOnItsJourney(world, physical, day);
+    const point = roadPositionOfNpc(world.locations, physical, day, undefined,
+        id => world.npcs.find(person => person.id === id));
     const ground = point && coarse ? groundWhereACarriageStopped(world,leg.vesselId,leg.departureDay,day,point,coarse) : coarse;
     leaveItHere(world.objects, vehicle, ground);
     if(ground&&point&&point.kind==='edge'&&!factsWithDataValue(world,'vesselId',leg.vesselId).some(fact=>fact.data.publicCarriageStopped===true&&fact.locationId===ground)){

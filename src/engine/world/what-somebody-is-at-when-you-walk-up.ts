@@ -207,6 +207,7 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
                 ? `putting a party together: ${activity.note}`
                 : `putting a party together, and ${them} have said yes`;
         case 'trade':
+        case 'waiting_for_a_departure':
             return activity.note;
         case 'drawing_on_the_ground':
             // The note is the specific of it where there is one. Two of these
@@ -264,6 +265,7 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
 export function whetherTheyWouldLookUp(kind: ActivityKind): boolean {
     switch (kind) {
         case 'trade':
+        case 'waiting_for_a_departure':
         case 'mustering':
         // SOMEBODY POSTED HERE IS WHO THE GROUND GIVES YOU. Being stationed in
         // a town is being the house's face in it; a person whose whole business

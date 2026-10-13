@@ -5,7 +5,7 @@ import type { HistoricalFact } from './history.js';
  * nor return. There is no second attendance timer or independent history log. */
 import type { WorldState } from './world-state.js';
 import type { NpcRecord } from './npc-state.js';
-import { locationOnNpcJourney, siteIntervalOnAnNpcPosting, journeyTimeHasReached } from './places-on-the-way.js';
+import { siteIntervalOnAnNpcPosting, journeyTimeHasReached, locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
 import { isLostTrackOf } from './who-a-house-has-lost-track-of.js';
 import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
@@ -82,7 +82,7 @@ export function aRetainedMemberActuallyServed(state: WorldState, npc: NpcRecord,
     const site = siteIntervalOnAnNpcPosting(state.locations, npc,routes);
     return !!site && site.locationId === row.locationId && enoughService(row, site.fromDay, site.untilDay)
         && journeyTimeHasReached(state.currentDay, site.untilDay)
-        && locationOnNpcJourney(state.locations, npc, (site.fromDay + site.untilDay) / 2,routes) === row.locationId;
+        && locationOfNpcOnItsJourney(state, npc, (site.fromDay + site.untilDay) / 2,routes) === row.locationId;
 }
 export function actualRetainedReturnDay(state: WorldState, npc: NpcRecord, row: RetainedSending,routes?:RouteQueries): number | null {
     if(row.dispatchFactId)return actualShuttleReturnDay(state,npc,row);
@@ -97,7 +97,7 @@ export function actualRetainedReturnDay(state: WorldState, npc: NpcRecord, row: 
     }
     const due = row.departsOnDay + row.posting.days;
     return stillOnThisRetainedSending(npc, row) && journeyTimeHasReached(state.currentDay, due)
-        && locationOnNpcJourney(state.locations, npc, state.currentDay,routes) === (doing.returnTo ?? npc.locationId)
+        && locationOfNpcOnItsJourney(state, npc, state.currentDay,routes) === (doing.returnTo ?? npc.locationId)
         ? due : null;
 }
 export function aRetainedMemberActuallyReturned(state: WorldState, npc: NpcRecord, row: RetainedSending,routes?:RouteQueries): boolean {

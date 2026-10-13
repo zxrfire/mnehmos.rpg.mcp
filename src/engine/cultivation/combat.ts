@@ -1351,6 +1351,8 @@ export interface ExchangeRecord {
 
 export interface ConfrontationResult {
     outcome: ConfrontationOutcome;
+    /** An actual shared fight may be won by a companion, whose identity stays intact. */
+    playerSideWon?: boolean;
     /**
      * WHAT THE STRONGER PARTY DECIDED, when the gap made the decision theirs.
      *
@@ -2882,6 +2884,10 @@ export interface MeleeContext {
     /** Default for any side that did not state its own. */
     intent: ConfrontationIntent;
     vector?: AttackVector;
+    /** An actual participant's choice this round; absence keeps the ordinary melee. */
+    acts?: Readonly<Record<string, RoundAct>>;
+    vectors?: Readonly<Record<string, AttackVector>>;
+    intents?: Readonly<Record<string, ConfrontationIntent>>;
 }
 
 // OUTPUT
@@ -3003,7 +3009,34 @@ function withFactor(power: CombatantPower, source: string, factor: number, note:
 /**
  * Resolve a confrontation between two or more sides.
  */
-export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): MeleeResult {
+/** The same melee carried across actual rounds; no world or database state lives here. */
+export interface UnfinishedMelee {
+    sides: SideInput[];
+    fighters: Fighter[];
+    hp: Record<string, number>;
+    injuries: Record<string, Injury[]>;
+    exchanges: ExchangeRecord[];
+    adaptations: Record<string, Adaptation>;
+    suppressionPulses: Record<string, boolean>;
+    order: string[];
+    roundsFought: number;
+    roundBudget: number;
+}
+export type MeleeTurn = { state: UnfinishedMelee; result: null }
+    | { state: null; result: MeleeResult };
+
+function meleeCanReach(f: Fighter, targets: readonly Fighter[]): boolean {
+    return targets.some(t => assessGap(f.power, t.power).verdict !== 'helpless');
+}
+
+function finishMeleeRound(state: UnfinishedMelee, ctx: MeleeContext): MeleeTurn {
+    const survivingSides = new Set(state.fighters.filter(f => f.state === 'standing').map(f => f.sideIndex));
+    const winner = survivingSides.size === 1 ? [...survivingSides][0] : null;
+    return { state: null, result: assemble(state.sides, state.fighters, state.hp, state.injuries,
+        state.exchanges, ctx, winner) };
+}
+
+export function openMelee(sides: readonly SideInput[], ctx: MeleeContext): MeleeTurn {
     const adaptations: Record<string, Adaptation> = {};
     const suppressionPulses: Record<string, boolean> = {};
     if (sides.length < 2) {
@@ -3044,24 +3077,22 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
     const byId = new Map(fighters.map(f => [f.input.id, f]));
     const exchanges: ExchangeRecord[] = [];
 
-    const living = () => fighters.filter(f => f.state === 'standing');
-    const enemiesOf = (f: Fighter) => living().filter(o => o.sideIndex !== f.sideIndex);
 
     // RULE 1, at the level of a person.
     // Somebody two major realms under everybody opposite them is not a weak
     // contributor, they are not a contributor. They cannot land anything and
     // they do not count toward what their side brings.
-    const canReach = (f: Fighter, targets: readonly Fighter[]) =>
-        targets.some(t => assessGap(f.power, t.power).verdict !== 'helpless');
+    const canReach = meleeCanReach;
 
     const sidesThatCanReach = sides
         .map((_, index) => index)
         .filter(index => fighters.some(f =>
-            f.sideIndex === index && canReach(f, fighters.filter(o => o.sideIndex !== index))
+            f.sideIndex === index && ctx.acts?.[f.input.id] !== 'guard'
+            && canReach(f, fighters.filter(o => o.sideIndex !== index))
         ));
 
     if (sidesThatCanReach.length === 0) {
-        return assemble(sides, fighters, hp, injuries, exchanges, ctx, null);
+        return { state: null, result: assemble(sides, fighters, hp, injuries, exchanges, ctx, null) };
     }
     if (sidesThatCanReach.length === 1) {
         // Not a fight in either direction: one side gets what it came for, at no
@@ -3076,7 +3107,7 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
             if (!reachable) continue;
             f.state = 'fallen';
             f.felledVector = vector;
-            f.felledBy = fighters.find(o => o.sideIndex === winner)?.input.id ?? null;
+            f.felledBy = fighters.find(o => o.sideIndex === winner && ctx.acts?.[o.input.id] !== 'guard')?.input.id ?? null;
             if (theWorstItCouldDo(intent.thrown ?? AN_ORDINARY_SWING) === 'a_death') {
                 hp[f.input.id] = 0;
             } else {
@@ -3086,7 +3117,7 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
                 );
             }
         }
-        return assemble(sides, fighters, hp, injuries, exchanges, ctx, winner);
+        return { state: null, result: assemble(sides, fighters, hp, injuries, exchanges, ctx, winner) };
     }
 
     // Initiative, rolled once so the order is stable across the whole melee.
@@ -3097,220 +3128,269 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
 
     // Rounds.
     const roundBudget = bodyRoundBudget(meleeRoundBudget(sides), fighters.map(f => f.power));
-    for (let round = 0; round < roundBudget; round++) {
-        const activeSides = new Set(living().map(f => f.sideIndex));
-        if (activeSides.size < 2) break;
+    return { state: { sides: [...sides], fighters, hp, injuries, exchanges,
+        adaptations, suppressionPulses, order: order.map(fighter => fighter.input.id),
+        roundsFought: 0, roundBudget }, result: null };
+}
 
-        // Recomputed every round: as a side thins its budget shrinks with it,
-        // and the last one standing is a side of one fighting at their own weight.
-        const acting = new Set<string>();
-        sides.forEach((_, index) => {
-            const engaged = fighters
-                .filter(f => f.sideIndex === index && f.state === 'standing' && canReach(f, enemiesOf(f)))
-                .sort((a, b) =>
-                    b.power.total - a.power.total ||
-                    (a.input.id < b.input.id ? -1 : a.input.id > b.input.id ? 1 : 0)
+interface MeleeRoundFrame {
+    powerCtx: PowerContext;
+    order: Fighter[];
+    living: () => Fighter[];
+    enemiesOf: (fighter: Fighter) => Fighter[];
+    pending: { state: UnfinishedMelee; result: null };
+}
+
+function meleeRoundFrame(state: UnfinishedMelee, ctx: MeleeContext): MeleeRoundFrame {
+    const byId = new Map(state.fighters.map(f => [f.input.id, f]));
+    const living = () => state.fighters.filter(f => f.state === 'standing');
+    return { powerCtx: { ambient: ctx.ambient }, order: state.order.map(id => byId.get(id)!),
+        living, enemiesOf: f => living().filter(o => o.sideIndex !== f.sideIndex),
+        pending: { state, result: null } };
+}
+
+/** The whole-fight caller owns this local state and computes its frame only once. */
+function advanceMeleeRound(state: UnfinishedMelee, ctx: MeleeContext,
+    frame = meleeRoundFrame(state, ctx)): MeleeTurn {
+    const { sides, fighters, hp, injuries, exchanges, adaptations, suppressionPulses } = state;
+    const { powerCtx, order, living, enemiesOf } = frame;
+    const canReach = meleeCanReach;
+    const round = state.roundsFought;
+    const activeSides = new Set(living().map(f => f.sideIndex));
+    if (activeSides.size < 2) return finishMeleeRound(state, ctx);
+
+    // Recomputed every round: as a side thins its budget shrinks with it,
+    // and the last one standing is a side of one fighting at their own weight.
+    const acting = new Set<string>();
+    sides.forEach((_, index) => {
+        const engaged = fighters
+            .filter(f => f.sideIndex === index && f.state === 'standing' && canReach(f, enemiesOf(f)))
+            .sort((a, b) =>
+                b.power.total - a.power.total ||
+                (a.input.id < b.input.id ? -1 : a.input.id > b.input.id ? 1 : 0)
+            );
+        // In the fight, whether or not the budget reaches them this round.
+        // A bystander is somebody the gap excluded, not somebody who queued.
+        for (const f of engaged) f.everEngaged = true;
+
+        // Numbers are counted against the ladder. A body a full realm below
+        // the best thing facing it buys nothing, however many of them came,
+        // and a side with nobody up to the task gets exactly one strike.
+        const topEnemyRealm = fighters
+            .filter(f => f.sideIndex !== index && f.state === 'standing')
+            .reduce((top, f) => Math.max(top, f.power.realmIndex), -1);
+        const counted = engaged.filter(f => f.power.realmIndex >= topEnemyRealm);
+        const pool = counted.length > 0 ? counted : engaged.slice(0, 1);
+
+        const strength = sideStrength(pool.map(f => f.power));
+        const strikes = strikesThisRound(strength, engaged.length, ctx.rng);
+        // Strongest first. The budget is what the side can actually land, so
+        // it goes to the people most able to land it, and everybody past it
+        // is standing there being a reason the fight takes longer.
+        for (const f of engaged.filter(f => ctx.acts?.[f.input.id] !== 'guard').slice(0, strikes))
+            acting.add(f.input.id);
+    });
+
+    for (const striker of order) {
+        if (striker.state !== 'standing') continue;
+        if (!acting.has(striker.input.id)) continue;
+        const act = ctx.acts?.[striker.input.id] ?? 'strike';
+        if (act === 'guard') continue;
+
+        // How far this one use reaches.
+        // The area mechanic in its entirety: one action, resolved once per
+        // person the art lands on, with every strike priced by the ordinary
+        // arithmetic. It deliberately does NOT touch the strike budget - a
+        // side still gets the strikes its numbers bought it, and an area art
+        // widens each of those rather than granting more. That asymmetry is
+        // what keeps rule 1 intact: reach scales with how many ENEMIES are
+        // present, never with how many friends, so twenty people a realm
+        // below still land one strike a round between them however wide
+        // their arts are, while one person above them can answer all twenty
+        // at once.
+        const art = prepareCombatArtUse(striker.input);
+        if (art.input !== striker.input) { striker.input = art.input;
+            striker.power = assessPower(art.input, powerCtx); }
+        let artResolved = false;
+        const reach = reachOf(striker.input.technique);
+        const targets = orderTargets(striker, enemiesOf(striker), hp)
+            .slice(0, REACH_TARGETS[reach]);
+        if (targets.length === 0) continue;
+        striker.everEngaged = true;
+
+        const side = sides[striker.sideIndex];
+
+        for (const target of targets) {
+            if (target.state !== 'standing') continue;
+
+            // Re-read every time, never captured. A wide art resolves once
+            // per person it lands on, so an object that breaks against the
+            // first of them is already gone against the second - the same
+            // rule `resolveConfrontation` states as "a weapon lost on the
+            // first swing of a round is already gone on the second".
+            const strikePower = striker.power;
+
+            // Aegis, read before the dice, the way tradition is. Per person,
+            // because an art that lands on a place still meets each of them
+            // separately: one of a crowd standing behind something is covered
+            // by it and the person beside them is not.
+            const denied = new Set(target.aegis.flatMap(a => a.denies ?? []));
+            const edges = striker.edges.filter(e => !denied.has(e));
+            const forbidden = new Set(target.aegis.flatMap(a => a.forbids ?? []));
+            const defenceMultiplier = target.aegis.reduce(
+                (product, a) => product * (a.defenceMultiplier ?? 1), 1
+            );
+            const defendPower = target.aegis.length === 0
+                ? target.power
+                : withFactor(
+                    target.power,
+                    `aegis:${target.aegis.map(a => a.id).join('+')}`,
+                    defenceMultiplier,
+                    target.aegis.map(a => a.note).join(' ')
                 );
-            // In the fight, whether or not the budget reaches them this round.
-            // A bystander is somebody the gap excluded, not somebody who queued.
-            for (const f of engaged) f.everEngaged = true;
 
-            // Numbers are counted against the ladder. A body a full realm below
-            // the best thing facing it buys nothing, however many of them came,
-            // and a side with nobody up to the task gets exactly one strike.
-            const topEnemyRealm = fighters
-                .filter(f => f.sideIndex !== index && f.state === 'standing')
-                .reduce((top, f) => Math.max(top, f.power.realmIndex), -1);
-            const counted = engaged.filter(f => f.power.realmIndex >= topEnemyRealm);
-            const pool = counted.length > 0 ? counted : engaged.slice(0, 1);
+            let vector: AttackVector = (ctx.vectors?.[striker.input.id] ?? side.vector ?? ctx.vector ?? 'body') === 'soul'
+                && canDirectAtSoul(striker.input.technique)
+                ? 'soul'
+                : 'body';
+            if (forbidden.has(vector)) vector = vector === 'soul' ? 'body' : 'soul';
 
-            const strength = sideStrength(pool.map(f => f.power));
-            const strikes = strikesThisRound(strength, engaged.length, ctx.rng);
-            // Strongest first. The budget is what the side can actually land, so
-            // it goes to the people most able to land it, and everybody past it
-            // is standing there being a reason the fight takes longer.
-            for (const f of engaged.slice(0, strikes)) acting.add(f.input.id);
-        });
-
-        for (const striker of order) {
-            if (striker.state !== 'standing') continue;
-            if (!acting.has(striker.input.id)) continue;
-
-            // How far this one use reaches.
-            // The area mechanic in its entirety: one action, resolved once per
-            // person the art lands on, with every strike priced by the ordinary
-            // arithmetic. It deliberately does NOT touch the strike budget - a
-            // side still gets the strikes its numbers bought it, and an area art
-            // widens each of those rather than granting more. That asymmetry is
-            // what keeps rule 1 intact: reach scales with how many ENEMIES are
-            // present, never with how many friends, so twenty people a realm
-            // below still land one strike a round between them however wide
-            // their arts are, while one person above them can answer all twenty
-            // at once.
-            const art = prepareCombatArtUse(striker.input);
-            if (art.input !== striker.input) { striker.input = art.input;
-                striker.power = assessPower(art.input, powerCtx); }
-            let artResolved = false;
-            const reach = reachOf(striker.input.technique);
-            const targets = orderTargets(striker, enemiesOf(striker), hp)
-                .slice(0, REACH_TARGETS[reach]);
-            if (targets.length === 0) continue;
-            striker.everEngaged = true;
-
-            const side = sides[striker.sideIndex];
-
-            for (const target of targets) {
-                if (target.state !== 'standing') continue;
-
-                // Re-read every time, never captured. A wide art resolves once
-                // per person it lands on, so an object that breaks against the
-                // first of them is already gone against the second - the same
-                // rule `resolveConfrontation` states as "a weapon lost on the
-                // first swing of a round is already gone on the second".
-                const strikePower = striker.power;
-
-                // Aegis, read before the dice, the way tradition is. Per person,
-                // because an art that lands on a place still meets each of them
-                // separately: one of a crowd standing behind something is covered
-                // by it and the person beside them is not.
-                const denied = new Set(target.aegis.flatMap(a => a.denies ?? []));
-                const edges = striker.edges.filter(e => !denied.has(e));
-                const forbidden = new Set(target.aegis.flatMap(a => a.forbids ?? []));
-                const defenceMultiplier = target.aegis.reduce(
-                    (product, a) => product * (a.defenceMultiplier ?? 1), 1
-                );
-                const defendPower = target.aegis.length === 0
-                    ? target.power
-                    : withFactor(
-                        target.power,
-                        `aegis:${target.aegis.map(a => a.id).join('+')}`,
-                        defenceMultiplier,
-                        target.aegis.map(a => a.note).join(' ')
-                    );
-
-                let vector: AttackVector = (side.vector ?? ctx.vector ?? 'body') === 'soul'
-                    && canDirectAtSoul(striker.input.technique)
-                    ? 'soul'
-                    : 'body';
-                if (forbidden.has(vector)) vector = vector === 'soul' ? 'body' : 'soul';
-
-                if (forbidden.has(vector)) {
-                    exchanges.push({
-                        index: exchanges.length,
-                        attackerId: striker.input.id,
-                        defenderId: target.input.id,
-                        result: {
-                            damage: 0, injury: null, nullified: true,
-                            nullifiedReason: 'aegis_forbids_vector',
-                            vector, advantage: 0, roll: 0, modifiers: [], weapon: null,
-                            narrationHint:
-                                `The approach does not resolve against ${target.input.name}. ` +
-                                target.aegis.map(a => a.note).join(' ')
-                        },
-                        defenderHpAfter: hp[target.input.id]
-                    });
-                    continue;
-                }
-
-                const result = resolveExchange(strikePower, defendPower, target.input.maxHp, {
-                    suppressionPulses,
-                    attackerId: striker.input.id,
-                    adaptations,
-                    defenderId: target.input.id,
-                    rng: ctx.rng,
-                    ambient: ctx.ambient,
-                    turn: ctx.turn,
-                    vector,
-                    attackerEdges: edges,
-                    defenderEdges: target.edges
-                });
-
-                hp[target.input.id] = Math.max(0, hp[target.input.id] - result.damage);
-                if (result.injury) injuries[target.input.id].push(result.injury);
-
-                // A gap this wide is one nothing brought would have closed, so
-                // there is nothing left to grind through. This is what lets
-                // somebody at a large advantage take attackers off themselves
-                // between exchanges, instead of a crowd trading its way home on
-                // the strength of having more health bars than the elder has
-                // attacks - and, met once per person by a wide art, it is the
-                // whole of why fifteen breaths is enough to end a faction.
-                if (!result.nullified && result.advantage >= OVERWHELMING_ADVANTAGE) {
-                    hp[target.input.id] = 0;
-                }
-
-                // The object broke. It stays in their hand at half and they
-                // are priced again, identically to the two-party path.
-                if (result.weapon?.broke) {
-                    striker.input = {
-                        ...striker.input,
-                        weapon: striker.input.weapon ? { ...striker.input.weapon, broken: true } : null,
-                        artifactOrdinal: undefined
-                    };
-                    striker.power = assessPower(striker.input, powerCtx);
-                }
-
+            if (forbidden.has(vector)) {
                 exchanges.push({
                     index: exchanges.length,
                     attackerId: striker.input.id,
                     defenderId: target.input.id,
-                    result,
-                    ...(!artResolved && art.use ? { artUse: art.use } : {}),
+                    result: {
+                        damage: 0, injury: null, nullified: true,
+                        nullifiedReason: 'aegis_forbids_vector',
+                        vector, advantage: 0, roll: 0, modifiers: [], weapon: null,
+                        narrationHint:
+                            `The approach does not resolve against ${target.input.name}. ` +
+                            target.aegis.map(a => a.note).join(' ')
+                    },
                     defenderHpAfter: hp[target.input.id]
                 });
-                artResolved = true;
-
-                const targetIntent = sides[target.sideIndex].intent ?? ctx.intent;
-                if (hp[target.input.id] <= 0) {
-                    target.state = 'fallen';
-                    target.felledBy = striker.input.id;
-                    target.felledVector = vector;
-                } else if (
-                    (targetIntent.willWithdraw ?? true) &&
-                    hp[target.input.id] < target.input.maxHp * WITHDRAW_HP_FRACTION
-                ) {
-                    const flight = payForFlight(target.input, striker.input, hp, injuries, ctx, target.edges);
-                    exchanges[exchanges.length - 1]!.flight = flight;
-                    exchanges[exchanges.length - 1]!.defenderHpAfter = hp[target.input.id];
-                    acting.delete(target.input.id);
-                    if (hp[target.input.id] <= 0 || flight.escaped) {
-                        target.state = hp[target.input.id] <= 0 ? 'fallen' : 'withdrawn';
-                        target.felledBy = striker.input.id;
-                        target.felledVector = vector;
-                    }
-                }
+                continue;
             }
 
-            if (artResolved && art.after !== art.input) {
-                // One cast for the whole volley; preserve a weapon broken within it.
-                striker.input = { ...striker.input, qi: art.after.qi,
-                    technique: art.after.technique, techniqueCooldowns: art.after.techniqueCooldowns };
+            const result = resolveExchange(strikePower, defendPower, target.input.maxHp, {
+                suppressionPulses,
+                attackerId: striker.input.id,
+                adaptations,
+                defenderId: target.input.id,
+                rng: ctx.rng,
+                ambient: ctx.ambient,
+                turn: ctx.turn,
+                vector,
+                attackerEdges: edges,
+                defenderEdges: target.edges,
+                attackerPosture: act === 'press' ? POSTURE_WORTH : 1,
+                defenderPosture: ctx.acts?.[target.input.id] === 'guard' ? POSTURE_WORTH
+                    : ctx.acts?.[target.input.id] === 'press' ? 1 / POSTURE_WORTH : 1
+            });
+
+            hp[target.input.id] = Math.max(0, hp[target.input.id] - result.damage);
+            if (result.injury) injuries[target.input.id].push(result.injury);
+
+            // A gap this wide is one nothing brought would have closed, so
+            // there is nothing left to grind through. This is what lets
+            // somebody at a large advantage take attackers off themselves
+            // between exchanges, instead of a crowd trading its way home on
+            // the strength of having more health bars than the elder has
+            // attacks - and, met once per person by a wide art, it is the
+            // whole of why fifteen breaths is enough to end a faction.
+            if (!result.nullified && result.advantage >= OVERWHELMING_ADVANTAGE) {
+                hp[target.input.id] = 0;
+            }
+
+            // The object broke. It stays in their hand at half and they
+            // are priced again, identically to the two-party path.
+            if (result.weapon?.broke) {
+                striker.input = {
+                    ...striker.input,
+                    weapon: striker.input.weapon ? { ...striker.input.weapon, broken: true } : null,
+                    artifactOrdinal: undefined
+                };
                 striker.power = assessPower(striker.input, powerCtx);
             }
-            if (new Set(living().map(f => f.sideIndex)).size < 2) break;
+
+            exchanges.push({
+                index: exchanges.length,
+                attackerId: striker.input.id,
+                defenderId: target.input.id,
+                result,
+                ...(!artResolved && art.use ? { artUse: art.use } : {}),
+                defenderHpAfter: hp[target.input.id]
+            });
+            artResolved = true;
+
+            const targetIntent = ctx.intents?.[target.input.id] ?? sides[target.sideIndex].intent ?? ctx.intent;
+            if (hp[target.input.id] <= 0) {
+                target.state = 'fallen';
+                target.felledBy = striker.input.id;
+                target.felledVector = vector;
+            } else if (
+                (targetIntent.willWithdraw ?? true) &&
+                hp[target.input.id] < target.input.maxHp * WITHDRAW_HP_FRACTION
+            ) {
+                const flight = payForFlight(target.input, striker.input, hp, injuries, ctx, target.edges);
+                exchanges[exchanges.length - 1]!.flight = flight;
+                exchanges[exchanges.length - 1]!.defenderHpAfter = hp[target.input.id];
+                acting.delete(target.input.id);
+                if (hp[target.input.id] <= 0 || flight.escaped) {
+                    target.state = hp[target.input.id] <= 0 ? 'fallen' : 'withdrawn';
+                    target.felledBy = striker.input.id;
+                    target.felledVector = vector;
+                }
+            }
         }
 
-        // The stall. Somebody who only had to last has lasted.
-        // Checked at the end of a round rather than during it, so a window of
-        // one means "you get one round", and an assault that finishes inside it
-        // still finishes.
-        const held = sides.findIndex((side, index) =>
-            side.reinforcement !== undefined &&
-            round + 1 >= side.reinforcement.holdsFor &&
-            fighters.some(f => f.sideIndex === index && f.state === 'standing')
-        );
-        if (held >= 0) {
-            // Everybody else has to be gone before the answer lands, so they go.
-            for (const f of fighters) {
-                if (f.sideIndex !== held && f.state === 'standing') f.state = 'withdrawn';
-            }
-            return assemble(sides, fighters, hp, injuries, exchanges, ctx, held, sides[held].id);
+        if (artResolved && art.after !== art.input) {
+            // One cast for the whole volley; preserve a weapon broken within it.
+            striker.input = { ...striker.input, qi: art.after.qi,
+                technique: art.after.technique, techniqueCooldowns: art.after.techniqueCooldowns };
+            striker.power = assessPower(striker.input, powerCtx);
         }
+        if (new Set(living().map(f => f.sideIndex)).size < 2) break;
     }
 
-    const survivingSides = new Set(living().map(f => f.sideIndex));
-    const winner = survivingSides.size === 1 ? [...survivingSides][0] : null;
-    return assemble(sides, fighters, hp, injuries, exchanges, ctx, winner);
+    // The stall. Somebody who only had to last has lasted.
+    // Checked at the end of a round rather than during it, so a window of
+    // one means "you get one round", and an assault that finishes inside it
+    // still finishes.
+    const held = sides.findIndex((side, index) =>
+        side.reinforcement !== undefined &&
+        round + 1 >= side.reinforcement.holdsFor &&
+        fighters.some(f => f.sideIndex === index && f.state === 'standing')
+    );
+    if (held >= 0) {
+        // Everybody else has to be gone before the answer lands, so they go.
+        for (const f of fighters) {
+            if (f.sideIndex !== held && f.state === 'standing') f.state = 'withdrawn';
+        }
+        return { state: null, result: assemble(sides, fighters, hp, injuries, exchanges, ctx, held, sides[held].id) };
+    }
+
+    state.roundsFought += 1;
+    if (new Set(living().map(f => f.sideIndex)).size < 2 || state.roundsFought >= state.roundBudget)
+        return finishMeleeRound(state, ctx);
+    return frame.pending;
+}
+
+/** One actual round, preserving its initiative, wounds, withdrawals and spent arts. */
+export function takeMeleeRound(input: UnfinishedMelee, ctx: MeleeContext): MeleeTurn {
+    const state: UnfinishedMelee = { ...input, fighters: input.fighters.map(f => ({ ...f })),
+        hp: { ...input.hp }, injuries: Object.fromEntries(Object.entries(input.injuries).map(([id, wounds]) => [id, [...wounds]])),
+        exchanges: [...input.exchanges], adaptations: structuredClone(input.adaptations),
+        suppressionPulses: { ...input.suppressionPulses } };
+    return advanceMeleeRound(state, ctx);
+}
+
+export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): MeleeResult {
+    let turn = openMelee(sides, ctx);
+    const frame = turn.state ? meleeRoundFrame(turn.state, ctx) : null;
+    while (turn.state) turn = advanceMeleeRound(turn.state, ctx, frame!);
+    return turn.result;
 }
 
 /**

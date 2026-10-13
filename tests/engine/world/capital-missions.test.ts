@@ -22,8 +22,13 @@
  * without a pilot or an air receipt. Actual house flight is covered by the shuttle
  * controls; this file keeps the refusal and moves its cargo/fare/arrival checks
  * onto the admitted public mission. Capital travel has one actual itinerary.
- * The owner allows thirty minutes for this census. Both horizons use the
- * canonical demography soakedWorld cache; no claim walks a separate century.
+ * The owner allows thirty minutes for this census. The opening uses the
+ * canonical demography cache; the observed decade starts from its own copy.
+ * Completed background dockets now age out after a year. On the current
+ * decade snapshot, Emerald Water City retained five business dispatches, all
+ * in year nine, so asking that snapshot for two dispatch years tested an
+ * archive the world no longer keeps. Observe those years before each sweep;
+ * the original presence, diversity and repeated-business bounds stay.
  * Each unchanged snapshot shares its route read for physical census placement.
  * Owner correction: the former majority-home assertion was the coordinator's
  * wording. Actual business may take many members away; an absence without an
@@ -31,6 +36,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { soakedWorld } from '../../support/soaked-world.js';
+import { advanceWorldForPlay } from '../../../src/engine/world/driver.js';
 import { capitalPlaces } from '../../../src/engine/world/capital-missions-and-calendar.js';
 import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import { PROVINCIAL_CAPITALS } from '../../../src/data/cultivation/regions.js';
@@ -38,12 +44,29 @@ import { locationOnNpcJourney } from '../../../src/engine/world/places-on-the-wa
 import { routeQueriesFor } from '../../../src/engine/world/locations.js';
 import { exteriorGroundOfDeparture } from '../../../src/engine/world/departure-approach.js';
 
-/** Native journey controls moved unchanged to capital-mission-journeys.test.ts.
- * The cached decade census keeps its original assertions and canonical seed. */
+/** Native journey controls live in capital-mission-journeys.test.ts.
+ * Callback observations keep their own walk, per tests/support/README.md. */
 describe('capital missions', () => {
     it('keeps every capital occupied by residents and several visiting houses over a decade', async () => {
         const opened = await soakedWorld('demography', { years: 0 });
-        const lived = await soakedWorld('demography', { years: 10 });
+        const lived = structuredClone(opened);
+        const sent = new Map<string, { houses: Set<string>; businessYears: Set<number>; occasionYears: Set<number> }>();
+        const observe = () => {
+            for (const fact of lived.history.facts) {
+                if (fact.data.capitalMission !== true || typeof fact.data.destinationId !== 'string'
+                    || fact.day < opened.currentDay) continue;
+                const id = fact.data.destinationId;
+                let at = sent.get(id);
+                if (!at) { at = { houses: new Set(), businessYears: new Set(), occasionYears: new Set() }; sent.set(id, at); }
+                for (const houseId of fact.factionIds) at.houses.add(houseId);
+                const year = Math.floor((fact.day - opened.currentDay) / 365);
+                if (['trade and purchases', 'carrying the house report', 'escorting the house envoy'].includes(String(fact.data.reason)))
+                    at.businessYears.add(year);
+                if (['the auction delegation', 'witnessing the auction', 'the inter-house competition'].includes(String(fact.data.reason)))
+                    at.occasionYears.add(year);
+            }
+        };
+        advanceWorldForPlay(lived, { days: 10 * 365, stopOnInterrupt: false, atWorldBoundary: observe });
         for (const state of [opened, lived]) {
             const alive = state.npcs.filter(n => n.status === 'alive');
             const routes = routeQueriesFor(state.locations);
@@ -73,19 +96,11 @@ describe('capital missions', () => {
                     .map(n => n.factionId));
                 expect(visitingHouses.size, `${city.name}: visiting houses`).toBeGreaterThanOrEqual(3);
                 if (state === lived) {
-                    const dispatches = state.history.facts.filter(f => f.data.destinationId === city.id &&
-                        f.data.capitalMission === true && f.day >= opened.currentDay);
-                    expect(new Set(dispatches.flatMap(f => f.factionIds)).size,
+                    const observed = sent.get(city.id);
+                    expect(observed?.houses.size ?? 0,
                         `${city.name}: houses sending missions`).toBeGreaterThanOrEqual(3);
-                    const businessYears = new Set(dispatches.filter(f =>
-                        ['trade and purchases', 'carrying the house report', 'escorting the house envoy']
-                            .includes(String(f.data.reason)))
-                        .map(f => Math.floor((f.day - opened.currentDay) / 365)));
-                    const occasionYears = new Set(dispatches.filter(f =>
-                        ['the auction delegation', 'witnessing the auction', 'the inter-house competition'].includes(String(f.data.reason)))
-                        .map(f => Math.floor((f.day - opened.currentDay) / 365)));
-                    expect(businessYears.size, `${city.name}: business sent in separate years`).toBeGreaterThanOrEqual(2);
-                    expect(occasionYears.size, `${city.name}: calendar delegations sent in separate years`).toBeGreaterThanOrEqual(2);
+                    expect(observed?.businessYears.size ?? 0, `${city.name}: business sent in separate years`).toBeGreaterThanOrEqual(2);
+                    expect(observed?.occasionYears.size ?? 0, `${city.name}: calendar delegations sent in separate years`).toBeGreaterThanOrEqual(2);
                 }
             }
         }

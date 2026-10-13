@@ -340,6 +340,8 @@ function whatArrivingIntroduces(
         lines.push(...gate.lines);
         structure.push(gate.structure);
     }
+    // The gate places the body in its admitted area before that area's people are read.
+    cultivator = game.repos.cultivators.getById(cultivator.id) ?? cultivator;
 
     // AND A DOOR THAT SHUTS SAYS SO. Ground on a sixty-year cycle is a door as
     // much as a gatehouse is, and until this nothing reached
@@ -2062,8 +2064,6 @@ export const travelVerbs = {
             arrivedAt: place.id,
             onDay: routineTime(world)
         });
-        if (moved.length === 0) return null;
-
         for (const row of moved) {
             const redirect = row.activity?.redirect;
             if (redirect && row.activity?.returnTo) {
@@ -2076,15 +2076,19 @@ export const travelVerbs = {
             const at = world.npcs.findIndex(npc => npc.id === row.id);
             if (at >= 0) world.npcs[at] = row;
         }
-        this.theWorldMoved();
+        if (moved.length > 0) this.theWorldMoved();
 
-        const names = namesOf(moved);
+        // The journey clock may already have brought the companions here.
+        const alongside = whoIsOnTheRoadWith(world.npcs, cultivator.id, routineTime(world))
+            .filter(npc => npc.activity?.kind !== 'travelling' && npc.locationId === place.id);
+        if (alongside.length === 0) return null;
+        const names = namesOf(alongside);
         return {
             names,
             line: `${howMany(names.length, 'person')} came with you and `
                 + `${names.length === 1 ? 'is' : 'are'} standing here: ${names.join(', ')}.`,
             structure:
-                `who-is-on-the-road-with-you: ${names.length} moved to ${place.id} on day `
+                `who-is-on-the-road-with-you: ${names.length} standing at ${place.id} on day `
                 + `${today}, read off their own out_with_a_party activity. No party record `
                 + 'is stored anywhere.'
         };
@@ -2309,6 +2313,10 @@ export const travelVerbs = {
             ? flyable.find(a => a.conveyance.id === asked.id)!
             : flyable.find(option => option === bestOnThisRoad))
             ?? flyable[0] ?? available[0];
+        const driverLine = driver && itWantsAPilot(chosen.conveyance)
+            ? driver.name === 'You' ? 'You drive it yourself.'
+                : `${driver.name} drives it; ${withYou.length > 1 ? 'the rest of you ride' : 'you ride'}.`
+            : null;
         if (chosen.conveyance.waterOnly) {
             const hull = chosen.rowId && this.atHand?.objects.find(object => object.id === chosen.rowId);
             const seaTarget = this.atHand && worldLocationFor(this.atHand, arrivedAt);
@@ -2408,6 +2416,7 @@ export const travelVerbs = {
                     air: chosen.conveyance.crossesGroundThatCannotBeWalked });
                 const sailed = await spendOnOwnedPassage(this, run, cultivator, journey.daysOneWay, undefined, run.turn + 1, true);
                 if (sailed) {
+                    if (driverLine) shownWithNoModelAfter(sailed.facts, driverLine);
                     sailed.calls.push({ name: 'engine.priceJourney', action: 'ride', ok: true,
                         summary: chosen.conveyance.name + ': actual owned passage, ' + journey.daysOneWay + ' days.' });
                     if (this.repos.cultivators.getById(cultivator.id)?.location === arrivedAt) {
@@ -2455,11 +2464,7 @@ export const travelVerbs = {
                         : ' Nothing saved: this is what walking costs.'),
             ...(meeting ? ['Another traveller is here on the road.'] : [journey.arrivalReads])
         ];
-        if (driver && itWantsAPilot(chosen.conveyance)) {
-            lines.push(driver.name === 'You'
-                ? 'You drive it yourself.'
-                : `${driver.name} drives it; ${withYou.length > 1 ? 'the rest of you ride' : 'you ride'}.`);
-        }
+        if (driverLine) lines.push(driverLine);
         if (journey.wrongToolNote) lines.push(journey.wrongToolNote);
         // WHAT IT HOLDS AGAINST HOW MANY ARE GOING. `priceJourney` also returns
         // `daysForEverybody` for this, and it is NOT spent here: `conv-on-foot`
@@ -2733,11 +2738,18 @@ export const travelVerbs = {
         // A SHIP OR A CARRIAGE is bought at its own counter: whenever the sentence
         // names one, and where the Span keeps no counter and a line here goes
         // where the sentence asked. Anything else is still the Span's.
-        const service = theServiceNamed(topic) ?? theServiceNamed(rawInput);
+        const local = this.atHand && worldLocationFor(this.atHand, cultivator.location);
+        const area = local && this.atHand && theAreasOf(this.atHand, local).areas.find(area => area.id === cultivator.standingIn);
+        const service = theServiceNamed(topic) ?? theServiceNamed(rawInput)
+            ?? (intent === 'ticket' || intent === 'embark' ? area?.for === 'carriage_station' ? 'carriage'
+                : area?.for === 'landing' ? 'ship' : null : null);
+        // A folding counter performs its immediate crossing, rather than a
+        // captain's scheduled vehicle departure. Preserve that existing buy.
+        if (service === null && counter !== null && intent === 'ticket') intent = 'buy';
         const runsFromHere = counter === null ? whatRunsFromHere(this, cultivator, today) : [];
         if (service !== null
             || (target !== undefined && theLineTo(runsFromHere, target, null) !== null)) {
-            return aSeatOnAShipOrACarriage(this, run, cultivator, target, intent, service, topic ?? '');
+            return aSeatOnAShipOrACarriage(this, run, cultivator, target, intent, service, `${topic ?? ''} ${rawInput}`);
         }
 
         if (counter === null) {

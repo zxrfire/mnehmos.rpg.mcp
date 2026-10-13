@@ -1,5 +1,6 @@
 /** A private hire spends the contractor's days. The member's word stays with the house. */
 import { createObligation, settleObligation } from '../social/grudges.js';
+import { keepTheirHallCheckOnLeaving } from './what-the-roll-and-the-lamps-say.js';
 import type { WorldState } from './world-state.js';
 
 /** Close private hires when the work ends or the contractor ceases doing it. */
@@ -27,6 +28,7 @@ export function settleHiredDuties(state: WorldState, day: number): void {
         }));
         if (worker && doing?.sinceDay === term.incurredOnDay
             && doing.untilDay === term.dueOnDay) {
+            keepTheirHallCheckOnLeaving(state, worker, day);
             state.npcs[workerAt] = { ...worker, activity: null };
         }
     }

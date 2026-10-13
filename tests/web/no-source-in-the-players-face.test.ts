@@ -19,6 +19,38 @@
 
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
+import { reportFromDigest, worldCalls } from '../../src/web/tool-result-prose';
+import type { PlayerDigest } from '../../src/engine/world/digest';
+
+// The played log exposed an unheard-event count. Both visible channels must
+// carry only received news; the native digest retains its accounting unchanged.
+describe('unheard news stays outside the player log', () => {
+    const digest: PlayerDigest = {
+        fromDay: 0, toDay: 365, lines: [], unheard: 166,
+        unattributed: 0, headline: 'No news reached them.'
+    };
+
+    it('prints nothing about events that never reached the player', () => {
+        const report = reportFromDigest(digest);
+        expect(report.lines).toEqual([]);
+        expect(worldCalls(report)).toEqual([]);
+        expect(digest.unheard).toBe(166);
+    });
+
+    it('retains the actual received fact and its repetitions in both channels', () => {
+        const received: PlayerDigest = { ...digest, lines: [{
+            factId: 'crossing-fact', occurrences: 2, day: 365, year: 1,
+            kind: 'realm_crossing', channel: 'market', form: 'unattributed',
+            text: 'A cultivator crossed a realm.', namableFactionIds: [],
+            namableNpcIds: [], magnitude: 2
+        }] };
+        const before = JSON.stringify(received);
+        const report = reportFromDigest(received);
+        expect(report.lines).toEqual(['Year 1: A cultivator crossed a realm, twice over the span.']);
+        expect(worldCalls(report).map(call => call.summary)).toEqual(report.lines);
+        expect(JSON.stringify(received)).toBe(before);
+    });
+});
 
 /** A symbol, a filename, or anything else only somebody with the source says. */
 const SOURCE_IN_PROSE = /`[^`]+`|\b\w+\.(?:ts|md)\b|\bundefined\b|\[object Object\]/;
@@ -213,7 +245,7 @@ describe('the engine log is read by somebody standing in a room', () => {
         expect(
             [...new Set(offences)],
             "The engine log sits on the same screen as the prose and is rewritten by "
-            + "nobody. What it says is what the player reads."
+            + "nobody. What it says is what the player reads.\n" + [...new Set(offences)].join('\n')
         ).toEqual([]);
     });
 });

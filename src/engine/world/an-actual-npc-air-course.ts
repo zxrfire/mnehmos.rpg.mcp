@@ -12,7 +12,7 @@ import type { WorldState } from './world-state.js';
 import { type NpcRecord, spendNpcQi } from './npc-state.js';
 import type { ObjectRecord } from './possessions.js';
 import { isRuined } from './possessions.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 import { routineOf } from './npc-routines.js';
 import { beginAnAirCourse, recordPaidAirCourseFuel } from './an-air-course-in-the-world.js';
@@ -30,7 +30,7 @@ export function theExteriorGroundsOfAnNpcAirDeparture(world:WorldState,npc:NpcRe
     routes?:RouteQueries,scene?:ReturnType<typeof departureSceneFor>) {
     routes ??= routeQueriesFor(world.locations);
     if (npc.status !== 'alive' || !npc.locationId
-        || locationOnNpcJourney(world.locations,npc,day,routes) !== npc.locationId) return null;
+        || locationOfNpcOnItsJourney(world,npc,day,routes) !== npc.locationId) return null;
     if (!isPlayerInvolved(world, npc)) {
         const from = exteriorGroundOfDeparture(world, npc.locationId, routes.places);
         const to = exteriorGroundOfDeparture(world, toId, routes.places);

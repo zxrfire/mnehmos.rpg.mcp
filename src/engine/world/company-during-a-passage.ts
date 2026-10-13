@@ -8,7 +8,7 @@ import type { NpcActivity, NpcRecord } from './npc-state.js';
 
 export function companyAgreement(activity: NpcActivity | null | undefined, day: number): NpcActivity | null {
     const agreement = activity?.kind === 'out_with_a_party' ? activity
-        : activity?.kind === 'travelling' ? activity.passageCompany : null;
+        : activity?.kind === 'travelling' || activity?.kind === 'waiting_for_a_departure' ? activity.passageCompany : null;
     if (!agreement || agreement.kind !== 'out_with_a_party') return null;
     if (agreement.redirect && day >= agreement.redirect.until) return null;
     if (agreement.untilDay != null && day >= agreement.untilDay) return null;

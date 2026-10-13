@@ -6,6 +6,7 @@ import { arrivalCourseOfFact, recordActualBodyArrival } from '../engine/world/a-
 import { projectPersonalAirPassenger } from './an-actual-personal-air-course.js';
 import { physicalPassageScene, selectedAreaOnActualCarrier } from './the-actual-carrier-scene.js';
 import { projectOwnedPassenger } from './an-owned-passage.js';
+import { projectPartyFollower, releaseFollowingForIndependentPassage } from './following-the-party-leader.js';
 /** Accepted public passengers follow the actual source at the current world boundary. */
 import type Database from 'better-sqlite3';
 import type { WorldState } from '../engine/world/world-state.js';
@@ -19,11 +20,13 @@ export function projectActualPassengers(db: Database.Database, world: WorldState
     playerId:string,onDay:number):void {
     settleLostPublicPassages(world,onDay);
     const ids=new Set([playerId,...playersAwaitingOnwardPassage(world),...playersAwaitingDriversWord(world),...playersAwaitingPilotsWord(world)]);
+    for(const id of ids) releaseFollowingForIndependentPassage(db,world,id,onDay);
     for(const id of ids) projectOneActualPassenger(db,world,id,onDay);
     beginAgreedOnwardPassagesAtPort(db,world,onDay);
     beginDriversOnwardAtEndpoint(db,world,onDay);
     beginPilotsOnwardAtEndpoint(db,world,onDay);
     for(const id of ids) projectOneActualPassenger(db,world,id,onDay);
+    for(const id of ids) projectPartyFollower(db,world,id,onDay);
 }
 
 function projectOneActualPassenger(db: Database.Database, world: WorldState,

@@ -17,7 +17,7 @@ import { isSomethingYouWouldSwing } from './possessions.js';
 import { SECTS } from '../../data/cultivation/sects.js';
 import { aUniformFor } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { isAStackOfCommunicationTalismans } from './a-communication-talisman-carries-word-home.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 
 export interface QuartersHolding {
     personId: string;
@@ -30,7 +30,7 @@ export interface QuartersHolding {
 export function readQuartersTogether(state: WorldState) {
     const people = new Map(state.npcs.map(npc => [npc.id, npc]));
     const peoplePlaces = new Map(state.npcs.map(npc => [npc.id,
-        locationOnNpcJourney(state.locations, npc, state.currentDay)]));
+        locationOfNpcOnItsJourney(state, npc, state.currentDay)]));
     const locations = new Map(state.locations.map(place => [place.id, place]));
     const rooms = new Map<string, ReturnType<typeof theLodgingsOfAHouse>>();
     const roomByHolder = new Map<string, QuartersHolding>();
@@ -190,7 +190,7 @@ export function keepTheirQuartersInOrder(state: WorldState, onDay: number, openi
 /** Only an actual body on its house's ground can put its carried things in its room. */
 function atTheirHouse(state: WorldState, npc: NpcRecord, read?: QuartersRead): boolean {
     let place = read ? read.peoplePlaces.get(npc.id) ?? null
-        : locationOnNpcJourney(state.locations, npc, state.currentDay);
+        : locationOfNpcOnItsJourney(state, npc, state.currentDay);
     const seen = new Set<string>();
     while (place !== null && !seen.has(place)) {
         seen.add(place);

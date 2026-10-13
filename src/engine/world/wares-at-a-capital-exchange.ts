@@ -14,7 +14,7 @@ import { factsWithDataValue, pendingAuctionLots, witnessIndexFor } from './witne
 import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import type { AnOfferStandingHere } from './what-somebody-standing-here-would-part-with.js';
 import type { WorldState } from './world-state.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { routeQueriesFor, type RouteQueries } from './locations.js';
 import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 
@@ -22,7 +22,7 @@ import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident
 export function loadExchangeConsignment(state: WorldState, seller: NpcRecord, day: number, routes?: RouteQueries): void {
     const house = state.factions.find(h => h.id === seller.factionId);
     if (!house || !seller.activity || !seller.locationId) return;
-    const ground = locationOnNpcJourney(state.locations, seller, day, routes);
+    const ground = locationOfNpcOnItsJourney(state, seller, day, routes);
     if (!ground) return;
     const mission=seller.activity.capitalMissionId?witnessIndexFor(state).byId.get(seller.activity.capitalMissionId):undefined;
     const destinationId=typeof mission?.data.destinationId==='string'?mission.data.destinationId:seller.locationId;
@@ -98,7 +98,7 @@ export function exchangeOffers(state: WorldState, seller: NpcRecord,
     stockPositions?: readonly number[], auctionedIds?: ReadonlySet<unknown>, day = state.currentDay,
     positions?: ReadonlyMap<string, string | null>): AnOfferStandingHere[] {
     if (!seller.activity || seller.status !== 'alive'
-        || (positions?.has(seller.id) ? positions.get(seller.id) : locationOnNpcJourney(state.locations, seller, day)) !== seller.locationId) return [];
+        || (positions?.has(seller.id) ? positions.get(seller.id) : locationOfNpcOnItsJourney(state, seller, day)) !== seller.locationId) return [];
     const mission=seller.activity.capitalMissionId
         ?witnessIndexFor(state).byId.get(seller.activity.capitalMissionId):null;
     if(seller.activity.capitalMissionId&&mission?.data.destinationId!==seller.locationId)return [];
@@ -123,7 +123,7 @@ export function tradeExchangeObject(state: WorldState, seller: NpcRecord, buyer:
     const objectAt = state.objects.findIndex(o => o.id === objectId);
     const object = state.objects[objectAt];
     const placeOf = (n: NpcRecord) => n.id === playerAt?.id ? playerAt.locationId
-        : positions?.has(n.id) ? positions.get(n.id) ?? null : locationOnNpcJourney(state.locations, n, day);
+        : positions?.has(n.id) ? positions.get(n.id) ?? null : locationOfNpcOnItsJourney(state, n, day);
     const venue = state.locations.find(l => l.id === placeOf(seller));
     if (!venue || !(venue.tags.includes('city') || whatKindOfPlace(venue.name) === 'provincial capital') || placeOf(buyer) !== venue.id || seller.id === buyer.id
         || seller.status !== 'alive' || buyer.status !== 'alive' || !object || isRuined(object)
@@ -162,7 +162,7 @@ export function tradeAtCapitalExchanges(state: WorldState, day: number): void {
     const cities = new Set(state.locations.filter(l => l.tags.includes('city') || whatKindOfPlace(l.name) === 'provincial capital').map(l => l.id));
     // A seasonal trade changes goods and purses, not places, activities or the clock.
     const routes = routeQueriesFor(state.locations);
-    const positions = new Map(state.npcs.map(n => [n.id, locationOnNpcJourney(state.locations, n, day, routes)]));
+    const positions = new Map(state.npcs.map(n => [n.id, locationOfNpcOnItsJourney(state, n, day, routes)]));
     const stockPositions = new Map<string, number[]>();
     for (let i = 0; i < state.objects.length; i++) {
         const object = state.objects[i]!;
@@ -264,11 +264,11 @@ export function handOverExchangeConsignment(state: WorldState, seller: NpcRecord
     const houseId = seller.factionId;
     const stintDay = seller.activity?.sinceDay;
     const receiverStintDay = receiver.activity?.sinceDay;
-    const venue = locationOnNpcJourney(state.locations, seller, day);
+    const venue = locationOfNpcOnItsJourney(state, seller, day);
     if (!houseId || stintDay == null || receiverStintDay == null || !venue
         || seller.id === receiver.id || receiver.factionId !== houseId
         || seller.status !== 'alive' || receiver.status !== 'alive'
-        || locationOnNpcJourney(state.locations, receiver, day) !== venue) return false;
+        || locationOfNpcOnItsJourney(state, receiver, day) !== venue) return false;
     const stock = state.objects.filter(o => o.tags.includes('exchange')
         && o.possessorId === seller.id && o.ownerId === houseId);
     const receipts = exchangeReceipts(state, seller.id, houseId, stintDay);

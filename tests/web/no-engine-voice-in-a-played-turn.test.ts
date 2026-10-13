@@ -49,6 +49,8 @@
  * nobody added here is a mechanic this does not protect.
  */
 
+// A post-fight care line and the death projection also exposed a raw rate
+// percentage and an estate taker's database id; their actual data must remain.
 import { describe, it, expect } from 'vitest';
 import { makeGameInWorld } from './harness';
 

@@ -63,7 +63,7 @@ import { theStacksInHand } from './a-communication-talisman-carries-word-home.js
 import { witnessIndexFor } from './witness-reaction-index.js';
 import { isInsideTheCompound } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { routeQueriesFor } from './locations.js';
-import { locationOnNpcJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { sendHouseMission } from './capital-missions-and-calendar.js';
 import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 import { dutyTermsFor, takeableOffAWall, type DutyTerms } from '../encounters/duties.js';
@@ -393,7 +393,7 @@ export function peopleTakeWorkOffTheirHousesBoard(state: WorldState, year: numbe
             const npc = state.npcs[i]!;
             return freeToTakeWork(npc)
                 && faction.seatLocationId !== null
-                && isInsideTheCompound(routes.places, locationOnNpcJourney(state.locations, npc, day, routes), faction.seatLocationId)
+                && isInsideTheCompound(routes.places, locationOfNpcOnItsJourney(state, npc, day, routes), faction.seatLocationId)
                 && howAnAskReaches({ pitchOrdinal: npc.cultivation.realmOrdinal, reachOfTheHouse: reach }) === 'the_wall';
         });
         // A week's work at home is also read by whoever is free for that much.

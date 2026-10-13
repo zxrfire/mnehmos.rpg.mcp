@@ -39,6 +39,11 @@ import { KnowledgeGate } from '../../src/web/knowledge';
 import { HELPLESS_REALM_GAP } from '../../src/engine/cultivation/combat';
 import { realmIndexOf } from '../../src/engine/cultivation/realms';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
+import { actualSpiritStones } from '../../src/web/transferring-actual-spirit-stones';
+
+// A real gift transferred its stones, but its eighth-day charge suppressed the
+// recipient's reaction as if the player had only returned after a long sitting.
+// The immediate scene and the later clock must both survive the played turn.
 
 const WORLD = 'people-channel-world';
 const RUN = 'people-channel';
@@ -186,11 +191,17 @@ describe('a gift and a robbery are the same kind of event', () => {
         }));
 
         const mark = provider.calls.length;
-        await game.act(`I give ${them.name} ${gift} spirit stones`);
+        const beforeGift = actualSpiritStones(game, them.id)!;
+        const beforeTime = game.state().run.elapsedDays;
+        const turn = await game.act(`I give ${them.name} ${gift} spirit stones`);
+        expect(turn.toolCalls.some(call => !call.ok), turn.narration).toBe(false);
+        expect(actualSpiritStones(game, them.id)).toBe(beforeGift + gift);
+        expect(game.state().cultivator.spiritStones).toBe(gift * 3);
+        expect(game.state().run.elapsedDays - beforeTime).toBeCloseTo(1 / 8);
         const [prompt] = narrationsSince(provider, mark);
 
         const line = prompt.split('\n').find(row => row.startsWith(`- ${them.name},`));
-        expect(line).toBeDefined();
+        expect(line, prompt).toBeDefined();
         // The engine does not grade. What separates this from a theft is the
         // direction, and nothing else.
         expect(line).toMatch(/gained/);

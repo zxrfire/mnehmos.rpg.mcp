@@ -2,6 +2,8 @@ import { shipHandsForHull, publicShipHullCanBeBoarded } from './a-public-ship-hu
 import { requireConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { ObjectRecord } from './possessions.js';
 import { companyDuringPassage } from './company-during-a-passage.js';
+import { handInPassageTally, unusedPassageTalliesGoToDust, passageTallySeatsForBoarding } from './a-passage-tally-is-the-seat-you-own.js';
+import { routineTime } from './npc-routines.js';
 /**
  * Where a ship puts in: every lane's landfalls, and every place on open water, each at its own dock.
  *
@@ -33,7 +35,7 @@ import { stonesFor } from './the-fare-and-calendar-of-a-passage.js';
 import { provisionForLane, resolveCrossing } from './what-a-sea-crossing-costs.js';
 import type { NpcActivity, NpcRecord } from './npc-state.js';
 import { shipIdForLane } from './the-ship-on-a-lane.js';
-import { locationOnNpcJourney, journeyTimeHasReached } from './places-on-the-way.js';
+import { journeyTimeHasReached, locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { factsWithDataValue, witnessIndexFor, type HistoryFactSource } from './witness-reaction-index.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -533,6 +535,9 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     const requesting=new Set(requestingIds);
     if (requesting.size>heads) return {quote:null,retryAt:null};
     const passengers=[...aboard].filter(id=>!crewIds.has(id) && !requesting.has(id)).length;
+    const tallySeats = world.objects ? passageTallySeatsForBoarding(
+        { objects: world.objects },
+        { service: 'ship', vesselId, fromId, toId, departureDay }, requesting) : { used: 0, other: 0 };
     // An older player boarding omitted its actor entirely. Do not fabricate
     // free berths from that omission: this unknown active claim blocks another
     // acceptance until the actual dated arrival. A read/refusal stores nothing.
@@ -547,7 +552,7 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
         1+shipHandsForHull(world.seed,vesselId));
     const capacity=requireConveyance('conv-water-ship').heads;
     if (crewHeads+heads>capacity) return {quote:null,retryAt:null};
-    if (passengers+crewHeads+heads>capacity) return {quote:null,retryAt:same?.arrivalDay ?? null};
+    if (passengers+tallySeats.other+crewHeads+heads>capacity) return {quote:null,retryAt:same?.arrivalDay ?? null};
     const provision = provisionForLane(lane, heads);
     const crossing = resolveCrossing(crossingSeed, lane, provision, monthOf(departureDay));
     if (crossing.laneWasShut) return { quote: null };
@@ -559,7 +564,7 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
         .sort((a, b) => a.departureDay - b.departureDay)[0];
     if (next && next.fromId !== toId) return { quote: null, retryAt: next.departureDay };
     return { quote: { lane, vesselId, fromId, toId, departureDay, arrivalDay, days, heads,
-        fareStones: stonesFor(line.cashPerSeat) * heads, provision, crossing } };
+        fareStones: stonesFor(line.cashPerSeat) * (heads - tallySeats.used), provision, crossing } };
 }
 
 /**
@@ -630,7 +635,7 @@ export function activityOfAPublicPassage(leg: PublicPassageLeg, purpose: string,
 /** The caller pays the quoted sponsoring purse once; no personal wallet is injected. */
 export function onSponsoredPublicPassage(world: ShippingWorld, npc: NpcRecord, quote: PublicPassageQuote,
     purpose: string, withIds: string[] = []): NpcRecord | null {
-    if (npc.status !== 'alive' || locationOnNpcJourney(world.locations, npc, quote.departureDay) !== quote.fromId) return null;
+    if (npc.status !== 'alive' || locationOfNpcOnItsJourney(world, npc, quote.departureDay) !== quote.fromId) return null;
     return { ...npc, activity: companyDuringPassage(npc.activity, activityOfAPublicPassage(quote, purpose, withIds), quote.departureDay), updatedOnDay: quote.departureDay };
 }
 
@@ -639,7 +644,21 @@ export function onSponsoredPublicPassage(world: ShippingWorld, npc: NpcRecord, q
 export function recordPublicPassage(world: WorldState, leg: PublicPassageLeg,
     onDay = leg.departureDay, locationId = leg.fromId, actorIds: readonly string[] = [],
     priorReceiptId?: string, boardingMoment?: PassageRunMoment,
-    boardingPeople?: readonly {id:string;name:string}[], onwardAgreementId?:string, lost=false): HistoricalFact {
+    boardingPeople?: readonly {id:string;name:string}[], onwardAgreementId?:string, lost=false,
+    beforeHandIn?: (receipt: HistoricalFact) => void): HistoricalFact {
+    const departure = { ...leg, service: 'ship' as const };
+    const settleDeparture = (receipt: HistoricalFact): HistoricalFact => {
+        if (receipt.data.actualBoarding === true && journeyTimeHasReached(onDay, leg.departureDay)
+            && journeyTimeHasReached(routineTime(world), leg.departureDay)) {
+            beforeHandIn?.(receipt);
+            const receiver = world.npcs.find(person => person.status === 'alive'
+                && person.tags.includes('crew-of:' + leg.vesselId)
+                && locationOfNpcOnItsJourney(world, person, routineTime(world)) === leg.fromId);
+            for (const person of boardingPeople ?? []) handInPassageTally(world, person.id, departure, receiver?.id ?? null);
+            unusedPassageTalliesGoToDust(world, departure, onDay);
+        }
+        return receipt;
+    };
     const parent = priorReceiptId ? witnessIndexFor(world).byId.get(priorReceiptId) : undefined;
     const validParent = parent?.data.publicPassage === true && parent.data.vesselId === leg.vesselId
         && (parent.data.seaLaneId === leg.lane.id
@@ -668,22 +687,24 @@ export function recordPublicPassage(world: WorldState, leg: PublicPassageLeg,
         && candidate.data.arrivalDay === leg.arrivalDay && candidate.data.seaLaneId === leg.lane.id
         && (!boardingMoment || candidate.data.runId === boardingMoment.runId
             && candidate.data.boardingRunElapsedDays === boardingMoment.elapsedDays));
-    if (existing) return existing;
+    if (existing) return settleDeparture(existing);
     if (previous && (!lost || previous.data.publicPassageLost===true) && actors.every(actor=>previous.actors.some(prior=>prior.id===actor.id))
         && (!boardingPeople?.length || previous.data.actualBoarding===true)
         && previous.data.fromLocationId === leg.fromId && previous.data.toLocationId === leg.toId
         && previous.data.arrivalDay === leg.arrivalDay && previous.data.seaLaneId === leg.lane.id
         && (!boardingMoment || previous.data.runId === boardingMoment.runId
-            && previous.data.boardingRunElapsedDays === boardingMoment.elapsedDays)) return previous;
-    return appendWorldFact(world, makeFact({ day: onDay, kind: 'gathering', locationId,
+            && previous.data.boardingRunElapsedDays === boardingMoment.elapsedDays)) return settleDeparture(previous);
+    return settleDeparture(appendWorldFact(world, makeFact({ day: onDay, kind: 'gathering', locationId,
         summary: `Public ship passage: ${leg.fromId} to ${leg.toId}; arrival day ${leg.arrivalDay}.`,
         visibility: 'public', causes: previous ? [previous.id] : [],
         actors, data: { publicPassage: true, vesselId: leg.vesselId, seaLaneId: leg.lane.id,
+            ...(typeof (leg as Partial<PublicPassageQuote>).fareStones === 'number'
+                ? {fareStones:(leg as Partial<PublicPassageQuote>).fareStones!} : {}),
             fromLocationId: leg.fromId, toLocationId: leg.toId,
             departureDay: leg.departureDay, arrivalDay: leg.arrivalDay,
             ...(boardingPeople?.length ? {actualBoarding:true} : {}),
             ...(onwardAgreementId && validParent ? {onwardAgreementId} : {}),
             ...(lost ? {publicPassageLost:true} : {}),
             ...(boardingMoment ? { runId: boardingMoment.runId,
-                boardingRunElapsedDays: boardingMoment.elapsedDays } : {}) } }), { recur: false });
+                boardingRunElapsedDays: boardingMoment.elapsedDays } : {}) } }), { recur: false }));
 }

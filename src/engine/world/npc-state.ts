@@ -320,6 +320,8 @@ export type ActivityKind =
     | 'fighting_a_beast'
     /** Somewhere goods change hands. */
     | 'trade'
+    /** Holding a bought passage while remaining on actual departure ground. */
+    | 'waiting_for_a_departure'
     /** Ground worth working, being worked. */
     | 'drawing_on_the_ground'
     /**
@@ -388,6 +390,16 @@ export type ActivityKind =
     | 'squeezing';
 
 export interface NpcActivity {
+    /** The actual party discussion currently interrupting this undertaking. */
+    partyQuestionId?: string;
+    /** Actual group fight holding this undertaking at reached ground. */
+    partyFightId?: string;
+    /** The ordinary party decision behind a changed course. */
+    partyCourseDecisionId?: string;
+    /** One accepted ordinary carrier appointment, never a copied fleet position. */
+    publicDepartureId?: string;
+    /** The physical tally this person has chosen to use at their departure. */
+    passageTallyId?: string;
     /** The held departure intention; no berth, fare or arrival has been accepted. */
     departureApproach?: { locationId: string; areaId: string | null; destinationId: string; purpose: string; vehicleId?: string; service?: 'ship'|'carriage'|'air'|'ground'|'gather' };
     /** Sole actual partial road course, held only by its vehicle operator. */

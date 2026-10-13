@@ -1,11 +1,13 @@
 /** One transient physical hull read; accepted receipts and their operators own movement. */
+import { followedParty, survivingPartyCarrier } from './the-party-you-actually-follow.js';
+import { actualNpcPilotOfAirCourse } from '../engine/world/an-air-course-in-the-world.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import { actualVesselRooms, vesselRoomAreaId, vesselRoomChosen, type ActualVesselRoom } from '../engine/world/rooms-in-a-vessel.js';
 import { witnessIndexFor } from '../engine/world/witness-reaction-index.js';
-import { journeyTimeHasReached, locationOnNpcJourney, roadPositionOfNpc } from '../engine/world/places-on-the-way.js';
+import { journeyTimeHasReached, locationOnNpcJourney, roadPositionOfNpc, locationOfNpcOnItsJourney } from '../engine/world/places-on-the-way.js';
 import { shipPassengerAt } from '../engine/world/passenger-on-a-vessel.js';
 import { publicCarriagePassage } from '../engine/world/public-carriages.js';
 import { ownedPassageClaim, ownedCarrierAt } from './an-owned-passage.js';
@@ -62,7 +64,24 @@ export function actualCarrierScene(repos: Pick<CultivationRepos, 'db'>, body: Cu
         return onThisLeg(source.leg.vesselId, source.driver.id, ground!, source.leg.fromId,
             source.leg.toId, source.leg.departureDay, source.leg.arrivalDay, world, onDay, 'here');
     }
-    return null;
+    const party = followedParty(repos.db, world, body.id, onDay);
+    const surviving = party ? null : survivingPartyCarrier(repos.db, world, body.id, onDay);
+    const leg = party?.leader.activity ?? surviving?.operator.activity;
+    if ((!party && !surviving) || party?.finished || surviving && surviving.arrived || leg?.kind !== 'travelling' || !leg.vesselId
+        || !leg.fromLocationId || !leg.returnTo || leg.untilDay == null
+        || (party?.locationId ?? surviving!.source.locationId) !== ground || journeyTimeHasReached(onDay, leg.untilDay)) return null;
+    const air = leg.airCourseLocationId && world.locations.find(place => place.id === leg.airCourseLocationId);
+    const pilot = air && typeof air.data.airCourseId === 'string'
+        ? actualNpcPilotOfAirCourse(world, air.data.airCourseId) : null;
+    const vessel = world.objects.find(object => object.id === leg.vesselId);
+    const operator = pilot ?? world.npcs.find(person => person.status === 'alive'
+        && person.activity?.vesselId === leg.vesselId
+        && locationOfNpcOnItsJourney(world, person, onDay) === ground
+        && (person.id === leg.carrierOperatorId
+            || person.identity.occupation === 'shipmaster' || person.id === vessel?.ownerId));
+    if (!operator) return null;
+    return onThisLeg(leg.vesselId, operator.id, ground!, leg.fromLocationId,
+        leg.returnTo, leg.sinceDay, leg.untilDay, world, onDay, leg.seaLaneId || air ? 'deck' : 'here');
 }
 
 /** Physical survivors of the actual failed course, without an intact carrier.
@@ -82,7 +101,7 @@ export function failedPublicPassageScene(repos: Pick<CultivationRepos, 'db'>, bo
         && npc.identity.occupation === 'shipmaster');
     const accepts = (npc: NpcRecord): boolean => npc.status === 'alive' && members.has(npc.id)
         && npc.activity?.kind !== 'travelling'
-        && locationOnNpcJourney(world.locations, npc, onDay) === source.locationId;
+        && locationOfNpcOnItsJourney(world, npc, onDay) === source.locationId;
     return {key: JSON.stringify(['failed-public-course',loss.id]), vesselId: source.vesselId,
         operatorId: operator?.id ?? '', locationId: source.locationId, areaKind: 'here',
         accepts, rooms: [], actualAreaFor: () => null};

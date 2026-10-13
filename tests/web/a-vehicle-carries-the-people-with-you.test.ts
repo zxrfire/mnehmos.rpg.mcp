@@ -5,6 +5,8 @@
  * trip of three.
  * Ground vehicles are arranged on a road within one province; a sea route
  * correctly takes them to a landing rather than to the requested destination.
+ * Oct11: the physical owned-passage path completed a novice's actual flight
+ * with the companion pilot but omitted that pilot from its resolved facts.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -76,8 +78,15 @@ describe('a vehicle and the people with you', () => {
 
         const turn = await game.act(`we fly the spirit boat to ${going}`);
         expect(turn.toolCalls.some(call => call.action === 'ride' && call.ok), JSON.stringify(turn.toolCalls.map(c => c.summary))).toBe(true);
-        expect(turn.narration).toContain(`${driver.name} drives it; the rest of you ride.`);
+        expect(turn.narration, JSON.stringify({ calls: turn.toolCalls, narration: turn.narration })).toContain(`${driver.name} drives it; the rest of you ride.`);
+        const receipt = game.atHand!.history.facts.find(fact => fact.data.ownedPassage === true
+            && fact.data.vesselId === 'boat' && fact.data.ownerId === cultivator.id);
+        expect(receipt, 'the flight must have an actual accepted owned passage').toBeDefined();
+        expect(receipt!.data.pilotId).toBe(driver.id);
         expect((game as any).repos.cultivators.getById(cultivator.id).location).toBe(going);
+        const arrived = placeRow(game, going);
+        for (const member of party) expect(world.npcs.find((person: any) => person.id === member.id)?.locationId)
+            .toBe(arrived.id);
     }, 300_000);
 
     it('makes more than one trip where it seats fewer than the party', async () => {
@@ -90,6 +99,6 @@ describe('a vehicle and the people with you', () => {
         const turn = await game.act(`we ride the mount to ${going}`);
         // Said to the player in the turn's own account: it goes back for the rest.
         const said = [turn.narration ?? '', ...game.state().log.slice(-12).map(entry => entry.text)].join(' ');
-        expect(said).toMatch(/goes back for the rest: 2 trips/);
+        expect(said, JSON.stringify({ calls: turn.toolCalls, narration: turn.narration })).toMatch(/goes back for the rest: 2 trips/);
     }, 300_000);
 });

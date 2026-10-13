@@ -71,7 +71,7 @@ import {
     tokenIdFor
 } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { routeQueriesFor, walkingDaysFrom, type LocationRecord } from './locations.js';
-import { locationOnNpcJourney, journeyNeedsWater } from './places-on-the-way.js';
+import { journeyNeedsWater, locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { startNpcJourney } from './dao-ground-stints.js';
 import {
     isAwayOnSomething,
@@ -411,7 +411,7 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
     const routes = routeQueriesFor(state.locations);
     const byId = routes.places;
     const actualPlace = (npc: NpcRecord): string | null =>
-        locationOnNpcJourney(state.locations, npc, day, routes);
+        locationOfNpcOnItsJourney(state, npc, day, routes);
     // Gathered once rather than asked per house: the same answer as
     // `whereThisHouseBurnsItsLamps`, which walks every location per call.
     const lampRoomOf = new Map<string, string>();

@@ -52,7 +52,7 @@
  * this path - it moves what somebody was trying to do, never what they owned.
  */
 
-import { theirSlipsBreak } from '../engine/world/a-communication-talisman-carries-word-home.js';
+import { theirIdentityGoesToDust } from '../engine/world/when-a-disciple-dies-their-tokens-go-to-dust.js';
 import { theirJadeBreaks } from '../engine/world/a-pair-of-communication-jade.js';
 import { isACommunicationTalismanInAPouch } from './sending-word-on-a-communication-talisman.js';
 import type Database from 'better-sqlite3';
@@ -118,14 +118,13 @@ function trackedOnTheBody(
     for (const entry of listCarriedArtifacts(db, dead.id)) {
         const catalog = getArtifact(entry.itemId);
         if (!catalog) {
-            unaccounted.push(`${entry.itemId}: no catalog row, so nothing to move`);
+            unaccounted.push('One item recorded in the pack could not be found on the body; it was not moved.');
             continue;
         }
         const worldRow = getObject(world, catalog.id);
         if (worldRow && worldRow.possessorId !== null && worldRow.possessorId !== dead.id) {
             unaccounted.push(
-                `${catalog.id}: the world says ${worldRow.possessorId} is holding it, so the pouch row `
-                + 'is a copy nothing reconciled. Not moved and not duplicated.'
+                `${catalog.name} was not on the body; it was not moved.`
             );
             continue;
         }
@@ -285,12 +284,12 @@ export function settleWhatTheyWereCarrying(deps: EstateDeps): EstateOutcome {
 
     const counted = countedOnTheBody(db, cultivator);
     if (world) {
-        theirSlipsBreak(world.objects, cultivator.id, null, world.currentDay);
+        theirIdentityGoesToDust(world, cultivator.id, world.currentDay);
         theirJadeBreaks(world.objects, cultivator.id, Math.floor(world.currentDay));
     }
     const found = world
         ? trackedOnTheBody(db, world, dead)
-        : { tracked: [] as TrackedThing[], unaccounted: ['no world is running, so no object row was read'] };
+        : { tracked: [] as TrackedThing[], unaccounted: [] as string[] };
 
     // ── THE WORLD IS TOLD FIRST ──────────────────────────────────────────
     //
@@ -397,7 +396,7 @@ export function settleWhatTheyWereCarrying(deps: EstateDeps): EstateOutcome {
         factIds,
         objects: estate.objects,
         theWorldMoved: world !== null,
-        facts: factsForEstate(deps, estate, cache, graveLocationId, found.unaccounted)
+        facts: factsForEstate(deps, estate, found.unaccounted)
     };
 }
 
@@ -408,8 +407,6 @@ export function settleWhatTheyWereCarrying(deps: EstateDeps): EstateOutcome {
 function factsForEstate(
     deps: EstateDeps,
     estate: EstateAtDeath,
-    cache: CacheRecord | null,
-    graveLocationId: string | null,
     unaccounted: readonly string[]
 ): EngineFacts {
     const place = deps.cultivator.location ?? 'the open road';
@@ -464,26 +461,7 @@ function factsForEstate(
         );
     }
 
-    const structure = [
-        estate.structure,
-        cache
-            ? `${cache.id} written into cultivation_sites as a cache at '${cache.place}' `
-              + `(${cache.ground} ground, ${describeGoods(cache.goods)}), undiscovered, against run `
-              + `${cache.buriedByRunId}, on `
-              + (cache.buriedOnWorldDay === null
-                  ? 'a world day the run did not record'
-                  : `world day ${cache.buriedOnWorldDay}`)
-              + '. daysSpent 1 and burierOrdinal 0: nobody concealed it.'
-            : 'No cache row: nothing was left in the ground.',
-        graveLocationId
-            ? `enshrineRun placed ${graveLocationId} and wrote the chronicle fact.`
-            : 'No grave and no chronicle fact: there was no world row for this cultivator.',
-        ...estate.objects.map(o =>
-            `${o.id}: possessor ${o.possessorId ?? 'nobody'}, owner ${o.ownerId ?? 'unresolved'}, `
-            + `${o.provenance.length} provenance link(s), last '${o.provenance[o.provenance.length - 1]?.how}'.`),
-        ...unaccounted.map(line => `Not moved - ${line}`),
-        `cultivator_pouch cleared and the purse zeroed for ${deps.cultivator.id}: a corpse holds nothing.`
-    ];
+    const structure = [...unaccounted];
 
     return {
         headline: estate.taker

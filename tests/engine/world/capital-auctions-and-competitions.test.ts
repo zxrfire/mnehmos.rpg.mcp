@@ -36,6 +36,23 @@ function lot(state: ReturnType<typeof arrangement>['state'], seller: ReturnType<
 }
 
 describe('capital event ledgers', () => {
+    it('rejects bids for missing, ruined or transferred goods and closes without new bids', () => {
+        // A closing receipt must not invite new bids on goods the seller can no longer deliver.
+        for (const unavailable of ['missing', 'ruined', 'transferred', 'missing-seller'] as const) {
+            const { state, seller, buyer } = arrangement();
+            const offered = lot(state, seller, 'cargo');
+            if (unavailable === 'missing') state.objects = [];
+            else if (unavailable === 'ruined') state.objects[0]!.tags.push('ruined');
+            else if (unavailable === 'transferred') state.objects[0]!.possessorId = buyer.id;
+            else state.npcs = state.npcs.filter(person => person.id !== seller.id);
+            expect(bidAtCapitalAuction(state, buyer, 'venue', offered.id, 900, 0)).toBeNull();
+            expect(settleCapitalAuctions(state, 7)).toHaveLength(1);
+            expect(state.history.facts.some(fact => fact.data.auctionBid === true)).toBe(false);
+            expect(state.npcs.every(person => person.spiritStones === 1000)).toBe(true);
+            expect(settleCapitalAuctions(state, 8)).toEqual([]);
+        }
+    });
+
     it('conserves payment, transfers the tracked lot once and rejects an absent or unaffordable bidder', () => {
         const { state, seller, buyer, absent } = arrangement();
         const offered = lot(state, seller, 'cargo');

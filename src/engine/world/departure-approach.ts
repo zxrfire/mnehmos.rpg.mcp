@@ -5,7 +5,7 @@ import { evaluateAccess, routeQueriesFor, type RouteQueries } from './locations.
 import { pathTo, reachThrough } from './architecture.js';
 import { whereCompoundsAre, whereTheyAreStanding } from './where-inside-a-house-somebody-is-standing.js';
 import { theAreasOf, type APlaceReadIntoAreas } from './where-in-a-place-somebody-is-standing.js';
-import { locationOnNpcJourney, journeyTimeHasReached } from './places-on-the-way.js';
+import { journeyTimeHasReached, locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { actualVesselRooms, vesselRoomChosen, vesselRoomAccess } from './rooms-in-a-vessel.js';
 import { isRuined } from './possessions.js';
 import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
@@ -86,7 +86,7 @@ export function readActualDepartureApproach(state: WorldState, actorId: string,
             return { kind: 'refused', reason: 'The cabin door is closed.' };
     }
     routes ??= routeQueriesFor(state.locations);
-    if (locationOnNpcJourney(state.locations, actor, onDay,routes) !== actor.locationId)
+    if (locationOfNpcOnItsJourney(state, actor, onDay,routes) !== actor.locationId)
         return { kind: 'refused', reason: 'The traveller is still on another journey.' };
     const batch = scene?.at(onDay);
     const clock = batch?.clock ?? { ...state, currentDay: onDay, currentHour: (onDay % 1) * 24 };

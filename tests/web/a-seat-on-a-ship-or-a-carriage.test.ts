@@ -335,7 +335,8 @@ describe('a seat on a ship or a carriage', () => {
         expect(parseIntent('I take the ship to Sweet Spring Island'))
             .toMatchObject({ action: 'passage', intent: 'buy', target: 'Sweet Spring Island' });
         expect(parseIntent('I buy a ticket to Sweet Spring Island'))
-            .toMatchObject({ action: 'passage', intent: 'buy', target: 'Sweet Spring Island' });
+            // A ticket is now a held item; taking the trip is its boarding act.
+            .toMatchObject({ action: 'passage', intent: 'ticket', target: 'Sweet Spring Island' });
         expect(parseIntent('I book a carriage to Emerald Water City'))
             .toMatchObject({ action: 'passage', intent: 'buy', target: 'Emerald Water City' });
         expect(parseIntent('I hire an iron-rimmed carriage to Emerald Water City'))
