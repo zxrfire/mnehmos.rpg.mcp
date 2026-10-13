@@ -491,6 +491,15 @@ passes it into the same focused scenario, and asserts the same behaviour. The ar
 keeps the scenario fast and readable; the real one proves the scenario holds for what the
 world actually produces.
 
+**Long unscripted walks are for exploring, never for CI.** The split above only checks what
+somebody thought to check. A world left to run for fifteen centuries finds what nobody
+predicted: a house that never dies, a ladder that drains, a cascade nobody wrote. That is
+worth doing, on demand, by an agent with the exploration harness under `explore/`, which
+walks worlds across seeds and reports what looks wrong. It is not part of `npm test` or CI:
+vitest only collects `tests/**/*.test.ts`, and nothing under `explore/` may be moved there.
+What an exploration finds becomes an ordinary split test (scenario, reachability, contract)
+before it is fixed, so CI keeps it from coming back.
+
 ## Tests are living documentation
 
 > **A test's header is where this repo keeps its reasons. It is a first class
