@@ -459,6 +459,12 @@ not the rank"* and passes through every reshuffle.
   it covers and confirm it goes red. Several tests in this repo were written that way and
   say so in their headers.
 
+### The smallest test that keeps it true
+
+The rule for words holds for tests (see *Comments earn their keep*): many small focused tests,
+fewer that wire pieces together, and few played end to end. Not everything needs an acceptance
+test; play a turn only when the player-facing path is the thing at risk.
+
 ### A long walk is three tests, or one
 
 > **Never walk a world for centuries in CI to reach the moment a test is about.**
