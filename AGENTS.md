@@ -459,49 +459,27 @@ not the rank"* and passes through every reshuffle.
   it covers and confirm it goes red. Several tests in this repo were written that way and
   say so in their headers.
 
-### A long walk is two tests: what happens from a state, and that the state is reachable
+### A long walk is three tests, or one
 
-> **Never walk a world for centuries to reach the moment a test is about. Arrange the moment,
-> and prove separately that real worlds get there.**
+> **Never walk a world for centuries in CI to reach the moment a test is about.**
 
-A test that runs a world for a thousand years and then checks one rule is slow, and when
-it fails it does not say whether the rule broke or the world wandered somewhere odd in
-year four hundred. There is no property that "only shows over an unbroken walk"; it only
-looks that way until its preconditions are written down. Split it:
+When a rule only matters after a long history, split the walk:
 
-- **The behaviour test** arranges the state the walk would have produced (a house in
-  decline, a ladder of that shape, the history the rule reads), through the engine's own
-  writers, and checks what happens from there.
-- **The reachability test** checks, on worlds that really ran that long, that states like
-  the arranged one occur. Those worlds are walked once and kept: the soaked-world cache
-  (`tests/support/soaked-world.ts`) keys them on the source of the simulation, so an engine
-  change walks them fresh and nothing stale is served. A sample of checkpoints across seeds
-  is enough.
+- **Scenario:** arrange the state (a house in decline) through the engine's own writers and
+  check what happens from it.
+- **Reachability:** walked worlds contain that state. Walk them once and keep them
+  (`tests/support/soaked-world.ts` keys them on the simulation's source, so nothing stale is
+  served); a sample across seeds is enough.
+- **Contract:** a real instance taken from a walked world goes through the same scenario
+  function and behaves the same.
 
-**Both halves read the same state.** Write the precondition once, as one predicate
-(`isADyingHouse(world, houseId)`): the behaviour test asserts its arranged world passes it,
-and the reachability test asserts walked worlds pass it. If the arrangement adds anything
-the predicate does not cover, the two halves no longer connect, and the pair proves less
-than the walk did. The headers say which property is checked where.
+Define the state once, as one predicate all three assert (`isADyingHouse(world, houseId)`),
+or the tests stop connecting. A bug with no history behind it needs none of this: one
+focused regression test.
 
-**And the scenario runs on a real one too.** A predicate can pass on an arranged state that
-still differs from real ones in something the rule depends on. So a third test, the contract,
-takes a real instance out of a walked world (a dying house found by the reachability test),
-passes it into the same focused scenario, and asserts the same behaviour. The arranged state
-keeps the scenario fast and readable; the real one proves the scenario holds for what the
-world actually produces.
-
-**Long unscripted walks are for exploring, never for CI.** The split above only checks what
-somebody thought to check. A world left to run for fifteen centuries finds what nobody
-predicted: a house that never dies, a ladder that drains, a cascade nobody wrote. That is
-worth doing, on demand, by an agent with the exploration harness under `explore/`, which
-walks worlds across seeds and reports what looks wrong. It is not part of `npm test` or CI:
-vitest only collects `tests/**/*.test.ts`, and nothing under `explore/` may be moved there.
-What an exploration finds gets a CI test before it is fixed, so it cannot come back, and
-the test is as small as the bug. The three-test split is for findings that hang on a long
-history (a house that only fails after centuries of decline); an arithmetic slip in a
-promotion needs one focused regression test and nothing more. A pattern applied where it is
-not needed is ceremony.
+**Long unscripted walks are for exploring, not CI.** They find what nobody thought to check.
+Run them on demand with the harness under `explore/`, which vitest never collects (it reads
+`tests/**/*.test.ts` only). Each finding gets a CI test, as small as the bug, before it is fixed.
 
 ## Tests are living documentation
 
