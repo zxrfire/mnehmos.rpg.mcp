@@ -484,6 +484,13 @@ and the reachability test asserts walked worlds pass it. If the arrangement adds
 the predicate does not cover, the two halves no longer connect, and the pair proves less
 than the walk did. The headers say which property is checked where.
 
+**And the scenario runs on a real one too.** A predicate can pass on an arranged state that
+still differs from real ones in something the rule depends on. So a third test, the contract,
+takes a real instance out of a walked world (a dying house found by the reachability test),
+passes it into the same focused scenario, and asserts the same behaviour. The arranged state
+keeps the scenario fast and readable; the real one proves the scenario holds for what the
+world actually produces.
+
 ## Tests are living documentation
 
 > **A test's header is where this repo keeps its reasons. It is a first class
