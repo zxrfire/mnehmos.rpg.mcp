@@ -9,6 +9,10 @@
  * each now stays open or settles according to its own contractor's term.
  * Hiring and accepting a chore now spend the member's conversational eighth
  * of a day; the contractor still carries the remaining work, not the member.
+ * The suite later found all three cases stopped before hiring: the midnight
+ * worker had no public area and SQLite refused an undefined standing marker.
+ * The worker's ordinary meal/work can also put them in a room inside the seat.
+ * Read that actual room and area before arranging the meeting.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
@@ -20,10 +24,12 @@ import type { Duty } from '../../src/engine/encounters/types';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { hireForYourDuty, settleTheMissionPostTheyHold, theMissionPostOnTheSheet } from '../../src/web/holding-a-mission-post';
 import { theFirstRungOf } from '../../src/engine/encounters/what-a-house-has-on-its-board';
+import { whereCompoundsAre, whereTheyAreStanding } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 
 async function atAPost() {
     const h = await makeGameInWorld({ seed: 'private-hire', worldSeed: 'private-hire' });
-    const { cultivator, run } = await h.game.newRun('Member');
+    await h.game.newRun('Member');
+    const { cultivator, run } = h.game.currentRun();
     const world = (await h.game.loadWorld())!;
     const house = world.factions.find(f => f.id === 'sect-azure-cloud-pavilion')!;
     const place = world.locations.find(p => p.id === house.seatLocationId)!;
@@ -35,7 +41,14 @@ async function atAPost() {
         locationId: place.id, factionId: house.id, factionRankIndex: 1, activity: null };
     world.npcs = [worker];
     h.game.atHand = world;
-    h.repos.cultivators.standIn(cultivator.id, theAreasOf(world, place).whereIs.get(worker.id)!);
+    const workerPlaceId = whereTheyAreStanding(world, whereCompoundsAre(world), worker,
+        new Set(world.npcs.map(person => person.id)));
+    const workerPlace = world.locations.find(row => row.id === workerPlaceId);
+    expect(workerPlace, 'the worker must have an actual room before hiring').toBeDefined();
+    h.repos.cultivators.update(cultivator.id, { location: workerPlace!.name });
+    const area = theAreasOf(world, workerPlace!).whereIs.get(worker.id);
+    expect(area, 'the worker must have an actual area before hiring').toBeDefined();
+    h.repos.cultivators.standIn(cultivator.id, area!);
     h.game.knowledge.learnIfNew({ holderId: cultivator.id, kind: 'cultivator', id: worker.id,
         name: worker.name, onDay: run.elapsedDays, sourceKind: 'witnessed', stage: 'encountered' });
     const duty: Duty = { origin: 'commission', posture: 'assigned', factionId: house.id,
@@ -112,6 +125,7 @@ describe('a member hires their duty out', () => {
             locationId: h.worker.locationId });
         h.world.npcs.push(coworker);
         const place = h.world.locations.find(p => p.id === coworker.locationId)!;
+        h.repos.cultivators.update(h.id, { location: place.name });
         h.repos.cultivators.standIn(h.id, theAreasOf(h.world, place).whereIs.get(coworker.id)!);
         h.game.knowledge.learnIfNew({ holderId: h.id, kind: 'cultivator', id: coworker.id,
             name: coworker.name, onDay: h.run.elapsedDays, sourceKind: 'witnessed', stage: 'encountered' });

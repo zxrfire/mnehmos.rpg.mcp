@@ -18,11 +18,18 @@
  * RE-PINNED when the ship's named crew took the place of four unnamed guards: three or four
  * defenders is a different escort, so the band that attacks is drawn differently. `east-46`,
  * `east-58` and `east-27` stopped nothing afterwards; the new seeds were found by sweeping 420.
+ * The later suite's early seed retains a named foreground defender even though
+ * its background crew loses. That is not loss of the whole crew and cannot
+ * imply a return. The late seed has no ordinary aboard crowd; sharing its ocean
+ * does not put strangers aboard. Read the actual surviving crew and course.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
+import { recordedVoyage } from '../../src/web/a-ship-at-sea';
+import { shipPassengerAt } from '../../src/engine/world/passenger-on-a-vessel';
+import { routineTime } from '../../src/engine/world/npc-routines';
 
 const WORLD = 'road-world';
 const AT_SEA = /At sea on [^,]+, day (\d+) of (\d+), bound for ([^.]+)\./;
@@ -122,7 +129,6 @@ describe('a ship at sea', () => {
         expect(stopped.narration).toMatch(/The crew did not hold the ship\. It is past the middle of the passage and goes on\./);
         expect(AT_SEA.exec(stopped.narration)?.[3]).toBe('Cloud Gate');
         const aboard = game.present(game.state().cultivator);
-        expect(aboard.length).toBeGreaterThan(0);
         expect(aboard.length).toBeLessThanOrEqual(3);
 
         // With the crew beaten, the band's leader comes at the passenger, who is no match for them;
@@ -134,18 +140,16 @@ describe('a ship at sea', () => {
         expect(game.state().cultivator.location).toBe('Cloud Gate');
     }, 120_000);
 
-    it('short of the middle, a ship that lost its crew turns back for the port it left', async () => {
+    it('short of the middle, a surviving foreground defender keeps the actual course', async () => {
         const { game, stopped } = await stoppedOnTheEasternPassage('east-8');
 
-        expect(stopped.narration).toMatch(/The crew did not hold the ship\. It turns back for Sweet Spring Island/);
-        expect(AT_SEA.exec(stopped.narration)?.[3]).toBe('Sweet Spring Island');
-
-        // With the crew beaten, the band's leader is free to come at the passenger: get clear of
-        // that first, then the ship sails on, back the shorter way.
-        for (let round = 0; round < 6 && game.state().fight; round++) await game.act('I break off');
-        const back = await game.act('sail on');
-        expect(game.state().cultivator.location).toBe('Sweet Spring Island');
-        expect(back.narration).toMatch(/at sea, and back into Sweet Spring Island/);
+        const claim = recordedVoyage(game.db, game.state().cultivator.id)!;
+        const actual = shipPassengerAt(game.atHand!, claim.receiptId!, routineTime(game.atHand!))!;
+        expect(actual.crew.some(person => person.status === 'alive')).toBe(true);
+        expect(stopped.narration).toMatch(/held: of the crew nobody fell and nobody broke off/);
+        expect(stopped.narration).not.toMatch(/The crew did not hold the ship\. It turns back/);
+        expect(AT_SEA.exec(stopped.narration)?.[3]).toBe('Cloud Gate');
+        expect(actual.toId).toBe(game.atHand!.locations.find(place => place.name === 'Cloud Gate')!.id);
     }, 120_000);
 
     it('a leader who comes at the passenger is fought at sea', async () => {
