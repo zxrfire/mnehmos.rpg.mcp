@@ -22,6 +22,9 @@
  * test that pins one is pinning a coincidence.
  * The early arm arranges the opponent still ahead after the opening round:
  * starting whole does not imply they are still winning after a blow lands.
+ * The late arm arranges the actual held opponent behind after the opening,
+ * too. The census selected a different person from the pre-worn raw roster;
+ * eight offers then ended in the player's death, which was mistaken for mercy.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -123,6 +126,11 @@ describe('mercy is a decision with a price on it', () => {
         // either. The fight itself says who it actually is; read the id off
         // it rather than trusting the npc we pre-wore.
         const opponentId = game.fight!.state.defender.input.id;
+        const fight = game.fight!.state;
+        const mine = fight.aggressor.input;
+        const theirs = fight.defender.input;
+        fight.hp[mine.id] = mine.maxHp!;
+        fight.hp[theirs.id] = theirs.maxHp! * 0.25;
 
         let ended: any = null;
         for (let round = 0; round < 8 && ended === null; round++) {
@@ -132,6 +140,7 @@ describe('mercy is a decision with a price on it', () => {
             if (!game.state().cultivator.alive) break;
         }
         expect(ended, 'the fight never ended in a sparing').not.toBeNull();
+        expect(game.state().cultivator.alive, 'the resolved ending must be mercy, not the player dying').toBe(true);
 
         // ── THEY ARE ALIVE, WHICH IS THE ENTIRE RISK ─────────────────────
         const after = await game.loadWorld();

@@ -1651,19 +1651,15 @@ describe('what a cultivator carrying open channels is told', () => {
             'a countdown to a death that no longer happens'
         ).toBeUndefined();
 
-        // The inspector panel still carries the numbers, and they are the true
-        // ones: how long the channels have been open, and what they cost.
-        //
-        // Asserted on the figures rather than on the field names. This channel
-        // is read by the PLAYER as well as by an operator - the promise is that
-        // the engine's arithmetic is visible, not that it is dumped - so
-        // `untreatedInjuries=2 of 3 ..., daysChannelsOpen=90, rateLost=20%`
-        // became a sentence carrying the same three numbers.
+        // The later surface ruling bans raw percentages in the play log. Keep
+        // the injury count and elapsed days, and state the bodily impairment;
+        // the inspector's cultivation result retains the native rate figure.
         const line = logged.find(row => /untreated injur/i.test(row.text));
         expect(line, 'no injury figures on the mechanical channel').toBeDefined();
         expect(line!.text).toMatch(/\d+ untreated injur\w+ of the \d+/);
         expect(line!.text).toMatch(/open \d+ days?/);
-        expect(line!.text).toMatch(/costing \d+% of the cultivation rate/);
+        expect(line!.text).toContain('These wounds slow cultivation.');
+        expect(line!.text).not.toMatch(/\d+%/);
     });
 
     it('is a clock the treatment route beats, with room to spare', async () => {

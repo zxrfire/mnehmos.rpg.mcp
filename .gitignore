@@ -137,3 +137,7 @@ intent-trace-*.txt
 
 # Local scratch. Never committed, including anything explaining it.
 /reference-material/
+
+# Diagnostic observations produced by the played transport controls.
+.claude/public-wreck-presence-*.jsonl
+.claude/transport-revision*-observations.jsonl

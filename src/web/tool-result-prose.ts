@@ -37,6 +37,14 @@ export const MAX_LOGGED_EVENTS = 40;
  */
 export const ONLY_FOR_AN_OPERATOR = 'Roll: ';
 
+/** Diagnostic rows remain inspectable, but do not describe perceived events. */
+export function onlyForOperator(line: string): boolean {
+    return line.startsWith(ONLY_FOR_AN_OPERATOR) || line.startsWith('World digest: ')
+        || line.startsWith('Operator: ');
+}
+
+export function operatorDetail(line: string): string { return `Operator: ${line}`; }
+
 /**
  * A structure line, with the name of the function that produced it taken off.
  */
@@ -438,7 +446,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         const crippledAt = mine?.mortality?.crippledInjuryThreshold;
         const rateLoss = mine?.mortality?.injuryRatePenalty;
         const cost = typeof rateLoss === 'number' && rateLoss > 0
-            ? ` They are taking ${Math.round(rateLoss * 100)}% of the cultivation rate.`
+            ? ' These wounds slow cultivation.'
             : '';
         if (typeof carried === 'number' && typeof crippledAt === 'number' && carried > 0) {
             lines.push(
@@ -963,7 +971,7 @@ export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
             `World digest: ${digest.lines.length} line(s) reached this cultivator; ` +
             `${digest.unheard} event(s) reached them by no channel at all.`,
             ...digest.lines.map(line =>
-                `  A ${line.kind.replace(/_/g, ' ')} reached them via ${line.channel}, in `
+                `World digest: a ${line.kind.replace(/_/g, ' ')} reached them via ${line.channel}, in `
                 + `${line.form} form, at magnitude ${line.magnitude}`
                 + `${line.occurrences === 1 ? '.' : `, ${line.occurrences} times over the span.`}`)
         ]

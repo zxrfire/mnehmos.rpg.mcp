@@ -530,7 +530,7 @@ async function theSentenceSaysSoToo(input: string, chosen: ActionName): Promise<
         // way. The table reads it as unclear - it rules explicitly that
         // sitting DOWN is taking a seat - the model read `cultivate`, this
         // said the sentence agreed, and the guard let it through.
-        return verbForASentenceThePatternsMissed(
+        return await verbForASentenceThePatternsMissed(
             input, { action: FALLBACK_ACTION }
         ).then(settled => settled.action === chosen);
     } catch {

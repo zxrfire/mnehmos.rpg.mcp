@@ -173,9 +173,9 @@ const rungs = (n: number): string => `${n} rung${n === 1 ? '' : 's'}`;
  * reason the question was asked.
  */
 const WHY_A_TEACHER_MATTERS: Record<TeacherInput['manualState'], string> = {
-    no_method: 'No method is practised, so the rate multiplier is zero and nothing '
+    no_method: 'No method is practised, so nothing '
         + 'accumulates however long they sit. A teacher is one of the two ways out of that.',
-    exhausted: 'The manual has stopped carrying them, so the rate multiplier is zero past '
+    exhausted: 'The manual has stopped carrying them, so nothing accumulates past '
         + 'where it ends. Being taught across is one of the three ways past that.',
     teaching: 'The manual is still carrying them, so a teacher would be an improvement '
         + 'rather than the thing standing between them and any progress at all.'

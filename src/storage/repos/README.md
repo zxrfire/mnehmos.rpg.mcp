@@ -20,6 +20,9 @@ the existence engine also preserves the person's identity.
 `WorldStateRepository` round-trips the runtime's appointment cursor and retained
 postings, each NPC's taken-name day, and structural convalescence in activity JSON.
 Absent optional lifecycle fields remain absent on older rows.
+It also preserves NPC insights and their actual achievement records. A restart
+must retain what a person learned from lived instruction; absent records on old
+rows remain absent, while an explicitly empty collection stays empty.
 
 The two rules that matter when adding one:
 

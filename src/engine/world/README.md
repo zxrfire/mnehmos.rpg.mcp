@@ -2,6 +2,14 @@
 
 # The World Layer
 
+`houseSeatRegions` owns existing physical house placement, shared with birth:
+last region listing wins, with the existing first-region fallback for an unlisted
+house. It does not change political jurisdiction or world placement.
+
+`house-standing.ts` holds the shared alliance/rival line. Gathering, sending and
+allocation read that dependency leaf, so an import cycle cannot initialize a
+hostility boundary as NaN. The existing numeric line and public re-exports remain.
+
 Whole-compound counts read the same actual journey position as its rooms.
 An assigned destination alone neither puts an incoming member inside nor removes
 a departing member before departure; counting does not advance their journey.
@@ -4873,8 +4881,8 @@ without erasing the route, return or standing-post obligation.
 Catalog power sizes a house's external posts; its head's later advancement does
 not create additional establishments. Relief still requires the replacement's
 actual arrival before the incumbent leaves. Quarterly business retains four
-35% dispatch opportunities per house-year. Reports take 1–3 days on site,
-envoy escorts 3–7, and trading 7–21. Both travel legs use the actual road and
+35% dispatch opportunities per house-year. Reports take 1-3 days on site,
+envoy escorts 3-7, and trading 7-21. Both travel legs use the actual road and
 admitted ship itinerary; calendar attendance retains its existing dated span.
 Each homecoming sweep continues a shuttle once for its whole selected sending.
 It groups pending sendings by their actual members once for the sweep, without

@@ -15,6 +15,9 @@
  *
  * The note was fixed where it is written. This is the net, because that field
  * is read at three sites and filled by every tool in the game.
+ * Unheard world counts are inspector diagnostics. The census printed them
+ * into this same transcript; the guard also requires their original inspection
+ * receipts to survive, so deleting the facts cannot satisfy the boundary.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -171,6 +174,7 @@ describe('the engine log is read by somebody standing in a room', () => {
         expect(somebody, roster.narration.slice(0, 200)).toBeTruthy();
 
         const offences: string[] = [];
+        const worldDiagnostics: string[] = [];
         for (const said of [
             "I look around",
             "I assess myself",
@@ -195,7 +199,10 @@ describe('the engine log is read by somebody standing in a room', () => {
         ]) {
             const answer = await game.act(said) as unknown as {
                 state: { log: Array<{ role: string; text: string }> };
+                toolCalls: Array<{ name: string; summary: string }>;
             };
+            worldDiagnostics.push(...answer.toolCalls.filter(call => call.name === 'world.advanceWorldForPlay')
+                .map(call => call.summary));
             const rulings = (answer.state.log ?? []).filter(row => row.role === "engine");
             for (const row of rulings) {
                 for (const [what, re] of [
@@ -210,6 +217,8 @@ describe('the engine log is read by somebody standing in a room', () => {
             }
         }
 
+        expect(worldDiagnostics.length, 'the world diagnostic receipts must remain inspectable').toBeGreaterThan(0);
+        expect(worldDiagnostics.every(line => line.startsWith('World digest: '))).toBe(true);
         expect(
             [...new Set(offences)],
             "The engine log sits on the same screen as the prose and is rewritten by "

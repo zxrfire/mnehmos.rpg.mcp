@@ -26,7 +26,7 @@
  * Pure. Standings and a count in, an allocation out. Nothing here moves anybody.
  */
 
-import { ALLIED_STANDING } from './gatherings.js';
+import { ALLIED_STANDING } from './house-standing.js';
 
 /** What a place bought is: one opening at a door, or a tour at a posting. */
 export type WhatEachPlaceIs = 'one_opening' | 'a_tour';

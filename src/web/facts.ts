@@ -207,7 +207,7 @@ export function observable(headline: string, lines: string[], prose: string, str
 
 const AMBIENT_IN_WORLD: Record<AmbientQi, string> = {
     thin: 'Qi density thin: half cultivation rate, and a penalty to breakthrough odds. Drawn down long ago, or never rich.',
-    normal: 'Qi density ordinary: no modifier either way. Inhabited land.',
+    normal: 'Qi density ordinary: cultivation proceeds at its ordinary rate. Inhabited land.',
     dense: 'Qi density dense: double cultivation rate, and a bonus to breakthrough odds. A vein near the surface, or ground nobody has worked.',
     spirit_tide: 'Qi density spirit tide: triple cultivation rate and the largest breakthrough bonus in the table. A vein shifting, a seal failing, a season turning over. Temporary.',
     sealed_vein: 'Qi density sealed vein: quadruple cultivation rate and a substantial breakthrough bonus. Never drawn on. Weight zero in the ambient roll - this is found, not encountered.'
@@ -528,8 +528,9 @@ export function standingStructure(cultivator: Cultivator, ambient: AmbientQi): s
         // fact and is what replaced it.
         `${untreated} untreated injur${untreated === 1 ? 'y' : 'ies'} of the `
         + `${CRIPPLING_UNTREATED_INJURIES} at which the body stops mending. The channels have `
-        + `been open ${daysOpen} day${daysOpen === 1 ? '' : 's'} and are costing ${rateLost}% `
-        + `of the cultivation rate. ${cultivator.yearsAtCurrentRealm.toFixed(1)} years held at `
+        + `been open ${daysOpen} day${daysOpen === 1 ? '' : 's'}. `
+        + (rateLost > 0 ? 'These wounds slow cultivation. ' : '')
+        + `${cultivator.yearsAtCurrentRealm.toFixed(1)} years held at `
         + `this rank of the ${settling} the ladder credits before settling.`,
         describeAmbientInWorld(ambient)
     ];

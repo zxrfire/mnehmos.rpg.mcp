@@ -30,11 +30,12 @@
  * what a verb costs.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ProviderNarrator } from '../../src/web/narrator';
 import { parseIntent, TIME_CONSUMING_ACTIONS, type ActionName } from '../../src/web/actions';
 import { readyTheTier, verbForASentenceThePatternsMissed } from '../../src/web/reaching-a-verb-the-pattern-table-has-no-line-for';
+import * as semanticTier from '../../src/web/reaching-a-verb-the-pattern-table-has-no-line-for';
 import { ScriptedProvider } from './harness';
 
 function modelSaying(json: string) {
@@ -86,6 +87,24 @@ describe('a model may read a sentence differently', () => {
 });
 
 describe('but it may not be why the turn became dangerous', () => {
+    /**
+     * The committed-head census exposed an asynchronous tier failure escaping
+     * corroboration's catch. An unavailable reader supplies no corroboration;
+     * it must neither spend the player nor reject the entire planning turn.
+     */
+    it('declines an expensive reading when corroboration rejects asynchronously', async () => {
+        const reader = vi.spyOn(semanticTier, 'verbForASentenceThePatternsMissed')
+            .mockRejectedValue(new Error('Corroborating reader unavailable'));
+        try {
+            const plan = await modelSaying('{"action":"cultivate","days":30}')
+                .plan('I sit down', '');
+            expect(dangerous(plan.action.action)).toBe(false);
+            expect(plan.source).toBe('fallback');
+        } finally {
+            reader.mockRestore();
+        }
+    });
+
     it('declines an ask read as a fight, and says so', async () => {
         // The measured case. The table reads this as `interact`, which cannot
         // spend a day or write a wound; the model called it a duel to humiliate.

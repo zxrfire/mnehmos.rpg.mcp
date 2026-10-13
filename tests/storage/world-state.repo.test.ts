@@ -1,3 +1,9 @@
+/**
+ * A saved world retains every lived fact. The committed-head 500-year round
+ * trip discarded NPC achievements and insights because neither had a column.
+ * The short control also distinguishes absent legacy collections from recorded
+ * empty ones; the long strict round trip remains the integration control.
+ */
 import { describe, it, expect } from 'vitest';
 import Database from 'better-sqlite3';
 import { migrate } from '../../src/storage/migrations';
@@ -48,6 +54,28 @@ function protagonist(state: WorldState): string {
 
 describe('WorldStateRepository', () => {
     describe('whole-world round trip', () => {
+        it('preserves lived comprehension, its evidence, and absent or empty collections', () => {
+            const db = makeDb();
+            const repo = new WorldStateRepository(db);
+            const state = world();
+            const [learned, empty, untouched] = state.npcs;
+            learned.cultivation.achievements = [{ id: 'actual-instruction', kind: 'extraordinary_instruction',
+                onDay: state.currentDay, turn: 0, summary: 'Received instruction in the sword.', detail: {} }];
+            learned.cultivation.insights = [{ id: 'insight-from-instruction', domain: 'weapon', subject: 'sword', degree: 1,
+                provenance: { achievementId: 'actual-instruction', achievementKind: 'extraordinary_instruction',
+                    onDay: state.currentDay, deepenedBy: [], account: 'Received instruction in the sword.' } }];
+            empty.cultivation.achievements = [];
+            empty.cultivation.insights = [];
+            expect(untouched.cultivation.achievements).toBeUndefined();
+            expect(untouched.cultivation.insights).toBeUndefined();
+            repo.saveWorld(state);
+            const loaded = repo.loadWorld(state.id)!;
+            for (const person of [learned, empty, untouched]) {
+                expect(loaded.npcs.find(npc => npc.id === person.id)!.cultivation).toEqual(person.cultivation);
+            }
+            db.close();
+        });
+
         it('saves and reloads a seeded world identically, clock included', () => {
             const db = makeDb();
             const repo = new WorldStateRepository(db);

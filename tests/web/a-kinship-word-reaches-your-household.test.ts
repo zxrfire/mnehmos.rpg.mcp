@@ -23,6 +23,7 @@ import { theKinThisWordMeans } from '../../src/web/a-kinship-word-is-your-househ
 import { peopleInThisPlace } from '../../src/web/hearsay';
 import { worldLocationFor } from '../../src/web/entities';
 import { routineLocationOf } from '../../src/engine/world/npc-routines';
+import { whereCompoundsAre, whereTheyAreStanding } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 import { theOneIdAPersonIsKnownBy } from '../../src/engine/world/a-catalog-person-and-their-world-row';
 
 type Played = { narration?: string; toolCalls: { name: string; action: string; summary: string; ok: boolean }[] };
@@ -68,8 +69,10 @@ describe('played', () => {
         const person = world.npcs.find(npc => theOneIdAPersonIsKnownBy(npc.id) === raiser!.id);
         const personId = stored?.id ?? person?.id;
         expect(personId, 'the remembered parent needs an actual living row').toBeDefined();
+        const physical = person ? whereTheyAreStanding(world, whereCompoundsAre(world), person,
+            new Set(world.npcs.map(npc => npc.id))) : null;
         const where = stored ? worldLocationFor(world, stored.location)
-            : person ? world.locations.find(row => row.id === routineLocationOf(world, person)) : null;
+            : person ? world.locations.find(row => row.id === (physical ?? routineLocationOf(world, person))) : null;
         expect(where, 'the actual parent needs a physical place').toBeTruthy();
         harness.repos.cultivators.update(cultivator.id, { location: where!.name });
         const body = harness.repos.cultivators.getById(cultivator.id)!;

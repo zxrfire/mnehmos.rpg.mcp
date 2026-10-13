@@ -1213,7 +1213,7 @@ import {
     stonesNamedIn,
     structureCalls,
     summariseToolBody,
-    ONLY_FOR_AN_OPERATOR,
+    onlyForOperator,
     tollCalls,
     withoutTheHandlerName,
     withoutTheOverride,
@@ -4378,12 +4378,14 @@ export class GameService {
         // Lesser time is a fallback only for an execution that did not state a
         // time disposition. Facts are for the player and narrator, not a pricing
         // protocol: a person may naturally say "no time passed" in a real reply.
-        if (done.outcome !== 'refused' && !done.cutShort && done.timeDisposition === undefined && !done.calls.some(call => !call.ok)
+        if (nowRun.status === 'active' && done.outcome !== 'refused' && !done.cutShort && done.timeDisposition === undefined && !done.calls.some(call => !call.ok)
             && !done.calls.some(call => call.name === 'world.waitForHour')
             && Math.abs(nowRun.elapsedDays - run.elapsedDays - approach) < 1e-8) {
             const days = lesserActionDays(action);
             if (days > 0) {
-                const advanced = await passHours(this, nowRun, this.repos.cultivators.getById(cultivator.id) ?? cultivator, days * 24, run.turn + 1);
+                const nowCultivator = this.repos.cultivators.getById(cultivator.id);
+                if (!nowCultivator?.alive) return done;
+                const advanced = await passHours(this, nowRun, nowCultivator, days * 24, run.turn + 1);
                 if (advanced.spent) done = executionWithItsSpentSpan(done, advanced.spent,
                     advanced.finished ? done : advanced.spent);
                 if (!advanced.finished) return done;
@@ -12929,8 +12931,8 @@ ${opened.text}` : receipt,
         // `lines` serves the narrator and, through `summary` below, the
         // operator. `prose` is the deterministic account a player reads with no
         // model configured, and a raw die roll has no reader there. See
-        // `ONLY_FOR_AN_OPERATOR`.
-        const forThePlayer = lines.filter(line => !line.startsWith(ONLY_FOR_AN_OPERATOR));
+        // `onlyForOperator`.
+        const forThePlayer = lines.filter(line => !onlyForOperator(line));
 
         return {
             facts: factsForToolResult(
@@ -20700,8 +20702,13 @@ ${fit.line}`;
         // player watched happen. Read off `execution` rather than passed in,
         // so it cannot be got right at one call site and wrong at the other -
         // which is exactly how the skip path came to run this block at all.
+        const spans = execution.timeSkips ?? (execution.timeSkip ? [execution.timeSkip] : []);
+        const replyClocks = execution.calls.filter(call => call.name === 'engine.lesserActionTime').length;
+        // A gift's ordinary reply clock is still a scene. A folded turn that
+        // also lived a work or cultivation span remains a digest.
         const couldHaveSeenIt =
-            execution.timeSkip === null && placeName(playerBefore) === placeName(playerNow);
+            (execution.timeSkip === null || replyClocks > 0 && spans.length === replyClocks)
+            && placeName(playerBefore) === placeName(playerNow);
         const saidThisTurn = new Map<string, Set<string>>();
         for (const said of whatThePeopleHereAreAnswering({
             before: squareBefore,
@@ -22444,6 +22451,7 @@ ${fit.line}`;
             ? []
             : [{ role: 'engine', turn, text: execution.facts.headline }];
         for (const line of execution.facts.structure) {
+            if (onlyForOperator(line)) continue;
             entries.push({ role: 'engine', turn, text: withoutTheHandlerName(line) });
         }
         for (const event of execution.events.slice(0, MAX_LOGGED_EVENTS)) {

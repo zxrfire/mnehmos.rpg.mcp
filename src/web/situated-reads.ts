@@ -3,6 +3,7 @@
  */
 
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
+import { operatorDetail, onlyForOperator } from './tool-result-prose.js';
 import { APEX_INSTITUTIONS, COURTS, SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import {
@@ -998,10 +999,10 @@ export const situatedReads = {
             + 'if it came up.'
         ]);
         facts.structure.push(
-            `${mine.length} dao ground(s) this cultivator can point at and `
+            operatorDetail(`${mine.length} dao ground(s) this cultivator can point at and `
             + `${carried.length} thing(s) carrying a road bound to them; ${inReach} in reach. `
             + `Standing: ordinal ${who.ordinal}, province ${who.regionCatalogId ?? 'none'}, `
-            + `house ${who.factionId ?? 'none'} at rank index ${who.factionRankIndex}.`
+            + `house ${who.factionId ?? 'none'} at rank index ${who.factionRankIndex}.`)
         );
 
         const execution = this.freeAction(run, 'roads', facts);
@@ -1014,7 +1015,7 @@ export const situatedReads = {
                 + `${inReach} in reach. Gated on canPointAt - the same predicate `
                 + `destinations and move enforce - plus the ground underfoot. Reach and `
                 + `refusal both from howSomebodyStandsToAGround, which is the rule the world `
-                + `runs for its own people.`,
+                + `runs for its own people. ${facts.structure.filter(onlyForOperator).join(' ')}`,
             ok: true
         }];
         return execution;

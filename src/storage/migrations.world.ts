@@ -326,6 +326,8 @@ export function migrateWorld(db: Database.Database): void {
       realm_ordinal INTEGER NOT NULL DEFAULT 0,
       qi REAL, -- NULL is a legacy balance never recorded; zero is an actual exhausted pool
       technique_cooldowns TEXT, -- sparse remaining catalog cooldowns from real NPC uses
+      insights TEXT, -- NULL before any lived comprehension was recorded
+      achievements TEXT, -- actual lived events referred to by those insights
       spirit_root TEXT NOT NULL,
       attributes TEXT NOT NULL DEFAULT '{}',         -- JSON might/insight/fortune/charm
       foundation TEXT NOT NULL DEFAULT 'incomplete', -- a history, not a rank
@@ -1102,6 +1104,12 @@ function addWorldColumns(db: Database.Database): void {
     // unchanged and must never become a free refill on another load.
     if (!npcColumns.includes('technique_cooldowns')) {
         db.exec('ALTER TABLE world_npcs ADD COLUMN technique_cooldowns TEXT;');
+    }
+    if (!npcColumns.includes('insights')) {
+        db.exec('ALTER TABLE world_npcs ADD COLUMN insights TEXT;');
+    }
+    if (!npcColumns.includes('achievements')) {
+        db.exec('ALTER TABLE world_npcs ADD COLUMN achievements TEXT;');
     }
     if (!npcColumns.includes('qi')) {
         console.error('[Migration] Adding qi column to world_npcs table');

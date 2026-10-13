@@ -17,6 +17,8 @@
  *
  * Seeds and world are the road test's own, so the fight that gets the player to
  * their knees is the same one `somebody-comes-at-you-on-the-road.test.ts` plays.
+ * Yield after actual damage, as that sibling does. Swinging until zero health
+ * killed all three subjects before a holder could decide about living submission.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -42,7 +44,7 @@ interface ProbeNpc {
     relationships: Record<string, unknown>[];
 }
 interface Held {
-    fight: { party: { id: string } } | null;
+    fight: { party: { id: string }; state: { hp: Record<string, number> } } | null;
     atHand: { currentDay: number; npcs: ProbeNpc[] } | null;
     worldPlaceOf(cultivator: unknown): string | null;
     state(): { cultivator: unknown };
@@ -82,15 +84,16 @@ async function aRiteHolderCameForYou(seed: string, sameSex = false) {
     }));
     const alive = () => (at.db.prepare('SELECT alive FROM cultivators WHERE id = ?')
         .get(cultivator.id) as { alive: number }).alive;
-    return { ...at, held, holder, playerId: cultivator.id, playerName: cultivator.name, alive };
+    const hurt = () => (held.fight?.state.hp[cultivator.id] ?? hp) < hp;
+    return { ...at, held, holder, playerId: cultivator.id, playerName: cultivator.name, alive, hurt };
 }
 
 /** Swing until the fight ends, with the holder's choice and any step-in forced. */
-async function fightItOutForced(game: { act: (s: string) => Promise<{ narration: string }> }, held: Held) {
+async function fightItOutForced(game: { act: (s: string) => Promise<{ narration: string }> }, held: Held, hurt: () => boolean) {
     const ran = await withTheAttemptLanding('attack', async () => {
         let last = '';
         for (let round = 0; round < 12 && held.fight !== null; round++) {
-            last = (await game.act('I keep swinging')).narration;
+            last = (await game.act(hurt() ? 'I yield' : 'I keep swinging')).narration;
         }
         return last;
     });
@@ -103,7 +106,7 @@ describe('a rite holder who takes everything at once', () => {
         await at.game.act(WHERE);
         expect(at.held.fight?.party.id).toBe(at.holder.id);
 
-        const ran = await fightItOutForced(at.game, at.held);
+        const ran = await fightItOutForced(at.game, at.held, at.hurt);
 
         expect(ran.result).toMatch(new RegExp(
             `${at.holder.name} does not keep you\\. They work Lotus-Plucking Ritual on you and take everything at once`
@@ -118,7 +121,7 @@ describe('a rite holder who takes everything at once', () => {
         await at.game.act(WHERE);
         expect(at.held.fight?.party.id).toBe(at.holder.id);
 
-        const ran = await fightItOutForced(at.game, at.held);
+        const ran = await fightItOutForced(at.game, at.held, at.hurt);
 
         expect(ran.result).toMatch(new RegExp(
             `Lotus-Plucking Ritual does not answer between you and ${at.holder.name}, and ${at.holder.name} does not keep you`
@@ -144,7 +147,7 @@ describe('a rite holder who takes everything at once', () => {
             note: 'Blood.', sinceDay: 0, lastChangedDay: 0, factIds: [], inheritedFromId: null
         });
 
-        const ran = await fightItOutForced(at.game, at.held);
+        const ran = await fightItOutForced(at.game, at.held, at.hurt);
 
         expect(ran.result).toMatch(new RegExp(`${kin.name} gets between you before it lands`));
         expect(at.alive()).toBe(1);

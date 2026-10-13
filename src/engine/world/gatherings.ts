@@ -4,6 +4,8 @@ import { npcCombatArts, writeTheNpcArtsActuallyUsed } from './the-arts-an-npc-ac
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
+import { ALLIED_STANDING } from './house-standing.js';
+export { ALLIED_STANDING } from './house-standing.js';
 import {
     realmForOrdinal,
     realmIndexOf,
@@ -74,7 +76,6 @@ import { whatItAddsInAFight } from './what-somebody-fights-with.js';
 /**
  * Standing at which two houses count as allied.
  */
-export const ALLIED_STANDING = 0.3;
 
 /**
  * How often a circle gathers, in years.

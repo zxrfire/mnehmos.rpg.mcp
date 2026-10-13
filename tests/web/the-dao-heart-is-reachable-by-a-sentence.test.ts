@@ -19,6 +19,8 @@
  * the accumulator, and the reprisals not killing the subject before the wall.
  * Nothing here forces an outcome; the obligations asserted on are the ones the
  * ordinary path wrote.
+ * A fatal crossing still returns its resolved receipt. The committed-head
+ * census instead tried to spend a lesser-action span on the newly dead body.
  */
 
 import { describe, expect, it, afterAll, beforeAll } from 'vitest';

@@ -39,6 +39,7 @@ import { SECTS, intakeRouteOf, type IntakeRoute } from '../../data/cultivation/s
 import { NO_PLACE_FOR_THEIR_OWN } from '../../data/cultivation/bodies-that-cannot-keep-their-members-children.js';
 import { houseFloorsOf } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
 import { housesWithTwoDoors } from './spending-a-word-to-place-a-child.js';
+import { houseSeatRegions } from '../world/where-the-catalog-seats-a-house.js';
 
 // THE WORLD A BIRTH IS DRAWN FROM
 //
@@ -136,6 +137,7 @@ export function catalogBirthWorld(): BirthWorld {
 
     const publishesADoor = new Set(housesWithTwoDoors().map(d => d.factionId));
     const noPlaceForTheirOwn = new Set(NO_PLACE_FOR_THEIR_OWN.map(row => row.factionId));
+    const physicalRegionOf = houseSeatRegions(REGIONS);
     const houses: BirthHouse[] = SECTS.map(sect => {
         // The `REGIONS` row, reached through the province the catalog seats the
         // house in. `Province.regionId` is the existing link between the two id
@@ -150,9 +152,7 @@ export function catalogBirthWorld(): BirthWorld {
         // held by a belief. The world seats all 34 anyway, through
         // `REGIONS[].factionIds`, and this reads the same list so that a birth
         // and the world agree about which houses have ground at all.
-        const seatRegionId = regionId
-            ?? REGIONS.find(r => r.factionIds.includes(sect.id))?.id
-            ?? null;
+        const seatRegionId = physicalRegionOf(sect.id);
         const floors = houseFloorsOf(sect.id);
         return {
             id: sect.id,

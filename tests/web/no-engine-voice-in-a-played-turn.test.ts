@@ -12,8 +12,8 @@
  * WHAT THIS PLAYS AND WHERE IT LOOKS. Twelve mechanics, a handful of sentences
  * each, through the real service - and then it reads EVERY channel a player can
  * end up in front of, which is the half that matters. The narration was already
- * clean; `structure`, carried on the tool calls, was not, and AGENTS.md is
- * explicit that it is shown in every mode:
+ * clean; `structure`, rendered into the play log, was not. Its player facts
+ * remain subject to the rule:
  *
  *   *"`structure` is the mechanical channel and it is shown to the player in
  *   every mode, so 'mechanical' has never meant 'may be unreadable'. It means
@@ -43,6 +43,11 @@
  * stones, 15 rations, two and a bit years, a wall somebody judges at roughly
  * one in three. This guard is about the engine naming its own machinery, never
  * about the engine being precise.
+ *
+ * The current web surface contract retains raw tool-call diagnostics in the
+ * inspector. This guard reads narration, event summaries and the actual play
+ * log. The census found both a wound-rate percentage on that surface and a
+ * grave key in the inspector; only the former is a player-facing defect.
  *
  * A NEW MECHANIC BELONGS IN THE LIST BELOW. That is the whole design of it: the
  * patterns are cheap and the coverage is the sentence list, so a mechanic
@@ -97,15 +102,14 @@ describe('what a played turn puts in front of a player', () => {
                 try {
                     const r = await h.game.act(said) as {
                         narration?: string;
-                        events?: unknown[];
-                        toolCalls?: Array<{ summary?: string }>;
+                        events?: Array<{ summary: string }>;
+                        state: { log: Array<{ text: string }> };
                     };
-                    // EVERY CHANNEL, not just the narrated one. `structure`
-                    // rides on the tool calls and is printed verbatim.
+                    // Every transcript channel, including rendered structure.
                     out = [
                         r.narration,
-                        ...(r.events ?? []).map(e => JSON.stringify(e)),
-                        ...(r.toolCalls ?? []).map(c => String(c.summary ?? ''))
+                        ...(r.events ?? []).map(e => e.summary),
+                        ...r.state.log.map(row => row.text)
                     ].filter(Boolean).map(String).join(' | ');
                 } catch (err) {
                     // A refusal is an answer and is read like any other.

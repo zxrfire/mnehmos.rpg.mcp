@@ -1,4 +1,5 @@
 import { initializeMetricGround } from './the-metric-ground-under-a-journey.js';
+import { houseSeatRegions } from './where-the-catalog-seats-a-house.js';
 /**
  * World seeding: turning the content catalogs into a world that is already running
  * when the player arrives.
@@ -1195,14 +1196,11 @@ function seedFactions(
     const out: FactionRecord[] = [];
     // The top of the ground scale belongs to whoever is actually strongest.
     const apexPowerOrdinal = catalog.factions.reduce((max, f) => Math.max(max, f.powerOrdinal), 1);
-    const regionForFaction = new Map<string, string>();
-    for (const region of catalog.regions) {
-        for (const id of region.factionIds) regionForFaction.set(id, region.id);
-    }
+    const regionForFaction = houseSeatRegions(catalog.regions);
 
     for (const cf of catalog.factions) {
         const rng = forStream(state.seed, 'seed-faction', cf.id);
-        const regionId = regionForFaction.get(cf.id) ?? catalog.regions[0]?.id ?? null;
+        const regionId = regionForFaction(cf.id);
         const region = regionId ? regions.get(regionId) ?? null : null;
         // A sect is a PLACE. Its seat used to be the region location, which
         // meant a disciple could be on the roll and had nowhere to walk to -

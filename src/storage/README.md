@@ -34,6 +34,8 @@ tenant-context.ts            the verified tenant a request resolves against
 The world runtime persists its partial-year appointment cursor and pending long
 postings as nullable JSON. NPCs persist `name_taken_on_day`; structural recovery uses
 the existing activity JSON. These are live state, with no duplicate outcome ledger.
+NPC insights and achievements use nullable JSON columns: old rows remain absent,
+and a recorded comprehension and the lived event it cites survive saving together.
 
 `migrations.ts` is a **shared registry that conflicts badly** when several agents edit it.
 Make the minimum one-line addition and nothing else.

@@ -8,12 +8,15 @@
  * way.
  * The room control now stands in an actual public crowd at waking hours.
  * Its birthplace had only one person present, so it never tested a room greeting.
+ * Advance the actual run from eight to ten before choosing the crowd; changing
+ * only currentHour left the greeting and its arranged company at different times.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld, ScriptedProvider } from './harness';
 import { parseIntent } from '../../src/web/actions';
+import { passHours } from '../../src/web/routine-invitations';
 import { theAreasOf, npcsInTheArea } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import {
     A_GREETING_TOPIC,
@@ -66,8 +69,9 @@ describe('the words reach the self-question', () => {
 describe('played', () => {
     it('"hello" to the room: up to three give their own names, nothing guessed or dropped', async () => {
         const { game, plans, provider, cultivator, repos } = await withAModel('greet-room');
+        const current = game.currentRun();
+        await passHours(game, current.run, current.cultivator, 2, current.run.turn + 1);
         const world = (await game.loadWorld())!;
-        world.currentHour = 10;
         const crowd = world.locations.filter(place => place.kind === 'settlement').flatMap(place =>
             theAreasOf(world, place).areas.filter(area => !area.id.includes('#room#'))
                 .map(area => ({ place, area, people: npcsInTheArea(world, area.id) })))

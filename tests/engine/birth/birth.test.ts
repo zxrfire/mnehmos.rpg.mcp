@@ -12,6 +12,9 @@
  * and then re-measures the outcome distribution through the harness that
  * already existed to confirm the wiring did not turn the axis into a
  * difficulty slider.
+ * The world also retains the grounds of three destroyed houses. The census's
+ * seat-count comparison included them as present birthplaces; compare living
+ * houses instead, while still checking every birth seat's actual name and region.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -344,11 +347,16 @@ describe('a run can open inside a house rather than beside one', () => {
             expect(built, `${house.id} has a birth seat the world never built`).toBeDefined();
             expect(built!.name, `${house.id} seat name disagrees with the world`)
                 .toBe(house.seat.name);
+            const region = state.locations.find(location => location.id === built!.parentId)!;
+            expect(region.data.catalogRegionId, `${house.id} physical seat region disagrees with birth`)
+                .toBe(house.seat.regionId);
             checked++;
         }
         // And every house the world seats has one here, not just the ones a
         // prefecture happens to hold.
-        expect(checked).toBe(state.locations.filter(l => l.kind === 'sect_seat').length);
+        const livingSeats = new Set(state.factions.filter(faction => faction.dissolvedOnDay === null)
+            .map(faction => faction.seatLocationId));
+        expect(checked).toBe(state.locations.filter(l => l.kind === 'sect_seat' && livingSeats.has(l.id)).length);
     });
 });
 
