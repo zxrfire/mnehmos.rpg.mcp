@@ -1,3 +1,9 @@
+/** The served-term control shortened only its obligation deadline and waited
+ * without food. Arrange the same native post term and actual carried provisions;
+ * retain the real relief and original contribution check. */
+import { theOneBeingPlayedStandsAtThisPost } from '../../src/engine/world/a-house-posts-the-one-being-played';
+import { writeFlag } from '../../src/server/consolidated/cultivation-support';
+import { FLAG_RATIONS_HELD } from '../../src/web/flag-keys';
 /**
  * Relief now waits for physical arrival; both people share the handover day.
  * A house puts the player on a posting, expects them there, looks in on them,
@@ -281,6 +287,8 @@ describe('holding the post', () => {
 
     it('served to its end, counts the served-posting rate over the term', async () => {
         const h = await atThePost('posted-served');
+        // Waiting for physical relief still consumes the member's actual provisions.
+        writeFlag(h.db, h.cultivator.id, FLAG_RATIONS_HELD, '150');
         const word = theirOpenPosting(h.game, h.cultivator.id)!;
         const runDay = Math.floor(h.game.currentRun().run.elapsedDays);
         // A tour taken up four hundred days ago, due tomorrow.
@@ -291,6 +299,12 @@ describe('holding the post', () => {
             dueOnDay: runDay + 1,
             tags: [...word.tags.filter(t => !t.startsWith('arrived:')), `arrived:${incurredOnDay}`]
         });
+        // Arrange that same served term on the native post, which drives physical relief.
+        const origin = h.game.atHand!.currentDay - h.game.currentRun().run.elapsedDays;
+        theOneBeingPlayedStandsAtThisPost(h.game.atHand!, { playerId: h.cultivator.id,
+            townId: h.post.townId, houseId: h.house.id,
+            sinceDay: origin + incurredOnDay, untilDay: origin + runDay + 1 });
+        h.game.theWorldMoved();
         const before = h.repos.sects.getMembership(h.cultivator.id)!.contribution;
         const ordinal = h.repos.cultivators.getById(h.cultivator.id)!.realmOrdinal;
 

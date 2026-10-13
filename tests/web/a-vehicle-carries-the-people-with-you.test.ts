@@ -1,8 +1,8 @@
 /**
  * A vehicle carries people as well as goods. The owner: "remember to test that they can carry
  * people", "remember to test parties too". Two people on the road with the player ride their
- * carriage with them and arrive where they arrive; a mount that seats two makes more than one
- * trip of three.
+ * carriage with them and arrive where they arrive. A two-seat mount cannot carry three
+ * on one leg; later loads require real return trips.
  * Ground vehicles are arranged on a road within one province; a sea route
  * correctly takes them to a landing rather than to the requested destination.
  * Oct11: the physical owned-passage path completed a novice's actual flight
@@ -89,16 +89,20 @@ describe('a vehicle and the people with you', () => {
             .toBe(arrived.id);
     }, 300_000);
 
-    it('makes more than one trip where it seats fewer than the party', async () => {
+    it('states the actual legs needed before a two-seat mount carries three', async () => {
         const { game } = await makeGameInWorld({ seed: 'road-party-mount', worldSeed: 'world-road-party-move' });
         const { cultivator: born } = await game.newRun('Wen Shu');
         const { cultivator, going } = twoOnTheRoadWithThem(game as any, born);
         (game as any).atHand.objects.push(aVehicleOf({ id: 'mount', conveyanceId: 'conv-mount-mortal',
             ownerId: cultivator.id, ownerName: 'Wen Shu', at: game.worldPlaceOf(cultivator) }));
 
+        const beforeDay = game.currentRun().run.elapsedDays;
         const turn = await game.act(`we ride the mount to ${going}`);
-        // Said to the player in the turn's own account: it goes back for the rest.
-        const said = [turn.narration ?? '', ...game.state().log.slice(-12).map(entry => entry.text)].join(' ');
-        expect(said, JSON.stringify({ calls: turn.toolCalls, narration: turn.narration })).toMatch(/goes back for the rest: 2 trips/);
+        expect(turn.narration).toMatch(/carries 2 people per leg.*3 were requested and need 2 actual legs/);
+        expect(turn.toolCalls.find(call => call.name === 'engine.priceJourney')?.ok).toBe(false);
+        const after = game.currentRun();
+        expect(after.cultivator.location).toBe(cultivator.location);
+        expect(after.cultivator.spiritStones).toBe(cultivator.spiritStones);
+        expect(after.run.elapsedDays).toBe(beforeDay);
     }, 300_000);
 });
