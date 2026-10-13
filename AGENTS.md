@@ -497,8 +497,11 @@ predicted: a house that never dies, a ladder that drains, a cascade nobody wrote
 worth doing, on demand, by an agent with the exploration harness under `explore/`, which
 walks worlds across seeds and reports what looks wrong. It is not part of `npm test` or CI:
 vitest only collects `tests/**/*.test.ts`, and nothing under `explore/` may be moved there.
-What an exploration finds becomes an ordinary split test (scenario, reachability, contract)
-before it is fixed, so CI keeps it from coming back.
+What an exploration finds gets a CI test before it is fixed, so it cannot come back, and
+the test is as small as the bug. The three-test split is for findings that hang on a long
+history (a house that only fails after centuries of decline); an arithmetic slip in a
+promotion needs one focused regression test and nothing more. A pattern applied where it is
+not needed is ceremony.
 
 ## Tests are living documentation
 
