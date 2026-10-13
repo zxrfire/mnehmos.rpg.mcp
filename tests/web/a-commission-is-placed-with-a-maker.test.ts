@@ -19,6 +19,10 @@
  * area rather than asking an earlier crowd from another area; the busy check
  * is made beside the maker before its due day, retaining the pending-work
  * assertion. Waiting for completion and actual interruption stay unchanged.
+ * The interruption fixture later reached day 365004 for work due on 365004;
+ * the piece was already made and held. That cannot interrupt pending work.
+ * It now arranges another paid word at the exact clock, using the native work
+ * duration, before taking its maker away. The other controls still play placing.
  */
 
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -34,6 +38,8 @@ import { whatIsBeingMade } from '../../src/engine/world/where-inside-a-house-som
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { worldLocationFor } from '../../src/web/entities';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
+import { routineTime } from '../../src/engine/world/npc-routines';
+import { daysAtTheWork } from '../../src/engine/social-leverage/commissioning-a-craft';
 
 const WORLD = 'a-commission-is-placed';
 
@@ -124,14 +130,21 @@ describe('a commission placed with a maker', () => {
         const found = await placeWithSomebody(taken);
         expect(found, 'nobody else here would take the work').not.toBeNull();
         const maker = found!;
-        const one = placed().find(p => p.makerId === maker.id)!;
+        const previous = placed().find(p => p.makerId === maker.id)!;
+        const today = routineTime(world());
+        const one: ACommissionPlaced = { ...previous, thingId: `pending-interruption:${previous.thingId}`,
+            placedOnDay: today, dueOnDay: today + daysAtTheWork(previous.ask.grade, maker.cultivation.realmOrdinal,
+                { aSlip: Boolean(previous.ask.slip) }), held: false, heldIds: undefined };
+        writeFlag(h.db, cultivatorId, FLAG_COMMISSIONS_PLACED, JSON.stringify([...placed(), one]));
+        const payer = h.repos.cultivators.getById(cultivatorId)!;
+        h.repos.cultivators.update(cultivatorId, { spiritStones: payer.spiritStones - one.stonesPaid });
         const at = world().npcs.findIndex(n => n.id === maker.id);
-        const today = Math.floor(world().currentDay);
         world().npcs[at] = {
-            ...maker,
+            ...maker, spiritStones: maker.spiritStones + one.stonesPaid,
             activity: { kind: 'out_with_a_party', note: 'Sent out with a party.', withIds: [], sinceDay: today, untilDay: today + 90 }
         };
         const turn = await h.game.act('I look around');
+        expect(today).toBeLessThan(one.dueOnDay);
         expect(said(turn)).toMatch(/set down the work/);
         expect(placed().some(p => p.thingId === one.thingId)).toBe(false);
         const owed = h.db.prepare('SELECT COUNT(*) AS n FROM obligations WHERE holder_id = ? AND subject_id = ?')
