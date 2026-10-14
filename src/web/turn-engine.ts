@@ -18,6 +18,13 @@ import { paidCarrierSource } from './an-actual-paid-passage.js';
 import { rationsHeld as readRationsHeld, drawFromPack as openRationsInThePack, putBackWhatWasNotEaten as returnUnopenedRations, setRationsHeld as writeRationsHeld } from './rations-in-the-actual-pack.js';
 import { spendAboardTheCarriage } from './an-actual-paid-passage.js';
 import { spendFollowingParty, answerFollowingParty } from './following-the-party-leader.js';
+import { joiningAPrivateParty, privatePartyInvitationLines } from './joining-a-private-party.js';
+import { swearingBrotherhoodWithAPerson, brotherhoodOfferedOnContact } from './swearing-brotherhood-with-a-person.js';
+import { privateWorkWithAPerson, privateWorkOffersAtTheBody, settlePrivateWorkAtTheBody, privateBusinessBoundaryDates } from './private-work-with-a-person.js';
+import { thePlayerReceivesPrivatePartyFinds } from './the-player-receives-a-private-party-find.js';
+import { recordAnActualPrivateGather } from '../engine/world/private-work-in-the-field.js';
+import { thePrivatePartyHuntsWithThePlayer } from './a-private-party-hunts-with-the-player.js';
+import { privateQuestionIdsAtTheActualBody } from './private-questions-at-the-actual-body.js';
 import { whatThisThingIs } from '../engine/world/what-a-house-gives-merit-for.js';
 import { exchangeOffers, tradeExchangeObject } from '../engine/world/wares-at-a-capital-exchange.js';
 import { reviewPlayerBeastContract } from '../engine/world/beast-cultivation-contracts.js';
@@ -4398,6 +4405,12 @@ export class GameService {
             factsForRefusal('This life has ended.', 'The actual body cannot perform this act. Nothing spent and no time passed.'));
         const peopleBeforeHandler = this.present(cultivator);
         let done = await this.executeAction(action, run, cultivator, ambient, rawInput);
+        const actualBody = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+        done.facts.lines.push(...this.settlePrivateBusinessAtBodyBoundary(false, false));
+        const privateInvitations = [...privatePartyInvitationLines(this, actualBody), ...brotherhoodOfferedOnContact(this, actualBody),
+            ...privateWorkOffersAtTheBody(this, actualBody)];
+        done.facts.lines.push(...privateInvitations);
+        done.facts.required = [...(done.facts.required ?? []), ...privateInvitations];
         // A reply belongs to the moment its handler resolved it. Capture the card
         // after that handler's immediate writes, while the person is still in the
         // approached area, and before the generic lesser-action clock advance can
@@ -4700,7 +4713,11 @@ export class GameService {
         rawInput = ''
     ): Promise<Execution> {
         const partyReply = answerFollowingParty(this, run, cultivator, rawInput);
-        if (partyReply) return partyReply;
+        if (partyReply) {
+            // The settled decision is heard before the next movement. Leaving remains an act.
+            partyReply.timeDisposition = 'no_op';
+            return partyReply;
+        }
         const auction = await attendACapitalAuction(this, run, cultivator, action, rawInput);
         if (auction) return auction;
         if (action.action === 'project' || action.action === 'possess' || action.action === 'reconstruct') {
@@ -4711,6 +4728,12 @@ export class GameService {
         if (canExistBeyondTheLid(cultivator) && MORTAL_WORLD_ACTIONS.includes(action.action)) {
             return this.aboveTheLid(run, cultivator, action.action);
         }
+        const privateParty = await joiningAPrivateParty(this, run, cultivator, action, rawInput);
+        if (privateParty) return privateParty;
+        const brotherhood = await swearingBrotherhoodWithAPerson(this, run, cultivator, action, rawInput);
+        if (brotherhood) return brotherhood;
+        const privateWork = await privateWorkWithAPerson(this, run, cultivator, action, rawInput);
+        if (privateWork) return privateWork;
 
         // ── A HAGGLE IS NOT A PURCHASE, AND THIS ONE SPENDS MONEY ────────
         //
@@ -11594,6 +11617,8 @@ ${line}`;
         const pouched = withinReach && ground.taken > 0 ? withinReach : null;
         if (pouched) {
             addToPouch(this.db, cultivator.id, pouched.id, 'herb', 1);
+            if (this.atHand && recordAnActualPrivateGather(this.atHand, applied.cultivator,
+                this.worldPlaceOf(applied.cultivator), pouched.id, 1, routineTime(this.atHand))) this.theWorldMoved();
         }
 
         const calls: ToolCallRecord[] = [
@@ -21651,6 +21676,21 @@ ${fit.line}`;
             && throughPresence.standingIn === cultivator.standingIn;
         if (!actualProxyScene && betweenRoadEndpoints(this.repos.db, cultivator)) return null;
         return worldLocationFor(this.atHand, cultivator.location)?.id ?? null;
+    }
+
+    settlePrivateBusinessAtBodyBoundary(allowHuntStart = true, includeQuestions = true): string[] {
+        const work = [...settlePrivateWorkAtTheBody(this), ...thePlayerReceivesPrivatePartyFinds(this), ...thePrivatePartyHuntsWithThePlayer(this, allowHuntStart)];
+        if (includeQuestions && !this.fight && this.state().cultivator.alive) work.push(...privatePartyInvitationLines(this, this.state().cultivator),
+            ...privateWorkOffersAtTheBody(this, this.state().cultivator), ...brotherhoodOfferedOnContact(this, this.state().cultivator));
+        return work;
+    }
+
+    pendingPrivateOfferIdsAtBodyBoundary(): string[] {
+        return privateQuestionIdsAtTheActualBody(this);
+    }
+
+    privateBusinessBoundaryDates(): number[] {
+        return privateBusinessBoundaryDates(this);
     }
 
     settlePlagueAtTheBodyBoundary(): string[] {

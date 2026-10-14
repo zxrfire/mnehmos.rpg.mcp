@@ -32,6 +32,8 @@ function unfinishedWork(state: WorldState, person: NpcRecord, day: number): bool
     if (!Array.isArray(route)) return false;
     const phase = activity!.capitalMissionLeg ?? 0;
     if (phase < route.length) return true;
+    if (phase === route.length && factsWithDataValue(state, 'privateHuntPending', mission.id).length
+        && !factsWithDataValue(state, 'privateHuntResolved', mission.id).length) return true;
     const question = activity!.partyQuestionId ? witnessIndexFor(state).byId.get(activity!.partyQuestionId) : undefined;
     const workedUntil = question?.data.partyRouteQuestion === true ? question.day : day;
     return phase === route.length && activity!.untilDay != null

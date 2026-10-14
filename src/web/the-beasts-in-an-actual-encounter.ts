@@ -1,7 +1,7 @@
 /** Literal encountered beasts stand in the existing species and person machinery. */
 import { ENCOUNTERS } from '../data/cultivation/encounters.js';
 import { getBeast } from '../data/cultivation/beasts.js';
-import { standUpTheOneOnThisGround, idOfTheOneOnThisGround } from '../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
+import { standUpTheOneOnThisGround, idOfTheOneOnThisGround, theSpeciesItIs } from '../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { bandOf } from '../engine/world/hunting-a-spirit-beast.js';
 import { routineTime } from '../engine/world/npc-routines.js';
 import { worldLocationFor } from './entities.js';
@@ -11,6 +11,11 @@ import type { GameService } from './turn-engine.js';
 
 export function theEncounterBeasts(game: GameService, occurrence: EncounterOccurrence): NpcRecord[] | null {
     const world = game.atHand;
+    if (world && occurrence.kind === 'spirit_beast' && occurrence.source === 'digest' && occurrence.castIds.length) {
+        const place = worldLocationFor(world, game.currentRun().cultivator.location)?.id;
+        return world.npcs.filter(person => occurrence.castIds.includes(person.id) && person.status === 'alive'
+            && person.locationId === place && theSpeciesItIs(person) !== null);
+    }
     const speciesId = ENCOUNTERS.find(entry => entry.id === occurrence.entryId)?.beastId;
     const species = speciesId ? getBeast(speciesId) : null;
     const locationId = world && worldLocationFor(world, game.currentRun().cultivator.location)?.id;

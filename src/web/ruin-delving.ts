@@ -33,6 +33,8 @@ import { readAdmission } from '../data/cultivation/inheritance-trials.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { manualIdOf } from '../engine/world/manuals.js';
 import { recordACopyHeld } from '../server/consolidated/technique-manage.js';
+import { recordPlayerPrivatePartyPickup } from './the-player-receives-a-private-party-find.js';
+import { pouchQuantity } from '../storage/cultivator-pouch.js';
 import { elementalHostility } from './summit-play.js';
 
 const POSITION = 'ruin_chamber';
@@ -298,7 +300,10 @@ export async function delveRuin(
                     note: `Recovered while working ${current!.name}.` });
                 world.objects[world.objects.findIndex(row => row.id === object.id)] = { ...taken, locationId: null };
                 const manual = manualIdOf(object);
+                const before = manual ? pouchQuantity(service.db, me.id, manual) : 0;
                 if (manual) recordACopyHeld(service.db, me.id, manual);
+                recordPlayerPrivatePartyPickup(service, me, object.id, !!manual,
+                    manual ? pouchQuantity(service.db, me.id, manual) - before : undefined);
             }
             append(done, loose.length > 0
                 ? [`You picked up ${loose.map(row => row.name).join(', ')}.`]

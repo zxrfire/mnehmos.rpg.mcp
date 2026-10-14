@@ -57,6 +57,7 @@ export function comesAtYou(occurrence: EncounterOccurrence): boolean {
     if (!threat || !threat.engageable || threat.avoidable) return false;
     if (occurrence.account) return true;
     if (occurrence.scene || occurrence.duty) return false;
+    if (occurrence.source === 'digest' && occurrence.kind === 'spirit_beast' && occurrence.castIds.length) return true;
     const entry = ENCOUNTERS.find(row => row.id === occurrence.entryId);
     if (!entry || (!needsToFindYou(entry) && entry.kind !== 'spirit_beast')) return false;
     const tags = new Set(entry.tags);

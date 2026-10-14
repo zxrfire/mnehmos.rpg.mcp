@@ -6,6 +6,7 @@ import { privateVenturesThisYear } from './private-ventures.js';
 import { closePeopleThisYear } from './close-people-go-together.js';
 import { plagueAppointments, plagueOutbreaksThisYear, withPlagueAppointments } from './plague-in-a-place.js';
 import { privatePaidWorkThisYear, settlePrivateWork, privateWorkAppointment } from './private-paid-work.js';
+import { departAfterPrivateInvitations } from './a-private-party-invites-the-player.js';
 import { publicCaptainsAtTheirAppointments,publicCaptainHoldAppointments } from './a-public-captain-protects-their-passengers.js';
 import { captainWaterAppointments } from './a-captain-aids-a-vessel-they-met.js';
 import { nativePilotsAtTheirAppointments } from './a-native-pilot-answers-trouble.js';
@@ -5083,6 +5084,7 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
     const routes = routeQueriesFor(state.locations);
     settleHiredDuties(state, day);
     settlePrivateWork(state, day, undefined, undefined, (id, due) => schedule?.(`private-work:${id}:${due}`, due));
+    departAfterPrivateInvitations(state, day, (id, due) => schedule?.(`private-party:${id}:${due}`, due));
     publicCaptainsAtTheirAppointments(state, day);
     nativePilotsAtTheirAppointments(state, day);
     const reliefDays = new Map<string, number>();

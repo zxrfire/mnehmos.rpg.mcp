@@ -5055,6 +5055,24 @@ not silently perform a SQL player's work or resolve their party combat.
 Close Native people can organise their own private journey or hunt through that
 same itinerary, capacity and risk machinery. Any close tie can supply company;
 sworn siblings are called first. Mutual brotherhood enters the ordinary oath
-ledger and sworn-sibling lineage edges. Native-only hunt resolution excludes a
-party containing the player; actual player following and common foreground risk
-remain the separate transport/admission integration.
+ledger and sworn-sibling lineage edges. Native-only hunts resolve their actual
+beast here. A met human party instead holds the pending beast and ground for the
+existing party question and shared foreground fight. Every member answers, and
+the leader can overrule the human. The actual fight closer supplies completion;
+the stalk deadline alone does not finish the hunt or start the return.
+
+Private invitations admit a human only after their explicit answer. Personal
+pupils can accompany their own elder, or a going elder who accepted another
+elder's favour request. The actual quote reads the contacted SQL body, access,
+capacity and sponsoring purse; it creates no second fare. An unanswered invitation
+ends after the existing discussion window, allowing the native plan to proceed.
+Foreground private requests use the existing local exchange duration; native
+background requests retain their existing duration and ordinary decision.
+
+The actual-body adapters read personal favours and released private words from
+the ordinary ledger before resolving private business. Goods need actual harvest,
+production and custody receipts; wages need completion and a reachable payment
+meeting. Paid road protection can quote a single outward course without a hidden
+return. Human followers record its admitted finite foot course and their matching
+actual arrival. Native attrition and cultivation writers cannot substitute a
+player mirror for the real body's held encounters, combat or learning acts.

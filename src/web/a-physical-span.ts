@@ -36,6 +36,7 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
         finishTurn?: boolean;
     } = {}): Promise<ASpentWorldSpan & { world: WorldReport }> {
     game.atHand = await prepareWorldClockForPreciseSpan(run, body);
+    const questionsBefore = new Set(game.pendingPrivateOfferIdsAtBodyBoundary());
     const startingPlagueLines = [...game.settlePlagueAtTheBodyBoundary(), ...game.settleCaptainTroubleAtTheBodyBoundary()];
     let captainStop: string | null = null;
     body = game.repos.cultivators.getById(body.id) ?? body;
@@ -75,7 +76,8 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
                 const leg = source();
                 const dated = typeof events.dates === 'function' ? events.dates(start + elapsed) : events.dates ?? [];
                 const next = nextWorldClockBoundary(state, start + elapsed, start + requested,
-                    [...(leg ? [leg.endsOnDay, ...(leg.vertexDates ?? [])] : []), ...dated]);
+                    [...(leg ? [leg.endsOnDay, ...(leg.vertexDates ?? [])] : []), ...dated,
+                        ...game.privateBusinessBoundaryDates()]);
                 return next ? next.onDay - start : null;
             },
             commitProvisions: cumulative => {
@@ -93,11 +95,14 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
                 world.lines.push(...report.lines); world.structure.push(...report.structure);
                 events.afterBoundary?.();
                 world.lines.push(...game.settlePlagueAtTheBodyBoundary());
+                world.lines.push(...game.settlePrivateBusinessAtBodyBoundary());
                 const captainLines = game.settleCaptainTroubleAtTheBodyBoundary();
                 world.lines.push(...captainLines);
                 if (captainLines.length) captainStop = captainLines.join(' ');
             },
             whatStopsTheSpan: () => {
+                if (game.pendingPrivateOfferIdsAtBodyBoundary().some(id => !questionsBefore.has(id)))
+                    return 'A person here has asked you a private question.';
                 const current = source();
                 const fresh = game.repos.cultivators.getById(body.id);
                 const caught = fresh && activePlague(fresh, routineTime(game.atHand!));

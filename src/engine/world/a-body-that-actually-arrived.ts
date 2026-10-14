@@ -40,7 +40,8 @@ export function arrivalCourseOfActivity(activity: NpcActivity | null | undefined
 /** Historical accepted course or actual-arrival fact, never a passenger roster. */
 export function arrivalCourseOfFact(fact: HistoricalFact): ActualArrivalCourse | null {
     const data = fact.data;
-    if (data.publicPassage !== true && data.ownedPassage !== true && data.actualBodyArrival !== true) return null;
+    if (data.publicPassage !== true && data.ownedPassage !== true && data.actualBodyArrival !== true
+        && typeof data.followingPartyFootCourse !== 'string') return null;
     if (typeof data.fromLocationId !== 'string' || typeof data.toLocationId !== 'string'
         || typeof data.departureDay !== 'number' || typeof data.arrivalDay !== 'number') return null;
     const course = { fromLocationId: data.fromLocationId, toLocationId: data.toLocationId,
