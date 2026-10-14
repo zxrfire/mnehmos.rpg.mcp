@@ -249,7 +249,7 @@ describe('the yearly pass reached by waiting', () => {
             const roll = h.world.npcs.filter(person => isTheWorldsToMove(person)
                 && person.status === 'alive' && person.factionId === house.id);
             const decider = [...roll].sort((a, b) => b.factionRankIndex - a.factionRankIndex)[0];
-            const offices = portfoliosIn({ locations: h.world.locations, sectId: house.id,
+            const offices = portfoliosIn({ npcs: h.world.npcs, locations: h.world.locations, sectId: house.id,
                 roll: roll.map(person => ({ id: person.id, rankIndex: person.factionRankIndex })),
                 rankCount: house.ranks.length });
             return { house, roll, decider, offices,

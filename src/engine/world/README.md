@@ -4999,3 +4999,11 @@ price quote; counted pills keep their existing finite and grade authorities.
 
 A care endpoint releases only the clinician's own course; a new undertaking
 and its companions remain.
+
+A house's seven hall groups are read from its founded rooms in house-halls.ts.
+Founding office claims retain their holders' elder seats. Colliding claims give
+one hall head by the existing chair order; other actual halls use the ordinary
+covering deal. Room aliases answer through that one head. Ordinary work without
+its dedicated hall stays with the head, or Internal Affairs for care without
+Alchemy. It uses existing quarters; it creates no room or craft institution.
+New discipline, lecture and duelling rooms follow the surviving founded rooms.

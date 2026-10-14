@@ -1,3 +1,4 @@
+import { whoAnswersAbout } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 /** Opening custody, not a key replacement or office-succession mechanism. */
 import { purposeOf } from './architecture.js';
 import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
@@ -16,7 +17,7 @@ export function seedTheKeysThatOpenAHouse(state: WorldState): ObjectRecord[] {
         const roll = state.npcs.filter(n => n.status === 'alive' && n.factionId === house.id)
             .map(n => ({ id: n.id, rankIndex: rankIndexOnAHousesRoll(rolls, n.id, house.ranks.length) }))
             .filter(n => n.rankIndex >= 0);
-        const offices = portfoliosIn({ locations: state.locations, sectId: house.id, roll,
+        const offices = portfoliosIn({ npcs: state.npcs, locations: state.locations, sectId: house.id, roll,
             rankCount: house.ranks.length });
         for (const room of state.locations) {
             if (room.controllingFactionId !== house.id || typeof room.data.keyId !== 'string') continue;
@@ -25,7 +26,7 @@ export function seedTheKeysThatOpenAHouse(state: WorldState): ObjectRecord[] {
             seen.add(keyId);
             const purpose = purposeOf(room);
             // holderId already names the acting cover when a chair is vacant.
-            const custodian = people.get(offices.find(p => p.purpose === purpose)?.holderId ?? '');
+            const custodian = people.get(purpose ? whoAnswersAbout(offices, purpose) ?? '' : '');
             const key = makeObject({ id: `obj-${keyId}`, name: `Key to ${room.name}`, kind: 'key',
                 description: `The name ${room.name} is engraved on the key. It bears ${house.name}'s mark.`,
                 significance: 'notable', ownerId: house.id, ownerName: house.name,

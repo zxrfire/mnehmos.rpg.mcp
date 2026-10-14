@@ -142,7 +142,7 @@ import { maxQiForOrdinal } from '../engine/cultivation/realms.js';
 import { recordPermanentWounds } from '../engine/world/recording-the-day-a-wound-was-taken.js';
 import { whatAnEndingLeavesToTheHouse } from '../engine/world/a-house-that-ends-one-of-its-own-keeps-what-they-had.js';
 import { putIntoTheHouse } from '../engine/world/a-house-holds-its-own.js';
-import { purposeOf } from '../engine/world/architecture.js';
+import { roomForHouseWork, theHouseHasHoldingCells } from '../engine/world/where-a-house-does-its-work.js';
 import { THE_ROOM_COMPLAINTS_GO_TO } from '../engine/social-leverage/reporting-what-you-saw.js';
 import {
     whoIsSentToCarryItOut,
@@ -312,9 +312,7 @@ export function whatAFineComesTo(ordinal: number, severity: Severity): { contrib
  * would come to disagree about which room that is.
  */
 function theRoomThisHouseHearsIn(world: WorldState, houseId: string): LocationRecord | null {
-    return world.locations.find(place =>
-        place.data?.factionId === houseId
-        && purposeOf(place) === THE_ROOM_COMPLAINTS_GO_TO) ?? null;
+    return roomForHouseWork(world.locations, houseId, THE_ROOM_COMPLAINTS_GO_TO);
 }
 
 /** Nothing moved on any of the axes. Each branch overrides what it actually did. */
@@ -678,6 +676,10 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
         // Everybody else was refused here and told, honestly and wrongly, that
         // there was no record to carry it.
         const world = input.world ?? null;
+        if (world && !theHouseHasHoldingCells(world, input.houseId)) {
+            return routed(decided.carriedOutBy,
+                `${input.houseName}'s holding cells have no working arrays sufficient to hold a cultivator. No seal was laid and nobody was confined.`);
+        }
         const them = input.repos.cultivators.getById(input.offenderId);
         const npc = world === null ? null : getNpc(world, input.offenderId);
         const standing = (them !== null && them.alive) || (npc !== null && isActing(npc.status));

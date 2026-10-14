@@ -864,7 +864,7 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
     // AND ON WHAT AUTHORITY
     const world = await worldForRun(view.run).catch(() => null);
     const portfolios = world
-        ? portfoliosIn({
+        ? portfoliosIn({ npcs: world.npcs,
             locations: world.locations,
             sectId: view.sectId,
             // AND THE SEAT ITSELF. `view.elders` stops one rung short of the

@@ -1157,13 +1157,8 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     if (!input.recruits || input.tributeStonesPerYear > 0) out.push('audience_hall');
     if (input.tributeStonesPerYear > 0) out.push('tribute_room');
     if (input.holdsVein) out.push('vein_chamber');
-    // Somewhere to hold one of your own, and it takes both columns. A house
-    // that takes nobody in has nobody to discipline - what an apex does about
-    // an offence is not done in a cell - and a house whose arrays have gone
-    // dark cannot hold a cultivator anyway, which is the same
-    // `formationIntegrity` bar the shelf line above already reads rather than
-    // a second opinion about when a house's formations still work.
-    if (input.recruits && input.formationIntegrity >= 0.35) out.push('punishment_hall');
+    // Existing discipline rooms retain their slot; newly required rooms are appended below.
+    if (input.recruits && input.formationIntegrity >= CELL_HOLDING_INTEGRITY) out.push('punishment_hall');
     out.push('meditation_cell');
     // What the house will not spend, so it needs something coming in worth not
     // spending: ground of its own, a tribute arrangement it is a party to, or
@@ -1174,13 +1169,9 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
         out.push('treasury');
     }
     out.push('residence');
-    // A house that takes people in has people to talk to, the same column the
-    // dormitory and the mission hall read. APPENDED LAST so every room that
-    // existed before keeps its place in the list.
+    // Previously built lecture rooms retain their slot; every house teaches its existing members.
     if (input.recruits) out.push('lecture_hall');
-    // AND GROUND TO SETTLE SOMETHING ON, for a house with people to settle
-    // things between. APPENDED LAST for the same reason as the lecture hall:
-    // every room that existed before keeps its place in the draw.
+    // Previously built duelling grounds retain their slot; newly required grounds follow below.
     if (input.recruits) out.push('duelling_ground');
     // Every house keeps the lamps of its own, whether or not anybody in it can
     // light one today. APPENDED LAST for the same reason as the lecture hall.
@@ -1191,6 +1182,10 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     if (supports.artifacts) out.push('artifact_refining_hall');
     if (supports.pills && !out.includes('infirmary')) out.push('infirmary');
     if (supports.pills && !out.includes('furnace_room')) out.push('furnace_room');
+    // New rooms follow all surviving old rooms, including supported craft rooms.
+    if (!out.includes('punishment_hall')) out.push('punishment_hall');
+    if (!out.includes('lecture_hall')) out.push('lecture_hall');
+    if (!out.includes('duelling_ground')) out.push('duelling_ground');
     return out;
 }
 

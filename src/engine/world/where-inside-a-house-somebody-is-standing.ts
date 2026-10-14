@@ -221,7 +221,7 @@ export function whereTheyAreStanding(
         }
         if (compound.offices === null) {
             const faction = state.factions.find(row => row.id === compound.houseId);
-            compound.offices = portfoliosIn({
+            compound.offices = portfoliosIn({ npcs: state.npcs,
                 locations: state.locations,
                 sectId: compound.houseId,
                 roll: state.npcs

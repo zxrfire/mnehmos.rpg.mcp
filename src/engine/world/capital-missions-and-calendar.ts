@@ -718,7 +718,7 @@ function spareFor(state: WorldState, house: FactionRecord, day: number,graph:Rou
         const physical = locationOfNpcOnItsJourney(state,n,day,graph);
         return [n.id,physical ? exteriorGroundOfDeparture(state,physical,graph.places)?.id : null];
     }));
-    const rooms = portfoliosIn({ locations: state.locations, sectId: house.id,
+    const rooms = portfoliosIn({ npcs: state.npcs, locations: state.locations, sectId: house.id,
         roll: roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })), rankCount: house.ranks.length });
     const officers = new Set(rooms.map(r => r.holderId).filter(Boolean));
     const spare = whatTheHouseCanSpare({ seatLocationId: house.seatLocationId, rankCount: house.ranks.length,

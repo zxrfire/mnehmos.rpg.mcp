@@ -634,7 +634,7 @@ export function whoReadsTheHall(
     const there = roll.filter(n => n.locationId === seat);
     const holderId = theInternalAffairsElderIn(
         state.locations, house, roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex }))
-    );
+    , state.npcs);
     const holder = holderId === null ? undefined : there.find(n => n.id === holderId);
     if (holder) return { id: holder.id, name: holder.name };
     const senior = [...there].sort((a, b) => b.factionRankIndex - a.factionRankIndex

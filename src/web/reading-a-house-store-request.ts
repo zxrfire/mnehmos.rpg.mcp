@@ -1,3 +1,4 @@
+import { whoAnswersAbout } from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
 /** Extracted existing store authority; direct/fetched requests share it. */
 import { portfoliosIn } from '../engine/social-leverage/authority-for-an-order.js';
 import { whoStaffsWhat } from '../engine/social-leverage/who-works-in-an-elders-hall.js';
@@ -16,9 +17,9 @@ export function readHouseStoreRequest(world: WorldState, house: WorldState['fact
         .filter(n => n.rankIndex >= 0);
     const playerRank = rankIndexOnAHousesRoll(rolls, requesterId, house.ranks.length);
     if (playerRank >= 0) roll.push({ id: requesterId, rankIndex: playerRank });
-    const portfolios = portfoliosIn({ locations: world.locations, sectId: house.id, roll, rankCount: house.ranks.length });
+    const portfolios = portfoliosIn({ npcs: world.npcs, locations: world.locations, sectId: house.id, roll, rankCount: house.ranks.length });
     const posts = whoStaffsWhat({ portfolios, roll, rankCount: house.ranks.length });
-    const receivers = new Set([...portfolios.filter(p => p.purpose === purpose).map(p => p.holderId),
+    const receivers = new Set([whoAnswersAbout(portfolios, purpose),
         ...posts.filter(p => p.purpose === purpose).map(p => p.personId)]);
     return { roll, portfolios, receivers, rankCount: house.ranks.length, purpose, requesterId };
 }

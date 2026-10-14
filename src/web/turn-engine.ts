@@ -16371,7 +16371,7 @@ ${fit.line}`;
             { id: cultivator.id, rankIndex: held.rankIndex },
             ...roster.map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }))
         ];
-        const portfolios = portfoliosIn({
+        const portfolios = portfoliosIn({ npcs: world?.npcs ?? [],
             locations: world?.locations ?? [],
             sectId: held.sectId,
             roll,
@@ -17263,7 +17263,7 @@ ${fit.line}`;
         const roll = rosterFor(
             { repos: this.repos, knowledge: this.knowledge, world }, cultivator
         ).map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }));
-        const portfolios = portfoliosIn({
+        const portfolios = portfoliosIn({ npcs: world?.npcs ?? [],
             locations: world?.locations ?? [],
             sectId: held.sectId,
             roll: [{ id: cultivator.id, rankIndex: held.rankIndex }, ...roll],

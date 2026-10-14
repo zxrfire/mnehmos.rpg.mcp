@@ -633,7 +633,7 @@ export function setWhatEverybodyIsAt(state: WorldState, onDay: number): void {
             .filter(n => n.status === 'alive' && n.factionId === faction.id)
             .map(n => ({ id: n.id, rankIndex: n.factionRankIndex }));
         if (roll.length === 0) continue;
-        const portfolios = portfoliosIn({
+        const portfolios = portfoliosIn({ npcs: state.npcs,
             locations: state.locations, sectId: faction.id, roll, rankCount: faction.ranks.length
         });
         for (const person of roll) {

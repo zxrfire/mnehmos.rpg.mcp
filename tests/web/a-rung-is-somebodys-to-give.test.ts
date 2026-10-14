@@ -51,6 +51,8 @@
  * precinct before the elder could answer. Its refusal scene now meets the
  * same actual holder in the public forecourt; the offer and decision stay
  * unchanged. Authority is still read from the existing roll and portfolios.
+ * Oct13 applies the same real meeting to the success control: its eight asks
+ * otherwise reached an empty scripture pavilion after hall authority changed.
  */
 
 import { aRecruiterOfTheHouseIsHere, makeGameInWorld } from './harness';
@@ -125,7 +127,7 @@ async function inFrontOfTheHouse(
         { id: cultivator.id, rankIndex: held!.rankIndex },
         ...roster.map(p => ({ id: p.id, rankIndex: p.rankIndex ?? 0 }))
     ];
-    const portfolios = portfoliosIn({
+    const portfolios = portfoliosIn({ npcs: world.npcs ?? [],
         locations: world.locations ?? [],
         sectId: held!.sectId,
         roll,
@@ -168,6 +170,33 @@ async function inFrontOfTheHouse(
         .run(place!.name, cultivator.id);
 
     return { db, game, cultivator, held: held!, holder: holder!, somebodyElse: somebodyElse! };
+}
+
+/** Presence is arranged; the offer and the holder's decision remain real. */
+function meetInTheForecourt({ game, cultivator, held, holder }: Pick<
+    Awaited<ReturnType<typeof inFrontOfTheHouse>>, 'game' | 'cultivator' | 'held' | 'holder'>): void {
+    const world = game.atHand!;
+    const person = world.npcs.find(row => theOneIdAPersonIsKnownBy(row.id) === holder.id)!;
+    const court = world.locations.find(place => place.data.purpose === 'forecourt'
+        && (place.data.factionId === held.sectId || place.controllingFactionId === held.sectId))!;
+    expect(person).toBeDefined();
+    expect(court).toBeDefined();
+    const day = routineTime(world);
+    person.locationId = court.id;
+    person.activity = { kind: 'talking', note: 'Meeting a member in the forecourt.',
+        withIds: [cultivator.id], sinceDay: day, untilDay: day + 1,
+        redirect: { until: day + 1, previous: person.activity, visit: true } };
+    game.repos.cultivators.update(cultivator.id, { location: court.name, standingIn: null });
+    game.theWorldMoved();
+    const body = game.currentRun().cultivator;
+    const meeting = peopleInThisPlace(game.repos, body, world, court);
+    const faced = meeting.people.find(row => row.name === holder.name)!;
+    expect(faced).toBeDefined();
+    const area = meeting.whereIs.get(faced.id)!;
+    expect(area).toBeDefined();
+    person.activity.redirect!.standingIn = area;
+    game.repos.cultivators.standIn(cultivator.id, area);
+    expect(game.present(game.currentRun().cultivator).some(row => row.name === holder.name)).toBe(true);
 }
 
 const SEED = 'a-rung-is-somebodys-to-give';
@@ -231,28 +260,7 @@ describe('a rung is somebody\'s to give', () => {
     it('is refused by the person whose call it is, naming what would have worked', async () => {
         const { game, cultivator, held, holder } = await inFrontOfTheHouse(`${SEED}-refused`);
 
-        const world = game.atHand!;
-        const person = world.npcs.find(row => theOneIdAPersonIsKnownBy(row.id) === holder.id)!;
-        const court = world.locations.find(place => place.data.purpose === 'forecourt'
-            && (place.data.factionId === held.sectId || place.controllingFactionId === held.sectId))!;
-        expect(person).toBeDefined();
-        expect(court).toBeDefined();
-        const day = routineTime(world);
-        person.locationId = court.id;
-        person.activity = { kind: 'talking', note: 'Meeting a member in the forecourt.',
-            withIds: [cultivator.id], sinceDay: day, untilDay: day + 1,
-            redirect: { until: day + 1, previous: person.activity, visit: true } };
-        game.repos.cultivators.update(cultivator.id, { location: court.name, standingIn: null });
-        game.theWorldMoved();
-        const body = game.currentRun().cultivator;
-        const meeting = peopleInThisPlace(game.repos, body, world, court);
-        const faced = meeting.people.find(row => row.name === holder.name)!;
-        expect(faced).toBeDefined();
-        const area = meeting.whereIs.get(faced.id)!;
-        expect(area).toBeDefined();
-        person.activity.redirect!.standingIn = area;
-        game.repos.cultivators.standIn(cultivator.id, area);
-        expect(game.present(game.currentRun().cultivator).some(row => row.name === holder.name)).toBe(true);
+        meetInTheForecourt({ game, cultivator, held, holder });
 
         const acted = await game.act(
             `I bribe ${holder.name} with 4000 spirit stones to promote me`
@@ -292,6 +300,7 @@ describe('a rung is somebody\'s to give', () => {
         }));
         db.prepare('UPDATE cultivators SET realm_ordinal = ? WHERE id = ?')
             .run(holder.realmOrdinal, cultivator.id);
+        meetInTheForecourt({ game, cultivator, held, holder });
 
         let narration = '';
         for (let i = 0; i < 8; i += 1) {
@@ -302,7 +311,7 @@ describe('a rung is somebody\'s to give', () => {
         }
 
         const after = positionIn(repos, cultivator.id)!;
-        expect(after.rankIndex, 'eight asks and the rung never moved').toBe(held.rankIndex + 1);
+        expect(after.rankIndex, 'eight asks and the rung never moved: ' + narration).toBe(held.rankIndex + 1);
 
         // THE RULING, AS ONE NUMBER. A rung was got and nothing was written
         // against their name to say they had earned it.

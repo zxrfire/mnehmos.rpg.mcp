@@ -3902,3 +3902,8 @@ it only if no other undertaking replaced the course. A medicine clerk can dispen
 counted pills without being a clinician. Information questions buy no care.
 Ordinary made artifacts bought or sold at an exchange transfer the actual world
 object and money; inventory reads that same object without a counted-pouch copy.
+
+House keys, slips, store receivers and delegated orders read the same hall head.
+A missing archive or treasury moves the work to existing ordinary quarters;
+it does not remove the records, stores or responsible person. Existing formations
+decide whether discipline cells can hold a cultivator.

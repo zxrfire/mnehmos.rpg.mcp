@@ -12,12 +12,11 @@
 
 import type { Cultivator } from '../schema/cultivation.js';
 import { elderRungOf } from '../engine/cultivation/leadership.js';
-import { theRoomsThisHouseHas } from '../engine/social-leverage/authority-for-an-order.js';
+import { theRoomsThisHouseHas, portfoliosIn } from '../engine/social-leverage/authority-for-an-order.js';
 import {
     officePressureIn,
     whatTheHouseMakesOfThem,
-    whatTheyHold,
-    whoIsInChargeOfWhat
+    whatTheyHold
 } from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { HousePosition } from './standing.js';
@@ -47,14 +46,16 @@ export function elderStandingLines(
     }
 
     const rooms = theRoomsThisHouseHas(world.locations, held.sectId);
+    const portfolios = portfoliosIn({ locations: world.locations, sectId: held.sectId,
+        roll, rankCount, npcs: world.npcs });
     const them = whatTheHouseMakesOfThem({
         ranks: held.ranks,
         rankIndex: held.rankIndex,
         realmOrdinal: cultivator.realmOrdinal,
         yearsHeld: cultivator.yearsAtCurrentRealm,
-        holds: whatTheyHold(whoIsInChargeOfWhat({ rooms, roll, rankCount }), cultivator.id)
+        holds: whatTheyHold(portfolios, cultivator.id)
     });
-    const pressure = officePressureIn({ rooms, roll, rankCount, yearsHeldById, realmOrdinalById });
+    const pressure = officePressureIn({ rooms, roll, rankCount, yearsHeldById, realmOrdinalById, portfolios });
 
     const over = them.holds.map(room => `the ${room.replace(/_/g, ' ')}`).join(' and ');
     const lines = [

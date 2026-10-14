@@ -56,7 +56,7 @@ async function atAStore(allowed: boolean, seed: string, cauldron = false) {
         const roll = [...world.npcs.filter(n => n.status === 'alive' && n.factionId === house.id)
             .map(n => ({ id: n.id, rankIndex: rankIndexOf(h.game, n.id, house.ranks.length) }))
             .filter(n => n.rankIndex >= 0), { id: cultivator.id, rankIndex: 0 }];
-        const portfolios = portfoliosIn({ locations: world.locations, sectId: house.id, roll, rankCount: house.ranks.length });
+        const portfolios = portfoliosIn({ npcs: world.npcs, locations: world.locations, sectId: house.id, roll, rankCount: house.ranks.length });
         const decision = whetherItLeavesTheStore({ significance: object.significance, meaning: 'use_it_and_return_it',
             room: 'treasury', roll, portfolios, rankCount: house.ranks.length, askerId: cultivator.id });
         if (decision.allowed !== allowed) continue;
@@ -257,7 +257,7 @@ it('a changed responsible office does not replace the actual custodian for physi
         .map(n => ({ id: n.id, rankIndex: rankIndexOf(h.game, n.id, h.house.ranks.length) }))
         .filter(n => n.rankIndex >= 0);
     roll.push({ id: h.player.id, rankIndex: rankIndexOf(h.game, h.player.id, h.house.ranks.length) });
-    const offices = portfoliosIn({ locations: world.locations, sectId: h.house.id, roll, rankCount: h.house.ranks.length });
+    const offices = portfoliosIn({ npcs: world.npcs, locations: world.locations, sectId: h.house.id, roll, rankCount: h.house.ranks.length });
     const responsible = offices.find(p => p.purpose === 'treasury')?.holderId;
     expect(responsible).toBeTruthy();
     expect(responsible).not.toBe(h.receiver.id);

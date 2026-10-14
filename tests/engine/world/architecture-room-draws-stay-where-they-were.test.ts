@@ -1,6 +1,12 @@
-/** Conditional craft support removes only unsupported trailing craft rooms.
- * The saved former draws cover all 40 catalog houses; every surviving room and
- * formation node must retain its construction. Links may reach later rooms. */
+/**
+ * Discipline, teaching and duelling rooms now serve members regardless of intake;
+ * institutional craft rooms are conditional. Adding these rooms in the old list
+ * would change later construction draws. A paired Oct10 run compared the former
+ * and amended builders on all 40 catalog houses and saved these former draws.
+ * A second paired baseline from cbe5a65b also protects the committed cauldron rooms.
+ * Every surviving room and formation node must keep its construction. Links may
+ * connect newly added rooms; only the former universal craft rooms may disappear.
+ */
 import { it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -10,9 +16,9 @@ import { makeLocation } from '../../../src/engine/world/locations.js';
 
 type KeptHouse = { houseId: string; rooms: { id: string; purpose: RoomPurpose | null; hash: string }[] };
 
-it('keeps every surviving room and formation node on its former construction draw', async () => {
-    const kept = JSON.parse(readFileSync(new URL('./fixtures/architecture-before-halls-20261010.json',
-        import.meta.url), 'utf8')) as KeptHouse[];
+it.each(['architecture-before-halls-20261010.json', 'architecture-before-seven-halls-cbe5a65b.json'])(
+    'keeps every surviving room and formation node on its former construction draw (%s)', async fixture => {
+    const kept = JSON.parse(readFileSync(new URL(`./fixtures/${fixture}`, import.meta.url), 'utf8')) as KeptHouse[];
     const catalog = await loadCultivationCatalog();
     let checked = 0;
     for (const prior of kept) {
@@ -30,6 +36,7 @@ it('keeps every surviving room and formation node on its former construction dra
         for (const former of prior.rooms) {
             const room = byId.get(former.id);
             if (!room) {
+                expect(fixture, former.id).toBe('architecture-before-halls-20261010.json');
                 expect(['alchemy_hall', 'artifact_refining_hall', 'infirmary'], former.id).toContain(former.purpose);
                 continue;
             }

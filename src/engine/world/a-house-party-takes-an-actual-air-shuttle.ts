@@ -71,7 +71,7 @@ function continueAssembly(state:WorldState,row:Sending,day:number){
  const people=row.party.map(member=>state.npcs.find(person=>person.id===member.id)!);
  const roll=state.npcs.filter(n=>n.status==='alive'&&n.factionId===house.id)
   .map(n=>({id:n.id,rankIndex:n.factionRankIndex}));
- const portfolios=portfoliosIn({locations:state.locations,sectId:house.id,roll,rankCount:house.ranks.length});
+ const portfolios=portfoliosIn({ npcs: state.npcs,locations:state.locations,sectId:house.id,roll,rankCount:house.ranks.length});
  const selected={...row,departsOnDay:day};
  const walking=walkingDaysFrom(state.locations,ground.id).get(row.locationId);
  if(walking===undefined)return;

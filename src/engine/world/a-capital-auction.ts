@@ -105,7 +105,7 @@ export function consignCapitalAuction(state: WorldState, occasion: CapitalOccasi
             .map(n => ({ id: n.id, rankIndex: n.factionRankIndex }));
         const allowed = whetherItLeavesTheStore({ significance: object.significance, meaning: 'pass_it_on',
             room: whereInTheHouseItSits(object.kind, object.significance, object.tags),
-            portfolios: portfoliosIn({ locations: state.locations, sectId: house.id, roll, rankCount: house.ranks.length }),
+            portfolios: portfoliosIn({ npcs: state.npcs, locations: state.locations, sectId: house.id, roll, rankCount: house.ranks.length }),
             roll, rankCount: house.ranks.length, askerId: seller.id, asOfDay: day });
         if (allowed.allowed || object.tags.includes('exchange') && object.possessorId === seller.id) consign(seller, house.id, object.id, reserve);
     }

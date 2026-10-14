@@ -1,3 +1,4 @@
+import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 /**
  * What comes to light about a killing somebody hid.
  *
@@ -44,10 +45,8 @@ import { factsWithData } from './witness-reaction-index.js';
 import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
 import { MAX_ORDINAL } from '../cultivation/realms.js';
 import type { Severity } from '../social/grudges.js';
-import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
 import { whereAComplaintGoes } from '../social-leverage/reporting-what-you-saw.js';
 import { whatTheRoomDecides } from '../social-leverage/what-a-room-decides-about-one-of-its-own.js';
-import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { explainFact, makeFact, type HistoricalFact } from './history.js';
 import { upsertRelationship, relationshipWith, type NpcRecord } from './npc-state.js';
 import {
@@ -241,8 +240,8 @@ function theRoomHearsOfIt(state: WorldState, killer: NpcRecord, fact: Historical
         : state.factions.find(f => f.id === killer.factionId && f.dissolvedOnDay === null) ?? null;
     if (house === null) return 'nobody to answer to';
     const roll = state.npcs.filter(n => n.status === 'alive' && n.factionId === house.id);
-    const portfolios = whoIsInChargeOfWhat({
-        rooms: theRoomsThisHouseHas(state.locations, house.id),
+    const portfolios = portfoliosIn({
+        locations: state.locations, sectId: house.id, npcs: state.npcs,
         roll: roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
         rankCount: house.ranks.length
     });

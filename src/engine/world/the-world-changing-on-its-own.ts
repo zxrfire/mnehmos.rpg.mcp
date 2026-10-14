@@ -58,8 +58,8 @@ import {
 } from './a-house-sends-somebody-looking.js';
 import { beastsOnThisGround, bandOf, whatComesOffTheBody } from './hunting-a-spirit-beast.js';
 import { whatGroundThisIs } from './what-ground-a-place-is.js';
-import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
-import { theRoomsThisHouseHas, portfoliosIn } from '../social-leverage/authority-for-an-order.js';
+import { type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
+import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 import { rankName, triggersHeavenlyTribulation } from '../cultivation/realms.js';
 // Pressure is the LOWER world's own affairs, and only its own. Every selection
 // in this file is filtered to the mortal layer, because politics above the Lid
@@ -3717,7 +3717,7 @@ function applySendings(
                     locationId:goingTo,named,reachedPastItsWeight,
                     counterparties:[...whoTheErrandWasWith(state,aboutHouses,goingTo)]};
                 const houseRoll=roll.get(faction.id)??[];
-                const portfolios=portfoliosIn({locations:state.locations,sectId:faction.id,
+                const portfolios=portfoliosIn({ npcs: state.npcs,locations:state.locations,sectId:faction.id,
                     roll:houseRoll,rankCount:faction.ranks.length});
                 const admitted=sendASelectedHousePartyOnAnAvailableAirHull(state,faction,selected as NpcRecord[],
                     goingTo,day,walking,!!water,inTheChest,read=>new Map(selected.map(person=>[person!.id,{
@@ -4805,8 +4805,8 @@ export function applyPostings(state: WorldState, year: number, day: number,
             && n.factionRankIndex < ranks - 1);
         if (members.length === 0) continue;
 
-        const rooms = whoIsInChargeOfWhat({
-            rooms: theRoomsThisHouseHas(state.locations, faction.id),
+        const rooms = portfoliosIn({
+            locations: state.locations, sectId: faction.id, npcs: state.npcs,
             // A ROOM TAKEN OFF SOMEBODY IS A WEIGHT AGAINST THEM, NOT A DOOR
             // BRICKED UP. The owner, asked whether a removal is permanent:
             // *"depends on your influence so not permanent"*. This filtered

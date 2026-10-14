@@ -76,7 +76,7 @@ export function whoDispensesAtTheHouse(state: CareRead, houseId: string): NpcRec
     if (!careRoom) return null;
     const lessons = whoIsAtAClosedLesson(state, { seatId: house.seatLocationId, inside,
         day: Math.floor(state.currentDay) });
-    const offices = portfoliosIn({ locations: state.locations, sectId: houseId,
+    const offices = portfoliosIn({ npcs: state.npcs, locations: state.locations, sectId: houseId,
         rankCount: house.ranks.length, roll: state.npcs.filter(n => n.status === 'alive' && n.factionId === houseId)
             .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })) });
     return state.npcs.filter(npc => {

@@ -1,3 +1,9 @@
+import { HOUSE_HALLS } from '../world/house-halls.js';
+import { roomForHouseWork } from '../world/where-a-house-does-its-work.js';
+import { whoDecidesIn } from './what-a-body-wants-is-what-its-deciders-want.js';
+import { responsibilitiesFor } from '../world/a-house-gives-one-elder-each-hall.js';
+import type { NpcRecord } from '../world/npc-state.js';
+import { roomAuthorityOf } from '../world/architecture.js';
 /**
  * On what authority an order is given, and whether the house recognises it.
  *
@@ -37,8 +43,7 @@ import type { OnTheRoll } from './what-a-body-wants-is-what-its-deciders-want.js
 import {
     type APortfolio,
     whatTheyHold,
-    whoAnswersAbout,
-    whoIsInChargeOfWhat
+    whoAnswersAbout
 } from './what-an-elder-is-in-charge-of.js';
 
 /**
@@ -75,12 +80,26 @@ export function portfoliosIn(input: {
     sectId: string;
     roll: readonly OnTheRoll[];
     rankCount: number;
+    npcs: readonly NpcRecord[];
 }): APortfolio[] {
-    return whoIsInChargeOfWhat({
-        rooms: theRoomsThisHouseHas(input.locations, input.sectId),
-        roll: input.roll,
-        rankCount: input.rankCount
-    });
+    const rooms = theRoomsThisHouseHas(input.locations, input.sectId);
+    const responsibilities = responsibilitiesFor({ ...input, rooms });
+    const portfolios: APortfolio[] = responsibilities.map(read => ({
+        purpose: read.room, holderId: read.holderId, hallId: read.hall.id,
+        depth: roomAuthorityOf(read.room).depth, actingId: read.covering ? read.holderId : null
+    }));
+    const headId = whoDecidesIn(input)[0]?.id;
+    if (headId && portfolios.length) {
+        // Missing rooms do not remove ordinary work or create another hall.
+        portfolios[0]!.coveringWork = HOUSE_HALLS
+            .filter(hall => !responsibilities.some(read => read.hall.id === hall.id))
+            .flatMap(hall => hall.rooms.filter(purpose => !hall.serviceOnly?.includes(purpose)
+                && roomForHouseWork(input.locations, input.sectId, purpose))
+                .map(purpose => ({ purpose, holderId: purpose === 'infirmary'
+                    ? responsibilities.find(read => read.hall.id === 'internal-affairs')?.holderId ?? headId
+                    : headId })));
+    }
+    return portfolios;
 }
 
 export interface AuthorityForAnOrder {
@@ -134,7 +153,7 @@ export function whetherTheyMayGiveThisOrder(input: {
     // people on a house's roll run no room, and an elder can hold a rung and no
     // portfolio. What makes this illegitimate is not seniority, it is that the
     // sentence said something specific and untrue.
-    if (held.length === 0) {
+    if (held.length === 0 && (under === null || whoAnswersAbout(input.portfolios, under) !== input.giverId)) {
         return {
             claim: 'delegated',
             legitimate: false,

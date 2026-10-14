@@ -15,7 +15,7 @@ export function personnelManager(state: WorldState, houseId: string): NpcRecord 
     if (!house) return null;
     const roll = state.npcs.filter(person => person.status === 'alive' && person.factionId === houseId);
     const holder = theInternalAffairsElderIn(state.locations, house,
-        roll.map(person => ({ id: person.id, rankIndex: person.factionRankIndex })));
+        roll.map(person => ({ id: person.id, rankIndex: person.factionRankIndex })), state.npcs);
     return roll.find(person => person.id === holder) ?? roll.sort((a, b) =>
         b.factionRankIndex - a.factionRankIndex || b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
         || a.id.localeCompare(b.id))[0] ?? null;

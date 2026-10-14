@@ -57,7 +57,7 @@ it('the existing acting office cover holds the opening key when there is no sepa
     for (const purpose of rooms.filter(p => p !== 'treasury')) h.state.locations.push(makeLocation({
         id: `key-${purpose}`, name: `${purpose} fixture`, kind: 'hall', controllingFactionId: h.house.id,
         sealed: true, data: { factionId: h.house.id, purpose, keyId: `key:fixture:${purpose}` } }));
-    const offices = portfoliosIn({ locations: h.state.locations, sectId: h.house.id,
+    const offices = portfoliosIn({ npcs: h.state.npcs, locations: h.state.locations, sectId: h.house.id,
         roll: [{ id: h.custodian.id, rankIndex: h.custodian.factionRankIndex }], rankCount: h.house.ranks.length });
     const acting = offices.find(p => p.actingId !== null && p.actingId !== undefined)!;
     expect(acting).toBeDefined();
@@ -84,7 +84,7 @@ it('the office can pass to another real member without moving the physical key',
     replacement.factionRankIndex = 2;
     h.custodian.factionRankIndex = 0;
     h.state.npcs.push(replacement);
-    const offices = portfoliosIn({ locations: h.state.locations, sectId: h.house.id,
+    const offices = portfoliosIn({ npcs: h.state.npcs, locations: h.state.locations, sectId: h.house.id,
         roll: h.state.npcs.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })), rankCount: h.house.ranks.length });
     expect(offices.find(p => p.purpose === 'treasury')?.holderId).toBe(replacement.id);
     expect(h.key.possessorId).toBe(h.custodian.id);

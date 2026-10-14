@@ -1,3 +1,4 @@
+import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 /**
  * A house puts the player on a posting, looks in on them there, and tops up
  * their slips.
@@ -55,8 +56,6 @@ import { physicalJourneyDays, locationOfNpcOnItsJourney } from './places-on-the-
 import { isPlayerInvolved } from './background-incident-draw.js';
 import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { RouteQueries } from './locations.js';
-import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
-import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { keepTheTwins, takeOffTheStack, howManyTheHouseHas } from './a-communication-talisman-carries-word-home.js';
 import { whereThisHouseBurnsItsLamps } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { keepTheirHallCheckOnLeaving } from './what-the-roll-and-the-lamps-say.js';
@@ -159,9 +158,9 @@ export function aPostTheHouseWouldSendThemTo(
     const roll = state.npcs.filter(n => n.status === 'alive' && n.factionId === house.id && n.id !== input.playerId);
 
     const idle = roll.filter(n => n.activity === null && isTheWorldsToMove(n));
-    const rooms = whoIsInChargeOfWhat({
-        rooms: theRoomsThisHouseHas(state.locations, house.id),
-        roll: [...idle, { id: input.playerId, factionRankIndex: input.rankIndex }]
+    const rooms = portfoliosIn({
+        locations: state.locations, sectId: house.id, npcs: state.npcs,
+        roll: [...roll, { id: input.playerId, factionRankIndex: input.rankIndex }]
             .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
         rankCount: house.ranks.length
     });

@@ -11,6 +11,7 @@
  */
 
 import type { RoomPurpose } from '../world/architecture.js';
+import { hallForRoom } from '../world/house-halls.js';
 import { roomAuthorityOf } from '../world/architecture.js';
 import { stagnationYearsForOrdinal } from '../../schema/cultivation.js';
 import { mayExercise } from '../cultivation/leadership.js';
@@ -131,6 +132,10 @@ export function whatTheHouseMakesOfThem(input: {
 }
 
 export interface APortfolio {
+    /** Derived hall grouping; absent on the legacy founding office claims. */
+    hallId?: string;
+    /** Derived responsibility for ordinary work where its dedicated hall is absent. */
+    coveringWork?: readonly { purpose: RoomPurpose; holderId: string }[];
     purpose: RoomPurpose;
     /** Who holds it, or null where the house has nobody to hold it. */
     holderId: string | null;
@@ -217,7 +222,10 @@ export function whoAnswersAbout(
     portfolios: readonly APortfolio[],
     purpose: RoomPurpose
 ): string | null {
-    return portfolios.find(p => p.purpose === purpose)?.holderId ?? null;
+    const hall = hallForRoom(purpose);
+    return portfolios.find(p => p.purpose === purpose
+        || (hall && !hall.serviceOnly?.includes(purpose) && p.hallId === hall.id))?.holderId
+        ?? portfolios.flatMap(p => p.coveringWork ?? []).find(work => work.purpose === purpose)?.holderId ?? null;
 }
 
 export interface WhoseCallItIs {
@@ -309,6 +317,7 @@ export interface OfficePressure {
 }
 
 export function officePressureIn(input: {
+    portfolios?: readonly APortfolio[];
     rooms: readonly RoomPurpose[];
     roll: readonly OnTheRoll[];
     rankCount: number;
@@ -317,7 +326,7 @@ export function officePressureIn(input: {
     /** Their rung on the cultivation ladder, by id. Absent reads as zero. */
     realmOrdinalById: Readonly<Record<string, number>>;
 }): OfficePressure {
-    const portfolios = whoIsInChargeOfWhat(input);
+    const portfolios = input.portfolios ?? whoIsInChargeOfWhat(input);
     const offices = portfolios.length;
     const room = whoDecidesIn({ roll: input.roll, rankCount: input.rankCount });
 

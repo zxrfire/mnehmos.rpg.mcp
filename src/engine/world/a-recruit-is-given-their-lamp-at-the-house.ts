@@ -437,7 +437,7 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
                     state.locations,
                     house,
                     members.map(m => ({ id: m.npc.id, rankIndex: m.npc.factionRankIndex }))
-                );
+                , state.npcs);
             }
             return elder;
         };
