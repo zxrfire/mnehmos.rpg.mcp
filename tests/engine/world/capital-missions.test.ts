@@ -24,54 +24,68 @@
  * onto the admitted public mission. Capital travel has one actual itinerary.
  * The owner allows thirty minutes for this census. The opening uses the
  * canonical demography cache; the observed decade starts from its own copy.
- * Completed background dockets now age out after a year. On the current
- * decade snapshot, Emerald Water City retained five business dispatches, all
- * in year nine, so asking that snapshot for two dispatch years tested an
- * archive the world no longer keeps. Observe those years before each sweep;
- * the original presence, diversity and repeated-business bounds stay.
+ * The focused factor scenario uses isAnActualCapitalFactor; reachability
+ * samples demography at 10/100 and drift-guard at 100, and the contract sends
+ * a real factor through that same offer scenario. No claim rewalks a century.
  * Each unchanged snapshot shares its route read for physical census placement.
+ * Completed business dockets are swept after a year. The original/current-source
+ * demography control observed business in 8-10 years per capital over a decade,
+ * while both final ledgers retained only year nine's business. Count actual
+ * dispatches at native world boundaries before that sweep; the original two-year
+ * and three-house minima remain. This observer owns its short decade walk,
+ * while all aged reachability and contract instances remain source-keyed samples.
  * Owner correction: the former majority-home assertion was the coordinator's
  * wording. Actual business may take many members away; an absence without an
  * activity is wrong. The full decade census checks every checkpoint's reasons.
  */
 import { describe, expect, it } from 'vitest';
-import { soakedWorld } from '../../support/soaked-world.js';
-import { advanceWorldForPlay } from '../../../src/engine/world/driver.js';
+import { capitalDispatchesDuring } from '../../support/capital-dispatch-window.js';
+import { sampledWorld } from '../../support/sampled-world.js';
 import { capitalPlaces } from '../../../src/engine/world/capital-missions-and-calendar.js';
 import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import { PROVINCIAL_CAPITALS } from '../../../src/data/cultivation/regions.js';
-import { locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from '../../../src/engine/world/places-on-the-way.js';
 import { routeQueriesFor } from '../../../src/engine/world/locations.js';
 import { exteriorGroundOfDeparture } from '../../../src/engine/world/departure-approach.js';
+import { isAnActualCapitalFactor } from '../../support/capital-precondition.js';
+import { anActualCapitalFactorOffersItsCargo } from '../../support/capital-scenario.js';
 
 /** Native journey controls live in capital-mission-journeys.test.ts.
  * Callback observations keep their own walk, per tests/support/README.md. */
 describe('capital missions', () => {
+    // Presence/diversity bands below remain the original acceptance. This
+    // sampled reachability/contract pair connects them to the focused counter
+    // scenario in a-capital-factor-offers-its-actual-cargo.test.ts.
+    const samples = [['demography', 10], ['demography', 100], ['drift-guard', 100]] as const;
+    it('finds real physically working visiting factors across cached ages and seeds', async () => {
+        let reached = false;
+        for (const [seed, years] of samples) {
+            const state = await sampledWorld(seed, { years });
+            reached ||= state.npcs.some(person => !!person.locationId && isAnActualCapitalFactor(state, person.id, person.locationId));
+        }
+        expect(reached).toBe(true);
+    }, 3_600_000);
+
+    it('passes a real visiting factor into the same focused offer scenario', async () => {
+        for (const [seed, years] of samples) {
+            const state = await sampledWorld(seed, { years });
+            const factor = state.npcs.find(person => !!person.locationId && isAnActualCapitalFactor(state, person.id, person.locationId));
+            if (!factor) continue;
+            anActualCapitalFactorOffersItsCargo(state, factor.id, factor.locationId!);
+            return;
+        }
+        throw new Error('No reachable actual capital factor');
+    }, 120_000);
+
     it('keeps every capital occupied by residents and several visiting houses over a decade', async () => {
-        const opened = await soakedWorld('demography', { years: 0 });
+        const opened = await sampledWorld('demography', { years: 0 });
         const lived = structuredClone(opened);
-        const sent = new Map<string, { houses: Set<string>; businessYears: Set<number>; occasionYears: Set<number> }>();
-        const observe = () => {
-            for (const fact of lived.history.facts) {
-                if (fact.data.capitalMission !== true || typeof fact.data.destinationId !== 'string'
-                    || fact.day < opened.currentDay) continue;
-                const id = fact.data.destinationId;
-                let at = sent.get(id);
-                if (!at) { at = { houses: new Set(), businessYears: new Set(), occasionYears: new Set() }; sent.set(id, at); }
-                for (const houseId of fact.factionIds) at.houses.add(houseId);
-                const year = Math.floor((fact.day - opened.currentDay) / 365);
-                if (['trade and purchases', 'carrying the house report', 'escorting the house envoy'].includes(String(fact.data.reason)))
-                    at.businessYears.add(year);
-                if (['the auction delegation', 'witnessing the auction', 'the inter-house competition'].includes(String(fact.data.reason)))
-                    at.occasionYears.add(year);
-            }
-        };
-        advanceWorldForPlay(lived, { days: 10 * 365, stopOnInterrupt: false, atWorldBoundary: observe });
+        const sentDuringDecade = capitalDispatchesDuring(lived, 10 * 365);
         for (const state of [opened, lived]) {
             const alive = state.npcs.filter(n => n.status === 'alive');
             const routes = routeQueriesFor(state.locations);
             const placeOf = new Map(alive.map(n => [n.id,
-                locationOnNpcJourney(state.locations, n, state.currentDay, routes)]));
+                locationOfNpcOnItsJourney(state, n, state.currentDay, routes)]));
             const cities = capitalPlaces(state);
             expect(cities.map(c => c.name)).toEqual(expect.arrayContaining(Object.values(PROVINCIAL_CAPITALS)));
             const cityIds = new Set(cities.map(c => c.id));
@@ -96,11 +110,19 @@ describe('capital missions', () => {
                     .map(n => n.factionId));
                 expect(visitingHouses.size, `${city.name}: visiting houses`).toBeGreaterThanOrEqual(3);
                 if (state === lived) {
-                    const observed = sent.get(city.id);
-                    expect(observed?.houses.size ?? 0,
+                    const dispatches = sentDuringDecade.filter(f => f.data.destinationId === city.id &&
+                        f.data.capitalMission === true && f.day >= opened.currentDay);
+                    expect(new Set(dispatches.flatMap(f => f.factionIds)).size,
                         `${city.name}: houses sending missions`).toBeGreaterThanOrEqual(3);
-                    expect(observed?.businessYears.size ?? 0, `${city.name}: business sent in separate years`).toBeGreaterThanOrEqual(2);
-                    expect(observed?.occasionYears.size ?? 0, `${city.name}: calendar delegations sent in separate years`).toBeGreaterThanOrEqual(2);
+                    const businessYears = new Set(dispatches.filter(f =>
+                        ['trade and purchases', 'carrying the house report', 'escorting the house envoy']
+                            .includes(String(f.data.reason)))
+                        .map(f => Math.floor((f.day - opened.currentDay) / 365)));
+                    const occasionYears = new Set(dispatches.filter(f =>
+                        ['the auction delegation', 'witnessing the auction', 'the inter-house competition'].includes(String(f.data.reason)))
+                        .map(f => Math.floor((f.day - opened.currentDay) / 365)));
+                    expect(businessYears.size, `${city.name}: business sent in separate years`).toBeGreaterThanOrEqual(2);
+                    expect(occasionYears.size, `${city.name}: calendar delegations sent in separate years`).toBeGreaterThanOrEqual(2);
                 }
             }
         }

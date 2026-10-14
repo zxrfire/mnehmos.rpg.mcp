@@ -85,6 +85,26 @@ describe('capital event ledgers', () => {
         expect(state.objects[0]!.ownerId).toBe(seller.id);
     });
 
+    // Attendance is shared across simultaneous lots, but purchases must change
+    // the next lot's affordability. A shared row snapshot would sell both.
+    it('reads the current purse at each lot and uses each actual closing date', () => {
+        const { state, seller, buyer } = arrangement();
+        state.npcs = state.npcs.map(person => ({ ...person,
+            spiritStones: person.id === buyer.id ? 100 : 0 }));
+        const first = lot(state, seller, 'first');
+        const second = lot(state, seller, 'second');
+        appendWorldFact(state, makeFact({ day: 1, kind: 'gathering', locationId: 'venue', summary: 'First bid.',
+            actors: [{ id: buyer.id, name: buyer.name, role: 'bidder' }],
+            data: { auctionBid: true, lotId: first.id, stones: 100 } }), { recur: false });
+        appendWorldFact(state, makeFact({ day: 1, kind: 'gathering', locationId: 'venue', summary: 'Second bid.',
+            actors: [{ id: buyer.id, name: buyer.name, role: 'bidder' }],
+            data: { auctionBid: true, lotId: second.id, stones: 100 } }), { recur: false });
+        const results = settleCapitalAuctions(state, 7);
+        expect(results.find(fact => fact.data.lotId === first.id)?.data.winnerId).toBe(buyer.id);
+        expect(results.find(fact => fact.data.lotId === second.id)?.data.winnerId).toBeNull();
+        expect(state.npcs.find(person => person.id === buyer.id)?.spiritStones).toBe(0);
+    });
+
     it('keeps each owner’s eligible stock and reserve when unrelated objects are inserted', () => {
         const arrangeStock = (withUnrelated: boolean) => {
             const { state, seller, buyer, host } = arrangement();

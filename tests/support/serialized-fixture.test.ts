@@ -4,13 +4,32 @@ import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
-import { transpileModule, ModuleKind, ScriptTarget } from 'typescript';
+import { build } from 'esbuild';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { fixtureSourceHash, serializedFixture } from './serialized-fixture.js';
 
 describe('serialized fixtures', () => {
+    it('waits for a live builder even when its lock is older than thirty minutes', async () => {
+        const key = randomUUID(), entries = ['tests/support/serialized-fixture.ts'];
+        const hash = createHash('sha256').update(fixtureSourceHash(entries)).update(JSON.stringify(key)).digest('hex');
+        const lock = path.join(os.tmpdir(), 'mnehmos-fixtures', 'cache-test', `${hash}.snapshot.lock`);
+        fs.mkdirSync(path.dirname(lock), { recursive: true });
+        fs.writeFileSync(lock, String(process.pid));
+        fs.utimesSync(lock, new Date(0), new Date(0));
+        let released = false;
+        const release = setTimeout(() => { released = true; fs.rmSync(lock, { force: true }); }, 50);
+        try {
+            const bytes = await serializedFixture('cache-test', entries, key, async () => {
+                expect(released, 'the earlier live builder still owns its lock').toBe(true);
+                return Buffer.from('after release');
+            });
+            expect(bytes.toString()).toBe('after release');
+        } finally { clearTimeout(release); fs.rmSync(lock, { force: true }); }
+    });
+
     it('takes a lock left by an exited builder', async () => {
         const key = randomUUID();
         const entries = ['tests/support/serialized-fixture.ts'];
@@ -35,9 +54,16 @@ describe('serialized fixtures', () => {
         const module = path.join(directory, 'fixture.mjs');
         const runner = path.join(directory, 'runner.mjs');
         const counter = path.join(directory, 'builds');
-        fs.writeFileSync(module, transpileModule(fs.readFileSync(source, 'utf8'), {
-            compilerOptions: { module: ModuleKind.ESNext, target: ScriptTarget.ES2022 }
-        }).outputText);
+        // The cache's dependency reader is part of the child module too. Bundle
+        // that reader so both forks execute the same real locking implementation.
+        const require = createRequire(import.meta.url);
+        await build({ entryPoints: [source], outfile: module, bundle: true,
+            platform: 'node', format: 'esm',
+            define: { 'import.meta.url': JSON.stringify(pathToFileURL(source).href) },
+            plugins: [{ name: 'installed-fixture-compiler', setup(b) {
+                b.onResolve({ filter: /^typescript$/ }, () => ({
+                    path: pathToFileURL(require.resolve('typescript')).href, external: true }));
+            } }] });
         fs.writeFileSync(runner, `
             import fs from 'node:fs';
             import { pathToFileURL } from 'node:url';

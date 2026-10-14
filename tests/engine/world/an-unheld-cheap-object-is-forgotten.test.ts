@@ -69,7 +69,7 @@ it('protects facts, structured jobs, obligations, searches, deliveries and other
         data: { privateWorkTerms: JSON.stringify({ objective: { objectId: 'job-target' } }) } }));
     world.obligations.push(createObligation({ kind: 'oath', cause: 'service_term', severity: 'serious', holderId: 'worker',
         subjectId: 'word-target', onDay: 0, description: 'An actual accepted account.' }));
-    const person = createNpc(world.seed, { id: 'searcher', locationId: 'ground', onDay: 0 });
+    const person = createNpc(world.seed, { id: 'searcher', locationId: 'ground', bornOnDay: -20 * 365, onDay: 0 });
     person.goals.push({ id: 'search', kind: 'discovery', text: 'Find the object.', priority: 1, progress: '', obstacles: [],
         deadlineOnDay: null, status: 'active', targetId: 'search-target', openedOnDay: 0, closedOnDay: null, note: '',
         inheritedFromId: null, originHolderId: person.id, generation: 0 });
@@ -81,7 +81,7 @@ it('protects facts, structured jobs, obligations, searches, deliveries and other
 });
 
 it('protects the player owner and actual SQL contact ground even with an unplaced world mirror', () => {
-    const world = arrangement(), player = createNpc(world.seed, { id: 'player', locationId: null, onDay: 0, tags: [PLAYER_ROW_TAG] });
+    const world = arrangement(), player = createNpc(world.seed, { id: 'player', locationId: null, bornOnDay: -20 * 365, onDay: 0, tags: [PLAYER_ROW_TAG] });
     world.npcs.push(player);
     world.locations.push(makeLocation({ id: 'elsewhere', name: 'Elsewhere', kind: 'wilds' }));
     world.objects.push({ ...lost('player-owned', 'elsewhere'), ownerId: player.id }, lost('underfoot'), lost('elsewhere-trash', 'elsewhere'));

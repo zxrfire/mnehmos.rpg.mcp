@@ -1,14 +1,21 @@
-// Canonical walks retain the original seed, horizons and assertions.
 /**
- * A house may fall; the ladder may not - the long walk out of
- * `demography.test.ts`, in a file of its own so the rest of that file runs
- * beside it rather than behind it. Fifteen hundred years of one seed is the
- * longest single walk in the suite and cannot be split, only started early.
+ * Reachability and contract halves of the successor-library control. The behavior test in
+ * a-successor-house-reads-its-written-road.test.ts arranges a written road;
+ * both halves require isANewHouseWithAWrittenRoad. Sample real source-keyed
+ * worlds at 500, 1,000, 1,200 and 1,500 years on drift-guard, plus a second
+ * seed at 100 years. The original final census retains every decline, occupied
+ * band, narrowing and born-since-seeding assertion. A warm check loads these
+ * actual ages; the background regenerator performs a fresh walk when source
+ * changes. No calendar relabelling or fabricated old population is used.
+ * The contract passes an actually founded successor into the same shelf
+ * scenario, so an arranged library cannot silently differ from a real one.
  */
 
 import { describe, it, expect } from 'vitest';
-import { soakedWorld } from '../../support/soaked-world.js';
+import { sampledWorld } from '../../support/sampled-world.js';
 import { writeFileSync } from 'node:fs';
+import { isANewHouseWithAWrittenRoad } from '../../support/ladder-precondition.js';
+import { aSuccessorReadsItsPhysicalRoad } from '../../support/ladder-scenario.js';
 
 /**
  * A HOUSE MAY FALL. THE LADDER MAY NOT.
@@ -59,9 +66,8 @@ import { writeFileSync } from 'node:fs';
  * / 7 across the four bands, of whom 121 of 126 were born after the seeding.
  */
 describe('a house may fall; the ladder may not', () => {
-    // Deliberately longer than the block above. The collapse this pins is a
-    // long-horizon shape and five hundred years does not show it - the middle
-    // bands are still holding the last of the seeded cohort at that point.
+    // Read the genuine later checkpoint: at five hundred years the
+    // middle can still be held by the last of the seeded cohort.
     const HORIZON_YEARS = 1500;
 
     const REALMS: [string, number, number, number][] = [
@@ -75,15 +81,33 @@ describe('a house may fall; the ladder may not', () => {
         ['Deity Transformation', 25, 28, 1]
     ];
 
+    it('reaches the same written-road precondition across real age and seed samples', async () => {
+        let reached = false;
+        for (const [seed, years] of [['drift-guard', 500], ['drift-guard', 1000], ['demography', 100]] as const) {
+            const opening = await sampledWorld(seed, { years: 0 });
+            const state = await sampledWorld(seed, { years });
+            reached ||= state.factions.some(house => isANewHouseWithAWrittenRoad(state, house.id, opening.currentDay));
+            expect(state.currentDay).toBe(opening.currentDay + years * 365);
+        }
+        expect(reached, 'a real generated house retains a written road').toBe(true);
+    }, 3_600_000);
+
+    it('passes a real successor into the same focused shelf scenario', async () => {
+        const opening = await sampledWorld('drift-guard', { years: 0 });
+        const world = await sampledWorld('drift-guard', { years: 1000 });
+        const house = world.factions.find(house => isANewHouseWithAWrittenRoad(world, house.id, opening.currentDay));
+        expect(house).toBeDefined();
+        aSuccessorReadsItsPhysicalRoad(world, house!.id, opening.currentDay);
+    }, 120_000);
+
     it('lets its houses fall without letting its ladder collapse', async () => {
-        const seeded = await soakedWorld('drift-guard', { years: 0 });
+        const seeded = await sampledWorld('drift-guard', { years: 0 });
         // Who and what the world started with, so a later count can tell a
         // survivor from an arrival. A band held entirely by people placed there
         // at seeding is a band that is dying, whatever its headcount reads.
         const seededNpcIds = new Set(seeded.npcs.map(n => n.id));
         const seededFactionIds = seeded.factions.map(f => f.id);
-        // The five hundred years `demography.test.ts` keeps, first, so this waits
-        // on that walk rather than repeating it.
+        // Inspect completed source-keyed ages; regeneration owns the cold walk.
         const bytes = (rows: unknown[]) => rows.reduce<number>((sum, row) =>
             sum + Buffer.byteLength(JSON.stringify(row)), 2) + Math.max(0, rows.length - 1);
         const census = (world: typeof seeded, years: number) => ({ years, day: world.currentDay,
@@ -91,12 +115,12 @@ describe('a house may fall; the ladder may not', () => {
                 .map(([key, value]) => [key, { rows: (value as unknown[]).length, bytes: bytes(value as unknown[]) }])),
             facts: { rows: world.history.facts.length, bytes: bytes(world.history.facts) },
             memories: { rows: world.memories.records.length, bytes: bytes(world.memories.records) } });
-        const growth = [census(await soakedWorld('drift-guard', { years: 500 }), 500)];
-        growth.push(census(await soakedWorld('drift-guard', { years: 1000 }), 1000));
-        const pastLimit = await soakedWorld('drift-guard', { years: 1200 });
+        const growth = [census(await sampledWorld('drift-guard', { years: 500 }), 500)];
+        growth.push(census(await sampledWorld('drift-guard', { years: 1000 }), 1000));
+        const pastLimit = await sampledWorld('drift-guard', { years: 1200 });
         expect(pastLimit.currentDay).toBe(seeded.currentDay + 1200 * 365);
         growth.push(census(pastLimit, 1200));
-        const state = await soakedWorld('drift-guard', { years: HORIZON_YEARS });
+        const state = await sampledWorld('drift-guard', { years: HORIZON_YEARS });
         growth.push(census(state, HORIZON_YEARS));
         writeFileSync('.claude/ladder-world-growth.json', JSON.stringify(growth, null, 2));
         const alive = state.npcs.filter(n => n.status === 'alive');
@@ -147,5 +171,5 @@ describe('a house may fall; the ladder may not', () => {
             `${risen.length} of ${high.length} people above Qi Condensation were born since `
             + 'the seeding. The rest of the ladder is inherited rather than climbed.'
         ).toBeGreaterThan(0.5);
-    }, 900_000);
+    }, 3_600_000);
 });

@@ -386,6 +386,9 @@ and nearby people bypass those draws. Selected incidents use the ordinary
 resolvers. History reads share indexes by person, house, place, year and sparse
 data column; append cursors and affected-bucket updates survive mortal pruning.
 These indexes are ephemeral readings of the ledger and are rebuilt after loading.
+An auction settlement shares dated attendance within that call and reads current
+purses at each lot. A retained lot retains its actual closing receipt through
+the ordinary business sweep, so loading or pruning cannot reopen settled stock.
 An already-started return to a lost member's own seat closes normally; arrival
 is what lets the house know them again. Other lost errands stay unclosed.
 Due ordinary journeys are settled only where `locationOnNpcJourney` can put

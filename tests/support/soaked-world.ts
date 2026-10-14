@@ -25,20 +25,17 @@
  * Every caller gets its own copy: tests change the worlds they are handed.
  */
 
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { loadCultivationCatalog } from '../../src/engine/world/catalog.js';
 import { advanceWorldForPlay } from '../../src/engine/world/driver.js';
 import { seedWorld } from '../../src/engine/world/seeding.js';
 import type { WorldState } from '../../src/engine/world/world-state.js';
 import type { SeedWorldOptions } from '../../src/engine/world/seeding.js';
-import { serializedFixture } from './serialized-fixture.js';
+import { fixtureSourceHash, serializedFixture } from './serialized-fixture.js';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 /** What `walkIt` calls; everything the walk can run is imported from these. */
 const WHERE_THE_SIMULATION_STARTS = [
     'src/engine/world/catalog.ts', 'src/engine/world/driver.ts', 'src/engine/world/seeding.ts'
@@ -49,29 +46,10 @@ const CHECKPOINT_DAYS = 25 * DAYS_PER_YEAR;
 
 let sourceHash: string | null = null;
 
-/** Preserve the existing live-catalog keys instead of rebuilding every kept walk. */
+/** One source identity for the fixture loader's immutable module graph. */
 function theSimulationsSource(): string {
     if (sourceHash !== null) return sourceHash;
-    const IMPORTED = /(?:from\s+|import\s*\(\s*)['"](\.{1,2}\/[^'"]+)['"]/g;
-    const seen = new Set<string>();
-    const pending = WHERE_THE_SIMULATION_STARTS.map(rel => path.join(ROOT, rel));
-    while (pending.length > 0) {
-        const file = pending.pop()!;
-        if (seen.has(file) || !fs.existsSync(file)) continue;
-        seen.add(file);
-        const text = fs.readFileSync(file, 'utf8');
-        for (const m of text.matchAll(IMPORTED)) {
-            const target = path.resolve(path.dirname(file), m[1]!.replace(/\.js$/, '.ts'));
-            if (target.endsWith('.ts')) pending.push(target);
-            else pending.push(`${target}.ts`, path.join(target, 'index.ts'));
-        }
-    }
-    const hash = createHash('sha256');
-    for (const file of [...seen].sort()) {
-        hash.update(path.relative(ROOT, file));
-        hash.update(fs.readFileSync(file));
-    }
-    sourceHash = hash.digest('hex').slice(0, 16);
+    sourceHash = fixtureSourceHash([...WHERE_THE_SIMULATION_STARTS, 'tests/support/soaked-world.ts']).slice(0, 16);
     return sourceHash;
 }
 
@@ -79,7 +57,7 @@ let keptDir: string | null = null;
 
 function keptAt(): string {
     if (keptDir !== null) return keptDir;
-    const root = path.join(os.tmpdir(), 'mnehmos-worlds');
+    const root = path.resolve(process.env.MNEHMOS_WORLD_CACHE ?? path.join(os.tmpdir(), 'mnehmos-worlds'));
     keptDir = path.join(root, theSimulationsSource());
     fs.mkdirSync(keptDir, { recursive: true });
     throwAwayOldWorlds(root, keptDir);
@@ -96,11 +74,23 @@ function throwAwayOldWorlds(root: string, current: string): void {
         .filter(entry => entry.isDirectory() && path.join(root, entry.name) !== current)
         .map(entry => ({ dir: path.join(root, entry.name), at: fs.statSync(path.join(root, entry.name)).mtimeMs }))
         .sort((a, b) => b.at - a.at);
-    for (const stale of others.slice(2)) fs.rmSync(stale.dir, { recursive: true, force: true });
+    for (const stale of others.slice(2)) {
+        const target = path.resolve(stale.dir);
+        if (!target.startsWith(`${path.resolve(root)}${path.sep}`)) throw new Error('Cache cleanup escaped its root');
+        const building = fs.readdirSync(target).filter(name => name.endsWith('.lock'))
+            .some(name => builderIsAlive(path.join(target, name)) !== false);
+        if (!building) fs.rmSync(target, { recursive: true, force: true });
+    }
 }
 
 const aSafeName = (seed: string): string => seed.replace(/[^A-Za-z0-9_-]/g, c => `%${c.charCodeAt(0).toString(16)}`);
 const fileFor = (seed: string, days: number): string => path.join(keptAt(), `${aSafeName(seed)}@${days}.json`);
+
+/** Read only a completed current-source checkpoint; measurement never starts an unnoticed cold walk. */
+export function preBakedWorld(seed: string, years: number): WorldState | null {
+    const file = fileFor(seed, Math.round(years * DAYS_PER_YEAR));
+    return fs.existsSync(file) ? readKept(file) : null;
+}
 
 /** The longest kept walk of this seed no longer than `days`, if any. */
 function nearestKept(seed: string, days: number): { days: number; file: string } | null {
@@ -131,6 +121,8 @@ let publication = 0;
 
 /** Ledger growth must not require one string as large as the whole world. */
 function keepWorld(file: string, state: WorldState): void {
+    const fresh = fixtureSourceHash([...WHERE_THE_SIMULATION_STARTS, 'tests/support/soaked-world.ts'], true).slice(0, 16);
+    if (fresh !== theSimulationsSource()) throw new Error('Simulation source changed during fixture generation; retry on the finished tree.');
     const directory = `${path.basename(file)}.${process.pid}.${publication++}.parts`;
     const parts = path.join(path.dirname(file), directory);
     fs.mkdirSync(parts);
@@ -213,7 +205,9 @@ export async function soakedWorld(
 async function walkIt(seed: string, days: number, file: string): Promise<WorldState> {
     // ONE WALKER A WORLD. Another fork asking for the same walk waits for it
     // rather than doing it again; an exited builder's lock is abandoned.
-    const lock = `${file}.lock`;
+    // Different horizons share one builder; the longer request resumes the
+    // shorter request's publication instead of walking their overlap twice.
+    const lock = path.join(keptAt(), `${aSafeName(seed)}.walk.lock`);
     for (;;) {
         try {
             fs.writeFileSync(lock, String(process.pid), { flag: 'wx' });

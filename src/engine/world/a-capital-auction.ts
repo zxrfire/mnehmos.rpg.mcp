@@ -15,6 +15,7 @@ import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { isRuined, transferPossession, type ObjectRecord } from './possessions.js';
 import type { CapitalOccasion } from './capital-missions-and-calendar.js';
 import type { WorldState } from './world-state.js';
+import { getNpc, getObject, indexById } from './world-state.js';
 import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { routeQueriesFor } from './locations.js';
 import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
@@ -135,18 +136,21 @@ export function bidAtCapitalAuction(state: WorldState, bidder: NpcRecord, venueI
         || (isTheWorldsToMove(bidder)
             ? positions?.has(bidder.id) ? positions.get(bidder.id) : locationOfNpcOnItsJourney(state, bidder, day)
             : playerLocationId) !== venueId) return null;
-    const lot = capitalAuctionLots(state, venueId, day).find(f => f.id === lotId);
-    if (!lot || bidder.id === lot.data.sellerId || bidder.id === lot.data.payeeId
+    const index = witnessIndexFor(state);
+    const lot = index.byId.get(lotId);
+    if (!lot || !index.openAuctionLots.has(lot) || lot.locationId !== venueId
+        || !(lot.day <= day && Number(lot.data.closesOnDay) >= day)
+        || bidder.id === lot.data.sellerId || bidder.id === lot.data.payeeId
         || stones < Number(lot.data.reserve) || stones > bidder.spiritStones) return null;
-    if (!theLotIsStillHeld(state.objects.find(object => object.id === lot.data.objectId), lot,
-        state.npcs.find(person => person.id === lot.data.sellerId))) return null;
+    if (!theLotIsStillHeld(typeof lot.data.objectId === 'string' ? getObject(state, lot.data.objectId) ?? undefined : undefined, lot,
+        typeof lot.data.sellerId === 'string' ? getNpc(state, lot.data.sellerId) ?? undefined : undefined)) return null;
     const bids = factsWithDataValue(state, 'lotId', lotId).filter(f => f.data.auctionBid === true);
     if (bids.some(f => Number(f.data.stones) >= stones)) return null;
     const committed = new Map<string, number>();
-    const active = new Set(pendingAuctionLots(state).filter(f => Number(f.data.closesOnDay) >= day).map(f => f.id));
-    for (const fact of witnessIndexFor(state).factsByPerson.get(bidder.id) ?? []) {
-        if (fact.data.auctionBid !== true || fact.actors[0]?.id !== bidder.id || !active.has(String(fact.data.lotId))
-            || fact.data.lotId === lotId) continue;
+    for (const fact of index.factsByPerson.get(bidder.id) ?? []) {
+        if (fact.data.auctionBid !== true || fact.actors[0]?.id !== bidder.id || fact.data.lotId === lotId) continue;
+        const other = index.byId.get(String(fact.data.lotId));
+        if (!other || !index.openAuctionLots.has(other) || !(Number(other.data.closesOnDay) >= day)) continue;
         committed.set(String(fact.data.lotId), Math.max(committed.get(String(fact.data.lotId)) ?? 0, Number(fact.data.stones)));
     }
     if (stones + [...committed.values()].reduce((s, n) => s + n, 0) > bidder.spiritStones) return null;
@@ -165,6 +169,13 @@ export function settleCapitalAuctions(state: WorldState, day: number,
 function settleThem(state: WorldState, day: number,
     playerAt?: { id: string; locationId: string | null }): HistoricalFact[] {
     const results: HistoricalFact[] = [];
+    // Settlement changes no player's identity, location, activity or goals.
+    // Reuse the existing involvement read within this settlement only.
+    const involvement = new Map<string, boolean>();
+    const playerInvolved = (person: NpcRecord): boolean => {
+        if (!involvement.has(person.id)) involvement.set(person.id, isPlayerInvolved(state, person));
+        return involvement.get(person.id)!;
+    };
     const positionsByDay = new Map<number, Map<string, string | null>>();
     const routes = routeQueriesFor(state.locations);
     const positionOn = (npc: NpcRecord, onDay: number): string | null => {
@@ -177,24 +188,46 @@ function settleThem(state: WorldState, day: number,
         return positions.get(npc.id) ?? null;
     };
     const lots = pendingAuctionLots(state).filter(f => Number(f.data.closesOnDay) <= day);
+    const presentObjectIds = new Set(state.objects.map(object => object.id));
+    // Only purses, history links and custody change during settlement. Keep
+    // attendance positions for this call; refresh each attendee's row per lot
+    // so one purchase changes what they can afford at the next closing.
+    const attendanceByDay = new Map<number, Map<string | null, number[]>>();
+    const attending = (onDay: number, venue: string | null): NpcRecord[] => {
+        let attendance = attendanceByDay.get(onDay);
+        if (!attendance) {
+            attendance = new Map();
+            for (let at = 0; at < state.npcs.length; at++) {
+                const npc = state.npcs[at]!;
+                if (npc.status !== 'alive') continue;
+                const place = npc.id === playerAt?.id ? playerAt.locationId : positionOn(npc, onDay);
+                const rows = attendance.get(place) ?? [];
+                rows.push(at); attendance.set(place, rows);
+            }
+            attendanceByDay.set(onDay, attendance);
+        }
+        return (attendance.get(venue) ?? []).map(at => state.npcs[at]!);
+    };
     for (const lot of lots) {
         const closes = Number(lot.data.closesOnDay);
         const bids = factsWithDataValue(state, 'lotId', lot.id).filter(f => f.data.auctionBid === true);
-        if (!playerAt && bids.some(f => f.actors.some(a => state.npcs.some(n => n.id === a.id && !isTheWorldsToMove(n))))) continue;
-        const objectAt = state.objects.findIndex(o => o.id === lot.data.objectId);
+        if (!playerAt && bids.some(f => f.actors.some(a => {
+            const npc = getNpc(state, a.id);
+            return npc !== null && !isTheWorldsToMove(npc);
+        }))) continue;
+        const objectAt = typeof lot.data.objectId === 'string' && presentObjectIds.has(lot.data.objectId)
+            ? indexById(state.objects, lot.data.objectId) : -1;
         const object = state.objects[objectAt];
-        const seller = state.npcs.find(n => n.id === lot.data.sellerId);
-        const available = theLotIsStillHeld(object, lot, seller);
-        const participants = available ? state.npcs.filter(n => n.status === 'alive'
-            && (n.id === playerAt?.id ? playerAt.locationId
-                : positionOn(n, closes)) === lot.locationId) : [];
+        const seller = typeof lot.data.sellerId === 'string' ? getNpc(state, lot.data.sellerId) : null;
+        const available = theLotIsStillHeld(object, lot, seller ?? undefined);
+        const participants = available ? attending(closes, lot.locationId) : [];
         const previous = Math.max(Number(lot.data.reserve) - 1, ...bids.map(b => Number(b.data.stones)));
         const possible = participants.filter(isTheWorldsToMove);
-        const distant = possible.filter(person => !isPlayerInvolved(state, person));
+        const distant = possible.filter(person => !playerInvolved(person));
         const selected = new Set((distant.length <= 4 ? distant : drawBackgroundIncidents(
             distant.map(value => ({ value, rate: 1 })), forStream(state.seed, 'background-auction-bidders', lot.id), 4))
             .map(person => person.id));
-        for (const npc of possible.filter(person => selected.has(person.id) || isPlayerInvolved(state, person))) {
+        for (const npc of possible.filter(person => selected.has(person.id) || playerInvolved(person))) {
             if (npc.id === lot.data.sellerId || npc.id === lot.data.payeeId) continue;
             const rng = forStream(state.seed, 'auction-bid', lot.id, npc.id);
             const interested = npc.goals.some(g => g.status === 'active'
@@ -225,15 +258,15 @@ function settleThem(state: WorldState, day: number,
                 stintDay: seller?.activity?.sinceDay ?? null } }));
         results.push(fact);
         if (winner && object) {
-            const at = state.npcs.findIndex(n => n.id === winner.id);
+            const at = indexById(state.npcs, winner.id);
             state.npcs[at] = { ...state.npcs[at]!, spiritStones: state.npcs[at]!.spiritStones - stones };
             const house = state.factions.find(h => h.id === lot.data.payeeId);
             if (house && seller) {
-                const sellerAt = state.npcs.findIndex(n => n.id === seller.id);
+                const sellerAt = indexById(state.npcs, seller.id);
                 state.npcs[sellerAt] = { ...state.npcs[sellerAt]!, spiritStones: state.npcs[sellerAt]!.spiritStones + stones };
             }
             else {
-                const payeeAt = state.npcs.findIndex(n => n.id === lot.data.payeeId);
+                const payeeAt = typeof lot.data.payeeId === 'string' ? indexById(state.npcs, lot.data.payeeId) : -1;
                 if (payeeAt >= 0) state.npcs[payeeAt] = { ...state.npcs[payeeAt]!, spiritStones: state.npcs[payeeAt]!.spiritStones + stones };
             }
             state.objects[objectAt] = { ...transferPossession(object, { onDay: closes, toHolderId: winner.id,
