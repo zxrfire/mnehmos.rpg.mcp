@@ -30,6 +30,9 @@
  * renamed by whoever owns them, and a test that pins one is measuring their
  * sweep rather than this channel - so the square is read out of the world and
  * whoever is in it is who the turn is about.
+ * A completed lesser-action clock does not turn an immediate gift into a
+ * years-long digest. The census transferred the stones and wrote the favor,
+ * but the later three-hour reply span suppressed the recipient's scene reading.
  */
 
 import { describe, expect, it } from 'vitest';

@@ -1219,7 +1219,7 @@ import {
     stonesNamedIn,
     structureCalls,
     summariseToolBody,
-    ONLY_FOR_AN_OPERATOR,
+    onlyForOperator,
     tollCalls,
     withoutTheHandlerName,
     withoutTheOverride,
@@ -4405,12 +4405,12 @@ export class GameService {
         // after the advance and remains the authority on who is here now.
         this.captureReplyCardsBeforeTime(cultivator);
         const nowRun = this.repos.runs.getById(run.id)!;
-        const afterHandler = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+        const afterHandler = this.repos.cultivators.getById(cultivator.id);
         const approach = done.calls.some(call => call.name === 'engine.approachTime') ? LESSER_ACTION_DAYS.move : 0;
         // Lesser time is a fallback only for an execution that did not state a
         // time disposition. Facts are for the player and narrator, not a pricing
         // protocol: a person may naturally say "no time passed" in a real reply.
-        if (nowRun.status === 'active' && afterHandler.alive
+        if (nowRun.status === 'active' && afterHandler?.alive
             && done.outcome !== 'refused' && !done.cutShort && done.timeDisposition === undefined && !done.calls.some(call => !call.ok)
             && !done.calls.some(call => call.name === 'world.waitForHour')
             && Math.abs(nowRun.elapsedDays - run.elapsedDays - approach) < 1e-8) {
@@ -13010,8 +13010,8 @@ ${opened.text}` : receipt,
         // `lines` serves the narrator and, through `summary` below, the
         // operator. `prose` is the deterministic account a player reads with no
         // model configured, and a raw die roll has no reader there. See
-        // `ONLY_FOR_AN_OPERATOR`.
-        const forThePlayer = lines.filter(line => !line.startsWith(ONLY_FOR_AN_OPERATOR));
+        // `onlyForOperator`.
+        const forThePlayer = lines.filter(line => !onlyForOperator(line));
 
         return {
             facts: factsForToolResult(
@@ -22550,6 +22550,7 @@ ${fit.line}`;
             ? []
             : [{ role: 'engine', turn, text: execution.facts.headline }];
         for (const line of execution.facts.structure) {
+            if (onlyForOperator(line)) continue;
             entries.push({ role: 'engine', turn, text: withoutTheHandlerName(line) });
         }
         for (const event of execution.events.slice(0, MAX_LOGGED_EVENTS)) {

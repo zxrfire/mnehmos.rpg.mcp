@@ -23,6 +23,10 @@
  * Red-checked: dropping the largest-remainder loop turns the exact-sum
  * assertions red; returning a floor of 0.1 instead of 0 from `weightOfAnAsk`
  * turns the refusal assertions red.
+ * The committed-head census found an import cycle capturing the alliance line
+ * before initialization: its negative was NaN and hostile houses received places.
+ * The paid-rival control uses a valid hostile standing independent of that line,
+ * so an uninitialized constant cannot also corrupt the fixture's input.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -116,7 +120,7 @@ describe('how a house doles out the places it holds', () => {
     it('cannot be bought past the line a rivalry sits at', () => {
         const hated = asking({
             id: 'f-hated',
-            standingFromTheHolder: TOO_HOSTILE_TO_BE_GIVEN_A_PLACE - 0.1,
+            standingFromTheHolder: -1,
             paid: STONES_PER_POINT_OF_STANDING * 100
         });
         expect(weightOfAnAsk(hated)).toBe(0);

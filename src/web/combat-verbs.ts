@@ -135,7 +135,7 @@ import { type HeldBack, type StandingFight, theFightStillStands } from './fight-
 import { routesOutOfAGap, sayingWhatWouldWork } from './gap-routes.js';
 import { loosePlaceKey } from './knowledge.js';
 import { creditIn, headTitleOf, positionIn, spendStanding } from './standing.js';
-import { refused } from './tool-result-prose.js';
+import { refused, operatorDetail, onlyForOperator } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
@@ -1230,7 +1230,7 @@ export const combatVerbs = {
                     : 'the other';
         const inWords = (key: string): string => key.replace(/[_:]+/g, ' ').trim();
         facts.structure.push(
-            `Round ${this.fight.state.roundsFought} of ${this.fight.state.roundBudget}. `
+            operatorDetail(`Round ${this.fight.state.roundsFought} of ${this.fight.state.roundBudget}. `
             + `${cultivator.name} answered "${turn.playerAct}"; `
             + `${held.party.name} answered "${turn.theirAct}". `
             + turn.exchanges.map(x =>
@@ -1241,7 +1241,7 @@ export const combatVerbs = {
             + `. Breaking off prices at ${(where.flight.chance * 100).toFixed(0)}%: `
             + where.flight.modifiers.map(m => `${inWords(m.source)} ${m.delta >= 0 ? '+' : ''}`
                 + m.delta.toFixed(2)).join(', ')
-            + '. Nothing is written down until the fight ends.'
+            + '. Nothing is written down until the fight ends.')
         );
         if (turn.shout) facts.structure.push(...turn.shout.heard.map(h => h.because));
 
@@ -1258,7 +1258,7 @@ export const combatVerbs = {
             calls: [{
                 name: 'combat.round',
                 action: held.verb,
-                summary: `${turn.line} ${where.line}`,
+                summary: `${turn.line} ${where.line} ${facts.structure.filter(onlyForOperator).join(' ')}`,
                 ok: true
             }]
         };
@@ -1488,14 +1488,14 @@ export const combatVerbs = {
             execution.facts.structure.push(lastRound.line);
             execution.facts.prose = [lastRound.line, execution.facts.prose].join('\n\n');
             if (lastRound.flight) {
-                execution.facts.structure.push(
-                    `Flight: ${(lastRound.flight.chance * 100).toFixed(0)}% against a roll of `
+                const detail = operatorDetail(`Flight: ${(lastRound.flight.chance * 100).toFixed(0)}% against a roll of `
                     + `${lastRound.flight.roll.toFixed(3)}; ${lastRound.flight.escaped
                         ? 'clear' : 'caught'}, ${lastRound.flight.damage} paid either way`
                     + (lastRound.fleeingToward
                         ? `, making for ${lastRound.fleeingToward.name}` : ', nowhere named')
-                    + '.'
-                );
+                    + '.');
+                execution.facts.structure.push(detail);
+                execution.calls.push({ name: 'combat.flight', action: held.verb, summary: detail, ok: true });
             }
             if (lastRound.shout) {
                 execution.facts.structure.push(...lastRound.shout.heard.map(h => h.because));
@@ -1608,6 +1608,11 @@ export const combatVerbs = {
             // this turn actually resolved.
             const holderId = seed.holderId === held.opponent.id ? held.party.id : seed.holderId;
             const subjectId = seed.subjectId === held.self.id ? cultivator.id : seed.subjectId;
+            const holder = this.atHand?.npcs.find(person => person.id === holderId);
+            // The applied existence transition can end somebody the resolver
+            // expected to survive bodily destruction. Their heirs keep the
+            // actual death accounts; the ended person cannot hold a new one.
+            if (holder?.status === 'physically_dead' || holder?.status === 'remnant') continue;
 
             const record = createObligation({
                 kind: seed.kind,

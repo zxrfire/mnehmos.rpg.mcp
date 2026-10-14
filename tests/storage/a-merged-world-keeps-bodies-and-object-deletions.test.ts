@@ -3,6 +3,9 @@
  * no centuries of history are needed to observe a lost column or resurrected item.
  * Optional absence and explicit clearing remain distinct. Claims and provenance
  * must disappear with consumed objects while unrelated inventory survives.
+ * Suite integration also found duplicate insight ALTER guards sharing one old
+ * column snapshot. An older table must upgrade once and reopen without a second
+ * attempt to add the same column.
  */
 import { afterEach, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
@@ -26,6 +29,19 @@ function prepared() {
     world.npcs.push(person);
     return { db, repo, world, person, day };
 }
+
+it('upgrades an older NPC table once and can repeat the migration', () => {
+    const { db, repo, world, person } = prepared();
+    db.exec('ALTER TABLE world_npcs DROP COLUMN insights; ALTER TABLE world_npcs DROP COLUMN achievements;');
+    migrate(db);
+    migrate(db);
+    person.cultivation.insights = [];
+    person.cultivation.achievements = [];
+    repo.saveWorld(world);
+    const loaded = repo.loadWorld(world.id)!.npcs[0]!;
+    expect(loaded.cultivation.insights).toEqual([]);
+    expect(loaded.cultivation.achievements).toEqual([]);
+});
 
 it('keeps plague and finite body fields beside Native insights and achievements', () => {
     const { repo, world, person, day } = prepared();
@@ -80,7 +96,8 @@ it('does not restore a removed object or its children on reopening', () => {
     const { db, repo, world, person, day } = prepared();
     const used = assertClaim(makeObject({ id: 'used-token', name: 'The consumed token', kind: 'token',
         ownerId: person.id, possessorId: person.id, provenance: [{ onDay: day, holderId: person.id,
-            holderName: person.name, how: 'bought' }] }), { claimantId: person.id,
+            holderName: person.name, how: 'bought', source: 'The arranged local purchase',
+            previousHolderId: null, previousHolderName: null, factId: null, note: '' }] }), { claimantId: person.id,
         claimantName: person.name, basis: 'purchase', assertedOnDay: day });
     const kept = makeObject({ id: 'kept-token', name: 'The retained token', kind: 'token', possessorId: person.id });
     world.objects.push(used, kept); repo.saveWorld(world);

@@ -3,6 +3,9 @@
  * years. Measured at year 500, zone_forbidden had consumed every shipped vein.
  * The 30 September ruling replaces sales and claims with apex/court grants,
  * distributes every opening vein, and keeps forbidden ground separate.
+ * The return control arranges the failing holding after that year's economy
+ * and before the dated vein review. The full-year census fixture began empty,
+ * then earned 6,031 stones before review; tribute debt does not erase that income.
  */
 import { describe, it, expect } from 'vitest';
 import { whoseVeinsChangeHands, whoGrantsThisVein } from '../../../src/engine/world/a-vein-is-taken-given-up-or-granted.js';
@@ -127,10 +130,12 @@ describe('vein grants are written into the running world', () => {
             && l.controllingFactionId === 'sect-clearwater-ward')!;
         const holder = state.factions.find(f => f.id === ground.controllingFactionId)!;
         const grantor = whoGrantsThisVein(state, ground)!;
+        const yearStart = state.currentDay;
+        applyPressure(state, yearStart, yearStart + 172);
         holder.resources.spirit_stones = 0;
         holder.resources.tribute_owed_per_year = 1_000_000;
         holder.resources.power_ordinal = 0;
-        const first = applyPressure(state, state.currentDay, state.currentDay + YEAR);
+        const first = applyPressure(state, yearStart + 172, yearStart + YEAR);
         const returned = first.events.find(e => e.kind === 'vein_given_up' && e.fact.locationId === ground.id)!;
         expect(returned).toBeDefined();
         expect(returned.fact.factionIds).toEqual([holder.id, grantor.id]);
@@ -139,7 +144,7 @@ describe('vein grants are written into the running world', () => {
         expect(holder.controlledLocationIds).not.toContain(ground.id);
         expect(grantor.controlledLocationIds).toContain(ground.id);
 
-        const second = applyPressure(state, state.currentDay + YEAR, state.currentDay + 2 * YEAR);
+        const second = applyPressure(state, yearStart + YEAR, yearStart + 2 * YEAR);
         const granted = second.events.find(e => e.kind === 'vein_granted' && e.fact.locationId === ground.id)!;
         expect(granted).toBeDefined();
         const recipient = state.factions.find(f => f.id === granted.fact.data.toId)!;

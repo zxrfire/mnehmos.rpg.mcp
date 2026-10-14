@@ -211,7 +211,7 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 + `What is missing is a book, or somebody willing to teach you one.`,
             structure:
                 `No method is practised, so the manual carries no further than `
-                + `${theRung(0)} and the rate multiplier is 0. A stretch of any length `
+                + `${theRung(0)}. A stretch of any length `
                 + 'returns exactly nothing.'
         });
     } else if (input.manual.state === 'exhausted') {

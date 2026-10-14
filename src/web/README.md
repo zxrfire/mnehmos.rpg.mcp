@@ -2246,7 +2246,7 @@ where the string is assigned, never by the name of the function that built it:
 
 | Where the string is assigned | Where it is read | Format |
 |---|---|---|
-| `EngineFacts.structure` (including `factsForRefusal`'s third argument) | `engineEntries` renders every entry into the **play log**, beside the prose | sentences, every figure kept |
+| `EngineFacts.structure` (including `factsForRefusal`'s third argument) | `engineEntries` renders player facts into the **play log**, beside the prose; `Roll: `, `World digest: ` and `Operator: ` diagnostics remain in the inspector | sentences for player facts, every perceived figure kept |
 | `EngineFacts.headline`, `lines`, `prose` | the play log and the narrator | sentences |
 | `SimEvent.summary` | the play log, as `Day N: ...` | sentences |
 | `ToolCallRecord.summary` and `.note` | the **inspector** only - nothing reads a call into the log | a compact field dump is correct here |
@@ -2255,6 +2255,15 @@ The asymmetry is one-directional and worth knowing: `refused()` sources its call
 from `facts.structure[0]`, and `structureCalls` builds rows out of structure lines - so
 structure reaches both surfaces and `calls[]` reaches only one. **Where an emitter reaches
 both, the player's surface decides the format.**
+
+A resolved fight reads the actual world ending before opening the resolver's
+additional personal accounts. A remnant or a dead person holds no new bodily
+grudge. Existing accounts held by their heirs and house remain intact; a surviving
+soul can still hold its own account.
+
+An immediate local scene is read after the handler's writes and before its generic
+reply clock moves the people involved. Actual long work and cultivation spans
+retain their digest treatment; the later scene pass does not repeat that reply.
 
 The inspector's rows carry `name` and `action` as separate fields with the routine's own
 identifier in a `<code>`, which is why a field dump reads correctly there and does not read

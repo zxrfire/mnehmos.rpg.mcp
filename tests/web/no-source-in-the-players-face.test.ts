@@ -15,12 +15,18 @@
  *
  * The note was fixed where it is written. This is the net, because that field
  * is read at three sites and filled by every tool in the game.
+ * Unheard world counts are inspector diagnostics. The census printed them
+ * into this same transcript; the guard also requires their original inspection
+ * receipts to survive, so deleting the facts cannot satisfy the boundary.
  */
 
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
-import { reportFromDigest, worldCalls } from '../../src/web/tool-result-prose';
+import { onlyForOperator, reportFromDigest, worldCalls } from '../../src/web/tool-result-prose';
 import type { PlayerDigest } from '../../src/engine/world/digest';
+import { makeScheduledEffect } from '../../src/engine/world/world-state.js';
+import { worldLocationFor } from '../../src/web/entities.js';
+import { prepareWorldClockForPreciseSpan } from '../../src/server/state/cultivation-world.js';
 
 // The played log exposed an unheard-event count. Both visible channels must
 // carry only received news; the native digest retains its accounting unchanged.
@@ -47,7 +53,13 @@ describe('unheard news stays outside the player log', () => {
         const before = JSON.stringify(received);
         const report = reportFromDigest(received);
         expect(report.lines).toEqual(['Year 1: A cultivator crossed a realm, twice over the span.']);
-        expect(worldCalls(report).map(call => call.summary)).toEqual(report.lines);
+        expect(report.structure.filter(line => !onlyForOperator(line))).toEqual(report.lines);
+        const inspected = worldCalls(report).map(call => call.summary);
+        expect(inspected.filter(line => !onlyForOperator(line))).toEqual(report.lines);
+        expect(inspected.filter(onlyForOperator)).toEqual([
+            'World digest: 1 line(s) reached this cultivator; 166 event(s) reached them by no channel at all.',
+            'World digest: a realm crossing reached them via market, in unattributed form, at magnitude 2, 2 times over the span.'
+        ]);
         expect(JSON.stringify(received)).toBe(before);
     });
 });
@@ -202,8 +214,24 @@ describe('the engine log is read by somebody standing in a room', () => {
         // it exists to catch, so it has to have found somebody.
         expect(somebody, roster.narration.slice(0, 200)).toBeTruthy();
 
+        // Free reads need not produce news. Arrange one actual local calendar
+        // report and let its ordinary clock writer deliver it, rather than
+        // depending on unrelated events happening in this seed.
+        const current = game.currentRun();
+        const world = await prepareWorldClockForPreciseSpan(current.run, current.cultivator);
+        game.atHand = world;
+        const ground = worldLocationFor(world, game.currentRun().cultivator.location)!;
+        world.schedule.push(makeScheduledEffect({
+            id: 'engine-log-local-meeting', kind: 'meeting',
+            dueOnDay: world.currentDay + 1 / 24, locationId: ground.id,
+            actorIds: [cultivator.id],
+            summary: 'A gathering is announced here.', data: { scale: 'local' }
+        }));
+        game.theWorldMoved();
         const offences: string[] = [];
+        const worldDiagnostics: string[] = [];
         for (const said of [
+            'I wait for 2 hours',
             "I look around",
             "I assess myself",
             "what is for sale",
@@ -227,7 +255,10 @@ describe('the engine log is read by somebody standing in a room', () => {
         ]) {
             const answer = await game.act(said) as unknown as {
                 state: { log: Array<{ role: string; text: string }> };
+                toolCalls: Array<{ name: string; summary: string }>;
             };
+            worldDiagnostics.push(...answer.toolCalls.filter(call => call.name === 'world.advanceWorldForPlay')
+                .map(call => call.summary).filter(onlyForOperator));
             const rulings = (answer.state.log ?? []).filter(row => row.role === "engine");
             for (const row of rulings) {
                 for (const [what, re] of [
@@ -242,6 +273,8 @@ describe('the engine log is read by somebody standing in a room', () => {
             }
         }
 
+        expect(worldDiagnostics.length, 'the world diagnostic receipts must remain inspectable').toBeGreaterThan(0);
+        expect(worldDiagnostics.every(line => line.startsWith('World digest: '))).toBe(true);
         expect(
             [...new Set(offences)],
             "The engine log sits on the same screen as the prose and is rewritten by "

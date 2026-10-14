@@ -34,6 +34,13 @@ without knowing an origin exists.
 
 ## The contract
 
+Birth draws from living catalog houses. A destroyed house's historical ground
+remains in the world, but is not a place a newborn enters on its present roll.
+Political jurisdiction and physical seat placement remain separate reads.
+The physical read uses the world's `houseSeatRegions`: last listing wins and
+an unlisted house retains the existing first-region fallback. This fixes a
+birth seat following its political province while its actual ground stood elsewhere.
+
 1. **An origin buys inputs, never rank.** `Birth` has no realm ordinal, no
    cultivation progress, no rank index, no foundation and no insight, and no
    field may be added that could carry one. An Empyrean Court Seat's child opens

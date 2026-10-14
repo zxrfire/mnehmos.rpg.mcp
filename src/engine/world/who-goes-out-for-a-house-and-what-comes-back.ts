@@ -26,6 +26,8 @@ import {
 import { getSubsidiariesOf, theBodyItAnswersTo } from '../../data/cultivation/governance-and-water-rights.js';
 import { containmentHeldBy } from '../../data/cultivation/artifacts.js';
 import { regardFor, type Regard } from '../cultivation/regard.js';
+import { ALLIED_STANDING, RIVAL_STANDING } from './house-standing.js';
+export { ALLIED_STANDING, RIVAL_STANDING } from './house-standing.js';
 import { summonable } from '../encounters/duties.js';
 import { clampOrdinal } from '../cultivation/realms.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
@@ -145,8 +147,6 @@ export interface HouseAsItStands {
  * Standing above which a house is somebody's ally, and below which somebody's
  * rival.
  */
-export const ALLIED_STANDING = 0.3;
-export const RIVAL_STANDING = -0.3;
 
 /**
  * One predicate per NEED KEY. Not one per reason.

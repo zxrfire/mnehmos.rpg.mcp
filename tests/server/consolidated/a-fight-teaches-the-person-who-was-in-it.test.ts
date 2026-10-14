@@ -14,6 +14,10 @@
  * Plus the two other rulings that reach the database through this tool:
  * `toMakeThemComply: true` reaching `submission` and leaving a person standing, and
  * somebody who would rather die doing so.
+ * The compliance control names a light open-handed blow. A goal alone does
+ * not select that physical act or prevent flight. This control presses the
+ * fight to its conclusion; the census's withdrawing bout never captured the
+ * courier and correctly could not reach submission.
  */
 
 import {
@@ -188,7 +192,9 @@ describe('forcing somebody to submit, through the tool', () => {
 
         const result = await combat({
             action: 'resolve',
+            thrown: { with: 'open_hand', at: 'unstated', force: 'light' },
             toMakeThemComply: true,
+            fightToTheEnd: true,
             opponent: { name: 'a courier', realmOrdinal: realmStart('core_formation') - 2 }
         });
 

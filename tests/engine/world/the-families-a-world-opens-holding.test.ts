@@ -11,6 +11,10 @@
  * seeds, and it asserts the DISTRIBUTION rather than the total - because "39% of
  * the world has a blood tie" and "one household with two hundred people in it"
  * are the same number and only one of them is a world.
+ *
+ * Postings can move a parent away from the household after its ties are seeded.
+ * When current rooms differ, the shared home is read from the actual posting's
+ * return ground. The rate bounds remain unchanged and require separate review.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -102,10 +106,15 @@ describe('the families a world opens holding', () => {
                 expect(back, 'and the parent holds their half of it').toBeDefined();
                 expect(back.kind).toBe('child');
                 expect(back.standing).toBe(CHILD_STANDING);
-                // A household is people who live together. `applyHouseholds`'s
-                // rule, and the one every consumer that asks who was standing
-                // near somebody depends on.
-                expect(parent.locationId).toBe(child.locationId);
+                // Families were bound before house postings. A current post
+                // moves somebody without changing who raised them; its native
+                // returnTo records the household ground they left.
+                if (parent.locationId !== child.locationId) {
+                    expect(parent.activity?.returnTo ?? child.activity?.returnTo,
+                        'a dispersed opening household needs an actual posting').toBeTruthy();
+                    expect(parent.activity?.returnTo ?? parent.locationId)
+                        .toBe(child.activity?.returnTo ?? child.locationId);
+                }
                 // And old enough to be one.
                 expect(parent.identity.bornOnDay).toBeLessThan(child.identity.bornOnDay);
             }

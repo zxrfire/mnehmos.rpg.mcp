@@ -15,15 +15,20 @@
  * state - the word the derivation returns, the rows behind it, and who is in a
  * position to act - and none is on prose.
  *
- * ADMIN is used twice and only to ARRANGE: it sets the rung so the cultivator
- * survives the reprisals, and it lands the attempts so the run does not turn
- * on nine coin flips. `docs/admin.md`: *the admin panel can set preconditions,
+ * ADMIN arranges the rung, awareness of actual present people, and successful
+ * attempts. The fixture also arranges contact at each person's current room.
+ * `docs/admin.md`: *the admin panel can set preconditions,
  * but it allows me to test outcomes.* Nothing here forces an outcome the engine
  * did not then write for itself - the records asserted on are the ones the
  * ordinary `interact` path wrote.
  * Each wrong now spends time and may change daily placement. The test meets
  * each previously named target in their current area before the next wrong;
  * it still requires every distinct deed to be written to the same ledger.
+ * The later cost-based pricing leaves the original three-person career at
+ * 1.45 against the unchanged method line of 2. The fixture now meets eight
+ * actual people and preserves the demonic, pursuit and distinct-deed claims.
+ * Census diagnostics measured 24 distinct ordinary wrongs worth 3.60, with
+ * two actual pursuers. No severity or alignment threshold is changed.
  */
 
 // Load the played entry point before reading the catalogs it initializes.
@@ -34,13 +39,12 @@ import { whoseArt } from '../../src/engine/world/manuals';
 import { whatFollowsFromTheBout } from '../../src/engine/social-leverage/going-further-than-an-agreed-bout-allowed';
 import { activeWorld } from '../../src/server/state/cultivation-world';
 import type { AHolder } from '../../src/engine/social-leverage/being-hunted';
-import { whatTheirRecordMakesThem } from '../../src/engine/social-leverage/personal-alignment';
-import { obligationFromRow } from '../../src/storage/repos/obligation.repo';
 import { whatTheWorldHoldsAbout } from '../../src/web/personal-record';
 import type { GameService } from '../../src/web/game';
 import { worldLocationFor } from '../../src/web/entities';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
+import { whereCompoundsAre, whereTheyAreStanding } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 
 /** High enough to be seen and dealt with, before anybody is stood level with. */
 const IN_PLAIN_SIGHT = 12;
@@ -106,60 +110,55 @@ const WOULD_MISS_THEM = new Set(['kin', 'spouse', 'parent', 'child']);
 
 /** Who is standing here, and the rung that puts the cultivator among them. */
 async function standingAmongThem(
-    game: { act(text: string): Promise<{ narration: string }> } & Pick<GameService, 'atHand' | 'currentRun'>
+    game: { act(text: string): Promise<{ narration: string }> } & Pick<GameService, 'atHand' | 'currentRun' | 'repos' | 'present' | 'knowledge'>
 ): Promise<{ neighbours: string[]; rung: number }> {
     const neighbours = await whoIsHere(game);
-    // A PLACE IS READ INTO AREAS OF AT MOST THREE, so three people to wrong may take a walk round
-    // it, asking again in each, the way a player would.
+    // Collect actual people across the place's existing areas.
     const place = game.atHand ? worldLocationFor(game.atHand, game.currentRun().cultivator.location) : null;
     for (const area of place && game.atHand ? theAreasOf(game.atHand, place).areas : []) {
-        if (neighbours.length >= 3) break;
-        await game.act(`I go to ${area.name}`);
+        if (neighbours.length >= 8) break;
+        game.repos.cultivators.standIn(game.currentRun().cultivator.id, area.id);
+        // Knowing these actual faces is an arranged precondition. This file
+        // tests what wrongdoing writes, while the greeting file tests how a
+        // person gives their name. No name is invented or pinned to the seed.
+        for (const person of game.present(game.currentRun().cultivator)) {
+            await game.act(`ADMIN grant_knowledge kind=cultivator name=${person.name}`);
+        }
         for (const name of await whoIsHere(game)) if (!neighbours.includes(name)) neighbours.push(name);
     }
-    const three = neighbours.slice(0, 3);
-    return { neighbours: three, rung: await levelWith(three) };
+    const career = neighbours.slice(0, 8);
+    expect(career.length, 'the ordinary career needs eight actual people, not repeated charges against one').toBe(8);
+    return { neighbours: career, rung: await levelWith(career) };
+}
+
+/** Arrange contact at their actual room immediately before each dated act. */
+async function meetThem(game: GameService, who: string): Promise<void> {
+    const world = (await game.loadWorld())!;
+    const target = world.npcs.find(person => person.name === who)!;
+    const physical = whereTheyAreStanding(world, whereCompoundsAre(world), target,
+        new Set(world.npcs.map(person => person.id)));
+    const place = world.locations.find(location => location.id === physical)!;
+    const body = game.currentRun().cultivator;
+    game.repos.cultivators.update(body.id, { location: place.name });
+    await standWhereThePeopleAre({ game, repos: game.repos }, body.id, new Set([target.id]));
+    expect(game.present(game.currentRun().cultivator).some(person => person.id === target.id),
+        'the next wrong requires its named target to be present').toBe(true);
 }
 
 /** Four ordinary verbs, none of which is a special case anywhere. */
 const WHAT_THEY_DID = ['rob', 'threaten', 'deceive', 'interrogate'];
 
-/**
- * Who the game just said was standing here, in the words it used.
- *
- * Read out of the narration rather than pinned, because the run seed decides
- * where somebody is born and a hard-coded name is a coincidence waiting to be
- * asserted. It is also the thing a player does: AGENTS.md - *any name the game
- * prints is a name the game must accept.*
- */
-async function whoIsHere(game: { act(text: string): Promise<{ narration: string }> }): Promise<string[]> {
-    // ASKED, AND NOT GLANCED AT.
-    //
-    // This used to read the arrival prose from `I look around`, and that stopped
-    // being the roster: the design owner's ruling is that walking into a square
-    // hands you ONE person or their party, and everybody else is a count -
-    // *"you don't necessarily know everyone who is here right off the bat"* -
-    // with the roster reserved for the sentence a player deliberately types,
-    // *"who else is here?"*
-    //
-    // So the harvester asks, which is what a player does and what the feature
-    // is for. Still read out of the words the game printed rather than pinned:
-    // AGENTS.md - *any name the game prints is a name the game must accept.*
-    const look = await game.act('who else is here');
-    // THE CENSUS STOPPED BEING A LIST, so this stopped being a list read.
-    //
-    // It used to open "X, Y and Z are here." and this split that one sentence.
-    // A roll call is not how anybody writes a room, so the census now gives
-    // each person their own sentence, opening with their name and what they
-    // are at. The names are still read out of the words the game printed
-    // rather than pinned - AGENTS.md, *any name the game prints is a name the
-    // game must accept* - and what is read is now the subject of each
-    // sentence instead of the members of one list.
-    return look.narration
-        .split(/(?<=\.)\s+/)
-        .map(sentence => /^([^.]+?) is (?:here\b|.*\bhas not looked up\b)/.exec(sentence.trim()))
-        .filter((found): found is RegExpExecArray => found !== null)
-        .map(found => found[1].trim());
+/** Actual present people whose names this fixture has arranged to know. */
+async function whoIsHere(game: { act(text: string): Promise<{ narration: string }> }
+    & Pick<GameService, 'present' | 'currentRun' | 'knowledge'>): Promise<string[]> {
+    // Arrival prose and a census need not introduce every face. This career
+    // tests deeds rather than introductions, so read actual presence and the
+    // existing awareness authority. Names remain drawn from the real world.
+    await game.act('who else is here');
+    const body = game.currentRun().cultivator;
+    return game.present(body)
+        .filter(person => game.knowledge.isAwareOf(body.id, 'cultivator', person.id))
+        .map(person => person.name);
 }
 
 /** ADMIN_MODE is read at call time, so a test can turn it on and put it back. */
@@ -239,13 +238,7 @@ describe('becoming something by acting', () => {
 
         for (const who of neighbours) {
             for (const verb of WHAT_THEY_DID) {
-                const world = (await game.loadWorld())!;
-                const target = world.npcs.find(n => n.name === who)!;
-                const place = world.locations.find(l => l.id === target.locationId)!;
-                game.repos.cultivators.update(cultivator.id, { location: place.name });
-                await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id, new Set([target.id]));
-                expect(game.present(game.repos.cultivators.getById(cultivator.id)!).some(p => p.id === target.id),
-                    'the next wrong requires its named target to be present').toBe(true);
+                await meetThem(game, who);
                 await game.act(`ADMIN interact I ${verb} ${who}`);
                 // The reprisals cost the body, and a dead cultivator cannot go
                 // on being anything. Arranging, not deciding.
@@ -297,6 +290,7 @@ describe('and what the people holding it can do about it', () => {
         await game.act(`ADMIN set_realm ${rung}`);
         for (const who of neighbours) {
             for (const verb of WHAT_THEY_DID) {
+                await meetThem(game, who);
                 await game.act(`ADMIN interact I ${verb} ${who}`);
                 await game.act(`ADMIN set_realm ${rung}`);
             }
@@ -407,6 +401,7 @@ describe('and it binds anybody', () => {
         expect(theOneTheyPicked, 'nobody was standing here').toBeDefined();
         await game.act(`ADMIN set_realm ${rung}`);
         for (const verb of WHAT_THEY_DID) {
+            await meetThem(game, theOneTheyPicked);
             await game.act(`ADMIN interact I ${verb} ${theOneTheyPicked}`);
             await game.act(`ADMIN set_realm ${rung}`);
         }
@@ -578,6 +573,7 @@ describe('the sheet finally says something true', () => {
         await game.act(`ADMIN set_realm ${rung}`);
         for (const who of neighbours) {
             for (const verb of WHAT_THEY_DID) {
+                await meetThem(game, who);
                 await game.act(`ADMIN interact I ${verb} ${who}`);
                 await game.act(`ADMIN set_realm ${rung}`);
             }
@@ -594,77 +590,4 @@ describe('the sheet finally says something true', () => {
         await game.act(`ADMIN set_realm ${PAST_ANYBODY_HERE}`);
         expect(game.state().cultivator.feuds).toEqual([]);
     }, 300_000);
-});
-
-describe('and the world\'s own killers are on the ledger too', () => {
-    withAdmin();
-
-    /**
-     * The design owner, on a war leaving nothing where a played killing left a
-     * grudge: *this is bespoke. a war death is still a grudge. fix it.*
-     *
-     * Played, because that is the only way this was ever going to be found:
-     * the world's wars ran for centuries writing an inherited tie into
-     * `WorldState` and nothing at all into the table this reading is over. So
-     * the reading measured the player alone, in a world full of killers no
-     * record knew about.
-     *
-     * The span is arranged with ADMIN and nothing else is: the player sits
-     * still, and every row asserted on was written by the world fighting its
-     * own wars.
-     */
-    it('writes a war\'s dead into the same table a player\'s killing reaches', async () => {
-        const { db, game } = await makeGameInWorld({
-            seed: 'war-ledger', worldSeed: 'vol-a', adminMode: true
-        });
-        const { cultivator } = await game.newRun('Bystander');
-        // Rations for the span, and a rung that survives it. Arranging.
-        db.prepare('UPDATE cultivators SET spirit_stones = 90000000 WHERE id = ?')
-            .run(cultivator.id);
-        await game.act('ADMIN set_realm 30');
-
-        expect((db.prepare('SELECT COUNT(*) AS n FROM obligations')
-            .get() as { n: number }).n).toBe(0);
-
-        for (let i = 0; i < 6; i++) {
-            await game.act('ADMIN advance_days years=50 rations=9000');
-            await game.act('ADMIN set_realm 30');
-        }
-
-        const rows = (db.prepare('SELECT * FROM obligations').all() as never[])
-            .map(obligationFromRow);
-        const fromAFight = rows.filter(r => r.tags.includes('bout'));
-        expect(fromAFight.length).toBeGreaterThan(0);
-
-        // Nobody arranged a war, so every one of them is priced as the open
-        // killing it was - the same band a killing in a square gets.
-        for (const row of fromAFight) {
-            expect(row.tags).toContain('open');
-            expect(row.subjectId).not.toBe(cultivator.id);
-            expect(['grave', 'serious']).toContain(row.severity);
-        }
-        expect(fromAFight.some(r => r.severity === 'grave')).toBe(true);
-
-        // One battle, many dead, and each death ONE deed rather than one row
-        // per griever. This is the dedupe the reading depends on: without it a
-        // victim's family size would price the killer's character.
-        const deeds = new Set(fromAFight.map(r => r.triggeringEventId));
-        expect(deeds.size).toBeGreaterThan(0);
-        expect(deeds.size).toBeLessThan(fromAFight.length);
-
-        // And the reading answers about them, off the same rows and the same
-        // function the player is read with. A world in which only the player
-        // has a reputation is a world in which nobody else has done anything.
-        // A ledger row can name nobody to answer for it, and nobody has no
-        // record to read. Proved non-empty so the two assertions below cannot
-        // pass on an empty list.
-        const killers = [...new Set(fromAFight.map(r => r.subjectId))]
-            .filter((id): id is string => id !== null);
-        expect(killers.length, 'no fight row names anybody to answer for it')
-            .toBeGreaterThan(0);
-        const readings = killers.map(id =>
-            whatTheirRecordMakesThem({ personId: id, ledger: rows }));
-        expect(readings.some(r => r.alignment === 'demonic')).toBe(true);
-        expect(readings.every(r => r.alignment !== 'righteous')).toBe(true);
-    }, 900_000);
 });

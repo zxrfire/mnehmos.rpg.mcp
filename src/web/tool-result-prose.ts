@@ -37,6 +37,14 @@ export const MAX_LOGGED_EVENTS = 40;
  */
 export const ONLY_FOR_AN_OPERATOR = 'Roll: ';
 
+/** Diagnostic rows remain inspectable, but do not describe perceived events. */
+export function onlyForOperator(line: string): boolean {
+    return line.startsWith(ONLY_FOR_AN_OPERATOR) || line.startsWith('World digest: ')
+        || line.startsWith('Operator: ');
+}
+
+export function operatorDetail(line: string): string { return `Operator: ${line}`; }
+
 /**
  * A structure line, with the name of the function that produced it taken off.
  */
@@ -907,7 +915,7 @@ function hearingFact(hearing: Hearing): string {
 export interface WorldReport {
     /** Narratable. Every line is already safe to name what it names. */
     lines: string[];
-    /** Public log facts; hidden digest counts stay in the native digest. */
+    /** Received log facts and marked inspector details; hidden counts are never player facts. */
     structure: string[];
 }
 
@@ -922,8 +930,8 @@ export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
         };
     }
 
-    // Collapse repeated news in both visible channels. The native digest keeps
-    // how each report travelled; unread events are not player knowledge.
+    // Collapse received news in both visible channels. Marked diagnostic rows
+    // retain the native delivery accounting for the inspector only.
     const byText = new Map<string, { year: number; text: string; occurrences: number }>();
     for (const line of digest.lines) {
         const key = `${line.year}|${line.text}`;
@@ -938,7 +946,18 @@ export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
         const said = line.text.replace(A_CLOSING_STOP, '');
         return `Year ${line.year}: ${said}, ${howOften} over the span.`;
     });
-    return { lines, structure: [...lines] };
+    return {
+        lines,
+        structure: [
+            ...lines,
+            `World digest: ${digest.lines.length} line(s) reached this cultivator; ` +
+            `${digest.unheard} event(s) reached them by no channel at all.`,
+            ...digest.lines.map(line =>
+                `World digest: a ${line.kind.replace(/_/g, ' ')} reached them via ${line.channel}, in `
+                + `${line.form} form, at magnitude ${line.magnitude}`
+                + `${line.occurrences === 1 ? '.' : `, ${line.occurrences} times over the span.`}`)
+        ]
+    };
 }
 
 /**
