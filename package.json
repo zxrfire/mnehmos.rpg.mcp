@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
+    "explore": "node explore/walk-worlds.mjs",
     "build": "tsc",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "typecheck:all": "tsc --noEmit -p tsconfig.all.json",

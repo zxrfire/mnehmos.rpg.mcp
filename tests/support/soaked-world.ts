@@ -47,10 +47,11 @@ const CHECKPOINT_DAYS = 25 * DAYS_PER_YEAR;
 let sourceHash: string | null = null;
 
 /** One source identity for the fixture loader's immutable module graph. */
-function theSimulationsSource(): string {
-    if (sourceHash !== null) return sourceHash;
-    sourceHash = fixtureSourceHash([...WHERE_THE_SIMULATION_STARTS, 'tests/support/soaked-world.ts']).slice(0, 16);
-    return sourceHash;
+export function soakedWorldSourceHash(refresh = false): string {
+    if (!refresh && sourceHash !== null) return sourceHash;
+    const hash = fixtureSourceHash([...WHERE_THE_SIMULATION_STARTS, 'tests/support/soaked-world.ts'], refresh).slice(0, 16);
+    if (!refresh) sourceHash = hash;
+    return hash;
 }
 
 let keptDir: string | null = null;
@@ -58,7 +59,7 @@ let keptDir: string | null = null;
 function keptAt(): string {
     if (keptDir !== null) return keptDir;
     const root = path.resolve(process.env.MNEHMOS_WORLD_CACHE ?? path.join(os.tmpdir(), 'mnehmos-worlds'));
-    keptDir = path.join(root, theSimulationsSource());
+    keptDir = path.join(root, soakedWorldSourceHash());
     fs.mkdirSync(keptDir, { recursive: true });
     throwAwayOldWorlds(root, keptDir);
     return keptDir;
@@ -121,8 +122,7 @@ let publication = 0;
 
 /** Ledger growth must not require one string as large as the whole world. */
 function keepWorld(file: string, state: WorldState): void {
-    const fresh = fixtureSourceHash([...WHERE_THE_SIMULATION_STARTS, 'tests/support/soaked-world.ts'], true).slice(0, 16);
-    if (fresh !== theSimulationsSource()) throw new Error('Simulation source changed during fixture generation; retry on the finished tree.');
+    if (soakedWorldSourceHash(true) !== soakedWorldSourceHash()) throw new Error('Simulation source changed during fixture generation; retry on the finished tree.');
     const directory = `${path.basename(file)}.${process.pid}.${publication++}.parts`;
     const parts = path.join(path.dirname(file), directory);
     fs.mkdirSync(parts);
