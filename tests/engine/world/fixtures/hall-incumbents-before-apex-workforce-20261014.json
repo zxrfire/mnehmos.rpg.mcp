@@ -1,0 +1,3834 @@
+{
+  "seed": "apex-halls-before-elaboration",
+  "day": 365000,
+  "houses": [
+    {
+      "id": "sect-azure-cloud-pavilion",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-ru-anxi"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-xiang-yuwei"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-shi-weiran"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-azure-cloud-grand-elder"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-ru-anwei"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-xiang-yuwei"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-xiang-yuwei"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-51",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-yan-shuling",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-hou-baiyu",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-cen-qingzhi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-mu-yanling",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-cai-ruzhen",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-shi-weiran",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-xiang-yuwei",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-azure-cloud-grand-elder",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-ru-anxi",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-ru-anwei",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-4",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-5",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-6",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-7",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-8",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-azure-cloud-pavilion-9",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-verdant-spring-valley",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-ji-wanniang"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-verdant-spring-valley-3"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-raised-sect-verdant-spring-valley-3"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-ji-wanniang"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-ji-wanniang"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-raised-sect-verdant-spring-valley-3"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-ji-wanniang"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-59",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-tao-chunxi",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-jiang-ruoshui",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-pei-hanyue",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-lou-tingwei",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-xue-songyi",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-ji-wanniang",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-verdant-spring-valley-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-verdant-spring-valley-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-verdant-spring-valley-2",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-verdant-spring-valley-3",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-nine-peaks-ascetic-order",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-lu-qianzhou"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-lu-qianzhou"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-duan-shiyin"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-cheng-wanru"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-shi-lianzhen"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-cheng-wanru"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-shi-lianzhen"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-kuang-da",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-rong-bingchen",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-sang-zhiyuan",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-yin-muqing",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-duan-shiyin",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-member-shi-lianzhen",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-lu-qianzhou",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-cheng-wanru",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-nine-peaks-ascetic-order-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-nine-peaks-ascetic-order-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-nine-peaks-ascetic-order-2",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-nine-peaks-ascetic-order-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-nine-peaks-ascetic-order-4",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-nine-peaks-ascetic-order-5",
+          "rankIndex": 1
+        }
+      ]
+    },
+    {
+      "id": "sect-clear-river-alliance",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-su-jinglan"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-old-ge-of-the-ninth-ford"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-nie-zhaoxin"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-old-ge-of-the-ninth-ford"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-nie-zhaoxin"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-su-jinglan"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-72",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-ren-xiaomao",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-qiao-duo",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-fang-lianzhou",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-nie-zhaoxin",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-su-jinglan",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-old-ge-of-the-ninth-ford",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-clear-river-alliance-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-clear-river-alliance-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-clear-river-alliance-2",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-clear-river-alliance-3",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-clear-river-alliance-4",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-sweptground-temple",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-zhuo-heping"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-lai-shouyi"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-the-abbot"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-hua-jueming"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-the-abbot"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-the-abbot"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-hua-jueming"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-1",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-9",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-32",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-40",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-45",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-63",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-64",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-tan-wu",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-gu-anrou",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-ji-yuanhe",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-zhuo-heping",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-lai-shouyi",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-hua-jueming",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-the-abbot",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-sweptground-temple-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-sweptground-temple-1",
+          "rankIndex": 0
+        }
+      ]
+    },
+    {
+      "id": "sect-lantern-hall",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-lantern-hall-1"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-min-boyan"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-warden-general-mo-ai"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-kong-zhaoting"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-warden-general-mo-ai"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-warden-general-mo-ai"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-kong-zhaoting"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-153",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-154",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-160",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-184",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-185",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-188",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-201",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-xi-linzhao",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-duan-cuiwen",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-min-boyan",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-kong-zhaoting",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-warden-general-mo-ai",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-lantern-hall-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-lantern-hall-1",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-lantern-hall-2",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-lantern-hall-3",
+          "rankIndex": 2
+        }
+      ]
+    },
+    {
+      "id": "sect-azure-mist-court",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-azure-mist-court-11"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-azure-mist-court-10"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-pei-hanzhang"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-yu-shenxing"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-pei-hanzhang"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-pei-hanzhang"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-yu-shenxing"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-pei-hanzhang",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-yu-shenxing",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-tan-liuyi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-kong-zhaoyu",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-4",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-5",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-6",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-7",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-8",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-9",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-10",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-azure-mist-court-11",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-azure-dew-sect",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-azure-dew-sect-0"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-ao-jinglu"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-raised-sect-azure-dew-sect-3"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-shu-wanping"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-shu-wanping"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-raised-sect-azure-dew-sect-3"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-ao-jinglu"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-17",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-28",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-54",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-shu-wanping",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-ao-jinglu",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-huan-shiqing",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-weng-er",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-dew-sect-0",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-azure-dew-sect-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-dew-sect-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-azure-dew-sect-3",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-earth-vein-tower",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-earth-vein-tower-14"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-earth-vein-tower-13"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-mu-chengyan"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-lou-zhensheng"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-mu-chengyan"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-mu-chengyan"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-sect-earth-vein-tower-13"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-qiao-lanshi",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-bian-ruo",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-tang-yuzhi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-lou-zhensheng",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-mu-chengyan",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-3",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-4",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-5",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-6",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-7",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-8",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-9",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-10",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-11",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-12",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-13",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-14",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-15",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-earth-vein-tower-16",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-myriad-course-hall",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-myriad-course-hall-10"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-myriad-course-hall-0"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-raised-sect-myriad-course-hall-3"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-deep-band-tuo"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-nail-duan"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-raised-sect-myriad-course-hall-4"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-sect-myriad-course-hall-4"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-course-shu",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-spoil-yan",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-set-hand-que",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-deep-band-tuo",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-nail-duan",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-0",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-3",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-4",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-5",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-6",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-7",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-8",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-9",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-myriad-course-hall-10",
+          "rankIndex": 2
+        }
+      ]
+    },
+    {
+      "id": "sect-stone-marrow-hall",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-stone-marrow-hall-9"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-stone-marrow-hall-8"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-principal-hou-sanyi"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-raised-sect-stone-marrow-hall-10"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-principal-hou-sanyi"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-principal-hou-sanyi"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-187",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-pan-mingyu",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-teng-kexin",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-qin-fusheng",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-yao-wangchun",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-principal-hou-sanyi",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-1",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-2",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-4",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-5",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-6",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-7",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-8",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-9",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-stone-marrow-hall-10",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-thousand-treasure-pavilion",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-thousand-treasure-pavilion-5"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-thousand-treasure-pavilion-8"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-grand-steward-lei-fu"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-grand-steward-lei-fu"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-grand-steward-lei-fu"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-sect-thousand-treasure-pavilion-8"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-mo-guyun",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-sha-peiran",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-dai-huaiyu",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-zong-ruilin",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-grand-steward-lei-fu",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-thousand-treasure-pavilion-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-thousand-treasure-pavilion-1",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-thousand-treasure-pavilion-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-thousand-treasure-pavilion-3",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-thousand-treasure-pavilion-4",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-thousand-treasure-pavilion-5",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-thousand-treasure-pavilion-6",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-thousand-treasure-pavilion-7",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-thousand-treasure-pavilion-8",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-cinnabar-crucible-sect",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-nie-shiyu"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-cinnabar-crucible-sect-6"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-grandmaster-xie-ruo"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-grandmaster-xie-ruo"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-grandmaster-xie-ruo"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-raised-sect-cinnabar-crucible-sect-6"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-nie-shiyu"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-fu-niankang",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-chai-xilian",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-ruan-jiangming",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-nie-shiyu",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-liang-tuoshan",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-grandmaster-xie-ruo",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-cinnabar-crucible-sect-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-cinnabar-crucible-sect-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-cinnabar-crucible-sect-2",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-cinnabar-crucible-sect-3",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-cinnabar-crucible-sect-4",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-cinnabar-crucible-sect-5",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-cinnabar-crucible-sect-6",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-ashen-forge-clan",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-clan-chief-duan-wu"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-ashen-forge-clan-6"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-raised-sect-ashen-forge-clan-6"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-clan-chief-duan-wu"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-clan-chief-duan-wu"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-sect-ashen-forge-clan-6"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-jin-erchun",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-jin-tianlu",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-jin-genlin",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-jin-wenqi",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-clan-chief-duan-wu",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-ashen-forge-clan-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-ashen-forge-clan-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-ashen-forge-clan-2",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-ashen-forge-clan-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-ashen-forge-clan-4",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-ashen-forge-clan-5",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-ashen-forge-clan-6",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-hollow-bell-wanderers",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-xun-zhenning"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-bell-keeper-ji"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-cao-nanshan"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-qu-yaoguang"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-289",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-292",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-299",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-301",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-304",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-309",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-311",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-319",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-hu-anzhou",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-pu-meixi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-zhan-deyi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-cao-nanshan",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-qu-yaoguang",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-xun-zhenning",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-bell-keeper-ji",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-cold-sword-sect",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-qiu-yuxi"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-cold-sword-sect-4"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-raised-sect-cold-sword-sect-3"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-wei-shenchuan"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-sect-cold-sword-sect-4"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-shan-ruyi",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-ye-anping",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-gao-zhaolin",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-qiu-yuxi",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-wei-shenchuan",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-raised-sect-cold-sword-sect-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-cold-sword-sect-1",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-cold-sword-sect-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-cold-sword-sect-3",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-cold-sword-sect-4",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-orchid-court",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-ruan-heqing"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-yin-cuo"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-raised-sect-orchid-court-5"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-raised-sect-orchid-court-5"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-ruan-heqing"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-ruan-heqing"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-yin-cuo"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-232",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-shu-lianzhi",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-qiao-wanyin",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-nie-shuang",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-yin-cuo",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-ruan-heqing",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-orchid-court-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-orchid-court-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-orchid-court-2",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-orchid-court-3",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-orchid-court-4",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-orchid-court-5",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-frostmirror-court",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-lang-yuxi"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-court-sovereign-yan-shu"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-court-sovereign-yan-shu"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-lang-yuxi"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-bai-tuoyun"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-court-sovereign-yan-shu"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-bai-tuoyun"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-yue-linshuang",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-ning-qianshu",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-bai-tuoyun",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-xiao-hanning",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-lang-yuxi",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-court-sovereign-yan-shu",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-frostmirror-court-0",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-deeproot-court",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-kiln-keeper"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-kiln-gate-warden"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-kiln-keeper"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-kiln-gate-warden"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-kiln-keeper"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-kiln-keeper"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-kiln-gate-warden"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-kiln-warden-water",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-kiln-warden-against",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-kiln-second-warden-instalments",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-kiln-gate-warden",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-kiln-keeper",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-hollow-court",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-hollow-court-mo-yinlu"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-hollow-court-third-seat"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-hollow-court-second-seat"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-hollow-court-fourth-seat"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-hollow-court-first-seat"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-hollow-court-shen-quan"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-hollow-court-third-seat"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-hollow-court-first-seat",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-hollow-court-second-seat",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-hollow-court-third-seat",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-hollow-court-fourth-seat",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-hollow-court-huang-shu",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-hollow-court-tan-jingzhi",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-hollow-court-bai-ruozhen",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-hollow-court-wei-lianfang",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-hollow-court-shen-quan",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-hollow-court-mo-yinlu",
+          "rankIndex": 2
+        }
+      ]
+    },
+    {
+      "id": "sect-the-severed",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-the-severed-13"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-ninth-cut-ledger-keeper"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-the-one-who-introduces-herself-as-four-bonds-and-a-name"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-raised-sect-the-severed-11"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-the-one-who-introduces-herself-as-four-bonds-and-a-name"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-the-one-who-introduces-herself-as-four-bonds-and-a-name"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-131",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-han-shuqing",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-yi-first-cut",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-third-cut-at-scarwater",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-ninth-cut-ledger-keeper",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-the-one-who-introduces-herself-as-four-bonds-and-a-name",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-the-severed-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-the-severed-1",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-the-severed-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-the-severed-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-the-severed-4",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-the-severed-5",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-the-severed-6",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-the-severed-7",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-the-severed-8",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-the-severed-9",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-the-severed-10",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-the-severed-11",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-raised-sect-the-severed-12",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-the-severed-13",
+          "rankIndex": 4
+        }
+      ]
+    },
+    {
+      "id": "sect-crimson-abyss-fortress",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-abyss-lord-wen-qiao"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-cui-fangzhi"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-cui-fangzhi"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-abyss-lord-wen-qiao"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-abyss-lord-wen-qiao"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-cui-fangzhi"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-2",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-12",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-42",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-50",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-tang-lingyun",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-ping-xingzhi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-lin-mudan",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-zhu-renshan",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-cui-fangzhi",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-abyss-lord-wen-qiao",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-crimson-abyss-fortress-0",
+          "rankIndex": 0
+        }
+      ]
+    },
+    {
+      "id": "sect-corpse-refining-sect",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-141"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-the-corpse-ancestor"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-yu-ziyan"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-ye-puxian"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-the-corpse-ancestor"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-ye-puxian"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-141"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-141",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-168",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-169",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-shao-kongzhi",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-wu-liuyi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-yu-ziyan",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-ye-puxian",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-the-corpse-ancestor",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-corpse-refining-sect-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-corpse-refining-sect-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-corpse-refining-sect-2",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-corpse-refining-sect-3",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-corpse-refining-sect-4",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-nine-abyss-flame-sect",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-nine-abyss-flame-sect-12"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-sect-nine-abyss-flame-sect-11"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-flame-sovereign-rong-yi"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-tu-baochen"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-flame-sovereign-rong-yi"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-flame-sovereign-rong-yi"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-tu-baochen"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-tong-anze",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-xiang-yunzhao",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-zhou-hongshi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-tu-baochen",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-flame-sovereign-rong-yi",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-1",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-4",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-5",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-6",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-7",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-8",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-9",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-10",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-11",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-nine-abyss-flame-sect-12",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-storm-tyrant-court",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-storm-tyrant-court-9"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-the-storm-tyrant"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-the-storm-tyrant"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-kang-lishu"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-raised-sect-storm-tyrant-court-10"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-raised-sect-storm-tyrant-court-10"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-sect-storm-tyrant-court-9"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-226",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-233",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-tian-changgeng",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-bo-shuyi",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-du-yanzhi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-kang-lishu",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-the-storm-tyrant",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-1",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-2",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-4",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-5",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-6",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-7",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-8",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-9",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-sect-storm-tyrant-court-10",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-ancient-bough-grove",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-sect-ancient-bough-grove-3"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-yun-qingtai"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-keeper-shen-muyan"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-keeper-shen-muyan"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-keeper-shen-muyan"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-yun-qingtai"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-sect-ancient-bough-grove-3"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-ge-yiran",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-wen-danyang",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-yun-qingtai",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-keeper-shen-muyan",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-sect-ancient-bough-grove-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-sect-ancient-bough-grove-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-ancient-bough-grove-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-sect-ancient-bough-grove-3",
+          "rankIndex": 2
+        }
+      ]
+    },
+    {
+      "id": "sect-clearwater-ward",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-gapwater-yun"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-third-face-ren"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-kettle-shen"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-weir-master-tan-zhu"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-third-face-ren"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-third-face-ren"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-76",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-91",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-94",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-97",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-100",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-101",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-102",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-119",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-120",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-124",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-queue-bo",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-chisel-ma",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-third-face-ren",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-kettle-shen",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-gapwater-yun",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-weir-master-tan-zhu",
+          "rankIndex": 6
+        }
+      ]
+    },
+    {
+      "id": "sect-six-li-patrol",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-longstake-mu"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-warden-ai-sanniang"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-survey-wen"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-longstake-mu"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-warden-ai-sanniang"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-78",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-105",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-117",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-stakes",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-paint-hui",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-ninth-marker-ji",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-survey-wen",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-longstake-mu",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-warden-ai-sanniang",
+          "rankIndex": 3
+        }
+      ]
+    },
+    {
+      "id": "sect-fallen-grain-caravan",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-second-face-guo"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-company-master-xun-erlang"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-company-master-xun-erlang"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-hollowmarket-zhai"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-company-master-xun-erlang"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-hollowmarket-zhai"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-second-face-guo"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-79",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-92",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-114",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-118",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-barrow-nine",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-sorting-yard-heng",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-second-face-guo",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-lampblack-ke",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-hollowmarket-zhai",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-company-master-xun-erlang",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-silver-island-market",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-nie-out-of-salt-reach"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-halfwater-yue"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-farside-wen"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-sui-out-of-bellhead"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-sui-out-of-bellhead"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-287",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-291",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-296",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-320",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-321",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-323",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-330",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-332",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-dryrun-ping",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-sui-out-of-bellhead",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-farside-wen",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-nie-out-of-salt-reach",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-halfwater-yue",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-sand-well-caravan",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-sounding-wei"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-nine-boards-qiu"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-123"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-tally-board-mu"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-tally-board-mu"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-87",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-93",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-106",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-123",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-stopper-xi",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-half-cup-lian",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-short-rope-yi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-tally-board-mu",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-sounding-wei",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-nine-boards-qiu",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "sect-moonwater",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-yan-zhaosu"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-374"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-337"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-duan-xuelin"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-338"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-349"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-337",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-338",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-340",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-341",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-342",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-343",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-344",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-346",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-349",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-355",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-358",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-362",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-364",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-370",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-374",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-376",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-380",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-389",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-390",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-393",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-394",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-395",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-zuo-qintai",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-pei-ningshu",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-duan-xuelin",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-yan-zhaosu",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-qiu-yanzhen",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-bao-ning",
+          "rankIndex": 0
+        }
+      ]
+    },
+    {
+      "id": "sect-five-grains",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-fan-mengqi"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-du-rui"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-335"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-368"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-383"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-tan-huizhen"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-335",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-348",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-356",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-360",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-361",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-363",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-367",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-368",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-372",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-381",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-383",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-386",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-392",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-397",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-luo-yanshao",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-tan-huizhen",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-fan-mengqi",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-du-rui",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-he-zhengqi",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-fang-suoyin",
+          "rankIndex": 0
+        }
+      ]
+    },
+    {
+      "id": "house-ninefold-karma",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-house-ninefold-karma-7"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-house-ninefold-karma-6"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-cao-duan"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-raised-house-ninefold-karma-8"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-cao-duan"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-cao-duan"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-house-ninefold-karma-8"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-15",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-48",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-67",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-68",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-yan-zhenyi",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-yan-boting",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-yan-changshi",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-cao-duan",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-house-ninefold-karma-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-ninefold-karma-1",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-ninefold-karma-2",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-ninefold-karma-3",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-ninefold-karma-4",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-ninefold-karma-5",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-ninefold-karma-6",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-ninefold-karma-7",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-ninefold-karma-8",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "house-flowing-light",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-house-flowing-light-4"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-member-cao-shuangqing"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-cao-yulian"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-raised-house-flowing-light-8"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-cao-yulian"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-cao-yulian"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-house-flowing-light-8"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-167",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-192",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-197",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-cao-chanming",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-cao-hengzhi",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-cao-shuangqing",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-cao-yulian",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-house-flowing-light-0",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-flowing-light-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-flowing-light-2",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-flowing-light-3",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-flowing-light-4",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-flowing-light-5",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-flowing-light-6",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-flowing-light-7",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-flowing-light-8",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "house-vermilion-seal",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-house-vermilion-seal-19"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-house-vermilion-seal-16"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-raised-house-vermilion-seal-20"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-raised-house-vermilion-seal-22"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-lin-anren"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-lin-anren"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-house-vermilion-seal-20"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-43",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-69",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-lin-shouzhen",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-lin-muyan",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-lin-liangfu",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-lin-anren",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-1",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-3",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-4",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-5",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-6",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-7",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-8",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-9",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-10",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-11",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-12",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-13",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-14",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-15",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-16",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-17",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-18",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-19",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-20",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-21",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-vermilion-seal-22",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "house-still-blade",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-house-still-blade-12"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-house-still-blade-11"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-chu-jueyi"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-member-chu-hengan"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-chu-jueyi"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-member-chu-jueyi"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-chu-changting",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-chu-wuji",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-chu-hengan",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-member-chu-jueyi",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-house-still-blade-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-still-blade-1",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-still-blade-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-still-blade-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-still-blade-4",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-still-blade-5",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-still-blade-6",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-still-blade-7",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-still-blade-8",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-still-blade-9",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-still-blade-10",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-still-blade-11",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-still-blade-12",
+          "rankIndex": 4
+        }
+      ]
+    },
+    {
+      "id": "house-jade-register",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-xu-zhengsu"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-house-jade-register-24"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-raised-house-jade-register-18"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-raised-house-jade-register-21"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-gu-baiyun"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-raised-house-jade-register-21"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-house-jade-register-21"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-196",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-gu-anding",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-gu-changle",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-xu-zhengsu",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-member-gu-baiyun",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-house-jade-register-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-jade-register-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-jade-register-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-jade-register-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-jade-register-4",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-jade-register-5",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-jade-register-6",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-jade-register-7",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-jade-register-8",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-jade-register-9",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-jade-register-10",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-jade-register-11",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-jade-register-12",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-jade-register-13",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-jade-register-14",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-jade-register-15",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-jade-register-16",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-jade-register-17",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-jade-register-18",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-jade-register-19",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-jade-register-20",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-jade-register-21",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-jade-register-22",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-jade-register-23",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-jade-register-24",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "house-shrinking-earth",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-member-fu-nianzhi"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-house-shrinking-earth-11"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-member-fu-nianzhi"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-raised-house-shrinking-earth-10"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-raised-house-shrinking-earth-13"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-member-fu-nianzhi"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-house-shrinking-earth-13"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-fu-tuoyi",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-fu-jingsheng",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-member-fu-lingchuan",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-fu-nianzhi",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-0",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-4",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-5",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-6",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-7",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-8",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-9",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-10",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-11",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-12",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-shrinking-earth-13",
+          "rankIndex": 5
+        }
+      ]
+    },
+    {
+      "id": "house-immovable-mountain",
+      "incumbentChairs": [
+        {
+          "hallId": "outer-affairs",
+          "holderId": "npc-raised-house-immovable-mountain-26"
+        },
+        {
+          "hallId": "discipline",
+          "holderId": "npc-raised-house-immovable-mountain-25"
+        },
+        {
+          "hallId": "internal-affairs",
+          "holderId": "npc-raised-house-immovable-mountain-29"
+        },
+        {
+          "hallId": "scripture",
+          "holderId": "npc-raised-house-immovable-mountain-28"
+        },
+        {
+          "hallId": "treasury",
+          "holderId": "npc-member-xu-zhenshan"
+        },
+        {
+          "hallId": "alchemy",
+          "holderId": "npc-raised-house-immovable-mountain-30"
+        },
+        {
+          "hallId": "artifact",
+          "holderId": "npc-raised-house-immovable-mountain-30"
+        }
+      ],
+      "incumbentRanks": [
+        {
+          "id": "npc-member-xu-shizhen",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-member-xu-heshan",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-xu-kanping",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-member-xu-suzhi",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-member-xu-zhenshan",
+          "rankIndex": 6
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-0",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-1",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-2",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-3",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-4",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-5",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-6",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-7",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-8",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-9",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-10",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-11",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-12",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-13",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-14",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-15",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-16",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-17",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-18",
+          "rankIndex": 0
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-19",
+          "rankIndex": 2
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-20",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-21",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-22",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-23",
+          "rankIndex": 1
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-24",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-25",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-26",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-27",
+          "rankIndex": 3
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-28",
+          "rankIndex": 5
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-29",
+          "rankIndex": 4
+        },
+        {
+          "id": "npc-raised-house-immovable-mountain-30",
+          "rankIndex": 4
+        }
+      ]
+    }
+  ]
+}

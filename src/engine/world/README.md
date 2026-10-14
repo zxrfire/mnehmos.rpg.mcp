@@ -5047,3 +5047,16 @@ A paid contractor serves at the real post, on the actual clock, with real paymen
 They count as staff and craft hands without also collecting member contribution.
 Their completed lamp checks remain known after their departure or death through
 the ordinary roll-check facts. No extra roll or employee table is kept.
+
+A deep institution at Tribulation Transcendence with a reserve for two years of
+closed-door cultivation can keep two hands per hall and a wider elder pool.
+Its posted complement and a practice complement enter the modeled roll after
+all existing ranks and ties have settled. The existing office assignment is
+held once in its responsible room; adding elders does not re-deal that chair,
+anchor room or covering responsibility. A vacancy uses the remaining claimants
+and ordinary chair order. No deputy office is created. Opening issue uses the
+same robes, token and lamp machinery for the additional actual people.
+Dedicated receiving and teaching rooms append on separate construction streams;
+a tribute counting room requires an actual paying subsidiary. Existing rooms
+and formation nodes keep their draws. The roster's annual intake reads the same
+institutional need, and Internal Affairs still chooses its real workers.

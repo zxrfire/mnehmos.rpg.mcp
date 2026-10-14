@@ -536,8 +536,9 @@ institution.
 The player's elder standing is read through `whatTheHouseMakesOfThem` and
 `officePressureIn` in the web standing verb. Player years at the rung already
 live in `Cultivator.yearsAtCurrentRealm`; NPC years derive from their last
-advancement day. This belief never bars advancement. Offices are dealt from
-the current roll and rooms. Rank orders use `canOrder`; delegated room authority
+advancement day. This belief never bars advancement. Founding offices are dealt
+from the roll and rooms; their actual appointments retain the incumbent until
+the chair is vacated. Rank orders use `canOrder`; delegated room authority
 uses `authority-for-an-order.ts`. There is no separate same-rung permission or
 room eviction mechanic: removing an elder uses the existing expulsion path.
 
@@ -956,8 +957,11 @@ The witness account reader weighs the doer's words against what the witness saw,
 
 portfoliosIn is the actual hall-authority read: it takes the authoritative member
 roll and actual people for the chair order. The legacy room deal supplies its
-founding claims. One derived portfolio answers for a hall's other rooms and any
-ordinary work it covers. Serving a residence gives no authority over its owner.
+founding claims. Its incumbent, anchor and co-claimants are held once on the
+responsible room: a growing roll does not appoint a new head. A vacancy reads
+the surviving claimants and ordinary chair order; catalog and world IDs name
+the same incumbent. One derived portfolio answers for a hall's other rooms and
+any ordinary work it covers. Serving a residence gives no authority over its owner.
 Catalog and world IDs resolve through the existing person-ID reader before
 the chair order reads their realm, merit and ties.
 

@@ -97,7 +97,7 @@ import { seedHouseWards } from './the-ward-a-house-raised-over-its-own-ground.js
 import { seedTreasuries } from './what-a-house-keeps-in-its-treasury.js';
 import { lineagesFromTheKinTheWorldWrote } from './a-family-is-the-people-you-are-kin-to.js';
 import { CHILD_STANDING, PARENT_STANDING, rosterOf } from './the-ties-an-ordinary-life-produces.js';
-import { uniformsForEverybodyAlreadyOnARoll } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { uniformsForEverybodyAlreadyOnARoll, whatTheHouseGivesThem, whereThisHouseBurnsItsLamps } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { theRingsAWorldOpensWith } from './who-opens-the-world-wearing-a-ring.js';
 import { keepTheirQuartersInOrder } from './what-somebody-keeps-in-their-quarters.js';
 import {
@@ -117,6 +117,11 @@ import { setWhatEverybodyIsAt } from './what-somebody-is-at-when-you-walk-up.js'
 import { seedTownPhysicians, givePhysiciansTheirOpeningWork } from './who-is-actually-seeing-to-wounds.js';
 import { seedTheTempleBranches } from './a-temple-branch.js';
 import { theRollItsPostsNeed } from './what-a-houses-standing-posts-need.js';
+import { getSubsidiariesOf } from '../../data/cultivation/governance-and-water-rights.js';
+import { theRollItsHallsNeed } from './a-house-keeps-the-staff-it-can-support.js';
+import { keepTheHallChairs, hallResponsibilities } from './a-house-gives-one-elder-each-hall.js';
+import { staffTheHalls } from './the-people-posted-to-a-houses-halls.js';
+import { thisHouseCanIssue } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { addPlacesOnTheWay } from './places-on-the-way.js';
 import { applyPostings } from './the-world-changing-on-its-own.js';
 import { ordinaryAdultsTakeWork } from './the-work-an-ordinary-mortal-does.js';
@@ -608,6 +613,26 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // the only deaths a fresh world contains are the wrongs, and those now fall
     // on people it keeps.
     theWorldForgetsTheMortalDead(state);
+
+    // Existing ranks, ties and chairs stand before the institution's wider workforce enters the slice.
+    for (const house of state.factions) keepTheHallChairs(state, house.id);
+    const reserve = seedThePeopleAHouseRaised(state, opts.catalog, presentDay,
+        new Set(state.npcs.map(person => person.name)), rollWorthModelling, true);
+    everybody.push(...reserve);
+    state.populationTarget += reserve.length;
+    for (const person of reserve) {
+        const house = state.factions.find(row => row.id === person.factionId)!;
+        const issued = whatTheHouseGivesThem({ house, person: { id: person.id, name: person.name, rankIndex: person.factionRankIndex },
+            wearsItsRobes: false, holdsItsToken: false,
+            canCut: thisHouseCanIssue(state.npcs.filter(row => row.factionId === house.id && row.status === 'alive')
+                .map(row => row.cultivation.realmOrdinal)), lampRoomId: whereThisHouseBurnsItsLamps(state.locations, house.id),
+            internalAffairsElder: () => hallResponsibilities(state, house.id).find(hall => hall.hall.id === 'internal-affairs')?.holderId ?? null,
+            onDay: presentDay });
+        state.objects.push(...[issued.robes, issued.token, issued.lamp].filter((object): object is NonNullable<typeof object> => !!object));
+    }
+    for (const houseId of new Set(reserve.map(person => person.factionId!))) staffTheHalls(state, houseId, presentDay, true);
+    setWhatEverybodyIsAt(state, presentDay);
+    keepTheirQuartersInOrder(state, presentDay, true);
 
     addPlacesOnTheWay(state.locations);
     initializeMetricGround(state.locations, state.seed, opts.catalog.regions, opts.catalog.factions);
@@ -1179,6 +1204,7 @@ function compoundInputFor(cf: CatalogFaction): CompoundInput {
         inherited: cf.compoundInherited ?? false,
         holdsVein: cf.holdsVein,
         tributeStonesPerYear: cf.tributeStonesPerYear,
+        receivesTributeStonesPerYear: getSubsidiariesOf(cf.id).reduce((sum, child) => sum + (child.terms?.tributeStonesPerYear ?? 0), 0),
         sealedCeilingOrdinal: cf.sealedCeilingOrdinal,
         preferredRoots: cf.preferredRoots ?? [],
         teachesElements: cf.teachesElements ?? [],
@@ -2144,7 +2170,8 @@ function seedThePeopleAHouseRaised(
     /** Names already spoken for in this world. See the note in `seedPopulation`. */
     taken: Set<string>,
     /** See {@link SeedWorldOptions.rollWorthModelling}. */
-    rollWorthModelling: number
+    rollWorthModelling: number,
+    institutionalReserve = false
 ): NpcRecord[] {
     const created: NpcRecord[] = [];
     if (rollWorthModelling <= 0) return created;
@@ -2173,7 +2200,10 @@ function seedThePeopleAHouseRaised(
                 : (presentDay - faction.foundedOnDay) / DAYS_PER_YEAR
         });
         // A house whose standing posts need more people than its standing does keeps the larger roll.
-        const target = Math.max(wanted, theRollItsPostsNeed(state, faction.id));
+        const hallNeeds = institutionalReserve ? theRollItsHallsNeed(state, faction.id) : { people: 0, elders: 0 };
+        if (institutionalReserve && hallNeeds.people === 0) continue;
+        const target = institutionalReserve ? Math.max(here.length, hallNeeds.people)
+            : Math.max(wanted, theRollItsPostsNeed(state, faction.id));
         const short = target - here.length;
         if (short <= 0) continue;
 
@@ -2189,20 +2219,26 @@ function seedThePeopleAHouseRaised(
         // bottom, which is where a house that took somebody in this decade puts
         // them.
         const seats = rosterByRung(target, ladder);
+        const elder = elderRungOf(ladder);
+        if (institutionalReserve) seats[elder] = Math.max(seats[elder] ?? 0,
+            hallNeeds.elders - here.filter(person => person.factionRankIndex > elder && person.factionRankIndex < ladder - 1).length);
         for (const npc of here) {
             const rung = npc.factionRankIndex;
             if (rung >= 0 && rung < seats.length) seats[rung] = Math.max(0, seats[rung] - 1);
         }
 
         let raised = 0;
-        for (let rung = 0; rung < ladder && raised < short; rung++) {
+        const rungs = Array.from({ length: ladder }, (_, rung) => rung);
+        if (institutionalReserve) rungs.sort((a, b) => Number(b === elder) - Number(a === elder));
+        for (const rung of rungs) {
+            if (raised >= short) break;
             for (let k = 0; k < (seats[rung] ?? 0) && raised < short; k++) {
                 const band = theBandARaisedMemberStandsIn(faction.id, rung, strongest);
                 // No room under the cap at this rung: the house holds one fewer
                 // rather than gaining somebody who would outrank its own head.
                 if (!band) break;
 
-                const id = `npc-raised-${faction.id}-${raised}`;
+                const id = `npc-${institutionalReserve ? 'hall-raised' : 'raised'}-${faction.id}-${raised}`;
                 if (state.npcs.some(n => n.id === id)) { raised++; continue; }
                 const rng = forStream(state.seed, 'a-house-raises-its-own', id);
                 const ordinal = clampOrdinal(rng.int(band.minOrdinal, band.maxOrdinal));

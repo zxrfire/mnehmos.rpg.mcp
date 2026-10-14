@@ -1,5 +1,6 @@
 import { theDisciplesPostedToInternalAffairs } from '../../src/engine/world/what-a-house-hears-from-its-people-away.js';
 /** Hall grouping reads the room's authority, rather than its head's anchor room.
+ * Hall incumbency survives new members; the chair control creates a real vacancy.
  * Opening worlds now staff the hall: the control releases its actual clerk,
  * asks the engine for a real personnel nomination, and reaches the work room. */
 /**
@@ -70,6 +71,8 @@ import {
 import { FOUNDATION_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import { THE_NOTICE_FOR_CUTTING } from '../../src/web/who-cuts-the-houses-slips.js';
 import { theCommunicationTalismansOnYou } from '../../src/web/sending-word-on-a-communication-talisman.js';
+import { hallResponsibilities } from '../../src/engine/world/a-house-gives-one-elder-each-hall.js';
+import { theOneIdAPersonIsKnownBy } from '../../src/engine/world/a-catalog-person-and-their-world-row.js';
 import { portfoliosIn } from '../../src/engine/social-leverage/authority-for-an-order.js';
 import { whoAnswersAbout } from '../../src/engine/social-leverage/what-an-elder-is-in-charge-of.js';
 import { THE_ROOM_THE_ROLL_IS_KEPT_IN } from '../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
@@ -140,16 +143,17 @@ describe('the office itself', () => {
         const { cultivator } = await harness.game.newRun('Elder');
         await harness.game.act('I look around');
         const world = harness.game.atHand!;
-        // A house whose own deal hands the life lamp hall to its top rung, asked
-        // of the deal rather than assumed: `whoIsInChargeOfWhat` deals rooms
-        // deepest-first among the people who decide.
-        let found: { houseId: string; rank: number } | null = null;
+        // A real incumbent keeps the seal when another elder joins. Arrange a vacancy
+        // by releasing its claimants, then ask the engine who takes that actual chair.
+        let found: { houseId: string; rank: number; released: Set<string> } | null = null;
         for (const house of world.factions) {
             if (house.dissolvedOnDay === null && house.seatLocationId !== null
                 && harness.repos.sects.getById(house.id) !== null) {
                 const rank = house.ranks.length - 1;
+                const hall = hallResponsibilities(world, house.id).find(row => row.hall.id === 'internal-affairs');
+                const released = new Set([...(hall?.existingClaimants ?? []), ...(hall?.holderId ? [hall.holderId] : [])]);
                 const roll = [
-                    ...world.npcs.filter(n => n.status === 'alive' && n.factionId === house.id)
+                    ...world.npcs.filter(n => n.status === 'alive' && n.factionId === house.id && !released.has(n.id))
                         .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
                     { id: cultivator.id, rankIndex: rank }
                 ];
@@ -157,12 +161,18 @@ describe('the office itself', () => {
                     locations: world.locations, sectId: house.id, roll, rankCount: house.ranks.length
                 });
                 if (whoAnswersAbout(portfolios, THE_ROOM_THE_ROLL_IS_KEPT_IN) === cultivator.id) {
-                    found = { houseId: house.id, rank };
+                    found = { houseId: house.id, rank, released };
                     break;
                 }
             }
         }
         expect(found, 'no house in this world deals the life lamp hall to anybody').toBeTruthy();
+        for (const id of found!.released) {
+            const person = world.npcs.find(row => row.id === id)!;
+            theOneBeingPlayedLeavesThePost(world, { playerId: id, today: world.currentDay });
+            person.factionId = null;
+            harness.repos.sects.removeMember(found!.houseId, theOneIdAPersonIsKnownBy(id));
+        }
         harness.repos.sects.addMember(found!.houseId, cultivator.id, found!.rank);
         const seat = world.locations.find(l => l.id === world.factions.find(f => f.id === found!.houseId)!.seatLocationId)!;
         harness.repos.cultivators.update(cultivator.id, {

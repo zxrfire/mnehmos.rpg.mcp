@@ -48,6 +48,8 @@ import { bindNewbornToHousehold, couldParent, rosterOf, type Roster } from './th
 import { getLocation, type FactionRecord, type WorldState } from './world-state.js';
 import { feederHousesFor } from './what-a-house-answers-to.js';
 import { theRollItsPostsNeed } from './what-a-houses-standing-posts-need.js';
+import { theRollItsHallsNeed } from './a-house-keeps-the-staff-it-can-support.js';
+import { keepTheHallChairs } from './a-house-gives-one-elder-each-hall.js';
 
 const DAYS_PER_YEAR = 365;
 
@@ -70,7 +72,7 @@ export function vacanciesOnTheRolls(state: WorldState, day: number): Map<string,
                 : (day - house.foundedOnDay) / DAYS_PER_YEAR
         });
         // Never smaller than its standing posts need: a full staff on each, and as many at home.
-        const roll = house.dissolvedOnDay === null ? Math.max(worth, theRollItsPostsNeed(state, house.id)) : worth;
+        const roll = house.dissolvedOnDay === null ? Math.max(worth, theRollItsPostsNeed(state, house.id), theRollItsHallsNeed(state, house.id).people) : worth;
         return [house.id, Math.max(0, roll - (counts.get(house.id) ?? 0))];
     }));
 }
@@ -105,6 +107,7 @@ export function stillHasPeopleNobodyModels(state: WorldState, house: FactionReco
 
 /** Each house short of its roll takes one of its own in. Returns how many came forward. */
 export function theHousesTakeInTheirOwn(state: WorldState, year: number, day: number): number {
+    for (const house of state.factions) keepTheHallChairs(state, house.id);
     const vacancies = vacanciesForOrdinaryIntake(state, day);
     const roll = new Map<string, { count: number; strongest: number }>();
     for (const n of state.npcs) {

@@ -15,6 +15,8 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeFact } from './history.js';
 import type { WorldState } from './world-state.js';
 import type { APost } from '../social-leverage/who-works-in-an-elders-hall.js';
+import { hallStaffingDepth } from './a-house-keeps-the-staff-it-can-support.js';
+import { keepTheHallChairs } from './a-house-gives-one-elder-each-hall.js';
 import { onTheirHallShift } from './a-hall-workers-shift.js';
 import { roomForHouseWork, housesWithACraftHall } from './where-a-house-does-its-work.js';
 import { routeQueriesFor } from './locations.js';
@@ -36,7 +38,8 @@ export function theHandsAtHouseCraftWork(state: WorldState, craft: 'alchemy' | '
             || person.activity?.kind !== 'stationed' || person.activity.redirect || person.activity.houseCareFactId
             || person.activity.houseWorkSchedule?.rota) continue;
         const appointment = houseAppointment(state, person);
-        if (appointment?.data.job !== `serving_${craft}` && !hired) continue;
+        if (appointment?.data.job !== `serving_${craft}`
+            && !String(appointment?.data.job ?? '').startsWith(`serving_${craft}:`) && !hired) continue;
         if (!room || room.data.factionId !== houseId) continue;
         const arrival = whenTheyReachTheirPost(state.locations, person, routes);
         if (arrival === null || day < arrival) continue;
@@ -80,6 +83,8 @@ export function theHallStaff(state: WorldState, houseId: string, day: number): A
 export function staffTheHalls(state: WorldState, houseId: string, day: number, initialPlacement = false): number {
     const house = state.factions.find(row => row.id === houseId && row.dissolvedOnDay === null);
     if (!house) return 0;
+    if (!initialPlacement || state.locations.some(room => room.data.factionId === houseId && typeof room.data.hallOfficeId === 'string'))
+        keepTheHallChairs(state, houseId);
     const roll = state.npcs.filter(person => person.status === 'alive' && person.factionId === houseId);
     const portfolios = portfoliosIn({ locations: state.locations, sectId: houseId, npcs: state.npcs,
         roll: roll.map(person => ({ id: person.id, rankIndex: person.factionRankIndex })), rankCount: house.ranks.length });
@@ -103,12 +108,13 @@ export function staffTheHalls(state: WorldState, houseId: string, day: number, i
             suitable: person => person.factionRankIndex === 0 });
         if (worker) added++;
     }
-    for (const hall of HOUSE_HALLS) {
+    const depth = hallStaffingDepth(state, houseId);
+    for (const hall of HOUSE_HALLS) for (let hand = 0; hand < depth; hand++) {
         const portfolio = portfolios.find(row => row.hallId === hall.id);
         if (!portfolio) continue;
-        const job = `serving_${hall.id.replaceAll('-', '_')}`;
+        const job = `serving_${hall.id.replaceAll('-', '_')}${hand ? ':' + hand : ''}`;
         if (roll.some(person => houseAppointment(state, person)?.data.job === job)) continue;
-        if (work.some(post => hallForRoom(post.purpose)?.id === hall.id)) continue;
+        if (depth === 1 && work.some(post => hallForRoom(post.purpose)?.id === hall.id)) continue;
         const room = state.locations.find(row => row.data.factionId === houseId
             && purposeOf(row) === (hall.id === 'internal-affairs' ? 'life_lamp_hall' : portfolio.purpose))
             ?? state.locations.find(row => row.data.factionId === houseId && purposeOf(row) === portfolio.purpose);
