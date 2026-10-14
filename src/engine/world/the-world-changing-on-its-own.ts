@@ -1,3 +1,4 @@
+import { settleHouseCare } from './a-house-healer-tends-a-real-member.js';
 import { aRetainedMemberActuallyServed, aRetainedMemberActuallyReturned, stillOnThisRetainedSending,
     stillOnAnActualRetainedReturn, actualRetainedReturnDay, retainedAirReturnBoundary, continueActualRetainedAirReturns } from './a-retained-sending-has-actually-served.js';
 import { initializeMetricGround } from './the-metric-ground-under-a-journey.js';
@@ -626,6 +627,8 @@ function pressureTasksForYear(state: WorldState, year: number,
     }
     for (const npc of state.npcs) {
         if (!isTheWorldsToMove(npc) || npc.activity?.untilDay == null) continue;
+        if (npc.activity.houseCareFactId) tasks.push({ key: `house-care:${npc.id}:${npc.activity.untilDay}`,
+            day: npc.activity.untilDay, checkpoint: true, run: () => {} });
         if (!isPlayerInvolved(state, npc)) continue;
         if (npc.activity.capitalMissionId) {
             const due = npc.activity.untilDay;
@@ -994,7 +997,7 @@ function pressureTasksForYear(state: WorldState, year: number,
         peopleWithNoHouseMoveOn(state, year, onDay);
     } });
     tasks.push({ key: 'wound-care', day: year * 365 + 179, run: (onDay: number) => {
-        woundsCloseThisYear(state, year, onDay);
+        woundsCloseThisYear(state, year, onDay, (id, due) => schedulePostingDay(`house-care:${id}:${due}`, due));
     } });
     tasks.push({ key: 'leaving-a-house', day: year * 365 + 179, run: (onDay: number) => {
         applyPeopleWalkingOut(
@@ -5018,6 +5021,7 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
     const day = onDay;
     // Only the geographic graph is shared; every iteration reads the current row.
     const routes = routeQueriesFor(state.locations);
+    settleHouseCare(state, day);
     settleHiredDuties(state, day);
     const reliefDays = new Map<string, number>();
     const reliefFacts = new Map<string, (typeof state.history.facts)[number]>();
@@ -5078,14 +5082,32 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
     }
     const continuedShuttles = new Map<NonNullable<WorldState['pendingSendings']>[number], boolean>();
     let exchangeStock: Map<string, number[]> | undefined;
+    let purchasedStock: Map<string, number[]> | undefined;
+    let exchangeStockObjects: WorldState['objects'] | undefined;
+    let exchangeStockLength = -1;
+    let lastExchangeSale: HistoricalFact | undefined;
     const consignmentsWith = (holderId: string): readonly number[] => {
-        if (!exchangeStock) {
+        const sale = factsWithDataValue(state, 'exchangeSale', true).at(-1);
+        // Purchasing missions can transfer an existing row during this pass;
+        // counted deliveries can replace the array before the next return.
+        if (!exchangeStock || exchangeStockObjects !== state.objects
+            || exchangeStockLength !== state.objects.length || lastExchangeSale !== sale) {
+            exchangeStockObjects = state.objects;
+            exchangeStockLength = state.objects.length;
+            lastExchangeSale = sale;
             exchangeStock = new Map();
+            purchasedStock = new Map();
             for (let at = 0; at < state.objects.length; at++) {
                 const object = state.objects[at]!;
-                if (!object.tags.includes('exchange') || !object.possessorId) continue;
-                const rows = exchangeStock.get(object.possessorId) ?? [];
-                rows.push(at); exchangeStock.set(object.possessorId, rows);
+                if (!object.possessorId) continue;
+                if (object.tags.includes('exchange')) {
+                    const rows = exchangeStock.get(object.possessorId) ?? [];
+                    rows.push(at); exchangeStock.set(object.possessorId, rows);
+                }
+                if (object.tags.includes('house-medicine-purchase') || object.tags.includes('house-artifact-purchase')) {
+                    const rows = purchasedStock.get(object.possessorId) ?? [];
+                    rows.push(at); purchasedStock.set(object.possessorId, rows);
+                }
             }
         }
         return exchangeStock.get(holderId) ?? [];
@@ -5273,7 +5295,7 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
             : typeof feederReturn?.data.stintDay === 'number' ? feederReturn.data.stintDay : doing.sinceDay;
         returnExchangeConsignment(state, npc, day, stintDay,
             typeof feederReturn?.data.fromHouseId === 'string' ? feederReturn.data.fromHouseId : npc.factionId,
-            consignmentsWith(npc.id));
+            consignmentsWith(npc.id), purchasedStock!.get(npc.id) ?? []);
         if (sendingsOf.has(npc.id)) continue;
 
         // A place that has since ceased to exist leaves them standing where

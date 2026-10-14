@@ -1,6 +1,7 @@
+import { routineTime } from '../engine/world/npc-routines.js';
 /** Clinical questions read an actual provider's offer; they never buy or administer it. */
-import { purposeOf } from '../engine/world/architecture.js';
-import { isAMortalPhysician, physicianIsWorking, whoDispensesAtTheHouse } from '../engine/world/who-is-actually-seeing-to-wounds.js';
+import { roomForHouseWork, nameOfTheCareRoom } from '../engine/world/where-a-house-does-its-work.js';
+import { isAMortalPhysician, physicianIsWorking, whoDispensesAtTheHouse, whoTendsTheSick, medicalGradeOf } from '../engine/world/who-is-actually-seeing-to-wounds.js';
 import { countedWoundMedicine, onTheShelf, whatTheShelfChargesAMember, whatTheShelfGivesAMember }
     from '../engine/world/house-wound-medicine.js';
 import { medicineReaches } from '../engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
@@ -21,6 +22,8 @@ export function askingAboutCareHere(game: GameService, cultivator: Cultivator, a
     const place = world.locations.find(p => p.id === placeId);
     const provider = world.npcs.find(n => n.id === askedId);
     if (!place || !provider || !game.present(cultivator).some(p => p.id === askedId)) return null;
+    const houseId = place.controllingFactionId ?? (typeof place.data.factionId === 'string' ? place.data.factionId : null);
+    const careRoom = houseId ? roomForHouseWork(world.locations, houseId, 'infirmary') : null;
     const lines: string[] = [];
     if (isAMortalPhysician(provider) && !physicianIsWorking(world, provider)) {
         lines.push('This physician is not currently offering care here. Ask at the clinic while they are working. Nothing has been bought or administered.');
@@ -39,10 +42,10 @@ export function askingAboutCareHere(game: GameService, cultivator: Cultivator, a
             lines.push(`Of the wounds you currently carry, mortal care reaches ${reachable.length}; `
                 + 'the others cannot be closed by this physician\'s ordinary course.');
         }
-    } else if (purposeOf(place) === 'infirmary' && place.controllingFactionId
-        && whoDispensesAtTheHouse(world, place.controllingFactionId)?.id === askedId) {
-        const house = world.factions.find(h => h.id === place.controllingFactionId)!;
-        lines.push(`This infirmary dispenses ${house.name}'s finite medicine to its members for contribution.`);
+    } else if (houseId && careRoom?.id === place.id
+        && whoDispensesAtTheHouse(world, houseId)?.id === askedId) {
+        const house = world.factions.find(h => h.id === houseId)!;
+        lines.push(`${nameOfTheCareRoom(careRoom)} dispenses ${house.name}'s finite medicine to its members for contribution.`);
         const shelf = countedWoundMedicine().filter(pill => onTheShelf(house, pill.id) > 0);
         lines.push(...shelf.map(pill => `${pill.name}: ${onTheShelf(house, pill.id)} doses on the shelf, `
             + `${pill.grade} grade, ${whatTheShelfChargesAMember(pill)} contribution per dose.`));
@@ -58,5 +61,12 @@ export function askingAboutCareHere(game: GameService, cultivator: Cultivator, a
             if (offer.withheld?.why === 'kept') lines.push(`${offer.withheld.pill.name} is held back for ${offer.withheld.above} wounded members who are seen to before you.`);
         } else lines.push('You are not on this house\'s roll. Its member medicine is not offered to you.');
     } else return null;
+    if (houseId && careRoom?.id === place.id) {
+        const healer = whoTendsTheSick(world, houseId, routineTime(world));
+        lines.push(healer ? `${healer.name} is appointed to tend the sick here.`
+            : 'Nobody is currently tending the sick here.');
+        if (healer && medicalGradeOf(healer) === null)
+            lines.push(`${healer.name} has no medical skill to provide a course of care.`);
+    }
     return factsForToolResult('The care offered here.', lines);
 }

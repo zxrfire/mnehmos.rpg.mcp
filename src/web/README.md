@@ -3895,3 +3895,10 @@ takes them through ordinary possession.
 
 The unfinished fight is stored in the existing character flags, scoped to its run.
 Service recreation reads that same round; ending clears it. No battle archive is kept.
+
+An appointed house clinician offers actual care in the dedicated infirmary or
+existing quarters. The paid course retains their appointment and returns them to
+it only if no other undertaking replaced the course. A medicine clerk can dispense
+counted pills without being a clinician. Information questions buy no care.
+Ordinary made artifacts bought or sold at an exchange transfer the actual world
+object and money; inventory reads that same object without a counted-pouch copy.

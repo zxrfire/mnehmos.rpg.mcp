@@ -50,6 +50,7 @@ import { SECTS, sectThreat } from '../../data/cultivation/sects.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 import { REFINING_VESSELS } from '../cultivation/what-you-refine-in.js';
 import { theVesselsAHouseKeeps } from './what-a-house-refines-in.js';
+import { roomForHouseWork } from './where-a-house-does-its-work.js';
 import { refiningOrdinalFor } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import {
     everyIngredientThatIs,
@@ -150,13 +151,16 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
         const name = SECTS.find(s => s.id === house.id)?.name ?? house.name;
         const seat = house.seatLocationId;
         const rooms = seat === null ? undefined : roomsOf.get(seat);
-        // The room where there is one, and the compound where the house has no
-        // room of that purpose - a hill sect with no archive still owns books.
-        // A cauldron room is a house focused on medicine's, and every house has
-        // an alchemy hall, so what goes in a cauldron room goes there instead.
+        // Missing dedicated stores use existing ordinary rooms; supported crafts keep their own ground.
+        const workRooms = new Map<RoomPurpose, string | null>();
+        const workRoom = (purpose: RoomPurpose): string | null => {
+            if (!workRooms.has(purpose)) workRooms.set(purpose,
+                roomForHouseWork(state.locations, house.id, purpose)?.id ?? null);
+            return workRooms.get(purpose)!;
+        };
         const roomFor = (purpose: RoomPurpose | null): string | null =>
             (purpose === null ? null : rooms?.get(purpose)
-                ?? (purpose === 'furnace_room' ? rooms?.get('alchemy_hall') : undefined) ?? null) ?? seat;
+                ?? (purpose === 'furnace_room' ? rooms?.get('alchemy_hall') : workRoom(purpose)) ?? null) ?? seat;
 
         // ── WHAT IT REFINES IN ───────────────────────────────────────────
         //
@@ -187,7 +191,8 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
         // it deserves - so a house's healing pills are a stack with a number on
         // it and its heaven-grade dose is a row with a history, for the same
         // reason and by the same call.
-        out.push(...whatElseTheHouseKeeps(house.id, name, roomFor, acting, today));
+        out.push(...whatElseTheHouseKeeps(house.id, name, roomFor, acting, today,
+            workRoom('alchemy_hall') !== null));
         out.push(...whatTheHouseKeepsToWorkWith(house.id, name, roomFor, acting, today));
 
         // ── AND ITS COMMUNICATION TALISMANS ──────────────────────────────
@@ -258,7 +263,8 @@ function whatElseTheHouseKeeps(
     houseName: string,
     roomFor: (purpose: RoomPurpose | null) => string | null,
     acting: number,
-    today: number
+    today: number,
+    medicineIsMadeHere: boolean
 ): ObjectRecord[] {
     const out: ObjectRecord[] = [];
     const ceiling = bestFurnaceAHouseCouldKeep(acting);
@@ -272,10 +278,13 @@ function whatElseTheHouseKeeps(
     // WHAT IT DISPENSES, up to what it could field somebody to use. A hill sect
     // holding a heaven-grade dose nobody in it could survive taking is the
     // ornament problem again.
-    for (const grade of GRADES_A_HOUSE_STOCKS) {
-        if (refiningOrdinalFor(grade) > refiningOrdinalFor(ceiling)) continue;
-        for (const pill of getPillsByGrade(grade).slice(0, HOW_MANY_KINDS_OF_EACH)) {
-            wanted.push({ id: pill.id, name: pill.name, grade, kind: 'pill' });
+    // Houses without alchemy support obtain their doses through actual purchases.
+    if (medicineIsMadeHere) {
+        for (const grade of GRADES_A_HOUSE_STOCKS) {
+            if (refiningOrdinalFor(grade) > refiningOrdinalFor(ceiling)) continue;
+            for (const pill of getPillsByGrade(grade).slice(0, HOW_MANY_KINDS_OF_EACH)) {
+                wanted.push({ id: pill.id, name: pill.name, grade, kind: 'pill' });
+            }
         }
     }
 

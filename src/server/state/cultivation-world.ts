@@ -41,7 +41,6 @@ import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
 import { worldLocationFor } from '../../web/entities.js';
 import { whereInThisPlaceTheyStand } from '../../engine/world/where-in-a-place-somebody-is-standing.js';
 import { addPlacesOnTheWay } from '../../engine/world/places-on-the-way.js';
-import { addMissingInfirmary } from '../../engine/world/architecture.js';
 
 /**
  * Living NPCs a new world keeps records for.
@@ -222,18 +221,6 @@ async function open(worldId: string): Promise<WorldHandle | null> {
     if (state) {
         const before = state.locations.length;
         addPlacesOnTheWay(state.locations);
-        for (const house of state.factions) {
-            if (house.dissolvedOnDay !== null) continue;
-            const rooms = state.locations.filter(place => place.data.factionId === house.id);
-            const outer = rooms.find(place => place.data.purpose === 'precinct'
-                && Number(place.data.precinctIndex) === 0);
-            if (!outer || outer.controllingFactionId !== house.id) continue;
-            addMissingInfirmary(state.locations, {
-                factionId: house.id, factionName: house.name,
-                powerOrdinal: Number(house.resources.power_ordinal ?? outer.thresholds.mastery),
-                inherited: rooms.some(place => Number(place.data.builtFor ?? 0) > 0)
-            }, { seed: state.seed });
-        }
         const geometryCatalog = await cultivationCatalog();
         const geometryAdded = initializeMetricGround(state.locations, state.seed, geometryCatalog.regions, geometryCatalog.factions);
         const qiAdded = initializeNpcQi(state.npcs);

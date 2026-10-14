@@ -59,9 +59,8 @@ export interface ARefiningVessel {
 /**
  * Every kind of vessel. A third is a row here.
  *
- * The furnace is kept in the Artifact Refining Hall, which every compound has and
- * which `ROOMS_A_THING_IS_MADE_IN` reads a maker of artifacts into; the cauldron in
- * the furnace room, which is where `whereInTheHouseItSits` already puts one.
+ * Supported houses keep furnaces in an Artifact Hall and cauldrons in a cauldron
+ * room; personal vessels stay with their owners wherever they work.
  */
 export const REFINING_VESSELS: Readonly<Record<RefiningVesselKind, ARefiningVessel>> = {
     cauldron: {
@@ -167,4 +166,3 @@ export function whatACauldronIsWorthInAFight(grade: TechniqueGrade): number {
  * fights like the person who made it.
  */
 export const WHAT_A_POT_IS_WORTH_TO_HIDE_BEHIND = 0.4;
-

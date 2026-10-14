@@ -1,6 +1,6 @@
 import { putTheRouteToTheParty } from './a-party-answers-its-leader.js';
 /** Cities receive dated house business; attendance is a stint, never a new home. */
-import { loadExchangeConsignment } from './wares-at-a-capital-exchange.js';
+import { buyHouseMedicineAtThisExchange, loadExchangeConsignment } from './wares-at-a-capital-exchange.js';
 import { COMPETITION_CALENDARS } from '../../data/cultivation/competition-calendars.js';
 import { whatKindOfPlace } from '../../data/cultivation/regions.js';
 import { theDayItFallsIn } from './a-competition-anybody-may-enter.js';
@@ -772,6 +772,12 @@ function recordProgressAlongRoad(state:WorldState,person:NpcRecord,day:number,gr
 
 function receiveMissionParty(state: WorldState, mission: HistoricalFact, members: NpcRecord[],
     venue: LocationRecord, day: number): void {
+    if (mission.data.capitalMission === true && mission.data.reason === 'trade and purchases') {
+        for (const member of members) {
+            const buyer = state.npcs.find(person => person.id === member.id);
+            if (buyer) buyHouseMedicineAtThisExchange(state, buyer, day);
+        }
+    }
     const host = state.factions.find(house => house.id === mission.data.receivingHouseId);
     const sending = state.factions.find(house => house.id === mission.factionIds[0]);
     if (!host || !sending) return;

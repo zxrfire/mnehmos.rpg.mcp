@@ -45,6 +45,16 @@ settled on its reached landfall. They do not follow that driver's later work.
 The same native quote and commit permit an unladen, unpaid leg on an existing
 actual service hull; an empty request cannot mint a carrier or buy a seat.
 
+A nonmaking house's actual exchange factor can buy finite counted pills with
+the house purse. The seller receives the quoted price, the factor carries the
+house-owned doses, and the shelf gains them only when the factor is physically
+home. The seasonal exchange pass settles posted factors' purchases, and an
+actual purchasing errand buys at its real arrival before returning. An
+unaffordable dose stays with its seller.
+Return settlement shares a transient read of each carrier's exchange and bought
+cargo. Counted deliveries and purchases refresh that read; the actual rows and
+physical homecoming remain authoritative.
+
 The yearly sweep can forget an old mundane event without an unrelated business
 docket. Living participants or witnesses, and actual references such as a
 grievance, retain its evidence through the existing hold.
@@ -4973,3 +4983,16 @@ aboard an admitted carrier is put to the party on its real landing boundary,
 before its itinerary advances; the carrier's own course keeps running. Tracked
 beast remains use the existing body-material objects and are left for someone
 to take through ordinary possession.
+
+Institutional craft support follows focus, or the existing deep-foundation bar
+with vein or tribute income. Unsupported houses keep no manufactured pill
+cupboard or institutional vessel; personal tools and crafting remain available.
+Care and ordinary stores use existing compound rooms where dedicated rooms are
+absent. Actual bought doses and made artifacts arrive with their returning factor.
+
+Internal Affairs appoints the healer through ordinary decision odds and ties.
+The worker's activity references that appointment fact. A funded clinical course
+pays the real provider and rests the real member for the catalog month; its native
+endpoint closes the original reachable wound or records an interruption. No fee
+or wealth creates an instant cure. Player and world courses share the same local
+price quote; counted pills keep their existing finite and grade authorities.

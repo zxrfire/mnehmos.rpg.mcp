@@ -11,6 +11,8 @@
  * Swallowing must spend both, so the consumed unit cannot be sold or handed in.
  * The deterministic narrator prints EngineFacts.prose, so catalogue and run
  * metadata must stay out of that channel while the lot and entry remain told.
+ * Ordinary finished gear uses its real world-object inventory. Buying it must
+ * not create an herb stack; looking and selling read that same physical row.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
@@ -27,6 +29,8 @@ import { whoAnswersTo } from '../../src/engine/world/what-a-house-answers-to.js'
 import { enterAnOpenCompetition } from '../../src/engine/world/entering-an-open-competition.js';
 import { markDead, setRealm } from '../../src/engine/world/npc-state.js';
 import { vacanciesOnTheRolls } from '../../src/engine/world/a-house-takes-in-one-of-its-own.js';
+import { mintAMadeThing } from '../../src/engine/social-leverage/whether-the-work-holds.js';
+import { transferPossession } from '../../src/engine/world/possessions.js';
 
 async function opened(seed: string, provider?: ScriptedProvider) {
     const h = await makeGameInWorld({ seed, worldSeed: 'capital-play', provider });
@@ -145,6 +149,35 @@ describe('capital events in player turns', () => {
         const sold = await h.game.act(`I sell ${offered.name}`);
         expect(sold.toolCalls.some(c => c.name === 'world.tradeExchangeObject' && c.ok), said(sold)).toBe(true);
         expect(h.world.objects.find(o => o.id === offered.objectId)!.ownerId).toBe(seller.id);
+    }, 120_000);
+
+    it('buys, carries and resells ordinary made gear as the same object', async () => {
+        const h = await opened('exchange-made-gear');
+        const city = capitalPlaces(h.world).find(l => h.world.npcs.some(n => n.locationId === l.id
+            && n.activity?.kind === 'stationed' && exchangeOffers(h.world, n).length))!;
+        const seller = h.world.npcs.find(n => n.locationId === city.id && n.activity?.kind === 'stationed'
+            && exchangeOffers(h.world, n).length)!;
+        const object = { ...transferPossession(mintAMadeThing({ id: 'played-iron-sabre',
+            ask: { named: 'Iron Reed Sabre', grade: 'mortal' },
+            maker: { id: seller.id, name: seller.name, ordinal: seller.cultivation.realmOrdinal },
+            onDay: h.world.currentDay - 14 }), { onDay: h.world.currentDay,
+            toHolderId: seller.factionId, toHolderName: 'the house', how: 'crafted', transfersOwnership: true }),
+            possessorId: seller.id, locationId: city.id, tags: ['made', 'grade:mortal', 'exchange'] };
+        h.world.objects.push(object);
+        h.repos.cultivators.update(h.cultivator.id, { location: city.name, spiritStones: 100_000, realmOrdinal: 14 });
+        h.repos.cultivators.standIn(h.cultivator.id, theAreasOf(h.world, city).whereIs.get(seller.id)!);
+        h.game.theWorldMoved();
+        const bought = await h.game.act(`I buy ${object.name}`);
+        expect(bought.toolCalls.some(c => c.name === 'world.tradeExchangeObject' && c.ok), said(bought)).toBe(true);
+        expect(h.world.objects.find(o => o.id === object.id)!.possessorId).toBe(h.cultivator.id);
+        expect(listPouch(h.repos.db, h.cultivator.id).some(entry => entry.itemId.startsWith('made:'))).toBe(false);
+        expect(said(await h.game.act('inventory'))).toContain(object.name);
+        h.repos.cultivators.standIn(h.cultivator.id, theAreasOf(h.world, city).whereIs.get(seller.id)!);
+        const sold = await h.game.act(`I sell ${object.name}`);
+        expect(sold.toolCalls.some(c => c.name === 'world.tradeExchangeObject' && c.ok), said(sold)).toBe(true);
+        expect(h.world.objects.find(o => o.id === object.id)!.ownerId).toBe(seller.id);
+        expect(h.world.objects.find(o => o.id === object.id)!.possessorId).toBe(seller.id);
+        expect(h.world.objects.filter(o => o.id === object.id)).toHaveLength(1);
     }, 120_000);
 
     it('enters a winning player on the receiving house roll at its lowest rank', async () => {

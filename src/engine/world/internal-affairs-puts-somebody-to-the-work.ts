@@ -1,0 +1,82 @@
+/** Internal Affairs assigns house work through the ordinary decision odds. */
+import { oddsOf, type AttemptInput } from '../social-leverage/an-attempt-to-move-somebody.js';
+import { forStream } from '../cultivation/rng.js';
+import { theInternalAffairsElderIn } from './a-house-expects-somebody-it-took-on.js';
+import { relationshipWith, isAwayOnSomething, isTheWorldsToMove, type NpcRecord } from './npc-state.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
+import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { makeFact, type HistoricalFact } from './history.js';
+import type { LocationRecord } from './locations.js';
+import type { WorldState } from './world-state.js';
+
+export function personnelManager(state: WorldState, houseId: string): NpcRecord | null {
+    const house = state.factions.find(row => row.id === houseId && row.dissolvedOnDay === null);
+    if (!house) return null;
+    const roll = state.npcs.filter(person => person.status === 'alive' && person.factionId === houseId);
+    const holder = theInternalAffairsElderIn(state.locations, house,
+        roll.map(person => ({ id: person.id, rankIndex: person.factionRankIndex })));
+    return roll.find(person => person.id === holder) ?? roll.sort((a, b) =>
+        b.factionRankIndex - a.factionRankIndex || b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
+        || a.id.localeCompare(b.id))[0] ?? null;
+}
+
+/** Current work references its appointment; there is no parallel staff roll. */
+export function houseAppointment(state: Partial<Pick<WorldState, 'history'>>, person: NpcRecord): HistoricalFact | null {
+    const id = person.activity?.houseWorkFactId;
+    const fact = id && state.history ? witnessIndexFor({ history: state.history }).byId.get(id) : null;
+    return fact?.data.houseWorkAppointment === true && fact.data.houseId === person.factionId
+        && fact.actors.some(actor => actor.id === person.id && actor.role === 'appointed_worker') ? fact : null;
+}
+
+export function appointHouseWorker(state: WorldState, input: {
+    houseId: string; job: string; room: LocationRecord; day: number;
+    suitable: (person: NpcRecord) => boolean;
+}): NpcRecord | null {
+    const working = state.npcs.find(person => person.status === 'alive' && person.factionId === input.houseId
+        && houseAppointment(state, person)?.data.job === input.job);
+    if (working) return working;
+    const manager = personnelManager(state, input.houseId);
+    if (!manager || !isTheWorldsToMove(manager)) return null;
+    const inside = new Set(state.locations.filter(place => place.data.factionId === input.houseId
+        || place.controllingFactionId === input.houseId).map(place => place.id));
+    const house = state.factions.find(row => row.id === input.houseId)!;
+    if (house.seatLocationId) inside.add(house.seatLocationId);
+    if (!inside.has(locationOfNpcOnItsJourney(state, manager, input.day) ?? '')) return null;
+    const party = (person: NpcRecord) => ({ id: person.id, name: person.name,
+        ordinal: person.cultivation.realmOrdinal, charm: person.cultivation.attributes.charm,
+        factionId: person.factionId, alignment: house.alignment, ranked: true });
+    const candidates = state.npcs.filter(person => person.status === 'alive' && isTheWorldsToMove(person)
+        && person.factionId === input.houseId && !person.activity?.redirect
+        && (!person.activity || !isAwayOnSomething(person.activity.kind))
+        && !person.activity?.thingId && !person.activity?.withIds.length
+        && !person.activity?.houseWorkFactId
+        && [house.seatLocationId, input.room.id].includes(locationOfNpcOnItsJourney(state, person, input.day)));
+    const review = [input.houseId, input.job, manager.id, Math.floor(input.day / 365),
+        candidates.map(person => person.id).sort().join(',')].join(':');
+    if (factsWithDataValue(state, 'housePersonnelReview', review).length) return null;
+    const proposals = candidates.map(person => {
+        const tie = relationshipWith(manager, person.id);
+        const attempt: AttemptInput = { actor: party(person), subject: party(manager), onDay: input.day,
+            ask: input.suitable(person) ? 'a_courtesy' : 'against_their_interest',
+            theirTie: tie ? { active: true, strength: Math.max(0, tie.standing) } : null,
+            theyWantSomethingFromYou: input.suitable(person),
+            rng: forStream(state.seed, 'house-personnel', review, person.id) };
+        return { person, attempt, odds: oddsOf(attempt).odds };
+    }).sort((a, b) => b.odds - a.odds || a.person.id.localeCompare(b.person.id));
+    const chosen = proposals.find(proposal => proposal.attempt.rng.chance(proposal.odds))?.person;
+    const fact = appendWorldFact(state, makeFact({ day: input.day, kind: 'gathering',
+        locationId: input.room.id, factionIds: [input.houseId], visibility: 'faction',
+        actors: [{ id: manager.id, name: manager.name, role: 'personnel_manager' },
+            ...(chosen ? [{ id: chosen.id, name: chosen.name, role: 'appointed_worker' }] : [])],
+        summary: chosen ? `${manager.name} appointed ${chosen.name} to ${input.job.replaceAll('_', ' ')}.`
+            : `${manager.name} appointed nobody to ${input.job.replaceAll('_', ' ')}.`,
+        data: { housePersonnelReview: review, houseWorkAppointment: !!chosen,
+            houseId: input.houseId, job: input.job } }), { bystanders: false, recur: false });
+    if (!chosen) return null;
+    const at = state.npcs.findIndex(person => person.id === chosen.id);
+    state.npcs[at] = { ...chosen, activity: { kind: 'the_work_of_their_rank',
+        note: input.job.replaceAll('_', ' ') + '.', withIds: [], sinceDay: input.day,
+        untilDay: null, houseWorkFactId: fact.id } };
+    return state.npcs[at]!;
+}

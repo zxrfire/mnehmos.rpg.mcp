@@ -1,3 +1,5 @@
+import { witnessIndexFor } from './witness-reaction-index.js';
+import { houseAppointment } from './internal-affairs-puts-somebody-to-the-work.js';
 /**
  * Which room of a compound somebody is standing in.
  *
@@ -53,8 +55,9 @@ import type { LocationRecord, RouteQueries } from './locations.js';
 import { isActing, type NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 import { whoDispensesAtTheHouse } from './who-is-actually-seeing-to-wounds.js';
+import { roomForHouseWork } from './where-a-house-does-its-work.js';
 import { whoIsAtAClosedLesson } from './where-a-master-takes-their-own-disciples.js';
-import { routineOf, routineLocationOf } from './npc-routines.js';
+import { routineOf, routineLocationOf, routineTime } from './npc-routines.js';
 import { theLodgingsOfAHouse, whichRoomARungGets, type LodgingRoom } from './the-room-a-house-gives-you.js';
 
 /** One compound, as much of it as a placement read needs. */
@@ -151,7 +154,7 @@ function stillAtIt(npc: Pick<NpcRecord, 'activity'>, day: number): boolean {
  * somebody who is not.
  */
 export function whereTheyAreStanding(
-    state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay' | 'seed' | 'currentHour'>,
+    state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay' | 'seed' | 'currentHour'> & Partial<Pick<WorldState, 'history'>>,
     compounds: WhereCompoundsAre,
     npc: NpcRecord,
     people: ReadonlySet<string>,
@@ -188,13 +191,23 @@ export function whereTheyAreStanding(
 
     if (!stillAtIt({ activity: routine.activity }, day)) return stored;
     const doing = routine.activity!;
+    if (doing.houseCareFactId && state.history) {
+        const course = witnessIndexFor({ history: state.history }).byId.get(doing.houseCareFactId);
+        if (course?.locationId && compound.inside.has(course.locationId)
+            && typeof course.data.beginsOnDay === 'number'
+            && routineTime(state) >= course.data.beginsOnDay) return course.locationId;
+    }
+    if (doing.houseWorkFactId) {
+        const appointed = houseAppointment(state, npc);
+        if (appointed?.locationId && compound.inside.has(appointed.locationId)) return appointed.locationId;
+    }
     if (doing.withIds.some(id => !people.has(id))) return stored;
 
     const hour = state.currentHour ?? 8;
     if (!compound.dispenser || compound.dispenser.day !== day || compound.dispenser.hour !== hour)
         compound.dispenser = { day, hour,
             id: whoDispensesAtTheHouse(state, compound.houseId)?.id ?? null };
-    if (compound.dispenser.id === npc.id) return compound.rooms.get('infirmary')?.id ?? stored;
+    if (compound.dispenser.id === npc.id) return roomForHouseWork(state.locations, compound.houseId, 'infirmary')?.id ?? stored;
 
     if (doing.kind === 'the_work_of_their_rank') {
         // MAKING A THING IS DONE WHERE THAT THING IS MADE, before the office:
@@ -274,7 +287,7 @@ export const A_SLIP_CUT_TO_ORDER = 'commission-slip-';
  * order: alive, by id.
  */
 export function npcsStandingIn(
-    state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay' | 'seed' | 'currentHour'>,
+    state: Pick<WorldState, 'locations' | 'npcs' | 'factions' | 'currentDay' | 'seed' | 'currentHour'> & Partial<Pick<WorldState, 'history'>>,
     locationId: string,
     compounds: WhereCompoundsAre = whereCompoundsAre(state),
     routes?: RouteQueries

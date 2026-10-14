@@ -390,6 +390,10 @@ export type ActivityKind =
     | 'squeezing';
 
 export interface NpcActivity {
+    /** The actual Internal Affairs appointment behind this work. */
+    houseWorkFactId?: string;
+    /** The paid clinical course currently resting this body. */
+    houseCareFactId?: string;
     /** The actual party discussion currently interrupting this undertaking. */
     partyQuestionId?: string;
     /** Actual group fight holding this undertaking at reached ground. */

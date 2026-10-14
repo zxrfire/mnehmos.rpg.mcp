@@ -6,17 +6,23 @@
  * These front-door controls keep that exact plan and prove real care receipts,
  * physician fee credit, elapsed month and persisted bodily recovery. Questions,
  * off-duty providers, an empty purse and another listener buy no treatment.
+ * Appointed house care also works in existing quarters and retains the appointment.
  * No new care calculation or promised outcome is introduced; named provider
  * identity must survive delegation into the existing finite service authorities.
+ * The house-provider mismatch fixture now uses its actual care room at a
+ * working hour, persisted on the run clock; the opening hour need not be a shift.
  */
 import { expect, it } from 'vitest';
+import { makeFaction } from '../../src/engine/world/world-state.js';
+import { makeLocation } from '../../src/engine/world/locations.js';
+import { houseAppointment } from '../../src/engine/world/internal-affairs-puts-somebody-to-the-work.js';
 import { atAWorkingPhysician } from './at-a-working-physician.js';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
-import { getOccupation } from '../../src/data/cultivation/mortal-world.js';
-import { purposeOf } from '../../src/engine/world/architecture.js';
-import { whoDispensesAtTheHouse } from '../../src/engine/world/who-is-actually-seeing-to-wounds.js';
+import { getOccupation, MORTAL_PHYSICIAN_JOB } from '../../src/data/cultivation/mortal-world.js';
+import { roomForHouseWork } from '../../src/engine/world/where-a-house-does-its-work.js';
+import { whoDispensesAtTheHouse, appointHouseHealer, whoTendsTheSick } from '../../src/engine/world/who-is-actually-seeing-to-wounds.js';
 import { onTheShelf } from '../../src/engine/world/house-wound-medicine.js';
-import { createNpc } from '../../src/engine/world/npc-state.js';
+import { createNpc, setRealm } from '../../src/engine/world/npc-state.js';
 import { routineTime } from '../../src/engine/world/npc-routines.js';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
@@ -108,10 +114,14 @@ it('does not take house medicine from a different attendant than the requested l
     const { cultivator } = await h.game.newRun('Member');
     const world = (await h.game.loadWorld())!;
     const house = world.factions.find(f => f.dissolvedOnDay === null && onTheShelf(f, 'pill-clear-meridian') >= 5
-        && whoDispensesAtTheHouse(world, f.id) !== null)!;
+        && h.repos.sects.getById(f.id) !== null
+        && Array.from({ length: 24 }, (_, hour) => hour).some(hour => {
+            world.currentHour = hour;
+            return whoDispensesAtTheHouse(world, f.id) !== null;
+        }))!;
     expect(house, 'an actual house currently dispensing counted medicine').toBeDefined();
     const dispenser = whoDispensesAtTheHouse(world, house.id)!;
-    const ground = world.locations.find(p => p.controllingFactionId === house.id && purposeOf(p) === 'infirmary')!;
+    const ground = roomForHouseWork(world.locations, house.id, 'infirmary')!;
     const area = theAreasOf(world, ground).whereIs.get(dispenser.id)!;
     expect(area, 'actual attendant placement agrees with clinical duty').toBeDefined();
     const listener = world.npcs.find(n => n.status === 'alive' && n.factionId === house.id && n.id !== dispenser.id)!;
@@ -123,6 +133,10 @@ it('does not take house medicine from a different attendant than the requested l
     h.repos.sects.addContribution(house.id, cultivator.id, 500);
     h.repos.cultivators.update(cultivator.id, { location: ground.name, spiritStones: 500 });
     h.repos.cultivators.standIn(cultivator.id, area); h.game.theWorldMoved();
+    const run = h.game.currentRun().run;
+    h.db.prepare('UPDATE runs SET elapsed_days = ? WHERE id = ?')
+        .run(Math.floor(run.elapsedDays) + world.currentHour! / 24, run.id);
+    await h.game.loadWorld();
     h.db.prepare(`INSERT INTO cultivator_injuries (id,cultivator_id,severity,source,description,sustained_on_turn,treated,cultivation_penalty,breakthrough_penalty)
         VALUES (?,?,'serious','combat','A torn meridian.',1,0,0.1,0.05)`).run('fc751388-e7fc-4cbc-8385-0653ee5396db', cultivator.id);
     const present = h.game.present(h.game.state().cultivator);
@@ -139,4 +153,44 @@ it('does not take house medicine from a different attendant than the requested l
         body: h.game.state().cultivator, elapsed: h.game.state().run.elapsedDays,
         member: h.repos.sects.getMembership(cultivator.id) }).toEqual(before);
     h.db.close();
+}, 120_000);
+
+
+it('buys a real course from the appointed house healer in ordinary quarters', async () => {
+    const h = await makeGameInWorld({ seed: 'appointed-house-clinical-care', worldSeed: 'the-house-appoints-a-physician' });
+    try {
+        const { cultivator, run } = await h.game.newRun('Patient');
+        const world = (await h.game.loadWorld())!;
+        const house = makeFaction({ id: 'house', name: 'Reed House', seatLocationId: 'seat' });
+        world.factions.push(house);
+        world.locations.push(makeLocation({ id: 'seat', name: 'Reed House', kind: 'sect_seat', controllingFactionId: house.id }),
+            makeLocation({ id: 'quarters', name: 'Reed Quarters', kind: 'hall', parentId: 'seat', tags: ['interior'],
+                data: { factionId: house.id, purpose: 'dormitory' } }));
+        world.npcs.push(createNpc(world.seed, { id: 'manager', onDay: world.currentDay, bornOnDay: world.currentDay - 7300,
+            locationId: 'seat', factionId: house.id, factionRankIndex: house.ranks.length - 1 }),
+            setRealm(createNpc(world.seed, { id: 'physician', onDay: world.currentDay, bornOnDay: world.currentDay - 7300,
+                locationId: 'seat', factionId: house.id, factionRankIndex: 0,
+                occupation: getOccupation(MORTAL_PHYSICIAN_JOB)!.name }), 0, world.currentDay));
+        const healer = appointHouseHealer(world, house.id, world.currentDay);
+        expect(healer).not.toBeNull();
+        const appointment = houseAppointment(world, healer!)!.id;
+        const hour = Array.from({ length: 24 }, (_, i) => i).find(hour => {
+            world.currentHour = hour; return whoTendsTheSick(world, house.id, world.currentDay)?.id === healer!.id;
+        });
+        expect(hour).toBeDefined();
+        const room = world.locations.find(place => place.id === 'quarters')!;
+        const area = theAreasOf(world, room).whereIs.get(healer!.id)!;
+        expect(area, 'the appointed healer stands in the actual care room').toBeDefined();
+        h.repos.cultivators.update(cultivator.id, { location: room.name, hp: 1, spiritStones: 500 });
+        h.repos.cultivators.standIn(cultivator.id, area); h.game.theWorldMoved();
+        h.db.prepare('UPDATE runs SET elapsed_days = ? WHERE id = ?').run(Math.floor(run.elapsedDays) + hour! / 24, run.id);
+        const before = healer!.spiritStones;
+        const turn = await h.game.act('treat my injuries');
+        expect(turn.toolCalls.some(call => call.name === 'engine.mortalCare' && call.ok), turn.narration).toBe(true);
+        expect(h.game.state().cultivator.hp).toBeGreaterThan(1);
+        const attending = h.game.atHand!.npcs.find(person => person.id === healer!.id)!;
+        expect(attending.spiritStones).toBeGreaterThan(before);
+        expect(houseAppointment(h.game.atHand!, attending)?.id).toBe(appointment);
+        expect(attending.activity?.withIds).toEqual([]);
+    } finally { h.db.close(); }
 }, 120_000);

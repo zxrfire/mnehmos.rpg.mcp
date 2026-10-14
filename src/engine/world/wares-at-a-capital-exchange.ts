@@ -17,6 +17,9 @@ import type { WorldState } from './world-state.js';
 import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { routeQueriesFor, type RouteQueries } from './locations.js';
 import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
+import { houseWhoseMedicineThisFactorBuys, houseWhoseArtifactThisFactorBuys,
+    putBoughtHouseMedicineOnTheShelf, putBoughtHouseArtifactsInTheStore } from './medicine-bought-by-a-house-factor.js';
+import { housesWithACraftHall } from './where-a-house-does-its-work.js';
 
 /** A dispatch buys one consignment; looking never restocks a counter. */
 export function loadExchangeConsignment(state: WorldState, seller: NpcRecord, day: number, routes?: RouteQueries): void {
@@ -32,6 +35,25 @@ export function loadExchangeConsignment(state: WorldState, seller: NpcRecord, da
         forStream(state.seed, 'exchange-ware', seller.id, day, a).next()
         - forStream(state.seed, 'exchange-ware', seller.id, day, b).next()).slice(0, rng.int(1, 3));
     const auctioned = new Set(pendingAuctionLots(state).map(fact => fact.data.objectId));
+    // Finished goods already put out for sale are stock, independent of the
+    // catalog of regional materials. Private gear stays in the house stores.
+    for (let at = 0; at < state.objects.length; at++) {
+        const object = state.objects[at]!;
+        if (object.kind !== 'artifact' || !object.tags.includes('made') || !object.tags.includes('exchange')
+            || object.ownerId !== house.id || object.possessorId !== null || object.locationId !== ground
+            || isRuined(object) || auctioned.has(object.id)) continue;
+        const thing = whatThisThingIs(object);
+        if (!thing || thing.marketStones === null) continue;
+        const fact = appendWorldFact(state, makeFact({ day, kind: 'gathering', visibility: 'faction',
+            locationId: ground, factionIds: [house.id],
+            actors: [{ id: seller.id, name: seller.name, role: 'factor' }],
+            summary: `${seller.name} loaded ${object.name} for ${destination}.`,
+            data: { exchangeConsignment: true, objectId: object.id, wareId: thing.kindId, stintDay: day } }), { recur: false });
+        state.objects[at] = { ...transferPossession(object, { onDay: day, toHolderId: seller.id,
+            toHolderName: seller.name, how: 'lent', transfersOwnership: false, factId: fact.id,
+            note: 'Finished goods consigned to the exchange for this stint.' }),
+            data: { ...object.data, stintDay: day } };
+    }
     for (const id of wares) {
         const freshId = `exchange:${seller.id}:${day}:${id}`;
         if (state.objects.some(o => o.id === freshId) || factsWithDataValue(state, 'stintDay', day)
@@ -48,7 +70,7 @@ export function loadExchangeConsignment(state: WorldState, seller: NpcRecord, da
         const quantity = stock ? whatThisThingIs(stock)!.quantity : 0;
         const objectId = quantity === 1 ? stock!.id : freshId;
         const purse = Number(house.resources.spirit_stones ?? 0);
-        if (!stock && purse < price) continue;
+        if (!stock && (purse < price || pill && !housesWithACraftHall(state.locations, 'alchemy_hall').has(house.id))) continue;
         if (!stock) house.resources.spirit_stones = purse - price;
         const name = ingredient?.name ?? pill!.name;
         const fact = appendWorldFact(state, makeFact({ day, kind: 'gathering', visibility: 'faction',
@@ -86,10 +108,11 @@ function exchangeOfferForObject(state: WorldState, seller: NpcRecord, object: Ob
     const price = object.kind === 'pill' ? pillCashPrice(getPill(thing.kindId)!) : thing.marketStones;
     if (price == null) return null;
     const region = regionIdOfPlace(state.locations.find(l => l.id === seller.locationId)?.name);
-    const ask = region ? localPrice(region, price) : price;
+    const total = price * thing.quantity;
+    const ask = region ? localPrice(region, total) : total;
     return { sellerId: seller.id, sellerName: seller.name, thingId: object.id, objectId: object.id,
         name: object.name, why: 'it_is_what_they_deal_in',
-        askStones: ask, listStones: price, counterStones: ask, usableFrom: 0, usefulUntil: 0,
+        askStones: ask, listStones: total, counterStones: ask, usableFrom: 0, usefulUntil: 0,
         whoWouldWantAWord: null, awkwardToHold: 0, fromTheMortalBoard: false };
 }
 
@@ -119,7 +142,7 @@ export function exchangeOffers(state: WorldState, seller: NpcRecord,
 /** Both ends pay out of actual purses and move this object through the ordinary provenance chain. */
 export function tradeExchangeObject(state: WorldState, seller: NpcRecord, buyer: NpcRecord,
     objectId: string, day: number, playerAt?: { id: string; locationId: string | null },
-    positions?: ReadonlyMap<string, string | null>): number | null {
+    positions?: ReadonlyMap<string, string | null>, forHouseSupplies = false): number | null {
     const objectAt = state.objects.findIndex(o => o.id === objectId);
     const object = state.objects[objectAt];
     const placeOf = (n: NpcRecord) => n.id === playerAt?.id ? playerAt.locationId
@@ -139,26 +162,58 @@ export function tradeExchangeObject(state: WorldState, seller: NpcRecord, buyer:
     const stones = offering?.askStones ?? quoteSale({ listStones: listPrice,
         quantity: thing.quantity, seller: { ordinal: seller.cultivation.realmOrdinal },
         localMultiplier: region ? localPrice(region, 100) / 100 : 1 }).offeredStones;
-    if (stones <= 0 || buyer.spiritStones < stones) return null;
+    const buyingHouse = forHouseSupplies ? houseWhoseMedicineThisFactorBuys(state, buyer, object, day)
+        ?? houseWhoseArtifactThisFactorBuys(state, buyer, object, day) : null;
+    if (forHouseSupplies && !buyingHouse) return null;
+    const purse = buyingHouse ? Number(buyingHouse.resources.spirit_stones ?? 0) : buyer.spiritStones;
+    if (stones <= 0 || purse < stones) return null;
     const sellerAt = state.npcs.findIndex(n => n.id === seller.id);
     const buyerAt = state.npcs.findIndex(n => n.id === buyer.id);
     if (sellerAt < 0 || buyerAt < 0) return null;
     const fact = appendWorldFact(state, makeFact({ day, kind: 'gathering', locationId: venue.id,
         summary: `${object.name} sold for ${stones} spirit stones at ${venue.name}.`,
         actors: [{ id: seller.id, name: seller.name, role: 'seller' }, { id: buyer.id, name: buyer.name, role: 'buyer' }],
-        factionIds: seller.factionId ? [seller.factionId] : [],
+        factionIds: [...new Set([seller.factionId, buyingHouse?.id].filter((id): id is string => !!id))],
         data: { exchangeSale: true, objectId, sellerId: seller.id, houseId: offering ? seller.factionId : null,
-            stintDay: seller.activity?.sinceDay ?? day, stones } }), { recur: false });
+            stintDay: seller.activity?.sinceDay ?? day, buyerId: buyer.id,
+            buyerHouseId: buyingHouse?.id ?? null, stones } }), { recur: false });
     state.npcs[sellerAt] = { ...state.npcs[sellerAt]!, spiritStones: seller.spiritStones + stones };
-    state.npcs[buyerAt] = { ...state.npcs[buyerAt]!, spiritStones: buyer.spiritStones - stones };
-    state.objects[objectAt] = { ...transferPossession(object, { onDay: day, toHolderId: buyer.id,
-        toHolderName: buyer.name, how: 'bought', transfersOwnership: true, factId: fact.id,
-        source: seller.name }), locationId: venue.id };
+    if (buyingHouse) buyingHouse.resources.spirit_stones = purse - stones;
+    else state.npcs[buyerAt] = { ...state.npcs[buyerAt]!, spiritStones: buyer.spiritStones - stones };
+    const bought = transferPossession(object, { onDay: day, toHolderId: buyingHouse?.id ?? buyer.id,
+        toHolderName: buyingHouse?.name ?? buyer.name, how: 'bought', transfersOwnership: true,
+        factId: fact.id, source: seller.name });
+    state.objects[objectAt] = buyingHouse ? { ...transferPossession(bought, { onDay: day,
+        toHolderId: buyer.id, toHolderName: buyer.name, how: 'lent', transfersOwnership: false,
+        factId: fact.id, note: 'House supplies carried by its factor.' }), locationId: venue.id,
+        tags: [...object.tags.filter(tag => tag !== 'exchange' && !tag.startsWith('house:')),
+            object.kind === 'artifact' ? 'house-artifact-purchase' : 'house-medicine-purchase', `house:${buyingHouse.id}`] }
+        : { ...bought, locationId: venue.id };
     return stones;
+}
+
+/** A purchasing errand asks the present counters for its house's needed supplies. */
+export function buyHouseMedicineAtThisExchange(state: WorldState, buyer: NpcRecord, day: number): number {
+    const ground = locationOfNpcOnItsJourney(state, buyer, day);
+    if (!ground) return 0;
+    const sellers = state.npcs.filter(person => person.id !== buyer.id && person.status === 'alive'
+        && person.factionId !== buyer.factionId && locationOfNpcOnItsJourney(state, person, day) === ground);
+    let spent = 0;
+    for (const seller of sellers) {
+        for (const offer of exchangeOffers(state, seller, undefined, undefined, day)) {
+            if (!offer.objectId) continue;
+            const current = state.npcs.find(person => person.id === seller.id)!;
+            const paid = tradeExchangeObject(state, current, buyer, offer.objectId, day, undefined, undefined, true);
+            if (paid !== null) spent += paid;
+        }
+    }
+    return spent;
 }
 
 /** One seasonal sample per counter, never a loop over a person's days. */
 export function tradeAtCapitalExchanges(state: WorldState, day: number): void {
+    const makers = housesWithACraftHall(state.locations, 'alchemy_hall');
+    const artifactMakers = housesWithACraftHall(state.locations, 'artifact_refining_hall');
     const cities = new Set(state.locations.filter(l => l.tags.includes('city') || whatKindOfPlace(l.name) === 'provincial capital').map(l => l.id));
     // A seasonal trade changes goods and purses, not places, activities or the clock.
     const routes = routeQueriesFor(state.locations);
@@ -198,14 +253,28 @@ export function tradeAtCapitalExchanges(state: WorldState, day: number): void {
             && n.id !== seller.id && n.factionId !== seller.factionId);
         const rng = forStream(state.seed, 'exchange-sale', seller.id, day);
         if (!buyers.length || !rng.chance(0.5)) continue;
-        tradeExchangeObject(state, seller, buyers[rng.int(0, buyers.length - 1)]!,
-            offers[rng.int(0, offers.length - 1)]!.objectId!, day, undefined, positions);
+        const houseNeeds = buyers.flatMap(buyer => offers.flatMap(offer => {
+            const object = state.objects.find(row => row.id === offer.objectId);
+            const house = object ? houseWhoseMedicineThisFactorBuys(state, buyer, object, day, makers)
+                ?? houseWhoseArtifactThisFactorBuys(state, buyer, object, day, artifactMakers) : null;
+            return house && Number(house.resources.spirit_stones ?? 0) >= offer.askStones
+                ? [{ buyer, objectId: object!.id }] : [];
+        }));
+        const need = houseNeeds.length ? houseNeeds[rng.int(0, houseNeeds.length - 1)]! : null;
+        tradeExchangeObject(state, seller, need?.buyer ?? buyers[rng.int(0, buyers.length - 1)]!,
+            need?.objectId ?? offers[rng.int(0, offers.length - 1)]!.objectId!, day, undefined, positions, !!need);
     }
 }
 
 /** An ended stint returns unsold stock and its receipts exactly once. */
 export function returnExchangeConsignment(state: WorldState, seller: NpcRecord, day: number,
-    stintDay = seller.activity?.sinceDay, houseId = seller.factionId, stockPositions?: readonly number[]): void {
+    stintDay = seller.activity?.sinceDay, houseId = seller.factionId, stockPositions?: readonly number[],
+    purchasePositions?: readonly number[]): void {
+    // Counted deliveries remove rows; retain the actual unsold objects before their indices change.
+    const consignments = stockPositions?.flatMap(at => state.objects[at] ? [state.objects[at]!] : []);
+    const purchases = purchasePositions?.flatMap(at => state.objects[at] ? [state.objects[at]!] : []);
+    putBoughtHouseMedicineOnTheShelf(state, seller, day, purchases);
+    putBoughtHouseArtifactsInTheStore(state, seller, day, purchases);
     const house = state.factions.find(h => h.id === houseId);
     if (!house || stintDay == null) return;
     if (factsWithDataValue(state, 'sellerId', seller.id).some(f => f.data.exchangeReturn === true
@@ -213,11 +282,8 @@ export function returnExchangeConsignment(state: WorldState, seller: NpcRecord, 
         && (f.data.houseId === house.id || f.data.houseId == null && seller.factionId === house.id))) return;
     const receipts = exchangeReceipts(state, seller.id, house.id, stintDay);
     const remit = Math.min(receipts, seller.spiritStones);
-    const unsold: number[] = [];
-    for (const i of stockPositions ?? state.objects.map((_, at) => at)) {
-        const object = state.objects[i]!;
-        if (object.tags.includes('exchange') && object.possessorId === seller.id && object.ownerId === house.id) unsold.push(i);
-    }
+    const unsold = (consignments ?? state.objects).filter(object => object.tags.includes('exchange')
+        && object.possessorId === seller.id && object.ownerId === house.id);
     if (!receipts && !unsold.length) return;
     appendWorldFact(state, makeFact({ day, kind: 'gathering', visibility: 'faction', locationId: house.seatLocationId,
         factionIds: [house.id], actors: [{ id: seller.id, name: seller.name, role: 'factor' }],
@@ -227,9 +293,10 @@ export function returnExchangeConsignment(state: WorldState, seller: NpcRecord, 
     house.resources.spirit_stones = Number(house.resources.spirit_stones ?? 0) + remit;
     const at = state.npcs.findIndex(n => n.id === seller.id);
     if (at >= 0) state.npcs[at] = { ...state.npcs[at]!, spiritStones: state.npcs[at]!.spiritStones - remit };
-    // Fact append and purse settlement do not reorder or insert object rows.
-    for (const i of unsold) {
-        const object = state.objects[i]!;
+    const unsoldById = new Map(unsold.map(object => [object.id, object]));
+    for (let i = 0; i < state.objects.length; i++) {
+        const object = unsoldById.get(state.objects[i]!.id);
+        if (!object) continue;
         state.objects[i] = { ...transferPossession(object, { onDay: day, toHolderId: null, toHolderName: house.name,
             how: 'lent', transfersOwnership: false, note: 'Unsold exchange consignment returned.' }), locationId: house.seatLocationId };
     }

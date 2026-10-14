@@ -26,7 +26,7 @@ const routine = (fact: HistoricalFact): boolean => {
         || data.actualBodyArrival === true || data.postRelief === true || data.postServiceReceipt === true
         || data.publicPassage === true || data.capitalMission === true || data.tributeReceived === true
         // A gate entry is a docket; a year's registration has run out by the time it is a year old.
-        || data.gateRegistration === true || data.passageTallyPurchase === true
+        || data.houseClinicalCare === true || typeof data.houseClinicalCareEnded === 'string' || typeof data.housePersonnelReview === 'string' || data.gateRegistration === true || data.passageTallyPurchase === true
         || data.missedDeparture === true || data.unusedPassageTally === true);
 };
 
@@ -50,7 +50,7 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
         'auctionLot', 'auctionBid', 'auctionResult', 'capitalCompetition', 'capitalOccasion',
         'houseProgress', 'houseBusiness', 'openCompetition', 'actualBodyArrival', 'postRelief',
         'postServiceReceipt', 'publicPassage', 'capitalMission', 'tributeReceived', 'gateRegistration',
-        'passageTallyPurchase', 'missedDeparture', 'unusedPassageTally'].some(key => factsWithData(state, key).some(fact => fact.day <= cutoff))
+        'passageTallyPurchase', 'missedDeparture', 'unusedPassageTally', 'housePersonnelReview', 'houseClinicalCare', 'houseClinicalCareEnded'].some(key => factsWithData(state, key).some(fact => fact.day <= cutoff))
         && ![...MUNDANE].some(kind => (index.byKind.get(kind) ?? [])
             .some(fact => fact.day <= cutoff))) return;
     const exact = new Set(state.npcs.filter(person => isPlayerInvolved(state, person)).map(person => person.id));
