@@ -118,6 +118,8 @@ export interface PendingSummons {
     what: string;
     /** Absolute day somebody actually asked. */
     spokenOnDay: number;
+    /** The actual Internal Affairs nomination, pending the player's answer. */
+    hallAppointmentId?: string;
 }
 
 /**

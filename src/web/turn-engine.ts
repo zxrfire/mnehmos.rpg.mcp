@@ -1318,6 +1318,7 @@ import {
     whatWearingThemBuys
 } from './what-is-on-you-and-in-your-hands.js';
 import { isAPosting, postingVerbs, settleWhereYourHouseHasPostedYou } from './holding-a-posting.js';
+import { requestHallService, pauseYourHallServiceForCare, resumeYourHallServiceAfterCare } from './serving-in-your-houses-hall.js';
 import { settleWhetherYourMasterHasCalledYou } from './a-master-calls-their-disciples-in.js';
 import { acceptANamedDisciple } from './accepting-a-named-disciple.js';
 import { enterThePublicCompetition } from './entering-the-public-competition.js';
@@ -8729,8 +8730,11 @@ ${noticed}`;
             case 'report_missing':
                 this.atHand = this.atHand ?? await this.loadWorld();
                 return reportWhereTheHouseShouldLook(this, run, cultivator, target, topic);
-            case 'duty':
-                return this.duty(run, cultivator, ambient, target, topic === 'hire');
+            case 'duty': {
+                this.atHand = this.atHand ?? await this.loadWorld();
+                const hall = requestHallService(this, run, cultivator, target, days);
+                return hall ?? this.duty(run, cultivator, ambient, target, topic === 'hire');
+            }
 
             // Answering the house, or not, or not yet.
             case 'summons':
@@ -13402,6 +13406,8 @@ ${opened.text}` : receipt,
             this.theWorldMoved();
         }
 
+        settleTheMissionPostTheyHold(this, forCare);
+        const pausedHallService = pauseYourHallServiceForCare(this, forCare);
         const startDay = Math.floor(run.elapsedDays);
         const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, paid, TREATMENT_DAYS, {
             seed: run.seed,
@@ -13427,6 +13433,8 @@ ${opened.text}` : receipt,
             hostility: ruinHostilityHere(this, paid),
             toll: tollConditionsFor(this.repos, paid)
         }, 'reserved');
+        const hallServiceLines = resumeYourHallServiceAfterCare(this, applied.cultivator, pausedHallService);
+        world.lines.push(...hallServiceLines);
         const attending = this.atHand?.npcs.find(npc => npc.id === physician?.id);
         const ourCourse = attending !== undefined && JSON.stringify(attending.activity) === JSON.stringify(paidWork);
         // No physician means the world is off, where the course is the board's and only time can stop it.
@@ -13447,6 +13455,7 @@ ${opened.text}` : receipt,
         // of a death.
         if (!applied.cultivator.alive) {
             const dead = factsForTimeSkip(paid, applied.cultivator, skip, ambient, 'Under a physician');
+            dead.lines.push(...hallServiceLines);
             dead.lines.unshift(provisioning.line);
             dead.lines.push(
                 `The ${cost} spirit stone${cost === 1 ? '' : 's'} for the care was paid up front and `

@@ -149,8 +149,9 @@ function readsAsTaking(plan: PlannedAction): boolean {
  */
 function changesWhoYouAre(plan: PlannedAction): boolean {
     if (plan.action !== 'sect') return false;
-    if (plan.intent === 'leave') return true;
-    return (plan.target ?? '').trim().length > 0;
+    if (plan.intent === 'leave' || plan.intent === 'join') return true;
+    // Named member work is not enrolment. The unlabelled named-house form still joins.
+    return !plan.intent && (plan.target ?? '').trim().length > 0;
 }
 
 /**

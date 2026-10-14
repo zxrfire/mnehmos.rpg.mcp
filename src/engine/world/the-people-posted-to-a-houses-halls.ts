@@ -1,4 +1,5 @@
 /** Hall staff are actual appointments and bodies, with service settled when read. */
+import { servesThisHiredDuty } from './a-hired-duty-at-its-post.js';
 import { DAYS_PER_MONTH } from '../../data/cultivation/mortal-world.js';
 import { houseFloorsOf } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
 import { elderRungOf } from '../cultivation/leadership.js';
@@ -24,18 +25,23 @@ export function theHandsAtHouseCraftWork(state: WorldState, craft: 'alchemy' | '
     const places = new Map(state.locations.map(place => [place.id, place]));
     const routes = routeQueriesFor(state.locations);
     const hands = new Map<string, NpcRecord[]>();
+    const hires = new Map(state.obligations.filter(term => term.status === 'open' && term.tags.includes('hall-duty')
+        && term.tags.includes(`hall-job:serving_${craft}`)).map(term => [term.holderId, term]));
     for (const person of state.npcs) {
-        if (person.status !== 'alive' || !isTheWorldsToMove(person) || !person.factionId || !supported.has(person.factionId)
+        const hire = hires.get(person.id);
+        const hired = !!hire && day <= (hire.dueOnDay ?? Infinity) && servesThisHiredDuty(person, hire);
+        const room = places.get(person.locationId ?? '');
+        const houseId = hired ? room?.data.factionId as string | undefined : person.factionId;
+        if (person.status !== 'alive' || !isTheWorldsToMove(person) || !houseId || !supported.has(houseId)
             || person.activity?.kind !== 'stationed' || person.activity.redirect || person.activity.houseCareFactId
             || person.activity.houseWorkSchedule?.rota) continue;
         const appointment = houseAppointment(state, person);
-        if (appointment?.data.job !== `serving_${craft}`) continue;
-        const room = places.get(person.locationId ?? '');
-        if (!room || room.data.factionId !== person.factionId) continue;
+        if (appointment?.data.job !== `serving_${craft}` && !hired) continue;
+        if (!room || room.data.factionId !== houseId) continue;
         const arrival = whenTheyReachTheirPost(state.locations, person, routes);
         if (arrival === null || day < arrival) continue;
-        const working = hands.get(person.factionId) ?? [];
-        working.push(person); hands.set(person.factionId, working);
+        const working = hands.get(houseId) ?? [];
+        working.push(person); hands.set(houseId, working);
     }
     return hands;
 }
@@ -51,8 +57,12 @@ export function theHallStaff(state: WorldState, houseId: string, day: number): A
     if (!house) return [];
     const rooms = new Map(state.locations.filter(room => room.data.factionId === houseId)
         .map(room => [room.id, room]));
+    const hires = new Map(state.obligations.filter(term => term.status === 'open' && term.tags.includes('hall-duty'))
+        .map(term => [term.holderId, term]));
     return state.npcs.flatMap(person => {
-        if (person.status !== 'alive' || person.factionId !== houseId || person.activity?.kind !== 'stationed'
+        const hire = hires.get(person.id);
+        const servingHire = !!hire && day <= (hire.dueOnDay ?? Infinity) && servesThisHiredDuty(person, hire);
+        if (person.status !== 'alive' || person.factionId !== houseId && !servingHire || person.activity?.kind !== 'stationed'
             || person.activity.redirect || person.activity.houseCareFactId) return [];
         if (!onTheirHallShift(person.activity, Number.isInteger(day) ? day + (state.currentHour ?? 8) / 24 : day)) return [];
         const room = rooms.get(locationOfNpcOnItsJourney(state, person, day) ?? '');
@@ -61,7 +71,7 @@ export function theHallStaff(state: WorldState, houseId: string, day: number): A
             ? appointment.data.workPurpose as RoomPurpose : room && purposeOf(room);
         if (!room || room.id !== person.locationId) return [];
         if (!purpose || !hallForRoom(purpose)) return [];
-        const manager = appointment?.actors.find(actor => actor.role === 'personnel_manager')?.id ?? null;
+        const manager = appointment?.actors.find(actor => actor.role === 'personnel_manager')?.id ?? (servingHire ? hire!.subjectId : null);
         return [{ purpose, personId: person.id, selectedById: manager }];
     });
 }

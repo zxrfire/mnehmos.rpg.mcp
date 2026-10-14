@@ -1,4 +1,5 @@
 /** A private hire spends the contractor's days. The member's word stays with the house. */
+import { servesThisHiredDuty } from './a-hired-duty-at-its-post.js';
 import { createObligation, settleObligation } from '../social/grudges.js';
 import { keepTheirHallCheckOnLeaving } from './what-the-roll-and-the-lamps-say.js';
 import type { WorldState } from './world-state.js';
@@ -11,10 +12,7 @@ export function settleHiredDuties(state: WorldState, day: number): void {
         const workerAt = state.npcs.findIndex(n => n.id === term.holderId);
         const worker = state.npcs[workerAt];
         const doing = worker?.activity;
-        const place = term.tags.find(t => t.startsWith('post-at:'))?.slice('post-at:'.length);
-        const working = worker?.status === 'alive' && worker.locationId === place
-            && doing?.kind === 'stationed'
-            && doing.sinceDay === term.incurredOnDay && doing.untilDay === term.dueOnDay;
+        const working = servesThisHiredDuty(worker, term);
         if (working && day < (term.dueOnDay ?? Infinity)) continue;
         state.obligations[at] = settleObligation(term, {
             resolution: working ? 'oath_fulfilled' : 'broken', onDay: day,

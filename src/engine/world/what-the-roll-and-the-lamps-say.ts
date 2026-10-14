@@ -1,4 +1,5 @@
 /** The house reads its existing member rows against the physical lamps, through its hall's work. */
+import { heldThisHiredPost } from './a-hired-duty-at-its-post.js';
 import { carriesATokenAt, thisHouseCanIssue, whatAHouseMakesOfSilence, whoHasALampBurningIn,
     type WhatTheHallSays } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { whereThisHouseBurnsItsLamps } from './a-recruit-is-given-their-lamp-at-the-house.js';
@@ -13,20 +14,23 @@ import type { WorldState } from './world-state.js';
 
 function theirDailyCheck(state: WorldState, houseId: string, hall: string, disciple: NpcRecord,
     member: NpcRecord, day: number): number | null {
-    if (disciple.factionId !== houseId || disciple.locationId !== hall || disciple.activity?.kind !== 'stationed'
+    const hire = state.obligations.find(term => term.tags.includes('hall-duty') && heldThisHiredPost(disciple, term));
+    if (disciple.factionId !== houseId && !hire || disciple.locationId !== hall || disciple.activity?.kind !== 'stationed'
         || member.diedOnDay === null) return null;
     const reached = whenTheyReachTheirPost(state.locations, disciple);
     if (reached === null) return null;
     const check = Math.max(Math.floor(member.diedOnDay) + 1, Math.ceil(reached));
     const house = state.factions.find(row => row.id === houseId);
     const end = Math.min(disciple.activity.untilDay ?? Infinity, disciple.diedOnDay ?? Infinity,
-        house?.dissolvedOnDay ?? Infinity);
+        house?.dissolvedOnDay ?? Infinity, hire?.settlement?.onDay ?? Infinity);
     return check <= day && check < end ? check : null;
 }
 
 /** Leaving the duty retains what its daily checks found, once, before the term disappears. */
 export function keepTheirHallCheckOnLeaving(state: WorldState, disciple: NpcRecord, day: number): void {
-    const houseId = disciple.factionId;
+    const hired = state.obligations.some(term => term.tags.includes('hall-duty') && heldThisHiredPost(disciple, term));
+    const houseId = hired ? state.locations.find(place => place.id === disciple.locationId)?.data.factionId as string | undefined
+        : disciple.factionId;
     if (!houseId || disciple.activity?.kind !== 'stationed') return;
     const hall = whereThisHouseBurnsItsLamps(state.locations, houseId);
     if (!hall || disciple.locationId !== hall) return;

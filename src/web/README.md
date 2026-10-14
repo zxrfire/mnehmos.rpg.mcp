@@ -3912,3 +3912,17 @@ House staff authority reads actual stationed hall workers through
 `theHallStaff`; the pure round-robin planning deal does not supply an imaginary
 clerk to a played report or store request. Actual presence still decides whether
 that worker can receive the request.
+
+Named hall or chore-rota requests reach Internal Affairs' actual personnel decision
+when its responsible person is present in the scene.
+An appointment names its real work room and authorises that destination through
+the existing invitation path; ordinary gate checks remain. The member must arrive
+before service starts. The current duty oath owns its calendar, quote and paid
+contribution, settled once into SQL membership. A daily physical lamp check reports
+plain findings once on a checked day. A private contractor at the post takes its
+real calendar and money while the member keeps responsibility to the house.
+The member remains free to take other work and to inspect their delegated post.
+Paid clinical rest suspends hall work and pay for the actual days spent under care;
+those days extend the service still owed. Membership ending ends the appointment.
+Model plans use the existing house duty fields for personnel work. The membership
+guard distinguishes that work from joining or leaving a house.

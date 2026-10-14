@@ -5036,3 +5036,14 @@ Unposted rank work remains `the_work_of_their_rank`: elders practise in assigned
 quarters, juniors on practice ground, with actual lessons and crafts taking
 precedence. A rogue's ordinary day follows their real residence, ground or town;
 trading requires a town, and a road stop invents no onward trip.
+
+Player hall and rota service use the same Internal Affairs nominations as world
+members. An automatic offer links its actual nomination on the existing summons;
+the accepted duty oath owns its room, calendar, quote and cumulative paid service.
+Service starts at actual arrival. Player pay enters SQL membership once, including
+the nonzero whole contribution promised for a completed short term. Native passes
+never choose for the player; a player personnel holder may choose their own work.
+A paid contractor serves at the real post, on the actual clock, with real payment.
+They count as staff and craft hands without also collecting member contribution.
+Their completed lamp checks remain known after their departure or death through
+the ordinary roll-check facts. No extra roll or employee table is kept.

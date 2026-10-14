@@ -642,7 +642,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to
             read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty"
             to take something off the mission board (topic "hire" holds even a short chore
-            for subcontracting), "hire_duty" to hire the person in "target" to serve a standing
+            for subcontracting), or to request personnel work with "target" naming a hall
+            such as "Internal Affairs Hall", or "chore rota". Optional "days" is the service
+            term requested. Internal Affairs decides the appointment and the player must
+            reach its actual room before work starts. "hire_duty" to hire the person in "target" to serve a standing
             post, "report_missing" to report the missing person in "target" at the place in
             "topic" to somebody of their house in this area, "donate" to pay money into the house's
             coffers, which buys no rung and no contribution, "hand_in" to hand a THING they are
