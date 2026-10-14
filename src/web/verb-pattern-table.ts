@@ -482,6 +482,7 @@ export function whatIsBeingHandedOver(
 ): { to?: string; thing: string; stones?: number } | null {
     const text = input.toLowerCase();
     if (A_PRICE_IS_NAMED.test(text)) return null;
+    if (/\b(?:pay|pays|paying|paid)\s+for\b/.test(text)) return null;
     if (MADE_TO_HAND_IT_OVER.test(text)) return null;
     // ── HANDING IT TO YOURSELF IS ASKING FOR IT ──────────────────────────
     //
@@ -6670,8 +6671,10 @@ function planIntent(input: string): PlannedAction {
 
     // A COUNTER, A BOARD, AND SOMEBODY ELSE'S SPAN - or a ship or a carriage,
     // whose word rides on `topic` so the counter knows which.
-    if (A_COUNTER_NOT_A_MISSION_BOARD.test(text) || usedAsVerb(text, BOOKING_A_PLACE)
-        || (A_SHIP_OR_A_CARRIAGE_FROM_HERE.test(text) && !BUILDING_SOMETHING.test(text))) {
+    const handingOver = whatIsBeingHandedOver(input)
+        && !/\bhand(?:s|ing|ed)?\s+in\b/.test(text);
+    if (!handingOver && (A_COUNTER_NOT_A_MISSION_BOARD.test(text) || usedAsVerb(text, BOOKING_A_PLACE)
+        || (A_SHIP_OR_A_CARRIAGE_FROM_HERE.test(text) && !BUILDING_SOMETHING.test(text)))) {
         const step = (matchIntent(text, PASSAGE_INTENT_PATTERNS)
             ?? DEFAULT_PASSAGE_INTENT) as PassageIntent;
         const where = extractDestination(input);

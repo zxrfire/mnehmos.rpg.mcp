@@ -236,7 +236,7 @@ import { invitationsDue, waitForHour, passHours } from './routine-invitations.js
 import { isDayLongAct, lesserActionDays, LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 import { perceivedDaylight } from './perceived-daylight.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { makeObject, howItIsHad, transferPossession, isRuined, ruin, type ObjectRecord } from '../engine/world/possessions.js';
+import { makeObject, howItIsHad, transferPossession, isRuined, isTracked, ruin, type ObjectRecord } from '../engine/world/possessions.js';
 import { theRowsThatGoWithAStack } from './stack-and-its-row.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
@@ -14352,6 +14352,8 @@ ${opened.text}` : receipt,
                 othersHere: here.map(row => row.name),
                 pouch: pouchStacks(this.db, cultivator.id)
                     .map(stack => ({ ...stack, name: nameOfStack({ ...stack, quantity: 1 }) })),
+                heldObjects: (this.atHand?.objects ?? []).filter(object => object.possessorId === cultivator.id
+                    && isTracked(object) && !isRuined(object)),
                 // Read only so the refusal can be honest about a book they
                 // really are carrying. See `handOver`.
                 heldArts: copiesHeldBy(this.db, cultivator.id)
@@ -14375,6 +14377,15 @@ ${opened.text}` : receipt,
                     );
                 }
             })();
+
+            if (outcome.objectId && this.atHand) {
+                const at = this.atHand.objects.findIndex(object => object.id === outcome.objectId);
+                this.atHand.objects[at] = transferPossession(this.atHand.objects[at]!, {
+                    onDay: routineTime(this.atHand), toHolderId: party!.id, toHolderName: party!.name,
+                    how: 'gifted', transfersOwnership: true, source: `Given by ${cultivator.name}`
+                });
+                this.theWorldMoved();
+            }
 
             // THE ROW THAT SAYS WHICH ONE IT IS GOES TOO, after the commit,
             // because the world's array does not roll back. See

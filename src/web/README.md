@@ -3934,3 +3934,9 @@ requested span, including fractional days, while the player remains free. The
 player's owed favour is written once through the existing SQL word writer on the
 run clock; Native words remain in the world ledger. Their combined decision read
 is a view, not a second stored word.
+
+Ordinary giving can hand an existing singular tracked object to somebody here,
+including a passage tally, through its actual possession and provenance. The
+existing gift favour still applies; counted pouch stock keeps its own transfer
+path. A hand-over remains a gift when the object is named passage or ticket;
+paying for passage and handing a tally in retain the public-service routes.
