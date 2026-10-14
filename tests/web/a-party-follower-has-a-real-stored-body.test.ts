@@ -12,7 +12,8 @@ import { advancePublicCapitalMission } from '../../src/engine/world/capital-miss
  * removes the accepted membership while retaining the body's actual ground.
  * Native encounter checks can interrupt this course and move incidental coins.
  * The money controls include those reported engine deltas; following itself
- * buys no second fare. A standing gate comes from its real authority, not a
+ * buys no second fare. The accepted rest until dawn is another played turn,
+ * so its reported coins enter the same conservation check. A standing gate comes from its real authority, not a
  * random registration catalog row. Group fights are covered in entry 131.
  * Merge validation found an accepted rest falling through to an ordinary
  * six-day wait: the Native party returned while the SQL follower stayed behind.
@@ -255,14 +256,16 @@ describe('the follower binding projects the actual player body', () => {
         expect(voices.map((voice: { personId: string }) => voice.personId).sort())
             .toEqual([h.leader.id, h.cultivator.id].sort());
         expect(reply.narration).toContain(decision!.summary);
+        const restEvents: SimEvent[] = [];
         if (decision!.data.choice === 'rest') {
-            await h.game.act('I wait until dawn');
+            const dawn = await h.game.act('I wait until dawn');
+            restEvents.push(...dawn.events);
             expect(h.world.npcs.find(person => person.id === h.leader.id)!.activity?.partyQuestionId).toBeUndefined();
         } else expect(h.world.npcs.find(person => person.id === h.leader.id)!.activity?.partyQuestionId).toBeUndefined();
         const home = await finishFollowing(h);
         expect(h.game.currentRun().cultivator.location, home.narration).toBe(h.from.name);
         expect(partyFollowerClaim(h.db, h.cultivator.id)).toBeNull();
-        expect(h.game.currentRun().cultivator.spiritStones).toBe(61 + reportedCoins(reply.events) + reportedCoins(home.events));
+        expect(h.game.currentRun().cultivator.spiritStones).toBe(61 + reportedCoins(reply.events) + reportedCoins(restEvents) + reportedCoins(home.events));
     });
 
     it('the remaining people settle a held question without a vote from someone who left', async () => {

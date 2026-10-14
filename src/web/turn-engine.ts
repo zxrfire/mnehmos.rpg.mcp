@@ -247,7 +247,7 @@ import { invitationsDue, waitForHour, passHours } from './routine-invitations.js
 import { isDayLongAct, lesserActionDays, LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 import { perceivedDaylight } from './perceived-daylight.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { makeObject, howItIsHad, transferPossession, isRuined, ruin, type ObjectRecord } from '../engine/world/possessions.js';
+import { makeObject, howItIsHad, transferPossession, isRuined, isTracked, ruin, type ObjectRecord } from '../engine/world/possessions.js';
 import { theRowsThatGoWithAStack } from './stack-and-its-row.js';
 import { together, whatTheirThingsTake } from '../engine/world/what-somebody-is-carrying-takes.js';
 import { theLinesForTheirRings, whatTheRingDoes } from './what-is-in-your-ring.js';
@@ -1329,6 +1329,7 @@ import {
     whatWearingThemBuys
 } from './what-is-on-you-and-in-your-hands.js';
 import { isAPosting, postingVerbs, settleWhereYourHouseHasPostedYou } from './holding-a-posting.js';
+import { requestHallService, pauseYourHallServiceForCare, resumeYourHallServiceAfterCare } from './serving-in-your-houses-hall.js';
 import { settleWhetherYourMasterHasCalledYou } from './a-master-calls-their-disciples-in.js';
 import { acceptANamedDisciple } from './accepting-a-named-disciple.js';
 import { enterThePublicCompetition } from './entering-the-public-competition.js';
@@ -8787,8 +8788,11 @@ ${noticed}`;
             case 'report_missing':
                 this.atHand = this.atHand ?? await this.loadWorld();
                 return reportWhereTheHouseShouldLook(this, run, cultivator, target, topic);
-            case 'duty':
-                return this.duty(run, cultivator, ambient, target, topic === 'hire');
+            case 'duty': {
+                this.atHand = this.atHand ?? await this.loadWorld();
+                const hall = requestHallService(this, run, cultivator, target, days);
+                return hall ?? this.duty(run, cultivator, ambient, target, topic === 'hire');
+            }
 
             // Answering the house, or not, or not yet.
             case 'summons':
@@ -13472,6 +13476,8 @@ ${opened.text}` : receipt,
             this.theWorldMoved();
         }
 
+        settleTheMissionPostTheyHold(this, forCare);
+        const pausedHallService = pauseYourHallServiceForCare(this, forCare);
         const startDay = Math.floor(run.elapsedDays);
         const { skip, applied, world } = await spendAnOrdinarySpanAtTheActualClock(this, run, paid, TREATMENT_DAYS, {
             seed: run.seed,
@@ -13497,6 +13503,8 @@ ${opened.text}` : receipt,
             hostility: ruinHostilityHere(this, paid),
             toll: tollConditionsFor(this.repos, paid)
         }, 'reserved');
+        const hallServiceLines = resumeYourHallServiceAfterCare(this, applied.cultivator, pausedHallService);
+        world.lines.push(...hallServiceLines);
         const attending = this.atHand?.npcs.find(npc => npc.id === physician?.id);
         const ourCourse = attending !== undefined && JSON.stringify(attending.activity) === JSON.stringify(paidWork);
         // No physician means the world is off, where the course is the board's and only time can stop it.
@@ -13518,6 +13526,7 @@ ${opened.text}` : receipt,
         if (!applied.cultivator.alive) {
             const dead = factsForTimeSkip(paid, applied.cultivator, skip, ambient, 'Under a physician');
             if (plagueTreatmentLine) sayThisWhateverTheNarratorDoes(dead, plagueTreatmentLine);
+            dead.lines.push(...hallServiceLines);
             dead.lines.unshift(provisioning.line);
             dead.lines.push(
                 `The ${cost} spirit stone${cost === 1 ? '' : 's'} for the care was paid up front and `
@@ -14416,6 +14425,8 @@ ${opened.text}` : receipt,
                 othersHere: here.map(row => row.name),
                 pouch: pouchStacks(this.db, cultivator.id)
                     .map(stack => ({ ...stack, name: nameOfStack({ ...stack, quantity: 1 }) })),
+                heldObjects: (this.atHand?.objects ?? []).filter(object => object.possessorId === cultivator.id
+                    && isTracked(object) && !isRuined(object)),
                 // Read only so the refusal can be honest about a book they
                 // really are carrying. See `handOver`.
                 heldArts: copiesHeldBy(this.db, cultivator.id)
@@ -14439,6 +14450,15 @@ ${opened.text}` : receipt,
                     );
                 }
             })();
+
+            if (outcome.objectId && this.atHand) {
+                const at = this.atHand.objects.findIndex(object => object.id === outcome.objectId);
+                this.atHand.objects[at] = transferPossession(this.atHand.objects[at]!, {
+                    onDay: routineTime(this.atHand), toHolderId: party!.id, toHolderName: party!.name,
+                    how: 'gifted', transfersOwnership: true, source: `Given by ${cultivator.name}`
+                });
+                this.theWorldMoved();
+            }
 
             // THE ROW THAT SAYS WHICH ONE IT IS GOES TOO, after the commit,
             // because the world's array does not roll back. See

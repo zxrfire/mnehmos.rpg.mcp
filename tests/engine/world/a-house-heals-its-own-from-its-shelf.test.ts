@@ -6,6 +6,9 @@
  * walked-world control then left 130 arranged tears open: owning some pills
  * does not supply every wounded member. Its assertion now accounts for finite
  * doses and natural recovery, rather than requiring unsupported cures.
+ * After real hall appointments the same control paid 25 stones for an actual
+ * clinical course. Such payments must match their course facts and do not
+ * supply an immediate cure; treating every funded course as zero spending was stale.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -101,8 +104,10 @@ describe('a walked world', () => {
         }
         expect(torn.length).toBeGreaterThan(0);
         const before = totalOnShelves(state);
+        const priorFacts = new Set(state.history.facts.map(fact => fact.id));
 
         const care = woundsCloseThisYear(state, 31, WALKED + 9);
+        const courses = state.history.facts.filter(fact => !priorFacts.has(fact.id) && fact.data.houseClinicalCare === true);
 
         const stillOpen = torn.filter(id => !state.npcs.find(n => n.id === id)!.cultivation.injuries[0]!.treated);
         const closed = torn.length - stillOpen.length;
@@ -110,7 +115,14 @@ describe('a walked world', () => {
         // totals bound the fresh patients; a purse supplies no additional cure.
         expect(closed).toBeLessThanOrEqual(care.fromTheShelf + care.swallowed + care.closedOnTheirOwn);
         expect(care.seenTo).toBe(0);
-        expect(care.spent).toBe(0);
+        expect(care.spent).toBe(courses.reduce((sum, fact) => sum + Number(fact.data.stones), 0));
+        for (const course of courses) {
+            expect(Number(course.data.untilDay)).toBeGreaterThan(WALKED + 9);
+            const patient = state.npcs.find(person => person.id === course.data.patientId)!;
+            const injuryIds = JSON.parse(String(course.data.injuryIds)) as string[];
+            expect(patient.cultivation.injuries.filter(wound => injuryIds.includes(wound.id))
+                .every(wound => !wound.treated)).toBe(true);
+        }
         expect(care.dosesFromTheShelf).toBeGreaterThan(0);
         expect(totalOnShelves(state)).toBe(before - care.dosesFromTheShelf + care.refined);
     }, 600_000);

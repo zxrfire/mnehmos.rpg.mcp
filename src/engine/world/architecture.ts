@@ -903,6 +903,8 @@ export interface CompoundInput {
     inherited: boolean;
     holdsVein: boolean;
     tributeStonesPerYear: number;
+    /** A receiving arrangement needs its own counting room too. */
+    receivesTributeStonesPerYear?: number;
     sealedCeilingOrdinal: number;
     preferredRoots: readonly string[];
     teachesElements: readonly (string | null)[];
@@ -1018,7 +1020,11 @@ export function growCompound(
             : precinctAt(precincts, spec.depth);
         const host = precinctRecords[at.index];
         if (!host) continue;
-        const room = buildRoom(purpose, spec, at, host, input, style, unit, styleData, rng);
+        const newlyDedicated = purpose === 'audience_hall' && input.recruits && input.tributeStonesPerYear <= 0
+            || purpose === 'scripture_pavilion' && input.formationIntegrity < 0.35
+            || purpose === 'tribute_room' && input.tributeStonesPerYear <= 0;
+        const roomRng = newlyDedicated ? forStream(opts.seed, 'dedicated-house-room', input.factionId, purpose) : rng;
+        const room = buildRoom(purpose, spec, at, host, input, style, unit, styleData, roomRng);
         locations.push(room);
         linkLocations(host, room, 'gate', 0);
 
@@ -1186,6 +1192,12 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     if (!out.includes('punishment_hall')) out.push('punishment_hall');
     if (!out.includes('lecture_hall')) out.push('lecture_hall');
     if (!out.includes('duelling_ground')) out.push('duelling_ground');
+    // A deep institution receives petitioners and keeps both records and teaching shelves.
+    if (input.powerOrdinal >= REALM_TIERS.find(realm => realm.key === 'tribulation_transcendence')!.ordinalStart) {
+        if (!out.includes('audience_hall')) out.push('audience_hall');
+        if (!out.includes('scripture_pavilion')) out.push('scripture_pavilion');
+    }
+    if ((input.receivesTributeStonesPerYear ?? 0) > 0 && !out.includes('tribute_room')) out.push('tribute_room');
     return out;
 }
 

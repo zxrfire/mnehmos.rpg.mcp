@@ -1,3 +1,4 @@
+import { routineTime } from '../engine/world/npc-routines.js';
 /**
  * Somebody giving their attention to the people in front of them, and what each of them gets.
  *
@@ -233,12 +234,13 @@ export const attentionVerbs = {
         const at = world.npcs.findIndex(npc => npc.id === teacherId);
         if (at < 0) return null;
         const teacher = world.npcs[at]!;
-        const today = Math.floor(world.currentDay);
+        if (!Number.isFinite(forDays) || forDays <= 0) return null;
+        const today = routineTime(world);
         const joined = isTeachingToday(teacher, today);
         const already = whoTheyAreTeaching(teacher, today);
         const added = studentIds.filter(id => !already.includes(id));
         const set = unique([...already, ...studentIds]);
-        const until = today + Math.max(1, Math.trunc(forDays));
+        const until = today + forDays;
         const was = teacher.activity;
 
         world.npcs[at] = {

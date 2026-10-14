@@ -1,51 +1,9 @@
 /**
- * Handing somebody a thing you already hold.
- *
- * The owner's own sentence for the feature this belongs to is *"a person could
- * steal and then hand it to someone else before running away"*. Three acts, and
- * the middle one had no verb: six ordinary phrasings of it reached `unclear`.
- *
- * ── WHAT MOVES, AND WHICH TIER IT MOVES ON ───────────────────────────────
- *
- * `docs/world/things/items.md` keeps three tiers of thing and they move by
- * three different mechanisms. What a player is carrying is the middle one -
- * COUNTED STOCK - so a gift of stones or of a pill is two rows changing by a
- * number, exactly as `GameService.whatALiftTook` moves them the other way and
- * for the same reason it states there: *"Counted stock, moved as a number on
- * two rows; `transferPossession` is for singular things and is not used here."*
- *
- * `transferPossession` and its `how: 'gifted'` are the right shape for the
- * TRACKED tier - one object, one provenance chain, an honest new link saying
- * whose it now is - and this does not reach that tier, because a player's pouch
- * does not hold one. When a tracked object can be in a player's hands, the gift
- * of it belongs in this module and `gifted` is already waiting for it.
- *
- * ── AND IT IS FREE, WHICH IS NOT A SHORTCUT ──────────────────────────────
- *
- * Nothing is attempted against the recipient. They are not being asked for
- * anything, there is no leverage on the table and no roll to lose, so there is
- * no day to spend: `PRESSING_SOMEBODY` is the set of things that spend a day
- * WHETHER OR NOT THEY COME OFF, and this is not one of them. What it costs is
- * the thing, which does not come back.
- *
- * ── THE PART THAT MAKES THE SENTENCE WORTH TYPING ────────────────────────
- *
- * A gift is not a neutral event. It is the one act in this game that puts
- * somebody in your debt WITHOUT LEVERAGE - every other route to that runs
- * through `resolveAttempt`, which prices what you leaned on - and the
- * vocabulary for it was already in the engine: `gifted_resource` is a member of
- * `FavorCause` in `grudges.ts`, and `createObligation` writes the row. So the
- * recipient ends up holding a favour about the giver, permanent until settled
- * and inheritable, off a turn that cost no day.
- *
- * What this module does NOT do, and the reason is worth having: it does not
- * make a stolen purse traceable through the gift. The theft path says so in its
- * own words - *"It is in your own purse now, with nothing in the ledger to say
- * it was ever theirs"* - because counted stock has no provenance by
- * construction. Handing on stolen stones is untraceable because stones are
- * untraceable, not because anybody decided a fence should be safe. That changes
- * the day a tracked object is in a player's hands, and it changes there rather
- * than here.
+ * A gift moves what the giver actually holds and opens the existing favour.
+ * The former pouch-only path refused tracked passage tallies. Singular gifts
+ * now select the actual held object for transferPossession; counted stock
+ * keeps its ordinary pouch and backing-row transfer. This pure read returns
+ * deltas to the existing gift writer, without minting another inventory row.
  */
 
 import type { Cultivator } from '../schema/cultivation.js';
@@ -85,6 +43,8 @@ export interface GiveDeps {
     othersHere: readonly string[];
     /** Pills and herbs on the giver, with their catalog names. */
     pouch: readonly GoodStackHeld[];
+    /** Singular objects physically held by the giver. */
+    heldObjects?: readonly { id: string; name: string }[];
     /**
      * Names of the arts this cultivator holds a COPY of.
      *
@@ -106,6 +66,8 @@ export interface GiveOutcome {
     stones: number;
     /** The pouch lot to move, when a thing rather than stones was handed over. */
     lot: { itemId: string; kind: PouchItemKind; quantity: number; name: string } | null;
+    /** The existing singular row to transfer, without a pouch delta. */
+    objectId?: string;
     /** The favour the recipient now holds, for the caller to write. */
     favour: ObligationInput | null;
 }
@@ -146,10 +108,10 @@ function theSameThing(said: string, name: string): boolean {
     return words.some(word => word.length >= 4 && lowered.includes(word));
 }
 
-export function theLotTheyMeant(
+export function theLotTheyMeant<T extends { name: string }>(
     said: string,
-    pouch: readonly GoodStackHeld[]
-): GoodStackHeld | 'ambiguous' | null {
+    pouch: readonly T[]
+): T | 'ambiguous' | null {
     const words = said.toLowerCase().match(/[a-z']+/g) ?? [];
     if (words.length === 0) return null;
 
@@ -226,6 +188,7 @@ export function handOver(deps: GiveDeps, thing: string, stonesAsked: number | un
     if (said.length === 0) {
         const couldHandOver = [
             ...deps.pouch.map(row => row.name),
+            ...(deps.heldObjects ?? []).map(row => row.name),
             ...(deps.giver.spiritStones > 0
                 ? [`your spirit stones (${deps.giver.spiritStones})`]
                 : [])
@@ -278,6 +241,20 @@ export function handOver(deps: GiveDeps, thing: string, stonesAsked: number | un
     }
 
     const lot = theLotTheyMeant(said, deps.pouch);
+    if (lot === null) {
+        const object = theLotTheyMeant(said, deps.heldObjects ?? []);
+        if (object === 'ambiguous') return decline('More than one held thing matches.',
+            `Held things: ${(deps.heldObjects ?? []).map(row => row.name).join('; ')}.`,
+            'No singular object was selected or transferred.');
+        if (object) {
+            const outcome = given(deps, object.name, 0, null);
+            const line = `You handed ${object.name} to ${deps.recipient.name}.`;
+            return { ...outcome, objectId: object.id, facts: {
+                headline: line, lines: [line], prose: line,
+                structure: [`Gift: tracked object ${object.id} from ${deps.giver.id} to ${deps.recipient.id}.`]
+            } };
+        }
+    }
     if (lot === 'ambiguous') {
         return decline(
             `More than one thing you are carrying answers to "${said}".`,

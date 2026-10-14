@@ -27,6 +27,10 @@
  * gets less from its hall.
  */
 
+import { howCloseTheyStandToTheirWall } from './how-close-somebody-is-to-their-wall.js';
+import { routineLocationOf } from './npc-routines.js';
+import { askSomebodyForHelp } from './somebody-calls-on-another-for-help.js';
+import { guidanceMultiplier } from '../cultivation/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
 import { isBelowTheLid } from './layers.js';
 import {
@@ -247,9 +251,19 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
     const places = new Map(state.locations.map(place=>[place.id,place]));
     recordTheAttentionThatEnded(state, byId, day);
     const teaching = new Set<string>();
+    const atTheirWall = new Map<string, boolean>();
+    const clock = { ...state, currentDay: Math.floor(day), currentHour: (day % 1) * 24 };
+    const theirCrossingComesFirst = (person: NpcRecord): boolean => {
+        const seen = atTheirWall.get(person.id);
+        if (seen !== undefined) return seen;
+        const ground = places.get(routineLocationOf(clock, person) ?? '');
+        const ready = !!ground && howCloseTheyStandToTheirWall(state, { ...person, locationId: ground.id }, ground.ambient, day).ready;
+        atTheirWall.set(person.id, ready);
+        return ready;
+    };
     let sets = 0;
 
-    const teach = (at: number, withIds: string[], note: string): void => {
+    const teach = (at: number, withIds: string[], note: string, privateHelp = false): void => {
         const teacher = state.npcs[at]!;
         // Attention given is service to the teacher's own house, priced as a
         // player's talk is: see `what-a-house-counts-in-somebodys-favour.ts`.
@@ -260,7 +274,7 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
         const worth = whatAttentionIsWorth(
             teacher.cultivation.realmOrdinal, untilDay - day, ofTheHouse, withIds.length);
         state.npcs[at] = {
-            ...creditMerit(teacher, worth),
+            ...(privateHelp ? teacher : creditMerit(teacher, worth)),
             activity: { kind: 'teaching', note, withIds, sinceDay: day, untilDay },
             updatedOnDay: day
         };
@@ -300,7 +314,7 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
         const at = byId.get(masterId);
         if (at === undefined) continue;
         const master = state.npcs[at]!;
-        if (!freeForTheirOwn(master, day)) continue;
+        if (teaching.has(masterId) || !freeForTheirOwn(master, day)) continue;
         // A new roll does not renew the old house's lessons away from home.
         const home=master.factionId?houses.get(master.factionId)?.seatLocationId:null;
         if(home&&!isInsideTheCompound(places,master.locationId,home))continue;
@@ -328,7 +342,24 @@ export function giveThisYearsAttention(state: WorldState, year: number, day: num
             state.npcs[j] = withAttentionRecorded(state.npcs[j]!, masterId, day);
         }
         if (here.length === 0) continue;
-        teach(at, here, 'taking their disciples through what they have');
+        const remaining = here.filter(id => {
+            const student = state.npcs[byId.get(id)!]!;
+            const ownGuidance = guidanceMultiplier(student.cultivation.realmOrdinal, master.cultivation.realmOrdinal, here.length);
+            return !askSomebodyForHelp(state, { askerId: master.id, beneficiaryId: student.id, day, work: 'teach cultivation', considerWhetherToAsk: true,
+                ability: helper => {
+                    if (teaching.has(helper.id) || !freeToTeach(helper, day) || helper.locationId !== student.locationId
+                        || (helper.activity?.untilDay ?? -Infinity) > day) return 0;
+                    const guidance = guidanceMultiplier(student.cultivation.realmOrdinal, helper.cultivation.realmOrdinal, 1);
+                    return guidance > ownGuidance && !theirCrossingComesFirst(helper) ? guidance : 0;
+                },
+                perform: helper => {
+                    const helperAt = byId.get(helper.id);
+                    if (helperAt === undefined) return false;
+                    teach(helperAt, [student.id], `Teaching ${student.name} at ${master.name}'s request.`, true);
+                    return true;
+                } });
+        });
+        if (remaining.length) teach(at, remaining, 'taking their disciples through what they have');
     }
 
     // ── OPEN: A LECTURE INSIDE THE HOUSE'S OWN COMPOUND ──────────────────

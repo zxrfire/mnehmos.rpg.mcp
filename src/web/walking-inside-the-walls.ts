@@ -1,3 +1,4 @@
+import { theHallsYourDutiesCallYouTo } from './serving-in-your-houses-hall.js';
 import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
 /**
  * Walking from one room of a compound to another.
@@ -211,6 +212,7 @@ export function theDoorsOffThisYard(
     const membership = game.repos.sects.getMembership(cultivator.id);
     const house = membership ? game.repos.sects.getById(membership.sectId) : null;
     const called = theLessonYourMasterCalledYouTo(game, world, cultivator);
+    const hallPosts = theHallsYourDutiesCallYouTo(game, cultivator);
 
     const doors: string[] = [];
     const quarters = theQuartersThisCultivatorHas(game, world, cultivator);
@@ -232,7 +234,7 @@ export function theDoorsOffThisYard(
                 : null,
             onDay: Math.floor(world.currentDay)
         });
-        const invited = called?.dwelling.id === room.id;
+        const invited = called?.dwelling.id === room.id || hallPosts.has(room.id);
         if (!invited && roomsVisibleTo([room], viewer).length === 0) continue;
         doors.push(aRoomsOwnName(room));
     }
@@ -273,6 +275,7 @@ export async function aWalkInsideTheWalls(
     // Where the player's master lives, named as that, and whether the master
     // has called them there. See `a-master-calls-their-disciples-in.ts`.
     const called = theLessonYourMasterCalledYouTo(game, world, cultivator);
+    const hallPosts = theHallsYourDutiesCallYouTo(game, cultivator);
     const ownQuarters = THEIR_QUARTERS.test(wanted) ? theQuartersThisCultivatorHas(game, world, cultivator) : null;
     const assigned = ownQuarters?.factionId === compound.houseId
         ? inside.find(row => row.id === ownQuarters.quarters.locationId) ?? null : null;
@@ -323,7 +326,7 @@ export async function aWalkInsideTheWalls(
     // house has no such room or has one they have not been shown, so asking is
     // not a way to find out what is inside.
     // Being called somewhere is being told where it is.
-    const invited = destination !== null && called?.dwelling.id === destination.id;
+    const invited = destination !== null && (called?.dwelling.id === destination.id || hallPosts.has(destination.id));
     const known = destination !== null
         && (destination.id === seat.id || invited || ORDINARY_FACILITIES.has(purposeOf(destination) ?? '')
             || isAtLeast(roomStageFor(destination, standingIn(destination).viewer), 'placed'));

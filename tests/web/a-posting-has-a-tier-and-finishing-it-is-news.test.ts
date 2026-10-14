@@ -9,8 +9,11 @@
  * `state.history.facts`, which is the ledger `circulating`, `retell`, the
  * digest and `whatIsSaidAbout` all read: played and reported, `what news is
  * there` and `what are people saying about me` returned the identical
- * unrelated line before and after a turn.
+ * unrelated line before and after a turn. With actual hall staffing, news
+ * must be heard beside a real person in their work room; an assumed forecourt
+ * crowd was empty and returned nobody to hear from on both turns.
  */
+import { npcsWhereTheyStand, theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { TIER_NAMES } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -40,8 +43,21 @@ async function standingWhereThereIsABoard(seed: string) {
     // The board is inside the walls: stand inside them, where anybody who got in reads it.
     game.repos.cultivators.standIn(game.currentRun().cultivator.id, `${seat.id}#forecourt#board`);
     // News is heard from people, and the board stands in an area of its own with nobody in it.
-    const amongPeople = () => game.repos.cultivators.standIn(
-        game.currentRun().cultivator.id, `${seat.id}#forecourt#the-forecourt`);
+    const amongPeople = () => {
+        const current = game.atHand!;
+        const player = game.currentRun().cultivator;
+        const houseId = current.locations.find(place => place.id === seat.id)?.data.factionId;
+        for (const place of current.locations.filter(place => place.id === seat.id || place.data.factionId === houseId)) {
+            for (const area of theAreasOf(current, place).areas) {
+                if (!npcsWhereTheyStand(current, place, area.id, { id: player.id }).length) continue;
+                game.repos.cultivators.update(player.id, { location: place.name });
+                game.repos.cultivators.standIn(player.id, area.id);
+                expect(game.present(game.repos.cultivators.getById(player.id)!).length).toBeGreaterThan(0);
+                return;
+            }
+        }
+        throw new Error('Nobody is actually in this compound to hear news from.');
+    };
     return { game, say, amongPeople, world: () => (game as unknown as { atHand: WorldAtHand }).atHand };
 }
 

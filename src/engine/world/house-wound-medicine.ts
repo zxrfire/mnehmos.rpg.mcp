@@ -17,8 +17,8 @@
  * catalog value times the board's contribution per stone).
  *
  * Houses with an alchemy hall refine their medicine; other houses must buy it.
- * Each year a house whose best hand can work a pill's grade (`canRefineGrade`)
- * refines back up to the shelf a house of its reach is seeded with, buying the
+ * Its appointed hands at home refine grades they can work (`canRefineGrade`)
+ * back up to the shelf a house of its reach keeps, buying the
  * recipe's ingredients at catalog value out of its purse, one pill a batch, each
  * batch setting at the recipe's base rate. The catalog gives no batches-a-year
  * figure, so the bounds are the shelf and the purse.
@@ -40,6 +40,9 @@ import type { ObjectRecord } from './possessions.js';
 import { pillStockKey, swallow, theHeightAHouseWorksAt, theShelfAHouseKeeps } from './where-the-pills-actually-are.js';
 import type { WorldState } from './world-state.js';
 import { housesWithACraftHall } from './where-a-house-does-its-work.js';
+import { theHandsAtHouseCraftWork } from './the-people-posted-to-a-houses-halls.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { makeFact } from './history.js';
 
 type Shelved = { resources: Record<string, number> };
 
@@ -258,22 +261,20 @@ export interface WhatWasRefined {
 }
 
 /** A year of houses refining their wound medicine back up to the shelf. See the header. */
-export function housesRefineTheirWoundMedicine(state: WorldState, year: number): WhatWasRefined {
+export function housesRefineTheirWoundMedicine(state: WorldState, year: number, day = state.currentDay): WhatWasRefined {
     const out: WhatWasRefined = { batches: 0, set: 0, stones: 0 };
     const makers = housesWithACraftHall(state.locations, 'alchemy_hall');
-    const bestHand = new Map<string, number>();
-    for (const npc of state.npcs) {
-        if (npc.status !== 'alive' || npc.factionId === null) continue;
-        bestHand.set(npc.factionId, Math.max(bestHand.get(npc.factionId) ?? -1, npc.cultivation.realmOrdinal));
-    }
+    const workers = theHandsAtHouseCraftWork(state, 'alchemy', day);
 
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null || !isBelowTheLid(house) || !makers.has(house.id)) continue;
-        const hand = bestHand.get(house.id);
-        if (hand === undefined) continue;
+        const hands = workers.get(house.id);
+        if (!hands?.length) continue;
+        const hand = Math.max(...hands.map(person => person.cultivation.realmOrdinal));
         const reach = theHeightAHouseWorksAt(house);
         const had = Number(house.resources.spirit_stones ?? 0);
         let purse = had;
+        const before = { ...out };
         let rng: ReturnType<typeof forStream> | null = null;
 
         for (const pill of countedWoundMedicine()) {
@@ -295,6 +296,13 @@ export function housesRefineTheirWoundMedicine(state: WorldState, year: number):
             out.set += made;
         }
         if (purse !== had) house.resources.spirit_stones = purse;
+        if (out.batches > before.batches) appendWorldFact(state, makeFact({ day, kind: 'gathering',
+            locationId: hands[0]!.locationId, factionIds: [house.id], visibility: 'faction',
+            actors: hands.map(person => ({ id: person.id, name: person.name, role: 'refiner' })),
+            summary: `${house.name}'s appointed refiners made ${out.set - before.set} doses of wound medicine.`,
+            data: { houseBusiness: 'standing_medicine', houseId: house.id,
+                batches: out.batches - before.batches, doses: out.set - before.set, stones: had - purse } }),
+            { bystanders: false, recur: false });
     }
     return out;
 }

@@ -736,6 +736,9 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
  * else entirely.
  */
 export function leadershipIntent(text: string, input: string): PlannedAction | null {
+    const hallWork = /\b(?:take|request|ask for)\s+(?:a\s+post\s+in\s+|service\s+in\s+|the\s+)?((?:(?:Outer Affairs|Discipline|Internal Affairs|Alchemy|Artifact) Hall|Scripture Pavilion|Treasury)(?:\s+(?:duty|service|work))?|chore rota|hall service)[.!?]?$/i.exec(input);
+    if (hallWork && ['take', 'request', 'ask'].some(verb => usedAsVerb(text, verb)))
+        return { action: 'sect', intent: 'duty', target: hallWork[1]!.trim() };
     const heldForHire = /\btake\s+(.+?)\s+(?:to hire (?:it )?out|for subcontracting)[.!?]?$/i.exec(input);
     if (heldForHire && usedAsVerb(text, 'take')) return { action: 'sect', intent: 'duty', topic: 'hire', target: heldForHire[1]!.trim() };
     const hire = /\bhire\s+(.+?)\s+to\s+(?:do|serve|finish|take over)\s+(?:my|the)\s+(?:duty|post|mission)[.!?]?$/i.exec(input);

@@ -44,6 +44,10 @@
  * extend.
  */
 
+import { HALL_SERVICE, requestHallService, holdsTheirBodyOnPost, thePersonnelHolderHere } from './serving-in-your-houses-hall.js';
+import { appointHouseWorker } from '../engine/world/internal-affairs-puts-somebody-to-the-work.js';
+import { hallServiceWorth } from '../engine/world/the-people-posted-to-a-houses-halls.js';
+import { standInTheWorld } from './the-player-as-a-row-the-world-can-invite.js';
 import { applyPostings } from '../engine/world/the-world-changing-on-its-own.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 import type { Duty } from '../engine/encounters/types.js';
@@ -60,6 +64,7 @@ import {
     theyAreRelieved
 } from '../engine/world/a-house-posts-the-one-being-played.js';
 import { whoReadsTheHall } from '../engine/world/a-communication-talisman-carries-word-home.js';
+import { checkYourHallsRoll } from './checking-the-life-lamp-roll.js';
 import { whatServiceIsWorth } from '../engine/world/what-a-house-counts-in-somebodys-favour.js';
 import { aLookInFallsDue } from '../engine/world/what-a-house-hears-from-its-people-away.js';
 import type { WorldState } from '../engine/world/world-state.js';
@@ -109,7 +114,7 @@ export function theirOpenPosting(game: Pick<GameService, 'repos'>, cultivatorId:
         row.kind === 'oath'
         && row.status === 'open'
         && row.holderId === cultivatorId
-        && row.tags.includes('duty')
+        && row.tags.includes('duty') && !row.tags.includes(HALL_SERVICE)
         && row.tags.some(isAPosting)) ?? null;
 }
 
@@ -217,6 +222,7 @@ function aPostingIsPutToThem(
     out: WhatThePostingDid
 ): void {
     if (readPendingSummons(game.repos, cultivator.id)) return;
+    if (ledgerAbout(game.repos.db as unknown as DatabaseHandle, cultivator.id).some(holdsTheirBodyOnPost)) return;
     const post = aPostTheHouseWouldSendThemTo(world, {
         houseId: held.sectId, playerId: cultivator.id, rankIndex: held.rankIndex,
         ordinal: cultivator.realmOrdinal, today: clocks.worldDay
@@ -231,7 +237,25 @@ function aPostingIsPutToThem(
         .some(row => row.tags.includes(entryId));
     if (answered) return;
 
-    const reader = whoReadsTheHall(world, post.houseId);
+    let hallAppointmentId: string | undefined;
+    let personnelSpeaker: ReturnType<typeof thePersonnelHolderHere> = null;
+    if (post.insideTheWalls) {
+        const room = world.locations.find(place => place.id === post.townId);
+        const row = standInTheWorld(world, cultivator, { factionId: held.sectId, rankIndex: held.rankIndex, contribution: held.contribution }, clocks.worldDay);
+        const here = game.worldPlaceOf(cultivator);
+        if (!room || !row || !here) return;
+        personnelSpeaker = thePersonnelHolderHere(game, cultivator, held.sectId);
+        if (!personnelSpeaker || personnelSpeaker.id === cultivator.id) return;
+        const nominated = appointHouseWorker(world, { houseId: held.sectId, job: 'serving_internal_affairs',
+            room, day: clocks.worldDay, posted: true, applicant: { ...row, locationId: here }, suitable: () => true,
+            calendar: { periodDays: 1, offset: 0, shift: 'day', rota: false }, purpose: 'life_lamp_hall',
+            note: 'Serving Internal Affairs in the Life Lamp Hall.' });
+        game.theWorldMoved();
+        if (!nominated) return;
+        hallAppointmentId = nominated.activity!.houseWorkFactId;
+    }
+    const reader = post.insideTheWalls ? personnelSpeaker
+        : whoReadsTheHall(world, post.houseId);
     const mouth = reader ? world.npcs.find(n => n.id === reader.id) ?? null : null;
     const givenBy = mouth ? { rankIndex: mouth.factionRankIndex, isHead: mouth.factionRankIndex >= held.rankCount - 1 } : null;
     const membership = {
@@ -244,7 +268,8 @@ function aPostingIsPutToThem(
         factionId: post.houseId,
         factionName: post.houseName,
         days: post.termDays,
-        contribution: Math.round(whatServiceIsWorth(cultivator.realmOrdinal, post.termDays)),
+        contribution: post.insideTheWalls ? hallServiceWorth(cultivator.realmOrdinal, post.termDays)
+            : Math.round(whatServiceIsWorth(cultivator.realmOrdinal, post.termDays)),
         stones: 0,
         pitchOrdinal: cultivator.realmOrdinal,
         dueOnDay: wantedBy,
@@ -284,7 +309,7 @@ function aPostingIsPutToThem(
           + 'cut for the rest of the house are not being cut at all.'
         : `${post.houseName} posts you to ${post.townName} for ${years(post.termDays)}, `
           + `relieving ${post.relievedName}, whose tour there ends on day ${wantedBy}.`;
-    const pending: PendingSummons = { duty, entryId, what, spokenOnDay: today };
+    const pending: PendingSummons = { duty, entryId, what, spokenOnDay: today, ...(hallAppointmentId ? { hallAppointmentId } : {}) };
     rememberSummons(game.repos, cultivator.id, pending);
     out.lines.push(
         `${mouth ? `${mouth.name} brings word from ${post.houseName}` : `Word comes from ${post.houseName}`}: ${what} `
@@ -442,6 +467,10 @@ function heldToThePost(
     }
 
     // ── AND LOOKED IN ON ─────────────────────────────────────────────────
+    if (town?.data.purpose === 'life_lamp_hall' && posting.subjectId) {
+        const checked = checkYourHallsRoll(game, cultivator, posting.subjectId);
+        if (checked) { out.lines.push(...checked.lines); out.structure.push(...checked.structure); }
+    }
     const lookIn = aLookInFallsDue(arrived, due, Math.floor(clockOnEntry) + 1, today);
     if (lookIn === null || posting.subjectId === null) return;
     const visitor = theHouseSendsSomebodyToLookIn(world, {
@@ -491,6 +520,14 @@ export const postingVerbs = {
         const worldToday = Math.floor(world?.currentDay ?? run.elapsedDays);
         const duty = pending.duty;
         const townId = theTownOf(pending.entryId);
+        if (world?.locations.some(place => place.id === townId && place.data.purpose === 'life_lamp_hall')) {
+            const accepted = requestHallService(this, run, cultivator, 'Internal Affairs Hall duty', pending.duty.days,
+                { factId: pending.hallAppointmentId, sourceId: pending.entryId })!;
+            if (ledgerAbout(this.repos.db as unknown as DatabaseHandle, cultivator.id).some(word =>
+                word.status === 'open' && word.tags.includes(HALL_SERVICE) && word.tags.includes(pending.entryId)))
+                clearPendingSummons(this.repos, cultivator.id);
+            return accepted;
+        }
         const townName = world?.locations.find(l => l.id === townId)?.name ?? 'the post';
         const provinceId = world ? theProvinceAround(world.locations, townId) : null;
         const provinceName = world?.locations.find(l => l.id === provinceId)?.name ?? townName;

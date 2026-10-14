@@ -24,6 +24,7 @@ export type RequestKind =
      * on the person asked - see `a-teacher-giving-you-their-attention.ts`.
      */
     | 'guidance'
+    | 'guidance_for_another'
     | 'discipleship'
     /**
      * ENDING A BOND, which is an act and not a request.
@@ -118,6 +119,7 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
         // Their days spent on yours, which is `a_real_favour`'s own definition.
         // A master is asked at this weight too; the tie is a term of the roll.
         case 'guidance':
+        case 'guidance_for_another':
         case 'discipleship':
         // Ending one is not asking for anything, and the resolver never rolls
         // it: it is weighed here only so no switch is left without an arm.
@@ -856,6 +858,8 @@ function classify(clause: string): { kind: RequestKind; object?: string } {
     // both, and the one that ends it wins.
     if (ENDING_A_BOND.test(clause)) return { kind: 'ending_a_bond' };
     if (ASKING_TO_BE_TAKEN_ON.test(clause)) return { kind: 'discipleship' };
+    const forPupil = /\b(?:guide|teach|train|tutor)\s+(?:my|our)\s+(?:disciple|pupil|student)\s+(.+?)(?=\s+(?:for\b|in\s+cultivation\b)|[.!?]?$)/i.exec(clause);
+    if (forPupil) return { kind: 'guidance_for_another', object: forPupil[1]!.trim() };
     if (ASKING_FOR_GUIDANCE.test(clause)) return { kind: 'guidance' };
     if (ASKING_TO_BE_TAUGHT.test(clause)) {
         return { kind: 'teaching', object: objectAfter(clause, AFTER_THE_TEACHING_VERB) };

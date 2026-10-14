@@ -6,9 +6,10 @@ import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-char
 import { whoDecidesIn } from '../social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { byStanding, meritNeededFor } from './promotion-inside-a-house.js';
 import { hallForRoom, hallsForRooms, type HouseHall } from './house-halls.js';
-import { roomAuthorityOf, type RoomPurpose } from './architecture.js';
+import { purposeOf as purposeOfRoom, roomAuthorityOf, type RoomPurpose } from './architecture.js';
 import type { WorldState } from './world-state.js';
 import type { NpcRecord } from './npc-state.js';
+import type { LocationRecord } from './locations.js';
 import type { OnTheRoll } from '../social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 
 export interface HallResponsibility {
@@ -28,12 +29,13 @@ export function hallResponsibilities(state: Pick<WorldState, 'locations' | 'npcs
     const members = state.npcs.filter(person => person.status === 'alive' && person.factionId === houseId);
     const roll = members.map(person => ({ id: person.id, rankIndex: person.factionRankIndex }));
     return responsibilitiesFor({ rooms: theRoomsThisHouseHas(state.locations, house.id),
-        sectId: house.id, roll, rankCount: house.ranks.length, npcs: members });
+        sectId: house.id, roll, rankCount: house.ranks.length, npcs: members, locations: state.locations });
 }
 
 /** The supplied roll remains authoritative, including a SQL player's actual seat. */
 export function responsibilitiesFor(input: { rooms: readonly RoomPurpose[]; sectId: string;
-    roll: readonly OnTheRoll[]; rankCount: number; npcs: readonly NpcRecord[] }): HallResponsibility[] {
+    roll: readonly OnTheRoll[]; rankCount: number; npcs: readonly NpcRecord[];
+    locations?: readonly LocationRecord[] }): HallResponsibility[] {
     const { rooms, roll } = input;
     const deciders = whoDecidesIn({ roll, rankCount: input.rankCount });
     const records = new Map<string, NpcRecord>();
@@ -60,12 +62,22 @@ export function responsibilitiesFor(input: { rooms: readonly RoomPurpose[]; sect
     const responsibilities = present.map(hall => {
         const held = legacy.filter(portfolio => hallForRoom(portfolio.purpose)?.id === hall.id);
         const ids = [...new Set(held.flatMap(portfolio => portfolio.holderId ? [portfolio.holderId] : []))];
-        const holder = chairs.find(id => ids.includes(id));
-        const anchor = held.find(portfolio => portfolio.holderId === holder)?.purpose
+        const appointment = input.locations?.find(room => room.data.factionId === input.sectId
+            && room.data.hallOfficeId === hall.id);
+        const incumbent = appointment?.data.hallHolderId;
+        const chairFor = (id: string) => chairs.find(chair => theOneIdAPersonIsKnownBy(chair) === theOneIdAPersonIsKnownBy(id));
+        const incumbentChair = typeof incumbent === 'string' ? chairFor(incumbent) : undefined;
+        const formerClaimants = appointment?.data.hallClaimantIds;
+        const claimants = typeof formerClaimants === 'string'
+            ? formerClaimants.split('\n').flatMap(id => { const chair = chairFor(id); return chair ? [chair] : []; }) : ids;
+        const holder = incumbentChair ?? chairs.find(id => claimants.includes(id)) ?? chairs.find(id => ids.includes(id));
+        const anchor = (appointment ? purposeOfRoom(appointment) : null)
+            ?? held.find(portfolio => portfolio.holderId === holder)?.purpose
             ?? hall.rooms.find(room => rooms.includes(room))!;
-        return { hall, holderId: holder ?? null, existingClaimants: ids,
-            room: anchor, covering: holder !== undefined
-                && !held.some(portfolio => portfolio.holderId === holder && !portfolio.actingId) };
+        return { hall, holderId: holder ?? null, existingClaimants: claimants,
+            room: anchor, covering: incumbentChair === holder && typeof appointment?.data.hallCovering === 'boolean'
+                ? appointment.data.hallCovering : holder !== undefined
+                    && !held.some(portfolio => portfolio.holderId === holder && !portfolio.actingId) };
     });
     const free = chairs.filter(id => !claims.has(id));
     const heads = chairs.filter(id => responsibilities.some(hall => hall.holderId === id));
@@ -78,4 +90,18 @@ export function responsibilitiesFor(input: { rooms: readonly RoomPurpose[]; sect
         at++;
     }
     return responsibilities;
+}
+
+/** The appointment is kept once in its responsible room; adding people does not re-deal it. */
+export function keepTheHallChairs(state: Pick<WorldState, 'locations' | 'npcs' | 'factions'>, houseId: string): void {
+    for (const responsibility of hallResponsibilities(state, houseId)) {
+        const room = state.locations.find(row => row.data.factionId === houseId
+            && row.data.hallOfficeId === responsibility.hall.id)
+            ?? state.locations.find(row => row.data.factionId === houseId && purposeOfRoom(row) === responsibility.room);
+        if (!room) continue;
+        room.data.hallOfficeId = responsibility.hall.id;
+        room.data.hallHolderId = responsibility.holderId;
+        room.data.hallCovering = responsibility.covering;
+        room.data.hallClaimantIds = responsibility.existingClaimants.join('\n');
+    }
 }

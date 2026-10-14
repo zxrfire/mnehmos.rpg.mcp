@@ -2,6 +2,9 @@
  * arrived after years away. Internal Affairs now appoints real available people;
  * they walk to their rooms and earn modest contribution for elapsed service.
  * Repeated reads and promotion must not pay that same service again. */
+import { createObligation } from '../../../src/engine/social/grudges';
+import { onTheirHallShift } from '../../../src/engine/world/a-hall-workers-shift';
+
 import { expect, it } from 'vitest';
 import { growCompound, type CompoundInput } from '../../../src/engine/world/architecture';
 import { createWorld, makeFaction } from '../../../src/engine/world/world-state';
@@ -52,7 +55,7 @@ it('appoints real roll members through Internal Affairs and keeps their actual w
         expect(locationOfNpcOnItsJourney(state, worker, arrival)).toBe(appointment.locationId);
     }
     expect(theHallStaff(state, house.id, 50)).toEqual([]);
-    expect(theHallStaff(state, house.id, 80).length).toBe(appointed.length);
+    expect(theHallStaff(state, house.id, 80).length).toBe(appointed.filter(person => onTheirHallShift(person.activity!, 80 + 8 / 24)).length);
     expect(new Set(appointed.map(person => houseAppointment(state, person)!.data.job)).size).toBe(appointed.length);
 });
 
@@ -106,4 +109,27 @@ it('reads active appointments without rescanning the complete history on every l
     reads = 0;
     for (let i = 0; i < 20; i++) expect(houseAppointment(state, worker)?.id).toBe(worker.activity!.houseWorkFactId);
     expect(reads).toBeLessThan(facts.length);
+});
+
+it('keeps paying an actual worker awaiting relief after the planned tour ends', () => {
+    const { state, house } = houseAtWork();
+    staffTheHalls(state, house.id, 50);
+    const at = state.npcs.findIndex(person => houseAppointment(state, person)?.data.job === 'serving_internal_affairs');
+    const worker = state.npcs[at]!;
+    expect(worker).toBeDefined();
+    state.npcs[at] = { ...worker, activity: { ...worker.activity!, untilDay: 51 } };
+    state.currentHour = 10;
+    expect(theHallStaff(state, house.id, 80).some(post => post.personId === worker.id)).toBe(true);
+    expect(settleHallService(state, 80, new Set([worker.id]))).toBeGreaterThan(0);
+});
+
+it("does not also grant a privately paid contractor the member's hall contribution", () => {
+    const { state, house } = houseAtWork();
+    staffTheHalls(state, house.id, 50, true);
+    const worker = state.npcs.find(person => houseAppointment(state, person))!;
+    state.obligations.push(createObligation({ kind: 'oath', holderId: worker.id, subjectId: 'member',
+        cause: 'service_term', severity: 'serious', onDay: 50, dueOnDay: 90,
+        description: "Serving the member's paid duty.", tags: ['hired-duty', `post-at:${worker.locationId}`] }));
+    expect(settleHallService(state, 80, new Set([worker.id]))).toBe(0);
+    expect(meritWith(state.npcs.find(person => person.id === worker.id)!, house.id)).toBe(0);
 });

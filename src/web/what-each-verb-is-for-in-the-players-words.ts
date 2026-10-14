@@ -128,6 +128,7 @@ export interface VerbSurfaceEntry {
 const EVERY_REQUEST_KIND: Record<RequestKind, true> = {
     teaching: true,
     guidance: true,
+    guidance_for_another: true,
     discipleship: true,
     ending_a_bond: true,
     introduction: true,
@@ -642,7 +643,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to
             read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty"
             to take something off the mission board (topic "hire" holds even a short chore
-            for subcontracting), "hire_duty" to hire the person in "target" to serve a standing
+            for subcontracting), or to request personnel work with "target" naming a hall
+            such as "Internal Affairs Hall", or "chore rota". Optional "days" is the service
+            term requested. Internal Affairs decides the appointment and the player must
+            reach its actual room before work starts. "hire_duty" to hire the person in "target" to serve a standing
             post, "report_missing" to report the missing person in "target" at the place in
             "topic" to somebody of their house in this area, "donate" to pay money into the house's
             coffers, which buys no rung and no contribution, "hand_in" to hand a THING they are
@@ -903,7 +907,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             and it is their attention and not their presence that counts, so a master standing
             nearby who is not asked teaches nothing; anybody, a master included, is asked like
             any favour and may say no, and somebody at their own practice or at their own wall
-            declines and says when they will be free), discipleship (be
+            declines and says when they will be free), guidance_for_another (ask the named person
+            to guide somebody else: "topic" names the pupil and "days" the term. All three must
+            actually be here; the teacher decides, you spend face and owe the favour, and the
+            pupil receives their actual attention while you remain free), discipleship (be
             taken on), ending_a_bond (PUT A MASTER-DISCIPLE BOND DOWN, from either end - a
             master casting a disciple out, a disciple walking out on a master. Nothing is being
             asked for and nobody may refuse it; what it costs is stated rather than weighed:

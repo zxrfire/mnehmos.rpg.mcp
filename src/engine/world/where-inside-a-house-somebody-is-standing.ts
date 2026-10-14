@@ -1,3 +1,4 @@
+import { isElderRank } from '../cultivation/leadership.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
 import { houseAppointment } from './internal-affairs-puts-somebody-to-the-work.js';
 /**
@@ -176,7 +177,10 @@ export function whereTheyAreStanding(
         compound.lodgings ??= theLodgingsOfAHouse(state, compound.houseId);
         return whichRoomARungGets(compound.lodgings, npc.factionRankIndex)?.locationId ?? stored;
     }
-    if (stored !== compound.seat.id) return stored;
+    const offPost = npc.activity?.kind === 'stationed' && (!!npc.activity.houseWorkSchedule || !!npc.activity.houseWorkFactId)
+        && routine.activity?.kind !== 'stationed' && routine.activity?.kind !== 'travelling'
+        && !npc.activity.houseCareFactId;
+    if (stored !== compound.seat.id && !offPost) return stored;
     if (npc.activity?.redirect) return stored;
 
     const day = Math.floor(state.currentDay);
@@ -238,7 +242,14 @@ export function whereTheyAreStanding(
             .map(purpose => compound.rooms.get(purpose))
             .filter((room): room is LocationRecord => room !== undefined)
             .at(-1);
-        if (!office) return stored;
+        if (!office) {
+            const house = state.factions.find(row => row.id === compound.houseId);
+            if (house && isElderRank(npc.factionRankIndex, house.ranks.length)) {
+                compound.lodgings ??= theLodgingsOfAHouse(state, compound.houseId);
+                return whichRoomARungGets(compound.lodgings, npc.factionRankIndex)?.locationId ?? stored;
+            }
+            return compound.rooms.get('practice_yard')?.id ?? stored;
+        }
         // A SEALED OFFICE IS KEPT FROM JUST OUTSIDE IT. The design owner: *"yes,
         // just outside it."* Somebody in charge of a treasury, a tribute room or
         // a discipline hall stands in the place that room opens from, with the

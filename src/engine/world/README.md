@@ -5124,3 +5124,55 @@ Native hall service earns one tenth of ordinary board contribution, with a minim
 one per thirty days. Its current receipt prevents paying the same service twice.
 A worker's paid clinical course suspends the post, includes the actual outward
 and return passage, and earns no service contribution during treatment or travel.
+
+A hall appointment may carry a repeating calendar, read by
+`a-hall-workers-shift.ts`; existing resident appointments default to day work.
+The house's one hall table also specifies day/night gate watches, the night
+patrol and morning forms. A patrol uses real open, keyless round-trip links on
+house ground and their travel times. Off-duty people practise or sleep through
+the ordinary hourly routine; these reads create no daily events or staff rows.
+Internal Affairs puts available rank-zero servants to menial posts first where
+`houseFloorsOf` gives the house a menial tier. Uncovered chores use two outer
+disciples on alternating days. This recurring responsibility earns half the
+ordinary posted-service contribution rate, with the same one-per-month minimum.
+A private paid contractor does not also earn the member's hall contribution.
+A person serving beyond a planned tour while awaiting relief remains paid.
+Institutional refining and hull-building use actual appointed hands at their
+reached Alchemy/Artifact post. Their existing bills, grade gates, work time and
+failure rules decide what is made; the receipts name the real workers.
+Unposted rank work remains `the_work_of_their_rank`: elders practise in assigned
+quarters, juniors on practice ground, with actual lessons and crafts taking
+precedence. A rogue's ordinary day follows their real residence, ground or town;
+trading requires a town, and a road stop invents no onward trip.
+
+Player hall and rota service use the same Internal Affairs nominations as world
+members. An automatic offer links its actual nomination on the existing summons;
+the accepted duty oath owns its room, calendar, quote and cumulative paid service.
+Service starts at actual arrival. Player pay enters SQL membership once, including
+the nonzero whole contribution promised for a completed short term. Native passes
+never choose for the player; a player personnel holder may choose their own work.
+A paid contractor serves at the real post, on the actual clock, with real payment.
+They count as staff and craft hands without also collecting member contribution.
+Their completed lamp checks remain known after their departure or death through
+the ordinary roll-check facts. No extra roll or employee table is kept.
+
+A deep institution at Tribulation Transcendence with a reserve for two years of
+closed-door cultivation can keep two hands per hall and a wider elder pool.
+Its posted complement and a practice complement enter the modeled roll after
+all existing ranks and ties have settled. The existing office assignment is
+held once in its responsible room; adding elders does not re-deal that chair,
+anchor room or covering responsibility. A vacancy uses the remaining claimants
+and ordinary chair order. No deputy office is created. Opening issue uses the
+same robes, token and lamp machinery for the additional actual people.
+Dedicated receiving and teaching rooms append on separate construction streams;
+a tribute counting room requires an actual paying subsidiary. Existing rooms
+and formation nodes keep their draws. The roster's annual intake reads the same
+institutional need, and Internal Affairs still chooses its real workers.
+
+People can ask someone they actually reach for help for themselves or another
+person. The ordinary request odds read their character, ties, ledger and ground;
+asking spends the existing private unit of face. The existing work producer must
+start before the helper holds the favour. A master may ask a better teacher for
+a personal pupil during the annual daytime attention checkpoint. The helper
+gives real attention, keeps their own crossing and timed work, and earns no house
+merit for that private request. A remote beneficiary is not an invented witness.

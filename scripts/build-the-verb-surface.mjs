@@ -109,7 +109,7 @@ const HANDLERS = [
     'src/web/institution-verbs.ts'
 ];
 
-const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\r\n/g, '\n');
 
 /** Where an intent list named by identifier in the glossary is declared. */
 const INTENT_CONSTANT_HOMES = ['src/web/planned-action.ts', 'src/web/verb-pattern-table.ts'];

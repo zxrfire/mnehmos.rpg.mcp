@@ -83,7 +83,7 @@ export function portfoliosIn(input: {
     npcs: readonly NpcRecord[];
 }): APortfolio[] {
     const rooms = theRoomsThisHouseHas(input.locations, input.sectId);
-    const responsibilities = responsibilitiesFor({ ...input, rooms });
+    const responsibilities = responsibilitiesFor({ ...input, rooms, locations: input.locations });
     const portfolios: APortfolio[] = responsibilities.map(read => ({
         purpose: read.room, holderId: read.holderId, hallId: read.hall.id,
         depth: roomAuthorityOf(read.room).depth, actingId: read.covering ? read.holderId : null

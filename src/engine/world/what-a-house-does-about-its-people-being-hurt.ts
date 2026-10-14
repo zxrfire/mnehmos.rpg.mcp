@@ -213,7 +213,7 @@ export function woundsCloseThisYear(state: WorldState, year: number, day: number
     }
 
     // And the houses refine back what they used, out of what the purse has left.
-    const refined = housesRefineTheirWoundMedicine(state, year);
+    const refined = housesRefineTheirWoundMedicine(state, year, day);
     out.refined = refined.set;
     out.spentRefining = refined.stones;
 

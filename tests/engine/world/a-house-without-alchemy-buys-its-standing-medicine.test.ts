@@ -1,3 +1,4 @@
+import { appointHouseWorker } from '../../../src/engine/world/internal-affairs-puts-somebody-to-the-work';
 /**
  * Removing universal craft rooms left the medicine seeder and yearly refill
  * making ordinary pills for houses without alchemy support. The owner's
@@ -265,8 +266,25 @@ describe('standing medicine requires actual alchemy support', () => {
         expect(faction.resources.spirit_stones).toBe(10_000);
     });
 
+    it('does not refine from an unappointed member or an absent high elder', () => {
+        const { state, faction } = house(true);
+        state.npcs[0]!.locationId = 'outside';
+        state.npcs[0]!.activity = { kind: 'out_with_a_party', withIds: [], sinceDay: 0,
+            untilDay: 30, note: 'Away from the house.' };
+        expect(housesRefineTheirWoundMedicine(state, 1)).toEqual({ batches: 0, set: 0, stones: 0 });
+        expect(faction.resources.spirit_stones).toBe(10_000);
+    });
+
     it('retains the ordinary paid ingredient batches of a supported maker', () => {
         const { state, faction } = house(true);
+        const maker = state.npcs[0]!;
+        maker.factionRankIndex = 0; maker.locationId = 'alchemy';
+        const manager = setRealm(createNpc(state.seed, { id: 'manager', bornOnDay: -10_000, onDay: 0,
+            factionId: faction.id, factionRankIndex: faction.ranks.length - 1, locationId: 'alchemy' }), 30, 0);
+        state.npcs.push(manager);
+        expect(appointHouseWorker(state, { houseId: faction.id, job: 'serving_alchemy',
+            room: state.locations.find(place => place.id === 'alchemy')!, day: 0, posted: true, initialPlacement: true,
+            eligible: person => person.id === maker.id, suitable: () => true })).not.toBeNull();
         const refined = housesRefineTheirWoundMedicine(state, 1);
         expect(refined.batches).toBeGreaterThan(0);
         expect(refined.stones).toBeGreaterThan(0);

@@ -3989,3 +3989,31 @@ House staff authority reads actual stationed hall workers through
 `theHallStaff`; the pure round-robin planning deal does not supply an imaginary
 clerk to a played report or store request. Actual presence still decides whether
 that worker can receive the request.
+
+Named hall or chore-rota requests reach Internal Affairs' actual personnel decision
+when its responsible person is present in the scene.
+An appointment names its real work room and authorises that destination through
+the existing invitation path; ordinary gate checks remain. The member must arrive
+before service starts. The current duty oath owns its calendar, quote and paid
+contribution, settled once into SQL membership. A daily physical lamp check reports
+plain findings once on a checked day. A private contractor at the post takes its
+real calendar and money while the member keeps responsibility to the house.
+The member remains free to take other work and to inspect their delegated post.
+Paid clinical rest suspends hall work and pay for the actual days spent under care;
+those days extend the service still owed. Membership ending ends the appointment.
+Model plans use the existing house duty fields for personnel work. The membership
+guard distinguishes that work from joining or leaving a house.
+
+A named request to guide another pupil reaches the same ordinary favour decision
+as world people use. The asker, teacher and pupil must actually be present; a
+request cannot move an absent pupil into a lesson. The teacher spends the real
+requested span, including fractional days, while the player remains free. The
+player's owed favour is written once through the existing SQL word writer on the
+run clock; Native words remain in the world ledger. Their combined decision read
+is a view, not a second stored word.
+
+Ordinary giving can hand an existing singular tracked object to somebody here,
+including a passage tally, through its actual possession and provenance. The
+existing gift favour still applies; counted pouch stock keeps its own transfer
+path. A hand-over remains a gift when the object is named passage or ticket;
+paying for passage and handing a tally in retain the public-service routes.

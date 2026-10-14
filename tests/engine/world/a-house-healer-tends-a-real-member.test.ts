@@ -1,9 +1,10 @@
-import { locationOfNpcOnItsJourney, whenTheyReachTheirPost } from '../../../src/engine/world/places-on-the-way';
-import { settleHallService, hallServiceWorth } from '../../../src/engine/world/the-people-posted-to-a-houses-halls';
-import { meritWith } from '../../../src/engine/world/what-a-house-counts-in-somebodys-favour';
 /** House care needs an appointed clinician, payment and the real month.
  * The same month can treat several paid wounds, as for the player. A
  * provider or patient who leaves interrupts it; money never creates an instant cure. */
+import { locationOfNpcOnItsJourney, whenTheyReachTheirPost } from '../../../src/engine/world/places-on-the-way';
+import { settleHallService, hallServiceWorth } from '../../../src/engine/world/the-people-posted-to-a-houses-halls';
+import { meritWith } from '../../../src/engine/world/what-a-house-counts-in-somebodys-favour';
+
 import { expect, it } from 'vitest';
 import { advanceWorldForPlay } from '../../../src/engine/world/driver';
 import { woundsCloseThisYear } from '../../../src/engine/world/what-a-house-does-about-its-people-being-hurt';
@@ -232,4 +233,24 @@ it('returns from the ground actually reached if care is interrupted during the a
     expect(settleHouseCare(h.state, day)).toBe(0);
     expect(locationOfNpcOnItsJourney(h.state, h.state.npcs[at]!, day)).toBe(reached);
     expect(h.state.npcs[at]!.cultivation.injuries[0]!.treated).toBe(false);
+});
+
+it('does not take a physician out of their own timed practice to appoint them', () => {
+    const state = createWorld({ seed: 'the-house-appoints-a-physician', regionCount: 0, skipPriorAges: true });
+    state.currentDay = 0;
+    const house = makeFaction({ id: 'house', name: 'Reed House', seatLocationId: 'seat' });
+    state.factions.push(house);
+    state.locations.push(makeLocation({ id: 'seat', name: house.name, kind: 'sect_seat', controllingFactionId: house.id }),
+        makeLocation({ id: 'quarters', name: 'Quarters', kind: 'hall', parentId: 'seat', tags: ['interior'],
+            data: { factionId: house.id, purpose: 'dormitory' } }));
+    const manager = createNpc(state.seed, { id: 'manager', onDay: 0, bornOnDay: -7300,
+        locationId: 'seat', factionId: house.id, factionRankIndex: house.ranks.length - 1 });
+    const physician = setRealm(createNpc(state.seed, { id: 'physician', onDay: 0, bornOnDay: -7300,
+        locationId: 'seat', factionId: house.id, factionRankIndex: 0,
+        occupation: getOccupation(MORTAL_PHYSICIAN_JOB)!.name }), 0, 0);
+    physician.activity = { kind: 'their_practice', note: 'Their own timed practice.', withIds: [], sinceDay: 0, untilDay: 20 };
+    state.npcs.push(manager, physician);
+    const before = JSON.stringify(physician);
+    appointHouseHealer(state, house.id, 0);
+    expect(JSON.stringify(state.npcs.find(person => person.id === physician.id))).toBe(before);
 });

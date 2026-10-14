@@ -46,6 +46,11 @@ import { readPendingSummons } from './pending-summons.js';
 import { theBoardTheyStandAt } from './the-mission-board-inside-a-house.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
+import { witnessIndexFor } from '../engine/world/witness-reaction-index.js';
+import { routineTime } from '../engine/world/npc-routines.js';
+import { hallServiceWorth } from '../engine/world/the-people-posted-to-a-houses-halls.js';
+import { theOneBeingPlayedLeavesThePost } from '../engine/world/a-house-posts-the-one-being-played.js';
+import { HALL_SERVICE, postTag, settleYourHallService } from './serving-in-your-houses-hall.js';
 
 /** What a post keeps on its word, as tags: `post-at:<location id>` and the rest. */
 const AT = 'post-at:';
@@ -85,12 +90,12 @@ function thePost(world: WorldState | null, record: ObligationRecord) {
     const entryId = record.tags.find(tag => theMissionBehind(tag) !== null) ?? '';
     const mission = theMissionBehind(entryId);
     const place = world?.locations.find(row => row.id === tagged(record, AT)) ?? null;
-    const houseId = entryId.slice(entryId.indexOf('@') + 1);
+    const houseId = record.tags.includes(HALL_SERVICE) ? record.subjectId! : entryId.slice(entryId.indexOf('@') + 1);
     const houseName = world?.factions.find(f => f.id === houseId)?.name ?? 'the house';
     const title = mission
         ? aMissionAsAnOffer(mission, { id: houseId, name: houseName }, place?.name ?? null).name
             .replace(/ for the next [^,]+$/, '')
-        : 'the post';
+        : postTag(record, 'post-title:') ?? 'the post';
     return { entryId, mission, place, houseId, houseName, title };
 }
 
@@ -146,7 +151,8 @@ export function takeUpTheMissionPost(
     const world = game.atHand;
     const post = whereThisPostIs(game, cultivator, chosen.entry.id);
     const merit = game.repos.sects.getMembership(cultivator.id)?.contribution ?? 0;
-    const there = world !== null && post !== null && standsAtThePost(world, game.worldPlaceOf(cultivator), post,theMissionBehind(chosen.entry.id)?.at==='its_public_terminal');
+    const there = world !== null && post !== null && standsAtThePost(world, game.worldPlaceOf(cultivator), post,
+        theMissionBehind(chosen.entry.id)?.at==='its_public_terminal');
     const record = writeOneObligation(game.repos.db as unknown as DatabaseHandle, {
         ...sworn,
         tags: [
@@ -212,7 +218,9 @@ function thePostIsLeft(
     const [contribution, stones] = (tagged(record, PAYS) ?? '0:0').split(':').map(aNumber);
     // The share of the term's contribution a stretch of it earns, on the post's own curve.
     const meritFor = (days: number): number =>
-        Math.round(contribution! * theDaysAPostsMeritCounts(days) / theDaysAPostsMeritCounts(termDays));
+        record.tags.includes(HALL_SERVICE)
+            ? hallServiceWorth(aNumber(tagged(record, PITCH)), days, JSON.parse(postTag(record, 'post-calendar:')!).rota)
+            : Math.round(contribution! * theDaysAPostsMeritCounts(days) / theDaysAPostsMeritCounts(termDays));
     const merit = game.repos.sects.getMembership(cultivator.id)?.contribution ?? 0;
     const then = aNumber(tagged(record, REALM));
     const pending = readPendingSummons(game.repos, cultivator.id);
@@ -235,7 +243,8 @@ function thePostIsLeft(
         // PAID FOR THE DAYS SERVED: stones at the monthly rate, and contribution on the same
         // curve the whole term was priced on (`theDaysAPostsMeritCounts`).
         const served = Math.max(0, termDays - daysLeft);
-        const paidContribution = meritFor(served);
+        const paidContribution = Math.max(0, meritFor(served) - (record.tags.includes(HALL_SERVICE)
+            ? Number(postTag(record, 'post-credited:') ?? 0) : 0));
         const paidStones = Math.round(stones! * served / termDays);
         game.repos.db.transaction(() => {
             writeOneObligation(db, settleObligation(record, {
@@ -298,6 +307,8 @@ export function settleTheMissionPostTheyHold(game: GameService, cultivator: Cult
 }
 
 function settleThisMissionPost(game: GameService, cultivator: Cultivator, record: ObligationRecord): WhatThePostDid | null {
+    if (record.tags.includes(HALL_SERVICE)) return settleYourHallService(game, cultivator, record,
+        (word, day, how, leftFrom) => thePostIsLeft(game, cultivator, word, day, how, leftFrom));
     const world = game.atHand!;
     const { title, houseName, place, mission } = thePost(world, record);
     const today = mission?.at==='its_public_terminal'?game.currentRun().run.elapsedDays:Math.floor(game.currentRun().run.elapsedDays);
@@ -327,11 +338,14 @@ function settleThisMissionPost(game: GameService, cultivator: Cultivator, record
                 structure: [`${record.id} broken; contractor term ${contractId} failed; member answerable.`] };
         }
     }
-    const at = place === null || standsAtThePost(world, game.worldPlaceOf(cultivator), place,mission?.at==='its_public_terminal');
+    const at = place === null || standsAtThePost(world, game.worldPlaceOf(cultivator), place,
+        mission?.at==='its_public_terminal');
     const arrived = record.tags.includes(ARRIVED);
 
     // Actual departure is read before a reached deadline can declare service complete.
-    if (contractId === null && arrived && !at) return thePostIsLeft(game, cultivator, record, today, 'by walking away from it');
+    if (contractId === null && arrived && !at) {
+        return thePostIsLeft(game, cultivator, record, today, 'by walking away from it');
+    }
 
     // NEVER TAKEN UP: the whole term was left.
     if (journeyTimeHasReached(today,due) && !arrived) return thePostIsLeft(game, cultivator, record, today, 'by never reaching it', record.incurredOnDay);
@@ -378,7 +392,7 @@ export function hireForYourDuty(game: GameService, run: Run, cultivator: Cultiva
         factsForRefusal('No hire agreed.', line, 'No new contractor was hired or paid.'));
     if (!world) return no('There is nobody here to hire.');
     // Finish an expired hire before another one replaces the worker's activity.
-    settleHiredDuties(world, Math.floor(world.currentDay));
+    settleHiredDuties(world, routineTime(world));
     game.theWorldMoved();
     if (!record) return no('Take a mission for subcontracting at the board before hiring somebody to serve it.');
     if (tagged(record, CONTRACT) !== null) return no('Somebody is already hired for this post.');
@@ -392,8 +406,8 @@ export function hireForYourDuty(game: GameService, run: Run, cultivator: Cultiva
         return no('They are already committed to other work.');
     }
     const { place, title, houseName, mission } = thePost(world, record);
-    if (!place || !standsAtThePost(world, worker.locationId, place,mission?.at==='its_public_terminal')) return no('The contractor must reach the post before taking it over.');
-    const today = Math.floor(run.elapsedDays);
+    if (!place || !standsAtThePost(world, worker.locationId, place,mission?.at==='its_public_terminal' || record.tags.includes(HALL_SERVICE))) return no('The contractor must reach the post before taking it over.');
+    const today = record.tags.includes(HALL_SERVICE) ? run.elapsedDays : Math.floor(run.elapsedDays);
     const days = (record.dueOnDay ?? today) - today;
     if (days <= 0) return no('The term has already ended.');
     const [contribution, stones] = (tagged(record, PAYS) ?? '0:0').split(':').map(aNumber);
@@ -403,12 +417,12 @@ export function hireForYourDuty(game: GameService, run: Run, cultivator: Cultiva
         pitchOrdinal: aNumber(tagged(record, PITCH))
     }, { id: worker.id, ordinal: worker.cultivation.realmOrdinal, spiritStones: worker.spiritStones ?? 0 });
     if (cultivator.spiritStones < price.askStones) return no(`They ask ${price.askStones} spirit stones; you hold ${cultivator.spiritStones}.`);
-    const worldDay = Math.floor(world.currentDay);
+    const worldDay = record.tags.includes(HALL_SERVICE) ? routineTime(world) : Math.floor(world.currentDay);
     const contract = createObligation({
         kind: 'oath', holderId: worker.id, subjectId: cultivator.id, cause: 'service_term',
         severity: record.severity, onDay: worldDay, dueOnDay: worldDay + days,
         description: `${worker.name} was hired to serve ${title} for ${cultivator.name}.`,
-        tags: ['hired-duty', `${AT}${worker.locationId}`, record.id]
+        tags: ['hired-duty', ...(record.tags.includes(HALL_SERVICE) ? ['hall-duty', `hall-job:${witnessIndexFor(world).byId.get(record.triggeringEventId ?? '')?.data.job ?? ''}`] : []), `${AT}${worker.locationId}`, record.id]
     });
     game.repos.db.transaction(() => {
         game.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -price.askStones });
@@ -419,6 +433,10 @@ export function hireForYourDuty(game: GameService, run: Run, cultivator: Cultiva
         world.npcs[workerAt] = { ...worker, spiritStones: (worker.spiritStones ?? 0) + price.askStones,
             activity: { kind: 'stationed', note: `Serving ${title} for ${cultivator.name}.`, withIds: [],
                 sinceDay: worldDay, untilDay: worldDay + days } };
+        if (record.tags.includes(HALL_SERVICE)) {
+            theOneBeingPlayedLeavesThePost(world, { playerId: cultivator.id, today: world.currentDay });
+            world.npcs[workerAt]!.activity!.houseWorkSchedule = JSON.parse(postTag(record, 'post-calendar:')!);
+        }
         game.theWorldMoved();
     })();
     game.theyGaveTheirName(cultivator, run, worker);
@@ -431,10 +449,22 @@ export function hireForYourDuty(game: GameService, run: Run, cultivator: Cultiva
 
 /** Saying they leave the post, or null where they hold none. */
 export function leaveTheMissionPost(game: GameService, run: Run, cultivator: Cultivator): Execution | null {
-    const record = theMissionPostTheyHold(game, cultivator.id);
+    let record = theMissionPostTheyHold(game, cultivator.id);
     if (record === null) return null;
-    const left = thePostIsLeft(game, cultivator, record, Math.floor(run.elapsedDays), 'by saying so');
+    const earned = record.tags.includes(HALL_SERVICE) ? settleYourHallService(game, cultivator, record,
+        (word, day, how, leftFrom) => thePostIsLeft(game, cultivator, word, day, how, leftFrom)) : null;
+    record = theMissionPostTheyHold(game, cultivator.id);
+    if (!record) {
+        const facts = factsForToolResult('Off post.', earned?.lines ?? []);
+        return game.freeAction(run, 'oath', facts);
+    }
+    const left = thePostIsLeft(game, cultivator, record, record.tags.includes(HALL_SERVICE) ? run.elapsedDays : Math.floor(run.elapsedDays), 'by saying so');
+    if (earned) { left.lines.unshift(...earned.lines); left.structure.unshift(...earned.structure); }
     const world = game.atHand;
+    if (world && record.tags.includes(HALL_SERVICE)) {
+        theOneBeingPlayedLeavesThePost(world, { playerId: cultivator.id, today: world.currentDay });
+        game.theWorldMoved();
+    }
     const contractAt = world?.obligations.findIndex(row => row.id === tagged(record, CONTRACT)) ?? -1;
     const contract = world?.obligations[contractAt];
     if (world && contract?.status === 'open') {

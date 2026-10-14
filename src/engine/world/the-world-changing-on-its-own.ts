@@ -1,4 +1,4 @@
-import { staffTheHalls, settleHallService } from './the-people-posted-to-a-houses-halls.js';
+import { staffTheHalls, settleHallService, theHandsAtHouseCraftWork } from './the-people-posted-to-a-houses-halls.js';
 import { settleHouseCare } from './a-house-healer-tends-a-real-member.js';
 import { aRetainedMemberActuallyServed, aRetainedMemberActuallyReturned, stillOnThisRetainedSending,
     stillOnAnActualRetainedReturn, actualRetainedReturnDay, retainedAirReturnBoundary, continueActualRetainedAirReturns } from './a-retained-sending-has-actually-served.js';
@@ -908,7 +908,7 @@ function pressureTasksForYear(state: WorldState, year: number,
     tasks.push({ key: 'wanderers', day: year * 365 + 96, run: (onDay: number) => {
         theWanderersGoAbout(state, year, onDay);
     } });
-    tasks.push({ key: 'attention', day: year * 365 + 97, run: (onDay: number) => {
+    tasks.push({ key: 'attention', day: year * 365 + 97.5, run: (onDay: number) => {
         giveThisYearsAttention(state, year, onDay);
     } });
     tasks.push({ key: 'book-acquisition', day: year * 365 + 100, run: (onDay: number) => {
@@ -5562,12 +5562,9 @@ function lotsInTheYard(state: WorldState, faction: FactionRecord, objects = stat
  */
 function applyConveyanceBuilding(state: WorldState, year: number, day: number): number {
     let launched = 0;
-    const handsByHouse = new Map<string, number[]>();
-    for (const npc of state.npcs) {
-        if (npc.status !== 'alive' || npc.factionId === null) continue;
-        const hands = handsByHouse.get(npc.factionId) ?? [];
-        hands.push(npc.cultivation.realmOrdinal); handsByHouse.set(npc.factionId, hands);
-    }
+    const workers = theHandsAtHouseCraftWork(state, 'artifact', day);
+    const handsByHouse = new Map([...workers].map(([id, people]) =>
+        [id, people.map(person => person.cultivation.realmOrdinal)]));
     const owned = new Map<string | null, typeof state.objects>();
     for (const object of state.objects) {
         const rows = owned.get(object.ownerId) ?? [];
@@ -5653,7 +5650,7 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
                     + outcome.narrationHint,
                 locationId: faction.seatLocationId,
                 factionIds: [faction.id],
-                actors: [],
+                actors: (workers.get(faction.id) ?? []).map(person => ({ id: person.id, name: person.name, role: 'builder' })),
                 visibility: 'regional',
                 magnitude: 0.3,
                 data: { conveyanceRecipe: recipe.id, launched: 0 }
@@ -5696,7 +5693,7 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
                 + `${recipe.grade} grade, over ${recipe.workDays} days of work.`,
             locationId: faction.seatLocationId,
             factionIds: [faction.id],
-            actors: [],
+            actors: (workers.get(faction.id) ?? []).map(person => ({ id: person.id, name: person.name, role: 'builder' })),
             visibility: trackedNow ? 'public' : 'regional',
             magnitude: trackedNow ? 0.6 : 0.25,
             data: {
