@@ -9,6 +9,9 @@ side-effect and re-exported imports. Missing or computed imports fail closed.
 The key also covers runtime, dependency lockfile and loader configuration;
 changing any of these rebuilds the walk. Snapshot-format and walk-boundary code
 are part of the canonical key. Historical keys are never relabelled as current.
+`soakedWorldSourceHash()` exposes that same canonical identity for diagnostic
+reports. Passing `true` re-reads current source without changing the loaded
+module graph's identity, so an exploration can stop if source changes mid-run.
 Long soaks advance at most ten years per span and discard returned event arrays.
 Spans shorten at checkpoint boundaries.
 Cold walks publish intermediate snapshots every 25 years. A later worker resumes
