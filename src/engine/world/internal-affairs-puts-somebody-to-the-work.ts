@@ -10,6 +10,7 @@ import { makeFact, type HistoricalFact } from './history.js';
 import type { LocationRecord } from './locations.js';
 import type { WorldState } from './world-state.js';
 import { routeQueriesFor } from './locations.js';
+import type { RoomPurpose } from './architecture.js';
 
 export function personnelManager(state: WorldState, houseId: string): NpcRecord | null {
     const house = state.factions.find(row => row.id === houseId && row.dissolvedOnDay === null);
@@ -39,12 +40,15 @@ export function appointHouseWorker(state: WorldState, input: {
     posted?: boolean;
     initialPlacement?: boolean;
     note?: string;
+    calendar?: NonNullable<NpcRecord['activity']>['houseWorkSchedule'];
+    purpose?: RoomPurpose;
 }): NpcRecord | null {
     const working = state.npcs.find(person => person.status === 'alive' && person.factionId === input.houseId
         && houseAppointment(state, person)?.data.job === input.job);
     if (working) return working;
     const manager = personnelManager(state, input.houseId);
-    if (!manager || !isTheWorldsToMove(manager)) return null;
+    if (!manager || !isTheWorldsToMove(manager)
+        || manager.activity?.untilDay != null && manager.activity.untilDay >= Math.floor(input.day)) return null;
     const inside = new Set(state.locations.filter(place => place.data.factionId === input.houseId
         || place.controllingFactionId === input.houseId).map(place => place.id));
     const house = state.factions.find(row => row.id === input.houseId)!;
@@ -57,6 +61,7 @@ export function appointHouseWorker(state: WorldState, input: {
     const candidates = state.npcs.filter(person => person.status === 'alive' && isTheWorldsToMove(person)
         && person.factionId === input.houseId && !person.activity?.redirect
         && (!person.activity || !isAwayOnSomething(person.activity.kind))
+        && !(person.activity?.untilDay != null && person.activity.untilDay >= Math.floor(input.day))
         && !person.activity?.thingId && !person.activity?.withIds.length
         && !person.activity?.houseWorkFactId
         && (!input.eligible || input.eligible(person))
@@ -81,10 +86,11 @@ export function appointHouseWorker(state: WorldState, input: {
         locationId: input.room.id, factionIds: [input.houseId], visibility: 'faction',
         actors: [{ id: manager.id, name: manager.name, role: 'personnel_manager' },
             ...(chosen ? [{ id: chosen.id, name: chosen.name, role: 'appointed_worker' }] : [])],
-        summary: chosen ? `${manager.name} appointed ${chosen.name} to ${input.job.replaceAll('_', ' ')}.`
-            : `${manager.name} appointed nobody to ${input.job.replaceAll('_', ' ')}.`,
+        summary: chosen ? `${manager.name} appointed ${chosen.name} to ${input.calendar?.rota ? 'the chore rota' : input.job.replaceAll('_', ' ')}.`
+            : `${manager.name} appointed nobody to ${input.calendar?.rota ? 'the chore rota' : input.job.replaceAll('_', ' ')}.`,
         data: { housePersonnelReview: review, houseWorkAppointment: !!chosen,
             houseId: input.houseId, job: input.job,
+            ...(input.purpose ? { workPurpose: input.purpose } : {}),
             ...(chosen ? { serviceOrdinal: chosen.cultivation.realmOrdinal } : {}) } }), { bystanders: false, recur: false });
     if (!chosen) return null;
     const at = state.npcs.findIndex(person => person.id === chosen.id);
@@ -93,6 +99,7 @@ export function appointHouseWorker(state: WorldState, input: {
         activity: { kind: input.posted ? 'stationed' : 'the_work_of_their_rank',
             note: input.note ?? input.job.replaceAll('_', ' ') + '.', withIds: [], sinceDay: input.day,
             untilDay: null, houseWorkFactId: fact.id,
+            ...(input.calendar ? { houseWorkSchedule: input.calendar } : {}),
             ...(input.posted ? { fromLocationId: input.initialPlacement ? null : from, returnTo: house.seatLocationId } : {}) } };
     return state.npcs[at]!;
 }

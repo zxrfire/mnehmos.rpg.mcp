@@ -4,9 +4,11 @@ import { ordinaryProfessionOf } from './the-work-an-ordinary-mortal-does.js';
 import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
 import { isAwayOnSomething, type NpcActivity, type NpcRecord } from './npc-state.js';
 import type { RouteQueries } from './locations.js';
-import type { WorldState } from './world-state.js';
-import { locationOnNpcJourney, npcIsTravellingOnDay } from './places-on-the-way.js';
+import { indexById, type WorldState } from './world-state.js';
+import { locationOnNpcJourney, npcIsTravellingOnDay, ROUTE_STOP } from './places-on-the-way.js';
 import { vesselRoomChosen } from './rooms-in-a-vessel.js';
+import { whoHoldsThisPlace } from './somewhere-that-is-theirs.js';
+import { onTheirHallShift } from './a-hall-workers-shift.js';
 
 type Clock = Pick<WorldState, 'seed' | 'currentDay' | 'currentHour'> & Partial<Pick<WorldState, 'locations' | 'npcs'>>;
 
@@ -28,6 +30,48 @@ function sample(state: Clock, stream: string, ...parts: (string | number)[]): nu
         samples.set(key, value);
     }
     return value;
+}
+
+/** Read the actual place and its ancestors, without scanning the population. */
+function rogueGround(state: Clock, personId: string, locationId: string | null, routes?: RouteQueries) {
+    const places = state.locations;
+    let home = false, town = false, road = false, resources = false, outdoors = false;
+    const visited = new Set<string>();
+    for (let id = locationId; id && places && !visited.has(id);) {
+        visited.add(id);
+        const place = routes?.places.get(id) ?? places[indexById(places, id)];
+        if (!place) break;
+        if (id === locationId) resources = place.environment.resources.length > 0;
+        home ||= whoHoldsThisPlace(place) === personId;
+        town ||= place.kind === 'settlement';
+        road ||= place.tags.includes(ROUTE_STOP);
+        outdoors ||= ['wilds', 'cave', 'ruin', 'grave', 'scar', 'forbidden_zone', 'secret_realm'].includes(place.kind);
+        id = place.parentId;
+    }
+    return { home, town, road, resources, outdoors };
+}
+
+/** Patrol only actual open, keyless links on the house's ground, at their travel cost. */
+function hallPatrolStop(state: Clock, npc: NpcRecord, now: number, routes?: RouteQueries): string | null {
+    const places = state.locations;
+    if (!places || !npc.locationId || !npc.factionId) return null;
+    const get = (id: string) => routes?.places.get(id) ?? places[indexById(places, id)];
+    const post = get(npc.locationId);
+    if (!post) return null;
+    const links = post.links.flatMap(link => {
+        const target = get(link.toLocationId);
+        const back = target?.links.find(reverse => reverse.toLocationId === post.id && reverse.open
+            && !reverse.requiresKeyId && reverse.travelDays > 0);
+        return link.open && !link.requiresKeyId && link.travelDays > 0 && target && back && !target.sealed
+            && (target.data.factionId === npc.factionId || target.controllingFactionId === npc.factionId)
+            ? [{ link, backDays: back.travelDays }] : [];
+    });
+    if (!links.length) return null;
+    const start = Math.floor(now) + ((now % 1) * 24 < 6 ? -1 : 0) + 18 / 24;
+    const route = links[Math.min(links.length - 1, Math.floor(sample(state, 'hall-patrol-path', npc.id, start) * links.length))]!;
+    const period = route.link.travelDays + route.backDays;
+    const phase = ((now - start) % period + period) % period;
+    return phase < route.link.travelDays ? post.id : route.link.toLocationId;
 }
 
 /** Fractional hours are shown as clock minutes, not decimal minutes. */
@@ -83,30 +127,44 @@ export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries,
     const result = (activity: NpcActivity | null, home = false) => ({ activity, home,
         standingIn: !redirect ? actualHullArea?.(npc) ?? (activity === journeyActivity
             && !vesselRoomChosen(ordinary?.standingIn) ? ordinary?.standingIn : null) ?? null : null, locationId });
-    // An errand, a posting and a timed seclusion already have their own calendar.
-    if (!redirect && ordinary && (isAwayOnSomething(ordinary.kind)
+    const offHallShift = ordinary?.kind === 'stationed' && (!!ordinary.houseWorkSchedule || !!ordinary.houseWorkFactId)
+        && !ordinary.houseCareFactId && !onTheirHallShift(ordinary, now);
+    if (!redirect && ordinary?.houseWorkSchedule?.patrol && !offHallShift
+        && journeyActivity?.kind !== 'travelling') {
+        const stop = hallPatrolStop(state, npc, now, routes);
+        if (stop) return { ...result({ ...ordinary, note: 'Patrolling the compound grounds.' }), standingIn: stop };
+    }
+    // An errand, a posting and a timed activity keep their own calendar.
+    if (!redirect && ordinary && (!offHallShift || journeyActivity?.kind === 'travelling') && (isAwayOnSomething(ordinary.kind)
         || (ordinary.untilDay != null && ordinary.untilDay >= Math.floor(state.currentDay)))) return result(journeyActivity);
     if (npc.tags.includes('spirit-beast') || npc.tags.some(tag => tag.startsWith('present-as:'))) return result(ordinary);
     const hour = state.currentHour ?? 8;
     const day = Math.floor(state.currentDay);
+    const profession = npc.factionId ? null : ordinaryProfessionOf(npc);
+    const rogue = !npc.factionId && !profession;
+    const ground = rogue ? rogueGround(state, npc.id, locationId, routes) : null;
     const habit = sample(state, 'daily-habit', npc.id);
     const shift = sample(state, 'daily-shift', npc.id, day);
     const night = hour < 6 || hour >= 21;
-    const doing = (kind: NpcActivity['kind'], note: string, home = false) => result({
+    const doing = (kind: NpcActivity['kind'], note: string, home = ground?.home ?? false) => result({
         kind, note, withIds: [], sinceDay: day, untilDay: null
     }, home);
     if (night) {
+        if (rogue && habit < 0.08) return doing('their_practice', 'Cultivating.');
         if (habit < 0.08) return doing('the_work_of_their_rank', npc.factionId ? 'keeping watch' : 'working');
-        if (habit < 0.14) return doing('at_a_table', 'eating at a table');
+        if (habit < 0.14) return doing('at_a_table', rogue ? 'Eating.' : 'eating at a table');
         return doing('idle', 'sleeping', true);
     }
-    if (ordinary && ordinary.withIds.length > 0) return result(ordinary);
+    if (!offHallShift && ordinary && ordinary.withIds.length > 0) return result(ordinary);
     if (sample(state, 'daily-errand', npc.id, day, Math.floor(hour / 3)) < 0.22) {
+        if (ground?.home) return doing('idle', 'Walking through the residence.');
+        if (ground && !ground.town) return doing(ground.outdoors && !ground.road ? 'searching' : 'idle',
+            ground.road ? 'Stopped on the road.' : ground.outdoors ? 'Searching this ground.' : 'Waiting here.');
         return doing('idle', npc.factionId ? 'walking across the grounds' : 'walking through the town');
     }
     const meal = 11 + sample(state, 'house-mealtimes', npc.factionId ?? locationId ?? npc.id);
     if ((hour >= meal + shift && hour < meal + 3 + shift) || (hour >= 18 && hour < 20)) {
-        return doing('at_a_table', 'eating at a table');
+        return doing('at_a_table', rogue ? 'Eating.' : 'eating at a table');
     }
     if (npc.factionId && hour >= 6 && hour < 10 && npc.factionRankIndex <= 1) {
         return doing('their_practice', 'training');
@@ -114,9 +172,19 @@ export function routineOf(state: Clock, npc: NpcRecord, routes?: RouteQueries,
     if (hour >= 16 && hour < 18 && npc.cultivation.realmOrdinal >= FOUNDATION_ORDINAL) {
         return doing('their_practice', 'practising an art');
     }
-    if (ordinary && ordinary.kind !== 'idle' && ordinary.kind !== 'at_a_table') return result(ordinary);
+    if (offHallShift) return doing('their_practice', 'Cultivating.');
+    if (ordinary && ordinary.kind !== 'idle' && ordinary.kind !== 'at_a_table'
+        && !(ground && ordinary.kind === 'trade' && (!ground.town || ground.home))) return result(ordinary, ground?.home ?? false);
     if (npc.factionId) return doing('the_work_of_their_rank', 'doing the work of their rank');
-    const profession = ordinaryProfessionOf(npc);
     if (profession) return doing('the_work_of_their_rank', `Working as ${profession.name}.`);
-    return doing('trade', 'trading');
+    const choice = sample(state, 'rogue-day', npc.id, day, Math.floor(hour / 3));
+    if (ground!.home) return ground!.resources && choice < 1 / 3
+        ? doing('drawing_on_the_ground', 'Tending this ground.')
+        : doing('their_practice', 'Cultivating in the residence.');
+    if (ground!.town) return choice < 1 / 2 ? doing('trade', 'trading')
+        : doing('searching', 'Reading notices for work.');
+    if (ground!.road) return doing('idle', 'Stopped on the road.');
+    if (!locationId || !ground!.outdoors) return doing('their_practice', 'Cultivating.');
+    if (ground!.resources && choice < 1 / 3) return doing('gathering', 'Gathering from this ground.');
+    return choice < 2 / 3 ? doing('hunting', 'Hunting for game.') : doing('searching', 'Searching this ground.');
 }

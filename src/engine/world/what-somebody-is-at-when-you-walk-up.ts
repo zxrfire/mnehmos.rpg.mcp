@@ -1,3 +1,4 @@
+import { isElderRank } from '../cultivation/leadership.js';
 /**
  * WHAT SOMEBODY IS AT WHEN YOU WALK UP.
  *
@@ -208,6 +209,9 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
                 : `putting a party together, and ${them} have said yes`;
         case 'trade':
         case 'waiting_for_a_departure':
+        case 'hunting':
+        case 'gathering':
+        case 'searching':
             return activity.note;
         case 'drawing_on_the_ground':
             // The note is the specific of it where there is one. Two of these
@@ -266,6 +270,9 @@ export function whetherTheyWouldLookUp(kind: ActivityKind): boolean {
     switch (kind) {
         case 'trade':
         case 'waiting_for_a_departure':
+        case 'hunting':
+        case 'gathering':
+        case 'searching':
         case 'mustering':
         // SOMEBODY POSTED HERE IS WHO THE GROUND GIVES YOU. Being stationed in
         // a town is being the house's face in it; a person whose whole business
@@ -362,6 +369,10 @@ export function whatTheyOpenAt(input: {
 
     if (ground === 'a_house_compound' && npc.factionId !== null) {
         const band = whereOnTheLadder(npc.factionRankIndex, input.rungsInTheirHouse);
+        // Actual posts, lessons and craft keep their own calendars; unposted work is practice.
+        if ((input.office ?? null) === null)
+            return bare('the_work_of_their_rank', isElderRank(npc.factionRankIndex, input.rungsInTheirHouse)
+                ? 'Cultivating in their quarters.' : 'Practising.');
         if (band === 'the_top') {
             // AT THE FRONT OF A HALL, as a share and not the default. See
             // `AN_OFFICE_HOLDER_IS_TEACHING`.

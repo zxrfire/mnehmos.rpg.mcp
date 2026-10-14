@@ -322,6 +322,12 @@ export type ActivityKind =
     | 'trade'
     /** Holding a bought passage while remaining on actual departure ground. */
     | 'waiting_for_a_departure'
+    /** Looking for game on the current ground; this does not assert a fight. */
+    | 'hunting'
+    /** Collecting what the current ground supplies. */
+    | 'gathering'
+    /** Looking over ground or notices; this does not assert a find or a job. */
+    | 'searching'
     /** Ground worth working, being worked. */
     | 'drawing_on_the_ground'
     /**
@@ -394,6 +400,9 @@ export interface NpcActivity {
     houseWorkFactId?: string;
     /** Latest receipt for contribution already earned at this actual hall post. */
     houseWorkPayFactId?: string;
+    /** The actual recurring calendar of this appointment. Off days remain their own. */
+    houseWorkSchedule?: { periodDays: number; offset: number; shift: 'day' | 'night'; rota: boolean;
+        hours?: { from: number; until: number }; patrol?: boolean };
     /** The paid clinical course currently resting this body. */
     houseCareFactId?: string;
     /** The actual care course this worker is providing, rather than receiving. */

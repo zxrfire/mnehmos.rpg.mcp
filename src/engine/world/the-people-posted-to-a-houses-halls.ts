@@ -1,11 +1,12 @@
 /** Hall staff are actual appointments and bodies, with service settled when read. */
 import { DAYS_PER_MONTH } from '../../data/cultivation/mortal-world.js';
+import { houseFloorsOf } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
 import { elderRungOf } from '../cultivation/leadership.js';
 import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
-import { purposeOf } from './architecture.js';
+import { purposeOf, type RoomPurpose } from './architecture.js';
 import { HOUSE_HALLS, hallForRoom } from './house-halls.js';
 import { appointHouseWorker, houseAppointment } from './internal-affairs-puts-somebody-to-the-work.js';
-import { isTheWorldsToMove } from './npc-state.js';
+import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { locationOfNpcOnItsJourney, whenTheyReachTheirPost } from './places-on-the-way.js';
 import { creditMerit, whatServiceIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
@@ -13,10 +14,35 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeFact } from './history.js';
 import type { WorldState } from './world-state.js';
 import type { APost } from '../social-leverage/who-works-in-an-elders-hall.js';
+import { onTheirHallShift } from './a-hall-workers-shift.js';
+import { roomForHouseWork, housesWithACraftHall } from './where-a-house-does-its-work.js';
+import { routeQueriesFor } from './locations.js';
+
+/** Institutional work uses actual appointed hands at home, not the best absent member. */
+export function theHandsAtHouseCraftWork(state: WorldState, craft: 'alchemy' | 'artifact', day: number): Map<string, NpcRecord[]> {
+    const supported = housesWithACraftHall(state.locations, craft === 'alchemy' ? 'alchemy_hall' : 'artifact_refining_hall');
+    const places = new Map(state.locations.map(place => [place.id, place]));
+    const routes = routeQueriesFor(state.locations);
+    const hands = new Map<string, NpcRecord[]>();
+    for (const person of state.npcs) {
+        if (person.status !== 'alive' || !isTheWorldsToMove(person) || !person.factionId || !supported.has(person.factionId)
+            || person.activity?.kind !== 'stationed' || person.activity.redirect || person.activity.houseCareFactId
+            || person.activity.houseWorkSchedule?.rota) continue;
+        const appointment = houseAppointment(state, person);
+        if (appointment?.data.job !== `serving_${craft}`) continue;
+        const room = places.get(person.locationId ?? '');
+        if (!room || room.data.factionId !== person.factionId) continue;
+        const arrival = whenTheyReachTheirPost(state.locations, person, routes);
+        if (arrival === null || day < arrival) continue;
+        const working = hands.get(person.factionId) ?? [];
+        working.push(person); hands.set(person.factionId, working);
+    }
+    return hands;
+}
 
 /** A steady post earns a tenth of ordinary board service, at least one a month. */
-export function hallServiceWorth(ordinal: number, days: number): number {
-    return Math.floor(Math.max(0, days) * Math.max(1 / DAYS_PER_MONTH, whatServiceIsWorth(ordinal, 1) / 10));
+export function hallServiceWorth(ordinal: number, days: number, rota = false): number {
+    return Math.floor(Math.max(0, days) * Math.max(1 / DAYS_PER_MONTH, whatServiceIsWorth(ordinal, 1) / (rota ? 20 : 10)));
 }
 
 /** Read the real posted people, never deal an imaginary staff from the roll. */
@@ -27,11 +53,14 @@ export function theHallStaff(state: WorldState, houseId: string, day: number): A
         .map(room => [room.id, room]));
     return state.npcs.flatMap(person => {
         if (person.status !== 'alive' || person.factionId !== houseId || person.activity?.kind !== 'stationed'
-            || person.activity.redirect || person.activity.houseCareFactId || (person.activity.untilDay != null && day >= person.activity.untilDay)) return [];
+            || person.activity.redirect || person.activity.houseCareFactId) return [];
+        if (!onTheirHallShift(person.activity, Number.isInteger(day) ? day + (state.currentHour ?? 8) / 24 : day)) return [];
         const room = rooms.get(locationOfNpcOnItsJourney(state, person, day) ?? '');
-        const purpose = room && purposeOf(room);
-        if (!purpose || !hallForRoom(purpose)) return [];
         const appointment = houseAppointment(state, person);
+        const purpose = typeof appointment?.data.workPurpose === 'string'
+            ? appointment.data.workPurpose as RoomPurpose : room && purposeOf(room);
+        if (!room || room.id !== person.locationId) return [];
+        if (!purpose || !hallForRoom(purpose)) return [];
         const manager = appointment?.actors.find(actor => actor.role === 'personnel_manager')?.id ?? null;
         return [{ purpose, personId: person.id, selectedById: manager }];
     });
@@ -46,7 +75,24 @@ export function staffTheHalls(state: WorldState, houseId: string, day: number, i
         roll: roll.map(person => ({ id: person.id, rankIndex: person.factionRankIndex })), rankCount: house.ranks.length });
     const heads = new Set(portfolios.map(portfolio => portfolio.holderId));
     const work = theHallStaff(state, houseId, day);
+    const menialTier = houseFloorsOf(houseId)?.hasMenialTier === true;
+    const outerRank = menialTier ? 1 : 0;
     let added = 0;
+    // Internal Affairs puts available servants to menial work before the outer rota.
+    if (menialTier) for (const hall of HOUSE_HALLS) {
+        if (!hall.chores || !portfolios.some(portfolio => portfolio.hallId === hall.id)) continue;
+        const room = roomForHouseWork(state.locations, houseId, hall.chores.room);
+        if (!room) continue;
+        const job = `menial_${hall.id.replaceAll('-', '_')}`;
+        if (state.npcs.some(person => houseAppointment(state, person)?.data.job === job)) continue;
+        const worker = appointHouseWorker(state, { houseId, job, room, day, posted: true, initialPlacement,
+            purpose: hall.chores.room, note: hall.chores.work,
+            calendar: { periodDays: 1, offset: 0, shift: 'day', rota: false },
+            eligible: person => person.factionRankIndex === 0 && !heads.has(person.id)
+                && !(person.activity?.untilDay != null && person.activity.untilDay > day),
+            suitable: person => person.factionRankIndex === 0 });
+        if (worker) added++;
+    }
     for (const hall of HOUSE_HALLS) {
         const portfolio = portfolios.find(row => row.hallId === hall.id);
         if (!portfolio) continue;
@@ -64,6 +110,39 @@ export function staffTheHalls(state: WorldState, houseId: string, day: number, i
             suitable: person => person.factionRankIndex > 0 });
         if (worker) added++;
     }
+    for (const hall of HOUSE_HALLS) {
+        if (!portfolios.some(portfolio => portfolio.hallId === hall.id)) continue;
+        for (const post of hall.posts ?? []) {
+            if (state.npcs.some(person => houseAppointment(state, person)?.data.job === post.job)) continue;
+            const room = roomForHouseWork(state.locations, houseId, post.room);
+            if (!room) continue;
+            const worker = appointHouseWorker(state, { houseId, job: post.job, room, day, posted: true,
+                initialPlacement, purpose: post.purpose ?? post.room, note: post.work, calendar: post.calendar,
+                eligible: person => person.factionRankIndex >= 0 && person.factionRankIndex < elderRungOf(house.ranks.length)
+                    && !heads.has(person.id)
+                    && !(person.activity?.untilDay != null && person.activity.untilDay > day),
+                suitable: person => post.senior ? person.factionRankIndex > outerRank : person.factionRankIndex === outerRank });
+            if (worker) added++;
+        }
+    }
+    // Two alternating assignments cover daily chores and leave practice days.
+    for (const hall of HOUSE_HALLS) {
+        if (!hall.chores || !portfolios.some(portfolio => portfolio.hallId === hall.id)) continue;
+        if (state.npcs.some(person => houseAppointment(state, person)?.data.job === `menial_${hall.id.replaceAll('-', '_')}`)) continue;
+        const room = roomForHouseWork(state.locations, houseId, hall.chores.room);
+        if (!room) continue;
+        for (let offset = 0; offset < 2; offset++) {
+            const job = `chores_${hall.id.replaceAll('-', '_')}_${offset}`;
+            if (state.npcs.some(person => houseAppointment(state, person)?.data.job === job)) continue;
+            const worker = appointHouseWorker(state, { houseId, job, room, day, posted: true, initialPlacement,
+                purpose: hall.chores.room, note: hall.chores.work,
+                calendar: { periodDays: 2, offset, shift: 'day', rota: true },
+                eligible: person => person.factionRankIndex === outerRank && !heads.has(person.id)
+                    && !(person.activity?.untilDay != null && person.activity.untilDay > day),
+                suitable: person => person.factionRankIndex === outerRank });
+            if (worker) added++;
+        }
+    }
     return added;
 }
 
@@ -71,25 +150,27 @@ export function staffTheHalls(state: WorldState, houseId: string, day: number, i
 export function settleHallService(state: WorldState, day: number, only?: ReadonlySet<string>): number {
     let credited = 0;
     const places = new Map(state.locations.map(place => [place.id, place]));
+    const hired = new Set(state.obligations.filter(term => term.status === 'open' && term.tags.includes('hired-duty'))
+        .map(term => term.holderId));
     for (let at = 0; at < state.npcs.length; at++) {
         const person = state.npcs[at]!;
         if (only && !only.has(person.id)) continue;
         if (!isTheWorldsToMove(person) || person.status !== 'alive' || !person.factionId
-            || person.activity?.kind !== 'stationed' || person.activity.redirect || person.activity.houseCareFactId) continue;
+            || person.activity?.kind !== 'stationed' || person.activity.redirect || person.activity.houseCareFactId || hired.has(person.id)) continue;
         const appointment = houseAppointment(state, person);
         // Older real hall posts also qualify, using their own actual term as the authority.
         const room = places.get(person.locationId ?? '');
         if (!room || room.data.factionId !== person.factionId || !hallForRoom(purposeOf(room)!)) continue;
         const since = whenTheyReachTheirPost(state.locations, person);
         if (since === null || since >= day) continue;
-        const through = Math.min(day, person.activity.untilDay ?? day);
+        const through = day;
         const receipt = person.activity.houseWorkPayFactId
             ? witnessIndexFor(state).byId.get(person.activity.houseWorkPayFactId) : undefined;
         const already = receipt?.data.houseHallService === true && receipt.data.servedSinceDay === since
             ? Number(receipt.data.totalContribution ?? 0) : 0;
         const ordinal = Number(appointment?.data.serviceOrdinal ?? receipt?.data.serviceOrdinal
             ?? person.cultivation.realmOrdinal);
-        const earned = hallServiceWorth(ordinal, through - since);
+        const earned = hallServiceWorth(ordinal, through - since, person.activity.houseWorkSchedule?.rota);
         const gain = earned - already;
         if (gain <= 0) continue;
         const fact = appendWorldFact(state, makeFact({ day: through, kind: 'gathering', locationId: room.id,

@@ -5016,3 +5016,23 @@ Native hall service earns one tenth of ordinary board contribution, with a minim
 one per thirty days. Its current receipt prevents paying the same service twice.
 A worker's paid clinical course suspends the post, includes the actual outward
 and return passage, and earns no service contribution during treatment or travel.
+
+A hall appointment may carry a repeating calendar, read by
+`a-hall-workers-shift.ts`; existing resident appointments default to day work.
+The house's one hall table also specifies day/night gate watches, the night
+patrol and morning forms. A patrol uses real open, keyless round-trip links on
+house ground and their travel times. Off-duty people practise or sleep through
+the ordinary hourly routine; these reads create no daily events or staff rows.
+Internal Affairs puts available rank-zero servants to menial posts first where
+`houseFloorsOf` gives the house a menial tier. Uncovered chores use two outer
+disciples on alternating days. This recurring responsibility earns half the
+ordinary posted-service contribution rate, with the same one-per-month minimum.
+A private paid contractor does not also earn the member's hall contribution.
+A person serving beyond a planned tour while awaiting relief remains paid.
+Institutional refining and hull-building use actual appointed hands at their
+reached Alchemy/Artifact post. Their existing bills, grade gates, work time and
+failure rules decide what is made; the receipts name the real workers.
+Unposted rank work remains `the_work_of_their_rank`: elders practise in assigned
+quarters, juniors on practice ground, with actual lessons and crafts taking
+precedence. A rogue's ordinary day follows their real residence, ground or town;
+trading requires a town, and a road stop invents no onward trip.
