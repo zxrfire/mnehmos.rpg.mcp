@@ -1,5 +1,15 @@
 # Played tests
 
+`local-news-reaches-a-present-non-participant.test.ts` advances the real clock
+past two scheduled NPC meetings on separate actual grounds. The player's stored
+body receives the local report without attending either meeting; the remote
+report stays unheard. Both the run and world seeds are pinned.
+
+`a-fractional-seclusion-remainder-is-not-lost.test.ts` arranges the completed skip
+at its question boundary. Spent and remaining time conserve the requested span,
+a remainder below one day stays available, and the stopping date comes from
+the already-applied run clock.
+
 `every-executed-result-reaches-the-narrator.test.ts` checks the folded execution
 boundary with actual span facts, narration composition and the output audit.
 Two lived months retain both occurrences, later automatic grants are recognized,

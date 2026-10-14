@@ -2,7 +2,7 @@
 import type { WorldState } from './world-state.js';
 import { getLocation } from './world-state.js';
 import type { NpcRecord } from './npc-state.js';
-import { isTheWorldsToMove, woundsCarriedBy, maxBodyOf, bodyStandingOn, markDead } from './npc-state.js';
+import { isTheWorldsToMove, woundsCarriedBy, maxBodyOf, bodyStandingOn, theWorldEnds } from './npc-state.js';
 import { activePlague, plagueSusceptibility, plagueCourse, contractPlague, plagueHealthCeiling,
     plagueHasBecomeFatal, treatPlague, PLAGUE_EXPOSURE_RATE, PLAGUE_COURSE_DAYS } from '../cultivation/plague.js';
 import { forStream } from '../cultivation/rng.js';
@@ -164,8 +164,9 @@ export function settleNativePlague(state: WorldState, personId: string, day: num
     const at = state.npcs.findIndex(person => person.id === personId), person = state.npcs[at];
     if (!person || !isTheWorldsToMove(person) || person.status !== 'alive' || !person.cultivation.plague) return;
     const course = person.cultivation.plague;
-    if (plagueHasBecomeFatal(bodyOf(person), day)) {
-        const ended = markDead(person, course.fatalOnDay!, 'Died of plague.');
+    const ended = plagueHasBecomeFatal(bodyOf(person), day)
+        ? theWorldEnds(person, course.fatalOnDay!, 'Died of plague.') : null;
+    if (ended) {
         state.npcs[at] = { ...ended, cultivation: { ...ended.cultivation, plague: null } };
         const died = ended.status === 'physically_dead';
         const fact = appendWorldFact(state, makeFact({ day: course.fatalOnDay!, kind: died ? 'death' : 'opportunity',

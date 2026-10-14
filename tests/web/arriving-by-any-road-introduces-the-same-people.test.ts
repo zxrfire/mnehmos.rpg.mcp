@@ -60,7 +60,7 @@ describe('who an arrival introduces', () => {
         game.repos.cultivators.update(cultivator.id, {location:town!.name,
             realmOrdinal:Number(seat.data.admissionOrdinal)});
         game.knowledge.learnIfNew({holderId:cultivator.id,kind:'place',id:seat.name,name:seat.name,
-            onDay:world.currentDay,sourceKind:'map',stage:'placed',statement:`The gate road reaches ${seat.name}.`});
+            onDay:world.currentDay,sourceKind:'read',stage:'placed',statement:`The gate road reaches ${seat.name}.`});
         world.objects.push(aVehicleOf({id:'arrival-control-mount',conveyanceId:'conv-mount-mortal',
             ownerId:cultivator.id,ownerName:cultivator.name,at:town!.id}));
         game.theWorldMoved();

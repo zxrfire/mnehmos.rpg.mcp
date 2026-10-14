@@ -28,8 +28,7 @@ import { GameService } from '../../src/web/turn-engine';
 import { theyCameAtYou } from '../../src/web/when-somebody-comes-at-you';
 
 async function prepared(following: boolean, count = 3, leaderOrdinal = 14) {
-    const h = await makeGameInWorld({ seed: 'party-on-forbidden-ground', worldSeed: 'party-on-forbidden-ground-world',
-        idFactory: () => 'party-fight-player' });
+    const h = await makeGameInWorld({ seed: 'party-on-forbidden-ground', worldSeed: 'party-on-forbidden-ground-world' });
     const { cultivator } = await h.game.newRun('Traveller');
     const world = h.game.atHand!, day = routineTime(world);
     const home = makeLocation({ id: 'party-fight-home', name: 'Reed Court', kind: 'settlement' });

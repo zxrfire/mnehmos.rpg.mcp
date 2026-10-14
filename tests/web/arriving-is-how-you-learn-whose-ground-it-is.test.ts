@@ -36,7 +36,7 @@ async function aboutToArriveAtAHeldSeat(worldSeed: string) {
     // Arrange the actual linked road, without introducing the ground's owner.
     h.game.knowledge.learnIfNew({
         holderId: cultivator.id, kind: 'place', id: seat.name, name: seat.name,
-        onDay: w.state.currentDay, sourceKind: 'map', sourceNote: 'the gate road', stage: 'placed',
+        onDay: w.state.currentDay, sourceKind: 'read', sourceNote: 'the gate road', stage: 'placed',
         statement: `The open road from ${town!.name} reaches ${seat.name}.`
     });
     return { ...h, cultivator, seat, house: seat.controllingFactionId! };

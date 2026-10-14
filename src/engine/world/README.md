@@ -60,6 +60,11 @@ estates. Real graded medicine is consumed; a reachable donor decides through
 the existing gift/favour path. Recovery and immunity clear the course. No
 ordinary sickness or second body record is introduced.
 
+Autonomous fatal plague courses consult the shared world-ending authority.
+An unperformed ending emits no death receipt. A protected course can still
+expire normally; an ordinary overdue death retains its actual fatal date,
+including when settlement happens after the illness course ended.
+
 The yearly business sweep silently collects an unheld object only after a year,
 when no fact, account, search, delivery, estate, auction, scheduled work or other
 object points at it. `CHEAP_UNHELD_VALUE` is the catalog's cheapest positive herb

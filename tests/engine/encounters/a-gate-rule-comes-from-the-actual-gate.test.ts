@@ -13,7 +13,7 @@ import { encounterPool } from '../../../src/engine/encounters/select';
 it('a random catalog cannot supply a gate or registration authority', () => {
     expect(ENCOUNTERS.some(entry => entry.id === 'enc-held-names-registration')).toBe(false);
     for (const kind of ['settlement', 'wilderness', 'sect', 'ruin']) {
-        const pool = encounterPool({ ordinal: 1, activity: 'travel', locatability: 'public',
+        const pool = encounterPool({ ordinal: 1, activity: 'travel', locatability: 'known',
             place: { id: 'actual-ground', name: 'The reached ground', kind, danger: 0.5,
                 controllingFactionId: 'an-ordinary-house' } });
         expect(pool.some(row => row.entry.id === 'enc-held-names-registration')).toBe(false);

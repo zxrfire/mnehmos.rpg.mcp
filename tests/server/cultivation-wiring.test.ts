@@ -91,7 +91,9 @@ describe('the wiring', () => {
             // The world moved by the span the cultivator lived, never by the
             // span that was asked for.
             const spanDays = result.worldDigest.toDay - result.worldDigest.fromDay;
-            expect(spanDays).toBe(Math.floor(result.simulatedDays));
+            // Native boundaries retain fractional lived days. Subtracting
+            // absolute world dates can carry floating-point representation error.
+            expect(spanDays).toBeCloseTo(result.simulatedDays, 8);
             expect(typeof result.worldDigest.headline).toBe('string');
         });
 

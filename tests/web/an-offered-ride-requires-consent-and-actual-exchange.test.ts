@@ -84,7 +84,6 @@ import { ensureShipCrew, bindShipCrewToPassage, placeShipCrew } from '../../src/
 import { buyTalliesForActualPublicBoarding } from '../../src/web/buying-the-tallies-for-an-actual-public-boarding.js';
 import { recordActualBodyArrival, arrivalCourseOfFact, actualBodiesArrivedTogether } from '../../src/engine/world/a-body-that-actually-arrived.js';
 import { offerTheNextPublicCarriage, acceptPublicCarriageOffer } from '../../src/engine/world/the-next-public-carriage-is-an-ordinary-trip.js';
-import { publicTransportFrom } from '../../src/engine/world/public-transport-at-a-place.js';
 import { makePassageTally } from '../../src/engine/world/a-passage-tally-is-the-seat-you-own.js';
 import { makeFact } from '../../src/engine/world/history.js';
 import { appendWorldFact } from '../../src/engine/world/who-was-there-when-it-happened.js';
@@ -379,7 +378,7 @@ it('a shared public arrival does not complete or charge an earlier private ride 
   const passengers=[{id:before.cultivator.id,name:before.cultivator.name},{id:rider.id,name:rider.name}];
   const receipt=recordPublicPassage(world,quote,day,h.from.id,
    [...passengers.map(person=>person.id),...crew.map(person=>person.id)],undefined,
-   {runId:before.run.id,elapsedDays:before.run.elapsedDays,boardedOnDay:day},passengers,undefined,false,
+   {runId:before.run.id,elapsedDays:before.run.elapsedDays},passengers,undefined,false,
    accepted=>{expect(buyTalliesForActualPublicBoarding(h.game,accepted,before.cultivator,passengers,quote.fareStones),
     'actual public tally purchase at the real carrier').toBe(true);});
   // This control starts its observation with both bodies already at the public landing.

@@ -411,7 +411,7 @@ describe('the follower binding projects the actual player body', () => {
     it('a real crossing interrupts a short follower span and the leader asks the party there', async () => {
         const h = await prepared(), before = h.game.currentRun(), day = routineTime(h.world);
         const middle = makeLocation({ id: 'actual-party-crossing', name: 'The crossing on this road',
-            kind: 'wilderness', tags: [ROUTE_STOP] });
+            kind: 'wilds', tags: [ROUTE_STOP] });
         h.from.links = h.from.links.filter(link => link.toLocationId !== h.to.id);
         h.to.links = h.to.links.filter(link => link.toLocationId !== h.from.id);
         linkLocations(h.from, middle, 'road', .5);
@@ -474,7 +474,7 @@ describe('the follower binding projects the actual player body', () => {
     it('a departed or dead leader cannot drag the stored body to an old promised destination', async () => {
         const h = await prepared(), before = h.game.currentRun();
         expect(bindFollowingParty(h.game, before.run, before.cultivator, h.leader.id, h.itinerary.id).ok).toBe(true);
-        h.world.npcs.find(person => person.id === h.leader.id)!.status = 'dead';
+        h.world.npcs.find(person => person.id === h.leader.id)!.status = 'physically_dead';
         projectPartyFollower(h.db, h.world, h.cultivator.id, routineTime(h.world));
         expect(h.game.currentRun().cultivator.location).toBe(h.from.name);
         expect(partyFollowerClaim(h.db, h.cultivator.id)).toBeNull();

@@ -226,6 +226,7 @@ describe('a service, played', () => {
         const term = ledgerAbout(db as unknown as ObligationDb, cultivator.id)
             .find(row => row.cause === 'service_term')!;
         const counterpartyId = term.holderId === cultivator.id ? term.subjectId : term.holderId;
+        if (counterpartyId === null) throw new Error('The personal service term must name its actual counterparty.');
         const counterparty = game.repos.cultivators.getById(counterpartyId)
             ?? game.atHand!.npcs.find(row => row.id === counterpartyId);
         expect(counterparty).toBeDefined();

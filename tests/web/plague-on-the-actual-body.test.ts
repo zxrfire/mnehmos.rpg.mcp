@@ -237,13 +237,13 @@ it('a death already due on the actual clock is settled before the next attempted
 
 it('an immune body still meets a real plague report at its actual native encounter date', async () => {
     const h = await scene();
-    let cadence: ReturnType<typeof vi.spyOn> | undefined;
+    let restoreCadence: (() => void) | undefined;
     try {
         h.world.statuses = h.world.statuses.filter(status => status.id !== h.outbreak.id);
         const deity = REALM_TIERS.find(realm => realm.key === 'deity_transformation')!.ordinalStart;
         h.repos.cultivators.update(h.bodyId, { realmOrdinal: deity });
         h.game.theWorldMoved();
-        cadence = vi.spyOn(encounterWindow, 'encountersAtChecks').mockImplementation(function* (input):
+        const cadence = vi.spyOn(encounterWindow, 'encountersAtChecks').mockImplementation(function* (input):
             Generator<EncounterCheckPhase, EncounterRoll, EncounterRollInput | undefined> {
             const day = input.startDay + 2;
             const actual = (yield { kind: 'check', absoluteDay: day, dayOffset: 2, stage: 'span' }) ?? input;
@@ -255,6 +255,7 @@ it('an immune body still meets a real plague report at its actual native encount
             yield { kind: 'resolved', occurrences: [occurrence], roll };
             return roll;
         });
+        restoreCadence = () => { cadence.mockRestore(); };
         const before = h.game.currentRun().run.elapsedDays;
         await handleCultivate({ action: 'cultivate', cultivatorId: h.bodyId, days: 5, focus: 'idle',
             autoBreakthrough: false, randomEvents: true, rations: 0, carriedRations: 0 });
@@ -264,5 +265,5 @@ it('an immune body still meets a real plague report at its actual native encount
         expect(outbreak.beganOnDay).toBeCloseTo(h.now + 2);
         expect(h.repos.cultivators.getById(h.bodyId)!.plague).toBeFalsy();
         expect(h.repos.cultivators.getById(h.bodyId)!.alive).toBe(true);
-    } finally { cadence?.mockRestore(); h.db.close(); }
+    } finally { restoreCadence?.(); h.db.close(); }
 });

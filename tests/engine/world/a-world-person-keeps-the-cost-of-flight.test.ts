@@ -36,7 +36,7 @@ it('keeps every native flight charge on the real body, whether the person escape
         const before = bodyStandingOn(npc, state.currentDay);
         whatTheConfrontationDidToThem(state, { npcId: npc.id, byId: attacker.id, byName: attacker.name,
             day: state.currentDay, wounds: injuries[npc.id]!, outcome: 'withdrawal', lost: true, finished: false,
-            flight: whatTheirFlightsCost(round.exchanges, npc.id, defender.maxHp) });
+            flight: whatTheirFlightsCost(round.exchanges.map((exchange, index) => ({ ...exchange, index })), npc.id, defender.maxHp) });
         expect(bodyStandingOn(state.npcs[0]!, state.currentDay)).toBe(Math.max(0,
             before - Math.round(receipt.flight.damage * maxBodyOf(npc) / defender.maxHp)));
         expect(state.npcs[0]!.cultivation.injuries).toEqual(injuries[npc.id]);

@@ -45,9 +45,9 @@ it('exposure can infect mortals and produces neither plague nor a fatal course o
     const deity = REALM_TIERS.find(realm => realm.key === 'deity_transformation')!.ordinalStart;
     for (let sample = 0; sample < 100; sample++) {
         if (contractPlague({ realmOrdinal: 0, injuries: [] }, 'outbreak', 1000, 1090,
-            forStream('plague-exposure', sample))) infected++;
+            forStream('plague-exposure', String(sample)))) infected++;
         expect(contractPlague({ realmOrdinal: deity, injuries: [] }, 'outbreak', 1000, 1090,
-            forStream('plague-exposure', sample))).toBeNull();
+            forStream('plague-exposure', String(sample)))).toBeNull();
     }
     expect(infected).toBeGreaterThan(0); expect(infected).toBeLessThan(100);
 });
@@ -63,7 +63,7 @@ it('active plague weakens an actual body, mending cannot erase it, and treatment
     expect(activePlague({ ...body, plague: treated }, 1014)).toBeNull();
     expect(plagueHasBecomeFatal({ ...body, plague: treated }, 1015)).toBe(false);
     expect(treatPlague(body, pill, 1016)).toBeNull();
-    const npc = createNpc('plague-health', { id: 'patient', onDay: 1000, cultivation: { realmOrdinal: 0 } });
+    const npc = createNpc('plague-health', { id: 'patient', onDay: 1000, bornOnDay: 1000 - 20 * 365, cultivation: { realmOrdinal: 0 } });
     npc.cultivation.plague = course;
     expect(bodyStandingOn(npc, 1014)).toBe(Math.floor(maxBodyOf(npc) * 0.65));
 });

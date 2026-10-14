@@ -2384,8 +2384,10 @@ Four rules that are easy to violate by accident:
   world gentler.
 - **The clock is neither handed back nor charged twice.** The first half spent
   `simulatedDays` and the world advanced by exactly that; the resumption spends the
-  remainder and no more. Food is the one thing that WOULD have been charged twice - it is
-  bought per stretch, at the cave mouth, for the whole span - so the crossroads carries
+  remainder and no more. Asked, spent and remaining durations retain their actual
+  fractions, including a remainder shorter than one day; the question displays that
+  fraction and records the already-applied run clock as its stopping date. Food is
+  the one thing that WOULD have been charged twice - it is bought per stretch, at the cave mouth, for the whole span - so the crossroads carries
   `endState.rationsRemaining` forward into the resumed stretch's provisioning.
 - **The two sentences are different and must not be flattened.** One case offers a ROAD out;
   the other offers only the POSTURE you are found in. `time-skip.ts` writes both and the

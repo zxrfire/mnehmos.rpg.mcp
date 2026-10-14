@@ -79,7 +79,7 @@ async function fillFirst(h: Awaited<ReturnType<typeof prepared>>) {
     return tallies;
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.restoreAllMocks(); });
 
 describe('a full carriage offers a later ordinary departure', () => {
     it('buying a tally does not let an oversized carried load board on a passenger seat', async () => {

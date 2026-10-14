@@ -76,9 +76,9 @@ it('a wounded hunter risks their actual body and named ending through the common
             person.locationId = h.ground.id;
             person.cultivation.hp = 1; person.cultivation.bodyOnDay = day;
         }
-        const mission = makeFact({ day: 0, kind: 'gathering', visibility: 'secret', locationId: h.home.id,
+        const mission = appendWorldFact(h.world, makeFact({ day: 0, kind: 'gathering', visibility: 'secret', locationId: h.home.id,
             actors: [], summary: 'An explicit native hunt arrangement.',
-            data: { privateHunt: true, leaderId: 'leader', destinationId: h.ground.id } });
+            data: { privateHunt: true, leaderId: 'leader', destinationId: h.ground.id } }));
         finishPrivatePartyHunt(h.world, mission, h.world.npcs.slice(), h.ground, day);
         for (const person of h.world.npcs.filter(person => ['leader', 'friend'].includes(person.id)))
             if (person.status !== 'alive' || woundsCarriedBy(person).length) consequences++;

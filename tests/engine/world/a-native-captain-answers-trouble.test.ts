@@ -31,7 +31,7 @@ it('an actual Native pilot diverts a stricken passenger on the same hull with an
  const to=makeLocation({id:'native-flight-destination',name:'Destination town',kind:'settlement',data:{metricXLi:6000,metricYLi:0}});
  world.locations.push(from,to);
  let captain=setRealm(createNpc(world.seed,{id:'actual-native-pilot',name:'The actual pilot',onDay:100,
-  bornOnDay:100-40*365,locationId:from.id,homeLocationId:from.id,spiritStones:100000}),29,100);
+  bornOnDay:100-40*365,locationId:from.id,spiritStones:100000}),29,100);
  let patient=createNpc(world.seed,{id:'actual-native-passenger',onDay:100,bornOnDay:100-25*365,locationId:from.id});
  world.npcs.push(captain,patient);
  const boat=aVehicleOf({id:'actual-native-care-hull',conveyanceId:'conv-spirit-boat',ownerId:captain.id,ownerName:captain.name,at:from.id});

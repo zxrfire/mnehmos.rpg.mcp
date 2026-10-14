@@ -113,7 +113,7 @@ it('the ordinary auction settlement bids for the elder who actually arrived', ()
     for (let seed = 0; seed < 20; seed++) {
         const h = arrangement(); h.world.seed = `private-auto-bid-${seed}`;
         h.ruin.kind = 'settlement';
-        const seller = createNpc(h.world.seed, { id: 'seller', onDay: 0, locationId: h.ruin.id, spiritStones: 0 });
+        const seller = createNpc(h.world.seed, { id: 'seller', onDay: 0, bornOnDay: -20 * 365, locationId: h.ruin.id, spiritStones: 0 });
         h.world.npcs.push(seller);
         h.world.objects[0] = { ...h.world.objects[0], ownerId: seller.id, possessorId: seller.id };
         appendWorldFact(h.world, makeFact({ day: 1, kind: 'gathering', visibility: 'public', locationId: h.ruin.id,

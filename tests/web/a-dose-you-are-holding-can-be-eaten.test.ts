@@ -125,7 +125,7 @@ describe('a dose in your own hands', () => {
         // spends one on its own.
         expect(dose().data.spent).toBe(true);
         expect(dose().tags).toContain('spent');
-        expect(harness.game.state().run.elapsedDays - before).toBe(SECOND_POUR.recoveryDays);
+        expect(harness.game.state().run.elapsedDays - before).toBeCloseTo(SECOND_POUR.recoveryDays, 12);
         expect(body().cultivationProgress).toBe(progress);
     }, 300_000);
 
@@ -141,7 +141,7 @@ describe('a dose in your own hands', () => {
         }).state);
         const before = harness.game.state().run.elapsedDays;
         const result = await harness.game.act(`I swallow the ${medicine.name}`);
-        expect(harness.game.state().run.elapsedDays - before).toBe(3);
+        expect(harness.game.state().run.elapsedDays - before).toBeCloseTo(3, 12);
         expect(brokenStatusOf(body().injuries)).toBe('cracked-core');
         expect(dose().data.spent).toBe(true);
         expect(result.narration).toContain('repair did not finish');

@@ -63,7 +63,7 @@ function arrangement() {
     return { state, buyer, passenger, receiver, terms, issue };
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.restoreAllMocks(); });
 
 describe('the passage tally is the physical seat', () => {
     it('states its accepted route, departure and seat in one carried tracked item', () => {

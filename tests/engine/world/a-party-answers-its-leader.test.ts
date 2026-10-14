@@ -22,7 +22,7 @@ import type { Party } from '../../../src/engine/social-leverage/an-attempt-to-mo
 function prepared(seed = 'all-the-party-answers', work: boolean | 'road' = false) {
     const world = createWorld({ seed, regionCount: 0, skipPriorAges: true });
     world.currentDay = 100;
-    const place = makeLocation({ id: 'party-stop', name: 'Reed Clearing', kind: 'wilderness' });
+    const place = makeLocation({ id: 'party-stop', name: 'Reed Clearing', kind: 'wilds' });
     world.locations = [place];
     const player: Party = { id: 'actual-player', name: 'Traveller', ordinal: 0, factionId: null, alignment: null };
     const people = ['leader', 'companion-a', 'companion-b'].map(id => createNpc(seed, {
@@ -137,7 +137,7 @@ describe('the whole party answers its actual leader', () => {
 
     it('an absent or dead member does not answer for a person who is not there', () => {
         const h = prepared();
-        h.world.npcs.find(person => person.id === h.people[1]!.id)!.status = 'dead';
+        h.world.npcs.find(person => person.id === h.people[1]!.id)!.status = 'physically_dead';
         const last = h.world.npcs.find(person => person.id === h.people[2]!.id)!;
         last.locationId = 'elsewhere';
         last.activity = null;

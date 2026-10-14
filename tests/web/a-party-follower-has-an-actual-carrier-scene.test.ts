@@ -85,7 +85,7 @@ async function preparedSponsoredParty(lostLeader: boolean) {
 }
 
 it.each([false, true])('the real sponsored hull carries its consenting follower with lost party leader=%s', async lostLeader => {
-    const { game, db, body, scene, turn, quote, captain, world } = await preparedSponsoredParty(lostLeader);
+    const { db, body, scene, turn, quote, captain, world } = await preparedSponsoredParty(lostLeader);
     expect(scene, turn.narration).not.toBeNull();
     expect(scene!.vesselId).toBe(quote.vesselId);
     expect(scene!.operatorId).toBe(captain.id);
@@ -106,6 +106,7 @@ it('an aboard party and the real crew defend once with the leader beside the gua
     const hp = maxHpForOrdinal(initial.cultivator.attributes.might, 3);
     h.game.repos.cultivators.update(initial.cultivator.id, { realmOrdinal: 3, hp, maxHp: hp });
     const current = h.game.currentRun(), day = routineTime(h.world);
+    if (current.cultivator.location === null) throw new Error('The aboard arrangement requires actual ground.');
     const crew = h.world.npcs.filter(person => h.scene!.accepts(person)
         && person.tags.includes('crew-of:' + h.scene!.vesselId));
     expect(crew.length).toBeGreaterThan(0);

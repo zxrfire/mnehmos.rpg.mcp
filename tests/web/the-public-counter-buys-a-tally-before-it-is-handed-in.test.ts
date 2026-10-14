@@ -47,7 +47,7 @@ async function prepared() {
     return { ...h, world, from, to, cultivator, driver, vehicle };
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.restoreAllMocks(); });
 
 describe('the public counter buys the item before hand-in', () => {
     it('a gifted paid tally lets its current holder board with an empty purse', async () => {
@@ -184,7 +184,7 @@ describe('the public counter buys the item before hand-in', () => {
             passengerIds: [h.cultivator.id], fareStones: 3, hired: false,
             playedPassenger: { id: h.cultivator.id, locationId: h.from.id, alive: true } })!;
         const receipt = commitPublicCarriage(h.world, quote)!;
-        h.world.npcs.find(person => person.id === h.driver.id)!.status = 'dead';
+        h.world.npcs.find(person => person.id === h.driver.id)!.status = 'physically_dead';
         expect(buyTalliesForActualPublicBoarding(h.game, receipt, h.cultivator, [h.cultivator], 3)).toBe(false);
         expect(h.game.repos.cultivators.getById(h.cultivator.id)!.spiritStones).toBe(100);
         expect(h.world.history.facts.some(fact => fact.data.passageTallyPurchase === true)).toBe(false);

@@ -631,8 +631,7 @@ export const seclusionVerbs = {
         this.raiseTheCrossroads(applied.run, applied.cultivator, skip, facts, {
             sealed,
             acknowledged: options.acknowledged ?? false,
-            daysAsked: lived,
-            startDay
+            daysAsked: lived
         });
 
         // THE CEILING, BEFORE THE DECADE RATHER THAN AFTER
@@ -781,7 +780,6 @@ export const seclusionVerbs = {
             acknowledged: boolean;
             /** The span the skip was handed, after the encounter layer's own cut. */
             daysAsked: number;
-            startDay: number;
         }
     ): void {
         // Whatever question was standing has been answered by getting here at
@@ -792,11 +790,11 @@ export const seclusionVerbs = {
         if (skip.interruptReason !== 'major_encounter') return;
         if (!cultivator.alive) return;
 
-        const remaining = Math.floor(context.daysAsked - skip.simulatedDays);
+        const remaining = context.daysAsked - skip.simulatedDays;
         // A stretch that stopped on its own last day has nothing left to
         // decide about. Offering a fork over zero days would be a panel with
         // nothing behind either button.
-        if (remaining < 1) return;
+        if (remaining <= 0) return;
 
         const filed = [...skip.events].reverse().find(event =>
             event.kind === 'encounter' && event.data?.severity === 'major');
@@ -809,10 +807,10 @@ export const seclusionVerbs = {
             canWithdraw: filed.data?.canWithdraw === true,
             sealed: context.sealed,
             acknowledged: context.acknowledged,
-            daysAsked: Math.floor(context.daysAsked),
-            daysSpent: Math.floor(skip.simulatedDays),
+            daysAsked: context.daysAsked,
+            daysSpent: skip.simulatedDays,
             daysRemaining: remaining,
-            stoppedOnDay: Math.floor(context.startDay + skip.simulatedDays),
+            stoppedOnDay: run.elapsedDays,
             rationsLeft: Math.max(0, Math.floor(skip.endState.rationsRemaining ?? 0)),
             whoIsClose: this.whoIsCloseNow(cultivator)
         };

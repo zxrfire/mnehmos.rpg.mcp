@@ -130,7 +130,7 @@ it('carries a .125-day reply and the exact remainder on the same paid passage', 
 });
 
 it('commits only the real fraction before a driver dies during the requested reply', async () => {
-    const { game, db, world, quote, receipt, player, stop, to } = await boarded();
+    const { game, db, world, quote, receipt, player, to } = await boarded();
     try {
         const driver = world.npcs.find(npc => npc.id === quote.driverId)!;
         driver.cultivation.lifespanEndsOnDay = quote.departureDay + .0625;

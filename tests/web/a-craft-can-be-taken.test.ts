@@ -269,7 +269,7 @@ describe('played: a boat changes hands', () => {
 
     it('says what was taken, and says it is still theirs', async () => {
         const h = await theTheftLands('lift-b');
-        const { game, known } = h;
+        const { known } = h;
         const said = await takeTheActualBoat(h);
         const prose = (said.narration ?? '').toLowerCase();
 

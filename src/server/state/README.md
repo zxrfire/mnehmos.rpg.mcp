@@ -2,9 +2,10 @@
 
 # Server-lifetime state
 
-The run's fractional elapsed day supplies the hour on world reads. World advancement
-uses the difference between the starting and ending whole days, so fractions crossing
-midnight advance with the player's observer. There is no separately persisted hour.
+Precise native spans persist the fractional world day, from which the hour derives.
+Legacy whole-day reads can still derive their hour from the run's fraction until
+native clock preparation materializes it. Clock comparisons use that actual time
+and the full elapsed run span. There is no separately persisted hour.
 
 Opening a saved world applies the same idempotent road-ground augmentation as fresh
 seeding and adds a missing infirmary through its existing compound's room factory, then
@@ -14,6 +15,11 @@ possessions and clock remain intact; a restart does not reseed an installation.
 `advanceWorldForCultivator` supplies the player's current body and actual area as a
 temporary visiting presence. NPC advancement can read their suppression and elemental
 neighbourhood without assigning the player a second persisted location.
+
+Local-news access resolves that body's current ground through `worldLocationFor`.
+Its native location ID matches the calendar's fact locations, so presence can
+receive local news without appearing among its participants or witnesses. The
+digest still applies its existing secret, distance and naming authorities.
 
 Two module singletons. They die on redeploy and cannot be shared across replicas. That is
 the constraint on ever running more than one of these, and it is stated here rather than in

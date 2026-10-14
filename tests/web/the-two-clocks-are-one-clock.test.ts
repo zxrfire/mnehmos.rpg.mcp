@@ -9,7 +9,11 @@
  *
  * The invariant it is silently repairing has never been written down:
  *
- *     world.currentDay === thisRun.startedOnDay + floor(run.elapsedDays)
+ *     routineTime(world) === thisRun.startedOnDay + run.elapsedDays
+ *
+ * Native spans now retain fractional dates. The old floor equation reported
+ * a real half-day as drift; the invariant includes that lived fraction and
+ * the legacy read hour, with no rounding of either physical clock.
  *
  * This file writes it down. It lands BEFORE the reconciler is removed,
  * deliberately: a test that only passes after the fix cannot tell you whether
@@ -21,6 +25,7 @@ import { describe, it, expect } from 'vitest';
 
 import { makeGameInWorld, type Harness } from './harness';
 import { worldForRun } from '../../src/server/state/cultivation-world';
+import { routineTime } from '../../src/engine/world/npc-routines.js';
 
 async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
     const before = process.env.ADMIN_MODE;
@@ -41,7 +46,7 @@ async function drift(harness: Harness): Promise<number> {
     // A run the world has no row for has no start day to measure from, and
     // that is a different defect from drift. Reported as such.
     if (!record) return Number.NaN;
-    return world.currentDay - (record.startedOnDay + Math.floor(run.elapsedDays));
+    return routineTime(world) - (record.startedOnDay + run.elapsedDays);
 }
 
 describe('the two clocks are one clock', () => {

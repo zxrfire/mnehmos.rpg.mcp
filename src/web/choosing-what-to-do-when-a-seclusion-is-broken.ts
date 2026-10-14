@@ -129,9 +129,9 @@ export interface SeclusionCrossroads {
     daysAsked: number;
     /** Days the engine actually simulated before it stopped. */
     daysSpent: number;
-    /** What is left, and what staying spends. Always at least one. */
+    /** What is left, and what staying spends. Any positive fraction remains available. */
     daysRemaining: number;
-    /** Absolute day it stopped on, for the record. */
+    /** Elapsed run day it stopped on, read from the applied run. */
     stoppedOnDay: number;
     /** Rations the engine says were still in the pack. See the header. */
     rationsLeft: number;
@@ -255,16 +255,20 @@ export const SAY_TO_GO = 'I get up and go';
  */
 function spans(scale: number): { said: (days: number) => string; bare: (days: number) => string } {
     const inYears = scale >= 365;
+    // Keep a fractional remainder visible without exposing binary float noise.
+    const inDays = (days: number) => String(Number(days.toPrecision(12)));
+    const years = (days: number) => days > 0 && days / 365 < 0.05
+        ? String(Number((days / 365).toPrecision(3))) : (days / 365).toFixed(1);
     return {
         said: (days: number) => inYears
-            ? `${(days / 365).toFixed(1)} years`
-            : `${Math.round(days)} day${Math.round(days) === 1 ? '' : 's'}`,
+            ? `${years(days)} years`
+            : `${inDays(days)} day${days === 1 ? '' : 's'}`,
         // THE UNIT IS SAID ONCE IN A SENTENCE. "0.5 years of the 1.0 years are
         // spent and 0.5 years are still sitting there" says `years` three times
         // and the figure four, which is the same arithmetic read as a stutter.
         bare: (days: number) => inYears
-            ? `${(days / 365).toFixed(1)}`
-            : `${Math.round(days)}`
+            ? years(days)
+            : inDays(days)
     };
 }
 

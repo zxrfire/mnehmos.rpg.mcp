@@ -12,42 +12,48 @@
  * had to go.
  *
  * Seeding a world is not cheap, so `worldEnabled` is off by default in the
- * harness and every test here turns it on deliberately.
+ * harness and every test here turns it on deliberately, with both seeds pinned.
+ * The integrated log shares its mechanical channel with the player: unheard
+ * accounting stays on the native digest instead of becoming news. Absolute
+ * date subtraction is checked at floating-point precision, without rounding
+ * away any fraction of the lived span.
  */
 
 import { describe, it, expect } from 'vitest';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { reportFromDigest } from '../../src/web/game';
 import { worldForRun, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
-import { makeGame, engineCalls } from './harness';
+import { makeGame, makeGameInWorld, engineCalls } from './harness';
+import type { PlayerDigest } from '../../src/engine/world/digest.js';
+import { routineTime } from '../../src/engine/world/npc-routines.js';
 
 function inWorld(seed: string) {
-    return makeGame({ seed, worldEnabled: true });
+    return makeGameInWorld({ seed, worldSeed: `world-clock-${seed}`, worldEnabled: true });
 }
 
 describe('one span, both clocks', () => {
     it('advances the world by exactly the days the cultivator lived', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('clocks');
+        const { db, game } = await inWorld('clocks');
         const { cultivator } = await game.newRun('Wen Shu');
         db.prepare('UPDATE cultivators SET spirit_stones = 900 WHERE id = ?').run(cultivator.id);
 
         const openedAt = game.state().run.elapsedDays;
-        const before = (await worldForRun(game.state().run as never)).currentDay;
+        const before = routineTime(await worldForRun(game.state().run as never));
         const { timeSkip, state } = await game.cultivate(20 * 365, { anyway: true });
-        const after = (await worldForRun(game.state().run as never)).currentDay;
+        const after = routineTime(await worldForRun(game.state().run as never));
 
         // Not the days requested. A seclusion broken in year three does not get
         // seventeen more years of world.
         // The run starts at 08:00; the spent span still reaches both clocks exactly.
         expect(state.run.elapsedDays - openedAt).toBe(timeSkip.simulatedDays);
         expect(timeSkip.simulatedDays).toBeGreaterThan(0);
-        expect(after - before).toBe(timeSkip.simulatedDays);
+        expect(after - before).toBeCloseTo(timeSkip.simulatedDays, 8);
     }, 60_000);
 
     it('reports what reached the player, on the narratable channel', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('digest');
+        const { db, game } = await inWorld('digest');
         const { cultivator } = await game.newRun('Wen Shu');
         db.prepare('UPDATE cultivators SET spirit_stones = 900 WHERE id = ?').run(cultivator.id);
 
@@ -60,7 +66,7 @@ describe('one span, both clocks', () => {
 
     it('never puts the arithmetic of what was withheld into the prose', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('ratio');
+        const { db, game } = await inWorld('ratio');
         const { cultivator } = await game.newRun('Nobody');
         db.prepare('UPDATE cultivators SET spirit_stones = 900 WHERE id = ?').run(cultivator.id);
 
@@ -77,7 +83,7 @@ describe('one span, both clocks', () => {
 
     it('does not move the world for an action that costs no time', async () => {
         resetCultivationWorlds();
-        const { game } = inWorld('free');
+        const { game } = await inWorld('free');
         await game.newRun('Watcher');
 
         const result = await game.act('I look around.');
@@ -97,7 +103,7 @@ describe('one span, both clocks', () => {
 describe('a life begins in the world the last one left', () => {
     it('draws the new seed from the world rather than inventing one', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('legacy');
+        const { db, game } = await inWorld('legacy');
         const { cultivator } = await game.newRun('The First');
 
         // Kill the first life so there is a world with a finished run in it.
@@ -126,12 +132,15 @@ describe('the digest folding', () => {
         expect(reportFromDigest(null)).toEqual({ lines: [], structure: [] });
     });
 
-    it('says so on the mechanical channel when nothing reached them', () => {
-        const report = reportFromDigest({
-            fromDay: 0, toDay: 365, lines: [], unheard: 41, unattributed: 3
-        } as never);
-        expect(report.lines).toEqual([]);
-        expect(report.structure.join(' ')).toMatch(/41 event\(s\) passed unheard/);
+    it('retains native unheard accounting while emitting no received news', () => {
+        const digest: PlayerDigest = {
+            fromDay: 0, toDay: 365, lines: [], unheard: 41, unattributed: 3,
+            headline: 'No news reached them.'
+        };
+        const before = structuredClone(digest);
+        const report = reportFromDigest(digest);
+        expect(report).toEqual({ lines: [], structure: [] });
+        expect(digest).toEqual(before);
     });
 
     it('puts the line text on the narratable channel and the shape on the other', () => {
@@ -167,7 +176,7 @@ describe('the digest folding', () => {
 describe('the seam with the knowledge gate', () => {
     it('is the same table both layers read', async () => {
         resetCultivationWorlds();
-        const { db, game } = inWorld('seam');
+        const { db, game } = await inWorld('seam');
         const { cultivator } = await game.newRun('Villager');
         const gate = new KnowledgeGate(db);
 

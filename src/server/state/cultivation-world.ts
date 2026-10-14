@@ -37,7 +37,7 @@ import {
 } from '../../engine/world/a-house-puts-a-price-on-somebody.js';
 import { createObligation } from '../../engine/social/grudges.js';
 import type { Cultivator, Run } from '../../schema/cultivation.js';
-import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
+import { KnowledgeGate } from '../../web/knowledge.js';
 import { worldLocationFor } from '../../web/entities.js';
 import { whereInThisPlaceTheyStand } from '../../engine/world/where-in-a-place-somebody-is-standing.js';
 import { addPlacesOnTheWay } from '../../engine/world/places-on-the-way.js';
@@ -562,7 +562,7 @@ export async function advanceWorldForCultivator(
             afterPassengersRetrievalBoundaryForDatabase(getDb(), cultivator.id)(world, onDay);
             options.atWorldBoundary?.(world, onDay);
         } : undefined,
-        access: accessForCultivator(cultivator),
+        access: accessForCultivator(cultivator, handle.state),
         observer: observerFor(cultivator, handle),
         stopOnInterrupt: false,
         pressure: place && person ? { visitingPresence: { person: { ...person, cultivation: {
@@ -641,9 +641,9 @@ function rungOf(cultivator: Cultivator, world: WorldState): number {
 /**
  * What this cultivator has standing to be told.
  */
-export function accessForCultivator(cultivator: Cultivator): PlayerAccess {
+export function accessForCultivator(cultivator: Cultivator, world: WorldState): PlayerAccess {
     const gate = new KnowledgeGate(getDb());
-    const here = cultivator.location ? placeKey(cultivator.location) : null;
+    const here = worldLocationFor(world, cultivator.location)?.id ?? null;
 
     return {
         ...simpleAccess({

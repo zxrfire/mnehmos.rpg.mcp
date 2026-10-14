@@ -12,7 +12,7 @@ import { firstTravellerOnTheWay, ROUTE_STOP } from '../../../src/engine/world/pl
 
 function crossing(firstDays: number, lastDays: number, departure: number, otherDeparture: number) {
     const from = makeLocation({ id: 'cross-from', name: 'First ground', kind: 'settlement' });
-    const middle = makeLocation({ id: 'cross-middle', name: 'The actual waypoint', kind: 'wilderness', tags: [ROUTE_STOP] });
+    const middle = makeLocation({ id: 'cross-middle', name: 'The actual waypoint', kind: 'wilds', tags: [ROUTE_STOP] });
     const to = makeLocation({ id: 'cross-to', name: 'Last ground', kind: 'settlement' });
     linkLocations(from, middle, 'road', firstDays);
     linkLocations(middle, to, 'road', lastDays);

@@ -75,7 +75,6 @@ it('an actual NPC pilot notices serious injury and diverts the same craft to a k
  const h=await departure(true);try{
   const now=h.game.currentRun(),day=routineTime(h.world);
   const pilot=h.world.npcs.find(person=>person.id===h.pilot!.id)!;
-  pilot.homeLocationId=h.from.id;
   const wound=createInjury({severity:'serious',source:'combat',turn:now.run.turn},forStream(h.world.seed,'captain-air-injury'));
   h.repos.cultivators.addInjury(now.cultivator.id,wound);
   h.repos.cultivators.update(now.cultivator.id,{hp:Math.floor(now.cultivator.maxHp*.6)});
