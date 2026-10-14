@@ -73,6 +73,9 @@ describe('the verb surface', () => {
         const text = fs.readFileSync(DOC, 'utf8');
         const missing = ACTION_NAMES.filter(verb => !text.includes(`### \`${verb}\``));
         expect(missing, `verbs with no section in docs/verbs.md: ${missing.join(' ')}`).toEqual([]);
+        // A shared CRLF reader bug once made generation and comparison agree on empty entries.
+        expect(text).not.toContain('_(no description; the source module is missing an entry)_');
+        expect(text).toContain(WHAT_EACH_VERB_IS_FOR.project.says);
     });
 });
 

@@ -1,3 +1,4 @@
+import { requestGuidanceForAnother } from './requesting-guidance-for-somebody-else.js';
 import { prepareRideOffer, bindAgreedRide } from './an-offered-ride-is-an-agreement.js';
 import { transferActualSpiritStones } from './transferring-actual-spirit-stones.js';
 import { attemptWasAccepted } from '../engine/social-leverage/an-attempt-to-move-somebody.js';
@@ -263,7 +264,7 @@ const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
     'teaching', 'discipleship', 'introduction', 'telling', 'a_thing', 'nothing',
     // A span of somebody's attention on your sitting. It spends the days of both
     // people, and what saying yes writes is their `teaching` activity.
-    'guidance',
+    'guidance', 'guidance_for_another',
     // Their days, which is the only ask that spends the days of the person
     // being asked. It goes down the ordinary request road - one costing, one
     // roll, one record - and what it leaves behind is a term written onto their
@@ -1269,6 +1270,9 @@ ${unnamed}`;
         // for the `weigh` read, which deliberately drops the kind so that the
         // interrogative cannot reach the attempt by carrying it along.
         const reread = requestPutToSomebody(rawInput);
+        if (intent === 'guidance_for_another' || reread?.kind === 'guidance_for_another')
+            return requestGuidanceForAnother(this, run, cultivator, query || reread?.person || '',
+                topic ?? reread?.object ?? '', days);
         const weighing = intent === 'weigh';
         let kind: RequestKind = REQUEST_KINDS.has(intent)
             ? intent as RequestKind

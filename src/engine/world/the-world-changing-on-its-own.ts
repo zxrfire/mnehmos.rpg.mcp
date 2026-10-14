@@ -872,7 +872,7 @@ function pressureTasksForYear(state: WorldState, year: number,
     tasks.push({ key: 'wanderers', day: year * 365 + 96, run: (onDay: number) => {
         theWanderersGoAbout(state, year, onDay);
     } });
-    tasks.push({ key: 'attention', day: year * 365 + 97, run: (onDay: number) => {
+    tasks.push({ key: 'attention', day: year * 365 + 97.5, run: (onDay: number) => {
         giveThisYearsAttention(state, year, onDay);
     } });
     tasks.push({ key: 'book-acquisition', day: year * 365 + 100, run: (onDay: number) => {

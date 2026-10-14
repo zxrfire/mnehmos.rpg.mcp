@@ -72,16 +72,12 @@ import {
 import { rankName, triggersHeavenlyTribulation } from '../engine/cultivation/realms.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import {
-    guidanceFor,
-    readyToStrike,
-    type Readiness,
     strikeAtTheWall
 } from '../engine/world/an-npc-striking-at-the-next-wall.js';
-import { BOOKLESS_CEILING, reachableCeilingFor } from '../engine/world/manuals.js';
+import { howCloseTheyStandToTheirWall } from '../engine/world/how-close-somebody-is-to-their-wall.js';
+export { howCloseTheyStandToTheirWall } from '../engine/world/how-close-somebody-is-to-their-wall.js';
 import { roadsInReachOf } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
-import { groundRateAt } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import { markDead, type NpcRecord, type NpcRelationship } from '../engine/world/npc-state.js';
-import type { WorldState } from '../engine/world/world-state.js';
 import { recordCrossing } from '../engine/world/recording-what-a-crossing-did.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { createObligation } from '../engine/social/grudges.js';
@@ -191,31 +187,6 @@ const WHY_NOT: Readonly<Record<
  * counted as a lesson; the wall a watch is kept over is the one the world's own
  * pass would strike at, so it asks the same question the same way.
  */
-export function howCloseTheyStandToTheirWall(
-    world: WorldState,
-    npc: NpcRecord,
-    ambient: AmbientQi,
-    today: number
-): Readiness {
-    const location = npc.locationId === null
-        ? undefined
-        : world.locations.find(row => row.id === npc.locationId);
-    const manualCeiling = reachableCeilingFor(world, npc) || BOOKLESS_CEILING;
-    const byId = new Map(world.npcs.map(row => [row.id, row]));
-    const guidance = guidanceFor(npc, byId, today);
-    return readyToStrike(npc, today, {
-        // The ground they are standing on. `ambient` is the band the turn
-        // already computed for this square, and the rate is the one this
-        // location supplies - today's figure rather than the yearly pass's
-        // average over a chamber allocation, because this is a question about
-        // one place on one day.
-        ambient,
-        rateMultiplier: groundRateAt(location) ?? 1,
-        guideOrdinal: guidance?.ordinal ?? null,
-        guideListeners: guidance?.listeners ?? 1,
-        manualCeiling
-    });
-}
 
 export const guardVerbs = {
     /**

@@ -128,6 +128,7 @@ export interface VerbSurfaceEntry {
 const EVERY_REQUEST_KIND: Record<RequestKind, true> = {
     teaching: true,
     guidance: true,
+    guidance_for_another: true,
     discipleship: true,
     ending_a_bond: true,
     introduction: true,
@@ -906,7 +907,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             and it is their attention and not their presence that counts, so a master standing
             nearby who is not asked teaches nothing; anybody, a master included, is asked like
             any favour and may say no, and somebody at their own practice or at their own wall
-            declines and says when they will be free), discipleship (be
+            declines and says when they will be free), guidance_for_another (ask the named person
+            to guide somebody else: "topic" names the pupil and "days" the term. All three must
+            actually be here; the teacher decides, you spend face and owe the favour, and the
+            pupil receives their actual attention while you remain free), discipleship (be
             taken on), ending_a_bond (PUT A MASTER-DISCIPLE BOND DOWN, from either end - a
             master casting a disciple out, a disciple walking out on a master. Nothing is being
             asked for and nobody may refuse it; what it costs is stated rather than weighed:

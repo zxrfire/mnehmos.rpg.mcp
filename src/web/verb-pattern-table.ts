@@ -5863,7 +5863,7 @@ function planIntent(input: string): PlannedAction {
             // no other kind has anything to do with the number.
             // `guidance` is the second: the span is how long they are asked to
             // watch, and it is the span the sitting then runs for.
-            const term = asked.kind === 'company' || asked.kind === 'guidance'
+            const term = asked.kind === 'company' || asked.kind === 'guidance' || asked.kind === 'guidance_for_another'
                 ? parseDuration(text)
                 : null;
             return {

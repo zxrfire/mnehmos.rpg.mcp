@@ -3926,3 +3926,11 @@ Paid clinical rest suspends hall work and pay for the actual days spent under ca
 those days extend the service still owed. Membership ending ends the appointment.
 Model plans use the existing house duty fields for personnel work. The membership
 guard distinguishes that work from joining or leaving a house.
+
+A named request to guide another pupil reaches the same ordinary favour decision
+as world people use. The asker, teacher and pupil must actually be present; a
+request cannot move an absent pupil into a lesson. The teacher spends the real
+requested span, including fractional days, while the player remains free. The
+player's owed favour is written once through the existing SQL word writer on the
+run clock; Native words remain in the world ledger. Their combined decision read
+is a view, not a second stored word.

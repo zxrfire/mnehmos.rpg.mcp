@@ -5060,3 +5060,11 @@ Dedicated receiving and teaching rooms append on separate construction streams;
 a tribute counting room requires an actual paying subsidiary. Existing rooms
 and formation nodes keep their draws. The roster's annual intake reads the same
 institutional need, and Internal Affairs still chooses its real workers.
+
+People can ask someone they actually reach for help for themselves or another
+person. The ordinary request odds read their character, ties, ledger and ground;
+asking spends the existing private unit of face. The existing work producer must
+start before the helper holds the favour. A master may ask a better teacher for
+a personal pupil during the annual daytime attention checkpoint. The helper
+gives real attention, keeps their own crossing and timed work, and earns no house
+merit for that private request. A remote beneficiary is not an invented witness.
