@@ -11,6 +11,9 @@
  * worker there and requires the provider answer to agree with their real body.
  * This is separate from rooms08's repaired instrument clock/area selection;
  * it makes no claim that the played failure was caused by this discrepancy.
+ * The later universal-work ruling lets the same finite medicine shelf use
+ * existing quarters when a house has no dedicated infirmary. Its dispenser
+ * must stand on that actual care ground; adding a room is not required.
  */
 import { describe, expect, it } from 'vitest';
 import { createWorld, makeFaction } from '../../../src/engine/world/world-state.js';
@@ -61,6 +64,27 @@ describe('the catalog physician is an ordinary mortal life', () => {
 });
 
 describe('dispensing the house medicine is ordinary rank work', () => {
+    it('uses existing quarters for the medicine shelf without a dedicated infirmary', () => {
+        const state = empty();
+        const house = makeFaction({ id: 'small-house', name: 'Small House', seatLocationId: 'small-seat' });
+        state.factions.push(house);
+        const seat = makeLocation({ id: 'small-seat', name: 'Small House', kind: 'sect_seat',
+            controllingFactionId: house.id });
+        const quarters = makeLocation({ id: 'quarters', name: 'Quarters', kind: 'hall', parentId: seat.id,
+            controllingFactionId: house.id, tags: ['interior'], data: { factionId: house.id, purpose: 'dormitory' } });
+        state.locations.push(seat, quarters);
+        const member = createNpc(state.seed, { id: 'shelf-worker', bornOnDay: -7300, onDay: 0,
+            locationId: seat.id, factionId: house.id, factionRankIndex: 0 });
+        member.activity = { kind: 'the_work_of_their_rank', note: 'Working.', withIds: [], sinceDay: 0, untilDay: 1 };
+        state.npcs.push(member);
+        expect(whoDispensesAtTheHouse(state, house.id)?.id).toBe(member.id);
+        expect(whereTheyAreStanding(state, whereCompoundsAre(state), member,
+            new Set(state.npcs.map(person => person.id)))).toBe(quarters.id);
+        expect(state.locations.map(place => place.id)).toEqual([seat.id, quarters.id]);
+        member.locationId = 'away';
+        expect(whoDispensesAtTheHouse(state, house.id)).toBeNull();
+    });
+
     it('requires an actual member on that ground and leaves crafting and away duties alone', () => {
         const state = empty();
         const house = makeFaction({ id: 'house', name: 'House', seatLocationId: 'seat' });

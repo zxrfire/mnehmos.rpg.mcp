@@ -73,7 +73,7 @@ describe('a house has somewhere its work is posted', () => {
             .toContain(THE_ROOM_WORK_IS_POSTED_IN);
 
         const roll = at.sect.ranks.map((_, i) => ({ id: `person-${i}`, rankIndex: i }));
-        const portfolios = portfoliosIn({
+        const portfolios = portfoliosIn({ npcs: at.world.npcs,
             locations: at.world.locations, sectId: A_HOUSE, roll,
             rankCount: at.sect.ranks.length
         });

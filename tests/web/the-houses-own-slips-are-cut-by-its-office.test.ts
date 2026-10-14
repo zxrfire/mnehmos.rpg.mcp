@@ -1,3 +1,6 @@
+import { theDisciplesPostedToInternalAffairs } from '../../src/engine/world/what-a-house-hears-from-its-people-away.js';
+/** Hall grouping reads the room's authority, rather than its head's anchor room.
+ * Opening worlds now staff the hall: the vacancy control first releases its actual clerk. */
 /**
  * Cutting a communication talisman: one act anybody at Foundation does, and one
  * an office does.
@@ -67,10 +70,10 @@ import { FOUNDATION_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import { THE_NOTICE_FOR_CUTTING } from '../../src/web/who-cuts-the-houses-slips.js';
 import { theCommunicationTalismansOnYou } from '../../src/web/sending-word-on-a-communication-talisman.js';
 import { portfoliosIn } from '../../src/engine/social-leverage/authority-for-an-order.js';
-import { whatTheyHold } from '../../src/engine/social-leverage/what-an-elder-is-in-charge-of.js';
+import { whoAnswersAbout } from '../../src/engine/social-leverage/what-an-elder-is-in-charge-of.js';
 import { THE_ROOM_THE_ROLL_IS_KEPT_IN } from '../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { whereThisHouseBurnsItsLamps } from '../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
-import { aPostTheHouseWouldSendThemTo } from '../../src/engine/world/a-house-posts-the-one-being-played.js';
+import { aPostTheHouseWouldSendThemTo, theOneBeingPlayedLeavesThePost } from '../../src/engine/world/a-house-posts-the-one-being-played.js';
 import { isAPosting, theTownOf, theirOpenPosting } from '../../src/web/holding-a-posting.js';
 
 const WORLD = 'who-cuts-the-slips';
@@ -145,10 +148,10 @@ describe('the office itself', () => {
                         .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
                     { id: cultivator.id, rankIndex: rank }
                 ];
-                const portfolios = portfoliosIn({
+                const portfolios = portfoliosIn({ npcs: world.npcs,
                     locations: world.locations, sectId: house.id, roll, rankCount: house.ranks.length
                 });
-                if (whatTheyHold(portfolios, cultivator.id).includes(THE_ROOM_THE_ROLL_IS_KEPT_IN)) {
+                if (whoAnswersAbout(portfolios, THE_ROOM_THE_ROLL_IS_KEPT_IN) === cultivator.id) {
                     found = { houseId: house.id, rank };
                     break;
                 }
@@ -191,21 +194,25 @@ describe('the office itself', () => {
         await harness.game.act('I look around');
         const world = harness.game.atHand!;
         const today = Math.floor(world.currentDay);
-        // A house whose own draw would put the player under its office, asked of
-        // the engine: nobody is stationed anywhere at world open, so the post
-        // with a day on it does not exist and the office's vacancy is what is left.
+        // Ask the engine which real hall would offer its work after its clerk leaves.
+        // Opening worlds are staffed, so an empty post must be arranged explicitly.
         let house = null as typeof world.factions[number] | null;
         for (const row of world.factions) {
-            if (row.dissolvedOnDay === null && row.seatLocationId !== null
-                && harness.repos.sects.getById(row.id) !== null) {
-                const post = aPostTheHouseWouldSendThemTo(world, {
-                    houseId: row.id, playerId: cultivator.id, rankIndex: 0,
-                    ordinal: FOUNDATION_ORDINAL, today
-                });
-                if (post?.insideTheWalls) { house = row; break; }
-            }
+            if (row.dissolvedOnDay !== null || row.seatLocationId === null
+                || harness.repos.sects.getById(row.id) === null) continue;
+            const clerks = new Set(theDisciplesPostedToInternalAffairs(world, row.id));
+            const vacant = { ...world, npcs: world.npcs.map(n => clerks.has(n.id) ? { ...n, activity: null } : n) };
+            const post = aPostTheHouseWouldSendThemTo(vacant, {
+                houseId: row.id, playerId: cultivator.id, rankIndex: 0,
+                ordinal: FOUNDATION_ORDINAL, today
+            });
+            if (!post?.insideTheWalls) continue;
+            for (const id of clerks) expect(theOneBeingPlayedLeavesThePost(world,
+                { playerId: id, today })).toBe(true);
+            house = row;
+            break;
         }
-        expect(house, 'no house in this world would put anybody under its office').toBeTruthy();
+        expect(house, 'no actual hall vacancy was offered').toBeTruthy();
         harness.repos.sects.addMember(house!.id, cultivator.id, 0);
         const seat = world.locations.find(l => l.id === house!.seatLocationId)!;
         harness.repos.cultivators.update(cultivator.id, {

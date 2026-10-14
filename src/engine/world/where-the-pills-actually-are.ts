@@ -57,6 +57,7 @@ import {
 import { isSettledOnUse } from '../cultivation/grade-spread.js';
 import { pillBandOrdinal } from '../cultivation/breakthrough.js';
 import type { Pill } from '../../schema/cultivation.js';
+import { housesWithACraftHall } from './where-a-house-does-its-work.js';
 
 /** Where a house's count of ordinary medicine is kept. One key, one number. */
 export function pillStockKey(pillId: string): string {
@@ -140,6 +141,7 @@ export function significanceOfPill(pill: Pill): ObjectSignificance {
 export function seedPillStock(state: WorldState): ObjectRecord[] {
     const rng = forStream(state.seed, 'pill-stock');
     const houses = state.factions.filter(f => f.dissolvedOnDay === null);
+    const makers = housesWithACraftHall(state.locations, 'alchemy_hall');
     const out: ObjectRecord[] = [];
 
     for (const house of houses) {
@@ -150,7 +152,7 @@ export function seedPillStock(state: WorldState): ObjectRecord[] {
                 // A quantity, and nothing else. No row, no provenance, no
                 // question about which one.
                 const count = stockFor(reach, pill, rng);
-                if (count > 0) house.resources[pillStockKey(pill.id)] = count;
+                if (count > 0 && makers.has(house.id)) house.resources[pillStockKey(pill.id)] = count;
                 continue;
             }
 

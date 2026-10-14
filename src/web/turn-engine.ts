@@ -1,3 +1,4 @@
+import { theHallStaff } from '../engine/world/the-people-posted-to-a-houses-halls.js';
 import { StoredStandingFight } from './a-standing-fight-is-stored-on-its-run.js';
 import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
 import { inClosedDoorCultivation } from '../engine/world/closed-door-cultivation.js';
@@ -30,14 +31,13 @@ import { exchangeOffers, tradeExchangeObject } from '../engine/world/wares-at-a-
 import { reviewPlayerBeastContract } from '../engine/world/beast-cultivation-contracts.js';
 import { theOrdinaryRoleNamed, thePersonInThatOrdinaryRole } from './the-person-in-a-named-role.js';
 import { physicianIsWorking, whoDispensesAtTheHouse } from '../engine/world/who-is-actually-seeing-to-wounds.js';
+import { roomForHouseWork } from '../engine/world/where-a-house-does-its-work.js';
 import { enteringAtTheJadeGate } from './entering-a-city-at-the-jade-gate.js';
 import { askingTheFlowingStarOffice } from './asking-the-flowing-star-office.js';
 import { isATempleBranch } from '../engine/world/a-temple-branch.js';
 import { aHousePrincipleOpenHere } from '../engine/world/a-house-principle-on-its-own-ground.js';
-import { purposeOf } from '../engine/world/architecture.js';
 import { carePricesHere, PHYSICIAN_VISIT_PRICE, PHYSICIAN_COURSE_PRICE } from './what-care-costs-where-you-are.js';
 import { askingAboutCareHere } from './asking-about-the-care-actually-offered-here.js';
-import { locationOfNpcOnItsJourney } from '../engine/world/places-on-the-way.js';
 import { npcsWhereTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { cultivationAgreementSaid } from './cultivation-agreement-phrasings.js';
 import { aWillingFurnaceRite } from './a-willing-furnace-rite.js';
@@ -513,7 +513,6 @@ import {
 import {
     type APost,
     type Remit,
-    whoStaffsWhat,
     whoTakesAReportAt
 } from '../engine/social-leverage/who-works-in-an-elders-hall.js';
 import {
@@ -13331,7 +13330,7 @@ ${opened.text}` : receipt,
         // fails open like every other world guard (AGENTS.md, the test harness).
         if (this.worldEnabled && !physician) {
             return refused('world.physicianIsWorking', 'treat', factsForRefusal(
-                'Nobody here is seeing to wounds.',
+                'Nobody here is available to take a course of care.',
                 'Visit a town clinic while its physician is working, or your house\'s infirmary for its own medicine.',
                 'No living working physician beside the player. Nothing spent and no time passed.'
             ));
@@ -13464,7 +13463,7 @@ ${opened.text}` : receipt,
         // A paid course is actual work on the existing activity calendar.
         // Ordinary meals are part of doing it; a death or a changed duty can
         // still interrupt it, and is checked after the world advances.
-        const paidWork = physician && careWorld ? { kind: 'the_work_of_their_rank' as const, note: 'Providing the paid course of care.', withIds: [],
+        const paidWork = physician && careWorld ? { ...precedingWork, kind: 'the_work_of_their_rank' as const, note: 'Providing the paid course of care.', withIds: [cultivator.id],
             sinceDay: careWorld.currentDay, untilDay: careWorld.currentDay + TREATMENT_DAYS } : null;
         if (physician && careWorld && paidWork) {
             physician.spiritStones += cost;
@@ -13503,7 +13502,8 @@ ${opened.text}` : receipt,
         // No physician means the world is off, where the course is the board's and only time can stop it.
         const stillServing = skip.simulatedDays >= TREATMENT_DAYS && (physician === undefined || ourCourse
             && attending!.status === 'alive'
-            && locationOfNpcOnItsJourney(this.atHand!, attending!, this.atHand!.currentDay) === carePlace?.id);
+            && carePlace !== undefined && npcsStandingIn(this.atHand!, carePlace.id)
+                .some(person => person.id === attending!.id));
         // Restore only our own course. A new engine-written duty, a journey or
         // a conflict is somebody's actual state and must survive this return.
         if (attending?.status === 'alive' && ourCourse) {
@@ -14286,7 +14286,8 @@ ${opened.text}` : receipt,
                 'The seller, stock, attendance and purse must still agree.'));
             this.db.transaction(() => {
                 this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -paid });
-                addToPouch(this.db, cultivator.id, thing.kindId, object.kind === 'pill' ? 'pill' : 'herb', thing.quantity);
+                if (object.kind !== 'artifact')
+                    addToPouch(this.db, cultivator.id, thing.kindId, object.kind === 'pill' ? 'pill' : 'herb', thing.quantity);
             })();
             this.theWorldMoved();
             learnTheSeller(this.knowledge, cultivator, Math.floor(run.elapsedDays), offer);
@@ -14496,13 +14497,21 @@ ${opened.text}` : receipt,
             const world = this.atHand;
             const placeId = this.worldPlaceOf(cultivator);
             const held = this.pouchEntryFor(listPouch(this.db, cultivator.id), target ?? '');
-            const lot = held ? this.lotFor(held) : null;
+            const pouchLot = held ? this.lotFor(held) : null;
+            const made = world.objects.filter(object => object.kind === 'artifact' && object.tags.includes('made')
+                && object.possessorId === cultivator.id && object.ownerId === cultivator.id && !isRuined(object))
+                .map(object => ({ object, thing: whatThisThingIs(object), score: matchScore(target ?? '', object.name) }))
+                .filter(read => read.thing?.marketStones != null && read.score > MATCH_THRESHOLD)
+                .sort((a, b) => b.score - a.score)[0];
+            const lot: (SaleLot & { kind: PouchItemKind }) | null = made
+                ? { itemId: made.object.id, name: made.object.name, quantity: made.thing!.quantity,
+                    listStones: made.thing!.marketStones!, kind: 'artifact' } : pouchLot;
             const buyer = world.npcs.find(n => n.id !== cultivator.id && n.status === 'alive' && n.locationId === placeId
                 && this.present(cultivator).some(p => p.id === n.id)
                 && (exchangeOffers(world, n).length > 0 || n.activity?.kind === 'stationed'));
             const sellerAt = world.npcs.findIndex(n => n.id === cultivator.id);
             if (lot && buyer && sellerAt >= 0 && world.locations.some(l => l.id === placeId && (l.tags.includes('city') || whatKindOfPlace(l.name) === 'provincial capital'))) {
-                let object = world.objects.find(o => o.possessorId === cultivator.id && o.ownerId === cultivator.id
+                let object = made?.object ?? world.objects.find(o => o.possessorId === cultivator.id && o.ownerId === cultivator.id
                     && !isRuined(o) && whatThisThingIs(o)?.kindId === lot.itemId && whatThisThingIs(o)?.quantity === 1);
                 // Counted pouch goods acquire a row when a named person takes this unit.
                 const newRow = !object;
@@ -14520,7 +14529,7 @@ ${opened.text}` : receipt,
                         `The buyer holds ${buyer.spiritStones} spirit stones.`, 'No object or money changed hands.'));
                 }
                 this.db.transaction(() => {
-                    if (!removeFromPouch(this.db, cultivator.id, lot.itemId, 1)) throw new GameError('The sold unit is missing from the pouch.', 500);
+                    if (!made && !removeFromPouch(this.db, cultivator.id, lot.itemId, 1)) throw new GameError('The sold unit is missing from the pouch.', 500);
                     this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: paid });
                 })();
                 this.theWorldMoved();
@@ -16435,13 +16444,13 @@ ${fit.line}`;
             { id: cultivator.id, rankIndex: held.rankIndex },
             ...roster.map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }))
         ];
-        const portfolios = portfoliosIn({
+        const portfolios = portfoliosIn({ npcs: world?.npcs ?? [],
             locations: world?.locations ?? [],
             sectId: held.sectId,
             roll,
             rankCount: held.rankCount
         });
-        const posts = whoStaffsWhat({ portfolios, roll, rankCount: held.rankCount });
+        const posts = world ? theHallStaff(world, held.sectId, world.currentDay) : [];
         const top = Math.max(0, held.rankCount - 1);
         const headId = roll.find(person => person.rankIndex >= top)?.id ?? null;
         return { roster, portfolios, posts, headId };
@@ -17327,7 +17336,7 @@ ${fit.line}`;
         const roll = rosterFor(
             { repos: this.repos, knowledge: this.knowledge, world }, cultivator
         ).map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }));
-        const portfolios = portfoliosIn({
+        const portfolios = portfoliosIn({ npcs: world?.npcs ?? [],
             locations: world?.locations ?? [],
             sectId: held.sectId,
             roll: [{ id: cultivator.id, rankIndex: held.rankIndex }, ...roll],
@@ -21135,10 +21144,12 @@ ${fit.line}`;
         const groundId = this.worldPlaceOf(cultivator);
         const ground = this.atHand?.locations.find(place => place.id === groundId);
         if (this.atHand && ground) {
-            if (purposeOf(ground) === 'infirmary' && ground.controllingFactionId) {
-                const dispenser = whoDispensesAtTheHouse(this.atHand, ground.controllingFactionId);
+            const careHouseId = ground.controllingFactionId
+                ?? (typeof ground.data.factionId === 'string' ? ground.data.factionId : null);
+            if (careHouseId && roomForHouseWork(this.atHand.locations, careHouseId, 'infirmary')?.id === ground.id) {
+                const dispenser = whoDispensesAtTheHouse(this.atHand, careHouseId);
                 if (dispenser && here.some(person => person.id === dispenser.id))
-                    clinicalWork.set(dispenser.id, 'at the infirmary medicine shelf, ready to dispense the house\'s medicine');
+                    clinicalWork.set(dispenser.id, 'at the house medicine shelf, ready to dispense the house\'s medicine');
             } else if (ground.kind === 'settlement') {
                 for (const person of here) {
                     const npc = byId.get(person.id);

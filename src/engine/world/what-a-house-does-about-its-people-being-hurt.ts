@@ -1,3 +1,4 @@
+import { beginHouseCare } from './a-house-healer-tends-a-real-member.js';
 /**
  * Wounds close, and who closes them says what a house is for.
  *
@@ -22,13 +23,11 @@
  *
  *   the house's medicine      counted wound pills off its own shelf first, then
  *                             a row it holds, which is spent only where the
- *                             shelf and the purse closed nothing
+ *                             shelf closed nothing
  *                             (`house-wound-medicine.ts`).
- *   a house sees to its own   the purse pays at `injuryTreatmentPrice`, the
- *                             figure the closed-form model already charges, and
- *                             the medicine it can source is what its own height
- *                             implies (`realmFloor` off `power_ordinal`). Worst
- *                             first, while the stones last.
+ *   purchased medicine       an actual factor buys doses through the exchange
+ *                             and carries them home; the purse alone supplies
+ *                             no treatment and house power supplies no dose.
  *   time and ordinary care    a minor wound mostly closes on its own inside a
  *                             year; a serious one rarely does. Nobody has to pay
  *                             for this and nobody has to be anywhere.
@@ -39,8 +38,8 @@
  *
  * ── AND WHO STAYS MAIMED ─────────────────────────────────────────────────
  *
- * Whoever has nobody behind them. Somebody on a roll is seen to while their
- * house can pay; somebody on no roll gets time and their own constitution, and
+ * Whoever has nobody behind them. Somebody on a roll uses what their house
+ * actually holds; somebody on no roll gets time and their own constitution, and
  * a serious wound they cannot treat is a serious wound they keep. That is the
  * same world the rest of this work describes - what a house is FOR is the thing
  * a rogue does without - and it falls out of who is standing behind whom rather
@@ -52,7 +51,7 @@
  * world had ever handed out, and what replaces it is a rate.
  */
 
-import { treatWorstInjuries, untreatedInjuryCount } from '../cultivation/injuries.js';
+import { untreatedInjuryCount } from '../cultivation/injuries.js';
 import {
     housesRefineTheirWoundMedicine,
     seenToBefore,
@@ -62,13 +61,13 @@ import {
     woundMedicineByHolder
 } from './house-wound-medicine.js';
 import { isPermanentWound } from '../../data/cultivation/wounds.js';
-import { injuryTreatmentPrice } from '../cultivation/origin.js';
-import { medicineReaches, realmFloor } from '../cultivation/what-grade-of-medicine-a-wound-needs.js';
 import { forStream } from '../cultivation/rng.js';
 import { isBelowTheLid } from './layers.js';
 import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 import { beginStructuralRepairs } from './recovering-from-structural-medicine.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
+import { routeQueriesFor, type RouteQueries } from './locations.js';
 
 /**
  * How often a minor wound closes in a year with nothing but time and whatever
@@ -86,11 +85,6 @@ export const A_MINOR_WOUND_CLOSES_AT = 0.35;
  * decides how much of the world limps.
  */
 export const A_SERIOUS_WOUND_CLOSES_ALONE_AT = 0.04;
-
-/** What a house spends to see to one wound on somebody standing at this rung. */
-export function whatSeeingToThemCosts(ordinal: number): number {
-    return injuryTreatmentPrice(ordinal);
-}
 
 /** What this year's care came to. */
 export interface WhatCareCameTo {
@@ -126,10 +120,10 @@ function carrying(npc: NpcRecord, injuries: readonly { treated: boolean }[]): Np
  * A year of it: the houses see to their own, and time closes what it can for
  * everybody else.
  *
- * One pass rather than two, because the order matters - a house pays first, and
+ * One pass rather than two, because the order matters - a house spends doses first, and
  * what it could not reach is what time is left to work on.
  */
-export function woundsCloseThisYear(state: WorldState, year: number, day: number): WhatCareCameTo {
+export function woundsCloseThisYear(state: WorldState, year: number, day: number, onCareDue?: (personId: string, day: number) => void): WhatCareCameTo {
     beginStructuralRepairs(state, day);
     const out: WhatCareCameTo = {
         seenTo: 0, closedOnTheirOwn: 0, spent: 0,
@@ -137,15 +131,17 @@ export function woundsCloseThisYear(state: WorldState, year: number, day: number
     };
 
     // ── WHAT A HOUSE CAN BRING, ONCE, FOR ALL OF ITS OWN ─────────────────
-    const reachOf = new Map<string, ReturnType<typeof realmFloor>>();
-    const purse = new Map<string, number>();
     const shelfOf = new Map<string, { resources: Record<string, number> }>();
+    const groundsOf = new Map<string, Set<string>>();
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null || !isBelowTheLid(house)) continue;
-        reachOf.set(house.id, realmFloor(Number(house.resources.power_ordinal ?? 0)));
-        purse.set(house.id, Number(house.resources.spirit_stones ?? 0));
         shelfOf.set(house.id, house);
+        groundsOf.set(house.id, new Set(house.seatLocationId ? [house.seatLocationId] : []));
     }
+    for (const room of state.locations) {
+        if (typeof room.data.factionId === 'string') groundsOf.get(room.data.factionId)?.add(room.id);
+    }
+    let routes: RouteQueries | undefined;
     const rowsHeld = woundMedicineByHolder(state.objects);
 
     // IN ORDER OF STANDING, so a house's last dose and last stones go to its
@@ -168,33 +164,16 @@ export function woundsCloseThisYear(state: WorldState, year: number, day: number
         const houseId = npc.factionId;
 
         // ── THE HOUSE'S OWN MEDICINE FIRST ───────────────────────────────
-        const shelf = houseId === null ? undefined : shelfOf.get(houseId);
+        const ground = houseId === null ? null
+            : locationOfNpcOnItsJourney(state, npc, day, routes ??= routeQueriesFor(state.locations));
+        const shelf = houseId === null || ground === null || !groundsOf.get(houseId)?.has(ground)
+            ? undefined : shelfOf.get(houseId);
         if (shelf !== undefined) {
             const dosed = seeToThemFromTheShelf(shelf, row);
             if (dosed.closed > 0) {
                 row = carrying(row, dosed.injuries);
                 out.fromTheShelf += dosed.closed;
                 out.dosesFromTheShelf += dosed.doses;
-            }
-        }
-
-        // ── THE HOUSE PAYS, WHILE IT CAN ─────────────────────────────────
-        if (houseId !== null && purse.has(houseId)) {
-            const grade = reachOf.get(houseId)!;
-            const price = whatSeeingToThemCosts(npc.cultivation.realmOrdinal);
-            const stones = purse.get(houseId)!;
-            const affordable = price <= 0 ? 0 : Math.floor(stones / price);
-            if (affordable > 0) {
-                const done = treatWorstInjuries(
-                    row.cultivation.injuries, affordable,
-                    severity => medicineReaches(grade, severity, npc.cultivation.realmOrdinal));
-                if (done.treatedCount > 0) {
-                    row = carrying(row, done.injuries);
-                    const cost = done.treatedCount * price;
-                    purse.set(houseId, Math.max(0, stones - cost));
-                    out.seenTo += done.treatedCount;
-                    out.spent += cost;
-                }
             }
         }
 
@@ -209,6 +188,13 @@ export function woundsCloseThisYear(state: WorldState, year: number, day: number
         }
 
         // ── AND TIME TAKES WHAT IT CAN OF THE REST ───────────────────────
+        if (row !== npc) state.npcs[i] = row;
+        const beforeCare = Number(shelf?.resources.spirit_stones ?? 0);
+        const careStarted = beginHouseCare(state, row, day, onCareDue);
+        out.spent += Math.max(0, beforeCare - Number(shelf?.resources.spirit_stones ?? 0));
+        row = state.npcs[i]!;
+        if (careStarted || row.activity?.houseCareFactId) continue;
+
         const rng = forStream(state.seed, 'a-wound-closes', npc.id, year);
         let closed = false;
         const after = row.cultivation.injuries.map(inj => {
@@ -224,18 +210,6 @@ export function woundsCloseThisYear(state: WorldState, year: number, day: number
         if (closed) row = carrying(row, after);
 
         if (row !== npc) state.npcs[i] = { ...row, updatedOnDay: day };
-    }
-
-    // AND THE PURSE IS ACTUALLY LIGHTER. The stones were tracked in a map and
-    // never written back in the first draft of this file, which would have made
-    // the care free - the houses would have healed everybody for ever and the
-    // one thing that decides who stays maimed would have decided nothing.
-    for (const house of state.factions) {
-        const left = purse.get(house.id);
-        if (left === undefined) continue;
-        if (left !== Number(house.resources.spirit_stones ?? 0)) {
-            house.resources.spirit_stones = left;
-        }
     }
 
     // And the houses refine back what they used, out of what the purse has left.

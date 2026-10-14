@@ -60,7 +60,7 @@ function read(state: WorldState): Reading {
             .filter(n => n.status === 'alive' && n.factionId === house.id)
             .map(n => ({ id: n.id, rankIndex: n.factionRankIndex }));
         const portfolios = portfoliosIn({
-            locations: state.locations, sectId: house.id, roll, rankCount: house.ranks.length
+            locations: state.locations, sectId: house.id, roll, rankCount: house.ranks.length, npcs: state.npcs
         });
         const holderId = whoAnswersAbout(portfolios, THE_ROOM_THE_ROLL_IS_KEPT_IN);
         const row = portfolios.find(p => p.purpose === THE_ROOM_THE_ROLL_IS_KEPT_IN);

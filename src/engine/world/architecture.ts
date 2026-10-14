@@ -611,11 +611,7 @@ export type RoomPurpose =
     /**
      * Where a house forges and refines artifacts, over its earth fire.
      *
-     * The design owner: *"same as the pill houses, every house makes artifacts,
-     * some are focused on artifacts."* So every compound has one, the way every
-     * compound now has an alchemy hall, and a house focused on the craft has a
-     * larger one - a difference of degree and not of kind. See
-     * {@link whatAHouseIsFocusedOn}.
+     * The house keeps this institutional forge only where it backs the craft.
      */
     | 'artifact_refining_hall';
 
@@ -888,6 +884,9 @@ function roomName(purpose: RoomPurpose, style: HouseStyle, precinct: Precinct): 
 /**
  * Everything the generator needs, and it is all already in the catalogs.
  */
+/** The existing formation bar for cells that can hold a cultivator. */
+export const CELL_HOLDING_INTEGRITY = 0.35;
+
 export interface CompoundInput {
     factionId: string;
     factionName: string;
@@ -1077,9 +1076,7 @@ export const A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER = 2;
  * Which of the two crafts a house is focused on, read off what its catalog row
  * carries for code.
  *
- * A FOCUS IS RARE AND EXCLUSIVE. The design owner: *"Same idea as pills. Almost
- * everyone can do it, few focus exclusively on it."* Every house has both rooms;
- * a focus is a house whose catalog makes the craft its main business.
+ * A focus names the house's craft business, rather than an individual member's skill.
  *
  * MEDICINE: a house whose `specialities` name `alchemy`. It read `alchemy`,
  * `support` or `cultivation`, which gave 23 of 38 houses the focus - healing
@@ -1103,6 +1100,16 @@ export function whatAHouseIsFocusedOn(
     };
 }
 
+/** A focused craft, or a deep-foundation house with steady income, has institutional support. */
+export function whichCraftsTheHouseSupports(input: Pick<CompoundInput,
+    'specialities' | 'powerOrdinal' | 'holdsVein' | 'tributeStonesPerYear'>
+): { pills: boolean; artifacts: boolean } {
+    const focus = whatAHouseIsFocusedOn(input);
+    // Thirty already marks a deep foundation; veins and tribute already justify a storehouse.
+    const endowed = input.powerOrdinal >= 30 && (input.holdsVein || input.tributeStonesPerYear > 0);
+    return { pills: focus.pills || endowed, artifacts: focus.artifacts || endowed };
+}
+
 /** Whether this room is the room of a craft this house is focused on. */
 function aRoomOfItsFocus(purpose: RoomPurpose, input: CompoundInput): boolean {
     const focus = whatAHouseIsFocusedOn(input);
@@ -1117,10 +1124,7 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     const specialities = new Set(input.specialities.map(s => s.toLowerCase()));
 
     if (input.recruits) out.push('dormitory', 'refectory');
-    // A house that takes people in has work for them and somewhere they go to
-    // say they have taken it. The same column the dormitory reads: a house
-    // that recruits nobody has nobody to post to, and its sendings are settled
-    // between the people who decide them.
+    // Recruiting houses keep a dedicated board room; other houses conduct that work on ordinary ground.
     if (input.recruits) out.push('mission_hall');
     // A house that can read what it inherited keeps it on shelves. A house
     // that cannot keeps it in a locked room, and that is the same fact wearing
@@ -1131,9 +1135,7 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     // cultivated in centuries.
     if (input.powerOrdinal >= 30 && input.formationIntegrity >= 0.35) out.push('archive');
 
-    // A HOUSE FOCUSED ON MEDICINE has its alchemy hall here and the furnace
-    // floor besides. Every other house has an alchemy hall too, appended at the
-    // end: see {@link whatAHouseIsFocusedOn}.
+    // Focused medicine rooms keep their original positions in the construction.
     if (whatAHouseIsFocusedOn(input).pills) {
         out.push('alchemy_hall', 'furnace_room');
     }
@@ -1143,9 +1145,7 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     // off. It read `production >= 0.6` against a number that was 0.5 for every
     // house in the catalog, so no compound in the world had one.
     //
-    // Making things is not this room's: every house forges in its Artifact
-    // Refining Hall, appended at the end. This is where ore off the house's
-    // own ground is worked.
+    // This workshop works ore from the house's ground; an institutional forge is separate.
     if (input.holdsVein) out.push('workshop');
     // A ROOM FOR PEOPLE WHO ARE NOT OF THE HOUSE, and it is now here because
     // of who arrives rather than because of how the house is funded. It read
@@ -1157,13 +1157,8 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     if (!input.recruits || input.tributeStonesPerYear > 0) out.push('audience_hall');
     if (input.tributeStonesPerYear > 0) out.push('tribute_room');
     if (input.holdsVein) out.push('vein_chamber');
-    // Somewhere to hold one of your own, and it takes both columns. A house
-    // that takes nobody in has nobody to discipline - what an apex does about
-    // an offence is not done in a cell - and a house whose arrays have gone
-    // dark cannot hold a cultivator anyway, which is the same
-    // `formationIntegrity` bar the shelf line above already reads rather than
-    // a second opinion about when a house's formations still work.
-    if (input.recruits && input.formationIntegrity >= 0.35) out.push('punishment_hall');
+    // Existing discipline rooms retain their slot; newly required rooms are appended below.
+    if (input.recruits && input.formationIntegrity >= CELL_HOLDING_INTEGRITY) out.push('punishment_hall');
     out.push('meditation_cell');
     // What the house will not spend, so it needs something coming in worth not
     // spending: ground of its own, a tribute arrangement it is a party to, or
@@ -1174,61 +1169,29 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
         out.push('treasury');
     }
     out.push('residence');
-    // A house that takes people in has people to talk to, the same column the
-    // dormitory and the mission hall read. APPENDED LAST so every room that
-    // existed before keeps its place in the list.
+    // Previously built lecture rooms retain their slot; every house teaches its existing members.
     if (input.recruits) out.push('lecture_hall');
-    // AND GROUND TO SETTLE SOMETHING ON, for a house with people to settle
-    // things between. APPENDED LAST for the same reason as the lecture hall:
-    // every room that existed before keeps its place in the draw.
+    // Previously built duelling grounds retain their slot; newly required grounds follow below.
     if (input.recruits) out.push('duelling_ground');
     // Every house keeps the lamps of its own, whether or not anybody in it can
     // light one today. APPENDED LAST for the same reason as the lecture hall.
     out.push('life_lamp_hall');
-    // AND BOTH CRAFTS, IN EVERY HOUSE. The design owner: every house makes pills
-    // and every house makes artifacts, and a focus is a difference of degree.
-    // APPENDED LAST, after every room that existed before, so the draws a
-    // compound makes for the rooms ahead of these are the draws it made.
-    if (!out.includes('alchemy_hall')) out.push('alchemy_hall');
-    out.push('artifact_refining_hall');
-    // Every inhabited house refines wound medicine. Specialist infirmaries keep
-    // their original position; append the ordinary dispensary without shifting old draws.
-    if (!out.includes('infirmary')) out.push('infirmary');
+    // Institutional crafts are conditional; unsupported members use their own tools.
+    const supports = whichCraftsTheHouseSupports(input);
+    if (supports.pills && !out.includes('alchemy_hall')) out.push('alchemy_hall');
+    if (supports.artifacts) out.push('artifact_refining_hall');
+    if (supports.pills && !out.includes('infirmary')) out.push('infirmary');
+    if (supports.pills && !out.includes('furnace_room')) out.push('furnace_room');
+    // New rooms follow all surviving old rooms, including supported craft rooms.
+    if (!out.includes('punishment_hall')) out.push('punishment_hall');
+    if (!out.includes('lecture_hall')) out.push('lecture_hall');
+    if (!out.includes('duelling_ground')) out.push('duelling_ground');
     return out;
 }
 
 type RoomConstructionInput = Pick<CompoundInput,
     'factionId' | 'factionName' | 'powerOrdinal' | 'inherited'>
     & Partial<Pick<CompoundInput, 'formationIntegrity' | 'alignment'>>;
-
-/** Add the ordinary dispensary to an existing compound without rebuilding its rooms. */
-export function addMissingInfirmary(
-    locations: LocationRecord[],
-    input: RoomConstructionInput,
-    opts: { seed: string }
-): LocationRecord | null {
-    if (locations.some(l => l.data.factionId === input.factionId && purposeOf(l) === 'infirmary')) return null;
-    const host = locations.find(l => l.data.factionId === input.factionId
-        && l.data.purpose === 'precinct' && Number(l.data.precinctIndex) === 0);
-    if (!host) return null;
-    const style = houseStyleFromTags(host);
-    if (!style) return null;
-    const precinct: Precinct = {
-        index: 0, rank: String(host.data.rank),
-        entryOrdinal: host.thresholds.operational, privacy: Number(host.data.privacy ?? 0)
-    };
-    // The outer court's capacity is the built unit (privacy zero). Read the
-    // existing construction rather than inventing catalog statistics for a founded house.
-    const unit = Number(host.data.capacity) / (1 - precinct.privacy * 0.8);
-    if (!Number.isFinite(unit) || unit <= 0) return null;
-    const room = buildRoom('infirmary', PURPOSE.infirmary, precinct, host, input, style, unit,
-        { styleId: style.id, styleTags: style.tags.join(' '), factionId: input.factionId },
-        forStream(opts.seed, 'compound-infirmary-upgrade', input.factionId));
-    if (locations.some(l => l.id === room.id)) return null;
-    locations.push(room);
-    linkLocations(host, room, 'gate', 0);
-    return room;
-}
 
 function buildRoom(
     purpose: RoomPurpose,

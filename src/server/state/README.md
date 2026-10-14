@@ -8,8 +8,8 @@ native clock preparation materializes it. Clock comparisons use that actual time
 and the full elapsed run span. There is no separately persisted hour.
 
 Opening a saved world applies the same idempotent road-ground augmentation as fresh
-seeding and adds a missing infirmary through its existing compound's room factory, then
-saves only when new ground was added. Existing roads, rooms, permissions, people,
+seeding and saves only when new ground was added. Care uses the house's existing rooms;
+opening a world does not build a dispensary. Existing roads, rooms, permissions, people,
 possessions and clock remain intact; a restart does not reseed an installation.
 
 `advanceWorldForCultivator` supplies the player's current body and actual area as a
@@ -57,5 +57,4 @@ anchors were added. Existing assigned points survive subsequent loads; nested
 rooms and road midpoints derive instead of keeping position copies. No world
 reseed, road-duration change, knowledge record or observer map disclosure follows.
 Unanchored legacy roots remain honestly unavailable rather than being guessed.
-
 

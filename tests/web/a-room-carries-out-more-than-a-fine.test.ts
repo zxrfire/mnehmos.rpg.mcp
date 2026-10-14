@@ -301,6 +301,28 @@ describe('the room carries it out', () => {
         expect(tagged(harness, other.id, THE_CAPABILITY_WAS_TAKEN)).toHaveLength(1);
     }, 300_000);
 
+    // The Oct10 hall ruling keeps discipline work when arrays go dark, but
+    // those cells cannot hold a cultivator. The failed confinement writes no seal.
+    it('cannot confine a cultivator in a discipline hall whose arrays have gone dark', async () => {
+        const { harness, playerId, other } = await aRoom('carried-out-dark-cells');
+        const world = await harness.game.loadWorld();
+        const house = world.factions.find((row: any) => row.id === HOUSE.id)!;
+        const seat = world.locations.find((row: any) => row.id === house.seatLocationId)!;
+        seat.data.formationNodesTotal = 20;
+        seat.data.formationNodesLit = 0;
+        const before = harness.repos.cultivators.getById(other.id)!;
+        const handed = await handDown(harness, { playerId, other, severity: 'serious', world });
+        expect(handed.decided.sentence).toBe('years sealed and held');
+        expect(handed.notCarriedOutHere).not.toBeNull();
+        expect(handed.line).toContain('No seal was laid and nobody was confined.');
+        expect(handed.sealed).toBe(false);
+        expect(handed.heldAt).toBeNull();
+        const after = harness.repos.cultivators.getById(other.id)!;
+        expect(after.qiSeal).toEqual(before.qiSeal);
+        expect(after.location).toBe(before.location);
+        expect(tagged(harness, other.id, SEALED_AND_HELD)).toHaveLength(0);
+    }, 300_000);
+
     it('ends them, through the one function that ends anybody', async () => {
         const { harness, playerId, other } = await aRoom('carried-out-death');
         const world = await harness.game.loadWorld();

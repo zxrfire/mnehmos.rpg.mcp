@@ -236,12 +236,7 @@ export interface SectAmbition {
 /**
  * A craft a house has made its main business, written among its specialities.
  *
- * The design owner: every house makes pills and every house makes artifacts,
- * and a focus is rare and exclusive - *"almost everyone can do it, few focus
- * exclusively on it."* So only a house whose trade IS the craft carries one, and
- * `whatAHouseIsFocusedOn` in `architecture.ts` reads it. The words are read as
- * text everywhere else a speciality is read, which is rumour and a sect's own
- * description.
+ * A craft focus supports the house's institutional hall; personal crafting needs no hall.
  */
 export type HouseCraft = 'alchemy' | 'forging';
 

@@ -1,10 +1,9 @@
+import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 /** A witness's reading of an event leaves the event and its consequences intact. */
 import { doesTheDeedNeedExplaining, weighAnAccountOfADeed, type DeedAccount, type DeedBelief, type SeenDeed } from '../social-leverage/an-account-of-a-deed.js';
 import type { AttemptInput, Party } from '../social-leverage/an-attempt-to-move-somebody.js';
 import { forStream } from '../cultivation/rng.js';
 import { theGroundUnderYou } from '../social-leverage/ground-trust.js';
-import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
-import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { whatStandsBetween, whereAComplaintGoes, whatTheWitnessDoesAboutIt } from '../social-leverage/reporting-what-you-saw.js';
 import { shapeOf, severityOfTheWrong } from '../social-leverage/what-somebody-does-about-being-wronged.js';
 import { createObligation, type ObligationInput, type ObligationRecord } from '../social/grudges.js';
@@ -144,7 +143,7 @@ function authorityKnownTo(world: WorldState, fact: HistoricalFact, witness: NpcR
     const house = world.factions.find(h => h.id === houseId);
     if (!house || house.seatLocationId !== fact.locationId) return null;
     const roll = (lookup ? lookup.rollByHouse.get(houseId) ?? [] : world.npcs).filter(n => n.status === 'alive' && n.factionId === houseId);
-    const portfolios = whoIsInChargeOfWhat({ rooms: theRoomsThisHouseHas(world.locations, houseId),
+    const portfolios = portfoliosIn({ locations: world.locations, sectId: houseId, npcs: world.npcs,
         roll: roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })), rankCount: house.ranks.length });
     const head = [...roll].sort((a, b) => b.factionRankIndex - a.factionRankIndex)[0];
     const toId = whereAComplaintGoes({ portfolios, aboutId: actorId, headId: head?.id ?? null });

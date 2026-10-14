@@ -559,3 +559,7 @@ Standing gate registration comes from the actual gate, clerk and house-price aut
 A catalog beast encounter may name its existing species with beastId. Actual
 contact realizes its counted animals as real world people through the existing
 beast factory; their bodies and remains use the ordinary group fight machinery.
+
+Craft focus identifies institutional support. A sufficiently powerful house with
+vein or tribute income can also support it; individuals still craft with their
+own tools and materials without a house hall.

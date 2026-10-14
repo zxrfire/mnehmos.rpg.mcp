@@ -1,3 +1,4 @@
+import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 /**
  * A house whose office stands empty takes in an elder from outside.
  *
@@ -33,8 +34,6 @@ import { getSect, stipendForRank } from '../../data/cultivation/sects.js';
 import { COST_PER_EXTERNAL_ELDER, elderRungOf, externalElderCost } from '../cultivation/leadership.js';
 import { rankName } from '../cultivation/realms.js';
 import { STIPEND_PERIOD_DAYS } from '../cultivation/what-each-rung-of-a-house-ladder-requires.js';
-import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
-import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { theSpeciesItIs } from './a-beast-with-a-core-is-somebody-in-particular.js';
 import { makeFact } from './history.js';
 import { isBelowTheLid } from './layers.js';
@@ -74,8 +73,8 @@ export function whatTakingInAnElderCosts(houseId: string, rankIndex: number, alr
 
 /** Whether a house has an office nobody of its own holds: covered, or with nobody in it. */
 export function anOfficeStandsEmpty(state: Pick<WorldState, 'locations'>, house: FactionRecord, roll: readonly NpcRecord[]): boolean {
-    const portfolios = whoIsInChargeOfWhat({
-        rooms: theRoomsThisHouseHas(state.locations, house.id),
+    const portfolios = portfoliosIn({
+        locations: state.locations, sectId: house.id, npcs: roll,
         roll: roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
         rankCount: house.ranks.length
     });

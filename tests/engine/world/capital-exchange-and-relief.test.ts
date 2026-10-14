@@ -5,6 +5,8 @@
  * The first per-account implementation's census exceeded two GB before its
  * ten-year checkpoint. Handover batches now refer to the original facts.
  * A seasonal stock index must show exactly the same finite offers as a live read.
+ * The maker fixture has its actual alchemy room under the conditional-crafts
+ * ruling; a house purse alone does not establish institutional pill production.
  */
 import { describe, expect, it } from 'vitest';
 import { createWorld, makeFaction } from '../../../src/engine/world/world-state.js';
@@ -27,7 +29,9 @@ function arrangement() {
     const house = makeFaction({ id: workshop.id, name: workshop.name, seatLocationId: 'seat', resources: { spirit_stones: 10_000 } });
     state.factions.push(house);
     state.locations.push(makeLocation({ id: 'venue', name: 'City', kind: 'settlement', tags: ['city'] }),
-        makeLocation({ id: 'seat', name: 'Grounds', kind: 'sect_seat' }));
+        makeLocation({ id: 'seat', name: 'Grounds', kind: 'sect_seat' }),
+        makeLocation({ id: 'alchemy', name: 'Alchemy Hall', kind: 'hall',
+            data: { factionId: house.id, purpose: 'alchemy_hall' } }));
     for (const id of ['seller', 'buyer']) state.npcs.push({ ...setRealm(createNpc(state.seed,
         { id, locationId: 'venue', onDay: 0, bornOnDay: -30 * 365 }), 8, 0), spiritStones: 1000,
         factionId: id === 'seller' ? house.id : null });

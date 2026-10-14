@@ -117,7 +117,7 @@ export async function spawnPersonFromSpec(
         lampRoomId: whereThisHouseBurnsItsLamps(world.locations, house.id) ?? house.seatLocationId,
         internalAffairsElder: () => theInternalAffairsElderIn(world.locations, house,
             [...world.npcs.filter(n => n.status === 'alive' && n.factionId === house.id), npc]
-                .map(n => ({ id: n.id, rankIndex: n.factionRankIndex }))), onDay: day
+                .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })), world.npcs), onDay: day
     }) : null;
     repos.db.transaction(() => {
         world.npcs.push(npc);

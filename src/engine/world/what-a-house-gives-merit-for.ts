@@ -94,12 +94,13 @@ import { creditMerit, whatServiceIsWorth } from './what-a-house-counts-in-somebo
 import { whatIsLeftIn } from './what-a-manual-has-left-in-it.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { FactionRecord, WorldState } from './world-state.js';
+import { whatACommissionComesTo } from '../social-leverage/commissioning-a-craft.js';
 
 const GRADES: readonly TechniqueGrade[] = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'];
 
 /** What a thing is, as a want reads it: the kind it is one of, and its grade. */
 export interface WhatAThingIs {
-    /** The catalog id it is a copy or a lot of. Two rows with one id are the same kind. */
+    /** The catalog id, or the name, grade and rating of an ordinary made kind. */
     kindId: string;
     grade: TechniqueGrade;
     /** Stones one unit fetches on a market, or null where nobody sells it. */
@@ -109,12 +110,21 @@ export interface WhatAThingIs {
 }
 
 /** Read a row as a kind, a grade and a price. Null for what no want can read. */
-export function whatThisThingIs(object: Pick<ObjectRecord, 'kind' | 'data' | 'tags'>): WhatAThingIs | null {
+export function whatThisThingIs(object: Pick<ObjectRecord, 'kind' | 'data' | 'tags'>
+    & Partial<Pick<ObjectRecord, 'name' | 'power'>>): WhatAThingIs | null {
     const data = object.data ?? {};
     const quantity = Math.max(1, Math.floor(Number(data.quantity ?? 1)) || 1);
     const tagged = object.tags.find(t => t.startsWith('grade:'))?.slice(6);
     const gradeOf = (value: unknown): TechniqueGrade | null =>
         typeof value === 'string' && (GRADES as readonly string[]).includes(value) ? value as TechniqueGrade : null;
+
+    if (object.kind === 'artifact' && object.tags.includes('made')
+        && typeof object.name === 'string' && typeof object.power === 'number') {
+        const grade = gradeOf(data.grade) ?? gradeOf(tagged);
+        if (grade === null || howAGradeIsStored(grade) !== 'counted' || !Number.isFinite(object.power)) return null;
+        return { kindId: `made:${grade}:${object.power}:${object.name}`, grade, quantity,
+            marketStones: whatACommissionComesTo(grade, false, object.power) };
+    }
 
     if (object.kind === 'manual') {
         const id = manualIdOf(object as ObjectRecord);

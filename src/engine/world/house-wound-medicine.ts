@@ -16,7 +16,7 @@
  * at the rate the house credits the same pill handed in (`whatItIsWorthToAHouse`:
  * catalog value times the board's contribution per stone).
  *
- * WHERE MORE COMES FROM. Every house makes medicine (`what-a-house-refines-in.ts`).
+ * Houses with an alchemy hall refine their medicine; other houses must buy it.
  * Each year a house whose best hand can work a pill's grade (`canRefineGrade`)
  * refines back up to the shelf a house of its reach is seeded with, buying the
  * recipe's ingredients at catalog value out of its purse, one pill a batch, each
@@ -39,6 +39,7 @@ import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import type { ObjectRecord } from './possessions.js';
 import { pillStockKey, swallow, theHeightAHouseWorksAt, theShelfAHouseKeeps } from './where-the-pills-actually-are.js';
 import type { WorldState } from './world-state.js';
+import { housesWithACraftHall } from './where-a-house-does-its-work.js';
 
 type Shelved = { resources: Record<string, number> };
 
@@ -259,6 +260,7 @@ export interface WhatWasRefined {
 /** A year of houses refining their wound medicine back up to the shelf. See the header. */
 export function housesRefineTheirWoundMedicine(state: WorldState, year: number): WhatWasRefined {
     const out: WhatWasRefined = { batches: 0, set: 0, stones: 0 };
+    const makers = housesWithACraftHall(state.locations, 'alchemy_hall');
     const bestHand = new Map<string, number>();
     for (const npc of state.npcs) {
         if (npc.status !== 'alive' || npc.factionId === null) continue;
@@ -266,7 +268,7 @@ export function housesRefineTheirWoundMedicine(state: WorldState, year: number):
     }
 
     for (const house of state.factions) {
-        if (house.dissolvedOnDay !== null || !isBelowTheLid(house)) continue;
+        if (house.dissolvedOnDay !== null || !isBelowTheLid(house) || !makers.has(house.id)) continue;
         const hand = bestHand.get(house.id);
         if (hand === undefined) continue;
         const reach = theHeightAHouseWorksAt(house);

@@ -2,10 +2,7 @@
  * WHAT A HOUSE REFINES IN: the cauldrons and refining furnaces a treasury is
  * seeded with.
  *
- * Every house makes medicine and every house makes artifacts, so every house
- * keeps both vessels: a counted cupboard of the plain ones in the room the craft
- * is done in (`REFINING_VESSELS[kind].keptIn`), and a graded vessel of each kind
- * with a history, filed where every tracked thing is filed.
+ * A house keeps institutional vessels only for crafts it supports in an actual hall.
  *
  * ── THE GRADE IS WHAT THE HOUSE CAN MAKE ─────────────────────────────────
  *
@@ -17,11 +14,7 @@
  *
  * ── AND A FOCUSED HOUSE KEEPS BETTER ONES ────────────────────────────────
  *
- * *"Almost everyone can do it, few focus exclusively on it."* So every house keeps
- * a graded vessel of each kind at the grade its best hand can work, and the few
- * houses `whatAHouseIsFocusedOn` names as making the craft their trade keep MORE
- * of them: twice the cupboard, the same twice their craft room is cut larger by,
- * and a second graded vessel. A difference of degree, as ruled.
+ * A focused house keeps twice the cupboard and a second graded vessel.
  */
 
 import { SECTS } from '../../data/cultivation/sects.js';
@@ -39,6 +32,7 @@ import {
 } from './architecture.js';
 import { makeObject, makeResourceLot, type ObjectRecord } from './possessions.js';
 import type { WorldState } from './world-state.js';
+import { housesWithACraftHall } from './where-a-house-does-its-work.js';
 
 /** Whether this house's trade is the craft this kind of vessel is for. */
 export function isFocusedOnTheCraftOf(houseId: string, kind: RefiningVesselKind): boolean {
@@ -86,7 +80,7 @@ export function howManyGradedVesselsAHouseKeeps(focused: boolean): number {
  * have put more vessels in the loans a house makes than it ever put there before.
  */
 export function theVesselsAHouseKeeps(input: {
-    state: Pick<WorldState, 'npcs' | 'currentDay'>;
+    state: Pick<WorldState, 'npcs' | 'currentDay' | 'locations'>;
     houseId: string;
     houseName: string;
     foundedOnDay: number;
@@ -103,6 +97,8 @@ export function theVesselsAHouseKeeps(input: {
     const name = input.houseName;
     const bestHand = theBestHandOnTheRoll(input.state, input.houseId);
     for (const vessel of Object.values(REFINING_VESSELS)) {
+        const hall = vessel.makes === 'medicine' ? 'alchemy_hall' : 'artifact_refining_hall';
+        if (!housesWithACraftHall(input.state.locations, hall).has(input.houseId)) continue;
         const focused = isFocusedOnTheCraftOf(input.houseId, vessel.kind);
         const isCauldron = vessel.kind === 'cauldron';
 

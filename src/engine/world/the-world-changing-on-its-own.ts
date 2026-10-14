@@ -1,3 +1,5 @@
+import { staffTheHalls, settleHallService } from './the-people-posted-to-a-houses-halls.js';
+import { settleHouseCare } from './a-house-healer-tends-a-real-member.js';
 import { aRetainedMemberActuallyServed, aRetainedMemberActuallyReturned, stillOnThisRetainedSending,
     stillOnAnActualRetainedReturn, actualRetainedReturnDay, retainedAirReturnBoundary, continueActualRetainedAirReturns } from './a-retained-sending-has-actually-served.js';
 import { initializeMetricGround } from './the-metric-ground-under-a-journey.js';
@@ -67,8 +69,8 @@ import {
 } from './a-house-sends-somebody-looking.js';
 import { beastsOnThisGround, bandOf, whatComesOffTheBody } from './hunting-a-spirit-beast.js';
 import { whatGroundThisIs } from './what-ground-a-place-is.js';
-import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
-import { theRoomsThisHouseHas, portfoliosIn } from '../social-leverage/authority-for-an-order.js';
+import { type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
+import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 import { rankName, triggersHeavenlyTribulation } from '../cultivation/realms.js';
 // Pressure is the LOWER world's own affairs, and only its own. Every selection
 // in this file is filtered to the mortal layer, because politics above the Lid
@@ -648,6 +650,8 @@ function pressureTasksForYear(state: WorldState, year: number,
     }
     for (const npc of state.npcs) {
         if (!isTheWorldsToMove(npc) || npc.activity?.untilDay == null) continue;
+        if (npc.activity.houseCareFactId) tasks.push({ key: `house-care:${npc.id}:${npc.activity.untilDay}`,
+            day: npc.activity.untilDay, checkpoint: true, run: () => {} });
         const privateDue = privateWorkAppointment(state, npc);
         if (privateDue != null) {
             const due = privateDue;
@@ -1045,7 +1049,7 @@ function pressureTasksForYear(state: WorldState, year: number,
         peopleWithNoHouseMoveOn(state, year, onDay);
     } });
     tasks.push({ key: 'wound-care', day: year * 365 + 179, run: (onDay: number) => {
-        woundsCloseThisYear(state, year, onDay);
+        woundsCloseThisYear(state, year, onDay, (id, due) => schedulePostingDay(`house-care:${id}:${due}`, due));
     } });
     tasks.push({ key: 'leaving-a-house', day: year * 365 + 179, run: (onDay: number) => {
         applyPeopleWalkingOut(
@@ -3776,7 +3780,7 @@ function applySendings(
                     locationId:goingTo,named,reachedPastItsWeight,
                     counterparties:[...whoTheErrandWasWith(state,aboutHouses,goingTo)]};
                 const houseRoll=roll.get(faction.id)??[];
-                const portfolios=portfoliosIn({locations:state.locations,sectId:faction.id,
+                const portfolios=portfoliosIn({ npcs: state.npcs,locations:state.locations,sectId:faction.id,
                     roll:houseRoll,rankCount:faction.ranks.length});
                 const admitted=sendASelectedHousePartyOnAnAvailableAirHull(state,faction,selected as NpcRecord[],
                     goingTo,day,walking,!!water,inTheChest,read=>new Map(selected.map(person=>[person!.id,{
@@ -4822,6 +4826,10 @@ export function applyPostings(state: WorldState, year: number, day: number,
     // are taken before anybody is moved. Measured with `--cpu-prof` on one
     // seed at 1,200 years, the two sweeps were 3.9ms per simulated year, the
     // largest remaining term in the advance.
+    let hallPostings = 0;
+    for (const house of liveFactions(state)) {
+        if (!options.onlyHouses || options.onlyHouses.has(house.id)) hallPostings += staffTheHalls(state, house.id, day, options.initialPlacement);
+    }
     const at = new Map<string, number>();
     const rolls = new Map<string, NpcRecord[]>();
     for (let i = 0; i < state.npcs.length; i++) {
@@ -4846,7 +4854,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
         }
         return local;
     };
-    let posted = 0;
+    let posted = hallPostings;
     const craftPositions = state.objects.flatMap((object, at) => typeof object.data.conveyanceId === 'string' ? [at] : []);
     for (const faction of liveFactions(state)) {
         const ranks = faction.ranks.length;
@@ -4864,8 +4872,8 @@ export function applyPostings(state: WorldState, year: number, day: number,
             && n.factionRankIndex < ranks - 1);
         if (members.length === 0) continue;
 
-        const rooms = whoIsInChargeOfWhat({
-            rooms: theRoomsThisHouseHas(state.locations, faction.id),
+        const rooms = portfoliosIn({
+            locations: state.locations, sectId: faction.id, npcs: state.npcs,
             // A ROOM TAKEN OFF SOMEBODY IS A WEIGHT AGAINST THEM, NOT A DOOR
             // BRICKED UP. The owner, asked whether a removal is permanent:
             // *"depends on your influence so not permanent"*. This filtered
@@ -4922,8 +4930,7 @@ export function applyPostings(state: WorldState, year: number, day: number,
         }
         // One empty slot per place a house is short of its people, standing sites first.
         const lampHallId = whereThisHouseBurnsItsLamps(state.locations, faction.id);
-        const lampHall = lampHallId === null ? undefined : state.locations.find(place => place.id === lampHallId);
-        const empty = [...(lampHall ? [lampHall] : []), ...shopfronts, ...branches, ...posts].flatMap(t =>
+        const empty = [...shopfronts, ...branches, ...posts].flatMap(t =>
             Array.from({ length: Math.max(0, (holds.get(t.id) ?? 1) - (held.get(t.id) ?? 0)) }, () => t));
         if (empty.length === 0) continue;
 
@@ -5082,6 +5089,8 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
         applyAdvancement(state, Math.floor(due / DAYS_PER_YEAR), due, undefined, new Set([id])));
     // Only the geographic graph is shared; every iteration reads the current row.
     const routes = routeQueriesFor(state.locations);
+    settleHallService(state, day);
+    settleHouseCare(state, day);
     settleHiredDuties(state, day);
     settlePrivateWork(state, day, undefined, undefined, (id, due) => schedule?.(`private-work:${id}:${due}`, due));
     departAfterPrivateInvitations(state, day, (id, due) => schedule?.(`private-party:${id}:${due}`, due));
@@ -5147,14 +5156,32 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
     }
     const continuedShuttles = new Map<NonNullable<WorldState['pendingSendings']>[number], boolean>();
     let exchangeStock: Map<string, number[]> | undefined;
+    let purchasedStock: Map<string, number[]> | undefined;
+    let exchangeStockObjects: WorldState['objects'] | undefined;
+    let exchangeStockLength = -1;
+    let lastExchangeSale: HistoricalFact | undefined;
     const consignmentsWith = (holderId: string): readonly number[] => {
-        if (!exchangeStock) {
+        const sale = factsWithDataValue(state, 'exchangeSale', true).at(-1);
+        // Purchasing missions can transfer an existing row during this pass;
+        // counted deliveries can replace the array before the next return.
+        if (!exchangeStock || exchangeStockObjects !== state.objects
+            || exchangeStockLength !== state.objects.length || lastExchangeSale !== sale) {
+            exchangeStockObjects = state.objects;
+            exchangeStockLength = state.objects.length;
+            lastExchangeSale = sale;
             exchangeStock = new Map();
+            purchasedStock = new Map();
             for (let at = 0; at < state.objects.length; at++) {
                 const object = state.objects[at]!;
-                if (!object.tags.includes('exchange') || !object.possessorId) continue;
-                const rows = exchangeStock.get(object.possessorId) ?? [];
-                rows.push(at); exchangeStock.set(object.possessorId, rows);
+                if (!object.possessorId) continue;
+                if (object.tags.includes('exchange')) {
+                    const rows = exchangeStock.get(object.possessorId) ?? [];
+                    rows.push(at); exchangeStock.set(object.possessorId, rows);
+                }
+                if (object.tags.includes('house-medicine-purchase') || object.tags.includes('house-artifact-purchase')) {
+                    const rows = purchasedStock.get(object.possessorId) ?? [];
+                    rows.push(at); purchasedStock.set(object.possessorId, rows);
+                }
             }
         }
         return exchangeStock.get(holderId) ?? [];
@@ -5280,7 +5307,8 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
                         appendWorldFact(state,makeFact({day,kind:'gathering',visibility:'faction',locationId:npc.locationId,
                             factionIds:npc.factionId?[npc.factionId]:[],actors:[{id:person.id,name:person.name,role:'outgoing'}],
                             causes:[relief.id],summary:person.name+' left the post for home.',
-                            data:{postServiceReceipt:true,outgoingId:person.id,servedSinceDay:term.sinceDay,servedUntilDay:day}}),{recur:false});
+                            data:{postServiceReceipt:true,outgoingId:person.id,servedSinceDay:term.sinceDay,servedUntilDay:day,
+                                ...(term.houseWorkPayFactId ? { houseHallPaid: true } : {})}}),{recur:false});
                     schedule?.(`post-return:${person.id}:${due}`,due);
                 }
                 // The admitted air receipt owns landfall, including a distant return.
@@ -5294,7 +5322,8 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
                         actors: [{ id: npc.id, name: npc.name, role: 'outgoing' }],
                         causes: [relief.id], summary: `${npc.name} left the post for home.`,
                         data: { postServiceReceipt: true, outgoingId: npc.id,
-                            servedSinceDay: doing.sinceDay, servedUntilDay: day } }), { recur: false });
+                            servedSinceDay: doing.sinceDay, servedUntilDay: day,
+                            ...(doing.houseWorkPayFactId ? { houseHallPaid: true } : {}) } }), { recur: false });
                 }
                 for (const peer of doing.withIds) {
                     const peerAt = state.npcs.findIndex(n => n.id === peer);
@@ -5333,11 +5362,10 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
             recordNpcActualArrival(state, state.npcs[i]!, doing, day);
             continue;
         }
-        const servedPost = doing.kind === 'travelling'
-            ? factsWithDataValue(state, 'outgoingId', npc.id).find(f =>
-                (f.data.postRelief === true || f.data.postServiceReceipt === true)
-                && f.data.servedUntilDay === doing.sinceDay)
-            : undefined;
+        const postRecords = doing.kind === 'travelling'
+            ? factsWithDataValue(state, 'outgoingId', npc.id).filter(f => f.data.servedUntilDay === doing.sinceDay) : [];
+        const servedPost = postRecords.find(f => f.data.postServiceReceipt === true)
+            ?? postRecords.find(f => f.data.postRelief === true);
         const feederReturn = factsWithDataValue(state, 'selectedId', npc.id).find(f =>
             f.data.feederSelection === true && f.data.cargoReturnViaHome === true
             && f.data.toHouseId === npc.factionId
@@ -5348,7 +5376,7 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
             : typeof feederReturn?.data.stintDay === 'number' ? feederReturn.data.stintDay : doing.sinceDay;
         returnExchangeConsignment(state, npc, day, stintDay,
             typeof feederReturn?.data.fromHouseId === 'string' ? feederReturn.data.fromHouseId : npc.factionId,
-            consignmentsWith(npc.id));
+            consignmentsWith(npc.id), purchasedStock!.get(npc.id) ?? []);
         if (sendingsOf.has(npc.id)) continue;
 
         // A place that has since ceased to exist leaves them standing where
@@ -5359,7 +5387,8 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
         // and came home is counted by the house it was for; a journey to a
         // house that took them is not service yet.
         const returning = state.npcs[i]!;
-        const served = servedPost && typeof servedPost.data.servedSinceDay === 'number'
+        const served = servedPost?.data.houseHallPaid === true ? returning
+            : servedPost && typeof servedPost.data.servedSinceDay === 'number'
             ? creditMerit(returning, whatServiceIsWorth(npc.cultivation.realmOrdinal,
                 doing.sinceDay - servedPost.data.servedSinceDay))
             : feederReturn && typeof feederReturn.data.fromHouseId === 'string'

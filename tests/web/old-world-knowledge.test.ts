@@ -2,8 +2,9 @@
  * The lore rows existed only in catalog tests. Asking could name no subject for them,
  * and recall had no learned statement to read. The live question must disclose a short
  * fact from an appropriate holder, preserve its source, and withhold private records
- * from strangers. Reading an archive requires standing in that archive; neither a
- * remembered topic nor a distant room grants a new fact.
+ * from strangers. On 2026-10-10 the owner ruled that a house without an archive
+ * still keeps records in an existing room. Reading requires standing where the
+ * records are kept; neither a remembered topic nor a distant room grants a fact.
  */
 import { getSect } from '../../src/data/cultivation/sects.js';
 import { HIGH_REALM_PROVENANCE } from '../../src/data/cultivation/faction-character.js';
@@ -17,6 +18,7 @@ import { parseIntent } from '../../src/web/actions.js';
 import { PRESENT_YEAR, THE_CALENDAR_OFFSET, CALENDARS } from '../../src/data/cultivation/history.js';
 import { FALSE_IMMORTAL_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import { purposeOf } from '../../src/engine/world/architecture.js';
+import { roomForHouseWork } from '../../src/engine/world/where-a-house-does-its-work.js';
 import { makeGame, makeGameInWorld, ScriptedProvider } from './harness.js';
 import { LESSER_ACTION_DAYS } from '../../src/web/lesser-action-costs.js';
 
@@ -191,6 +193,27 @@ describe('asking, remembering and reading in play', () => {
             const before = oldWorldYear(world, 0);
             world.currentDay += 365 * 7;
             expect(oldWorldYear(world, 0)).toBe(before + 7);
+        } finally { db.close(); }
+    }, 120_000);
+
+    it('reads a small house\'s records where it keeps them without building an archive', async () => {
+        const { game, repos, db } = await makeGameInWorld({ seed: 'records-without-archive',
+            worldSeed: 'records-without-archive-world' });
+        try {
+            const { cultivator } = await game.newRun('Reader');
+            const world = game.atHand!;
+            const house = world.factions.find(row => row.kind === 'sect'
+                && !world.locations.some(room => room.data.factionId === row.id && purposeOf(room) === 'archive')
+                && roomForHouseWork(world.locations, row.id, 'archive') !== null)!;
+            expect(house, 'the native world must have a house without a dedicated archive').toBeDefined();
+            const kept = roomForHouseWork(world.locations, house.id, 'archive')!;
+            const roomsBefore = world.locations.map(room => room.id);
+            repos.cultivators.update(cultivator.id, { location: kept.name });
+            const read = await game.act('I read the archive');
+            expect(read.toolCalls.some(call => call.name === 'knowledge.archive' && call.ok), read.narration).toBe(true);
+            expect(read.narration).toMatch(/stipend rolls/);
+            expect(game.knowledge.awareness(cultivator.id, 'event').some(row => row.sourceKind === 'read')).toBe(true);
+            expect(world.locations.map(room => room.id)).toEqual(roomsBefore);
         } finally { db.close(); }
     }, 120_000);
 

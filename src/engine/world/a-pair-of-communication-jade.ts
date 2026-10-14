@@ -355,7 +355,7 @@ export function whoMakesJadeForTheElders(
 ): NpcRecord | null {
     if (house.seatLocationId === null) return null;
     const roll = state.npcs.filter(n => n.status === 'alive' && n.factionId === house.id);
-    const holderId = theInternalAffairsElderIn(state.locations, house, roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })));
+    const holderId = theInternalAffairsElderIn(state.locations, house, roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })), state.npcs);
     const there = roll.filter(n => n.locationId === house.seatLocationId);
     const maker = (holderId === null ? undefined : there.find(n => n.id === holderId))
         ?? [...there].sort((a, b) => b.factionRankIndex - a.factionRankIndex

@@ -88,7 +88,7 @@ export function closedDoorCultivationThisYear(state: WorldState, year: number, d
     for (const house of state.factions.filter(row => row.dissolvedOnDay === null)) {
         const roll = state.npcs.filter(person => person.status === 'alive' && person.factionId === house.id);
         const postings = portfoliosIn({ locations: state.locations, sectId: house.id,
-            roll: roll.map(npc => ({ id: npc.id, rankIndex: npc.factionRankIndex })), rankCount: house.ranks.length });
+            roll: roll.map(npc => ({ id: npc.id, rankIndex: npc.factionRankIndex })), rankCount: house.ranks.length, npcs: state.npcs });
         for (const person of roll) if (whatTheyHold(postings, person.id).length)
             offices.add(person.id);
     }

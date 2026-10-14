@@ -14,7 +14,7 @@
  */
 
 import { theSeatOfTheCompound } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
-import { purposeOf } from '../engine/world/architecture.js';
+import { roomForHouseWork, nameOfTheCareRoom } from '../engine/world/where-a-house-does-its-work.js';
 import { whoDispensesAtTheHouse } from '../engine/world/who-is-actually-seeing-to-wounds.js';
 import { npcsWhereTheyStand } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { takeOffTheShelf, whatTheShelfGivesAMember } from '../engine/world/house-wound-medicine.js';
@@ -46,13 +46,16 @@ export async function seenToFromTheHouseShelf(
     if (!world || !house || house.seatLocationId === null) return null;
     if (theSeatOfTheCompound(world, game.worldPlaceOf(cultivator))?.id !== house.seatLocationId) return null;
     const here = world.locations.find(place => place.id === game.worldPlaceOf(cultivator));
+    const careRoom = roomForHouseWork(world.locations, house.id, 'infirmary');
     const dispenser = whoDispensesAtTheHouse(world, house.id);
-    if (!here || purposeOf(here) !== 'infirmary' || !dispenser
+    if (!here || here.id !== careRoom?.id || !dispenser
         || (requestedProviderId !== undefined && dispenser.id !== requestedProviderId)
         || !npcsWhereTheyStand(world, here, cultivator.standingIn,
             { id: cultivator.id, sectId: house.id }).some(n => n.id === dispenser.id)) {
-        return { withheld: { line: `Ask at ${house.name}'s infirmary when a member is dispensing medicine there.`,
-            structure: 'No medicine dispensed: member is not beside a working attendant in the infirmary.' } };
+        return { withheld: { line: careRoom
+            ? `Ask at ${nameOfTheCareRoom(careRoom)} when a member is dispensing ${house.name}'s medicine there.`
+            : `${house.name} has no room or attendant currently dispensing medicine.`,
+            structure: 'No medicine dispensed: member is not beside a working attendant on the actual care ground.' } };
     }
 
     const offer = whatTheShelfGivesAMember(world, {

@@ -34,7 +34,7 @@ export function eldersWithoutOffices(state: WorldState, day: number): NpcRecord[
     for (const house of state.factions.filter(row => row.dissolvedOnDay === null)) {
         const roll = state.npcs.filter(person => person.factionId === house.id && person.status === 'alive');
         const offices = portfoliosIn({ locations: state.locations, sectId: house.id,
-            roll: roll.map(person => ({ id: person.id, rankIndex: person.factionRankIndex })), rankCount: house.ranks.length });
+            roll: roll.map(person => ({ id: person.id, rankIndex: person.factionRankIndex })), rankCount: house.ranks.length, npcs: state.npcs });
         out.push(...roll.filter(person => isElderRank(person.factionRankIndex, house.ranks.length)
             && freeForPrivateBusiness(person, day) && !whatTheyHold(offices, person.id).length));
     }

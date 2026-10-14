@@ -4,7 +4,6 @@ import {
     ELEMENTAL_IDIOM_FLOOR,
     ELEMENTAL_TRIM_FLOOR,
     attributionField,
-    addMissingInfirmary,
     compoundCapacityUnit,
     describeRoom,
     elementalIntensityOf,
@@ -20,6 +19,7 @@ import {
     styleTagsOf,
     survivingTags,
     whatAHouseIsFocusedOn,
+    whichCraftsTheHouseSupports,
     THE_ROOMS_A_HOUSE_SHARES,
     A_HOUSE_FOCUSED_ON_A_CRAFT_CUTS_ITS_ROOM_THIS_MUCH_LARGER,
     type CompoundInput
@@ -86,10 +86,8 @@ function narrowHouse(over: Partial<CompoundInput> = {}): CompoundInput {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Saved compounds predate the universal dispensary. Opening one may append its
- * missing ordinary room, but must preserve its old rooms, keys, stock and offices.
- * The upgrade reads the built outer court, including for a player-founded house
- * absent from the catalog, and a second opening adds nothing.
+ * A dispatched body starts at its actual departure ground, rather than appearing
+ * at the destination named on its posting.
  */
 describe('an existing compound and the bodies on its ground', () => {
     /** A dispatched row names its destination, but its body still starts at home. */
@@ -116,27 +114,6 @@ describe('an existing compound and the bodies on its ground', () => {
         expect(npcsStandingIn(state, destination.id, whereCompoundsAre(state)).map(n => n.id)).toContain(traveller.id);
     });
 
-    it.each([true, false])('preserves the existing construction (inherited=%s)', inherited => {
-        const input = broadHouse({ inherited });
-        const built = growCompound(seat(), input, { seed: 'saved-house', presentDay: 1000 });
-        const locations = built.locations.filter(l => purposeOf(l) !== 'infirmary');
-        const oldInfirmary = built.locations.find(l => purposeOf(l) === 'infirmary')!;
-        for (const l of locations) l.links = l.links.filter(c => c.toLocationId !== oldInfirmary.id);
-        const host = locations.find(l => l.data.purpose === 'precinct' && l.data.precinctIndex === 0)!;
-        const unchanged = locations.filter(l => l !== host).map(l => JSON.stringify(l));
-        const hostBefore = JSON.stringify({ ...host, links: [] });
-        const narrowInput = { factionId: input.factionId, factionName: input.factionName,
-            powerOrdinal: input.powerOrdinal, inherited };
-        const added = addMissingInfirmary(locations, narrowInput, { seed: 'saved-house' });
-        expect(added).not.toBeNull();
-        expect(added!.parentId).toBe(host.id);
-        expect(added!.sealed).toBe(false);
-        expect(added!.data.precinctIndex).toBe(0);
-        expect(locations.filter(l => l !== host && l !== added).map(l => JSON.stringify(l))).toEqual(unchanged);
-        expect(JSON.stringify({ ...host, links: [] })).toBe(hostBefore);
-        expect(host.links.some(c => c.toLocationId === added!.id)).toBe(true);
-        expect(addMissingInfirmary(locations, narrowInput, { seed: 'saved-house' })).toBeNull();
-    });
 });
 
 describe('elementalIntensityOf', () => {
@@ -575,37 +552,45 @@ describe('nothing in the lore is bespoke', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-// BOTH CRAFTS, IN EVERY HOUSE
+// INSTITUTIONAL CRAFTS
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The design owner: *"same as the pill houses, every house makes artifacts,
- * some are focused on artifacts."* Every compound has a room to refine pills in
- * and a room to forge artifacts in, and a focus on the craft is a difference of
- * degree: a larger room, and for medicine the cauldron room besides.
- *
- * The forge focus is given to no house yet: it waits on a field in the catalog
- * code can read, and a house's name is not one.
- *
- * Red-checked: dropping the two appended rooms from `roomsFor` fails the first
- * arm, and dropping the focus multiplier from `growCompound` fails the second.
+ * On 2026-10-10 the owner overturned universal institutional crafts. A member
+ * can craft personally without a hall; a house supports a craft only for its
+ * focus or a deep foundation with steady income. The bar uses the existing
+ * thirty-rung foundation and vein/tribute columns, rather than a new wealth
+ * score. Focus still enlarges a supported room. Specialist care remains, while
+ * a house without a dedicated infirmary uses its existing ordinary rooms.
  */
-describe('every house makes pills and artifacts, and a focus is a matter of degree', () => {
+describe('a house supports an institutional craft where it can keep one', () => {
     const capacityOf = (input: CompoundInput, purpose: string) =>
         Number(growCompound(seat(), input, { seed: 'crafts', presentDay: 2_000 }).locations
             .find(row => purposeOf(row) === purpose)?.data.capacity ?? 0);
 
-    it('gives a house with no craft focus an alchemy hall and an Artifact Refining Hall', () => {
+    it('does not give a modest unfocused house either craft hall or a dedicated infirmary', () => {
         const rooms = roomsFor(broadHouse());
         expect(whatAHouseIsFocusedOn(broadHouse())).toEqual({ pills: false, artifacts: false });
-        expect(rooms).toContain('alchemy_hall');
-        expect(rooms).toContain('artifact_refining_hall');
+        expect(rooms).not.toContain('alchemy_hall');
+        expect(rooms).not.toContain('artifact_refining_hall');
         expect(rooms).not.toContain('furnace_room');
+        expect(rooms).not.toContain('infirmary');
+    });
+
+    it('requires both a deep foundation and steady income for an unfocused institutional craft', () => {
+        const supported = broadHouse({ powerOrdinal: 30, holdsVein: true });
+        expect(whichCraftsTheHouseSupports(supported)).toEqual({ pills: true, artifacts: true });
+        for (const house of [broadHouse({ powerOrdinal: 30 }), broadHouse({ powerOrdinal: 29, holdsVein: true })]) {
+            expect(whichCraftsTheHouseSupports(house)).toEqual({ pills: false, artifacts: false });
+        }
+        expect(whichCraftsTheHouseSupports(broadHouse({ powerOrdinal: 30, tributeStonesPerYear: 1 })))
+            .toEqual({ pills: true, artifacts: true });
+        expect(roomsFor(supported)).toEqual(expect.arrayContaining(['alchemy_hall', 'furnace_room', 'artifact_refining_hall', 'infirmary']));
     });
 
     it('cuts the room of the craft a house is focused on larger, and gives medicine its cauldron room', () => {
-        const plain = broadHouse();
-        const pills = broadHouse({ specialities: ['alchemy'] });
+        const plain = broadHouse({ powerOrdinal: 30, holdsVein: true });
+        const pills = { ...plain, specialities: ['alchemy'] };
         expect(roomsFor(pills)).toContain('furnace_room');
         // Within one seat of the multiple: a capacity is a whole number of seats,
         // rounded once on the larger figure rather than doubled after rounding.
@@ -626,8 +611,14 @@ describe('every house makes pills and artifacts, and a focus is a matter of degr
             const house = broadHouse({ specialities });
             expect(whatAHouseIsFocusedOn(house).pills, specialities.join(', ')).toBe(false);
             expect(roomsFor(house)).not.toContain('furnace_room');
-            expect(roomsFor(house)).toContain('alchemy_hall');
+            expect(roomsFor(house)).not.toContain('alchemy_hall');
         }
+    });
+
+    it('keeps a specialist infirmary without giving healing arts an alchemy business', () => {
+        const house = broadHouse({ specialities: ['support'] });
+        expect(roomsFor(house)).toContain('infirmary');
+        expect(roomsFor(house)).not.toContain('alchemy_hall');
     });
 
     it('gives the forge focus off the catalog\'s word, and never off a house\'s name', () => {

@@ -69,9 +69,10 @@ import { isOutLookingForDisciples } from './when-a-house-takes-people-on.js';
 export function theInternalAffairsElderIn(
     locations: readonly LocationRecord[],
     house: { id: string; ranks: readonly string[] },
-    roll: readonly { id: string; rankIndex: number }[]
+    roll: readonly { id: string; rankIndex: number }[],
+    npcs: readonly NpcRecord[]
 ): string | null {
-    return whoAnswersAbout(portfoliosIn({
+    return whoAnswersAbout(portfoliosIn({ npcs: npcs,
         locations,
         sectId: house.id,
         roll,
@@ -217,7 +218,7 @@ export function theHouseExpects(
         reportedOnDay: Math.floor(report.onDay),
         addressedTo: report.addressedTo,
         receivedById: theInternalAffairsElderIn(
-            state.locations, house, roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })))
+            state.locations, house, roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })), state.npcs)
     };
     state.factions[at] = {
         ...house,

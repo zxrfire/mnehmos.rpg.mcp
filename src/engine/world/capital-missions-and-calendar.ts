@@ -1,7 +1,7 @@
 import { putTheRouteToTheParty } from './a-party-answers-its-leader.js';
 import { finishPrivatePartyHunt } from './private-party-hunt.js';
 /** Cities receive dated house business; attendance is a stint, never a new home. */
-import { loadExchangeConsignment } from './wares-at-a-capital-exchange.js';
+import { buyHouseMedicineAtThisExchange, loadExchangeConsignment } from './wares-at-a-capital-exchange.js';
 import { collectPrivatePartyFinds } from './private-party-finds.js';
 import { privateWorkTerms, settlePrivateWork } from './private-paid-work.js';
 import { servePrivateWork } from './private-work-is-served.js';
@@ -815,7 +815,7 @@ function spareFor(state: WorldState, house: FactionRecord, day: number,graph:Rou
         const physical = locationOfNpcOnItsJourney(state,n,day,graph);
         return [n.id,physical ? exteriorGroundOfDeparture(state,physical,graph.places)?.id : null];
     }));
-    const rooms = portfoliosIn({ locations: state.locations, sectId: house.id,
+    const rooms = portfoliosIn({ npcs: state.npcs, locations: state.locations, sectId: house.id,
         roll: roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })), rankCount: house.ranks.length });
     const officers = new Set(rooms.map(r => r.holderId).filter(Boolean));
     const spare = whatTheHouseCanSpare({ seatLocationId: house.seatLocationId, rankCount: house.ranks.length,
@@ -869,6 +869,12 @@ function recordProgressAlongRoad(state:WorldState,person:NpcRecord,day:number,gr
 
 function receiveMissionParty(state: WorldState, mission: HistoricalFact, members: NpcRecord[],
     venue: LocationRecord, day: number): void {
+    if (mission.data.capitalMission === true && mission.data.reason === 'trade and purchases') {
+        for (const member of members) {
+            const buyer = state.npcs.find(person => person.id === member.id);
+            if (buyer) buyHouseMedicineAtThisExchange(state, buyer, day);
+        }
+    }
     const host = state.factions.find(house => house.id === mission.data.receivingHouseId);
     const sending = state.factions.find(house => house.id === mission.factionIds[0]);
     if (!host || !sending) return;

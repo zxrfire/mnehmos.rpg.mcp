@@ -10,6 +10,9 @@
  *
  * Pinned world and seed. The house is the first live one with a seat and five or
  * more Clear Meridian Pills on its shelf, read off the world rather than named.
+ * The universal-work ruling also permits that existing finite shelf in ordinary
+ * quarters. The additional fixture omits the dedicated infirmary before the
+ * played care turn; it supplies neither another room nor new medicine.
  */
 
 import { randomUUID } from 'node:crypto';
@@ -20,13 +23,14 @@ import { getPill } from '../../src/data/cultivation/pills.js';
 import { onTheShelf, whatTheShelfChargesAMember } from '../../src/engine/world/house-wound-medicine.js';
 import type { WorldState } from '../../src/engine/world/world-state.js';
 import { purposeOf } from '../../src/engine/world/architecture.js';
+import { roomForHouseWork } from '../../src/engine/world/where-a-house-does-its-work.js';
 import { whoDispensesAtTheHouse } from '../../src/engine/world/who-is-actually-seeing-to-wounds.js';
 import { npcsWhereTheyStand, theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 const WORLD = 'a-member-is-seen-to';
 const PILL = 'pill-clear-meridian';
 
-async function standingInTheInfirmary(seed: string, member: boolean) {
+async function standingInTheInfirmary(seed: string, member: boolean, dedicated = true) {
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD });
     const { run, cultivator } = await harness.game.newRun('Hurt');
     const world = (await harness.game.loadWorld())! as WorldState;
@@ -44,7 +48,10 @@ async function standingInTheInfirmary(seed: string, member: boolean) {
         harness.repos.sects.addMember(house.id, cultivator.id, 1);
         harness.repos.sects.addContribution(house.id, cultivator.id, 500);
     }
-    const infirmary = world.locations.find(l => l.controllingFactionId === house.id && purposeOf(l) === 'infirmary')!;
+    if (!dedicated) world.locations = world.locations.filter(place =>
+        !(place.controllingFactionId === house.id && purposeOf(place) === 'infirmary'));
+    const infirmary = roomForHouseWork(world.locations, house.id, 'infirmary')!;
+    expect(infirmary, 'the house must have actual care ground').toBeDefined();
     const dispenser = whoDispensesAtTheHouse(world, house.id)!;
     const area = theAreasOf(world, infirmary).whereIs.get(dispenser.id)!;
     expect(area, 'the attendant must actually stand in the infirmary').toBeDefined();
@@ -77,6 +84,23 @@ const shelf = (h: Awaited<ReturnType<typeof standingInTheInfirmary>>): number =>
     onTheShelf(h.game.atHand!.factions.find(f => f.id === h.house.id)!, PILL);
 
 describe('a member beside their infirmary attendant', () => {
+    it('uses its finite medicine in existing quarters when there is no dedicated infirmary', async () => {
+        const h = await standingInTheInfirmary('seen-to-quarters', true, false);
+        const before = shelf(h);
+        const merit = h.repos.sects.getMembership(h.cultivator.id)!.contribution;
+        const locations = h.game.atHand!.locations.length;
+        expect(h.game.atHand!.locations.some(place => place.controllingFactionId === h.house.id
+            && purposeOf(place) === 'infirmary')).toBe(false);
+        expect(purposeOf(roomForHouseWork(h.game.atHand!.locations, h.house.id, 'infirmary')!)).toBe('dormitory');
+        const turn = await h.game.act('I treat my injuries');
+        expect(turn.toolCalls.some(call => call.name === 'world.whatTheShelfGivesAMember' && call.ok), turn.narration).toBe(true);
+        expect(untreated(h)).toBe(0);
+        expect(shelf(h)).toBe(before - 1);
+        expect(merit - h.repos.sects.getMembership(h.cultivator.id)!.contribution)
+            .toBe(whatTheShelfChargesAMember(getPill(PILL)!));
+        expect(h.game.atHand!.locations.length).toBe(locations);
+    }, 120_000);
+
     it('is given one from the house\'s shelf, for contribution, and the shelf is one lighter', async () => {
         const h = await standingInTheInfirmary('seen-to-member', true);
         await h.game.loadWorld();

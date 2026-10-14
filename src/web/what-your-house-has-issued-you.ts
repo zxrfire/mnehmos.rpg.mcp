@@ -142,7 +142,7 @@ export function settleWhatYourHouseHasIssuedYou(
             lampRoomId,
             internalAffairsElder: () => theInternalAffairsElderIn(
                 world.locations, house, roll.map(n => ({ id: n.id, rankIndex: n.factionRankIndex }))
-            ),
+            , world.npcs),
             onDay: Math.floor(world.currentDay)
         });
         if (given.robes) {

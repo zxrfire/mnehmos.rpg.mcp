@@ -8,6 +8,8 @@
  * ten houses and Emerald Water City had 357. A flat 50-dispatch cutoff did
  * not describe both markets; repeated business and calendar sendings across
  * years accompany the exact presence band at each endpoint.
+ * Cinnabar's exported-medicine fixtures include its actual alchemy hall under
+ * the conditional-crafts ruling; passage payment does not establish a workshop.
  * A mission's destination remains in its activity while its actual position
  * passes through the same road and city placement the player sees.
  * Crossing water requires a house craft or paid public berths in both
@@ -118,7 +120,8 @@ describe('capital missions', () => {
         const city = makeLocation({ id: 'city', name: 'City', kind: 'settlement', tags: ['city'] });
         linkLocations(seat, water, 'crossing', 4);
         linkLocations(water, city, 'crossing', 4);
-        state.locations.push(seat, water, city);
+        state.locations.push(seat, water, city, makeLocation({ id: 'alchemy', name: 'Alchemy Hall',
+            kind: 'hall', parentId: seat.id, data: { factionId: houseRow.id, purpose: 'alchemy_hall' } }));
         state.factions.push(makeFaction({ id: houseRow.id, name: houseRow.name, seatLocationId: seat.id,
             ranks: ['servant', 'disciple', 'elder', 'head'], resources: { spirit_stones: 1_000_000 } }));
         for (let i = 0; i < 8; i++) state.npcs.push({ ...setRealm(createNpc(state.seed,
@@ -197,7 +200,8 @@ describe('capital missions', () => {
             parentId: seat.id, tags: ['interior']});
         linkLocations(seat, water, 'crossing', 10);
         linkLocations(water, island, 'crossing', 11);
-        state.locations.push(seat, water, island, lodging);
+        state.locations.push(seat, water, island, lodging, makeLocation({ id: 'alchemy', name: 'Alchemy Hall',
+            kind: 'hall', parentId: seat.id, data: { factionId: houseRow.id, purpose: 'alchemy_hall' } }));
         state.factions.push(makeFaction({ id: houseRow.id, name: houseRow.name, seatLocationId: seat.id,
             ranks: ['servant', 'disciple', 'elder', 'head'], resources: { spirit_stones: 1_000_000 } }));
         for (let i = 0; i < 8; i++) state.npcs.push({ ...setRealm(createNpc(state.seed,

@@ -1,3 +1,4 @@
+import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
 /**
  * Bringing what you know about somebody to the room, to get their place.
@@ -41,10 +42,8 @@ import { witnessIndexFor } from './witness-reaction-index.js';
 
 import { forStream } from '../cultivation/rng.js';
 import { severityRank, type Severity } from '../social/grudges.js';
-import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
 import { whereAComplaintGoes, whatTheWitnessDoesAboutIt } from '../social-leverage/reporting-what-you-saw.js';
 import { whatTheRoomDecides, type Sentence } from '../social-leverage/what-a-room-decides-about-one-of-its-own.js';
-import { whoIsInChargeOfWhat } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { relationshipWith, type NpcRecord } from './npc-state.js';
@@ -390,7 +389,7 @@ export function aRoomHearsIt(
 ): AnExpose | null {
     const roll = state.npcs.filter(n => n.status === 'alive' && n.factionId === house.id)
         .map(n => ({ id: n.id, rankIndex: n.factionRankIndex }));
-    const portfolios = whoIsInChargeOfWhat({ rooms: theRoomsThisHouseHas(state.locations, house.id), roll, rankCount: house.ranks.length });
+    const portfolios = portfoliosIn({ locations: state.locations, sectId: house.id, npcs: state.npcs, roll, rankCount: house.ranks.length });
     const head = state.npcs.filter(n => n.status === 'alive' && n.factionId === house.id)
         .sort((a, b) => b.factionRankIndex - a.factionRankIndex || (a.id < b.id ? -1 : 1))[0] ?? null;
     const toId = whereAComplaintGoes({ portfolios, aboutId: holder.id, headId: head?.id ?? null });

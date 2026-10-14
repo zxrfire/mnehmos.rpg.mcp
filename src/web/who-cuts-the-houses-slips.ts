@@ -63,7 +63,7 @@ import {
     THE_ROOM_THE_ROLL_IS_KEPT_IN
 } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { portfoliosIn } from '../engine/social-leverage/authority-for-an-order.js';
-import { whatTheyHold, whoAnswersAbout } from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
+import { whoAnswersAbout } from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
 import { isAPosting, theTownOf, theirOpenPosting } from './holding-a-posting.js';
 import { theReasonBehind } from '../engine/encounters/what-a-house-has-on-its-board.js';
 import { ledgerAbout } from '../storage/repos/obligation.repo.js';
@@ -113,10 +113,10 @@ export function whetherTheyMayCutForTheHouse(
             .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
         { id: cultivatorId, rankIndex }
     ];
-    const portfolios = house === undefined ? [] : portfoliosIn({
+    const portfolios = house === undefined ? [] : portfoliosIn({ npcs: world.npcs,
         locations: world.locations, sectId: houseId, roll, rankCount: house.ranks.length
     });
-    const holds = whatTheyHold(portfolios, cultivatorId).includes(THE_ROOM_THE_ROLL_IS_KEPT_IN);
+    const holds = whoAnswersAbout(portfolios, THE_ROOM_THE_ROLL_IS_KEPT_IN) === cultivatorId;
     const holderId = whoAnswersAbout(portfolios, THE_ROOM_THE_ROLL_IS_KEPT_IN);
     const named = holderId === null || holderId === cultivatorId
         ? null

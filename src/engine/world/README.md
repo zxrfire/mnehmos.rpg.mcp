@@ -45,6 +45,16 @@ settled on its reached landfall. They do not follow that driver's later work.
 The same native quote and commit permit an unladen, unpaid leg on an existing
 actual service hull; an empty request cannot mint a carrier or buy a seat.
 
+A nonmaking house's actual exchange factor can buy finite counted pills with
+the house purse. The seller receives the quoted price, the factor carries the
+house-owned doses, and the shelf gains them only when the factor is physically
+home. The seasonal exchange pass settles posted factors' purchases, and an
+actual purchasing errand buys at its real arrival before returning. An
+unaffordable dose stays with its seller.
+Return settlement shares a transient read of each carrier's exchange and bought
+cargo. Counted deliveries and purchases refresh that read; the actual rows and
+physical homecoming remain authoritative.
+
 The yearly sweep can forget an old mundane event without an unrelated business
 docket. Living participants or witnesses, and actual references such as a
 grievance, retain its evidence through the existing hold.
@@ -5081,3 +5091,36 @@ meeting. Paid road protection can quote a single outward course without a hidden
 return. Human followers record its admitted finite foot course and their matching
 actual arrival. Native attrition and cultivation writers cannot substitute a
 player mirror for the real body's held encounters, combat or learning acts.
+
+Institutional craft support follows focus, or the existing deep-foundation bar
+with vein or tribute income. Unsupported houses keep no manufactured pill
+cupboard or institutional vessel; personal tools and crafting remain available.
+Care and ordinary stores use existing compound rooms where dedicated rooms are
+absent. Actual bought doses and made artifacts arrive with their returning factor.
+
+Internal Affairs appoints the healer through ordinary decision odds and ties.
+The worker's activity references that appointment fact. A funded clinical course
+pays the real provider and rests the real member for the catalog month; its native
+endpoint closes the original reachable wounds bought, or records an interruption. No fee
+or wealth creates an instant cure. Player and world courses share the same local
+price quote; counted pills keep their existing finite and grade authorities.
+
+A care endpoint releases only the clinician's own course; a new undertaking
+and its companions remain.
+
+A house's seven hall groups are read from its founded rooms in house-halls.ts.
+Founding office claims retain their holders' elder seats. Colliding claims give
+one hall head by the existing chair order; other actual halls use the ordinary
+covering deal. Room aliases answer through that one head. Ordinary work without
+its dedicated hall stays with the head, or Internal Affairs for care without
+Alchemy. It uses existing quarters; it creates no room or craft institution.
+New discipline, lecture and duelling rooms follow the surviving founded rooms.
+
+Resident hall appointments are made by Internal Affairs through
+`internal-affairs-puts-somebody-to-the-work.ts`. `the-people-posted-to-a-houses-halls.ts`
+reads the actual stationed people and their ordinary passage to the room; it does
+not deal a second staff roll. An unsuccessful nomination leaves a vacancy.
+Native hall service earns one tenth of ordinary board contribution, with a minimum
+one per thirty days. Its current receipt prevents paying the same service twice.
+A worker's paid clinical course suspends the post, includes the actual outward
+and return passage, and earns no service contribution during treatment or travel.

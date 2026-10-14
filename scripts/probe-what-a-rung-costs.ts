@@ -101,7 +101,8 @@ async function oneWorld(seed: string): Promise<Row> {
         locations: world?.locations ?? [],
         sectId: held.sectId,
         roll,
-        rankCount: held.rankCount
+        rankCount: held.rankCount,
+        npcs: world?.npcs ?? []
     });
     const call = whoCouldRaiseYou({
         portfolios, roll, rankCount: held.rankCount, asking: cultivator.id

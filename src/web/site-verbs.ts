@@ -8,6 +8,7 @@ import { purposeOf } from '../engine/world/architecture.js';
 import { takeGraveMedicine } from '../engine/world/immortal-medicine.js';
 import { theHeightAHouseWorksAt } from '../engine/world/where-the-pills-actually-are.js';
 import { whereCompoundsAre } from '../engine/world/where-inside-a-house-somebody-is-standing.js';
+import { roomForHouseWork } from '../engine/world/where-a-house-does-its-work.js';
 
 
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
@@ -1424,12 +1425,13 @@ export const siteVerbs = {
             ));
         }
 
-        if (this.atHand && purposeOf(place) === 'archive'
+        if (this.atHand && (purposeOf(place) === 'archive' || asked === 'archive')
             && place.id === worldLocationFor(this.atHand, cultivator.location)?.id) {
             const compounds = whereCompoundsAre(this.atHand);
             const seat = compounds.seatOf.get(place.id);
             const house = seat ? compounds.bySeat.get(seat) : null;
-            if (house) {
+            if (house && (purposeOf(place) === 'archive'
+                || roomForHouseWork(this.atHand.locations, house.houseId, 'archive')?.id === place.id)) {
                 const holdingHouse = this.atHand.factions.find(faction => faction.id === house.houseId);
                 const records = oldWorldArchive(house.houseId, oldWorldYear(this.atHand, run.elapsedDays),
                     holdingHouse ? theHeightAHouseWorksAt(holdingHouse) : 0);
@@ -1445,8 +1447,8 @@ export const siteVerbs = {
 
         if (asked === 'archive') {
             return refused('knowledge.archive', 'look', factsForRefusal(
-                'No archive within reach.', 'The records must be read in the archive.',
-                `Current room ${place.id} is not an archive.`));
+                'No house records within reach.', 'The records must be read where the house keeps them.',
+                `Current room ${place.id} is not where the house keeps its records.`));
         }
 
         const rows = locationHistory(place);
