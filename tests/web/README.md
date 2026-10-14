@@ -10,6 +10,25 @@ at its question boundary. Spent and remaining time conserve the requested span,
 a remainder below one day stays available, and the stopping date comes from
 the already-applied run clock.
 
+The private-business player controls pin both the run and its world and use
+their own databases. `a-player-joins-a-private-venture.test.ts` covers explicit
+invitation answers, an actual auction visit, expiry, reached-ground leaving and
+the elder/equal custody paths. Removing only the physical-pickup hook makes its
+two custody cases fail; the current source is restored byte for byte afterward.
+`private-work-with-a-person.test.ts` covers deferred stones/pill/favour wages,
+actual harvest delivery, failure, nonpayment and an ordinarily released word.
+`private-road-protection.test.ts` requires real joint arrival, retained cargo
+custody and failure when the SQL guard leaves its admitted party.
+
+`swearing-brotherhood-with-a-person.test.ts` keeps human silence distinct from
+consent, reads an existing ordinary favour, writes reciprocal serious words and
+kin edges, and routes player party formation through ordinary company consent.
+`a-private-party-hunts-with-the-player.test.ts` samples four bounded worlds:
+actual member votes can overrule the human, while an agreed hunt enters the
+shared fight with its actual native beast and closes through that fight's result.
+No vote or winner is forced. These are native/scripted played behaviour checks,
+not acceptance of live-model prose.
+
 `every-executed-result-reaches-the-narrator.test.ts` checks the folded execution
 boundary with actual span facts, narration composition and the output audit.
 Two lived months retain both occurrences, later automatic grants are recognized,
@@ -78,5 +97,4 @@ repository code (imports alone relocated), then the current native migration,
 world opening and spending authorities. Fresh DDL and repeated file reopening
 distinguish nullable absence from a real exhausted pool. These controls do not
 clear shared caches or author database balances through migration defaults.
-
 

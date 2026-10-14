@@ -15,6 +15,7 @@ import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { WorldState } from './world-state.js';
+import { playerAtTheContact } from './background-incident-draw.js';
 
 /** Unknown usefulness earns no shame by inference. Read the actual art, power or native grade band. */
 export function theyHaveOutgrownTheFind(person: NpcRecord, object: ObjectRecord): boolean {
@@ -31,7 +32,9 @@ export function theyHaveOutgrownTheFind(person: NpcRecord, object: ObjectRecord)
 export function collectPrivatePartyFinds(state: WorldState, locationId: string, members: readonly NpcRecord[],
     elderId: string | null, day: number, ventureId: string, elderExpedition?: boolean,
     extraGoods: readonly ObjectRecord[] = []): void {
-    const survivors = members.filter(person => person.status === 'alive' && isTheWorldsToMove(person));
+    const contact = playerAtTheContact(state);
+    const survivors = members.filter(person => person.status === 'alive' && (isTheWorldsToMove(person)
+        || contact?.id === person.id && contact.placeId === locationId));
     if (!survivors.length) return;
     const found = [...new Map([...booksLyingIn(state, locationId), ...goodsLyingIn(state, locationId), ...extraGoods]
         .map(object => [object.id, object])).values()];
@@ -44,6 +47,17 @@ export function collectPrivatePartyFinds(state: WorldState, locationId: string, 
     for (const original of found) {
         const at = state.objects.findIndex(object => object.id === original.id), finder = finders.get(original.id);
         if (at < 0 || !finder || state.objects[at]!.possessorId !== finder.id) continue;
+        allocatePrivatePartyFind(state, original, finder, survivors, elderId, locationId, day, ventureId, elderExpedition);
+    }
+}
+
+/** The same allocation follows a real player's pickup as a native collector's pickup. */
+export function allocatePrivatePartyFind(state: WorldState, original: ObjectRecord, finder: NpcRecord,
+    survivors: readonly NpcRecord[], elderId: string | null, locationId: string, day: number, ventureId: string,
+    elderExpedition?: boolean): void {
+        const at = state.objects.findIndex(object => object.id === original.id);
+        if (at < 0 || state.objects[at].possessorId !== finder.id || state.history.facts.some(fact =>
+            fact.data.privatePartyFind === ventureId && fact.data.objectId === original.id)) return;
         const pickup = appendWorldFact(state, makeFact({ day, kind: 'opportunity', visibility: 'secret', locationId,
             actors: [{ id: finder.id, name: finder.name, role: 'finder' }], causes: [ventureId],
             summary: `${finder.name} found and took ${original.name}.`, data: { privatePartyFind: ventureId, objectId: original.id } }),
@@ -52,11 +66,11 @@ export function collectPrivatePartyFinds(state: WorldState, locationId: string, 
             onDay: day, how: 'found', transfersOwnership: true, factId: pickup.id });
         const elder = state.npcs.find(person => person.id === elderId && person.status === 'alive' && isTheWorldsToMove(person));
         const ownDisciple = finder.relationships.some(tie => tie.targetId === elder?.id && tie.kind === 'master');
-        if (!elder || !(elderExpedition ?? ownDisciple)) continue;
+        if (!elder || !(elderExpedition ?? ownDisciple)) return;
         const recipient = finder.id !== elder.id ? finder : survivors.find(person => person.id !== elder.id
             && person.relationships.some(tie => tie.targetId === elder.id && tie.kind === 'master'))
             ?? survivors.find(person => person.id !== elder.id);
-        if (!recipient) continue;
+        if (!recipient) return;
         const beneath = theyHaveOutgrownTheFind(elder, original);
         const tie = elder.relationships.find(row => row.targetId === recipient.id);
         const shared = whetherTheyGiveItAway({ id: elder.id, name: elder.name,
@@ -86,5 +100,4 @@ export function collectPrivatePartyFinds(state: WorldState, locationId: string, 
                 }
             }
         }
-    }
 }

@@ -1,7 +1,8 @@
 /** People's own purse buys an actual journey, without a house notice or merit. */
 import { forStream } from '../cultivation/rng.js';
 import { isElderRank } from '../cultivation/leadership.js';
-import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
+import { drawBackgroundIncidents, isPlayerInvolved, playerAtTheContact } from './background-incident-draw.js';
+import { invitePlayerToPrivateParty } from './a-private-party-invites-the-player.js';
 import { capitalCalendar, sendHouseMission, type CapitalOccasion } from './capital-missions-and-calendar.js';
 import { isAwayOnSomething, isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
@@ -43,12 +44,15 @@ export function eldersWithoutOffices(state: WorldState, day: number): NpcRecord[
 /** The native itinerary charges this person; no treasury is substituted. */
 export function undertakePrivateVenture(state: WorldState, leaderId: string, venue: LocationRecord,
     members: readonly NpcRecord[], day: number, auction?: CapitalOccasion,
-    onDue?: (id: string, day: number) => void, elderExpedition?: boolean) {
+    onDue?: (id: string, day: number) => void, elderExpedition?: boolean,
+    acceptedPlayers: ReadonlySet<string> = new Set()) {
     const leader = state.npcs.find(person => person.id === leaderId);
     const currentMembers = members.map(person => state.npcs.find(row => row.id === person.id));
     if (new Set(members.map(person => person.id)).size !== members.length || !leader || !freeForPrivateBusiness(leader, day)
-        || currentMembers.some(person => !person || !freeForPrivateBusiness(person, day)
-        || person.locationId !== leader.locationId || person.id === leader.id)) return null;
+        || currentMembers.some(person => !person || !(freeForPrivateBusiness(person, day)
+            || !isTheWorldsToMove(person) && acceptedPlayers.has(person.id) && person.status === 'alive')
+        || (isTheWorldsToMove(person) ? person.locationId : playerAtTheContact(state)?.placeId) !== leader.locationId
+        || person.id === leader.id)) return null;
     const party = [leader, ...currentMembers as NpcRecord[]];
     if (!auction) for (const member of party) {
         const entrance = reachThrough(pathTo(state.locations, venue.id), { realmOrdinal: member.cultivation.realmOrdinal,
@@ -102,16 +106,26 @@ export function privateVenturesThisYear(state: WorldState, year: number, day: nu
         const disciples = auction ? [] : state.npcs.filter(person => freeForPrivateBusiness(person, day)
             && person.locationId === elder.locationId && person.relationships.some(tie => tie.targetId === elder.id && tie.kind === 'master'))
             .filter(willing);
+        const contact = playerAtTheContact(state);
+        let visitingPlayer: NpcRecord | undefined;
         if (!auction) for (const other of pool.filter(person => person.id !== elder.id
             && announcement.witnessIds.includes(person.id))) {
-            const junior = state.npcs.find(person => freeForPrivateBusiness(person, day)
-                && person.locationId === elder.locationId && person.relationships.some(tie => tie.targetId === other.id && tie.kind === 'master'));
+            const junior = state.npcs.find(person => (freeForPrivateBusiness(person, day)
+                || contact?.id === person.id && person.status === 'alive')
+                && (isTheWorldsToMove(person) ? person.locationId : contact?.placeId) === elder.locationId
+                && person.relationships.some(tie => tie.targetId === other.id && tie.kind === 'master'));
             if (!junior || disciples.some(person => person.id === junior.id)) continue;
-            if (ask(other, elder, `${other.name} asked ${elder.name} to take ${junior.name} along.`,
-                'private-expedition-favour') && willing(junior)) disciples.push(junior);
+            if (ask(other, elder, `${other.name} asked ${elder.name} to take ${junior.name} along.`, 'private-expedition-favour')) {
+                if (!isTheWorldsToMove(junior)) visitingPlayer = junior;
+                else if (willing(junior)) disciples.push(junior);
+            }
         }
         // The existing request duration delays the paid departure. The held course
         // occupies these people through that preparation and the journey itself.
+        const pupil = visitingPlayer ?? (contact && state.npcs.find(person => person.id === contact.id
+            && person.relationships.some(tie => tie.targetId === elder.id && tie.kind === 'master')));
+        if (pupil && invitePlayerToPrivateParty(state, elder, pupil.id, ground.id, day, 'elder',
+            disciples.map(person => person.id), auction?.onDay, onDue, attentionDays)) continue;
         const dispatched = undertakePrivateVenture(state, elder.id, ground, disciples, day + attentionDays, auction ?? undefined, onDue, true);
         if (dispatched) started.push(dispatched.id);
     }

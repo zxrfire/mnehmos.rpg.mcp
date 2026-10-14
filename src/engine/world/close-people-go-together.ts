@@ -10,12 +10,14 @@ import { createObligation } from '../social/grudges.js';
 import { createLineageRecord, addLineageEdge } from './lineage.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
-import { drawBackgroundIncidents, isPlayerInvolved } from './background-incident-draw.js';
+import { drawBackgroundIncidents, isPlayerInvolved, playerAtTheContact } from './background-incident-draw.js';
+import { invitePlayerToPrivateParty } from './a-private-party-invites-the-player.js';
 import { whatOneOfTheWorldsOwnPeopleKnows } from './what-one-of-the-worlds-own-people-knows.js';
 import { isAtLeast } from '../social/discovery.js';
 import { sendHouseMission } from './capital-missions-and-calendar.js';
 import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
 import { HUNTING_DAYS } from './hunting-a-spirit-beast.js';
+import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 
 /** The actual lateral lineage edges are the bond; there is no parallel sibling flag. */
 export function swornSiblingsOf(state: WorldState, personId: string): Set<string> {
@@ -116,12 +118,20 @@ export function closePeopleThisYear(state: WorldState, year: number, day: number
         const leader = state.npcs.find(person => person.id === original.id)!;
         if (!freeForPrivateBusiness(leader, day)) continue;
         let candidates = privateCompanyCandidates(state, leader, day);
-        if (!candidates.length) continue;
-        const closest = candidates[0], mutual = Math.min(
+        const contact = playerAtTheContact(state);
+        const player = contact && state.npcs.find(person => person.id === contact.id);
+        const contactPlace = contact && state.locations.find(place => place.id === contact.placeId);
+        const closePlayer = player && contactPlace && contact?.placeId === leader.locationId
+            && theAreasOf(state, contactPlace, undefined, { id: player.id, sectId: player.factionId,
+                standingIn: contact.areaId }).whereIs.get(leader.id) === contact.areaId
+            && (swornSiblingsOf(state, leader.id).has(player.id)
+            || leader.relationships.some(tie => tie.targetId === player.id && tie.standing > 0));
+        if (!candidates.length && !closePlayer) continue;
+        const closest = candidates[0] ?? player!, mutual = Math.min(
             leader.relationships.find(tie => tie.targetId === closest.id)?.standing ?? 0,
             closest.relationships.find(tie => tie.targetId === leader.id)?.standing ?? 0);
         const beforeBond = state.history.facts.length;
-        if (!swornSiblingsOf(state, leader.id).has(closest.id)
+        if (isTheWorldsToMove(closest) && !swornSiblingsOf(state, leader.id).has(closest.id)
             && forStream(state.seed, 'close-company-bond', leader.id, year).chance(Math.max(0, mutual)))
             swearBrotherhood(state, leader.id, closest.id, day);
         const afterBond = day + state.history.facts.slice(beforeBond).reduce((days, fact) => days + Number(fact.data.attentionDays ?? 0), 0);
@@ -131,6 +141,14 @@ export function closePeopleThisYear(state: WorldState, year: number, day: number
             && isAtLeast(known(leader.id, 'place', place.id), 'placed'));
         if (!venues.length) continue;
         const venue = forStream(state.seed, 'close-company-venture', leader.id, year).pick(venues);
+        if (closePlayer) {
+            const before = state.history.facts.length;
+            const willing = candidates.filter(person => putPrivateRequest(state, leader, person, afterBond,
+                `${leader.name} invited ${person.name} to the private party for ${venue.name}.`, 'private-company-answer'));
+            const attention = state.history.facts.slice(before).reduce((sum, fact) => sum + Number(fact.data.attentionDays ?? 0), 0);
+            if (invitePlayerToPrivateParty(state, leader, player!.id, venue.id, afterBond,
+                venue.kind === 'wilds' ? 'hunt' : 'equals', willing.map(person => person.id), undefined, onDue, attention)) continue;
+        }
         const party = formPrivateParty(state, leader.id, venue, candidates.map(person => person.id), afterBond, onDue,
             venue.kind === 'wilds' ? 'hunt' : 'journey');
         if (party) departures.push(party.id);

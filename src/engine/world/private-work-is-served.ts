@@ -24,6 +24,7 @@ import { servePrivateCraft } from './private-work-at-a-bench.js';
 import { servePrivateRefinement } from './private-work-at-a-cauldron.js';
 import { servePrivateGather } from './private-work-in-the-field.js';
 import { FORAGE_BASE_DAYS as GATHERING_DAYS } from '../../data/cultivation/herbs.js';
+import { startPrivateRoadProtection } from './a-private-road-guard-joins-the-actual-party.js';
 
 export function doingPrivateWork(state: WorldState, worker: NpcRecord, termId: string): boolean {
     return worker.activity?.privateWorkId === termId || worker.activity?.passageCompany?.privateWorkId === termId
@@ -77,6 +78,9 @@ export function servePrivateWork(state: WorldState, offer: HistoricalFact, term:
     };
     let destination: string | null = null;
     if (objective.kind === 'escort') {
+        if (objective.destinationId) {
+            startPrivateRoadProtection(state, offer, term, terms, day, bodies); return;
+        }
         if (factsWithDataValue(state, 'privateEscortStarted', offer.id).length) return;
         const protectedPerson = person(objective.personId);
         if (!protectedPerson) return;

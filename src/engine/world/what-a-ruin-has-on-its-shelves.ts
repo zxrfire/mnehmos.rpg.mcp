@@ -68,7 +68,7 @@ import {
 } from './manuals.js';
 import type { LocationRecord } from './locations.js';
 import { wingsOf } from './provenance.js';
-import type { NpcRecord } from './npc-state.js';
+import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { howMuchAGradeIsWorthTracking, isRuined, makeObject, type ObjectRecord } from './possessions.js';
 import type { WorldState } from './world-state.js';
 import { takeTheArtOffThePage } from './what-a-manual-has-left-in-it.js';
@@ -621,7 +621,7 @@ export function applyWhatThePartyCarriedOut(
         state.objects[at] = carriedTo(object, input, carrier!.id, carrier!.name, carrier!.locationId, false);
         const merit = house === null ? 0 : whatTheHouseMakesOf(state, house.id, state.objects[at]!).merit;
 
-        const couldRead = alive.filter(r => (!input.carrierFor || r.id === carrier?.id)
+        const couldRead = alive.filter(r => isTheWorldsToMove(r) && (!input.carrierFor || r.id === carrier?.id)
             && !readThisTrip.has(r.id) && manual.cap > manualCeilingOf(r));
         let reader = whoOfThemCouldOpenIt(
             house === null

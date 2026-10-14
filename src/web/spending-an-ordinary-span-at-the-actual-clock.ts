@@ -28,7 +28,7 @@ export type OrdinarySpanServices = Pick<GameService,
     (Pick<GameService, 'groundFor' | 'rateTermsFor'> | {
         sceneForSpan(body: Cultivator, context: TimeSkipContext):
             Partial<import('../engine/cultivation/time-skip.js').TimeSkipScene>;
-    }) & Partial<Pick<GameService, 'settlePlagueAtTheBodyBoundary'>>;
+    }) & Partial<Pick<GameService, 'settlePlagueAtTheBodyBoundary' | 'settlePrivateBusinessAtBodyBoundary' | 'privateBusinessBoundaryDates' | 'pendingPrivateOfferIdsAtBodyBoundary'>>;
 
 /** The caller prepares its body, encounters and context AFTER clock promotion. */
 export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServices, run: Run,
@@ -41,7 +41,9 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
     initial = game.repos.cultivators.getById(initial.id) ?? initial;
     const originalPlague = initial.plague;
     const now = game.atHand ? routineTime(game.atHand) : run.elapsedDays;
+    const questionsBefore = new Set(game.pendingPrivateOfferIdsAtBodyBoundary?.() ?? []);
     const active = game.worldEnabled && (game.atHand?.npcs.some(n => n.activity?.retrievalRequestId)
+        || (game.privateBusinessBoundaryDates?.().length ?? 0) > 0
         || plagueSusceptibility(initial) > 0
         || game.atHand?.statuses.some(status => status.kind === 'plague' && isStatusRunningOn(status, now)));
     if (active) context = { ...context, startDay: now };
@@ -93,7 +95,7 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
                     fromId: initial.location ?? '', toId: initial.location ?? '', stationaryAt: stationary,
                     onDay: start + elapsed, days: requested - elapsed, exceptIds: new Set([initial.id]) }) : null;
             const boundary = () => state && nextWorldClockBoundary(state,
-                start + elapsed, start + requested, [...(checks?.dates ?? []),
+                start + elapsed, start + requested, [...(checks?.dates ?? []), ...(game.privateBusinessBoundaryDates?.() ?? []),
                     ...(meeting ? [start + elapsed + meeting.afterDays] : [])], {}, 'foreground');
             // A distant person's next ordinary work hour is not this body's tick.
             // Actual nearby people and the bounded world queue retain their dates.
@@ -123,6 +125,7 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
             // Cursor checkpoint and native world consequences precede current check input.
             await checks?.afterBoundary();
             world.lines.push(...(game.settlePlagueAtTheBodyBoundary?.() ?? []));
+            world.lines.push(...(game.settlePrivateBusinessAtBodyBoundary?.() ?? []));
             const state = game.atHand, body = game.repos.cultivators.getById(initial.id);
             const npc = meeting && state?.npcs.find(person => person.id === meeting!.npc.id);
             if (stationary && state && body?.alive && npc?.status === 'alive'
@@ -139,6 +142,8 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
             }
         },
         whatStopsTheSpan: () => {
+            if (game.pendingPrivateOfferIdsAtBodyBoundary?.().some(id => !questionsBefore.has(id)))
+                return 'A person here has asked you a private question.';
             const fresh = game.repos.cultivators.getById(initial.id);
             const caught = fresh && activePlague(fresh, game.atHand ? routineTime(game.atHand) : run.elapsedDays);
             return !fresh?.alive ? 'The actual body can no longer continue this span.'

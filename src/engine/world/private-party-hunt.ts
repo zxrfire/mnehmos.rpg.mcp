@@ -23,15 +23,20 @@ import { aBreakingEntersTheWorld } from './a-thing-somebody-ended-is-a-fact.js';
 import { oneAccountEach } from './what-a-change-of-hands-leaves.js';
 import { createObligation, type ObligationInput } from '../social/grudges.js';
 import { collectPrivatePartyFinds } from './private-party-finds.js';
+import { playerAtTheContact } from './background-incident-draw.js';
+import { putTheRouteToTheParty } from './a-party-answers-its-leader.js';
 
-/** Called once at the existing itinerary's work boundary, only for an NPC-only company. */
+/** Background company resolves here; a met human party hands the real beast to shared combat. */
 export function finishPrivatePartyHunt(state: WorldState, mission: HistoricalFact,
     members: NpcRecord[], venue: LocationRecord, day: number): NpcRecord[] {
-    if (members.some(person => !isTheWorldsToMove(person))) return members;
     if (state.history.facts.some(fact => fact.data.privateHuntResolved === mission.id))
         return members.map(person => state.npcs.find(row => row.id === person.id)!).filter(person => person.status === 'alive');
+    const pending = state.history.facts.find(fact => fact.data.privateHuntPending === mission.id);
+    if (pending && members.some(person => person.status === 'alive' && !isTheWorldsToMove(person))) return members;
     const clock = { ...state, currentDay: Math.floor(day), currentHour: (day % 1) * 24 };
-    const party = members.filter(person => person.status === 'alive' && person.locationId === venue.id);
+    const contact = playerAtTheContact(state);
+    const party = members.filter(person => person.status === 'alive' && (person.locationId === venue.id
+        || !isTheWorldsToMove(person) && contact?.id === person.id && contact.placeId === venue.id));
     if (!party.length || party.some(person => reachThrough(pathTo(state.locations, venue.id), {
         realmOrdinal: person.cultivation.realmOrdinal, onDay: day,
         keyIds: theDoorKeysTheyActuallyCarry(state.objects, person.id) }).stoppedAt !== null)) return members;
@@ -45,7 +50,10 @@ export function finishPrivatePartyHunt(state: WorldState, mission: HistoricalFac
     const rng = forStream(state.seed, 'private-hunt-beast', mission.id);
     const ground = whatIsOnThisGround({ sealed: venue.sealed, onAVein: venue.kind === 'vein',
         grounds: whatGroundThisIs(state, venue) ?? undefined }, Math.max(...party.map(person => person.cultivation.realmOrdinal)), rng.next(), { standingAt, gone });
-    const species = ground.met ?? (ground.worthGoingAfter.length ? rng.pick([...ground.worthGoingAfter]) : null);
+    const pendingBeast = pending && state.npcs.find(person => person.id === pending.data.beastId
+        && person.status === 'alive' && person.locationId === venue.id);
+    const species = pending ? pendingBeast && theSpeciesItIs(pendingBeast)
+        : ground.met ?? (ground.worthGoingAfter.length ? rng.pick([...ground.worthGoingAfter]) : null);
     if (!species) {
         appendWorldFact(state, makeFact({ day, kind: 'opportunity', visibility: 'secret', locationId: venue.id,
             causes: [mission.id], actors: party.map(person => ({ id: person.id, name: person.name, role: 'hunter' })),
@@ -53,12 +61,21 @@ export function finishPrivatePartyHunt(state: WorldState, mission: HistoricalFac
             { recur: false, bystanders: false });
         return party;
     }
-    const beastId = bandOf(species) === 'counted' ? `npc-private-hunt:${mission.id}` : idOfTheOneOnThisGround(species.id, venue.id);
+    const beastId = pendingBeast?.id ?? (bandOf(species) === 'counted' ? `npc-private-hunt:${mission.id}` : idOfTheOneOnThisGround(species.id, venue.id));
     let beast = state.npcs.find(person => person.id === beastId);
     if (!beast) {
         beast = { ...standUpTheOneOnThisGround({ beast: species, locationId: venue.id, seed: state.seed, onDay: day,
             takenNames: new Set(state.npcs.map(person => person.name)) }), id: beastId };
         state.npcs.push(beast);
+    }
+    if (party.some(person => !isTheWorldsToMove(person))) {
+        const pending = appendWorldFact(state, makeFact({ day, kind: 'opportunity', visibility: 'secret', locationId: venue.id,
+            causes: [mission.id], actors: party.map(person => ({ id: person.id, name: person.name, role: 'hunter' })),
+            summary: `The private hunting party met ${beast.name}.`,
+            data: { privateHuntPending: mission.id, beastId: beast.id } }), { recur: false, bystanders: false });
+        putTheRouteToTheParty(state, String(mission.data.leaderId), contact!.id, day, pending.id,
+            `The private hunt has met ${beast.name}. Continue the hunt, rest or turn back?`);
+        return members;
     }
     const inputs = [...party, beast].map(person => combatantOf(person, clock));
     const byId = new Map([...party, beast].map(person => [person.id, person]));

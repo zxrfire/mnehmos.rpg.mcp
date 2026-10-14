@@ -1,5 +1,7 @@
 /** A consenting follower reads one accepted itinerary and moves the stored body. */
 import type Database from 'better-sqlite3';
+import { recordFollowingFootCourse, recordFollowingFootArrival } from './a-following-party-reaches-its-foot-endpoint.js';
+import { aPrivateHuntEndsWithItsActualFight } from './a-private-party-hunts-with-the-player.js';
 import type { GameService } from './turn-engine.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import type { WorldState } from '../engine/world/world-state.js';
@@ -73,6 +75,7 @@ export function bindFollowingParty(game: GameService, run: Run, body: Cultivator
             runId: run.id, boardingRunElapsedDays: run.elapsedDays, departureDay: now } }),
         { bystanders: false, recur: false });
     writeFlag(game.db, current.id, FOLLOWING, JSON.stringify({ bindingFactId: binding.id } satisfies PartyFollowerClaim));
+    recordFollowingFootCourse(game.db, world, current);
     game.theWorldMoved();
     return { ok: true, binding };
 }
@@ -197,6 +200,8 @@ export function projectPartyFollower(db: Database.Database, world: WorldState, p
     if (privateLeg && (!privateLeg.actors.some(actor => actor.id === playerId)
         || partyFollowerSource(db, world, body, onDay)?.unavailable)) return;
     repo.update(playerId, { location: place.name });
+    const mirrorAt = world.npcs.findIndex(person => person.id === playerId);
+    if (mirrorAt >= 0) world.npcs[mirrorAt] = { ...world.npcs[mirrorAt], locationId: null };
     const areas = theAreasOf(world, place), area = areas.whereIs.get(party.leader.id);
     const current = repo.getById(playerId)!;
     const carrier = actualCarrierScene({ db }, current, world, onDay);
@@ -205,6 +210,7 @@ export function projectPartyFollower(db: Database.Database, world: WorldState, p
         || !current.standingIn || !areas.areas.some(area => area.id === current.standingIn))
         repo.standIn(playerId, area ?? null);
     recordFollowingPrivateLandfall(world, party, repo.getById(playerId)!, onDay);
+    recordFollowingFootArrival(db, world, repo.getById(playerId)!, onDay);
     if (party.finished) clearFlag(db, playerId, FOLLOWING);
 }
 
@@ -280,7 +286,10 @@ export async function spendFollowingParty(game: GameService, run: Run, body: Cul
         (arrivedBody, _arrivedRun, execution) => {
             execution.facts.lines.push(...askAfterThePartyFightOnReachedGround(game, arrivedBody));
         },
-        { source, beforeWorld: () => bindFreePrivateRideForFollower(game, game.currentRun().cultivator), contact: (onDay, remaining) => firstPartyContact(game, body, onDay, remaining), overWater: !!activity?.seaLaneId,
+        { source, beforeWorld: () => {
+            bindFreePrivateRideForFollower(game, game.currentRun().cultivator);
+            if (game.atHand) recordFollowingFootCourse(game.db, game.atHand, game.currentRun().cultivator);
+        }, contact: (onDay, remaining) => firstPartyContact(game, body, onDay, remaining), overWater: !!activity?.seaLaneId,
             vesselId: activity?.vesselId ?? undefined,
             airborne: !!activity?.airCourseLocationId,
             crew: () => game.atHand ? followedParty(game.db, game.atHand, body.id)?.members
@@ -426,14 +435,15 @@ export function theFollowingPartyAfterAFight(game: GameService, body: Cultivator
             actors: event.actors, witnessIds: event.witnessIds,
             data: { partyFightEnded: event.id } }), { bystanders: false, recur: false });
     }
-    if (!body.alive || typeof event.data.leaderId !== 'string') { game.theWorldMoved(); return []; }
+    const hunt = aPrivateHuntEndsWithItsActualFight(game, event.id);
+    if (!body.alive || typeof event.data.leaderId !== 'string') { game.theWorldMoved(); return hunt; }
     const question = putTheRouteToTheParty(world, event.data.leaderId, body.id, day,
         event.id, "The party's fight ended.");
-    if (!question) { game.theWorldMoved(); return []; }
+    if (!question) { game.theWorldMoved(); return hunt; }
     projectPartyFollower(game.db, world, body.id, day);
     game.theWorldMoved();
     const leader = world.npcs.find(person => person.id === event.data.leaderId)!;
-    return [`${leader.name} asks the party whether to continue, rest or turn back.`];
+    return [...hunt, `${leader.name} asks the party whether to continue, rest or turn back.`];
 }
 
 /** An aboard discussion waits for actual landfall; it cannot commandeer the hull. */

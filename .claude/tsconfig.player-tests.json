@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "../src/**/*.ts",
+    "../tests/web/a-player-joins-a-private-venture.test.ts",
+    "../tests/web/a-private-party-hunts-with-the-player.test.ts",
+    "../tests/web/private-road-protection.test.ts",
+    "../tests/web/private-work-with-a-person.test.ts",
+    "../tests/web/swearing-brotherhood-with-a-person.test.ts"
+  ],
+  "exclude": ["../node_modules", "../dist"]
+}

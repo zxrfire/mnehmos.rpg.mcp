@@ -34,7 +34,8 @@ export function privatePeopleCanSpeak(state: WorldState, actor: NpcRecord, subje
 /** A reached person can refuse. A player receives an offer, never an automatic answer. */
 export function putPrivateRequest(state: WorldState, actor: NpcRecord, subject: NpcRecord,
     day: number, description: string, stream: string, ask: AskWeight = 'a_real_favour',
-    reached: (actor: NpcRecord, subject: NpcRecord, day: number) => boolean = (actor, subject, day) => privatePeopleCanSpeak(state, actor, subject, day)): boolean {
+    reached: (actor: NpcRecord, subject: NpcRecord, day: number) => boolean = (actor, subject, day) => privatePeopleCanSpeak(state, actor, subject, day),
+    localExchangeDays?: number): boolean {
     if (!isTheWorldsToMove(subject) || !reached(actor, subject, day)) return false;
     const placeId = routineLocationOf({ ...state, currentDay: day, currentHour: 0 }, actor);
     const tie = (person: NpcRecord, id: string) => {
@@ -51,7 +52,7 @@ export function putPrivateRequest(state: WorldState, actor: NpcRecord, subject: 
     const fact = appendWorldFact(state, makeFact({ day, kind: 'opportunity', visibility: 'secret',
         locationId: placeId, actors: [{ id: actor.id, name: actor.name, role: 'asked' },
             { id: subject.id, name: subject.name, role: 'answered' }], summary: description + ' ' + result.line,
-        data: { privateRequest: true, accepted: attemptWasAccepted(result.outcome), attentionDays: result.days } }), { bystanders: false });
+        data: { privateRequest: true, accepted: attemptWasAccepted(result.outcome), attentionDays: localExchangeDays ?? result.days } }), { bystanders: false });
     for (const input of [result.marks.obligation, result.marks.counterObligation])
         if (input) state.obligations.push(createObligation({ ...input, triggeringEventId: fact.id }));
     if (held && attemptWasAccepted(result.outcome)) {

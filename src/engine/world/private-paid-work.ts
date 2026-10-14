@@ -25,11 +25,12 @@ import { getHerb } from '../../data/cultivation/herbs.js';
 import { getRecipe } from '../../data/cultivation/recipes.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 import type { Recipe as BenchRecipe } from '../../data/cultivation/what-an-artifact-is-made-of.js';
+import { actualBodiesArrivedTogether } from './a-body-that-actually-arrived.js';
 
 export type PrivateWorkPayment = { kind: 'stones'; amount: number }
     | { kind: 'pill'; objectId: string } | { kind: 'favor'; severity: Severity };
 export type PrivateWorkObjective = { kind: 'watch'; locationId: string; days: number; protectedId?: string }
-    | { kind: 'escort'; personId: string; days: number }
+    | { kind: 'escort'; personId: string; days: number; destinationId?: string; cargoId?: string }
     | { kind: 'handover'; objectId: string; recipientId: string; collectAt?: string; deliverAt?: string }
     | { kind: 'find'; personId: string; searchAt?: string }
     | { kind: 'gather'; herbId: string; quantity: number; locationId: string; recipientId: string }
@@ -44,6 +45,7 @@ export interface PrivateWorkTerms {
 
 /** The web supplies reads/writes of its SQL body; a world mirror cannot pay or move it. */
 export interface PrivateWorkBodies {
+    localExchangeDays?: number;
     person(id: string): NpcRecord | undefined;
     canSpeak(actor: NpcRecord, subject: NpcRecord, day: number): boolean;
     payStones(fromId: string, toId: string, amount: number): boolean;
@@ -52,6 +54,7 @@ export interface PrivateWorkBodies {
     bench?(personId: string): AUnitOnTheBench[];
     takeMaterials?(ask: WhatYouAskedThemToMake, bench: readonly AUnitOnTheBench[], day: number): boolean;
     takeRecipeMaterials?(grade: TechniqueGrade, recipe: BenchRecipe, bench: readonly AUnitOnTheBench[], day: number, named: string): boolean;
+    spendJourneyFare?(sponsorId: string, amount: number): boolean;
 }
 
 /** A real wound or an open protection goal supplies the employer's need. */
@@ -79,12 +82,12 @@ function offerWantedPrivateWatch(state: WorldState, employer: NpcRecord, worker:
 
 /** A met person resolves their yearly wish exactly, and asks this actual body. Silence is no acceptance. */
 export function privateWorkOfferedOnContact(state: WorldState, workerId: string, day: number,
-    bodies: PrivateWorkBodies): HistoricalFact[] {
+    bodies: PrivateWorkBodies, reachableEmployers: readonly NpcRecord[] = state.npcs): HistoricalFact[] {
     const worker = bodies.person(workerId), year = Math.floor(day / 365);
     if (!worker || worker.status !== 'alive' || state.obligations.some(word => word.status === 'open'
         && word.holderId === workerId && word.tags.includes('private-paid-work'))) return [];
     const index = witnessIndexFor(state), offered: HistoricalFact[] = [];
-    for (const employer of state.npcs) {
+    for (const employer of reachableEmployers) {
         if (!isTheWorldsToMove(employer) || employer.status !== 'alive' || employer.id === workerId
             || protectionWanted(state, employer) === null || !bodies.canSpeak(employer, worker, day)
             || (index.factsByPerson.get(employer.id) ?? []).some(fact => fact.year === year && fact.data.privateWorkOffer === true)
@@ -149,6 +152,9 @@ export function offerPrivateWork(state: WorldState, employerId: string, workerId
     if (objective.kind === 'escort' && (!Number.isFinite(objective.days) || objective.days <= 0
         || objective.personId === worker.id || personIn(state, objective.personId, bodies)?.status !== 'alive'
         || day + objective.days > terms.dueOnDay)) return null;
+    if (objective.kind === 'escort' && (objective.destinationId && !state.locations.some(place => place.id === objective.destinationId)
+        || objective.cargoId && !state.objects.some(object => object.id === objective.cargoId && !isRuined(object)
+            && object.possessorId === objective.personId))) return null;
     if (objective.kind === 'handover' && (!state.objects.some(object => object.id === objective.objectId && !isRuined(object))
         || !personIn(state, objective.recipientId, bodies))) return null;
     if (objective.kind === 'find' && personIn(state, objective.personId, bodies)?.status !== 'alive') return null;
@@ -172,9 +178,10 @@ export function offerPrivateWork(state: WorldState, employerId: string, workerId
             stonesOffered: terms.payment.kind === 'stones' ? terms.payment.amount : 0,
             theirTie: tie ? { active: true, strength: Math.max(0, tie.standing) } : null,
             rng: forStream(state.seed, 'private-work-answer', offer.id, employer.id, worker.id) });
+        const attentionDays = bodies?.localExchangeDays ?? decision.days;
         const answer = appendWorldFact(state, makeFact({ day, kind: 'opportunity', visibility: 'secret', locationId: employer.locationId,
             actors: [{ id: worker.id, name: worker.name, role: 'answered' }], causes: [offer.id], summary: decision.line,
-            data: { privateWorkAnswer: offer.id, accepted: attemptWasAccepted(decision.outcome), attentionDays: decision.days } }),
+            data: { privateWorkAnswer: offer.id, accepted: attemptWasAccepted(decision.outcome), attentionDays } }),
             { recur: false, bystanders: false });
         // The paid word replaces the kindness claim, but a counter or refusal
         // remains the ordinary person's actual account of the approach.
@@ -190,7 +197,7 @@ export function offerPrivateWork(state: WorldState, employerId: string, workerId
                 kind: who.relationships.find(row => row.targetId === other.id)?.kind ?? 'acquaintance',
                 standing: move.strength, factIds: [answer.id] }, day);
         }
-        if (attemptWasAccepted(decision.outcome)) acceptPrivateWork(state, offer.id, worker.id, day, bodies, decision.days);
+        if (attemptWasAccepted(decision.outcome)) acceptPrivateWork(state, offer.id, worker.id, day, bodies, attentionDays);
     }
     return offer;
 }
@@ -243,6 +250,15 @@ function workHasBeenDone(state: WorldState, offer: HistoricalFact, terms: Privat
     if (objective.kind === 'escort') {
         const begun = factsWithDataValue(state, 'privateEscortStarted', offer.id)[0];
         const protectedPerson = personIn(state, objective.personId, bodies);
+        if (objective.destinationId && begun) {
+            const arrivedTogether = protectedPerson && actualBodiesArrivedTogether(state, [worker, protectedPerson].map(person => ({
+                id: person.id, name: person.name, alive: person.status === 'alive', locationId: person.locationId })), objective.destinationId, begun.day);
+            return protectedPerson?.status === 'alive' && worker.status === 'alive'
+                && protectedPerson.locationId === objective.destinationId && worker.locationId === objective.destinationId
+                && (arrivedTogether || begun.data.itineraryFactId == null && day >= Number(begun.data.endsOnDay))
+                && (!objective.cargoId || state.objects.some(object => object.id === objective.cargoId && !isRuined(object)
+                    && object.possessorId === objective.personId));
+        }
         const clock = { ...state, currentDay: Math.floor(day), currentHour: (day % 1) * 24 };
         return !!begun && protectedPerson?.status === 'alive' && worker.status === 'alive'
             && day >= Number(begun.data.endsOnDay) && doingPrivateWork(state, worker, term.id)

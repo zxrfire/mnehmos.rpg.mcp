@@ -13,6 +13,35 @@ distant people's daily activity deadlines as player ticks.
 
 # The Web Front Door
 
+Private party invitations ask the actual player before admitting them. An elder's
+personal pupil can accept a private auction or expedition, and close people can
+invite the player into their own company. Accepted NPC-led parties use the native
+quote and existing follower binding; the sponsor's arrangement covers the fare
+and the real SQL body follows the reached outward, work and return phases.
+Player-led proposals enter the existing ongoing company consent path. At a
+leader's question all members answer; the human can be overruled. The decision
+is heard before further movement, and leaving remains a separate act.
+
+A private hunt containing the player meets the actual native beast through the
+existing shared party fight. Its leader is the default foreground ally and its
+other people retain their actual bodies and named outcomes. The shared closer
+records hunt completion and puts the post-fight course to the party. Actual
+pickups keep their finder; an elder expedition applies the existing keep/share
+decision and face consequences. Counted goods and manual copies enter SQL only
+once, and an elder's taking removes only the newly acquired quantity.
+
+Private paid work is offered directly to a reachable person, with explicit human
+acceptance and ordinary NPC consent. The player can offer it too. The native
+service word reads actual SQL bodies, purses, pill stock and custody; actual
+harvest/refinement and explicit delivery supply completion evidence. Payment in
+stones, real doses or favours follows completion and a real payment meeting.
+Failure or unpaid completion writes the existing grievance, with no house merit
+or contribution. Road protection uses the real sponsored course and party risk,
+including the actual cargo holder and matching arrival receipts. Private requests
+read existing personal favours and released words from the ordinary ledger.
+Mutual brotherhood writes reciprocal serious oaths and sworn-sibling edges while
+the two people actually give the word; a silent human never swears it.
+
 Public passage tallies and personal rides remain separate authorities. A tally
 supplies its public departure seat, never consent to board a privately held
 craft. Private boarding issues and consumes no tally. Personal operator terms

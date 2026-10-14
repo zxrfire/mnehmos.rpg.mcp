@@ -80,6 +80,7 @@ import type { Cultivator, Run } from '../schema/cultivation.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { GameService } from './turn-engine.js';
+import { recordPlayerPrivatePartyPickup } from './the-player-receives-a-private-party-find.js';
 import { ruinChamberHere } from './ruin-delving.js';
 import { worldLocationFor } from './entities.js';
 
@@ -395,6 +396,7 @@ export const takingVerbs = {
             const at = (this.atHand?.objects ?? []).findIndex(row => row.id === found.id);
             if (at >= 0 && this.atHand) {
                 this.atHand.objects[at] = { ...found, locationId: null };
+                recordPlayerPrivatePartyPickup(this, cultivator, found.id);
                 this.theWorldMoved();
             }
             const execution = this.freeAction(run, 'interact', factsForRefusal(
