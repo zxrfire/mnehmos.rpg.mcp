@@ -3907,3 +3907,8 @@ House keys, slips, store receivers and delegated orders read the same hall head.
 A missing archive or treasury moves the work to existing ordinary quarters;
 it does not remove the records, stores or responsible person. Existing formations
 decide whether discipline cells can hold a cultivator.
+
+House staff authority reads actual stationed hall workers through
+`theHallStaff`; the pure round-robin planning deal does not supply an imaginary
+clerk to a played report or store request. Actual presence still decides whether
+that worker can receive the request.

@@ -1,45 +1,5 @@
-/**
- * Who WORKS in a room somebody else is in charge of, and what a post lets them
- * touch.
- *
- * The design owner: *"a punishment hall needs disciples who are selected. they
- * are still ordinary outer/inner/conclave disciples, but they have a sub job at
- * that place."*
- *
- * TWO ORTHOGONAL THINGS ABOUT ONE PERSON, and keeping them apart is the whole
- * design. RANK is where somebody stands on the house's ladder. A POST is which
- * room they work in. Nothing here reads or writes `rankIndex`: a disciple
- * staffing the discipline hall is an ordinary inner disciple who also works
- * there, and a post that moved somebody's rung would be a second ladder.
- *
- * DERIVED, NOT STORED. `whoIsInChargeOfWhat` is already a pure function of the
- * rooms and the roll, and this is the same function one rung down - so a post
- * cannot drift from the roll it was read off, and there is no row anybody has
- * to remember to clear when somebody leaves. AGENTS.md's order of preference:
- * derive it, and only store what genuinely changes on its own.
- *
- * SELECTION IS NOT A SEPARATE PROCEDURE. The owner said disciples are
- * *selected*, and in this engine selecting is an elder exercising a portfolio -
- * so the person who selected is the person who holds the room, which
- * `whoAnswersAbout` already answers and `whoseCallItIs` already prices. There
- * is no selection roll here and there must not be one.
- *
- * ── WHAT A POST IS FOR, WHICH IS THE PART THAT PAYS OFF ──────────────────
- *
- * A room's staff is how the room can be reached when the person in charge of it
- * is not the person you are talking to. Two things fall out with nothing
- * authored:
- *
- *   A hall takes a report. You take a mission off the wall and say so to the
- *   mission hall - to the elder, or to whoever is working there.
- *
- *   A post is what somebody can be bribed FOR. {@link remitOf} is two values
- *   and no list of favours: whoever holds the room DECIDES about it, whoever is
- *   posted to it HANDLES what passes through it. So a disciple in the
- *   discipline hall can carry food in and be slow with a door, and cannot
- *   shorten a sentence, and neither of those is written down anywhere as a rule
- *   about discipline halls.
- */
+/** Hypothetical staff layout and room remits. Actual appointments are read by
+ * theHallStaff in the world layer; this planning deal does not post anybody. */
 
 import type { RoomPurpose } from '../world/architecture.js';
 import type { APortfolio } from './what-an-elder-is-in-charge-of.js';

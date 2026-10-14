@@ -1,3 +1,4 @@
+import { settleHallService } from './the-people-posted-to-a-houses-halls.js';
 import { portfoliosIn } from '../social-leverage/authority-for-an-order.js';
 /**
  * A house puts the player on a posting, looks in on them there, and tops up
@@ -316,8 +317,9 @@ export function theOneBeingPlayedLeavesThePost(
     const at = state.npcs.findIndex(n => n.id === input.playerId);
     const npc = state.npcs[at];
     if (!npc || npc.activity?.kind !== 'stationed') return false;
-    keepTheirHallCheckOnLeaving(state, npc, input.today);
-    state.npcs[at] = { ...npc, activity: null, updatedOnDay: input.today };
+    settleHallService(state, input.today, new Set([npc.id]));
+    keepTheirHallCheckOnLeaving(state, state.npcs[at]!, input.today);
+    state.npcs[at] = { ...state.npcs[at]!, activity: null, updatedOnDay: input.today };
     return true;
 }
 

@@ -392,6 +392,8 @@ export type ActivityKind =
 export interface NpcActivity {
     /** The actual Internal Affairs appointment behind this work. */
     houseWorkFactId?: string;
+    /** Latest receipt for contribution already earned at this actual hall post. */
+    houseWorkPayFactId?: string;
     /** The paid clinical course currently resting this body. */
     houseCareFactId?: string;
     /** The actual care course this worker is providing, rather than receiving. */

@@ -1,7 +1,7 @@
 import { whoAnswersAbout } from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
 /** Extracted existing store authority; direct/fetched requests share it. */
 import { portfoliosIn } from '../engine/social-leverage/authority-for-an-order.js';
-import { whoStaffsWhat } from '../engine/social-leverage/who-works-in-an-elders-hall.js';
+import { theHallStaff } from '../engine/world/the-people-posted-to-a-houses-halls.js';
 import { whetherItLeavesTheStore, type WhatTheyMeanToDo } from '../engine/social-leverage/who-has-to-agree-before-it-leaves-the-store.js';
 import { rankIndexOnAHousesRoll, type TheRollsToRead } from '../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import { routineOf } from '../engine/world/npc-routines.js';
@@ -18,7 +18,7 @@ export function readHouseStoreRequest(world: WorldState, house: WorldState['fact
     const playerRank = rankIndexOnAHousesRoll(rolls, requesterId, house.ranks.length);
     if (playerRank >= 0) roll.push({ id: requesterId, rankIndex: playerRank });
     const portfolios = portfoliosIn({ npcs: world.npcs, locations: world.locations, sectId: house.id, roll, rankCount: house.ranks.length });
-    const posts = whoStaffsWhat({ portfolios, roll, rankCount: house.ranks.length });
+    const posts = theHallStaff(world, house.id, world.currentDay);
     const receivers = new Set([whoAnswersAbout(portfolios, purpose),
         ...posts.filter(p => p.purpose === purpose).map(p => p.personId)]);
     return { roll, portfolios, receivers, rankCount: house.ranks.length, purpose, requesterId };
@@ -31,7 +31,7 @@ export function receivesTheStoreRequestWhileWorking(world: WorldState, houseId: 
     const npc = world.npcs.find(n => n.id === personId && n.status === 'alive');
     if (!npc || npc.factionId !== houseId || npc.activity?.redirect) return false;
     const work = routineOf(world, npc);
-    return !work.home && work.activity?.kind === 'the_work_of_their_rank'
+    return !work.home && (work.activity?.kind === 'the_work_of_their_rank' || work.activity?.kind === 'stationed')
         && !work.activity.thingId && work.activity.withIds.length === 0;
 }
 

@@ -9,6 +9,7 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import type { LocationRecord } from './locations.js';
 import type { WorldState } from './world-state.js';
+import { routeQueriesFor } from './locations.js';
 
 export function personnelManager(state: WorldState, houseId: string): NpcRecord | null {
     const house = state.factions.find(row => row.id === houseId && row.dissolvedOnDay === null);
@@ -24,7 +25,7 @@ export function personnelManager(state: WorldState, houseId: string): NpcRecord 
 /** Current work references its appointment; there is no parallel staff roll. */
 export function houseAppointment(state: Partial<Pick<WorldState, 'history'>>, person: NpcRecord): HistoricalFact | null {
     const id = person.activity?.houseWorkFactId;
-    const fact = id && state.history ? witnessIndexFor({ history: state.history }).byId.get(id) : null;
+    const fact = id && state.history ? witnessIndexFor(state as Pick<WorldState, 'history'>).byId.get(id) : null;
     return fact?.data.houseWorkAppointment === true && fact.data.houseId === person.factionId
         && fact.actors.some(actor => actor.id === person.id && actor.role === 'appointed_worker') ? fact : null;
 }
@@ -32,6 +33,12 @@ export function houseAppointment(state: Partial<Pick<WorldState, 'history'>>, pe
 export function appointHouseWorker(state: WorldState, input: {
     houseId: string; job: string; room: LocationRecord; day: number;
     suitable: (person: NpcRecord) => boolean;
+    /** Hard availability is separate from the manager's opinion of suitability. */
+    eligible?: (person: NpcRecord) => boolean;
+    /** A resident hall post uses the ordinary passage to its actual room. */
+    posted?: boolean;
+    initialPlacement?: boolean;
+    note?: string;
 }): NpcRecord | null {
     const working = state.npcs.find(person => person.status === 'alive' && person.factionId === input.houseId
         && houseAppointment(state, person)?.data.job === input.job);
@@ -46,12 +53,17 @@ export function appointHouseWorker(state: WorldState, input: {
     const party = (person: NpcRecord) => ({ id: person.id, name: person.name,
         ordinal: person.cultivation.realmOrdinal, charm: person.cultivation.attributes.charm,
         factionId: person.factionId, alignment: house.alignment, ranked: true });
+    const routes = input.posted ? routeQueriesFor(state.locations) : null;
     const candidates = state.npcs.filter(person => person.status === 'alive' && isTheWorldsToMove(person)
         && person.factionId === input.houseId && !person.activity?.redirect
         && (!person.activity || !isAwayOnSomething(person.activity.kind))
         && !person.activity?.thingId && !person.activity?.withIds.length
         && !person.activity?.houseWorkFactId
-        && [house.seatLocationId, input.room.id].includes(locationOfNpcOnItsJourney(state, person, input.day)));
+        && (!input.eligible || input.eligible(person))
+        && (input.posted
+            ? inside.has(locationOfNpcOnItsJourney(state, person, input.day) ?? '')
+                && (input.initialPlacement || routes!.treeFrom(locationOfNpcOnItsJourney(state, person, input.day)!).days.has(input.room.id))
+            : [house.seatLocationId, input.room.id].includes(locationOfNpcOnItsJourney(state, person, input.day))));
     const review = [input.houseId, input.job, manager.id, Math.floor(input.day / 365),
         candidates.map(person => person.id).sort().join(',')].join(':');
     if (factsWithDataValue(state, 'housePersonnelReview', review).length) return null;
@@ -72,11 +84,15 @@ export function appointHouseWorker(state: WorldState, input: {
         summary: chosen ? `${manager.name} appointed ${chosen.name} to ${input.job.replaceAll('_', ' ')}.`
             : `${manager.name} appointed nobody to ${input.job.replaceAll('_', ' ')}.`,
         data: { housePersonnelReview: review, houseWorkAppointment: !!chosen,
-            houseId: input.houseId, job: input.job } }), { bystanders: false, recur: false });
+            houseId: input.houseId, job: input.job,
+            ...(chosen ? { serviceOrdinal: chosen.cultivation.realmOrdinal } : {}) } }), { bystanders: false, recur: false });
     if (!chosen) return null;
     const at = state.npcs.findIndex(person => person.id === chosen.id);
-    state.npcs[at] = { ...chosen, activity: { kind: 'the_work_of_their_rank',
-        note: input.job.replaceAll('_', ' ') + '.', withIds: [], sinceDay: input.day,
-        untilDay: null, houseWorkFactId: fact.id } };
+    const from = locationOfNpcOnItsJourney(state, chosen, input.day);
+    state.npcs[at] = { ...chosen, ...(input.posted ? { locationId: input.room.id } : {}),
+        activity: { kind: input.posted ? 'stationed' : 'the_work_of_their_rank',
+            note: input.note ?? input.job.replaceAll('_', ' ') + '.', withIds: [], sinceDay: input.day,
+            untilDay: null, houseWorkFactId: fact.id,
+            ...(input.posted ? { fromLocationId: input.initialPlacement ? null : from, returnTo: house.seatLocationId } : {}) } };
     return state.npcs[at]!;
 }

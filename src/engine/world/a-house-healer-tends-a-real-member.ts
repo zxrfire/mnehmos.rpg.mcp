@@ -1,3 +1,4 @@
+import { settleHallService } from './the-people-posted-to-a-houses-halls.js';
 /** A funded clinical course rests one real member for the catalog's month. */
 import { getPrice, DAYS_PER_MONTH } from '../../data/cultivation/mortal-world.js';
 import { treatWorstInjuries, untreatedInjuryCount } from '../cultivation/injuries.js';
@@ -5,7 +6,7 @@ import { medicineReaches } from '../cultivation/what-grade-of-medicine-a-wound-n
 import { isPermanentWound } from '../../data/cultivation/wounds.js';
 import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
 import { isAwayOnSomething, isTheWorldsToMove, type NpcRecord } from './npc-state.js';
-import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
+import { locationOfNpcOnItsJourney, whenTheyReachTheirPost } from './places-on-the-way.js';
 import { roomForHouseWork } from './where-a-house-does-its-work.js';
 import { appointHouseHealer, whoTendsTheSick, medicalGradeOf } from './who-is-actually-seeing-to-wounds.js';
 import { HOME_REGION_ID } from '../../data/cultivation/regions.js';
@@ -23,13 +24,16 @@ export function beginHouseCare(state: WorldState, patient: NpcRecord, day: numbe
     const patientAt = state.npcs.findIndex(person => person.id === patient.id);
     if (patientAt < 0) return false;
     patient = state.npcs[patientAt]!;
+    const atHallPost = patient.activity?.kind === 'stationed'
+        && state.locations.some(place => place.id === patient.locationId && place.data.factionId === patient.factionId)
+        && locationOfNpcOnItsJourney(state, patient, day) === patient.locationId;
     if (!patient.factionId || !isTheWorldsToMove(patient) || patient.status !== 'alive'
         || patient.activity?.houseCareFactId || patient.activity?.thingId || patient.activity?.withIds.length
-        || patient.activity?.redirect || (patient.activity && isAwayOnSomething(patient.activity.kind))) return false;
+        || patient.activity?.redirect || (patient.activity && isAwayOnSomething(patient.activity.kind) && !atHallPost)) return false;
     const house = state.factions.find(row => row.id === patient.factionId && row.dissolvedOnDay === null);
     const room = house && roomForHouseWork(state.locations, house.id, 'infirmary');
     const ground = locationOfNpcOnItsJourney(state, patient, day);
-    if (!house || !room || ![house.seatLocationId, room.id].includes(ground)) return false;
+    if (!house || !room || (!atHallPost && ![house.seatLocationId, room.id].includes(ground))) return false;
     appointHouseHealer(state, house.id, day);
     const healer = whoTendsTheSick(state, house.id, day);
     if (!healer || medicalGradeOf(healer) === null || healer.id === patient.id || healer.activity!.withIds.length) return false;
@@ -50,22 +54,33 @@ export function beginHouseCare(state: WorldState, patient: NpcRecord, day: numbe
     const price = Math.max(quote.restingPrice, courses * quote.perWound);
     if (purse < price) return false;
     const injuryIds = reachable.slice(0, courses).map(injury => injury.id);
-    const begins = day + (ground === room.id ? 0 : LOCAL_WALK_DAYS);
+    const approach = atHallPost ? { ...patient, locationId: room.id, activity: {
+        ...patient.activity!, kind: 'stationed' as const, sinceDay: day,
+        fromLocationId: ground === room.id ? null : ground, untilDay: null } } : null;
+    const begins = approach ? whenTheyReachTheirPost(state.locations, approach)
+        : day + (ground === room.id ? 0 : LOCAL_WALK_DAYS);
+    if (begins === null) return false;
     const until = begins + DAYS_PER_MONTH;
+    settleHallService(state, day, new Set([patient.id]));
+    patient = state.npcs[patientAt]!;
     const fact = appendWorldFact(state, makeFact({ day, kind: 'gathering', locationId: room.id,
         factionIds: [house.id], visibility: 'faction', causes: [healer.activity!.houseWorkFactId!],
         actors: [{ id: healer.id, name: healer.name, role: 'clinician' },
             { id: patient.id, name: patient.name, role: 'patient' }],
         summary: `${house.name} paid ${healer.name} ${price} spirit stones for ${patient.name}'s course of care.`,
         data: { houseClinicalCare: true, houseId: house.id, healerId: healer.id,
-            patientId: patient.id, injuryIds: JSON.stringify(injuryIds), beginsOnDay: begins, untilDay: until, stones: price } }),
+            patientId: patient.id, injuryIds: JSON.stringify(injuryIds), beginsOnDay: begins, untilDay: until, stones: price,
+            ...(atHallPost ? { previousHallPost: JSON.stringify(patient.activity),
+                previousPostLocationId: patient.locationId! } : {}) } }),
         { bystanders: false, recur: false });
     house.resources.spirit_stones = purse - price;
     const clinicianAt = state.npcs.findIndex(person => person.id === healer.id);
     state.npcs[clinicianAt] = { ...healer, spiritStones: healer.spiritStones + price,
         activity: { ...healer.activity!, withIds: [patient.id], houseCareProviderFactId: fact.id } };
-    state.npcs[patientAt] = { ...patient, activity: { ...patient.activity, kind: 'idle', note: 'Receiving a course of care.',
-        withIds: [healer.id], sinceDay: day, untilDay: until, houseCareFactId: fact.id } };
+    state.npcs[patientAt] = { ...patient, ...(approach ? { locationId: room.id } : {}),
+        activity: { ...patient.activity, ...(approach ? approach.activity : {}),
+            kind: approach ? 'stationed' : 'idle', note: 'Receiving a course of care.',
+            withIds: [healer.id], sinceDay: day, untilDay: until, houseCareFactId: fact.id } };
     onDue?.(patient.id, until);
     return true;
 }
@@ -86,7 +101,8 @@ export function settleHouseCare(state: WorldState, day: number): number {
         const house = state.factions.find(row => row.id === fact.data.houseId && row.dissolvedOnDay === null);
         const patientHeld = patient.activity?.houseCareFactId === fact.id;
         const ground = locationOfNpcOnItsJourney(state, patient, day);
-        const stayed = patient.status === 'alive' && !!house && !!room && [house.seatLocationId, room.id].includes(ground);
+        const stayed = patient.status === 'alive' && !!house && !!room && ([house.seatLocationId, room.id].includes(ground)
+                || patientHeld && patient.activity?.kind === 'stationed' && day < Number(fact.data.beginsOnDay));
         const provider = healer?.activity;
         const legacy = provider?.houseCareProviderFactId === undefined && provider?.kind === 'the_work_of_their_rank'
             && houseAppointment(state, healer!)?.data.job === 'tending_the_sick'
@@ -111,10 +127,20 @@ export function settleHouseCare(state: WorldState, day: number): number {
             closed += treated.treatedCount;
         }
         const appointment = patientHeld && patient.status === 'alive' ? houseAppointment(state, patient) : null;
-        const resumed = appointment ? { kind: 'the_work_of_their_rank' as const,
+        let resumed: NpcRecord['activity'] = appointment ? { kind: 'the_work_of_their_rank' as const,
             note: String(appointment.data.job).replaceAll('_', ' ') + '.', withIds: [], sinceDay: day,
             untilDay: null, houseWorkFactId: appointment.id } : null;
-        state.npcs[at] = { ...patient, activity: patientHeld ? resumed : patient.activity, cultivation: { ...patient.cultivation, injuries,
+        let resumedLocation = patient.locationId;
+        if (patientHeld && patient.status === 'alive' && typeof fact.data.previousHallPost === 'string'
+            && typeof fact.data.previousPostLocationId === 'string') {
+            const post = JSON.parse(fact.data.previousHallPost) as NonNullable<NpcRecord['activity']>;
+            if (post.untilDay == null || post.untilDay > day) {
+                resumedLocation = fact.data.previousPostLocationId;
+                resumed = { ...post, sinceDay: day, fromLocationId: ground,
+                    houseWorkPayFactId: undefined };
+            } else resumed = null;
+        }
+        state.npcs[at] = { ...patient, locationId: resumedLocation, activity: patientHeld ? resumed : patient.activity, cultivation: { ...patient.cultivation, injuries,
             untreatedInjuries: untreatedInjuryCount(injuries) } };
         if (healer && provider && (provider.houseCareProviderFactId === fact.id || legacy)) {
             const continuing = { ...provider };

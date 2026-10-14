@@ -5007,3 +5007,12 @@ covering deal. Room aliases answer through that one head. Ordinary work without
 its dedicated hall stays with the head, or Internal Affairs for care without
 Alchemy. It uses existing quarters; it creates no room or craft institution.
 New discipline, lecture and duelling rooms follow the surviving founded rooms.
+
+Resident hall appointments are made by Internal Affairs through
+`internal-affairs-puts-somebody-to-the-work.ts`. `the-people-posted-to-a-houses-halls.ts`
+reads the actual stationed people and their ordinary passage to the room; it does
+not deal a second staff roll. An unsuccessful nomination leaves a vacancy.
+Native hall service earns one tenth of ordinary board contribution, with a minimum
+one per thirty days. Its current receipt prevents paying the same service twice.
+A worker's paid clinical course suspends the post, includes the actual outward
+and return passage, and earns no service contribution during treatment or travel.

@@ -960,3 +960,7 @@ founding claims. One derived portfolio answers for a hall's other rooms and any
 ordinary work it covers. Serving a residence gives no authority over its owner.
 Catalog and world IDs resolve through the existing person-ID reader before
 the chair order reads their realm, merit and ties.
+
+`whoStaffsWhat` is a pure hypothetical layout. Played staff remits use actual
+world appointments (`theHallStaff`), while the same `remitOf` and reporting
+readers price what a posted person can handle.

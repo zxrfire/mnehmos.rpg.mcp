@@ -1,3 +1,6 @@
+import { locationOfNpcOnItsJourney, whenTheyReachTheirPost } from '../../../src/engine/world/places-on-the-way';
+import { settleHallService, hallServiceWorth } from '../../../src/engine/world/the-people-posted-to-a-houses-halls';
+import { meritWith } from '../../../src/engine/world/what-a-house-counts-in-somebodys-favour';
 /** House care needs an appointed clinician, payment and the real month.
  * The same month can treat several paid wounds, as for the player. A
  * provider or patient who leaves interrupts it; money never creates an instant cure. */
@@ -7,12 +10,12 @@ import { woundsCloseThisYear } from '../../../src/engine/world/what-a-house-does
 import { DAYS_PER_MONTH, getOccupation, MORTAL_PHYSICIAN_JOB } from '../../../src/data/cultivation/mortal-world';
 import { createWorld, makeFaction } from '../../../src/engine/world/world-state';
 import { createNpc, setRealm } from '../../../src/engine/world/npc-state';
-import { makeLocation } from '../../../src/engine/world/locations';
+import { makeLocation, linkLocations } from '../../../src/engine/world/locations';
 import { appointHouseHealer, whoTendsTheSick } from '../../../src/engine/world/who-is-actually-seeing-to-wounds';
 import { beginHouseCare, settleHouseCare } from '../../../src/engine/world/a-house-healer-tends-a-real-member';
 import { houseAppointment } from '../../../src/engine/world/internal-affairs-puts-somebody-to-the-work';
 
-function ready() {
+function ready(dedicated = false) {
     const state = createWorld({ seed: 'the-house-appoints-a-physician', regionCount: 0, skipPriorAges: true });
     state.currentDay = 0; state.currentHour = 14;
     const house = makeFaction({ id: 'house', name: 'Reed House', seatLocationId: 'seat', resources: { spirit_stones: 100 } });
@@ -20,6 +23,13 @@ function ready() {
     state.locations.push(makeLocation({ id: 'seat', name: 'Reed House', kind: 'sect_seat', controllingFactionId: house.id }),
         makeLocation({ id: 'quarters', name: 'Quarters', kind: 'hall', parentId: 'seat', tags: ['interior'],
             data: { factionId: house.id, purpose: 'dormitory' } }));
+    if (dedicated) {
+        const clinic = makeLocation({ id: 'clinic', name: 'Infirmary', kind: 'hall', parentId: 'seat',
+            data: { factionId: house.id, purpose: 'infirmary' } });
+        state.locations.push(clinic);
+        linkLocations(state.locations.find(place => place.id === 'quarters')!, clinic, 'path', .1);
+        linkLocations(state.locations.find(place => place.id === 'seat')!, clinic, 'path', .1);
+    }
     const manager = createNpc(state.seed, { id: 'manager', onDay: 0, bornOnDay: -7300,
         locationId: 'seat', factionId: house.id, factionRankIndex: house.ranks.length - 1 });
     const physician = setRealm(createNpc(state.seed, { id: 'physician', onDay: 0, bornOnDay: -7300,
@@ -159,4 +169,67 @@ it('preserves a new party with the patient when the old course is interrupted', 
     expect(h.state.npcs.find(person => person.id === doctor.id)!.activity?.withIds).toEqual([patient.id]);
     expect(h.state.npcs.find(person => person.id === patient.id)!.activity?.withIds).toEqual([doctor.id]);
     expect(h.state.npcs.find(person => person.id === doctor.id)!.activity?.houseCareProviderFactId).toBeUndefined();
+});
+
+it('lets a worker at a home hall take care and resume without pay for the treatment interval', () => {
+    const h = ready();
+    h.patient.activity = { kind: 'stationed', note: 'Serving the quarters.', withIds: [],
+        sinceDay: -30, untilDay: 90, returnTo: 'seat' };
+    const at = h.state.npcs.findIndex(person => person.id === h.patient.id);
+    h.state.npcs[at] = h.patient;
+    let due = 0;
+    expect(beginHouseCare(h.state, h.patient, 0, (_id, day) => { due = day; })).toBe(true);
+    const earned = meritWith(h.state.npcs[at]!, h.house.id);
+    expect(earned).toBe(hallServiceWorth(h.patient.cultivation.realmOrdinal, 30));
+    expect(earned).toBeGreaterThan(0);
+    expect(settleHallService(h.state, due - 1, new Set([h.patient.id]))).toBe(0);
+    expect(settleHouseCare(h.state, due)).toBe(1);
+    const resumed = h.state.npcs[at]!;
+    expect(resumed.activity?.kind).toBe('stationed');
+    expect(resumed.activity?.sinceDay).toBe(due);
+    expect(resumed.activity?.untilDay).toBe(90);
+    expect(meritWith(resumed, h.house.id)).toBe(earned);
+    expect(settleHallService(h.state, due, new Set([h.patient.id]))).toBe(0);
+    expect(settleHallService(h.state, due + 30, new Set([h.patient.id]))).toBe(earned);
+    expect(meritWith(h.state.npcs[at]!, h.house.id)).toBe(earned * 2);
+});
+
+it('walks a posted worker to dedicated care and back before service starts again', () => {
+    const h = ready(true);
+    h.patient.activity = { kind: 'stationed', note: 'Serving the quarters.', withIds: [],
+        sinceDay: -30, untilDay: 90, returnTo: 'seat' };
+    const at = h.state.npcs.findIndex(person => person.id === h.patient.id);
+    h.state.npcs[at] = h.patient;
+    let due = 0;
+    expect(beginHouseCare(h.state, h.patient, 0, (_id, day) => { due = day; })).toBe(true);
+    const course = h.state.history.facts.find(fact => fact.data.houseClinicalCare === true)!;
+    const begins = Number(course.data.beginsOnDay);
+    expect(begins).toBeGreaterThan(0);
+    expect(locationOfNpcOnItsJourney(h.state, h.state.npcs[at]!, 0)).toBe('quarters');
+    expect(settleHouseCare(h.state, begins / 2)).toBe(0);
+    expect(locationOfNpcOnItsJourney(h.state, h.state.npcs[at]!, begins)).toBe('clinic');
+    expect(settleHouseCare(h.state, due)).toBe(1);
+    const returning = h.state.npcs[at]!;
+    expect(locationOfNpcOnItsJourney(h.state, returning, due)).toBe('clinic');
+    const returned = whenTheyReachTheirPost(h.state.locations, returning)!;
+    expect(returned).toBeGreaterThan(due);
+    expect(locationOfNpcOnItsJourney(h.state, returning, returned)).toBe('quarters');
+    expect(settleHallService(h.state, returned, new Set([h.patient.id]))).toBe(0);
+});
+
+it('returns from the ground actually reached if care is interrupted during the approach', () => {
+    const h = ready(true);
+    h.patient.activity = { kind: 'stationed', note: 'Serving the quarters.', withIds: [],
+        sinceDay: -30, untilDay: 90, returnTo: 'seat' };
+    const at = h.state.npcs.findIndex(person => person.id === h.patient.id);
+    h.state.npcs[at] = h.patient;
+    expect(beginHouseCare(h.state, h.patient, 0)).toBe(true);
+    const course = h.state.history.facts.find(fact => fact.data.houseClinicalCare === true)!;
+    const day = Number(course.data.beginsOnDay) / 2;
+    const reached = locationOfNpcOnItsJourney(h.state, h.state.npcs[at]!, day);
+    const healerAt = h.state.npcs.findIndex(person => person.id === h.chosen.id);
+    h.state.npcs[healerAt] = { ...h.state.npcs[healerAt]!, activity: null };
+    expect(settleHouseCare(h.state, day)).toBe(0);
+    expect(locationOfNpcOnItsJourney(h.state, h.state.npcs[at]!, day)).toBe(reached);
+    expect(h.state.npcs[at]!.cultivation.injuries[0]!.treated).toBe(false);
 });

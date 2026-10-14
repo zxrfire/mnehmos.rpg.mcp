@@ -1,3 +1,4 @@
+import { theHallStaff } from '../engine/world/the-people-posted-to-a-houses-halls.js';
 import { StoredStandingFight } from './a-standing-fight-is-stored-on-its-run.js';
 import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
 import { settleAgreedRides } from './an-offered-ride-is-an-agreement.js';
@@ -501,7 +502,6 @@ import {
 import {
     type APost,
     type Remit,
-    whoStaffsWhat,
     whoTakesAReportAt
 } from '../engine/social-leverage/who-works-in-an-elders-hall.js';
 import {
@@ -16377,7 +16377,7 @@ ${fit.line}`;
             roll,
             rankCount: held.rankCount
         });
-        const posts = whoStaffsWhat({ portfolios, roll, rankCount: held.rankCount });
+        const posts = world ? theHallStaff(world, held.sectId, world.currentDay) : [];
         const top = Math.max(0, held.rankCount - 1);
         const headId = roll.find(person => person.rankIndex >= top)?.id ?? null;
         return { roster, portfolios, posts, headId };

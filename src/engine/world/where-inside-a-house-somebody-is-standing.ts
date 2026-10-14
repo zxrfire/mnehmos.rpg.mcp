@@ -192,7 +192,7 @@ export function whereTheyAreStanding(
     if (!stillAtIt({ activity: routine.activity }, day)) return stored;
     const doing = routine.activity!;
     if (doing.houseCareFactId && state.history) {
-        const course = witnessIndexFor({ history: state.history }).byId.get(doing.houseCareFactId);
+        const course = witnessIndexFor(state as Pick<WorldState, 'history'>).byId.get(doing.houseCareFactId);
         if (course?.locationId && compound.inside.has(course.locationId)
             && typeof course.data.beginsOnDay === 'number'
             && routineTime(state) >= course.data.beginsOnDay) return course.locationId;
