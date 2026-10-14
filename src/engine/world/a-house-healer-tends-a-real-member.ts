@@ -33,33 +33,37 @@ export function beginHouseCare(state: WorldState, patient: NpcRecord, day: numbe
     appointHouseHealer(state, house.id, day);
     const healer = whoTendsTheSick(state, house.id, day);
     if (!healer || medicalGradeOf(healer) === null || healer.id === patient.id || healer.activity!.withIds.length) return false;
-    const injury = patient.cultivation.injuries.filter(wound => !wound.treated && !isPermanentWound(wound.woundType)
+    const reachable = patient.cultivation.injuries.filter(wound => !wound.treated && !isPermanentWound(wound.woundType)
         && medicineReaches('mortal', wound.severity, patient.cultivation.realmOrdinal))
         .sort((a, b) => ['minor', 'serious', 'crippling'].indexOf(b.severity)
-            - ['minor', 'serious', 'crippling'].indexOf(a.severity))[0];
-    if (!injury) return false;
+            - ['minor', 'serious', 'crippling'].indexOf(a.severity));
+    if (!reachable.length) return false;
     const provinceId = theProvinceAround(state.locations, room.id);
     const province = state.locations.find(place => place.id === provinceId);
     const regionId = typeof province?.data.catalogRegionId === 'string' ? province.data.catalogRegionId : HOME_REGION_ID;
     const groundPrice = priceMultiplierInArea(state.statuses, state.locations, room.id, Math.floor(day),
         getPrice(PHYSICIAN_COURSE_PRICE)!.category);
-    const price = carePricesOnThisGround(regionId, groundPrice).perWound;
+    const quote = carePricesOnThisGround(regionId, groundPrice);
     const purse = Number(house.resources.spirit_stones ?? 0);
+    const courses = Math.min(reachable.length, Math.floor(purse / quote.perWound));
+    if (courses === 0) return false;
+    const price = Math.max(quote.restingPrice, courses * quote.perWound);
     if (purse < price) return false;
+    const injuryIds = reachable.slice(0, courses).map(injury => injury.id);
     const begins = day + (ground === room.id ? 0 : LOCAL_WALK_DAYS);
     const until = begins + DAYS_PER_MONTH;
     const fact = appendWorldFact(state, makeFact({ day, kind: 'gathering', locationId: room.id,
-        factionIds: [house.id], visibility: 'faction',
+        factionIds: [house.id], visibility: 'faction', causes: [healer.activity!.houseWorkFactId!],
         actors: [{ id: healer.id, name: healer.name, role: 'clinician' },
             { id: patient.id, name: patient.name, role: 'patient' }],
         summary: `${house.name} paid ${healer.name} ${price} spirit stones for ${patient.name}'s course of care.`,
         data: { houseClinicalCare: true, houseId: house.id, healerId: healer.id,
-            patientId: patient.id, injuryId: injury.id, beginsOnDay: begins, untilDay: until, stones: price } }),
+            patientId: patient.id, injuryIds: JSON.stringify(injuryIds), beginsOnDay: begins, untilDay: until, stones: price } }),
         { bystanders: false, recur: false });
     house.resources.spirit_stones = purse - price;
     const clinicianAt = state.npcs.findIndex(person => person.id === healer.id);
     state.npcs[clinicianAt] = { ...healer, spiritStones: healer.spiritStones + price,
-        activity: { ...healer.activity!, withIds: [patient.id] } };
+        activity: { ...healer.activity!, withIds: [patient.id], houseCareProviderFactId: fact.id } };
     state.npcs[patientAt] = { ...patient, activity: { ...patient.activity, kind: 'idle', note: 'Receiving a course of care.',
         withIds: [healer.id], sinceDay: day, untilDay: until, houseCareFactId: fact.id } };
     onDue?.(patient.id, until);
@@ -83,17 +87,28 @@ export function settleHouseCare(state: WorldState, day: number): number {
         const patientHeld = patient.activity?.houseCareFactId === fact.id;
         const ground = locationOfNpcOnItsJourney(state, patient, day);
         const stayed = patient.status === 'alive' && !!house && !!room && [house.seatLocationId, room.id].includes(ground);
-        const stillServing = stayed && patientHeld && healer?.status === 'alive' && house && room
+        const provider = healer?.activity;
+        const legacy = provider?.houseCareProviderFactId === undefined && provider?.kind === 'the_work_of_their_rank'
+            && houseAppointment(state, healer!)?.data.job === 'tending_the_sick'
+            && provider.withIds.length === 1 && provider.withIds[0] === patient.id;
+        const ownWork = !!provider && (provider.houseCareProviderFactId === fact.id || legacy)
+            && provider.kind === 'the_work_of_their_rank'
+            && (fact.causes.length === 0 || fact.causes.includes(provider.houseWorkFactId ?? ''));
+        const stillServing = stayed && patientHeld && ownWork && healer?.status === 'alive' && house && room
             && healer.activity?.withIds.includes(patient.id)
             && [house.seatLocationId, room.id].includes(locationOfNpcOnItsJourney(state, healer, day));
         const done = typeof fact.data.untilDay === 'number' && day >= fact.data.untilDay;
         if (stillServing && patient.status === 'alive' && !done) continue;
         let injuries = patient.cultivation.injuries;
         if (stillServing && stayed && done) {
-            const target = injuries.find(wound => wound.id === fact.data.injuryId);
-            const treated = target && !isPermanentWound(target.woundType) ? treatWorstInjuries([target], 1,
-                severity => medicineReaches('mortal', severity, patient.cultivation.realmOrdinal)) : null;
-            if (treated?.treatedCount) { injuries = injuries.map(wound => wound.id === target!.id ? treated.injuries[0]! : wound); closed++; }
+            const ids: string[] = typeof fact.data.injuryIds === 'string' ? JSON.parse(fact.data.injuryIds)
+                : typeof fact.data.injuryId === 'string' ? [fact.data.injuryId] : [];
+            const targets = injuries.filter(wound => ids.includes(wound.id) && !isPermanentWound(wound.woundType));
+            const treated = treatWorstInjuries(targets, targets.length,
+                severity => medicineReaches('mortal', severity, patient.cultivation.realmOrdinal));
+            const after = new Map(treated.injuries.map(wound => [wound.id, wound]));
+            injuries = injuries.map(wound => after.get(wound.id) ?? wound);
+            closed += treated.treatedCount;
         }
         const appointment = patientHeld && patient.status === 'alive' ? houseAppointment(state, patient) : null;
         const resumed = appointment ? { kind: 'the_work_of_their_rank' as const,
@@ -101,8 +116,12 @@ export function settleHouseCare(state: WorldState, day: number): number {
             untilDay: null, houseWorkFactId: appointment.id } : null;
         state.npcs[at] = { ...patient, activity: patientHeld ? resumed : patient.activity, cultivation: { ...patient.cultivation, injuries,
             untreatedInjuries: untreatedInjuryCount(injuries) } };
-        if (healer?.activity?.withIds.includes(patient.id)) state.npcs[healerAt] = { ...healer,
-            activity: { ...healer.activity, withIds: healer.activity.withIds.filter(id => id !== patient.id) } };
+        if (healer && provider && (provider.houseCareProviderFactId === fact.id || legacy)) {
+            const continuing = { ...provider };
+            if (ownWork) continuing.withIds = provider.withIds.filter(id => id !== patient.id);
+            delete continuing.houseCareProviderFactId;
+            state.npcs[healerAt] = { ...healer, activity: continuing };
+        }
         appendWorldFact(state, makeFact({ day, kind: 'gathering', locationId: ground, visibility: 'faction',
             factionIds: [String(fact.data.houseId)], causes: [fact.id], actors: fact.actors,
             summary: stillServing && stayed && done ? `${patient.name}'s course of care ended.`

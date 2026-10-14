@@ -1,4 +1,5 @@
-/** House care needs an appointed clinician, payment and the real month. A
+/** House care needs an appointed clinician, payment and the real month.
+ * The same month can treat several paid wounds, as for the player. A
  * provider or patient who leaves interrupts it; money never creates an instant cure. */
 import { expect, it } from 'vitest';
 import { advanceWorldForPlay } from '../../../src/engine/world/driver';
@@ -107,4 +108,55 @@ it('reports the actual clinical fee when the yearly care read starts a course', 
     expect(care.spent).toBe(100 - h.house.resources.spirit_stones!);
     expect(h.state.npcs.find(person => person.id === h.patient.id)!.activity?.houseCareFactId).toBeDefined();
     expect(h.state.npcs.find(person => person.id === h.patient.id)!.cultivation.injuries[0]!.treated).toBe(false);
+});
+
+
+it('buys several original wounds in the same month without treating a new wound instead', () => {
+    const one = ready();
+    expect(beginHouseCare(one.state, one.patient, 0)).toBe(true);
+    const oneFee = 100 - one.house.resources.spirit_stones!;
+    const h = ready();
+    h.patient.cultivation.injuries.push({ ...h.patient.cultivation.injuries[0]!, id: 'second-tear' });
+    h.patient.cultivation.untreatedInjuries = 2;
+    expect(beginHouseCare(h.state, h.patient, 0)).toBe(true);
+    expect(100 - h.house.resources.spirit_stones!).toBe(2 * oneFee);
+    const actual = h.state.npcs.find(person => person.id === h.patient.id)!;
+    actual.cultivation.injuries.push({ ...actual.cultivation.injuries[0]!, id: 'later-tear' });
+    actual.cultivation.untreatedInjuries = 3;
+    expect(settleHouseCare(h.state, DAYS_PER_MONTH)).toBe(2);
+    const after = h.state.npcs.find(person => person.id === h.patient.id)!;
+    expect(new Set(after.cultivation.injuries.filter(wound => wound.treated).map(wound => wound.id)))
+        .toEqual(new Set(['tear', 'second-tear']));
+    expect(after.cultivation.untreatedInjuries).toBe(1);
+});
+
+
+it('buys only the wound count its real purse can pay for', () => {
+    const one = ready();
+    expect(beginHouseCare(one.state, one.patient, 0)).toBe(true);
+    const fee = 100 - one.house.resources.spirit_stones!;
+    const h = ready();
+    h.patient.cultivation.injuries.push({ ...h.patient.cultivation.injuries[0]!, id: 'second-tear' });
+    h.patient.cultivation.untreatedInjuries = 2;
+    h.house.resources.spirit_stones = fee;
+    expect(beginHouseCare(h.state, h.patient, 0)).toBe(true);
+    expect(h.house.resources.spirit_stones).toBe(0);
+    expect(settleHouseCare(h.state, DAYS_PER_MONTH)).toBe(1);
+    expect(h.state.npcs.find(person => person.id === h.patient.id)!.cultivation.untreatedInjuries).toBe(1);
+});
+
+
+it('preserves a new party with the patient when the old course is interrupted', () => {
+    const h = ready();
+    expect(beginHouseCare(h.state, h.patient, 0)).toBe(true);
+    const doctor = h.state.npcs.find(person => person.id === h.chosen.id)!;
+    const patient = h.state.npcs.find(person => person.id === h.patient.id)!;
+    doctor.activity = { ...doctor.activity!, kind: 'out_with_a_party', note: 'Leaving with the party.',
+        sinceDay: 1, untilDay: 4, withIds: [patient.id] };
+    patient.activity = { kind: 'out_with_a_party', note: 'Leaving with the party.', sinceDay: 1, untilDay: 4,
+        withIds: [doctor.id] };
+    expect(settleHouseCare(h.state, 1)).toBe(0);
+    expect(h.state.npcs.find(person => person.id === doctor.id)!.activity?.withIds).toEqual([patient.id]);
+    expect(h.state.npcs.find(person => person.id === patient.id)!.activity?.withIds).toEqual([doctor.id]);
+    expect(h.state.npcs.find(person => person.id === doctor.id)!.activity?.houseCareProviderFactId).toBeUndefined();
 });

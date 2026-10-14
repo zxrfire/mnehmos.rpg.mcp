@@ -4993,6 +4993,9 @@ absent. Actual bought doses and made artifacts arrive with their returning facto
 Internal Affairs appoints the healer through ordinary decision odds and ties.
 The worker's activity references that appointment fact. A funded clinical course
 pays the real provider and rests the real member for the catalog month; its native
-endpoint closes the original reachable wound or records an interruption. No fee
+endpoint closes the original reachable wounds bought, or records an interruption. No fee
 or wealth creates an instant cure. Player and world courses share the same local
 price quote; counted pills keep their existing finite and grade authorities.
+
+A care endpoint releases only the clinician's own course; a new undertaking
+and its companions remain.
