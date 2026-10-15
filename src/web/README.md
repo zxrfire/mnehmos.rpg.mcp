@@ -1,5 +1,12 @@
 <!-- tier: 3 -->
 
+Player favours live on the ordinary SQL ledger. Private requests derive their
+leverage from that ledger and native accounts; they never persist SQL favours
+on a world mirror. Completed private-work favour wages use the same writer.
+Legacy duplicate native favour rows are retired while preserving a settled SQL
+word, including across append saves and reopening.
+
+
 Plague contact and real clause/span boundaries read the actual SQL body.
 New infection interrupts a held span, and a death already due prevents another
 act or medicine purchase before the ordinary estate/run closer. The existing
@@ -10,6 +17,17 @@ casualty count, guaranteed cure or institutional response. Immune players can
 encounter the report without becoming susceptible. Ordinary held spans use
 actual foreground contact and bounded world appointments, rather than treating
 distant people's daily activity deadlines as player ticks.
+
+Whole-day ordinary actions can still need the native body iterator. The shared
+span prepares the displayed opening hour through the existing clock-promotion
+authority before any body portion. A later unobserved catch-up must not cross an
+actual appointment that belongs to that played span; actual observer, digest,
+passenger and interruption paths handle it at its date.
+
+Private passage terms can pay the actual owner or pilot named by the accepted
+course. The same completed course must still carry both individual arrival
+receipts; current purses and actual goods decide exchange after landfall.
+Public quoted fares keep their existing authority.
 
 # The Web Front Door
 

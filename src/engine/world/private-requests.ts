@@ -1,6 +1,6 @@
 /** Private requests use the ordinary person resolver and its existing favour ledger. */
 import { resolveAttempt, attemptWasAccepted, type AskWeight, type Party } from '../social-leverage/an-attempt-to-move-somebody.js';
-import { createObligation, settleObligation } from '../social/grudges.js';
+import { createObligation, settleObligation, type ObligationRecord } from '../social/grudges.js';
 import { forStream } from '../cultivation/rng.js';
 import { upsertRelationship, isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { theGroundUnderYou } from '../social-leverage/ground-trust.js';
@@ -11,6 +11,12 @@ import { inClosedDoorCultivation } from './closed-door-cultivation.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeFact } from './history.js';
 import type { WorldState } from './world-state.js';
+
+/** Decisions derive a ledger; its owner persists changes. Native callers use the world. */
+export interface PrivateRequestLedger {
+    read(): readonly ObligationRecord[];
+    write(word: ObligationRecord): void;
+}
 
 export function privatePartyOf(state: WorldState, person: NpcRecord): Party {
     return { id: person.id, name: person.name, ordinal: person.cultivation.realmOrdinal,
@@ -35,31 +41,38 @@ export function privatePeopleCanSpeak(state: WorldState, actor: NpcRecord, subje
 export function putPrivateRequest(state: WorldState, actor: NpcRecord, subject: NpcRecord,
     day: number, description: string, stream: string, ask: AskWeight = 'a_real_favour',
     reached: (actor: NpcRecord, subject: NpcRecord, day: number) => boolean = (actor, subject, day) => privatePeopleCanSpeak(state, actor, subject, day),
-    localExchangeDays?: number): boolean {
+    localExchangeDays?: number, words?: PrivateRequestLedger): boolean {
     if (!isTheWorldsToMove(subject) || !reached(actor, subject, day)) return false;
     const placeId = routineLocationOf({ ...state, currentDay: day, currentHour: 0 }, actor);
     const tie = (person: NpcRecord, id: string) => {
         const row = person.relationships.find(held => held.targetId === id);
         return row ? { active: true, strength: Math.max(0, row.standing) } : null;
     };
-    const held = state.obligations.find(term => term.status === 'open' && term.kind === 'favor'
+    const ledger = words?.read() ?? state.obligations;
+    const held = ledger.find(term => term.status === 'open' && term.kind === 'favor'
         && term.holderId === actor.id && term.subjectId === subject.id);
     const result = resolveAttempt({ actor: privatePartyOf(state, actor), subject: privatePartyOf(state, subject),
         ask, onDay: day, approach: { leverage: held ? 'favour' : 'name', audience: 'alone' },
-        theirTie: tie(subject, actor.id), yourTie: tie(actor, subject.id), ledger: state.obligations,
+        theirTie: tie(subject, actor.id), yourTie: tie(actor, subject.id), ledger,
         where: theGroundUnderYou(whoHoldsTheGround(state.locations, placeId)),
         rng: forStream(state.seed, stream, actor.id, subject.id, day) });
     const fact = appendWorldFact(state, makeFact({ day, kind: 'opportunity', visibility: 'secret',
         locationId: placeId, actors: [{ id: actor.id, name: actor.name, role: 'asked' },
             { id: subject.id, name: subject.name, role: 'answered' }], summary: description + ' ' + result.line,
         data: { privateRequest: true, accepted: attemptWasAccepted(result.outcome), attentionDays: localExchangeDays ?? result.days } }), { bystanders: false });
+    const write = (word: ObligationRecord) => {
+        if (words) words.write(word);
+        else {
+            const at = state.obligations.findIndex(row => row.id === word.id);
+            if (at < 0) state.obligations.push(word);
+            else state.obligations[at] = word;
+        }
+    };
     for (const input of [result.marks.obligation, result.marks.counterObligation])
-        if (input) state.obligations.push(createObligation({ ...input, triggeringEventId: fact.id }));
-    if (held && attemptWasAccepted(result.outcome)) {
-        const at = state.obligations.findIndex(term => term.id === held.id);
-        state.obligations[at] = settleObligation(held, { resolution: 'repaid', onDay: day,
-            byId: subject.id, note: description });
-    }
+        if (input) write(createObligation({ ...input, triggeringEventId: fact.id }));
+    if (held && attemptWasAccepted(result.outcome))
+        write(settleObligation(held, { resolution: 'repaid', onDay: day,
+            byId: subject.id, note: description }));
     if (result.marks.tie) for (const [person, other, move] of [
         [actor, subject, result.marks.tie.yours], [subject, actor, result.marks.tie.theirs]
     ] as const) {

@@ -93,6 +93,7 @@ describe('mutual brotherhood includes the player', () => {
         expect(swornSiblingsOf(h.game.atHand!, h.body.id).has(h.friend.id), JSON.stringify({ request,
             report: answer.narration, present: h.game.present(h.game.state().cultivator).map(person => person.id),
             day: routineTime(h.game.atHand!) })).toBe(accepted);
+        expect(h.game.atHand!.obligations.some(word => word.id === favor.id)).toBe(false);
         expect(ledgerAbout(h.db, h.body.id).find(word => word.id === favor.id)!.status).toBe(accepted ? 'settled' : 'open');
         expect(ledgerAbout(h.db, h.body.id).filter(word => word.cause === 'sworn_brotherhood')).toHaveLength(accepted ? 2 : 0);
     }, 120000);

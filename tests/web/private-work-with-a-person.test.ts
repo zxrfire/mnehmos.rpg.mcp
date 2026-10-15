@@ -109,6 +109,8 @@ describe('private work with the actual person', () => {
         await meetPayer(h);
         expect(ledgerAbout(h.db, h.body.id).some(word => word.kind === 'favor' && word.tags.includes('private-work-payment')
             && word.holderId === h.body.id && word.subjectId === h.employer.id)).toBe(true);
+        expect(h.game.atHand!.obligations.some(word => word.kind === 'favor' && word.tags.includes('private-work-payment')
+            && (word.holderId === h.body.id || word.subjectId === h.body.id))).toBe(false);
     }, 120000);
     it('moves the actual pill wage into SQL custody only once', async () => {
         const h = await prepared('pill');

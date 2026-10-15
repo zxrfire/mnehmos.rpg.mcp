@@ -1,4 +1,4 @@
-/** The integrated travel clock cost 2.2–2.9 seconds per full-catalog year.
+/** The integrated travel clock cost 2.2-2.9 seconds per full-catalog year.
  * Distant people must use actual route dates without walked station scenes or
  * speculative berth records. Meeting one realizes their current native hull,
  * keeps their paid fare and dates, and makes subsequent travel exact through

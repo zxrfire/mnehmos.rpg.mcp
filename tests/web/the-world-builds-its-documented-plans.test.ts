@@ -5,6 +5,10 @@
  * while distant world business is a bounded background draw. These arrangements
  * put the player beside the visitor or decider, then isolate the records each
  * foreground pass owes.
+ * The run3 trace found whole-day mortal spans omitting opening-clock promotion:
+ * unobserved catch-up then crossed the admission date. The shared span now
+ * prepares that clock, and these fixtures use its real dated area. Manual,
+ * purse, admission and probation assertions remain unchanged.
  * Talent remains the child's rolled fact; probation is not membership.
  * Removing the three yearly writers made all four tests fail. Restoring those
  * writes passed in the same command against the same pinned world.
@@ -42,8 +46,8 @@ function nextAnnualTaskDay(worldDay: number, dayInYear = 1): number {
 
 /**
  * Put the live player in the exact area the scheduled person will occupy when
- * the pass runs. The yearly writer asks at its dated 08:00 world state, not at
- * the opening's previous-day snapshot.
+ * the pass runs. Native task dates include their actual hour; an integer
+ * date is midnight, rather than the opening's previous08:00 snapshot.
  */
 function standWith(
     h: Awaited<ReturnType<typeof game>>,
@@ -51,7 +55,7 @@ function standWith(
     onDay: number
 ) {
     const world = h.game.atHand!;
-    const taskState = { ...world, currentDay: onDay, currentHour: world.currentHour ?? 8 };
+    const taskState = { ...world, currentDay: onDay, currentHour: (onDay - Math.floor(onDay)) * 24 };
     const scheduledPerson = taskState.npcs.find(row => row.id === person.id)!;
     const compounds = whereCompoundsAre(taskState);
     const actualPlaceId = whereTheyAreStanding(taskState, compounds, scheduledPerson,

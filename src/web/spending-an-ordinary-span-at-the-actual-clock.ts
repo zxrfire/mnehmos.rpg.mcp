@@ -7,6 +7,7 @@ import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
 import { nextWorldClockBoundary } from '../engine/world/world-clock-boundaries.js';
 import { routineTime } from '../engine/world/npc-routines.js';
 import type { GameService } from './turn-engine.js';
+import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-world.js';
 import { applyTimeSkip } from './apply.js';
 import { spendAtWorldBoundaries } from './a-span-spent-at-world-boundaries.js';
 import type { WorldReport } from './tool-result-prose.js';
@@ -30,13 +31,17 @@ export type OrdinarySpanServices = Pick<GameService,
             Partial<import('../engine/cultivation/time-skip.js').TimeSkipScene>;
     }) & Partial<Pick<GameService, 'settlePlagueAtTheBodyBoundary' | 'settlePrivateBusinessAtBodyBoundary' | 'privateBusinessBoundaryDates' | 'pendingPrivateOfferIdsAtBodyBoundary'>>;
 
-/** The caller prepares its body, encounters and context AFTER clock promotion. */
+/** The shared entry promotes the opening clock before its first actual body portion. */
 export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServices, run: Run,
     initial: Cultivator, days: number, context: TimeSkipContext,
     provisions: 'pack' | 'reserved', beforeWorld?: (portionDays: number) => void,
     resolvesOnTurn = run.turn + 1, groundAt?: (elapsed: number) => string | undefined,
     checks?: { dates: readonly number[]; afterBoundary(): void | Promise<void>; stop(): string | null },
     finishTurn = true) {
+    if (game.worldEnabled) {
+        game.atHand = await prepareWorldClockForPreciseSpan(run, initial);
+        run = game.repos.runs.getById(run.id) ?? run;
+    }
     const startingPlagueLines = game.settlePlagueAtTheBodyBoundary?.() ?? [];
     initial = game.repos.cultivators.getById(initial.id) ?? initial;
     const originalPlague = initial.plague;

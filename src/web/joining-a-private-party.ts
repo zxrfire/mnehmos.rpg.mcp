@@ -21,7 +21,7 @@ import { passHours } from './routine-invitations.js';
 import { whatOneOfTheWorldsOwnPeopleKnows } from '../engine/world/what-one-of-the-worlds-own-people-knows.js';
 import { isAtLeast } from '../engine/social/discovery.js';
 import { executionWithItsSpentSpan } from './an-execution-with-its-spent-span.js';
-import { readPrivateWordsAtTheActualBody, writePrivateWordsAtTheActualBody } from './private-words-on-the-actual-ledger.js';
+import { readPrivateWordsAtTheActualBody, writePrivateWordsAtTheActualBody, privateRequestLedgerFor } from './private-words-on-the-actual-ledger.js';
 import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 
 export function withPrivatePlayerContact<T>(game: GameService, body: Cultivator, resolve: () => T): T {
@@ -89,7 +89,7 @@ export async function joiningAPrivateParty(game: GameService, run: Run, body: Cu
         const before = world.history.facts.length;
         const accepted = putPrivateRequest(world, pupil, leader, routineTime(world),
             `${body.name} asked to accompany ${leader.name} on a private venture.`, 'player-private-disciple', 'a_real_favour',
-            () => game.present(body).some(person => person.id === leader.id), LESSER_ACTION_DAYS.request);
+            () => game.present(body).some(person => person.id === leader.id), LESSER_ACTION_DAYS.request, privateRequestLedgerFor(game, body.id));
         writePrivateWordsAtTheActualBody(game, body.id);
         const days = world.history.facts.slice(before).reduce((sum, fact) => sum + Number(fact.data.attentionDays ?? 0), 0);
         game.theWorldMoved();

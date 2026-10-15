@@ -1,5 +1,10 @@
 <!-- tier: 3 -->
 
+Transferred native obligation rows can be retired explicitly through the world
+repository. This removes an old duplicate favour from persistent storage; an
+ordinary append save cannot resurrect the retired row.
+
+
 Plague courses round-trip through the existing cultivator and native NPC
 body writers. Optional absence and explicit clearing remain distinct; actual
 SQL player health and illness are never read from a world mirror. The native

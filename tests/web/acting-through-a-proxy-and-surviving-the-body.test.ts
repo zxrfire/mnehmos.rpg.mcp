@@ -5,6 +5,8 @@
  * continue; rebuilding a remnant never restores the ended person's identity.
  * Losing that rebuilt body also cannot recover more identity than it held.
  * NPCs use the same recovery attempt, including resistance from the player's soul.
+ * The NPC attempt fixture samples the actual one-day settling clock, including
+ * the opening hour; an integer-day preview sampled a different RNG point.
  * The combat controls now finish the held fight, rather than restart it eight
  * times after an escape, and read destruction from its actual remaining body.
  * The reconstruction control stations its actual helper beside the retained
@@ -257,7 +259,7 @@ describe('surviving and recovering a body', () => {
 
     it('lets an NPC soul take the player body and closes the displaced life', async () => {
         const h = await setup('npc-possession', 0);
-        const day = h.world.currentDay + 1;
+        const day = routineTime(h.world) + 1;
         const id = Array.from({ length: 1000 }, (_, i) => `taking-soul-${i}`).find(id =>
             forStream(h.world.seed, 'seek-a-body', id, day).chance(0.15)
             && forStream(h.world.seed, 'body-recovery', id, h.cultivator.id, day).next() < 0.9)!;

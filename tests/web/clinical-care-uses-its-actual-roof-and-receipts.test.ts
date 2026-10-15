@@ -7,6 +7,8 @@
  * fee fed the patient despite the separately charged provisions. Narration
  * repeated that contradiction and inferred an unrecorded lack of stronger pills.
  * Clinical ground, not profession or action label, supplies physical cover.
+ * The outside control reads the actual physician area: the first street already
+ * held three people and correctly overflowed this visit to another outdoor corner.
  * These tests retain ordinary fees/food and prove actual body/area/refusal
  * outcomes; no bed, free food, discount or clinic inventory is manufactured.
  */
@@ -50,7 +52,13 @@ it('the same physician outside cannot sell care or turn outdoor nights into cove
     const now = routineTime(h.world);
     h.physician.activity = { kind: 'talking', note: 'Talking outside.', withIds: [], sinceDay: h.world.currentDay,
         untilDay: h.world.currentDay + 31, redirect: { until: now + 31, previous: null, standingIn: street.id } };
-    h.game.theWorldMoved(); h.repos.cultivators.standIn(h.cultivator.id, street.id);
+    h.game.theWorldMoved();
+    // Three people already fill the first street; the actual area reader places
+    // this visit at another outdoor corner. Stand beside the actual physician.
+    const outside = theAreasOf(h.game.atHand!, h.place);
+    const physicianArea = outside.whereIs.get(h.physician.id)!;
+    expect(outside.areas.find(area => area.id === physicianArea)?.for).toBe('street');
+    h.repos.cultivators.standIn(h.cultivator.id, physicianArea);
     expect(h.game.present(h.game.state().cultivator).some(p => p.id === h.physician.id)).toBe(true);
     const before = h.game.state();
     const refused = await h.game.act('I ask the physician to treat my injuries.');

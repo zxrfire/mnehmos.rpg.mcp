@@ -15,7 +15,7 @@ import { factsForToolResult, factsForRefusal } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import { passHours } from './routine-invitations.js';
 import { executionWithItsSpentSpan } from './an-execution-with-its-spent-span.js';
-import { readPrivateWordsAtTheActualBody, writePrivateWordsAtTheActualBody } from './private-words-on-the-actual-ledger.js';
+import { readPrivateWordsAtTheActualBody, writePrivateWordsAtTheActualBody, privateRequestLedgerFor } from './private-words-on-the-actual-ledger.js';
 import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 
 export function brotherhoodOfferedOnContact(game: GameService, body: Cultivator): string[] {
@@ -77,7 +77,7 @@ export async function swearingBrotherhoodWithAPerson(game: GameService, run: Run
         const before = world.history.facts.length;
         accepted = putPrivateRequest(world, player, subject, routineTime(world),
             `${body.name} asked ${subject.name} to swear brotherhood.`, 'sworn-brotherhood-answer', 'a_real_favour',
-            () => game.present(body).some(face => face.id === subject.id), LESSER_ACTION_DAYS.request);
+            () => game.present(body).some(face => face.id === subject.id), LESSER_ACTION_DAYS.request, privateRequestLedgerFor(game, body.id));
         writePrivateWordsAtTheActualBody(game, body.id);
         const days = world.history.facts.slice(before).reduce((sum, fact) => sum + Number(fact.data.attentionDays ?? 0), 0);
         // Both people give the word while they are actually speaking, as the ordinary oath verb does.

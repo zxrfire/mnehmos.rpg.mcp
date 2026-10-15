@@ -41,6 +41,12 @@ import { isAbilityTier } from '../../engine/world/hunting-a-spirit-beast.js';
 import type { Injury } from '../../schema/cultivation.js';
 import type { AQiSeal } from '../../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
 
+/** Retire a transferred account from the native store, including append-write saves. */
+export function removeWorldObligations(db: Database.Database, worldId: string, ids: readonly string[]): void {
+    const remove = db.prepare('DELETE FROM world_obligations WHERE world_id = ? AND id = ?');
+    for (const id of ids) remove.run(worldId, id);
+}
+
 /**
  * Persistence for the world layer. Named `world-state.repo.ts` because
  * `repos/world.repo.ts` is the base schema's `WorldRepository` - the same

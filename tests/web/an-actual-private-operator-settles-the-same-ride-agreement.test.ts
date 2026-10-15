@@ -10,7 +10,11 @@
  * obsolete provisioning call through its current native purchase/pack API, and
  * binds actual direct-air acceptance rather than pricing an unrelated road leg.
  * Immediate course change and onward agreement share preflight/binding; effect
- * success records terms without a second purse read discarding the oath. Checks unrun.
+ * success records terms without a second purse read discarding the oath.
+ * The integrated settlement filter admitted only an owner-as-provider and rejected
+ * the actual NPC pilot of a PC-owned hull: all five native-landfall exchange/short
+ * payment controls failed. The same owner-or-pilot receipt now reaches the unchanged
+ * individual arrival, payment and no-early-exchange authorities.
  * Actual environmental relief remains unbuilt: wounds do not imply arrival heals.
  */
 import { expect, it } from 'vitest';

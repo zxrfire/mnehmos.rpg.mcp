@@ -1139,6 +1139,10 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // A TEACHER'S ATTENTION, asked for by name or through the tie. What is
         // asked for is their days beside you, which is why it is a request and
         // not a lesson: no art changes hands.
+        // The played pupil-help sentence must retain its own discoverable door.
+        'request/guidance_for_another': [
+            'I ask Elder Fang to guide my disciple Shen for 30 days'
+        ],
         'request/guidance': [
             'I ask Elder Fang to guide my cultivation for 10 days',
             'I ask my master to guide my cultivation',

@@ -1,5 +1,11 @@
 <!-- tier: 3 -->
 
+Private requests accept a ledger read/write seam for externally owned people.
+The native default remains world-owned. Played requests derive SQL favour
+leverage through that seam, and private-work favour wages return to its owner
+without installing a second copy on the world.
+
+
 # The World Layer
 
 Accepted public carriage trips use finite ordinary appointments on one actual

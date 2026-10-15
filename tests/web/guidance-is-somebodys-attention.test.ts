@@ -30,7 +30,11 @@
  *      practice, declines before anything is rolled, and says why and when.
  *      This used to pin an unrolled yes; the design owner ruled it out.
  *   3. A yes writes the attention for the span, the rate reads it while the
- *      span runs, and it ends after. The asking spends its own days first.
+ *      span runs, and it ends after, including an interrupted span. The asking
+ *      spends its own days first. Run3 measured3.291666666686069 of10 guided
+ *      days before a real private question stopped the sitting; asking spent3
+ *      additional days. The clock conserves those actual receipts instead of
+ *      demanding an uninterrupted10-day outcome.
  *   4. Being taught an art spends the teacher's attention for
  *      `yearsToWriteOutACopy`, and a lesson cut short leaves nothing.
  *   5. Attention divides by the rate's own rule: `rateTermsFor` hands the rate
@@ -44,7 +48,9 @@
  * what somebody is at is their activity row, which the world writes the same way.
  * A missing teacher's lookup spends the ordinary request time; a busy teacher
  * declines before the resolver. After a span or a changed activity, stand beside
- * the teacher's current area again. A rogue teaching on house-owned public
+ * the teacher's current area again, waiting through actual body time when they
+ * are asleep. Run3's second teacher remained in Old River Village at midnight;
+ * the old town-only helper mistook sleeping for leaving. A rogue teaching on house-owned public
  * ground cannot stand in for that house's people when nobody of it is listening.
  */
 
@@ -58,7 +64,7 @@ import { whatATalkIsWorthToTheHouse } from '../../src/web/a-teacher-giving-you-t
 import { howCloseTheyStandToTheirWall } from '../../src/web/standing-guard';
 import type { Cultivator } from '../../src/schema/cultivation';
 import { aVehicleOf } from '../../src/engine/world/a-vehicle';
-import { routineOf } from '../../src/engine/world/npc-routines';
+import { routineOf, routineTime } from '../../src/engine/world/npc-routines';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { LESSER_ACTION_DAYS } from '../../src/web/lesser-action-costs';
 import type { WorldState } from '../../src/engine/world/world-state';
@@ -82,8 +88,22 @@ function inATown(world: WorldState, npc: NpcRecord): { town: WorldState['locatio
 
 /** The bond and the days it took let the teacher go about their day; the player goes back to them. */
 async function backToThem(harness: Harness, meId: string, npcId: string): Promise<void> {
-    const world = (await harness.game.loadWorld())!;
-    const npc = world.npcs.find(n => n.id === npcId)!;
+    let world = (await harness.game.loadWorld())!;
+    let npc = world.npcs.find(n => n.id === npcId)!;
+    // Read the actual next public hour, spend that wait, then read them again.
+    for (let attempt = 0; attempt < 24 && !inATown(world, npc) && routineOf(world, npc).home; attempt++) {
+        const now = routineTime(world);
+        const hours = Array.from({ length: 24 }, (_, i) => i + 1).find(hours => {
+            const day = now + hours / 24;
+            return inATown({ ...world, currentDay: day, currentHour: (day % 1) * 24 }, npc) !== null;
+        });
+        expect(hours, 'the current teacher has no public hour within the next day').toBeDefined();
+        const beforeWait = harness.game.currentRun().run.elapsedDays;
+        await harness.game.act(`I wait for ${hours} hours`);
+        expect(harness.game.currentRun().run.elapsedDays, 'the actual waiting body did not advance').toBeGreaterThan(beforeWait);
+        world = (await harness.game.loadWorld())!;
+        npc = world.npcs.find(n => n.id === npcId)!;
+    }
     expect(inATown(world, npc), 'the teacher went somewhere a visitor cannot follow').not.toBeNull();
     await goStandWith(harness, meId, world, npc);
 }
@@ -299,10 +319,10 @@ describe('a master may say no', () => {
     it('writes their attention on a yes, reads it over the span, and ends it after', async () => {
         const { harness, me, teacher } = await somebodyAboveHere('guided-master', { atLeast: 4 });
         await harness.game.act(`ADMIN request I beg ${teacher.name} to take me as a disciple`);
-        const before = harness.game.currentRun().run.elapsedDays;
         const seen = watchTheRate(harness);
 
         await backToThem(harness, me.id, teacher.id);
+        const before = harness.game.currentRun().run.elapsedDays;
         const turn = await harness.game.act(
             'ADMIN request I ask my master to guide my cultivation for 10 days'
         ) as Turn;
@@ -311,7 +331,18 @@ describe('a master may say no', () => {
 
         expect(names, text).toContain('engine.resolveAttempt');
         expect(names, text).toContain('world.theyGiveTheirAttention');
-        expect(harness.game.currentRun().run.elapsedDays - before).toBeGreaterThan(10);
+        const guidanceReceipt = turn.toolCalls.find(call => call.name === 'world.theyGiveTheirAttention')!;
+        const lived = Number(guidanceReceipt.summary.match(/([\d.]+) of 10 day\(s\) were lived/)?.[1]);
+        expect(lived).toBeGreaterThan(0);
+        expect(lived).toBeLessThanOrEqual(10);
+        const clockReceipts = turn.toolCalls.filter(call => call.name === 'engine.simulateTimeSkip')
+            .flatMap(call => {
+                const match = call.summary.match(/^([\d.]+) of [\d.]+ day\(s\)/);
+                return match ? [Number(match[1])] : [];
+            });
+        expect(clockReceipts.length).toBeGreaterThan(0);
+        expect(harness.game.currentRun().run.elapsedDays - before)
+            .toBeCloseTo(clockReceipts.reduce((total, days) => total + days, 0), 8);
         expect(seen.some(g => g !== null && g > me.realmOrdinal), 'the rate never saw anybody guiding').toBe(true);
         expect(text).toMatch(/not at their own practice/);
 

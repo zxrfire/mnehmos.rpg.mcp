@@ -33,7 +33,7 @@ import { startPrivateRoadProtection } from '../engine/world/a-private-road-guard
 import { bindFollowingParty } from './following-the-party-leader.js';
 import { withPrivatePlayerContact } from './joining-a-private-party.js';
 import { aPrivatePillPromiseNamesARealDose } from './a-private-pill-promise-names-a-real-dose.js';
-import { readPrivateWordsAtTheActualBody } from './private-words-on-the-actual-ledger.js';
+import { readPrivateWordsAtTheActualBody, writePrivateWordsAtTheActualBody, privateRequestLedgerFor } from './private-words-on-the-actual-ledger.js';
 import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 
 export function privateWorkBodiesFor(game: GameService): PrivateWorkBodies {
@@ -57,7 +57,7 @@ export function privateWorkBodiesFor(game: GameService): PrivateWorkBodies {
             onDay: day, how: 'bought', transfersOwnership: true, factId });
         return true;
     };
-    return { person, localExchangeDays: LESSER_ACTION_DAYS.request,
+    return { person, words: privateRequestLedgerFor(game, game.state().cultivator.id), localExchangeDays: LESSER_ACTION_DAYS.request,
         canSpeak: (actor, subject, day) => {
             const sql = game.repos.cultivators.getById(actor.id) ?? game.repos.cultivators.getById(subject.id);
             if (sql) return sql.alive && game.present(sql).some(face => face.id === (sql.id === actor.id ? subject.id : actor.id));
@@ -115,7 +115,7 @@ export function settlePrivateWorkAtTheBody(game: GameService): string[] {
             summary: `${body.name} found ${target.name} in person.`, data: { privateWorkMeeting: offer.id } }), { recur: false, bystanders: false });
     }
     settlePrivateWork(world, routineTime(world), privateWorkBodiesFor(game), new Set([body.id]));
-    writeObligations(game.db, world.obligations.filter(term => term.holderId === body.id || term.subjectId === body.id));
+    writePrivateWordsAtTheActualBody(game, body.id);
     game.theWorldMoved();
     return world.history.facts.slice(before).filter(fact => fact.data.privateWorkPayment || fact.data.privateWorkCompleted)
         .map(fact => fact.summary);
@@ -213,7 +213,7 @@ export function offerPrivateWorkFromThePlayer(game: GameService, body: Cultivato
     readPrivateWordsAtTheActualBody(game, body.id);
     const offer = offerPrivateWork(game.atHand, body.id, workerId, terms, routineTime(game.atHand), privateWorkBodiesFor(game));
     if (offer) {
-        writeObligations(game.db, game.atHand.obligations.filter(word => word.subjectId === body.id || word.holderId === body.id));
+        writePrivateWordsAtTheActualBody(game, body.id);
         game.theWorldMoved();
     }
     return offer;

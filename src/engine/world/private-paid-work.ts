@@ -45,6 +45,7 @@ export interface PrivateWorkTerms {
 
 /** The web supplies reads/writes of its SQL body; a world mirror cannot pay or move it. */
 export interface PrivateWorkBodies {
+    words?: import('./private-requests.js').PrivateRequestLedger;
     localExchangeDays?: number;
     person(id: string): NpcRecord | undefined;
     canSpeak(actor: NpcRecord, subject: NpcRecord, day: number): boolean;
@@ -173,7 +174,7 @@ export function offerPrivateWork(state: WorldState, employerId: string, workerId
         // Coin is promised on completion. The pure decision prices that promise;
         // its immediate-spend result is replaced by the explicit deferred term.
         const decision = resolveAttempt({ actor: privatePartyOf(state, employer), subject: privatePartyOf(state, worker),
-            ask: 'a_real_favour', onDay: day, ledger: state.obligations,
+            ask: 'a_real_favour', onDay: day, ledger: bodies?.words?.read() ?? state.obligations,
             approach: { leverage: terms.payment.kind === 'stones' ? 'coin' : 'favour', audience: 'alone' },
             stonesOffered: terms.payment.kind === 'stones' ? terms.payment.amount : 0,
             theirTie: tie ? { active: true, strength: Math.max(0, tie.standing) } : null,
@@ -187,7 +188,11 @@ export function offerPrivateWork(state: WorldState, employerId: string, workerId
         // remains the ordinary person's actual account of the approach.
         for (const input of [decision.marks.counterObligation,
             decision.marks.obligation?.kind === 'grudge' ? decision.marks.obligation : null])
-            if (input) state.obligations.push(createObligation({ ...input, triggeringEventId: answer.id }));
+            if (input) {
+                const word = createObligation({ ...input, triggeringEventId: answer.id });
+                if (bodies?.words) bodies.words.write(word);
+                else state.obligations.push(word);
+            }
         if (decision.marks.tie) for (const [who, other, move] of [
             [employer, worker, decision.marks.tie.yours], [worker, employer, decision.marks.tie.theirs]
         ] as const) {
@@ -373,9 +378,12 @@ export function settlePrivateWork(state: WorldState, day: number, bodies?: Priva
                         toHolderName: worker.name, onDay: day, how: 'bought', transfersOwnership: true, factId: fact.id }); paid = true;
                 }
             } else {
-                state.obligations.push(createObligation({ kind: 'favor', holderId: worker.id, subjectId: employer.id,
+                const favour = createObligation({ kind: 'favor', holderId: worker.id, subjectId: employer.id,
                     cause: 'other', severity: terms.payment.severity, onDay: day, triggeringEventId: fact.id,
-                    description: 'The agreed favour for completed private work.', tags: ['private-work-payment'] })); paid = true;
+                    description: 'The agreed favour for completed private work.', tags: ['private-work-payment'] });
+                if (bodies?.words) bodies.words.write(favour);
+                else state.obligations.push(favour);
+                paid = true;
             }
         }
         state.obligations[at] = settleObligation(term, { onDay: day, resolution: complete ? 'oath_fulfilled' : 'broken',

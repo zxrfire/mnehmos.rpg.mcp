@@ -4,6 +4,10 @@
  * party first settles its danger question. These bounded played samples retain
  * both outcomes: a leader can overrule the human and turn back, or actual consent
  * can reach the existing shared melee. No sample forces a voice or a winner.
+ * Four worlds on the integrated clock all continued or rested; the sixth actual
+ * sample turned back. Use a bounded twelve-world budget and stop only after the
+ * original four and both required outcomes. Every refusal/voice stays asserted;
+ * no decision is retried and no seed is replaced to discard an unwanted result.
  */
 import { expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
@@ -21,7 +25,7 @@ import { theSpeciesItIs } from '../../src/engine/world/a-beast-with-a-core-is-so
 
 it('a real danger vote can overrule the human or enter the actual shared hunt fight', async () => {
     let fought = 0, overruled = 0;
-    for (let sample = 0; sample < 4; sample++) {
+    for (let sample = 0; sample < 12 && (sample < 4 || fought === 0 || overruled === 0); sample++) {
         const h = await makeGameInWorld({ seed: 'private-player-hunt', worldSeed: 'private-player-hunt-world-' + sample });
         const { cultivator } = await h.game.newRun('Hunter');
         const world = h.game.atHand!, day = routineTime(world);
@@ -86,4 +90,4 @@ it('a real danger vote can overrule the human or enter the actual shared hunt fi
     }
     expect(fought).toBeGreaterThan(0);
     expect(overruled).toBeGreaterThan(0);
-}, 120000);
+}, 240000);

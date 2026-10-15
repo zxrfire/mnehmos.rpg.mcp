@@ -11,7 +11,7 @@
  * four native edge constraints failed. This successor adds an opt-in ignored
  * file observation before the unchanged assertions; JSON reporters suppressed
  * console evidence. Diagnostic03 identified the two directed halves of the
- * Buddha Precipice–Burial Sands corridor: 171.026 li against 160 li each.
+ * Buddha Precipice-Burial Sands corridor: 171.026 li against 160 li each.
  * Foundation04 authors the Sands centre at (60,-90), preserving its southeast
  * bearing and translating all local points together. Native roads, durations
  * and the full seeded-edge assertions are unchanged; their rerun is pending.

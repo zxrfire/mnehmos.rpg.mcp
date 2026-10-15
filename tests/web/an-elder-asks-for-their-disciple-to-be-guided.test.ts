@@ -17,6 +17,10 @@ import { askSomebodyForHelp } from '../../src/engine/world/somebody-calls-on-ano
 import { guidanceFor } from '../../src/engine/world/an-npc-striking-at-the-next-wall';
 import { faceOf } from '../../src/engine/world/what-a-face-is-worth';
 import { openLedgerBetween } from '../../src/web/encounters';
+import { WorldStateRepository } from '../../src/storage/repos/world-state.repo';
+import { createObligation, settleObligation } from '../../src/engine/social/grudges';
+import { ledgerAbout, writeObligations } from '../../src/storage/repos/obligation.repo';
+import { readPrivateWordsAtTheActualBody } from '../../src/web/private-words-on-the-actual-ledger';
 import { parseIntent } from '../../src/web/actions';
 
 async function arranged(provider?: ScriptedProvider, days = 30) {
@@ -84,6 +88,7 @@ it('starts the named pupils real lesson while the askers SQL body remains free',
     expect(favour).toBeTruthy();
     expect(favour.incurredOnDay).toBeCloseTo(before);
     expect(h.world.obligations.some(word => word.id === favour.id)).toBe(false);
+    expect(new WorldStateRepository(h.db).loadWorld(h.world.id)!.obligations.some(word => word.id === favour.id)).toBe(false);
     expect(faceOf(h.world.npcs.find(person => person.id === h.id)!)).toBeLessThan(oldFace);
     expect(guidanceFor(h.world.npcs.find(person => person.id === h.pupil.id)!, new Map(h.world.npcs.map(person => [person.id, person])), routineTime(h.world))?.ordinal).toBe(teacher.cultivation.realmOrdinal);
     expect(h.game.currentRun().run.elapsedDays - before).toBeLessThan(30);
@@ -121,4 +126,24 @@ it('does not move an absent pupil into an agreed lesson', async () => {
     expect(turn.narration).toContain('not here to receive guidance');
     expect(h.world.npcs.find(person => person.id === h.teacher.id)?.activity?.kind).not.toBe('teaching');
     expect(h.world.obligations.some(word => word.tags.includes(`beneficiary:${h.pupil.id}`))).toBe(false);
+});
+
+/** Old body-boundary adapters duplicated SQL favours in world_obligations.
+ * Upgrading must preserve the settled word, retire both native copies, and
+ * survive an append save/reopen without resurrecting a spent favour. */
+it.each([false, true])('retires a legacy favour copy while preserving its SQL settlement (closed mirror: %s)', async nativeClosed => {
+    const h = await arranged();
+    const word = createObligation({ kind: 'favor', cause: 'other', holderId: h.id, subjectId: h.teacher.id,
+        severity: 'serious', onDay: routineTime(h.world), description: 'An ordinary personal favour.' });
+    h.world.obligations.push(nativeClosed ? settleObligation(word, { resolution: 'forgiven',
+        onDay: routineTime(h.world) + 1, byId: h.id, note: 'A conflicting legacy mirror settlement.' }) : word);
+    h.game.theWorldMoved();
+    const closed = settleObligation(word, { resolution: 'repaid', onDay: routineTime(h.world),
+        byId: h.teacher.id, note: 'The favour was repaid.' });
+    writeObligations(h.db, [closed]);
+    readPrivateWordsAtTheActualBody(h.game, h.id);
+    h.game.theWorldMoved();
+    expect(ledgerAbout(h.db, h.id).find(row => row.id === word.id)).toEqual(closed);
+    expect(h.world.obligations.some(row => row.id === word.id)).toBe(false);
+    expect(new WorldStateRepository(h.db).loadWorld(h.world.id)!.obligations.some(row => row.id === word.id)).toBe(false);
 });

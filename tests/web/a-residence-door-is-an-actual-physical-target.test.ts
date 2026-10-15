@@ -1,5 +1,5 @@
 /**
- * Owner force ruling, 2026-10-03. Vault coverage did not cover an actual owned
+ * Owner force ruling, 2026-10-03. The vault coverage did not cover an actual owned
  * residence slab. Native residence location identity/material already exist;
  * private invitation alone still proves no locked physical bedroom door.
  * These controls use actual seeded residences, native force/material,

@@ -8,7 +8,7 @@
  * Synchronous and asynchronously delivered consequences must produce the same
  * native progress; both must differ from leaving the actual mastery unchanged.
  * All arms run in one invocation with the same body/world seeds. They use the
- * same held body, native world advance, rate reader and repository—no copied
+ * same held body, native world advance, rate reader and repository - no copied
  * progression formula, manufactured encounter, extra RNG stream or model.
  */
 import { TECHNIQUES } from '../../src/data/cultivation/techniques.js';
