@@ -8,6 +8,26 @@ without installing a second copy on the world.
 
 # The World Layer
 
+Public ships use finite bought-run appointments on the same actual master and
+hull. Each load and necessary empty return keeps its route, capacity, weather
+and time. Quoting creates no crew or hull; an accepted paid purchase uses the
+existing advertised source. Held tallies and consumed boarding seats reserve
+capacity. Boarding transfers tallies to real crew and deletes them there;
+unused tallies lapse only when the actual ship departs. A missing master or
+changed custody cannot be replaced by a forecast.
+
+Public folding keeps its published opening, crossing hour and recovery.
+Accepted crossings are finite ordinary appointments, with real attendants and
+paid physical tallies. An unstaffed opening does not expire them. Native holders
+cross on actual departure and arrival boundaries; an interrupted independent
+course cannot be overwritten by an old arrival appointment.
+
+An accepted native route intention survives sale or loss of its tally. At
+actual counter contact it can buy a replacement through the ordinary purchase
+and purse writers. The generic item decision reads actual replacement fare,
+arrival, lost work and goal deadline, without a ticket premium table or resale
+handler. A party that fits a load buys its seats on the same departure.
+
 Accepted public carriage trips use finite ordinary appointments on one actual
 driver and hull. Buying the next load can also accept its necessary empty return;
 each leg uses the native route, capacity and elapsed travel. The driver's current
@@ -3178,7 +3198,7 @@ market is computed on arrival and nothing is stored. **What that does not give**
 gap it is: the town has no road of its own, no residents in `npcs`, and no encounters.
 Closing it needs a world population scaled to the map it is spread over.
 
-**A place is read into areas of at most three, the same way.**
+**An area holds three other people plus the active player party.**
 `where-in-a-place-somebody-is-standing.ts` reads whoever a row holds (after the compound's
 room read) into areas off what they are at: in a town a counter or a hired hand to a market or
 the street, a table or a sitting to an inn, anything else to the street; at a house's seat the
@@ -3197,13 +3217,14 @@ the earlier packing rule filled 33% of occupied areas with three. With hourly ro
 `road-world`'s busiest town has occupied-area counts (one/two/three) of 6/3/2 at 08:00,
 7/4/1 at noon and 18/0/0 at 22:00 (day 365000; `npc-routines.test.ts`).
 
-Companions take space in that same read; they are never appended afterwards. The
-optional arrivals include run sheets and separated presences. Existing occupants
-keep their space; companions use vacancies, so approaching somebody cannot send
-them elsewhere. Overflow goes to another area of the place, creating one when
-necessary. Extra companions stay
-outside a full private room. The player is excluded; individually tracked beasts
-and bodies count against three, with bodies held separately from living targets.
+Active companions and followers are derived from the existing company activities.
+They do not consume any of the three places for other people during binning,
+explicit-area placement or joining the player. Existing other occupants keep
+those three places; a party never displaces them. Expired company uses the
+ordinary allowance again. Actual room, road-edge and hull admission still
+controls who can stand here; party membership cannot recall an absent body.
+Run sheets and separated presences use the same allowance. The player is
+excluded; non-party beasts and fallen bodies still count against three.
 Placement is derived on every read, including after travel, summons and world ticks.
 Whole-row and whole-compound readers remain for population and ground mechanics.
 
@@ -4491,7 +4512,7 @@ receipts are merged once; no future departure cast is kept as current company.
 
 An observer on a known unfinished road edge uses only exact matching physical
 positions. Those already-filtered bodies share its public contact point before
-the existing three-person area cap; the coarse endpoint label supplies no rooms
+the allowance for three other people plus the active party; the coarse endpoint label supplies no rooms
 or residents. Vertex placement retains ordinary named-area draws.
 
 An owned residence's physical slab follows the actual tagged location, including
@@ -5186,3 +5207,25 @@ merit for that private request. A remote beneficiary is not an invented witness.
 World people can agree arbitrary bilateral terms on the ordinary oath ledger. Background opportunities use rates; actual contact and each party's ordinary willingness decide agreement. All available bindings can be proposed. A human receives the offer as a question. An agreed slave service starts its stated work only after consent. Serious existing accounts can move a native person's decision to keep an ordinary word; breaking uses the existing grievance and dao-backlash authorities.
 
 Slave seals use the existing person-seal body record. Consent or established submission is required for ordinary laying. A holder has one: successful replacement releases the previous person immediately. Orders are recorded historical facts and memories; release preserves them and opens the person's account. Native orders use real journeys, possession transfers, cultivation and melee. Melee retains body, arts, flight, talisman, weapon, named death and estate consequences. Command provenance reaches the witness and house readers before indexing; an actor recorded as remote does not acquire physical presence. A righteous observer reads the compelled method through the existing alignment lens. Neither compulsion nor a contract creates a second outcome resolver.
+
+Personally owned inventory trades through one held-item offer and sale path,
+without an item-kind eligibility list or a premium table. Catalog value and
+actual acquisition evidence inform the ordinary person's decision alongside
+their goals, ties, obligations, character and the ground. Offers and answers
+are ordinary facts; payment uses the actual purses and custody uses the
+ordinary possession writer. Native contacts reuse the existing sampled
+seasonal exchange pass and accepted public departure meetings, without a
+daily tick. A contact's owned-inventory index is transient and current custody
+is reread before each offer. House consignments still require the house's
+authority; a carrier's custody does not turn house stock into their property.
+
+A native public passenger pays the real carrier and uses the same physical
+passage tally as any other buyer. A rates planner retains an already debited
+personal fare on the pending activity until the actual counter or boarding
+settles it; the ordinary purchase fact then owns that expense. A prepaid
+mission allocates only its actual funded fare, without charging its people
+again. Active funding accounts retain their expense facts. A future estimate
+is neither an actual boarding nor an occupied berth. Later contact settles
+the actual boarding and hand-in at their original date, with a real receiver
+there then; it does not require the vessel to remain at that port today.
+A held tally, however acquired, boards without another fare.

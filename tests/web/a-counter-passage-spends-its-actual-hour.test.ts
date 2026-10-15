@@ -1,3 +1,6 @@
+/* The physical-ticket ruling now requires a real attendant to receive the fare
+ * and tally. These clock controls arrange that actual person and start at the
+ * existing counter area; every elapsed-hour, arrival and recovery assertion stays. */
 /* CalendarAudit01 root native measured world365000.333/run.333, partyDay365000:
  * local0 said running, actual published phase0 world365000 is closed until365004.
  * Calendar01 corrects shared counter/NPC date to the existing persistent world
@@ -18,6 +21,8 @@
  * arrival remain the native counter's decisions. No model prose is asserted.
  */
 import { expect, it } from 'vitest';
+import {createNpc} from '../../src/engine/world/npc-state.js';
+import {theAreasOf} from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { makeGameInWorld } from './harness.js';
 import { prepareWorldClockForPreciseSpan } from '../../src/server/state/cultivation-world.js';
 import { routesFrom } from '../../src/engine/world/where-the-measured-span-still-answers.js';
@@ -39,6 +44,12 @@ for (const ordinal of [FOLD_FLOOR_ORDINAL, 0]) it('native counter clocks retain 
   if(!selected)throw Error('Actual opening world has no surveyed counter');
   h.repos.cultivators.update(native.cultivator.id,{realmOrdinal:ordinal,spiritStones:5000,
    location:selected.from.name,standingIn:null});
+
+  const counterArea=theAreasOf(world,selected.from).areas.find(a=>a.for==='span_counter')!;
+  const attendant=createNpc(world.seed,{id:'physical-clock-counter-attendant',occupation:'folding attendant',
+   locationId:selected.from.id,onDay:routineTime(world),bornOnDay:routineTime(world)-10000});
+  attendant.activity={kind:'trade',note:'Keeping the folding counter.',withIds:[],sinceDay:routineTime(world),untilDay:null,standingIn:counterArea.id};
+  world.npcs.push(attendant);h.repos.cultivators.standIn(native.cultivator.id,counterArea.id);h.game.theWorldMoved();
   const before=h.game.currentRun(),moment=routineTime(h.game.atHand!),quotedDay=h.game.theDayAPartyIsOn()!;
   const quoted=quotePassageAtACounter(selected.route,{heads:1,worstPassengerOrdinal:ordinal,onDay:quotedDay,cashPerWalkedDayReplaced:1});
   const result=await h.game.passage(before.run,before.cultivator,selected.route.toPlace, 'buy');

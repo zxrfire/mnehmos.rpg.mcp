@@ -1,3 +1,7 @@
+/* Adding the later passenger changes actual area placement under three other
+ * people plus party. Start the first offer beside its real listener after that
+ * addition, as the second offer already does. The original request cost and
+ * every three-course, fuel, custody, waiting body and arrival check remain. */
 /** Public-service tallies and personal rides are separate authorities. A free
  * owned ride produces no tally or public fare; even a paid carried public tally
  * cannot replace a person's consent to board this privately held craft. */
@@ -284,6 +288,10 @@ it('explicit first leg, fuelled return alone and second load are three actual co
   const index=world.npcs.findIndex(n=>n.id===second.id);world.npcs[index]={...setRealm(setLocation(second,h.from.id,day),29,day),activity:{kind:'mustering',note:'Waiting for the actual later leg.',withIds:[],sinceDay:day,untilDay:null}};
   h.game.theWorldMoved();const secondRow=()=>h.game.atHand!.npcs.find(n=>n.id===second.id)!;
   const secondOaths=()=>ledgerAbout(h.db,body.id).filter(o=>agreedRideOn(o)?.riderId===second.id);
+  const firstRead=peopleInThisPlace(h.repos,h.game.currentRun().cultivator,h.game.atHand!,h.from);
+  expect(firstRead.whereIs.has(h.rider.id)).toBe(true);
+  h.repos.cultivators.standIn(body.id,firstRead.whereIs.get(h.rider.id)!);
+  expect(h.game.present(h.game.currentRun().cultivator).some(p=>p.id===h.rider.id)).toBe(true);
   await offer(h,'free');let now=h.game.currentRun();
   const read=peopleInThisPlace(h.repos,now.cultivator,h.game.atHand!,h.from);expect(read.whereIs.has(second.id)).toBe(true);
   h.repos.cultivators.standIn(body.id,read.whereIs.get(second.id)!);now=h.game.currentRun();h.game.theyGaveTheirName(now.cultivator,now.run,secondRow());

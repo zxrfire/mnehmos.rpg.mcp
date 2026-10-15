@@ -1,8 +1,9 @@
+import { whoIsOnTheRoadWith } from './who-is-on-the-road-with-you.js';
 import { workersAtPublicCounters } from './who-is-working-at-a-public-counter.js';
 import { getConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import { publicCountersAt, publicTransportHubsAt, type PublicCounterKind } from './public-transport-at-a-place.js';
 /**
- * Which area of a place somebody is standing in, and no area holds more than three.
+ * Which area somebody stands in: three other people, plus the observer's party.
  *
  * The owner: "AT MOST 3 people per room, 3 NPCs", "like 3 character cards per room", "for others,
  * they can be in a diff room", where a room is any area of a place. Measured before this, on
@@ -27,8 +28,8 @@ import { publicCountersAt, publicTransportHubsAt, type PublicCounterKind } from 
  * The dead who fell there are counted. Each person stands in the area a draw of their own points at, or the next with room, so
  * a death pulls nobody across from elsewhere. People in one activity together
  * (`withIds`) are kept in one area. The draw includes the day and three-hour part of the day. Nothing
- * writes an area: a new activity is a new reading. Companions take room too;
- * a read with the player's position puts up to three with them and the rest elsewhere.
+ * writes an area: a new activity is a new reading. Active party members and followers
+ * stand with the observer without consuming one of the three places for other people.
  *
  * ── AN AREA IS NOT A LOCATION ROW ────────────────────────────────────────
  *
@@ -59,8 +60,15 @@ import {
     type WhereCompoundsAre
 } from './where-inside-a-house-somebody-is-standing.js';
 
-/** The owner's ceiling: three of the world's people to an area. */
+/** Three people outside the observer's active party; companions are additional. */
 export const AT_MOST_IN_AN_AREA = 3;
+
+/** Presentation fallbacks use the same ceiling without cutting off companions. */
+export function threeOthersAndTheParty<T extends {id: string}>(people: readonly T[], partyIds: ReadonlySet<string>): T[] {
+    let others = 0;
+    return people.filter(person => partyIds.has(person.id) || others++ < AT_MOST_IN_AN_AREA);
+}
+
 
 /** What an area of a place is for. */
 export type WhatAnAreaIsFor = 'street' | 'market' | 'table' | 'gate' | 'forecourt' | 'board' | 'here' | 'room' | 'deck' | 'exchange' | 'clinic' | 'landing' | 'carriage_station' | 'span_counter' | 'spirit_berth' | 'register_gate' | 'star_office';
@@ -81,6 +89,8 @@ interface StandingWith {
     id: string;
     standingIn?: string | null;
     sectId?: string | null;
+    /** Active party ids derived by the caller, including stored followers. */
+    partyIds?: ReadonlySet<string>;
     /** People held outside the world roster, with their own area when known. */
     others?: readonly { id: string; standingIn?: string | null }[];
     physical?: { accepts: (npc: NpcRecord) => boolean; betweenEndpoints: boolean;
@@ -343,6 +353,9 @@ export function theAreasOf(
     const watch = betweenEndpoints || house === null ? null : theOneOnWatchAtTheGate(state, place, compounds, routes);
     const aboard = isOpenWaterRow(place) || standingWith?.physical?.hull?.areaKind === 'deck';
     const now = routineTime(state);
+    const partyIds = new Set(standingWith ? [...standingWith.partyIds ?? [],
+        ...whoIsOnTheRoadWith(state.npcs, standingWith.id, now).map(person => person.id)] : []);
+    const othersIn = (group: readonly NpcRecord[]) => group.filter(person => !partyIds.has(person.id)).length;
     const hullOf = new Map<string, string>();
     if (standingWith?.physical?.hull) {
         for (const npc of people) hullOf.set(npc.id, standingWith.physical.hull.key);
@@ -459,11 +472,17 @@ export function theAreasOf(
     }
     for (const what of (standingWith?.physical?.hull ? [standingWith.physical.hull.areaKind]
         : betweenEndpoints ? ['here' as const] : theKindsAt(state,place,now,undefined,routes))) {
-        // Anybody bigger than an area is taken three at a time; then in the order of a draw per
-        // person on its own stream, the one on watch first so the gate a road reaches has them.
+        // Three other people per piece; the active party does not consume their places.
+        // The watch and each person's existing draw keep their ordinary placement order.
         const pieces = groups.filter(group => kindOf(group) === what)
-            .flatMap(group => Array.from({ length: Math.ceil(group.length / AT_MOST_IN_AN_AREA) },
-                (_, i) => group.slice(i * AT_MOST_IN_AN_AREA, (i + 1) * AT_MOST_IN_AN_AREA)))
+            .flatMap(group => {
+                const pieces: NpcRecord[][] = [[]];
+                for (const person of group) {
+                    if (!partyIds.has(person.id) && othersIn(pieces.at(-1)!) >= AT_MOST_IN_AN_AREA) pieces.push([]);
+                    pieces.at(-1)!.push(person);
+                }
+                return pieces.filter(piece => piece.length);
+            })
             .map(piece => ({
                 piece,
                 hull: hullOf.get(piece[0]!.id),
@@ -483,7 +502,7 @@ export function theAreasOf(
             }))
             .sort((a, b) => Number(b.counter !== undefined) - Number(a.counter !== undefined)
                 || Number(b.first) - Number(a.first) || a.draw - b.draw);
-        const total = pieces.reduce((n, p) => n + p.piece.length, 0);
+        const total = pieces.reduce((n, p) => n + othersIn(p.piece), 0);
         const names = theNamesFor(place, what);
         // Spare space is physical room, not a quota to fill. Fallen bodies still take space.
         const fallen = state.npcs.filter(n => !isActing(n.status) && n.locationId === place.id
@@ -502,7 +521,7 @@ export function theAreasOf(
                 : first || betweenEndpoints ? 0 : Math.floor(draw * bins.length);
             const at = Array.from({ length: bins.length }, (_, k) => (from + k) % bins.length)
                 .find(i => !heldByAHull.has(i) && (hull ? bins[i]!.length === 0
-                    : bins[i]!.length + piece.length <= AT_MOST_IN_AN_AREA));
+                    : othersIn(bins[i]!) + othersIn(piece) <= AT_MOST_IN_AN_AREA));
             const chosen = at ?? bins.length;
             if (at !== undefined) bins[at]!.push(...piece);
             else bins.push([...piece]);
@@ -512,7 +531,7 @@ export function theAreasOf(
         for (const npc of fallen) {
             const from = forStream(state.seed, 'where-a-body-fell', place.id, npc.id).int(0, bins.length - 1);
             const at = Array.from({ length: bins.length }, (_, k) => (from + k) % bins.length)
-                .find(i => !heldByAHull.has(i) && bins[i]!.length + fallenIn[i]!.length < AT_MOST_IN_AN_AREA);
+                .find(i => !heldByAHull.has(i) && othersIn(bins[i]!) + fallenIn[i]!.length < AT_MOST_IN_AN_AREA);
             if (at !== undefined) fallenIn[at]!.push(npc);
             else { bins.push([]); fallenIn.push([npc]); }
         }
@@ -532,12 +551,14 @@ export function theAreasOf(
             : areaTheyStandIn(place, areas, desired, npc.factionId);
         if (!area) continue;
         if (!areas.some(one => one.id === area.id)) areas.push(area);
-        if ([...whereIs.values(), ...whereBodiesAre.values()].filter(id => id === area.id).length < AT_MOST_IN_AN_AREA) {
+        if (partyIds.has(npc.id) || [...whereIs.entries(), ...whereBodiesAre.entries()]
+            .filter(([id, at]) => !partyIds.has(id) && at === area.id).length < AT_MOST_IN_AN_AREA) {
             whereIs.set(npc.id, area.id);
         }
     }
     if (standingWith) {
-        const count = (id: string) => [...whereIs.values(), ...whereBodiesAre.values()].filter(one => one === id).length;
+        const count = (id: string) => [...whereIs.entries(), ...whereBodiesAre.entries()]
+            .filter(([person, at]) => !partyIds.has(person) && at === id).length;
         const elsewhere = (from: AnAreaOfAPlace): AnAreaOfAPlace => {
             const kind = from.for === 'room' ? (house === null ? 'table' : 'forecourt') : from.for;
             const room = areas.find(area => area.for === kind && count(area.id) < AT_MOST_IN_AN_AREA);
@@ -555,7 +576,7 @@ export function theAreasOf(
                 : areaTheyStandIn(place, areas, other.standingIn, null);
             if (!areas.some(area => area.id === desired.id)) areas.push(desired);
             whereIs.delete(other.id);
-            whereIs.set(other.id, (count(desired.id) < AT_MOST_IN_AN_AREA ? desired : elsewhere(desired)).id);
+            whereIs.set(other.id, (partyIds.has(other.id) || count(desired.id) < AT_MOST_IN_AN_AREA ? desired : elsewhere(desired)).id);
         }
         // Aboard, the hull's own area; where the hull has no area here yet, the ordinary reading.
         const aboardAt = standingWith.physical?.hull
@@ -564,14 +585,14 @@ export function theAreasOf(
             : undefined;
         const at = aboardAt ?? areaTheyStandIn(place, areas, standingWith.standingIn, standingWith.sectId ?? null);
         if (!areas.some(area => area.id === at.id)) areas.push(at);
-        const companions = people.filter(n => (!standingWith.physical?.hull || at.for !== 'room') && routines.get(n.id)!.activity?.withIds.includes(standingWith.id))
+        const companions = people.filter(n => (!standingWith.physical?.hull || at.for !== 'room') && partyIds.has(n.id))
             // Following a leader cannot override this person's actual chosen hull area.
             .filter(n => !standingWith.physical?.hull || !areas.some(area =>
                 area.id === routines.get(n.id)!.standingIn && (area.for === standingWith.physical!.hull!.areaKind || standingWith.physical!.hull!.rooms?.some(room => room.id === area.id))))
             .sort((a, b) => a.id.localeCompare(b.id));
-        // Companions use free space; they cannot displace the person being approached.
+        // Actual companions join the observer; the three other people keep their places.
         for (const companion of companions) {
-            if (whereIs.get(companion.id) === at.id || count(at.id) >= AT_MOST_IN_AN_AREA) continue;
+            if (whereIs.get(companion.id) === at.id) continue;
             whereIs.set(companion.id, at.id);
         }
     }

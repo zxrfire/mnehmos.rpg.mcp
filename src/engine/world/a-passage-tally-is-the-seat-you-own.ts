@@ -13,7 +13,7 @@ import { hourOnTheClock, routineTime } from './npc-routines.js';
 import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 
 export interface TallyDeparture {
-    service: 'ship' | 'carriage' | 'spirit_boat' | 'air';
+    service: 'ship' | 'carriage' | 'spirit_boat' | 'air' | 'portal';
     vesselId: string;
     fromId: string;
     toId: string;
@@ -92,7 +92,7 @@ export function makePassageTally(input: {
 export function passageTallyTerms(object: ObjectRecord): PassageTallyTerms | null {
     const d = object.data;
     if (object.kind !== 'token' || !object.tags.includes('passage-tally') || d.passageTally !== true
-        || typeof d.service !== 'string' || !['ship', 'carriage', 'spirit_boat', 'air'].includes(d.service)
+        || typeof d.service !== 'string' || !['ship', 'carriage', 'spirit_boat', 'air', 'portal'].includes(d.service)
         || typeof d.vesselId !== 'string' || typeof d.fromLocationId !== 'string'
         || typeof d.toLocationId !== 'string' || typeof d.departureDay !== 'number'
         || !Number.isFinite(d.departureDay) || typeof d.seat !== 'number'
@@ -135,26 +135,26 @@ export function theHeldPassageTally(state: Pick<WorldState, 'objects' | 'history
 
 /** A real receiver must be alive and present at the actual boarding. */
 export function whatStopsHandingInPassageTally(state: WorldState, holderId: string,
-    departure: TallyDeparture, receiverId: string | null): string | null {
+    departure: TallyDeparture, receiverId: string | null,onDay=routineTime(state)): string | null {
     if (!theHeldPassageTally(state, holderId, departure))
         return 'You do not hold a passage tally for that departure.';
     const receiver = state.npcs.find(person => person.id === receiverId && person.status === 'alive');
-    if (!receiver || receiver.id === holderId)
+    if (!receiver || receiver.id === holderId || receiver.identity.bornOnDay > onDay)
         return 'Nobody is here to receive that passage tally.';
-    if (locationOfNpcOnItsJourney(state, receiver, routineTime(state)) !== departure.fromId)
+    if (locationOfNpcOnItsJourney(state, receiver, onDay) !== departure.fromId)
         return 'The person receiving that passage tally is not at this departure.';
     return null;
 }
 
 /** Boarding hands the tally to its real receiver, then consumes their item. */
 export function handInPassageTally(state: WorldState, holderId: string,
-    departure: TallyDeparture, receiverId: string | null): PassageTallyTerms | null {
-    if (whatStopsHandingInPassageTally(state, holderId, departure, receiverId)) return null;
+    departure: TallyDeparture, receiverId: string | null,onDay=routineTime(state)): PassageTallyTerms | null {
+    if (whatStopsHandingInPassageTally(state, holderId, departure, receiverId,onDay)) return null;
     const object = theHeldPassageTally(state, holderId, departure);
     if (!object) return null;
     const terms = passageTallyTerms(object)!;
     const receiver = state.npcs.find(person => person.id === receiverId)!;
-    const handed = transferPossession(object, { onDay: routineTime(state),
+    const handed = transferPossession(object, { onDay,
         toHolderId: receiver.id, toHolderName: receiver.name, how: 'gifted',
         transfersOwnership: true, note: 'The passage tally was handed in at boarding.' });
     state.objects[state.objects.indexOf(object)] = handed;

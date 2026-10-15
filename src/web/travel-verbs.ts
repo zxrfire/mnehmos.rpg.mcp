@@ -1,3 +1,4 @@
+import {preparePublicFoldingTallies,heldFoldingDestination} from './public-folding-tallies-at-the-counter.js';
 import { publicTransportHubsAt } from '../engine/world/public-transport-at-a-place.js';
 import {launchOwnedSeaPassage} from './launching-an-owned-sea-passage.js';
 import { quoteAnAirJourney, conveyanceOfPersonalFlight } from '../engine/world/what-an-air-journey-takes.js';
@@ -2365,9 +2366,9 @@ export const travelVerbs = {
             `${chosen.conveyance.name} carries ${chosen.conveyance.heads} people per leg, including its driver; ${heads} were requested and need ${journey.trips} actual legs. Choose who boards the first leg. Nothing spent.`,
             'A promise does not replace capacity or grant unplayed return legs. No booking, fuel or money changed.'));
         if (chosen.conveyance.crossesGroundThatCannotBeWalked && journey.trips !== 1)
-            return refused('engine.airJourney', 'ride', factsForRefusal('This actual air course cannot depart.',
-                'The selected craft cannot carry this party in one physical trip.',
-                'No fuel, craft, passenger or time was moved. Multiple shuttle flights remain unbuilt.'));
+            return refused('engine.airJourney', 'ride', factsForRefusal('The requested riders do not fit on one actual leg.',
+                `${chosen.conveyance.name} carries ${chosen.conveyance.heads} people per leg, including its pilot; ${heads} were requested and need ${journey.trips} actual legs. Choose who boards the first leg. Nothing spent.`,
+                'No fuel, craft, passenger or time was moved. Each later load needs its actual outward and return legs.'));
 
         // THE CHEST BURNS SPIRIT STONES, and they are the rider's. The owner: "you burn spirit
         // stones as fuel". Priced here all along (`whatTheChestBurns`) and never taken, so a spirit
@@ -2744,9 +2745,6 @@ export const travelVerbs = {
         const service = theServiceNamed(topic) ?? theServiceNamed(rawInput)
             ?? (intent === 'ticket' || intent === 'embark' ? area?.for === 'carriage_station' ? 'carriage'
                 : area?.for === 'landing' ? 'ship' : null : null);
-        // A folding counter performs its immediate crossing, rather than a
-        // captain's scheduled vehicle departure. Preserve that existing buy.
-        if (service === null && counter !== null && intent === 'ticket') intent = 'buy';
         const runsFromHere = counter === null ? whatRunsFromHere(this, cultivator, today) : [];
         if (service !== null
             || (target !== undefined && theLineTo(runsFromHere, target, null) !== null)) {
@@ -2793,10 +2791,10 @@ export const travelVerbs = {
             }
         }
 
-        const wanted = (target ?? '').trim();
+        const wanted = (target ?? (intent==='embark'?heldFoldingDestination(this,cultivator):undefined) ?? '').trim();
         const route = wanted.length >= 2 ? routeTo(counter, wanted) : null;
 
-        if (intent !== 'buy' || route === null) {
+        if (!['buy','ticket','embark'].includes(intent) || route === null) {
             const lines: string[] = [
                 `The board at ${counter}.`,
                 ...board.lines.map(line =>
@@ -2837,7 +2835,7 @@ export const travelVerbs = {
         // arrives together and waits for the person the crossing was hardest
         // on*. Nothing here decides either; this only stops asserting that the
         // player is travelling alone.
-        const withYou = this.whoIsWithYouOnTheRoad(cultivator);
+        const withYou = intent==='ticket'&&!/\b(?:tickets|tallies|for us|our)\b/i.test(rawInput)?[]:this.whoIsWithYouOnTheRoad(cultivator);
         const origin = this.atHand && worldLocationFor(this.atHand, placeName(cultivator));
         const companionIds = withYou.map(person => person.id);
         const unavailable = this.atHand && origin
@@ -2847,7 +2845,7 @@ export const travelVerbs = {
             'Your agreed company cannot cross here together.',
             'An agreed traveller is absent, no longer alive, or already on another actual passage. Nothing spent.',
             'Party membership does not recall a body or replace its accepted course.'));
-        const quote = quotePassageAtACounter(route, {
+        let quote = quotePassageAtACounter(route, {
             heads: 1 + withYou.length,
             worstPassengerOrdinal: theSlowestOfThem(cultivator.realmOrdinal, withYou),
             cashPerWalkedDayReplaced: rate,
@@ -2855,21 +2853,10 @@ export const travelVerbs = {
         });
         const stones = Math.max(1, Math.ceil(cashToStones(quote.fareCash)));
 
-        if (cultivator.spiritStones < stones) {
-            return refused('engine.quotePassageAtACounter', 'passage', factsForRefusal(
-                'The fare is the fare.',
-                `${route.toPlace} is ${quote.fareCash} cash, which is ${stones} spirit stones, `
-                + `and you are carrying ${cultivator.spiritStones}. The published fare supplies no alternate figure. `
-                + 'What the house sells is priced by true '
-                + 'distance off a table nobody outside it can check, and it is the same figure '
-                + 'for everybody standing at this counter.',
-                `quotePassageAtACounter: ${route.id} at ${quote.fareCash} cash (${stones} stones) `
-                + `against a purse of ${cultivator.spiritStones}. No time passed.`
-            ));
-        }
-
-        this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
-        const paid = this.repos.cultivators.getById(cultivator.id)!;
+        const admission=preparePublicFoldingTallies(this,run,cultivator,route,intent,withYou,quote,stones,rate);
+        if('execution' in admission)return admission.execution;
+        quote=admission.quote;
+        const paid=admission.paid;
         const arrivedAt = this.whereTheRoadEndsIn(route.toPlace).name;
 
         let crossedNames: string[] = [];

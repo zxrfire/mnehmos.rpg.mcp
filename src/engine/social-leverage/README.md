@@ -970,3 +970,9 @@ world appointments (`theHallStaff`), while the same `remitOf` and reporting
 readers price what a posted person can handle.
 
 A reached person's actual body may supply compelledById when a live slave seal is held by the asker. The ordinary resolver then returns acceptance without a willingness, morality, currency, favour or attachment draw. This input is derived from the sole body record, never from a model's description. It supplies compulsion, not capability: actual travel, custody and opposition still decide what the commanded act achieves.
+
+An ordinary paid exchange can bring appraised goods as well as stones, and
+can cost the recipient actual replacement value or lost work. The existing
+purse lens reads that net offered value through the same person's ordinary
+odds. These are engine-read values, not narrator prices or purse mutations;
+the actual exchange writer still checks and moves both purses and the goods.

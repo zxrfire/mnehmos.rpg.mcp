@@ -1,3 +1,5 @@
+import {passageTallyTerms} from './a-passage-tally-is-the-seat-you-own.js';
+import {buyTheNextPublicShipForANative,waitForThePublicShip} from './the-next-public-ship-is-an-ordinary-trip.js';
 import { aPostingForItsActualLegs } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import { companyDuringPassage } from './company-during-a-passage.js';
 import { stoppedRoadPoint } from './where-a-carriage-stopped.js';
@@ -67,13 +69,20 @@ export function bookNpcPassageForRoute(state: { locations: readonly LocationReco
         const to=state.locations.find(place=>place.id===destinationId);
         const line=ground&&to?publicShipLinesFrom(world,ground.name,day,routes).find(line=>line.to===to.name):undefined;
         if(!line)return null;
+        const held=world.objects.find(o=>o.possessorId===npc.id&&(()=>{const t=passageTallyTerms(o);return t?.service==='ship'
+            &&t.vesselId===shipIdForLane(line.lane)&&t.fromId===ground!.id&&t.toId===destinationId;})());
+        if(held&&npc.activity?.publicFarePaid===undefined) {
+            const approach=prepareNpcDepartureApproach(world,npc,destinationId,day,purpose,'ship',undefined,routes);
+            if(approach!==undefined)return approach;
+            waitForThePublicShip(world,npc,held);return world.npcs.find(p=>p.id===npc.id)??null;
+        }
         if (!isPlayerInvolved(world, npc)) {
             const fare = stonesFor(line.cashPerSeat);
             if (npc.status !== 'alive' || npc.spiritStones < fare) return null;
             const leaves = Math.max(day, line.runsFromDay ?? day);
             return { ...npc, locationId: ground!.id, spiritStones: npc.spiritStones - fare,
                 activity: companyDuringPassage(npc.activity, {
-                    kind: 'travelling', note: purpose, sinceDay: leaves, untilDay: leaves + line.days,
+                    kind: 'travelling', note: purpose, sinceDay: leaves, untilDay: leaves + line.days, publicFarePaid:fare,
                     // The lane's hull, so a passenger met on it can be put aboard the actual ship.
                     fromLocationId: ground!.id, returnTo: destinationId, seaLaneId: line.lane.id,
                     vesselId: shipIdForLane(line.lane), withIds: []
@@ -86,6 +95,7 @@ export function bookNpcPassageForRoute(state: { locations: readonly LocationReco
     }
     const quote = quotePublicPassage(typeof state.seed === 'string'
         ? state as typeof state & { seed: string } : { ...state, seed: npc.id }, npc.locationId, destinationId, day,1,[],undefined,[],routes);
+    if(!quote&&'history' in state)return buyTheNextPublicShipForANative(state as WorldState,npc.id,npc.locationId,destinationId);
     if (!quote || npc.spiritStones < quote.fareStones) return null;
     return startNpcPassage(state.locations, npc, { lane: quote.lane, destinationId, onDay: day,
         days: quote.days, fareStones: quote.fareStones, purpose });
@@ -102,9 +112,9 @@ export function startNpcPassage(locations: readonly LocationRecord[], npc: NpcRe
         || input.fareStones <= 0 || npc.spiritStones < input.fareStones) return null;
     if (publicSeaLaneBetween(locations, from.id, to.id)?.id !== input.lane.id) return null;
     return { ...npc, spiritStones: npc.spiritStones - input.fareStones,
-        activity: companyDuringPassage(npc.activity, activityOfAPublicPassage({ lane: input.lane, vesselId: shipIdForLane(input.lane),
+        activity: { ...companyDuringPassage(npc.activity, activityOfAPublicPassage({ lane: input.lane, vesselId: shipIdForLane(input.lane),
             fromId: from.id, toId: to.id, departureDay: input.onDay, arrivalDay: input.onDay + input.days },
-            input.purpose), input.onDay), updatedOnDay: input.onDay };
+            input.purpose), input.onDay), publicFarePaid:input.fareStones }, updatedOnDay: input.onDay };
 }
 
 export function isWater(place: LocationRecord): boolean {

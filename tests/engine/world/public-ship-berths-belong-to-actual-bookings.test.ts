@@ -1,3 +1,6 @@
+/* The full-departure ruling replaces the last refusal with buying a later
+ * ordinary load. The current hull is still full and gains no extra body; the
+ * late customer pays once, holds a later tally and waits at the origin. */
 /** Oct7 public hull audit found no finite berth admission and an identical-leg
  * receipt deduplicated away later NPCs; SQL player IDs were omitted entirely.
  * A berth is held by an actual boarding fact/body or a current living paid
@@ -7,6 +10,7 @@
  * A legacy actual SQL boarding which omitted its actor cannot imply spare seats.
  * Actual landing bodies preserve the quoted date; room departures have a separate timed approach.
  */
+import {passageTallyTerms} from '../../../src/engine/world/a-passage-tally-is-the-seat-you-own.js';
 import {expect,it} from 'vitest';
 import {loadCultivationCatalog} from '../../../src/engine/world/catalog.js';
 import {seedWorld} from '../../../src/engine/world/seeding.js';
@@ -38,7 +42,7 @@ function fixture(){
   world.npcs.push(npc);return npc;};
  return {world,from,to,quote,available,add};
 }
-it('charges independently accepted passengers once and refuses another body at real capacity',()=>{
+it('charges admitted passengers once and sells a later load at real current capacity',()=>{
  const {world,to,from,quote,available,add}=fixture();
  const accepted: NpcRecord[]=[];
  for(let i=0;i<available;i++){
@@ -50,13 +54,17 @@ it('charges independently accepted passengers once and refuses another body at r
   expect(personal!.spiritStones).toBe(opening-quote.fareStones);accepted.push(personal!);
  }
  expect(quotePublicPassage(world,from.id,to.id,quote.departureDay,1)).toBeNull();
- const late=add('not-admitted'),purse=late.spiritStones,activity=late.activity;
- expect(resolveWithPlayerPresent(world,from.id,
-  ()=>bookNpcPassageForRoute(world,late,to.id,quote.departureDay,'Seeking a seat.'))).toBeNull();
- expect(late.spiritStones).toBe(purse);expect(late.activity).toBe(activity);
+ const late=add('not-admitted'),purse=late.spiritStones;
+ const waiting=resolveWithPlayerPresent(world,from.id,
+  ()=>bookNpcPassageForRoute(world,late,to.id,quote.departureDay,'Seeking a seat.'));
+ expect(waiting).not.toBeNull();expect(waiting!.activity?.kind).toBe('waiting_for_a_departure');
+ const tally=world.objects.find(o=>o.possessorId===late.id&&passageTallyTerms(o));expect(tally).toBeTruthy();
+ const terms=passageTallyTerms(tally!)!;expect(terms.departureDay).toBeGreaterThan(quote.arrivalDay);
+ expect(world.npcs.find(p=>p.id===late.id)!.spiritStones).toBe(purse-terms.fareStones);
+ expect(world.npcs.find(p=>p.id===late.id)!.locationId).toBe(from.id);
  const facts=world.history.facts.filter(fact=>fact.data.actualBoarding===true&&fact.data.vesselId===quote.vesselId);
  const actualActors=new Set(facts.flatMap(fact=>fact.actors.map(actor=>actor.id)));
- expect(accepted.every(npc=>actualActors.has(npc.id))).toBe(true);
+ expect(accepted.every(npc=>actualActors.has(npc.id))).toBe(true);expect(actualActors.has(late.id)).toBe(false);
  expect(world.objects.filter(one=>one.id===quote.vesselId)).toHaveLength(1);
 });
 it('holds prepaid future seats through living mission pointers and credits only their own participants',()=>{

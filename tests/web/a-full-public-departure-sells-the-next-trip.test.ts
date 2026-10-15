@@ -7,6 +7,7 @@
  * This pinned played fixture fills the three seats through the actual counter.
  */
 import { expect, it } from 'vitest';
+import {takeThemWithYou} from '../../src/engine/world/who-is-on-the-road-with-you';
 import { parseIntent } from '../../src/web/actions';
 import { LESSER_ACTION_DAYS } from '../../src/web/lesser-action-costs';
 import { makeGameInWorld } from './harness';
@@ -45,10 +46,10 @@ async function atCounter() {
     return { h, world, from, to, day, driver, vehicle, station, cultivator };
 }
 
-function fillFirstLoad(fixture: Awaited<ReturnType<typeof atCounter>>) {
+function fillFirstLoad(fixture: Awaited<ReturnType<typeof atCounter>>,count=3) {
     const { h, world, from, to, day, driver, station } = fixture;
     const sold = [];
-    for (let seat = 0; seat < 3; seat++) {
+    for (let seat = 0; seat < count; seat++) {
         const buyer = createNpc(world.seed, { id: 'full-counter-passenger-' + seat, locationId: from.id,
             onDay: day, bornOnDay: day - 25 * 365 });
         buyer.spiritStones = 100;
@@ -124,4 +125,19 @@ it('hands a held passage tally to a real person through ordinary giving', async 
     expect(handed.ownerId).toBe(person.id);
     expect(handed.provenance.at(-1)?.how).toBe('gifted');
     expect(passageTallyTerms(handed)).toEqual(passageTallyTerms(tally));
+});
+
+it('keeps a party on the same later load when only one current seat remains',async()=>{
+    const fixture=await atCounter(),{h,from,to,station,cultivator}=fixture;
+    const first=fillFirstLoad(fixture,2)[0]!,world=h.game.atHand!,now=routineTime(world);
+    const member=createNpc(world.seed,{id:'same-load-companion',locationId:from.id,onDay:now,bornOnDay:now-9000});world.npcs.push(member);
+    const agreed=takeThemWithYou(world.npcs,{leaderId:cultivator.id,party:[member],note:'Travelling together.',onDay:now,untilDay:now+365})[0]!;
+    agreed.activity!.standingIn=station.id;world.npcs[world.npcs.findIndex(p=>p.id===member.id)]=agreed;h.game.theWorldMoved();
+    const before=h.game.currentRun().cultivator.spiritStones;
+    const turn=await h.game.act('I buy our passage tallies to '+to.name);
+    const held=h.game.atHand!.objects.filter(o=>[cultivator.id,member.id].includes(o.possessorId??'')).map(passageTallyTerms).filter(Boolean);
+    expect(held,turn.narration).toHaveLength(2);expect(new Set(held.map(t=>t!.departureDay)).size).toBe(1);
+    expect(held[0]!.departureDay).toBeGreaterThan(first.departureDay);expect(h.game.currentRun().cultivator.location).toBe(from.name);
+    expect(h.game.currentRun().cultivator.spiritStones).toBe(before-held.reduce((n,t)=>n+t!.fareStones,0));
+    expect(h.game.atHand!.npcs.find(p=>p.id===member.id)!.locationId).toBe(from.id);
 });

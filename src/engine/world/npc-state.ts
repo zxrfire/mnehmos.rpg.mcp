@@ -421,6 +421,8 @@ export interface NpcActivity {
     partyCourseDecisionId?: string;
     /** One accepted ordinary carrier appointment, never a copied fleet position. */
     publicDepartureId?: string;
+    /** Personal fare already debited by the rates planner, awaiting actual carrier settlement. */
+    publicFarePaid?: number;
     /** The physical tally this person has chosen to use at their departure. */
     passageTallyId?: string;
     /** The held departure intention; no berth, fare or arrival has been accepted. */

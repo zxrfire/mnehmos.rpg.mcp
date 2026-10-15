@@ -1,12 +1,13 @@
 /**
- * Companions were removed from the area bins and appended to whoever was already
- * there. Seven people talking to the player could therefore occupy one area;
- * the web roster hid the overflow with a slice while offers still read everyone.
- * Arrivals now take space in the same read. Overflow remains in another area,
- * including in a private room, and corpses and individually tracked beasts count.
- * Red-checked with a four-person cap: all three cases reject it.
+ * The original cap stopped a large conversation from overflowing an area.
+ * The owner now exempts the player's actual party and followers from the three
+ * places for other people. The old fixture labelled seven talking bystanders
+ * as companions; it now uses the ordinary active party activity. A separate
+ * conversation control keeps those bystanders under the ordinary cap. Beasts,
+ * corpses, stored visitors and people on a different hull still count normally.
  */
 import { describe, expect, it } from 'vitest';
+import { whoIsOnTheRoadWith } from '../../../src/engine/world/who-is-on-the-road-with-you';
 import { makeLocation } from '../../../src/engine/world/locations';
 import { createNpc, markDead, PLAYER_ROW_TAG } from '../../../src/engine/world/npc-state';
 import { SEA_LANES } from '../../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water';
@@ -22,7 +23,7 @@ function arrangement() {
         id: `person-${i}`, name: `Person ${i}`, bornOnDay: -7300, onDay: 0, locationId: place.id
     }));
     for (const npc of npcs.slice(0, 7)) {
-        npc.activity = { kind: 'talking', note: '', withIds: ['player'], sinceDay: 0, untilDay: 2 };
+        npc.activity = { kind: 'out_with_a_party', note: '', withIds: ['player'], sinceDay: 0, untilDay: 2 };
     }
     npcs[8]!.tags.push('spirit-beast');
     npcs[9] = markDead(npcs[9]!, 0, 'Died here.');
@@ -33,14 +34,14 @@ function arrangement() {
     return { place, state: { seed: 'area-cap', currentDay: 0, locations: [place], npcs, factions: [] } };
 }
 
-function capped(read: ReturnType<typeof theAreasOf>) {
+function capped(read: ReturnType<typeof theAreasOf>, partyIds: ReadonlySet<string> = new Set()) {
     for (const area of read.areas) {
-        const count = [...read.whereIs.values(), ...read.whereBodiesAre.values()].filter(id => id === area.id).length;
+        const count = [...read.whereIs, ...read.whereBodiesAre].filter(([id, at]) => !partyIds.has(id) && at === area.id).length;
         expect(count, area.name).toBeLessThanOrEqual(3);
     }
 }
 
-describe('companions take room in an area', () => {
+describe('the party leaves three places for other people', () => {
     /**
      * Paid passage stopped beside a fellow passenger, then put the observer on
      * that person's independently drawn deck, hiding the actual shipmaster.
@@ -85,34 +86,31 @@ describe('companions take room in an area', () => {
         const { state, place } = arrangement();
         const before = structuredClone(state);
         const read = theAreasOf(state, place, undefined, { id: 'player' });
-        capped(read);
+        capped(read, new Set(whoIsOnTheRoadWith(state.npcs, 'player', state.currentDay).map(person=>person.id)));
         expect(read.whereIs.size).toBe(9);
         expect(read.whereIs.has('player')).toBe(false);
         expect(read.whereIs.has(state.npcs[8]!.id)).toBe(true);
         expect(read.whereBodiesAre.has(state.npcs[9]!.id)).toBe(true);
-        expect(npcsWhereTheyStand(state, place, null, { id: 'player' }).length).toBeLessThanOrEqual(3);
+        expect(npcsWhereTheyStand(state, place, null, { id: 'player' }).length).toBeGreaterThanOrEqual(7);
+        expect(npcsWhereTheyStand(state, place, null, { id: 'player' }).length).toBeLessThanOrEqual(10);
         expect(state).toEqual(before);
     });
 
-    it('keeps only three companions in a private room and leaves the others reachable outside', () => {
+    it('keeps the active party in a private room without bringing other people inside', () => {
         const { state, place } = arrangement();
         const room = aRoomOfTheirOwn(place, 'player');
         const read = theAreasOf(state, place, undefined, { id: 'player', standingIn: room.id });
-        capped(read);
+        capped(read, new Set(whoIsOnTheRoadWith(state.npcs, 'player', state.currentDay).map(person=>person.id)));
         const here = npcsWhereTheyStand(state, place, room.id, { id: 'player' });
-        expect(here).toHaveLength(3);
-        for (const companion of state.npcs.slice(0, 7).filter(n => !here.some(one => one.id === n.id))) {
-            const elsewhere = read.whereIs.get(companion.id)!;
-            expect(elsewhere).not.toBe(room.id);
-            expect(npcsWhereTheyStand(state, place, elsewhere, { id: 'player' }).map(n => n.id)).toContain(companion.id);
-        }
+        expect(here.map(person=>person.id).sort()).toEqual(state.npcs.slice(0,7).map(person=>person.id).sort());
+
     });
 
     it('bins arrivals held in other stores and reads again after activity expiry and movement', () => {
         const { state, place } = arrangement();
         const others = Array.from({ length: 8 }, (_, i) => ({ id: `visitor-${i}` }));
         const read = theAreasOf(state, place, undefined, { id: 'player', others });
-        capped(read);
+        capped(read, new Set(whoIsOnTheRoadWith(state.npcs, 'player', state.currentDay).map(person=>person.id)));
         expect(read.whereIs.size).toBe(17);
         for (const one of others) expect(read.whereIs.has(one.id)).toBe(true);
         state.currentDay = 4;
@@ -122,4 +120,12 @@ describe('companions take room in an area', () => {
         expect(later.whereIs.has(state.npcs[0]!.id)).toBe(false);
         expect(later.whereIs.size).toBe(16);
     });
+});
+
+it('talking with the player does not itself make bystanders a travelling party',()=>{
+    const {state,place}=arrangement();
+    for(const person of state.npcs.slice(0,7))person.activity!.kind='talking';
+    const read=theAreasOf(state,place,undefined,{id:'player'});
+    capped(read);
+    expect(npcsWhereTheyStand(state,place,null,{id:'player'}).length).toBeLessThanOrEqual(3);
 });

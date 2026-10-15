@@ -3,13 +3,11 @@ import type { GameService } from './turn-engine.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import type { Execution } from './turn-wire-shapes.js';
 import { actualSpiritStones, transferActualSpiritStones } from './transferring-actual-spirit-stones.js';
-import { offerTheNextPublicCarriage, acceptPublicCarriageOffer, carriageDepartureIn,
-    publicCarriageDepartures, quoteBoardingThePublicCarriage, waitForThePublicCarriage,
+import { offerTheNextPublicCarriage, purchaseAcceptedPublicCarriageTally, carriageDepartureIn,freePublicCarriageSeats,
+    publicCarriageDepartures, quoteBoardingThePublicCarriage,
     type PublicCarriageOffer } from '../engine/world/the-next-public-carriage-is-an-ordinary-trip.js';
-import { makePassageTally, passageTallyTerms, theHeldPassageTally, whatStopsHandingInPassageTally }
+import { passageTallyTerms, theHeldPassageTally, whatStopsHandingInPassageTally }
     from '../engine/world/a-passage-tally-is-the-seat-you-own.js';
-import { makeFact } from '../engine/world/history.js';
-import { appendWorldFact } from '../engine/world/who-was-there-when-it-happened.js';
 import { routineTime, hourOnTheClock } from '../engine/world/npc-routines.js';
 import { commitPublicCarriage, carriageIdForRoad, assessPublicCarriage } from '../engine/world/public-carriages.js';
 import { worldLocationFor } from './entities.js';
@@ -41,7 +39,7 @@ export function publicCarriageDepartureNotice(game: GameService, body: Cultivato
 /** The buyer and payer can differ for a real companion standing at the counter. */
 export function buyPublicCarriageTally(game: GameService, fromId: string, toId: string,
     buyer: { id: string; name: string; location?: string | null; alive?: boolean; standingIn?: string | null }, payer = buyer,
-    keeperId?: string):
+    keeperId?: string,acceptedOffer?:PublicCarriageOffer):
     { ok: true; tally: ObjectRecord; offer: PublicCarriageOffer } | { ok: false; reason: string } {
     const world = game.atHand;
     if (!world) return { ok: false, reason: 'There is no actual public carriage here.' };
@@ -57,7 +55,7 @@ export function buyPublicCarriageTally(game: GameService, fromId: string, toId: 
         routineTime(world)).kind === 'ready'
         : !station || (buyer.standingIn !== undefined ? buyer.standingIn : stored?.standingIn) === station.id;
     if (!atStation) return { ok: false, reason: 'The buyer has not reached the actual carriage station.' };
-    const offer = offerTheNextPublicCarriage(world, fromId, toId, buyer.id,
+    const offer = acceptedOffer?{...acceptedOffer,seat:freePublicCarriageSeats(world,acceptedOffer.departure)[0]??0}:offerTheNextPublicCarriage(world, fromId, toId, buyer.id,
         stored ? { id: stored.id, locationId: fromId, alive } : undefined);
     if (!offer) return { ok: false, reason: 'No actual driver and carriage offer that road departure.' };
     if (buyer.id === offer.departure.operatorId) return { ok: false, reason: 'The driver already works the carriage; that is not a passenger seat.' };
@@ -74,28 +72,15 @@ export function buyPublicCarriageTally(game: GameService, fromId: string, toId: 
     const purse = actualSpiritStones(game, payer.id) ?? 0;
     if (purse < offer.departure.fareStones) return { ok: false,
         reason: `The departure on ${when(offer.departure.terms.departureDay)} costs ${offer.departure.fareStones} spirit stones; the payer has ${purse}.` };
-    const driver = acceptPublicCarriageOffer(world, offer);
-    if (!driver) return { ok: false, reason: 'The actual driver is no longer available.' };
-    let tally: ObjectRecord | null = null;
-    const paid = transferActualSpiritStones(game, payer.id, driver.id, offer.departure.fareStones, () => {
-        const t = offer.departure.terms;
-        const purchase = appendWorldFact(world, makeFact({ day: routineTime(world), kind: 'gathering', visibility: 'secret',
-            locationId: fromId, actors: [{ ...buyer, role: 'buyer' }, { ...payer, role: 'payer' },
-                { id: driver.id, name: driver.name, role: 'carrier' }],
-            summary: 'A passage tally was bought for its named public carriage departure.',
-            data: { passageTallyPurchase: true, publicDepartureId: offer.departure.effect.id,
-                service: t.service, vesselId: t.vesselId, fromLocationId: t.fromId, toLocationId: t.toId,
-                departureDay: t.departureDay, seat: offer.seat, fareStones: offer.departure.fareStones,
-                stones: buyer.id === payer.id ? offer.departure.fareStones : 0, payerId: payer.id, receiverId: driver.id } }),
-            { bystanders: false, recur: false });
-        tally = makePassageTally({ terms: { ...t, seat: offer.seat, fareStones: offer.departure.fareStones },
-            buyer, purchase, onDay: routineTime(world),
-            fromName: world.locations.find(place => place.id === fromId)!.name,
-            toName: world.locations.find(place => place.id === toId)!.name });
-        world.objects.push(tally);
-        if (person) waitForThePublicCarriage(world, person, tally);
-    });
-    if (!paid.ok || !tally) return { ok: false, reason: 'The actual purses no longer cover this passage tally.' };
+    const nativeArea=station?theAreasOf(world,world.locations.find(p=>p.id===fromId)!,undefined,
+        {id:buyer.id,standingIn:station.id}):null;
+    const witnesses=nativeArea?[...nativeArea.whereIs].filter(([,at])=>at===station!.id).map(([id])=>id):[];
+    const played=game.currentRun().cultivator;
+    if(game.worldPlaceOf(played)===fromId&&played.standingIn===station?.id)
+        witnesses.push(played.id,...game.present(played).map(person=>person.id));
+    const tally=purchaseAcceptedPublicCarriageTally(world,offer,buyer,payer,
+        (carrierId,stones,commit)=>transferActualSpiritStones(game,payer.id,carrierId,stones,commit).ok,[...new Set(witnesses)]);
+    if(!tally)return {ok:false,reason:'The actual source, seat or purses changed before this purchase.'};
     game.theWorldMoved();
     return { ok: true, tally, offer };
 }
@@ -127,7 +112,8 @@ export async function publicCarriageTalliesAtCounter(game: GameService, run: Run
             ? game.whoIsWithYouOnTheRoad(body).map(person => ({ id: person.id, name: person.name })) : [];
         const people = [body, ...companions];
         const offer = offerTheNextPublicCarriage(world, from.id, to.id, body.id,
-            { id: body.id, locationId: from.id, alive: body.alive });
+            { id: body.id, locationId: from.id, alive: body.alive },people.length);
+        if(!offer)return game.freeAction(run,'passage',factsForToolResult('No single public carriage departure can take this requested company.',['Nothing spent; choose who is to travel on the first load.']));
         if (offer && body.spiritStones < offer.departure.fareStones * people.length) {
             const price = offer.departure.fareStones * people.length;
             return refused('engine.publicCarriageTallyPurchase', 'passage', factsForRefusal(
@@ -136,11 +122,11 @@ export async function publicCarriageTalliesAtCounter(game: GameService, run: Run
                 'No passage tally was bought and no departure appointment was accepted.'));
         }
         for (const person of people) {
-            const result = buyPublicCarriageTally(game, from.id, to.id, person, body, keeperId);
+            const result = buyPublicCarriageTally(game, from.id, to.id, person, body, keeperId,offer);
             if (!result.ok) return game.freeAction(run, 'passage', factsForToolResult(result.reason,
                 [...bought, result.reason, 'No body was boarded by buying a passage tally.']));
             if (person.id === body.id) tally = result.tally;
-            if (result.offer.fullDepartureDay !== null) bought.push(`The departure on ${when(result.offer.fullDepartureDay)} has no passenger seat.`);
+            if (result.offer.fullDepartureDay !== null) bought.push(people.length===1?`The departure on ${when(result.offer.fullDepartureDay)} has no passenger seat.`:`The departure on ${when(result.offer.fullDepartureDay)} cannot take all ${people.length} requested passengers.`);
             bought.push(`${result.tally.name}: ${result.offer.departure.fareStones} spirit stones paid.`);
         }
     }

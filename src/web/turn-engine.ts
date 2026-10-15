@@ -1,3 +1,5 @@
+import {settleNativeShipTallyIntentions} from '../engine/world/the-next-public-ship-is-an-ordinary-trip.js';
+import { tradeAHeldItem, offersForYourHeldItems } from './a-price-offered-for-a-held-item.js';
 import { theHallStaff } from '../engine/world/the-people-posted-to-a-houses-halls.js';
 import { StoredStandingFight } from './a-standing-fight-is-stored-on-its-run.js';
 import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
@@ -1178,6 +1180,7 @@ import {
 } from './prompt.js';
 import { howTheyLeftTheChair, thePlayerIsSureItIsThem, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whatTheyRememberOnTheirCard, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
 import { settleWitnessesOnContact } from '../engine/world/witness-reactions.js';
+import { settleNativeCarriageTallyIntentions } from '../engine/world/the-next-public-carriage-is-an-ordinary-trip.js';
 import { settlePracticeOnContact } from '../engine/world/the-world-changing-on-its-own.js';
 import { whatSomebodyRemembers } from '../engine/world/what-somebody-remembers.js';
 import { opportunitiesTheyCanTell } from './opportunity-questions.js';
@@ -3510,6 +3513,9 @@ export class GameService {
             }
             if (this.atHand.history.facts.length > factsBefore) this.theWorldMoved();
         }
+        for (const line of offersForYourHeldItems(this, this.currentRun().cultivator))
+            sayThisWhateverTheNarratorDoes(execution.facts, line);
+
         const rides = settleAgreedRides(this, this.currentRun().cultivator);
         for (const line of this.settlePlagueAtTheBodyBoundary()) sayThisWhateverTheNarratorDoes(execution.facts, line);
         for (const line of plagueOnEntry) sayThisWhateverTheNarratorDoes(execution.facts, line);
@@ -7341,6 +7347,8 @@ ${noticed}`;
         // what makes an intent press somebody and spend a DAY, and a haggle is
         // a moment. See `haggleOverAPrice`.
         if (intent === 'trade') {
+            const heldTrade = tradeAHeldItem(this, run, cultivator, target, rawInput);
+            if (heldTrade) return heldTrade;
             return this.haggleOverAPrice(run, cultivator, target, topic, rawInput);
         }
 
@@ -13736,6 +13744,8 @@ ${opened.text}` : receipt,
         target: string | undefined,
         rawInput = ''
     ): Promise<Execution> {
+        const heldTrade = tradeAHeldItem(this, run, cultivator, undefined, rawInput, 'buy', target);
+        if (heldTrade) return heldTrade;
         const query = (target ?? '').trim();
 
         // A BOOK, WHICH IS THE ONE THING ON THE BOARD THAT WAS NOT
@@ -14535,6 +14545,8 @@ ${opened.text}` : receipt,
         target: string | undefined,
         rawInput = ''
     ): Promise<Execution> {
+        const heldTrade = tradeAHeldItem(this, run, cultivator, undefined, rawInput, 'sell', target);
+        if (heldTrade) return heldTrade;
         // AHEAD OF THE POUCH, BECAUSE A BOOK WAS NEVER IN IT
         //
         // And the VOLUME ahead of the copying, because somebody holding the
@@ -21155,7 +21167,9 @@ ${fit.line}`;
             const contacts = new Set(here.map(person => person.id));
             const practice = settlePracticeOnContact(this.atHand, contacts);
             const witnesses = settleWitnessesOnContact(this.atHand, contacts);
-            if (practice || witnesses) {
+            const continuedRoute = settleNativeCarriageTallyIntentions(this.atHand, undefined, contacts);
+            const continuedSailing = settleNativeShipTallyIntentions(this.atHand, undefined, contacts);
+            if (practice || witnesses || continuedRoute || continuedSailing) {
                 this.theWorldMoved();
                 here = this.present(cultivator);
             }

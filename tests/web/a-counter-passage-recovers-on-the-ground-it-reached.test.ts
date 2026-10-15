@@ -1,3 +1,6 @@
+/* The physical-ticket ruling now requires a real attendant to receive the fare
+ * and tally. These clock controls arrange that actual person and start at the
+ * existing counter area; every elapsed-hour, arrival and recovery assertion stays. */
 /** CalendarPhase10 red unexpectedly passed ten controls; dead failed at an
  * absent-row observer. Actual native Phase12 proved genuine boundaries at
  * 365001 (world task), 365002 (npc23 due), 365003 (npc52 due) before the quoted
@@ -50,6 +53,8 @@ import { nextWorldClockBoundary } from '../../src/engine/world/world-clock-bound
  * custody and stopping, not an organically encountered cause. No model is used.
  */
 import { expect, it, vi } from 'vitest';
+import {createNpc} from '../../src/engine/world/npc-state.js';
+import {theAreasOf} from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { appendFileSync } from 'node:fs';
 import { passHours } from '../../src/web/routine-invitations.js';
 import { makeGameInWorld } from './harness.js';
@@ -117,6 +122,12 @@ async function arrangement() {
  if(!selected)throw Error('Authored schedule search reached no actual living closed-date quiet crossing interval');
  h.repos.cultivators.update(native.cultivator.id,{realmOrdinal:0,spiritStones:5000,
   location:selected.from.name,standingIn:null});
+
+  const counterArea=theAreasOf(world,selected.from).areas.find(a=>a.for==='span_counter')!;
+  const attendant=createNpc(world.seed,{id:'physical-clock-counter-attendant',occupation:'folding attendant',
+   locationId:selected.from.id,onDay:routineTime(world),bornOnDay:routineTime(world)-10000});
+  attendant.activity={kind:'trade',note:'Keeping the folding counter.',withIds:[],sinceDay:routineTime(world),untilDay:null,standingIn:counterArea.id};
+  world.npcs.push(attendant);h.repos.cultivators.standIn(native.cultivator.id,counterArea.id);h.game.theWorldMoved();
  let before=h.game.currentRun();
  const here=standingOf(before.cultivator,world);
  const quoted=quotePassageAtACounter(selected.route,{heads:1,worstPassengerOrdinal:0,onDay:quotedDay,

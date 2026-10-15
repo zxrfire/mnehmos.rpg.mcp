@@ -60,6 +60,23 @@ read existing personal favours and released words from the ordinary ledger.
 Mutual brotherhood writes reciprocal serious oaths and sworn-sibling edges while
 the two people actually give the word; a silent human never swears it.
 
+Repeated private flights are ordinary successive legs on the actual pilot and
+craft. Every load counts the pilot's seat and pays its own fuel, route and time;
+a return is another actual leg. A request exceeding one leg's capacity names
+the counts and asks who boards first. It cannot move waiting riders or grant
+unplayed returns. After a real landing the same pilot and hull can fly again.
+Private company and ride agreements issue no public tally. Advertised public
+carriage and ship loads instead use their existing finite departure queue.
+
+A public ship ticket stays in the buyer's pack until boarding; a full departure
+sells the same hull's later ordinary load after its real return. Its fare goes
+to the actual master. Boarding hands the tally to present crew, deletes it from
+them and binds the real SQL body to the existing voyage, with no second fare.
+A folding ticket similarly keeps the item and leaves the wait unspent. Immediate
+folding passage still spends its existing published wait, crossing hour and
+recovery, now paying the actual attendant and handing in the tally. An absent
+attendant receives neither fare nor item. Destination gate fees remain separate.
+
 Public passage tallies and personal rides remain separate authorities. A tally
 supplies its public departure seat, never consent to board a privately held
 craft. Private boarding issues and consumes no tally. Personal operator terms
@@ -343,7 +360,7 @@ repository, observer, world and place object identities share computed placement
 and capped rosters; the scope is removed in `finally`, including on failure.
 Its route context shares graph paths while each person's activity and body stay
 live inputs. It never spans an action or clock advance. Full-ground crowding
-remains separate from the three-person visible roster. Live narration does not
+remains separate from the visible roster of three others plus the active party. Live narration does not
 enter this scope. Default entrance selection reuses the existing read's areas;
 an arbitrary invalid standing marker retains the ordinary unobserved-area fallback.
 The owner's places ruling (2026-10-03) applies to the playable routes: a junior can name
@@ -361,7 +378,7 @@ Public city destinations remain discoverable when empty, including the auction h
 the existing exchange, inn, teahouse and market rows. Local area walks preserve the city
 location/calendar identity. A route never creates free stock, grants a vault key, or declares
 an NPC present who is in another area. Local walks spend 1/4 day; routine activity reads the
-arrival hour, with at most three NPCs in any area and usually one or two.
+arrival hour, with at most three other people plus the active player party in an area.
 Prepared bench work pays that same walk before its work days. Failed preparation never
 moves the maker, and an inaccessible work room refuses before materials are consumed.
 Public ship boards and crew wrappers read the engine's shared public shipping
@@ -4039,3 +4056,21 @@ paying for passage and handing a tally in retain the public-service routes.
 Open personal contracts carry both literal promises, binding, duration and ending condition through the plan into the ordinary oath ledger. Native offers wait for an explicit human answer. SQL words and body seals stay solely on the actual SQL records; combined world/SQL decision reads are views. Promised verbs remain words, while distinct following acts remain executable. Unknown ending conditions are not asserted fulfilled.
 
 A live slave seal supplies absolute compulsion to the ordinary request path. Explicit orders retain the holder and act in history and memory, and route to actual movement, custody, work or combat. A commanded SQL player acts through the actual executor rather than a world mirror; an ordered guard prevents leaving the post until its real term ends. Release and replacement preserve forced-service accounts. ADMIN exposes both seal kinds and real close/sworn ties through the same prose schema used by the handler.
+
+Area presence derives active companions and followers from the ordinary company
+activities. They join the player without using the three places for other
+people. Hearsay, greetings and scene company read that same presence; narrator
+cards no longer truncate an actual larger party at a separate six-card limit.
+A conversation focused on specified people keeps its existing focus without
+changing who is physically present. Actual rooms, hulls and road positions
+still decide whether a companion is here.
+
+Person-directed buying, selling, price offers and answers read the actual owned
+inventory item before catalog-counter matching. There is no item-kind sale
+allowlist. Both the holder and a proposed buyer keep their ordinary decisions;
+an unanswered player offer never sells their item. A real exchange moves the
+same object's custody and ownership, its actual purchase provenance, both real
+purses and any backing pouch/food quantity. Unknown catalog value means no
+stated price, not an untradeable item. Incoming offers require a real reached
+buyer with a relevant want and knowledge of the actual item. An office, post,
+roll place or influence is not materialized as inventory by a trade request.
