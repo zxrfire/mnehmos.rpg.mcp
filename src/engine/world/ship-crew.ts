@@ -1,3 +1,4 @@
+import {routineTime} from './npc-routines.js';
 import { realiseAcceptedPublicShipHull, publicShipHullCanBeBoarded, shipHandsForHull } from './a-public-ship-hull.js';
 import { companyDuringPassage, companyAfterPassage } from './company-during-a-passage.js';
 /** The public hull's existing crew factory and finite passage binding. */
@@ -120,6 +121,8 @@ export function commitNpcPublicPassage(world: WorldState, accepted: NpcRecord): 
         || !doing.vesselId || !doing.fromLocationId || !doing.returnTo || doing.untilDay == null
         || doing.untilDay <= doing.sinceDay || !world.npcs.some(npc => npc.id === accepted.id
             && npc.activity === doing)) return false;
+    // A quoted future departure is not an actual boarding event.
+    if(routineTime(world)<doing.sinceDay)return false;
     const from = world.locations.find(place => place.id === doing.fromLocationId);
     const to = world.locations.find(place => place.id === doing.returnTo);
     if (!from || !to) return false;

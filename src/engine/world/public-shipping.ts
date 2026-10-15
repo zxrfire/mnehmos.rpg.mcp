@@ -1,3 +1,4 @@
+import {settlePrepaidNativeBoardingTallies} from './a-prepaid-native-passage-has-its-ordinary-tally.js';
 import { shipHandsForHull, publicShipHullCanBeBoarded } from './a-public-ship-hull.js';
 import { requireConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { ObjectRecord } from './possessions.js';
@@ -411,7 +412,7 @@ function knownHullLegs(world: ShippingWorld, vesselId: string,read:ShippingActor
     for (const row of historicalHullLegs(history, vesselId)) keep(row.leg, 1, row.confirmedDay);
     for (const npc of read.people(vesselId)) {
         const doing = npc.activity;
-        if (doing?.kind !== 'travelling' || doing.vesselId !== vesselId || !doing.seaLaneId
+        if (doing?.kind !== 'travelling' || doing.publicFarePaid!==undefined || doing.vesselId !== vesselId || !doing.seaLaneId
             || !doing.fromLocationId || !doing.returnTo || doing.untilDay == null) continue;
         // A currently bound crew is the actual course, including a turnback.
         keep({ vesselId, fromId: doing.fromLocationId, toId: doing.returnTo,
@@ -446,7 +447,7 @@ function readHull(world: ShippingWorld, vesselId: string, consideredLegs: readon
             const aboard=new Map<number,Set<string>>();
             const crewHeads=[...crewIds].reduce((count,id)=>count+(read.living.get(id)??0),0);
             for(const npc of people) {
-                if(npc.activity?.kind==='travelling'&&npc.activity.vesselId===vesselId) {
+                if(npc.activity?.kind==='travelling'&&npc.activity.publicFarePaid===undefined&&npc.activity.vesselId===vesselId) {
                     const ids=aboard.get(npc.activity.sinceDay)??new Set<string>();
                     ids.add(npc.id);aboard.set(npc.activity.sinceDay,ids);
                 }
@@ -671,10 +672,12 @@ export function recordPublicPassage(world: WorldState, leg: PublicPassageLeg,
         if (receipt.data.actualBoarding === true && (leg.publicDepartureId || journeyTimeHasReached(onDay, leg.departureDay)
             && journeyTimeHasReached(routineTime(world), leg.departureDay))) {
             beforeHandIn?.(receipt);
+            const handInDay=Math.min(routineTime(world),leg.departureDay);
             const receiver = world.npcs.find(person => person.status === 'alive'
                 && person.tags.includes('crew-of:' + leg.vesselId)
-                && locationOfNpcOnItsJourney(world, person, routineTime(world)) === leg.fromId);
-            for (const person of boardingPeople ?? []) handInPassageTally(world, person.id, departure, receiver?.id ?? null);
+                && locationOfNpcOnItsJourney(world, person, handInDay) === leg.fromId);
+            if(receiver&&!beforeHandIn)settlePrepaidNativeBoardingTallies(world,leg,receipt,receiver.id,boardingPeople??[],handInDay);
+            for (const person of boardingPeople ?? []) handInPassageTally(world, person.id, departure, receiver?.id ?? null,handInDay);
             if(journeyTimeHasReached(onDay,leg.departureDay)&&journeyTimeHasReached(routineTime(world),leg.departureDay))
                 unusedPassageTalliesGoToDust(world, departure, onDay);
         }

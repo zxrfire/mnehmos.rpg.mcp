@@ -1,3 +1,5 @@
+import {buyTheNextPublicShipForANative} from './the-next-public-ship-is-an-ordinary-trip.js';
+import {routineTime} from './npc-routines.js';
 /** Ordinary people reach the same real station before paying or boarding. */
 import type { WorldState } from './world-state.js';
 import type { NpcRecord } from './npc-state.js';
@@ -19,16 +21,26 @@ export function settleNpcTravelOnContact(world: WorldState, personIds: ReadonlyS
         const at = world.npcs.findIndex(person => person.id === id);
         const person = world.npcs[at], doing = person?.activity;
         if (person?.status !== 'alive' || doing?.kind !== 'travelling' || !doing.seaLaneId
-            || doing.vesselId || !doing.fromLocationId || !doing.returnTo || doing.untilDay == null
-            || world.currentDay < doing.sinceDay || world.currentDay >= doing.untilDay) continue;
+            || !doing.fromLocationId || !doing.returnTo || doing.untilDay == null
+            || world.currentDay >= doing.untilDay) continue;
+        if(routineTime(world)<doing.sinceDay) {
+            if(typeof doing.publicFarePaid==='number'&&buyTheNextPublicShipForANative(world,id,doing.fromLocationId,doing.returnTo))changed=true;
+            continue;
+        }
+        if(doing.vesselId&&doing.publicFarePaid===undefined)continue;
         const from = routes.places.get(doing.fromLocationId), to = routes.places.get(doing.returnTo);
         const line = from && to ? publicShipLinesFrom(world, from.name, doing.sinceDay, routes)
             .find(row => row.lane.id === doing.seaLaneId && row.to === to.name) : undefined;
         if (!line) continue;
-        // Contact checks current custody and finite berths before realizing a hull.
-        if (!quotePublicPassage(world, from!.id, to!.id, doing.sinceDay,
-            1, [], undefined, [person.id], routes)) continue;
-        const accepted = { ...person, activity: { ...doing, vesselId: shipIdForLane(line.lane) } };
+        // Unsettled rates estimates do not supply actual hulls or physical seats.
+        const quotedWorld=doing.publicFarePaid===undefined?world:{...world,npcs:world.npcs.filter(p=>p.activity?.publicFarePaid===undefined)};
+        const quote=quotePublicPassage(quotedWorld,from!.id,to!.id,doing.sinceDay,1,[],undefined,[person.id],routes);
+        if(!quote) {
+            if(typeof doing.publicFarePaid==='number'&&buyTheNextPublicShipForANative(world,id,doing.fromLocationId,doing.returnTo))changed=true;
+            continue;
+        }
+        const accepted = { ...person, updatedOnDay:doing.sinceDay,
+            activity: { ...doing, vesselId: shipIdForLane(line.lane),untilDay:quote.arrivalDay } };
         world.npcs[at] = accepted;
         if (commitNpcPublicPassage(world, accepted)) changed = true;
         else world.npcs[at] = person;

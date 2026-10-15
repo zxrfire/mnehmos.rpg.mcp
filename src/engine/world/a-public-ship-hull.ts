@@ -31,18 +31,18 @@ export function realiseAcceptedPublicShipHull(world: WorldState,leg: PublicPassa
         || operator.activity?.kind!=='travelling' || operator.activity.vesselId!==leg.vesselId
         || operator.activity.fromLocationId!==leg.fromId || operator.activity.returnTo!==leg.toId
         || operator.activity.sinceDay!==leg.departureDay || operator.activity.untilDay!==leg.arrivalDay) return null;
-    return realiseAcceptedPublicShipSource(world,leg,operator);
+    return realiseAcceptedPublicShipSource(world,leg,operator,leg.departureDay);
 }
 
 /** Acceptance uses the same advertised hull factory, with a real master at its source. */
-export function realiseAcceptedPublicShipSource(world:WorldState,leg:Pick<PublicPassageLeg,'vesselId'|'fromId'>,operator:NpcRecord):ObjectRecord|null {
+export function realiseAcceptedPublicShipSource(world:WorldState,leg:Pick<PublicPassageLeg,'vesselId'|'fromId'>,operator:NpcRecord,atDay=world.currentDay):ObjectRecord|null {
     if(operator.status!=='alive'||!operator.tags.includes('crew-of:'+leg.vesselId))return null;
     const existing=world.objects.find(object=>object.id===leg.vesselId);
     if (existing) return existing.data?.conveyanceId==='conv-water-ship'
         && !isRuined(existing)
         && (existing.possessorId===operator.id || existing.possessorId===null && whoItIsWith(existing)===operator.id)
         ? existing : null;
-    if(locationOfNpcOnItsJourney(world,operator,world.currentDay)!==leg.fromId)return null;
+    if(locationOfNpcOnItsJourney(world,operator,atDay)!==leg.fromId)return null;
     const hull=aVehicleOf({id:leg.vesselId,conveyanceId:'conv-water-ship',ownerId:operator.id,
         ownerName:operator.name,at:leg.fromId});
     world.objects.push(hull);

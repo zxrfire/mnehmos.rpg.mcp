@@ -1,3 +1,5 @@
+import {workersAtPublicCounters} from './who-is-working-at-a-public-counter.js';
+import {publicCountersAt} from './public-transport-at-a-place.js';
 /** Bought public sailings are finite ordinary appointments on the existing lane hull. */
 import {makeScheduledEffect,type ScheduledEffect,type WorldState} from './world-state.js';
 import {routineTime} from './npc-routines.js';
@@ -152,6 +154,49 @@ export function purchaseAcceptedPublicShipTally(world:WorldState,offer:PublicShi
             onDay:routineTime(world),fromName:world.locations.find(p=>p.id===t.fromId)!.name,toName:world.locations.find(p=>p.id===t.toId)!.name});
         world.objects.push(tally);const person=world.npcs.find(p=>p.id===buyer.id);if(person)waitForThePublicShip(world,person,tally);
     });return paid?tally:null;
+}
+
+/** An exact native counter purchase also settles a fare allocated by the rates planner. */
+export function buyTheNextPublicShipForANative(world:WorldState,id:string,fromId:string,toId:string):NpcRecord|null {
+    const person=world.npcs.find(p=>p.id===id&&p.status==='alive'&&!p.tags.includes(PLAYER_ROW_TAG));
+    const from=world.locations.find(p=>p.id===fromId),landing=from&&theAreasOf(world,from).areas.find(a=>a.for==='landing');
+    if(!person||!from||!landing||person.locationId!==fromId)return null;
+    const paid=person.activity?.publicFarePaid??0;
+    if(!Number.isFinite(paid)||paid<0||person.activity?.standingIn&&person.activity.standingIn!==landing.id)return null;
+    if(!paid&&readActualDepartureApproach(world,id,{intentId:'buy-next-native-public-ship',target:{locationId:fromId,areaId:landing.id}},routineTime(world)).kind!=='ready')return null;
+    const locals=world.npcs.filter(p=>p.status==='alive'&&locationOfNpcOnItsJourney(world,p,routineTime(world))===fromId);
+    const keeper=workersAtPublicCounters(world,from.name,locals,publicCountersAt(world,from.name,routineTime(world))).get('landing');
+    if(!keeper)return null;
+    let offer:PublicShipOffer|null=null;
+    const doing=person.activity;
+    if(paid>0&&doing?.kind==='travelling'&&doing.sinceDay>routineTime(world)&&doing.fromLocationId===fromId&&doing.returnTo===toId) {
+        // Other unresolved rate estimates are not physical tickets or actual boardings.
+        const quotedWorld={...world,npcs:world.npcs.filter(p=>p.activity?.publicFarePaid===undefined)};
+        const quote=quotePublicPassage(quotedWorld,fromId,toId,doing.sinceDay,1,[],undefined,[]);
+        if(quote) {
+            const terms:TallyDeparture={service:'ship',vesselId:quote.vesselId,fromId,toId,departureDay:quote.departureDay};
+            const existing=publicShipDepartures(world,quote.vesselId).find(d=>d.terms.fromId===fromId&&d.terms.toId===toId&&d.terms.departureDay===quote.departureDay);
+            const operator=world.npcs.find(p=>p.status==='alive'&&p.tags.includes('crew-of:'+quote.vesselId)&&p.identity.occupation==='shipmaster');
+            const effect=existing?.effect??makeScheduledEffect({id:'public-departure:'+passageDepartureKey(terms),kind:'meeting',
+                dueOnDay:quote.departureDay,locationId:fromId,actorIds:operator?[operator.id]:[],summary:'The accepted public ship departure falls due.',
+                data:{publicCarrierDeparture:true,service:'ship',vesselId:quote.vesselId,operatorId:operator?.id??null,
+                    fromLocationId:fromId,toLocationId:toId,arrivalDay:quote.arrivalDay,seaLaneId:quote.lane.id,fareStones:quote.fareStones}});
+            const departure=existing??shipDepartureIn(world,effect);
+            const seat=departure?freePublicShipSeats(world,departure)[0]:undefined;
+            if(departure&&seat)offer={departure,newAppointments:existing?[]:[effect],seat,fullDepartureDay:null};
+        }
+    }
+    offer??=offerTheNextPublicShip(world,fromId,toId);
+    if(!offer||person.spiritStones+paid<offer.departure.fareStones)return null;
+    const tally=purchaseAcceptedPublicShipTally(world,offer,person,person,(carrierId,stones,commit)=>{
+        const payer=world.npcs.find(p=>p.id===id)!,carrier=world.npcs.find(p=>p.id===carrierId);
+        if(!carrier||payer.spiritStones+paid<stones||(payer.activity?.publicFarePaid??0)!==paid)return false;
+        payer.spiritStones+=paid-stones;carrier.spiritStones+=stones;commit();return true;
+    },[person.id,keeper.id]);
+    if(!tally)return null;
+    const at=world.npcs.findIndex(p=>p.id===id),current=world.npcs[at]!;
+    if(current.activity)world.npcs[at]={...current,activity:{...current.activity,standingIn:landing.id}};
+    return world.npcs[at]!;
 }
 
 /** Boarding binds only actual passengers and crew, leaving the SQL player's body to its adapter. */

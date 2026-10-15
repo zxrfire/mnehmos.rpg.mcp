@@ -5,7 +5,7 @@ import { isTheWorldsToMove } from './npc-state.js';
 import { howAGradeIsStored, isRuined } from './possessions.js';
 import { whatThisThingIs } from './what-a-house-gives-merit-for.js';
 import { noteLedgerPruned } from './a-fact-that-keeps-happening-is-one-row.js';
-import { factsWithData, referenceKeys, witnessHistoryWasPruned, witnessIndexFor } from './witness-reaction-index.js';
+import { factsWithData, factsWithDataValue, referenceKeys, witnessHistoryWasPruned, witnessIndexFor } from './witness-reaction-index.js';
 import type { HistoricalFact } from './history.js';
 import type { WorldState } from './world-state.js';
 import { missingMembersInRollCheck } from './life-lamp-roll-check-findings.js';
@@ -155,7 +155,10 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
         if (!fact) continue;
         // A retained consignment keeps its closing receipt; dropping only the receipt reopens it.
         const closingReceipts = index.auctionResults.get(fact.id) ?? [];
-        for (const id of [...referenceKeys(fact), ...closingReceipts]) if (index.byId.has(id) && !held.has(id)) {
+        // A live prepaid account keeps the receipts which say how much it has spent.
+        const fareReceipts=fact.data.publicMission===true&&typeof fact.data.publicFareStones==='number'
+            ?factsWithDataValue(state,'publicFareFundingId',fact.id).map(receipt=>receipt.id):[];
+        for (const id of [...referenceKeys(fact), ...closingReceipts, ...fareReceipts]) if (index.byId.has(id) && !held.has(id)) {
             held.add(id); pending.push(id);
         }
     }

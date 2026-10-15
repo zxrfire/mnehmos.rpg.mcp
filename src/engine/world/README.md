@@ -5100,3 +5100,14 @@ seasonal exchange pass and accepted public departure meetings, without a
 daily tick. A contact's owned-inventory index is transient and current custody
 is reread before each offer. House consignments still require the house's
 authority; a carrier's custody does not turn house stock into their property.
+
+A native public passenger pays the real carrier and uses the same physical
+passage tally as any other buyer. A rates planner retains an already debited
+personal fare on the pending activity until the actual counter or boarding
+settles it; the ordinary purchase fact then owns that expense. A prepaid
+mission allocates only its actual funded fare, without charging its people
+again. Active funding accounts retain their expense facts. A future estimate
+is neither an actual boarding nor an occupied berth. Later contact settles
+the actual boarding and hand-in at their original date, with a real receiver
+there then; it does not require the vessel to remain at that port today.
+A held tally, however acquired, boards without another fare.
