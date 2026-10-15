@@ -8,6 +8,9 @@ import { privateVenturesThisYear } from './private-ventures.js';
 import { closePeopleThisYear } from './close-people-go-together.js';
 import { plagueAppointments, plagueOutbreaksThisYear, withPlagueAppointments } from './plague-in-a-place.js';
 import { privatePaidWorkThisYear, settlePrivateWork, privateWorkAppointment } from './private-paid-work.js';
+import { openContractsThisYear, settleOpenContracts } from './people-agree-open-contracts.js';
+import { settleSlaveOrders, unfinishedSlaveOrders } from './slave-orders.js';
+import { releasePersonSeal } from './person-seals.js';
 import { departAfterPrivateInvitations } from './a-private-party-invites-the-player.js';
 import { publicCaptainsAtTheirAppointments,publicCaptainHoldAppointments } from './a-public-captain-protects-their-passengers.js';
 import { captainWaterAppointments } from './a-captain-aids-a-vessel-they-met.js';
@@ -644,12 +647,21 @@ function pressureTasksForYear(state: WorldState, year: number,
             tasks.push({ key: due.key, day: due.day, checkpoint: true, run: () => {} });
     }
     for (const word of state.obligations) {
+        if (word.kind === 'oath' && word.status === 'open' && word.tags.some(tag => tag.startsWith('contract-pair:'))
+            && word.dueOnDay != null && word.dueOnDay >= year * DAYS_PER_YEAR && word.dueOnDay < (year + 1) * DAYS_PER_YEAR)
+            tasks.push({ key: `contract-due:${word.id}`, day: word.dueOnDay, run: day => settleOpenContracts(state, day) });
         if (word.status !== 'open' || !word.tags.includes('private-paid-work') || word.dueOnDay == null) continue;
         if (word.dueOnDay >= year * DAYS_PER_YEAR && word.dueOnDay < (year + 1) * DAYS_PER_YEAR)
             tasks.push({ key: `private-work-deadline:${word.id}`, day: word.dueOnDay, checkpoint: true, run: () => {} });
     }
     for (const npc of state.npcs) {
+        const sealEnds = npc.cultivation.seal?.kind === 'slave' ? npc.cultivation.seal.liftsOnDay : null;
+        if (isTheWorldsToMove(npc) && sealEnds != null && sealEnds >= year * DAYS_PER_YEAR && sealEnds < (year + 1) * DAYS_PER_YEAR)
+            tasks.push({ key: `slave-seal-expiry:${npc.id}:${sealEnds}`, day: sealEnds,
+                run: day => { releasePersonSeal(state, npc.id, day); } });
         if (!isTheWorldsToMove(npc) || npc.activity?.untilDay == null) continue;
+        if (npc.activity.slaveOrderId) tasks.push({ key: `slave-order:${npc.id}:${npc.activity.untilDay}`,
+            day: npc.activity.untilDay, checkpoint: true, run: () => {} });
         if (npc.activity.houseCareFactId) tasks.push({ key: `house-care:${npc.id}:${npc.activity.untilDay}`,
             day: npc.activity.untilDay, checkpoint: true, run: () => {} });
         const privateDue = privateWorkAppointment(state, npc);
@@ -938,6 +950,8 @@ function pressureTasksForYear(state: WorldState, year: number,
     tasks.push({ key: 'private-paid-work', day: year * DAYS_PER_YEAR + 40.5, run: day => {
         privatePaidWorkThisYear(state, year, day, (id, due) => schedulePostingDay(`private-work:${id}:${due}`, due));
     } });
+    tasks.push({ key: 'open-personal-contracts', day: year * DAYS_PER_YEAR + 50.5,
+        run: day => openContractsThisYear(state, year, day) });
     tasks.push({ key: 'close-private-company', day: year * DAYS_PER_YEAR + 60.5, run: day => {
         closePeopleThisYear(state, year, day, (id, due) => schedulePostingDay(`capital-mission:${id}:${due}`, due));
     } });
@@ -1096,7 +1110,8 @@ function pressureTasksForYear(state: WorldState, year: number,
     schedulePostingDay = (key: string, day: number, run?: () => void) => {
         const personId = key.slice(key.indexOf(':') + 1, key.lastIndexOf(':'));
         const person = state.npcs.find(npc => npc.id === personId);
-        if (person && !isPlayerInvolved(state, person) && !key.startsWith('private-work:') && !key.startsWith('plague-')) return;
+        if (person && !isPlayerInvolved(state, person) && !key.startsWith('private-work:') && !key.startsWith('plague-')
+            && !key.startsWith('slave-order:')) return;
         if (day < year * DAYS_PER_YEAR || day > yearEndsOn
             || completed.has(key) || scheduled.has(key)) return;
         let at = nextTask;
@@ -1829,6 +1844,8 @@ function reviewSlot(id: string, period: number): number {
 
 /** Practice skipped by the background draw is reviewed once before a person's card. */
 export function settlePracticeOnContact(state: WorldState, personIds: ReadonlySet<string>): boolean {
+    settleSlaveOrders(state, routineTime(state));
+    openContractsThisYear(state, Math.floor(state.currentDay / 365), routineTime(state), personIds);
     const privateWork = settlePrivateWork(state, routineTime(state), undefined, personIds).length;
     const seclusion = settleClosedDoorCultivation(state, routineTime(state),
         (id, day) => applyAdvancement(state, Math.floor(day / DAYS_PER_YEAR), day, undefined, new Set([id])), personIds);
@@ -5085,6 +5102,17 @@ function anAwayTermDueToClose(state:WorldState,npc:NpcRecord,day:number,reliefDa
 function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
     schedule?: (key: string, day: number) => void): number {
     const day = onDay;
+    settleOpenContracts(state, day);
+    for (const order of unfinishedSlaveOrders(state)) {
+        const person = state.npcs.find(person => person.id === order.data.slaveId);
+        if (person?.activity?.departureApproach) continueNpcDepartureApproach(state, person, day);
+    }
+    settleSlaveOrders(state, day);
+    for (const order of unfinishedSlaveOrders(state)) {
+        const person = state.npcs.find(person => person.id === order.data.slaveId);
+        const due = person?.activity?.untilDay;
+        if (person && due != null && due > day) schedule?.(`slave-order:${person.id}:${due}`, due);
+    }
     settleClosedDoorCultivation(state, day, (id, due) =>
         applyAdvancement(state, Math.floor(due / DAYS_PER_YEAR), due, undefined, new Set([id])));
     // Only the geographic graph is shared; every iteration reads the current row.

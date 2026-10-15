@@ -71,3 +71,5 @@ should: see [the declaration-list note](../../docs/comment-cleanup-rules.md).
 
 
 Time-skip end states optionally carry absolute `soulState` and `identityContinuity`. The simulation supplies them; older callers omitting them retain the persisted values.
+
+The existing qiSeal body field also holds the slave kind; no new seal store exists. Optional kind defaults to qi for legacy rows. Optional atOrdinal is the strength when that particular seal was cast. Its dated term and holder remain in the same record; slave orders and their receipts remain ordinary history facts.

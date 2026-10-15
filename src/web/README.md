@@ -4017,3 +4017,7 @@ including a passage tally, through its actual possession and provenance. The
 existing gift favour still applies; counted pouch stock keeps its own transfer
 path. A hand-over remains a gift when the object is named passage or ticket;
 paying for passage and handing a tally in retain the public-service routes.
+
+Open personal contracts carry both literal promises, binding, duration and ending condition through the plan into the ordinary oath ledger. Native offers wait for an explicit human answer. SQL words and body seals stay solely on the actual SQL records; combined world/SQL decision reads are views. Promised verbs remain words, while distinct following acts remain executable. Unknown ending conditions are not asserted fulfilled.
+
+A live slave seal supplies absolute compulsion to the ordinary request path. Explicit orders retain the holder and act in history and memory, and route to actual movement, custody, work or combat. A commanded SQL player acts through the actual executor rather than a world mirror; an ordered guard prevents leaving the post until its real term ends. Release and replacement preserve forced-service accounts. ADMIN exposes both seal kinds and real close/sworn ties through the same prose schema used by the handler.

@@ -190,7 +190,7 @@ export function appendWorldFact(
         : whoWasThere(state, {
             day: pending.day,
             locationId: opts.bystanders === false ? null : pending.locationId,
-            actorIds: pending.actors.map(a => a.id),
+            actorIds: pending.actors.filter(actor => actor.present !== false).map(a => a.id),
             visibility: pending.visibility,
             factionIds: pending.factionIds,
             // The row already says how far it reached. Asking the caller to say
@@ -287,7 +287,7 @@ export function linkFactToWhoItNames(
     // itself, which is still written in full and still unioned across a
     // recurrence. Presence is a fact about the world; the trajectory is a fact
     // about the person; and they were never the same list.
-    const named = new Set<string>(fact.actors.map(a => a.id));
+    const named = new Set<string>(fact.actors.filter(actor => actor.present !== false).map(a => a.id));
     // ── AND BEING SEEN IS PROOF OF LIFE, WHOEVER THE EVENT WAS ABOUT ─────
     //
     // The sentence under the `lastConfirmedOnDay` write below - somebody who was

@@ -123,6 +123,8 @@ export type RecordFidelity = 'full' | 'partial' | 'rumour' | 'lost';
 export type FactTruth = 'objective' | 'reconstructed' | 'unresolved';
 
 export interface HistoricalActor {
+    /** False for a remote participant, such as the person who issued an order elsewhere. */
+    present?: boolean;
     id: string;
     name: string;
     /** What this actor did: 'killer', 'victim', 'heir', 'claimant', 'witness'. */

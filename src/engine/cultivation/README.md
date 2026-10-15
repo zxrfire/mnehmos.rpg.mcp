@@ -1364,3 +1364,5 @@ unfinished state retains the same bodies, initiative, adaptations, exchanges and
 round budget used by the whole-melee wrapper. Per-actor guarding and posture use
 the existing action and exchange rules; a party victory keeps the actual winner's
 identity while reporting whether the player's side won.
+
+The existing person-seal record has qi and slave kinds. Older records without a kind are qi seals. Only qi seals cap the pool and drawing; a slave seal leaves cultivation available and binds the person to its recorded holder. Both kinds use the existing laying, realm-gap duration and breaking authorities. The seal records its cast strength and real end date, including fractional days.

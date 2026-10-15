@@ -21,6 +21,11 @@ import { spendAboardTheCarriage } from './an-actual-paid-passage.js';
 import { spendFollowingParty, answerFollowingParty } from './following-the-party-leader.js';
 import { joiningAPrivateParty, privatePartyInvitationLines } from './joining-a-private-party.js';
 import { swearingBrotherhoodWithAPerson, brotherhoodOfferedOnContact } from './swearing-brotherhood-with-a-person.js';
+import { openContractsWithAPerson, contractOffersAtBody } from './open-contracts-with-a-person.js';
+import { usingAPersonSeal } from './using-a-person-seal.js';
+import { bindingOf } from '../engine/social/open-contracts.js';
+import { theOrderOnTheActualPlayer } from './slave-orders-at-the-actual-body.js';
+import { finishSlaveOrder } from '../engine/world/slave-orders.js';
 import { privateWorkWithAPerson, privateWorkOffersAtTheBody, settlePrivateWorkAtTheBody, privateBusinessBoundaryDates } from './private-work-with-a-person.js';
 import { thePlayerReceivesPrivatePartyFinds } from './the-player-receives-a-private-party-find.js';
 import { recordAnActualPrivateGather } from '../engine/world/private-work-in-the-field.js';
@@ -4399,8 +4404,23 @@ export class GameService {
         run: Run,
         cultivator: Cultivator,
         ambient: AmbientQi,
-        rawInput = ''
+        rawInput = '',
+        underSlaveOrder = false
     ): Promise<Execution> {
+        if (!underSlaveOrder) {
+            const command = theOrderOnTheActualPlayer(this, cultivator, action);
+            if (command) {
+                if (/\b(?:resist|refuse the order|defy)\b/i.test(rawInput))
+                    this.repos.cultivators.update(cultivator.id, { soulState: 'fragmented' });
+                const done = await this.execute(command.action, run, this.repos.cultivators.getById(cultivator.id)!,
+                    ambient, command.raw, true);
+                sayThisWhateverTheNarratorDoes(done.facts, `The slave seal compels the order: ${command.fact.summary}`);
+                if (done.outcome === 'executed' && JSON.parse(String(command.fact.data.order)).action === 'message')
+                    finishSlaveOrder(this.atHand!, command.fact, routineTime(this.atHand!), 'The ordered message was delivered through the actual speaker.');
+                this.theWorldMoved();
+                return done;
+            }
+        }
         if (!this.repos.cultivators.getById(cultivator.id)?.alive) return refused('world.actualBody', action.action,
             factsForRefusal('This life has ended.', 'The actual body cannot perform this act. Nothing spent and no time passed.'));
         const peopleBeforeHandler = this.present(cultivator);
@@ -4408,7 +4428,7 @@ export class GameService {
         const actualBody = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
         done.facts.lines.push(...this.settlePrivateBusinessAtBodyBoundary(false, false));
         const privateInvitations = [...privatePartyInvitationLines(this, actualBody), ...brotherhoodOfferedOnContact(this, actualBody),
-            ...privateWorkOffersAtTheBody(this, actualBody)];
+            ...privateWorkOffersAtTheBody(this, actualBody), ...contractOffersAtBody(this, actualBody)];
         done.facts.lines.push(...privateInvitations);
         done.facts.required = [...(done.facts.required ?? []), ...privateInvitations];
         // A reply belongs to the moment its handler resolved it. Capture the card
@@ -4712,6 +4732,10 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
+        const personSeal = await usingAPersonSeal(this, run, cultivator, action, rawInput);
+        if (personSeal) return personSeal;
+        const openContract = openContractsWithAPerson(this, run, cultivator, action, rawInput);
+        if (openContract) return openContract;
         const partyReply = answerFollowingParty(this, run, cultivator, rawInput);
         if (partyReply) {
             // The settled decision is heard before the next movement. Leaving remains an act.
@@ -6697,7 +6721,11 @@ ${noticed}`;
             // imagine someone making an oath pre immortal, not being able to
             // fulfil it.* Rising makes an unkept word more dangerous rather
             // than less, and nothing had to be written to make that true.
-            const daoOath = binding.subjectId === THE_OATHWRIGHT_HOUSE;
+            const daoOath = bindingOf(binding) === 'dao';
+            if (bindingOf(binding) === 'slave' && cultivator.qiSeal?.kind === 'slave'
+                && cultivator.qiSeal.byId === binding.subjectId) {
+                this.repos.cultivators.update(cultivator.id, { soulState: 'fragmented' });
+            }
             const struck = daoOath
                 ? weatherTheStrikes(
                     cultivator,
@@ -21712,7 +21740,8 @@ ${fit.line}`;
     settlePrivateBusinessAtBodyBoundary(allowHuntStart = true, includeQuestions = true): string[] {
         const work = [...settlePrivateWorkAtTheBody(this), ...thePlayerReceivesPrivatePartyFinds(this), ...thePrivatePartyHuntsWithThePlayer(this, allowHuntStart)];
         if (includeQuestions && !this.fight && this.state().cultivator.alive) work.push(...privatePartyInvitationLines(this, this.state().cultivator),
-            ...privateWorkOffersAtTheBody(this, this.state().cultivator), ...brotherhoodOfferedOnContact(this, this.state().cultivator));
+            ...privateWorkOffersAtTheBody(this, this.state().cultivator), ...brotherhoodOfferedOnContact(this, this.state().cultivator),
+            ...contractOffersAtBody(this, this.state().cultivator));
         return work;
     }
 

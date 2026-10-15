@@ -103,6 +103,10 @@ export interface ASealLaid {
 }
 
 export interface ASealAttempt {
+    /** Qi remains the default for every existing caller. */
+    readonly kind?: 'qi' | 'slave';
+    /** A slave seal needs consent or a submission established by the coercion authority. */
+    readonly subjectConsentsOrSubmitted?: boolean;
     readonly sealerOrdinal: number;
     readonly sealerId: string | null;
     readonly subjectOrdinal: number;
@@ -195,6 +199,10 @@ export function whatLayingASealTakes(attempt: ASealAttempt): ASealLaid {
         );
     }
 
+    if (attempt.kind === 'slave' && (!attempt.sealerId || !attempt.subjectConsentsOrSubmitted)) {
+        return nothing('they_held', 'No consent or established submission. No slave seal was laid.');
+    }
+
     const holdsFor = howLongASealOfThisGapHolds(realmGap);
     if (holdsFor === 0) {
         return nothing(
@@ -211,13 +219,15 @@ export function whatLayingASealTakes(attempt: ASealAttempt): ASealLaid {
     const days = holdsFor === null
         ? asked
         : asked === null ? holdsFor : Math.min(asked, holdsFor);
-    const liftsOnDay = days === null ? null : attempt.onDay + Math.max(0, Math.floor(days));
+    const liftsOnDay = days === null ? null : attempt.onDay + Math.max(0, days);
 
     return {
         went: true,
         why: null,
-        poolCutTo: whatASealLeavesInThePool(attempt.subjectMaxQi),
+        poolCutTo: attempt.kind === 'slave' ? null : whatASealLeavesInThePool(attempt.subjectMaxQi),
         seal: {
+            atOrdinal: attempt.sealerOrdinal,
+            ...(attempt.kind === 'slave' ? { kind: 'slave' as const } : {}),
             liftsOnDay,
             byId: attempt.sealerId,
             note: attempt.note,

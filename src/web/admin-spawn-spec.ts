@@ -1,5 +1,6 @@
 /** ADMIN reads requested facts; the spawn handler validates and writes them. */
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { LLMProvider } from '../agent/provider/types.js';
 import { MAX_ORDINAL } from '../engine/cultivation/realms.js';
 import { SECTS } from '../data/cultivation/sects.js';
@@ -9,21 +10,38 @@ import { extractJsonObject } from './actions.js';
 
 export const AdminSpawnSpecSchema = z.object({
     ordinal: z.number().int().min(0).max(MAX_ORDINAL).optional(),
-    sex: z.enum(['female', 'male']).optional(),
+    sex: z.enum(['female', 'male']).optional().describe('female: girl, woman or lady; male: boy, man or fellow.'),
     age: z.number().finite().nonnegative().optional(),
     house: z.string().min(1).max(120).optional(),
     rank: z.string().min(1).max(100).optional(),
     species: z.string().min(1).max(80).optional(),
     name: z.string().min(1).max(100).optional(),
-    temperament: z.enum(['generous', 'stingy', 'reticent', 'expressive', 'proud', 'unassuming']).optional(),
+    temperament: z.enum(['generous', 'stingy', 'reticent', 'expressive', 'proud', 'unassuming']).optional()
+        .describe('generous: readily shares; stingy: keeps possessions; reticent: reserved; expressive: forthcoming; proud: values face; unassuming: little concern for face.'),
+    disposition: z.enum(['hostile', 'wary', 'indifferent', 'friendly', 'close', 'sworn_sibling']).optional()
+        .describe('hostile: enemy or means harm; wary: suspicious or cautious; indifferent: neither friendly nor hostile; friendly: nice, kind or helpful now, without changing character; close: best friend or old companion, a strong real tie; sworn_sibling: sworn brother or sister, close with the real oath and lineage bond. Generous describes temperament, not disposition.'),
+    toward: z.string().min(1).optional().describe('Whom disposition concerns: me for the player, or a named real world person.'),
+    alignment: z.enum(['righteous', 'neutral', 'demonic']).optional()
+        .describe('righteous: a house of righteous leaning; neutral: a neutral house; demonic: evil or demonic house leaning, not an invented moral judgment.'),
+    location: z.string().optional(),
+    seal: z.object({
+        kind: z.enum(['qi', 'slave']).describe('qi: locks qi; slave: absolute compulsion by the holder.'),
+        holder: z.string().min(1).describe('me: the player; otherwise the stated name of a real world person.')
+    }).strict().optional(),
+    guesses: z.array(z.object({ word: z.string(), field: z.string().min(1),
+        value: z.union([z.string(), z.number(), z.boolean()]) }).strict()).optional()
+        .describe('Report every nearest-value guess: the original word, field and chosen allowed value. Exact values require no guess note.'),
     unusedWords: z.array(z.string()).optional()
 }).strict();
+
+/** The handler and model both extend/read this shape; no hand-written property list. */
+export const adminSpawnJsonSchema = zodToJsonSchema(AdminSpawnSpecSchema, { $refStrategy: 'none' });
 
 export type AdminSpawnSpec = z.infer<typeof AdminSpawnSpecSchema>;
 
 /** A bare ordinal and explicit legacy pairs keep the existing spawn path. */
 export function needsSpawnReading(request: string, args: Record<string, unknown>): boolean {
-    if (['sex', 'age', 'house', 'rank', 'temperament'].some(k => args[k] !== undefined)) return true;
+    if (['sex', 'age', 'house', 'rank', 'temperament', 'seal'].some(k => args[k] !== undefined)) return true;
     const prose = request.split(/\b[a-z_]+=/i)[0]!;
     let remainder = prose.toLowerCase()
         .replace(/\b(?:spawn_encounter|spawn_npc|spawn_person|spawn_cultivator|stage_encounter)\b/g, '')
@@ -37,19 +55,52 @@ export function needsSpawnReading(request: string, args: Record<string, unknown>
 function readWithoutAModel(input: string): AdminSpawnSpec {
     let rest = input.trim();
     const spec: AdminSpawnSpec = {};
+    const guess = (word: string, field: 'disposition' | 'temperament' | 'alignment', value: string) => {
+        (spec.guesses ??= []).push({ word, field, value });
+    };
     const take = (pattern: RegExp): RegExpExecArray | null => {
         const match = pattern.exec(rest);
         if (match) rest = rest.slice(0, match.index) + ' ' + rest.slice(match.index + match[0].length);
         return match;
     };
-    const ordinal = take(/\bordinal\s*[=:]?\s*(-?\d+(?:\.\d+)?)\b/i);
-    if (ordinal) spec.ordinal = Number(ordinal[1]);
     const name = take(/\b(?:[Nn]amed|[Cc]alled|[Nn]ame\s*[=:]?)\s*(?:"([^"]+)"|'([^']+)'|([\w'-]+(?:\s+[A-Z][\w'-]+)*))/);
     if (name) spec.name = name[1] ?? name[2] ?? name[3];
+    const seal = take(/\b(?:a\s+)?(slave|qi)[ -]sealed\s+(?:to|by)\s+(me|[A-Z][\w'-]*(?:\s+[A-Z][\w'-]*)*)\b/)
+        ?? take(/\b(?:a\s+)?(slave|qi)\s+seal(?:ed)?\s+(?:to|by)\s+(me|[A-Z][\w'-]*(?:\s+[A-Z][\w'-]*)*)\b/);
+    if (seal) spec.seal = { kind: seal[1]!.toLowerCase() as 'qi' | 'slave', holder: seal[2]! };
+    if (!seal && take(/\bwhose qi I have sealed\b/i)) spec.seal = { kind: 'qi', holder: 'me' };
+    const exactDisposition = take(/\b(hostile|wary|indifferent|friendly|close|sworn[ _]sibling)\b/i);
+    if (exactDisposition) spec.disposition = exactDisposition[1]!.toLowerCase().replace(' ', '_') as AdminSpawnSpec['disposition'];
+    const close = take(/\b(best friend|old companion|sworn brother|sworn sister)\b(?:\s+(?:to|of|with)\s+(me|[A-Z][\w'-]*(?:\s+[A-Z][\w'-]*)*))?/);
+    if (close && !exactDisposition) {
+        spec.disposition = /^sworn/.test(close[1]!) ? 'sworn_sibling' : 'close';
+        if (close[2]) spec.toward = close[2];
+        if (!['close', 'sworn sibling'].includes(close[1]!)) guess(close[1]!, 'disposition', spec.disposition);
+    }
+    const disposition = take(/\b(hostile|enemy|wary|suspicious|cautious|indifferent|friendly|nice|kind|helpful)\b/i);
+    if (disposition && !close && !exactDisposition) spec.disposition = /^(nice|kind|helpful|friendly)$/i.test(disposition[1]!) ? 'friendly'
+        : /^(wary|suspicious|cautious)$/i.test(disposition[1]!) ? 'wary' : /^enemy$/i.test(disposition[1]!) ? 'hostile'
+            : disposition[1]!.toLowerCase() as 'hostile' | 'indifferent';
+    const exactAlignment = take(/\b(righteous|neutral|demonic)\b/i);
+    const nearbyAlignment = take(/\b(evil)\b/i);
+    const alignment = exactAlignment ?? nearbyAlignment;
+    if (alignment) spec.alignment = /^evil$/i.test(alignment[1]!) ? 'demonic' : alignment[1]!.toLowerCase() as 'righteous' | 'neutral' | 'demonic';
+    if (disposition && !close && !exactDisposition && !['hostile', 'wary', 'indifferent', 'friendly'].includes(disposition[1]!.toLowerCase()))
+        guess(disposition[1]!, 'disposition', spec.disposition!);
+    if (alignment && !['righteous', 'neutral', 'demonic'].includes(alignment[1]!.toLowerCase()))
+        guess(alignment[1]!, 'alignment', spec.alignment!);
+    const ordinal = take(/\bordinal\s*[=:]?\s*(-?\d+(?:\.\d+)?)\b/i);
+    if (ordinal) spec.ordinal = Number(ordinal[1]);
+    if (spec.disposition && !spec.toward) {
+        const toward = take(/\b(?:toward|towards|to)\s+(me|[A-Z][\w'-]*(?:\s+[A-Z][\w'-]*)*)\b/);
+        if (toward) spec.toward = toward[1];
+    }
+    const location = take(/\b(?:location\s*[=:]?\s*|(?:at|in)\s+)(?:"([^"]+)"|'([^']+)')/i);
+    if (location) spec.location = location[1] ?? location[2];
     const age = take(/\b(?:age(?:d)?\s*[=:]?\s*(-?\d+(?:\.\d+)?)|(-?\d+(?:\.\d+)?)\s*(?:years? old|year-old))\b/i);
     if (age) spec.age = Number(age[1] ?? age[2]);
     if (!ordinal) {
-        const named = ordinalNamed(rest);
+        const named = ordinalNamed(rest) ?? ordinalNamed(rest.replace(/\bFoundation\b/i, 'Foundation Establishment'));
         if (named) {
             spec.ordinal = named.ordinal;
             for (const word of named.words) take(new RegExp(`\\b${word}\\b`, 'i'));
@@ -59,6 +110,12 @@ function readWithoutAModel(input: string): AdminSpawnSpec {
     if (sex) spec.sex = /^(female|girl|woman|lady)$/i.test(sex[1]!) ? 'female' : 'male';
     const temperament = take(/\b(generous|stingy|reticent|expressive|proud|unassuming)\b/i);
     if (temperament) spec.temperament = temperament[1]!.toLowerCase() as AdminSpawnSpec['temperament'];
+    const nearbyTemperament = take(/\b(cheerful|greedy|haughty|quiet)\b/i);
+    if (nearbyTemperament && !temperament) {
+        spec.temperament = ({ cheerful: 'expressive', greedy: 'stingy', haughty: 'proud', quiet: 'reticent' } as const)
+            [nearbyTemperament[1]!.toLowerCase() as 'cheerful' | 'greedy' | 'haughty' | 'quiet'];
+        guess(nearbyTemperament[1]!, 'temperament', spec.temperament);
+    }
     const beast = take(/\b(?:transformed from|changed from)\s+(?:an?\s+)?([\w-]+)/i)
         ?? take(/\b([\w-]+)\s+that\s+(?:took human form|transformed)\b/i);
     if (beast) spec.species = beast[1];
@@ -107,19 +164,32 @@ export async function readAdminSpawnSpec(
                         + 'Return only one JSON object. Omit unspecified fields; do not invent a name, ordinal, age or house. '
                         + 'Preserve unknown house and rank names so the engine can refuse them. '
                         + 'A girl is female, a boy is male. A fox transformed into a person has species="fox". '
-                        + 'Use unusedWords for requests outside the schema. JSON Schema: '
-                        + JSON.stringify({ type: 'object', additionalProperties: false, properties: {
-                            ordinal: { type: 'integer', minimum: 0, maximum: MAX_ORDINAL },
-                            sex: { enum: ['female', 'male'] }, age: { type: 'number', minimum: 0 },
-                            house: { type: 'string' }, rank: { type: 'string' }, species: { type: 'string' },
-                            name: { type: 'string' }, temperament: { enum: AdminSpawnSpecSchema.shape.temperament.unwrap().options },
-                            unusedWords: { type: 'array', items: { type: 'string' } }
-                        } }) },
+                        + 'An exact allowed value always wins in its field. For words with no exact fit, best-guess the nearest allowed value in the most fitting field: '
+                        + 'cheerful means temperament expressive; kind means disposition friendly; greedy means temperament stingy; haughty means temperament proud; quiet means temperament reticent. '
+                        + 'Report every guess in guesses; exact matches need no note. unusedWords is only for facts no field covers, such as a red robe or scar. JSON Schema: '
+                        + JSON.stringify(adminSpawnJsonSchema) },
                     { role: 'user', content: input }
                 ]
             });
             const parsed = AdminSpawnSpecSchema.safeParse(extractJsonObject(result.text));
-            if (parsed.success) return parsed.data;
+            if (parsed.success) {
+                const fallback = readWithoutAModel(input);
+                // Exact values in the sentence outrank the model's nearest-value interpretation.
+                for (const field of ['disposition', 'temperament', 'alignment'] as const) {
+                    const schema = AdminSpawnSpecSchema.shape[field].unwrap();
+                    const exact = schema.options.find(value => fallback[field] === value
+                        && new RegExp(`\\b${value.replace('_', '[ _]')}\\b`, 'i').test(input));
+                    if (exact) Object.assign(parsed.data, { [field]: exact });
+                }
+                const guesses = [...(parsed.data.guesses ?? []), ...(fallback.guesses ?? [])]
+                    .filter(guess => {
+                        const value = guess.field.split('.').reduce<unknown>((at, key) =>
+                            at && typeof at === 'object' ? (at as Record<string, unknown>)[key] : undefined, parsed.data);
+                        return value === guess.value;
+                    })
+                    .filter((guess, at, all) => all.findIndex(other => other.word === guess.word && other.field === guess.field) === at);
+                return { ...parsed.data, ...(guesses.length ? { guesses } : {}) };
+            }
         } catch { /* The same supported words remain usable without a provider. */ }
     }
     // Bounds are checked by the handler so a refusal carries the requested number.

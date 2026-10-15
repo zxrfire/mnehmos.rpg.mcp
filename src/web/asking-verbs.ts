@@ -1,4 +1,5 @@
 import { requestGuidanceForAnother } from './requesting-guidance-for-somebody-else.js';
+import { compelledByTheAsker } from './the-slave-seal-on-a-reached-person.js';
 import { prepareRideOffer, bindAgreedRide } from './an-offered-ride-is-an-agreement.js';
 import { transferActualSpiritStones } from './transferring-actual-spirit-stones.js';
 import { attemptWasAccepted } from '../engine/social-leverage/an-attempt-to-move-somebody.js';
@@ -653,6 +654,7 @@ export const askingVerbs = {
                 id: party.id,
                 name: party.name,
                 ordinal: them.realmOrdinal,
+                compelledById: compelledByTheAsker(this, party.id, cultivator.id),
                 ...(them.charm === undefined ? {} : { charm: them.charm }),
                 factionId: them.factionId,
                 alignment: theirSect?.alignment ?? null,
@@ -1832,6 +1834,7 @@ ${unnamed}`;
                 id: party.id,
                 name: party.name,
                 ordinal: asked.ordinal,
+                compelledById: compelledByTheAsker(this, party.id, cultivator.id),
                 ...(party.party.charm === undefined ? {} : { charm: party.party.charm }),
                 factionId: asked.factionId,
                 alignment: theirSect?.alignment ?? null,
@@ -2791,6 +2794,7 @@ ${done.span.facts.prose}`;
                 id: party.id,
                 name: party.name,
                 ordinal: party.party?.realmOrdinal ?? 0,
+                compelledById: compelledByTheAsker(this, party.id, cultivator.id),
                 ...(party.party?.charm === undefined ? {} : { charm: party.party.charm }),
                 factionId: theirFaction,
                 alignment: theirSect?.alignment ?? null,

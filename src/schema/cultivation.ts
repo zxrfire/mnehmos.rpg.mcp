@@ -578,6 +578,8 @@ export const CultivatorSchema = z.object({
      * `a-qi-seal-is-put-on-a-person.ts`, which owns every rule about it.
      */
     qiSeal: z.object({
+        kind: z.enum(['qi', 'slave']).optional(),
+        atOrdinal: z.number().optional(),
         liftsOnDay: z.number().nullable().default(null),
         byId: z.string().nullable().default(null),
         note: z.string().default(''),

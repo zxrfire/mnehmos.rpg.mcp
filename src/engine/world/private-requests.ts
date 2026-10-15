@@ -11,9 +11,13 @@ import { inClosedDoorCultivation } from './closed-door-cultivation.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeFact } from './history.js';
 import type { WorldState } from './world-state.js';
+import { theSealStillHolds } from '../cultivation/a-qi-seal-is-put-on-a-person.js';
+import { routineTime } from './npc-routines.js';
 
-export function privatePartyOf(state: WorldState, person: NpcRecord): Party {
+export function privatePartyOf(state: WorldState, person: NpcRecord, day = routineTime(state)): Party {
     return { id: person.id, name: person.name, ordinal: person.cultivation.realmOrdinal,
+        ...(person.cultivation.seal?.kind === 'slave' && person.cultivation.seal.byId
+            && theSealStillHolds(person.cultivation.seal, day) ? { compelledById: person.cultivation.seal.byId } : {}),
         charm: person.cultivation.attributes.charm, factionId: person.factionId,
         alignment: state.factions.find(house => house.id === person.factionId)?.alignment ?? null,
         ranked: person.factionId !== null };
@@ -44,7 +48,7 @@ export function putPrivateRequest(state: WorldState, actor: NpcRecord, subject: 
     };
     const held = state.obligations.find(term => term.status === 'open' && term.kind === 'favor'
         && term.holderId === actor.id && term.subjectId === subject.id);
-    const result = resolveAttempt({ actor: privatePartyOf(state, actor), subject: privatePartyOf(state, subject),
+    const result = resolveAttempt({ actor: privatePartyOf(state, actor, day), subject: privatePartyOf(state, subject, day),
         ask, onDay: day, approach: { leverage: held ? 'favour' : 'name', audience: 'alone' },
         theirTie: tie(subject, actor.id), yourTie: tie(actor, subject.id), ledger: state.obligations,
         where: theGroundUnderYou(whoHoldsTheGround(state.locations, placeId)),

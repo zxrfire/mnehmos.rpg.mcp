@@ -33,6 +33,7 @@ import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
 import {
     theSealStillHolds,
+    aQiSealStillHolds,
     whatASealLeavesInThePool,
     type AQiSeal
 } from '../cultivation/a-qi-seal-is-put-on-a-person.js';
@@ -399,6 +400,8 @@ export type ActivityKind =
     | 'squeezing';
 
 export interface NpcActivity {
+    /** Actual command fact whose course this body is carrying out. */
+    slaveOrderId?: string;
     /** The actual Internal Affairs appointment behind this work. */
     houseWorkFactId?: string;
     /** Latest receipt for contribution already earned at this actual hall post. */
@@ -1140,7 +1143,7 @@ export function maxQiOf(npc: NpcRecord): number {
 export function qiStandingOn(npc: NpcRecord, onDay: number): number {
     const ceiling = maxQiOf(npc);
     const available = Math.max(0, Math.min(npc.cultivation.qi ?? 0, ceiling));
-    return theSealStillHolds(npc.cultivation.seal, onDay)
+    return aQiSealStillHolds(npc.cultivation.seal, onDay)
         ? Math.min(available, whatASealLeavesInThePool(ceiling)) : available;
 }
 

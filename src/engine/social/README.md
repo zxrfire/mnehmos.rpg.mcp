@@ -471,3 +471,5 @@ model above.
   `recordKnowledge` here makes it something the world can be asked about later.
 
 `KnowledgeGate` revises an identical account when a closer source advances its stage. SQLite retains the superseded account and revision link; incompatible statements remain separate. Soul searches read a transient `KnowledgeLedger` projected from current SQLite rows, with no second persistent store. Provenance reads include superseded accounts.
+
+Personal contract content is open. Two existing oath rows hold the parties' literal promises; existing tags hold the agreement pair, binding and ending condition. Binding is word, dao, blood or slave. Legacy oath causes retain their enforcement through the same reader. Both answers precede writing; ending prose is never treated as proof it happened. Dates and real loss of the same person can close terms automatically. Soul preservation is not death. Item trade and office favours remain their ordinary authorities.

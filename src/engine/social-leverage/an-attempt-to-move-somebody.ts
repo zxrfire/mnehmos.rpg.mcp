@@ -200,6 +200,8 @@ const ODDS_CEILING = 0.95;
 
 /** One side of the attempt, read off whatever record the caller holds. */
 export interface Party {
+    /** Derived from a real live slave seal by the body reader, never model-authored. */
+    compelledById?: string;
     id: string;
     name: string;
     /** Their rung. Read by `regard.ts` and nowhere else in this file. */
@@ -883,6 +885,12 @@ function describeLeverage(leverage: ApproachLeverage): string {
  * Resolve one attempt. Three rolls at most, all from the caller's seeded stream.
  */
 export function resolveAttempt(input: AttemptInput): AttemptResult {
+    if (input.subject.compelledById === input.actor.id) {
+        return { outcome: 'taken', odds: 1, terms: {}, days: ASK_DAYS[input.ask], stonesSpent: 0,
+            marks: { theyKnowWhatYouTried: true, reachedTheHouse: false, obligation: null,
+                counterObligation: null, tie: null, unspoken: null },
+            line: `${input.subject.name} is compelled by the slave seal held by ${input.actor.name}.` };
+    }
     const { odds, terms } = oddsOf(input);
     const leverage = input.approach?.leverage ?? 'none';
     const patience = APPROACH_PATIENCE_EFFECT[input.approach?.patience ?? 'normal'];

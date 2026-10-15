@@ -39,6 +39,10 @@
  * derived.
  */
 export interface AQiSeal {
+    /** Older records omit this and are qi seals. Both kinds use the same term and hand. */
+    kind?: 'qi' | 'slave';
+    /** Strength of the work when cast, not a copy of the caster's changing realm. */
+    atOrdinal?: number;
     /**
      * Absolute world day the seal lifts on, or null for one with no end.
      *
@@ -61,6 +65,16 @@ export function theSealStillHolds(seal: AQiSeal | null, onDay: number): boolean 
     if (seal === null) return false;
     if (seal.liftsOnDay === null) return true;
     return onDay < seal.liftsOnDay;
+}
+
+/** The slave kind leaves the body's qi available. */
+export function aQiSealStillHolds(seal: AQiSeal | null, onDay: number): boolean {
+    return seal?.kind !== 'slave' && theSealStillHolds(seal, onDay);
+}
+
+/** Compulsion is an effect, not an attempt to persuade. The hand alone can command. */
+export function holdsASlaveSeal(seal: AQiSeal | null, holderId: string, onDay: number): boolean {
+    return seal?.kind === 'slave' && seal.byId === holderId && theSealStillHolds(seal, onDay);
 }
 
 /**
@@ -123,7 +137,7 @@ export function whatThisPersonCanDrawFrom(input: {
     seal: AQiSeal | null;
     onDay: number;
 }): number {
-    return theSealStillHolds(input.seal, input.onDay)
+    return aQiSealStillHolds(input.seal, input.onDay)
         ? whatIsLeftToDrawUnderASeal(input.density)
         : input.density;
 }
@@ -132,6 +146,10 @@ export function whatThisPersonCanDrawFrom(input: {
 export function whatTheSealLooksLike(seal: AQiSeal | null, onDay: number): string | null {
     if (!theSealStillHolds(seal, onDay)) return null;
     const held = seal!;
+    if (held.kind === 'slave') {
+        return 'A slave seal. The hand that laid it can compel any order or end their life. '
+            + (held.liftsOnDay === null ? 'No end day is set.' : `${Math.max(0, Math.ceil(held.liftsOnDay - onDay))} days remain.`);
+    }
     if (held.liftsOnDay === null) {
         return 'A qi seal, with no day on it. A tenth of what they are is all they may hold, '
             + 'and it comes back at the rate the ground allows, which is nothing worth counting.';

@@ -45,6 +45,13 @@ export const INTERACT_INTENTS = [
 
 export const PlannedActionSchema = z.object({
     action: z.enum(ACTION_NAMES),
+    contract: z.object({
+        yourTerms: z.string().min(1), theirTerms: z.string().min(1),
+        binding: z.enum(['word', 'dao', 'blood', 'slave']),
+        endCondition: z.string().min(1), untilDeath: z.enum(['you', 'them']).optional(),
+        days: z.number().finite().positive().optional(),
+        bound: z.enum(['you', 'them']).optional()
+    }).optional(),
     /** What the speaker claims happened. Never a belief or an outcome. */
     deedAccount: z.enum(['found', 'already_damaged', 'defence', 'denial', 'blame', 'permission', 'admitted']).optional(),
     reportWitnessedEvent: z.boolean().optional(),
@@ -315,6 +322,7 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     const { action: name, days, target, intent, topic, terms, reason,
         deedAccount, blamed, reportWitnessedEvent } = parsed.data;
     const action: PlannedAction = { action: name };
+    if (name === 'oath' && parsed.data.contract) action.contract = parsed.data.contract;
     if (name === 'tell' && deedAccount) action.deedAccount = deedAccount;
     if (name === 'tell' && deedAccount === 'blame' && blamed) action.blamed = blamed;
     if (name === 'tell' && reportWitnessedEvent) action.reportWitnessedEvent = true;
@@ -437,6 +445,8 @@ export function carryWhatOnlyTheSentenceKnows(
     }
 
     if (fromSentence.action !== action.action) return merged;
+    if (merged.action === 'oath' && fromSentence.contract && !merged.contract)
+        merged.contract = fromSentence.contract;
 
     // An information exchange carries the player's whole question,
     // not the normalized forty-character topic label used by other verbs.
