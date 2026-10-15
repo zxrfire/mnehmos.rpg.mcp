@@ -3948,3 +3948,13 @@ cards no longer truncate an actual larger party at a separate six-card limit.
 A conversation focused on specified people keeps its existing focus without
 changing who is physically present. Actual rooms, hulls and road positions
 still decide whether a companion is here.
+
+Person-directed buying, selling, price offers and answers read the actual owned
+inventory item before catalog-counter matching. There is no item-kind sale
+allowlist. Both the holder and a proposed buyer keep their ordinary decisions;
+an unanswered player offer never sells their item. A real exchange moves the
+same object's custody and ownership, its actual purchase provenance, both real
+purses and any backing pouch/food quantity. Unknown catalog value means no
+stated price, not an untradeable item. Incoming offers require a real reached
+buyer with a relevant want and knowledge of the actual item. An office, post,
+roll place or influence is not materialized as inventory by a trade request.

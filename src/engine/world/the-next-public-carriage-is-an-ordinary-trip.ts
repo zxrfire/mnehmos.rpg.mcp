@@ -1,3 +1,4 @@
+import { tradeOwnedItemsAtAMeeting } from './a-person-is-offered-a-price-for-what-they-hold.js';
 /** Public counter promises are ordinary appointments on one real carriage. */
 import { makeScheduledEffect, type ScheduledEffect, type WorldState } from './world-state.js';
 import { makeFact, type HistoricalFact } from './history.js';
@@ -200,9 +201,11 @@ export function settleDuePublicCarriages(world: WorldState, day = routineTime(wo
         let receipt = existing.find(fact => fact.actors.some(actor => actor.role === 'passenger'));
         const station = theAreasOf(world, world.locations.find(place => place.id === departure.terms.fromId)!).areas
             .find(area => area.for === 'carriage_station');
-        const passengers = world.npcs.filter(person => person.status === 'alive' && !person.tags.includes(PLAYER_ROW_TAG)
-            && person.activity?.kind === 'waiting_for_a_departure'
-            && person.activity.passageTallyId && theHeldPassageTally(world, person.id, departure.terms)
+        const atCounter = world.npcs.filter(person => person.status === 'alive' && !person.tags.includes(PLAYER_ROW_TAG)
+            && readActualDepartureApproach(world, person.id,
+                { intentId: departure.effect.id, target: { locationId: departure.terms.fromId, areaId: station?.id ?? null } }, day).kind === 'ready');
+        tradeOwnedItemsAtAMeeting(world, atCounter.map(person => person.id), departure.terms.fromId, day);
+        const passengers = atCounter.filter(person => theHeldPassageTally(world, person.id, departure.terms)
             && readActualDepartureApproach(world, person.id,
                 { intentId: departure.effect.id, target: { locationId: departure.terms.fromId, areaId: station?.id ?? null } }, day).kind === 'ready');
         if (passengers.length || !receipt) {

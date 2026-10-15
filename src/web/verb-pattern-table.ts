@@ -1,3 +1,4 @@
+import { itemTradeSaid } from './what-is-being-swapped-for-what.js';
 import { rideOfferSaid } from './ride-offer-phrasings.js';
 import { isOneInformationExchange } from './one-information-exchange.js';
 import { cultivationAgreementSaid } from './cultivation-agreement-phrasings.js';
@@ -4846,6 +4847,8 @@ function whatIsSaidToTheirFace(said: string): PlannedAction | null {
 const A_DELIVERY_HANDED_OVER = /\b(?:deliver|delivers|hand over|hands over|hand in|hands in|hand off|turn over|drop off|drops off|return|returns|give back|gives back|bring back|brings back|take back|takes back)\b[^.!?]*\b(?:goods|crates?|consignment|delivery|cargo|casket|strongbox|bales?|sacks?|pelts?|grain|ore|load|shipment)\b|^\s*(?:i\s+)?(?:deliver|make (?:the|my) delivery)\b/;
 
 function planIntent(input: string): PlannedAction {
+    const heldTrade = itemTradeSaid(input);
+    if (heldTrade?.reply) return { action: 'interact', intent: 'trade', target: heldTrade.person, topic: heldTrade.item };
     const offeredRide = rideOfferSaid(input);
     if (offeredRide) return { action: 'request', intent: 'passage', target: offeredRide.person, topic: offeredRide.destination };
     // Asking whoever is driving or piloting to go somewhere else. The verb reads the course out of

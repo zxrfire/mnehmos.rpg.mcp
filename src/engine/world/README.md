@@ -5069,3 +5069,14 @@ start before the helper holds the favour. A master may ask a better teacher for
 a personal pupil during the annual daytime attention checkpoint. The helper
 gives real attention, keeps their own crossing and timed work, and earns no house
 merit for that private request. A remote beneficiary is not an invented witness.
+
+Personally owned inventory trades through one held-item offer and sale path,
+without an item-kind eligibility list or a premium table. Catalog value and
+actual acquisition evidence inform the ordinary person's decision alongside
+their goals, ties, obligations, character and the ground. Offers and answers
+are ordinary facts; payment uses the actual purses and custody uses the
+ordinary possession writer. Native contacts reuse the existing sampled
+seasonal exchange pass and accepted public departure meetings, without a
+daily tick. A contact's owned-inventory index is transient and current custody
+is reread before each offer. House consignments still require the house's
+authority; a carrier's custody does not turn house stock into their property.

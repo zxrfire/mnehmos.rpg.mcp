@@ -968,3 +968,9 @@ the chair order reads their realm, merit and ties.
 `whoStaffsWhat` is a pure hypothetical layout. Played staff remits use actual
 world appointments (`theHallStaff`), while the same `remitOf` and reporting
 readers price what a posted person can handle.
+
+An ordinary paid exchange can bring appraised goods as well as stones, and
+can cost the recipient actual replacement value or lost work. The existing
+purse lens reads that net offered value through the same person's ordinary
+odds. These are engine-read values, not narrator prices or purse mutations;
+the actual exchange writer still checks and moves both purses and the goods.

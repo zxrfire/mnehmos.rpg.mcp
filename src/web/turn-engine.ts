@@ -1,3 +1,4 @@
+import { tradeAHeldItem, offersForYourHeldItems } from './a-price-offered-for-a-held-item.js';
 import { theHallStaff } from '../engine/world/the-people-posted-to-a-houses-halls.js';
 import { StoredStandingFight } from './a-standing-fight-is-stored-on-its-run.js';
 import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
@@ -3493,6 +3494,9 @@ export class GameService {
             }
             if (this.atHand.history.facts.length > factsBefore) this.theWorldMoved();
         }
+        for (const line of offersForYourHeldItems(this, this.currentRun().cultivator))
+            sayThisWhateverTheNarratorDoes(execution.facts, line);
+
         const rides = settleAgreedRides(this, this.currentRun().cultivator);
         if (rides) {
             execution.facts.lines.push(...rides.lines); execution.facts.structure.push(...rides.structure);
@@ -7255,6 +7259,8 @@ ${noticed}`;
         // what makes an intent press somebody and spend a DAY, and a haggle is
         // a moment. See `haggleOverAPrice`.
         if (intent === 'trade') {
+            const heldTrade = tradeAHeldItem(this, run, cultivator, target, rawInput);
+            if (heldTrade) return heldTrade;
             return this.haggleOverAPrice(run, cultivator, target, topic, rawInput);
         }
 
@@ -13635,6 +13641,8 @@ ${opened.text}` : receipt,
         target: string | undefined,
         rawInput = ''
     ): Promise<Execution> {
+        const heldTrade = tradeAHeldItem(this, run, cultivator, undefined, rawInput, 'buy', target);
+        if (heldTrade) return heldTrade;
         const query = (target ?? '').trim();
 
         // A BOOK, WHICH IS THE ONE THING ON THE BOARD THAT WAS NOT
@@ -14434,6 +14442,8 @@ ${opened.text}` : receipt,
         target: string | undefined,
         rawInput = ''
     ): Promise<Execution> {
+        const heldTrade = tradeAHeldItem(this, run, cultivator, undefined, rawInput, 'sell', target);
+        if (heldTrade) return heldTrade;
         // AHEAD OF THE POUCH, BECAUSE A BOOK WAS NEVER IN IT
         //
         // And the VOLUME ahead of the copying, because somebody holding the

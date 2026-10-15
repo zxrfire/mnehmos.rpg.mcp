@@ -1,3 +1,4 @@
+import { tradeAHeldItem } from './a-price-offered-for-a-held-item.js';
 import { requestGuidanceForAnother } from './requesting-guidance-for-somebody-else.js';
 import { prepareRideOffer, bindAgreedRide } from './an-offered-ride-is-an-agreement.js';
 import { transferActualSpiritStones } from './transferring-actual-spirit-stones.js';
@@ -1249,6 +1250,8 @@ ${unnamed}`;
         /** The term, for the one kind that has one. See the `company` kind. */
         days?: number
     ): Promise<Execution> {
+        const heldTrade = tradeAHeldItem(this, run, cultivator, target, rawInput);
+        if (heldTrade) return heldTrade;
         const scope = this.scopeFor(cultivator);
         if (intent === 'end_company') return dismissCompany(this, run, cultivator, target);
         let query = (target ?? '').trim();

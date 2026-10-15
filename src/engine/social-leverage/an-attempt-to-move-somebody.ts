@@ -274,6 +274,10 @@ export interface AttemptInput {
     theyWantSomethingFromYou?: boolean;
     /** Spirit stones actually put down. Only spent when the attempt lands. */
     stonesOffered?: number;
+    /** Actual value and lost work the recipient gives up in accepting this paid exchange. */
+    opportunityCostStones?: number;
+    /** Actual appraised goods offered in the same exchange, not a purse debit. */
+    goodsOfferedStones?: number;
     /**
      * The act promised if they refuse, in the world's own vocabulary of wrongs.
      *
@@ -470,7 +474,8 @@ function grudgeAgainstYou(input: AttemptInput): Severity | null {
  */
 export function purseWeight(input: AttemptInput): number {
     if ((input.approach?.leverage ?? 'none') !== 'coin') return 0;
-    const offered = Math.max(0, Math.trunc(input.stonesOffered ?? 0));
+    const offered = Math.max(0, Math.trunc(input.stonesOffered ?? 0) + Math.max(0, input.goodsOfferedStones ?? 0)
+        - Math.max(0, input.opportunityCostStones ?? 0));
     if (offered === 0) return 0;
 
     // Their year, not a market rate and not the actor's.

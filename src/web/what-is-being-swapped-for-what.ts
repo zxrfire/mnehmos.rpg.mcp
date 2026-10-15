@@ -1,3 +1,4 @@
+import { puttingSomethingDownFor, askingWhatItWouldTake } from './what-a-request-asks-and-of-whom.js';
 /**
  * What leaves this cultivator's hands and what arrives in them.
  *
@@ -167,4 +168,19 @@ export function whatIsBeingSwapped(input: string): WhatIsBeingSwapped | null {
 export function namesTheCoin(side: string | null): boolean {
     if (side === null) return false;
     return /\b(?:spirit\s+)?(?:stones?|coin|coins|cash|money|silver|gold|payment)\b/i.test(side);
+}
+
+/** A price put to a real holder, or an answer about an actual offered item. */
+export function itemTradeSaid(input: string): { person: string; item: string; reply?: 'accept' | 'refuse'; selling?: boolean; quoting?: boolean } | null {
+    const reply = /\b(?:I\s+)?(accept|refuse|decline|reject)\s+(.+?)['?]s\s+offer\s+for\s+(?:my\s+|the\s+)?(.+?)[.!?]*$/i.exec(input);
+    if (reply) return { person: reply[2]!.trim(), item: reply[3]!.trim(), reply: reply[1]!.toLowerCase() === 'accept' ? 'accept' : 'refuse', selling: true };
+    const sell = /\bsell\s+(?:my\s+|the\s+)?(.+?)\s+to\s+(.+?)(?:\s+for\s+[^.!?]+)?[.!?]*$/i.exec(input);
+    if (sell) return { person: sell[2]!.trim(), item: sell[1]!.trim(), selling: true };
+    const buy = /\b(?:buy|purchase)\s+(?:(?:his|her|their|the|a|an)\s+)?(.+?)\s+(?:from|off)\s+(.+?)(?:\s+for\s+[^.!?]+)?[.!?]*$/i.exec(input);
+    if (buy) return { person: buy[2]!.trim(), item: buy[1]!.trim() };
+    const terms = askingWhatItWouldTake(input);
+    if (terms?.person && terms.object) return {person:terms.person,item:terms.object,quoting:true};
+    const offered = puttingSomethingDownFor(input);
+    return offered && /\b(?:spirit\s+)?stones?\b/i.test(offered.putDown ?? '')
+        ? { person: offered.person, item: offered.object ?? '' } : null;
 }

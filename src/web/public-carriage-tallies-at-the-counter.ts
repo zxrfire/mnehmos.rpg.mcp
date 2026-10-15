@@ -80,7 +80,10 @@ export function buyPublicCarriageTally(game: GameService, fromId: string, toId: 
     const paid = transferActualSpiritStones(game, payer.id, driver.id, offer.departure.fareStones, () => {
         const t = offer.departure.terms;
         const purchase = appendWorldFact(world, makeFact({ day: routineTime(world), kind: 'gathering', visibility: 'secret',
-            locationId: fromId, actors: [{ ...buyer, role: 'buyer' }, { ...payer, role: 'payer' },
+            locationId: fromId, witnessIds: game.worldPlaceOf(game.currentRun().cultivator) === fromId
+                && game.currentRun().cultivator.standingIn === station?.id
+                ? [game.currentRun().cultivator.id, ...game.present(game.currentRun().cultivator).map(person => person.id)] : [],
+            actors: [{ ...buyer, role: 'buyer' }, { ...payer, role: 'payer' },
                 { id: driver.id, name: driver.name, role: 'carrier' }],
             summary: 'A passage tally was bought for its named public carriage departure.',
             data: { passageTallyPurchase: true, publicDepartureId: offer.departure.effect.id,

@@ -1,3 +1,4 @@
+import { tradeOwnedItemsAtAMeeting } from './a-person-is-offered-a-price-for-what-they-hold.js';
 /** A travelling counter carries finite house goods and returns with its receipts. */
 import { waresMadeBy } from '../../data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
 import { getPill } from '../../data/cultivation/pills.js';
@@ -219,8 +220,10 @@ export function tradeAtCapitalExchanges(state: WorldState, day: number): void {
     const routes = routeQueriesFor(state.locations);
     const positions = new Map(state.npcs.map(n => [n.id, locationOfNpcOnItsJourney(state, n, day, routes)]));
     const stockPositions = new Map<string, number[]>();
+    const personalOwners = new Set<string>();
     for (let i = 0; i < state.objects.length; i++) {
         const object = state.objects[i]!;
+        if(object.possessorId && object.ownerId===object.possessorId)personalOwners.add(object.possessorId);
         if (!object.tags.includes('exchange') || !object.possessorId) continue;
         const held = stockPositions.get(object.possessorId) ?? [];
         held.push(i);
@@ -235,6 +238,11 @@ export function tradeAtCapitalExchanges(state: WorldState, day: number): void {
         .map(person => person.id));
     for (const selected of eligible.filter(person => selectedCounters.has(person.id) || isPlayerInvolved(state, person))) {
         const seller = state.npcs.find(n => n.id === selected.id)!;
+        const contact=positions.get(seller.id);
+        if(contact && personalOwners.has(seller.id)) {
+            const people=eligible.filter(person=>positions.get(person.id)===contact).map(person=>person.id);
+            tradeOwnedItemsAtAMeeting(state,people,contact,day);
+        }
         if (seller.status === 'alive' && seller.activity?.kind === 'stationed'
             && cities.has(positions.get(seller.id) ?? '')
             && !exchangeOffers(state, seller, stockPositions.get(seller.id) ?? [], auctioned, day, positions).length) {
