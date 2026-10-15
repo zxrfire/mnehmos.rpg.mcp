@@ -1,5 +1,11 @@
 # `src/engine/encounters/` - things happening to somebody
 
+A starting interruption can spend no body time. Once that actual arrival has
+been experienced, the existing knowledge ledger supplies its identity to the
+next window. The same dated arrival is not delivered again as new. Its ordinary
+draws still occur; suppression never draws a replacement. No separate encounter
+receipt store is maintained.
+
 The contract for this directory. Read it before editing anything here; update it
 in the same commit if you change the contract.
 
@@ -707,5 +713,4 @@ one provider-site projection; display names never determine stored targets.
 A remote watch is held after acceptance even on the outer rung: accepting at
 the board does not serve its sixty days or transport the member to the site.
 Original untargeted mission ids and their rung/term rules remain valid.
-
 

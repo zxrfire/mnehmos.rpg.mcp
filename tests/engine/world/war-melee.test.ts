@@ -7,6 +7,10 @@
  *
  *   IT IS FOUGHT       two houses at war meet, and the record says what the
  *                      RESOLVER said rather than what the inputs suggested.
+ *   BOTH COSTS ARE RECORDED  a battle can have casualties and withdrawals.
+ *                      The landing census found that the casualty clause
+ *                      suppressed every withdrawal name when both occurred.
+ *                      The same assertion keeps both actual result lists.
  *   IT COSTS THEM      the quantity three queued features read moves while the
  *                      war runs, and it moves in opposite directions for the
  *                      two sides.

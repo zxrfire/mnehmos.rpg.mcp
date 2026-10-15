@@ -1,5 +1,9 @@
 /**
  * The people in the square reach phase 3, in a real turn, on a pinned world.
+ * The landing census found the duelist absent after its round's three-hour
+ * charge: an ordinary routine had moved them to another area before the strike.
+ * A stored duel interrupts that actual activity until it ends; this is a
+ * physical body hold, not a narrator card manufactured for an absent person.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * THE MEASUREMENT THIS PINS
@@ -223,3 +227,19 @@ describe('and both front doors say the same thing', () => {
         expect(result.narration).toContain(them);
     }, 300_000);
 });
+
+it('releases the actual body when its stored duel ends', async () => {
+    const { game, cultivator, nameable, db } = await openARun();
+    try {
+        const target = closeEnoughToFight(nameable, cultivator.realmOrdinal);
+        await game.act(`I attack ${target.name}`);
+        const held = game.fight!;
+        expect(held).not.toBeNull();
+        const id = held.state.id;
+        expect(game.atHand!.npcs.find(npc => npc.id === target.id)?.activity?.playedFight?.id).toBe(id);
+        const remaining = held.state.roundBudget - held.state.roundsFought;
+        for (let round = 0; round < remaining && game.fight?.state.id === id; round++) await game.act('I strike');
+        expect(game.fight?.state.id).not.toBe(id);
+        expect(game.atHand!.npcs.find(npc => npc.id === target.id)?.activity?.playedFight?.id).not.toBe(id);
+    } finally { db.close(); }
+}, 300_000);

@@ -1,9 +1,12 @@
 /**
  * How decisive should a modest power edge be?
  *
- * Current ordinary-swing resolver, 400 sweep seeds: equal-power aggressors win
- * 53.5%. Both peers retain a chance. The historical tables below explain the
- * earlier investigation; they no longer describe the equal-power fixture.
+ * An earlier ordinary-swing sweep recorded 53.5% equal-power aggressor wins.
+ * On landing27511c66, the same 400-stream fixture measures 61%, failing its
+ * existing 40-60% guard. Each round explicitly lets the aggressor strike first
+ * and the defender answer only while standing. Whether to retain that order
+ * or change initiative needs the owner's decision; no bound or damage constant
+ * has been changed. The historical tables below explain the earlier inquiry.
  *
  * The standoff drift, isolated to one line: a 1.60:1 composite power ratio was
  * producing 100% / 0%. If a three-fifths edge between peers is certain, a

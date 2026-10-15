@@ -19,6 +19,9 @@
  * Raising spends years; the placement conversation is arranged in a current
  * occupied area, because daily routines no longer leave the opening crowd in
  * the same square afterwards. The refusal must still name an honest route.
+ * On landing27511c66 a childhood gift was transferred to SQL only by the
+ * first action. It now reaches its sole ledger before newRun returns, so an
+ * unrelated refusal cannot appear to have created that pre-existing favour.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -44,7 +47,12 @@ describe('placing a child', () => {
         const { cultivator } = await game.newRun('Childless');
 
         expect(theChildrenTheyRaised(game.repos, cultivator.id)).toEqual([]);
+        const world = (await game.loadWorld())!;
+        const nativeFavours = world.obligations.filter(word => word.kind === 'favor'
+            && (word.holderId === cultivator.id || word.subjectId === cultivator.id));
+        expect(nativeFavours, 'player childhood favours belong on the sole SQL ledger at opening').toEqual([]);
         const before = favours(db, cultivator.id).length;
+        expect(before, 'this control opens holding a real childhood favour').toBeGreaterThan(0);
 
         const said = await game.act(
             'I place my child at the Azure Cloud Pavilion'

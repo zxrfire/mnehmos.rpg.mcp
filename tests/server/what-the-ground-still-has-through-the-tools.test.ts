@@ -7,6 +7,10 @@
  * world where the ground runs out for a player and not for a tool caller.
  *
  * So: the same three claims, asked of the tool.
+ * Run3: the first top-rung pass took seven, then eleven passes spent zero
+ * days on the same dated house announcement. The remaining stock stayed17
+ * and the ground could never bind. Experiencing that actual interruption
+ * must keep it from arriving as new on the next attempt; time is not invented.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { handleCultivationManage } from '../../src/server/consolidated/cultivation-manage.js';
@@ -45,9 +49,11 @@ async function standingAt(ordinal: number, seed: string) {
 }
 
 describe('what the ground still has, through the tools', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         closeDb();
         getDb(':memory:');
+        resetCultivationWorlds();
+        await createWorld({ seed: 'native-ground-in-play' });
         delete process.env.ADMIN_MODE;
     });
 

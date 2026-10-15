@@ -400,10 +400,12 @@ export const DEFAULT_PASSAGE_INTENT: PassageIntent = 'board';
  * because a sentence about going and doing a thing for somebody carries no oath
  * vocabulary.
  */
-export type OathIntent = 'break' | 'swear' | 'read' | 'release' | 'serve' | 'beast_contract' | 'end_beast_contract';
+export type OathIntent = 'break' | 'swear' | 'read' | 'release' | 'serve' | 'beast_contract' | 'end_beast_contract'
+    | 'contract_offer' | 'contract_accept' | 'contract_decline';
 
 export const OATH_INTENTS: readonly OathIntent[] =
-    ['break', 'swear', 'read', 'release', 'serve', 'beast_contract', 'end_beast_contract'] as const;
+    ['break', 'swear', 'read', 'release', 'serve', 'beast_contract', 'end_beast_contract',
+        'contract_offer', 'contract_accept', 'contract_decline'] as const;
 
 /**
  * What a sentence about an oath means when it names no step.
@@ -4610,9 +4612,16 @@ function withoutWhatOnlyFillsTheFront(input: string): string {
 export function parseIntent(rawInput: string): PlannedAction {
     if (/\b(?:slave|qi)[ -]seal(?:ed)?\b/i.test(rawInput) && !/\bcontract\b/i.test(rawInput)
         || /\b(?:order|command)\s+(?:my|the)\s+slave\b/i.test(rawInput)) return { action: 'oath', intent: 'read' };
-    const openContract = openContractSaid(rawInput);
-    if (openContract) return openContract;
     const input = withoutWhatOnlyFillsTheFront(inTheCharactersThePatternsUse(rawInput));
+    const openContract = openContractSaid(rawInput);
+    if (openContract) {
+        // A named posted job remains work; accepting personal terms remains an oath.
+        if (openContract.intent === 'contract_accept' && tradeNamedIn(input.toLowerCase()) !== undefined) {
+            const posted = readTheSentence(input);
+            if (posted.action === 'work') return posted;
+        }
+        return openContract;
+    }
     if (/^(?:i\s+)?(?:leave|quit|depart from)\s+(?:the|this|our)\s+party[.!]?$/i.test(input)
         || /^(?:i\s+)?(?:tell|ask)\s+(?:the|our)\s+party\s+(?:to\s+)?(?:continue|press on|rest|turn back)[.!]?$/i.test(input))
         return { action: 'interact' };
@@ -6681,10 +6690,10 @@ function planIntent(input: string): PlannedAction {
     // whose word rides on `topic` so the counter knows which.
     const handingOver = whatIsBeingHandedOver(input)
         && !/\bhand(?:s|ing|ed)?\s+in\b/.test(text);
-    if (!handingOver && (A_COUNTER_NOT_A_MISSION_BOARD.test(text) || usedAsVerb(text, BOOKING_A_PLACE)
+    const passageIntent = matchIntent(text, PASSAGE_INTENT_PATTERNS);
+    if (!handingOver && (passageIntent === 'embark' || A_COUNTER_NOT_A_MISSION_BOARD.test(text) || usedAsVerb(text, BOOKING_A_PLACE)
         || (A_SHIP_OR_A_CARRIAGE_FROM_HERE.test(text) && !BUILDING_SOMETHING.test(text)))) {
-        const step = (matchIntent(text, PASSAGE_INTENT_PATTERNS)
-            ?? DEFAULT_PASSAGE_INTENT) as PassageIntent;
+        const step = (passageIntent ?? DEFAULT_PASSAGE_INTENT) as PassageIntent;
         const where = extractDestination(input);
         const by = A_SHIP_OR_A_CARRIAGE_WORD.exec(text)?.[1];
         return {

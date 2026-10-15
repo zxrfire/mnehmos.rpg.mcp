@@ -50,6 +50,10 @@
  * declines before the resolver. After a span or a changed activity, stand beside
  * the teacher's current area again, waiting through actual body time when they
  * are asleep. Run3's second teacher remained in Old River Village at midnight;
+ * On landing27511c66, changing npc-144 from idle to teaching moved the actual
+ * area from the carriage station to the street while the student stayed at
+ * the station. An agreed lesson now preserves the teacher's actual opening
+ * area. Direct activity arrangements stand the fixture beside that new row.
  * the old town-only helper mistook sleeping for leaving. A rogue teaching on house-owned public
  * ground cannot stand in for that house's people when nobody of it is listening.
  */
@@ -218,6 +222,7 @@ describe('attention divides, by the rate\'s own rule', () => {
                 sinceDay: today, untilDay: today + 5
             }
         };
+        await goStandWith(harness, me.id, world, world.npcs[at]!);
         const terms = harness.game.rateTermsFor(harness.game.currentRun().cultivator) as unknown as Terms;
         expect(terms.guideOrdinal).toBe(teacher.cultivation.realmOrdinal);
         expect(terms.guideListeners).toBe(1 + Math.min(3, others.length));
@@ -225,6 +230,25 @@ describe('attention divides, by the rate\'s own rule', () => {
             expect(guidanceMultiplier(me.realmOrdinal, terms.guideOrdinal, terms.guideListeners))
                 .toBeLessThan(guidanceMultiplier(me.realmOrdinal, terms.guideOrdinal, 1));
         }
+    }, 120_000);
+});
+
+describe('agreeing to a lesson does not walk away from the student', () => {
+    it('keeps the actual opening area, reads guidance there, and restores the previous activity', async () => {
+        const { harness, world, teacher } = await somebodyAboveHere('guided-terms');
+        const body = harness.game.currentRun().cultivator;
+        const previous = world.npcs.find(npc => npc.id === teacher.id)!.activity;
+        const area = body.standingIn;
+        expect(harness.game.present(body).some(npc => npc.id === teacher.id)).toBe(true);
+        const given = harness.game.theyGiveTheirAttention(teacher.id, [body.id], 5,
+            'An agreed lesson in the area where both are standing.', harness.game.worldPlaceOf(body));
+        expect(given).not.toBeNull();
+        expect(harness.game.currentRun().cultivator.standingIn).toBe(area);
+        expect(harness.game.present(body).some(npc => npc.id === teacher.id)).toBe(true);
+        expect(harness.game.rateTermsFor(body).guideOrdinal).toBe(teacher.cultivation.realmOrdinal);
+        harness.game.theirAttentionEnds(given!);
+        expect(world.npcs.find(npc => npc.id === teacher.id)!.activity).toEqual(previous);
+        expect(harness.game.rateTermsFor(body).guideOrdinal).toBeNull();
     }, 120_000);
 });
 

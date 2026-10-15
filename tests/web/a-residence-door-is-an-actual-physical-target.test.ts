@@ -69,7 +69,17 @@ async function outsideADoor(ordinal = FALSE_IMMORTAL_ORDINAL, seed = 'actual-res
     h.repos.cultivators.standIn(opened.cultivator.id, null);
     h.game.theWorldMoved();
     await h.game.act('I look around');
-    return { ...h, ...opened, plans, world, target: a.target, parent: a.parent! };
+    // Establish the ordinary clock and its counted-stock sweep before taking
+    // an exact goods snapshot for the separate physical door attempt.
+    await h.game.act('I wait for 3 hours');
+    const currentWorld = h.game.atHand!;
+    // Refresh the explicit outside-door placement after that real setup span.
+    h.repos.cultivators.update(opened.cultivator.id, { location: a.parent!.name });
+    h.repos.cultivators.standIn(opened.cultivator.id, null);
+    expect(h.game.worldPlaceOf(h.game.currentRun().cultivator)).toBe(a.parent!.id);
+    return { ...h, ...opened, plans, world: currentWorld,
+        target: currentWorld.locations.find(place => place.id === a.target.id)!,
+        parent: currentWorld.locations.find(place => place.id === a.parent!.id)! };
 }
 
 it('ordinary destroy breaks the actual residence door and persists damage without taking its goods', async () => {

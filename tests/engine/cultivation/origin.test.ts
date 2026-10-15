@@ -17,7 +17,6 @@ import {
     ORIGIN_WEIGHT_TOTAL,
     affordablePillPotency,
     getOrigin,
-    injuryTreatmentPrice,
     isOriginTierKey,
     openingPosition,
     originDiscoveryContext,
@@ -27,7 +26,7 @@ import {
     withOriginAccess,
     type OriginTierKey
 } from '../../../src/engine/cultivation/origin.js';
-import { breakthroughPillPrice, expeditionSurvival } from '../../support/origin-odds.js';
+import { breakthroughPillPrice, expeditionSurvival, sweepInjuryTreatmentPrice } from '../../support/origin-odds.js';
 import { discoverableInsights } from '../../../src/engine/cultivation/understanding.js';
 import { MAX_SECT_PROTECTION } from '../../../src/engine/cultivation/toll.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
@@ -259,8 +258,10 @@ describe('resources are finite and they are spent', () => {
         expect(enormous).toBeLessThan(25);
     });
 
-    it('prices a healer the same way', () => {
-        expect(injuryTreatmentPrice(20)).toBeGreaterThan(injuryTreatmentPrice(0));
+    it('keeps the reporting model\'s historical healer-price assumption beside its other prices', () => {
+        // This never quoted a played physician. Keep the unchanged projection
+        // calibration with that model; actual care uses its ordinary service read.
+        expect(sweepInjuryTreatmentPrice(20)).toBeGreaterThan(sweepInjuryTreatmentPrice(0));
     });
 
     it('buys a fraction of a pill for a fraction of the price', () => {

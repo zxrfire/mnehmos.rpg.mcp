@@ -5,7 +5,7 @@ import { isTheWorldsToMove } from './npc-state.js';
 import { howAGradeIsStored, isRuined } from './possessions.js';
 import { whatThisThingIs } from './what-a-house-gives-merit-for.js';
 import { noteLedgerPruned } from './a-fact-that-keeps-happening-is-one-row.js';
-import { factsWithData, factsWithDataValue, referenceKeys, witnessHistoryWasPruned, witnessIndexFor } from './witness-reaction-index.js';
+import { competitionBoardKey, factsWithData, factsWithDataValue, referenceKeys, witnessHistoryWasPruned, witnessIndexFor } from './witness-reaction-index.js';
 import type { HistoricalFact } from './history.js';
 import type { WorldState } from './world-state.js';
 import { missingMembersInRollCheck } from './life-lamp-roll-check-findings.js';
@@ -161,10 +161,16 @@ export function keepTheBusinessStillOnTheBooks(state: WorldState): void {
         // receipt makes the ledger's ordinary pending-lot read reopen a sale
         // that already ended. Its original settlement remains the authority.
         const closing = fact.data.auctionLot === true ? index.auctionResults.get(fact.id) ?? [] : [];
+        // A retained entry must keep the board's actual result. Otherwise the
+        // next sweep sees a pending contest and moves its entrants back in time.
+        const competitionResults = fact.data.openCompetition === true && fact.data.entry === true
+            ? index.competitions.get(competitionBoardKey(String(fact.data.hostId), Number(fact.data.contestDay),
+                typeof fact.data.venueId === 'string' ? fact.data.venueId : null,
+                fact.data.capitalCompetition === true))?.resultIds ?? [] : [];
         // A live prepaid account keeps the receipts which say how much it has spent.
         const fareReceipts = fact.data.publicMission === true && typeof fact.data.publicFareStones === 'number'
             ? factsWithDataValue(state, 'publicFareFundingId', fact.id).map(receipt => receipt.id) : [];
-        for (const id of [...referenceKeys(fact), ...closing, ...fareReceipts]) if (index.byId.has(id) && !held.has(id)) {
+        for (const id of [...referenceKeys(fact), ...closing, ...competitionResults, ...fareReceipts]) if (index.byId.has(id) && !held.has(id)) {
             held.add(id); pending.push(id);
         }
     }

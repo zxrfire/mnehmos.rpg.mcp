@@ -217,6 +217,12 @@ export function theWholeSentenceIsAQuestion(input: string): boolean {
  * The free read that answers a question about each committing verb.
  */
 export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
+    // Taking is an ownership-changing act, even though it shares the
+    // conversational verb. A conditional names the thing to read, never a
+    // taking to perform. Keep this before the legacy conversational split.
+    if (plan.action === 'interact' && plan.intent === 'take') {
+        return { action: 'investigate', target: plan.topic ?? plan.target };
+    }
     // A read is already the answer to a question about it.
     //
     // ASKED OF THE VERB HERE, WHICH IS NARROWER THAN `costsTheAskerNothing` AND

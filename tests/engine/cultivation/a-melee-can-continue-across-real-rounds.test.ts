@@ -4,6 +4,10 @@
  * pausable for the player's next choice without restarting initiative, healing
  * anybody, repeating an art, or changing the result of the existing whole fight.
  * Both comparisons use the same tree and their own identical seeded stream.
+ * The landing census found every member a bystander when the only reachable
+ * attacker guarded for one round. Entry had confused a chosen guard with a
+ * body's inability to act; equal defenders also conceded instantly by guarding.
+ * Both remain real rounds, without forcing the later combat result.
  */
 import { describe, it, expect } from 'vitest';
 import { openMelee, takeMeleeRound, resolveMelee, assessPower, assessGap, type CombatantInput, type SideInput } from '../../../src/engine/cultivation/combat.js';
@@ -20,6 +24,38 @@ const context = (seed: string) => ({ rng: forStream(seed, 'melee', 1), ambient: 
     turn: 1, intent: { thrown: AN_ORDINARY_SWING } });
 
 describe('a melee continued across rounds', () => {
+    it('does not make an equal defender concede by guarding', () => {
+        const ctx = { ...context('an-equal-guard-is-not-a-concession'),
+            acts: { defender: 'guard' as const } };
+        const opened = openMelee([
+            { id: 'one', name: 'one', members: [body('attacker', 4)] },
+            { id: 'two', name: 'two', members: [body('defender', 4)] }
+        ], ctx);
+        expect(opened.result).toBeNull();
+        expect(opened.state).not.toBeNull();
+        const round = takeMeleeRound(opened.state!, ctx);
+        const exchanges = round.state?.exchanges ?? round.result!.exchanges;
+        expect(exchanges.some(exchange => exchange.attackerId === 'attacker')).toBe(true);
+        expect(exchanges.some(exchange => exchange.attackerId === 'defender')).toBe(false);
+    });
+
+    it('keeps the round when the only reachable side guards, and lets it act later', () => {
+        const ctx = { ...context('the-strong-person-has-not-swung-yet'),
+            acts: { strong: 'guard' as const, weak: 'strike' as const } };
+        const opened = openMelee([
+            { id: 'one', name: 'one', members: [body('strong', 30)] },
+            { id: 'two', name: 'two', members: [body('weak', 0)] }
+        ], ctx);
+        expect(opened.result).toBeNull();
+        const first = takeMeleeRound(opened.state!, ctx);
+        expect(first.result).toBeNull();
+        expect(first.state?.roundsFought).toBe(1);
+        expect(first.state?.hp).toEqual(opened.state!.hp);
+        const second = takeMeleeRound(first.state!, { ...ctx,
+            acts: { strong: 'strike', weak: 'guard' } });
+        const exchanges = second.state?.exchanges ?? second.result!.exchanges;
+        expect(exchanges.some(exchange => exchange.attackerId === 'strong')).toBe(true);
+    });
     it('preserves the actual result and leaves the previous round untouched', () => {
         const sides: SideInput[] = [
             { id: 'party', name: 'party', members: [body('traveller', 3), body('companion', 4)] },

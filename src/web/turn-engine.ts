@@ -1,5 +1,6 @@
 import {settleNativeShipTallyIntentions} from '../engine/world/the-next-public-ship-is-an-ordinary-trip.js';
 import { tradeAHeldItem, offersForYourHeldItems } from './a-price-offered-for-a-held-item.js';
+import { readPrivateWordsAtTheActualBody } from './private-words-on-the-actual-ledger.js';
 import { theHallStaff } from '../engine/world/the-people-posted-to-a-houses-halls.js';
 import { StoredStandingFight } from './a-standing-fight-is-stored-on-its-run.js';
 import { spendOnPersonalAirCourse } from './an-actual-personal-air-course.js';
@@ -41,7 +42,7 @@ import { physicianIsWorking, whoDispensesAtTheHouse } from '../engine/world/who-
 import { roomForHouseWork } from '../engine/world/where-a-house-does-its-work.js';
 import { enteringAtTheJadeGate } from './entering-a-city-at-the-jade-gate.js';
 import { askingTheFlowingStarOffice } from './asking-the-flowing-star-office.js';
-import { isATempleBranch } from '../engine/world/a-temple-branch.js';
+import { isATempleBranch, whoHeadsTheBranch } from '../engine/world/a-temple-branch.js';
 import { aHousePrincipleOpenHere } from '../engine/world/a-house-principle-on-its-own-ground.js';
 import { carePricesHere, PHYSICIAN_VISIT_PRICE, PHYSICIAN_COURSE_PRICE } from './what-care-costs-where-you-are.js';
 import { askingAboutCareHere } from './asking-about-the-care-actually-offered-here.js';
@@ -2522,6 +2523,9 @@ export class GameService {
         });
 
         const faces = await this.seedTheFacesFromHome(created.cultivator, birth.origin, seed);
+        // Childhood has already happened. Publish its player favours on their
+        // sole ledger before the opening returns, rather than on the first act.
+        readPrivateWordsAtTheActualBody(this, created.cultivator.id);
 
         // AND THE GROUND. The same ruling, applied to geography: somebody who grew
         // up here can point at the caves and the wild ground outside the village.
@@ -2881,6 +2885,8 @@ export class GameService {
             ...(this.atHand?.factions ?? []).map(row => row.name),
             ...(this.atHand?.npcs ?? []).map(row => row.name),
             ...(this.atHand?.objects ?? []).map(row => row.name),
+            ...readWhatIsOnOfferHere(cultivator, this.atHand,
+                this.alreadyHasACopyOf(cultivator), this.present(cultivator)).offers.map(row => row.name),
             ...this.repos.cultivators.list().map(row => row.name),
             ...this.awarenessOf(cultivator).map(row => row.name),
             ...this.knownTechniqueNames(cultivator)
@@ -3459,7 +3465,7 @@ export class GameService {
         if (this.atHand) {
             const today = Math.floor(this.atHand.currentDay);
             const factsBefore = this.atHand.history.facts.length;
-            extinguishedLampsOpenInquiries(this.atHand, today);
+            extinguishedLampsOpenInquiries(this.atHand, routineTime(this.atHand));
             for (const line of settleYourCapitalAuctions(this, this.currentRun().cultivator)) {
                 sayThisWhateverTheNarratorDoes(execution.facts, line);
             }
@@ -8599,9 +8605,10 @@ ${noticed}`;
         // Somebody who answers you has told you who they are. Somebody who
         // hears you out and goes back to work has not, and that asymmetry is
         // the cheapest introduction in the game: it costs a question.
-        const met = answer.introduces && !knownAlready
+        const metOnApproach = this.namesGivenThisTurn.includes(asked.name);
+        const met = metOnApproach || (answer.introduces && !knownAlready
             ? this.theyGaveTheirName(cultivator, run, asked)
-            : false;
+            : false);
 
         // ── AND SOMETIMES THE HOUSE THEY GIVE IS NOT THEIRS ──────────────
         //
@@ -8743,8 +8750,9 @@ ${noticed}`;
                 name: 'knowledge.learn',
                 action: 'name_given',
                 summary:
-                    `${asked.name} recorded as believed, source told: they answered, and answering ` +
-                    'is how a stranger stops being one. A shrug would not have written this row.',
+                    `${asked.name} recorded as believed, source told: ` + (metOnApproach
+                        ? 'they gave their name on the approach before this reply.'
+                        : 'they gave their name in their answer.'),
                 ok: true
             });
         }
@@ -10887,6 +10895,26 @@ ${noticed}`;
         // Priced through the same calls the buy path prices with, so the figure
         // somebody is quoted is the figure they are charged.
         const named = (target ?? '').trim();
+        // A named seller's actual standing offer precedes a generic board rate.
+        // It also supplies the one quoted thing the next counteroffer refers to.
+        if (category === undefined && named.length >= 3 && this.atHand) {
+            const offered = readWhatIsOnOfferHere(
+                cultivator, this.atHand, this.alreadyHasACopyOf(cultivator), this.present(cultivator)
+            ).offers.find(offer => matchScore(named, offer.name) > MATCH_THRESHOLD);
+            if (offered) {
+                const asked = factsForToolResult(`${offered.name}, and what ${offered.sellerName} asks.`, [
+                    `${offered.sellerName} has ${offered.name} and is asking ${offered.askStones} spirit `
+                    + `stone${offered.askStones === 1 ? '' : 's'} for it. You are carrying `
+                    + `${cultivator.spiritStones}.`
+                ]);
+                asked.structure.push(
+                    `${offered.thingId} on offer from ${offered.sellerId} at ${offered.askStones} stone(s). `
+                    + 'Quoted, not bought - nothing spent and no time passed.'
+                );
+                this.nameWhatTheyGot(offered.name, offered.askStones, offered.sellerName);
+                return this.freeRead(run, 'market', asked);
+            }
+        }
         const row = category === undefined && named.length >= 3 ? resolvePrice(named) : null;
         const priced = row ? getPrice(row.id) : undefined;
         if (priced) {
@@ -10986,24 +11014,6 @@ ${noticed}`;
         // price question read the board, the stall and the pouch and never the
         // people, so a thing one person here was selling came back "nothing
         // here prices it" - and the haggle after it had no figure to argue with.
-        if (category === undefined && named.length >= 3 && this.atHand) {
-            const offered = readWhatIsOnOfferHere(
-                cultivator, this.atHand, this.alreadyHasACopyOf(cultivator), this.present(cultivator)
-            ).offers.find(offer => matchScore(named, offer.name) > MATCH_THRESHOLD);
-            if (offered) {
-                const asked = factsForToolResult(`${offered.name}, and what ${offered.sellerName} asks.`, [
-                    `${offered.sellerName} has ${offered.name} and is asking ${offered.askStones} spirit `
-                    + `stone${offered.askStones === 1 ? '' : 's'} for it. You are carrying `
-                    + `${cultivator.spiritStones}.`
-                ]);
-                asked.structure.push(
-                    `${offered.thingId} on offer from ${offered.sellerId} at ${offered.askStones} stone(s). `
-                    + 'Quoted, not bought - nothing spent and no time passed.'
-                );
-                this.nameWhatTheyGot(offered.name, offered.askStones, offered.sellerName);
-                return this.freeRead(run, 'market', asked);
-            }
-        }
         if (category === undefined && named.length >= 3) {
             const regionId = standingOf(cultivator, this.atHand).regionId;
             const onTheStall = manualsAStallCarries()
@@ -21110,11 +21120,15 @@ ${fit.line}`;
         houseIds: ReadonlySet<string>
     ): WhatIsOnTheirMind | null {
         if (row === null) return null;
+        const world = this.atHand;
+        const native = world ? getNpc(world, person.id) : null;
+        const branch = world?.locations.find(place => place.id === native?.locationId && isATempleBranch(place));
         return whatTheyWouldBeHeardOnAbout({
             ordinal: person.realmOrdinal,
             age: person.age,
             rank: person.sectRank ?? null,
             chosen: row.tags.includes('chosen'),
+            headsTheirBranch: !!world && !!branch && whoHeadsTheBranch(world, branch)?.id === person.id,
             shames: shameCausesFromTags(row.tags),
             carriesForSomebodyElse: whatTheyCarryForSomebodyElse(
                 this.atHand?.objects ?? [], person.id, houseIds

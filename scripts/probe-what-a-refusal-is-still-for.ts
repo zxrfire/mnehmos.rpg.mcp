@@ -186,6 +186,7 @@
  */
 
 import type Database from 'better-sqlite3';
+import { setImmediate } from 'node:timers/promises';
 
 import { MAX_ORDINAL } from '../src/engine/cultivation/realms.js';
 import { REGISTER_BANDS, theRegisterAtThisHeight, type RegisterBand } from '../src/web/prompt.js';
@@ -587,6 +588,7 @@ export async function measureAgainst(
     scenario: Scenario, worldSeed: string, said: readonly string[]
 ): Promise<Row[]> {
     return withAdminMode(async () => {
+        await setImmediate();
         const seed = `${worldSeed}-${scenario.given}`;
         // EVERY WORLD IS PINNED. An unpinned `worldEnabled` game mints one from
         // `randomUUID()`, so who is standing here and what the stall carries
@@ -602,6 +604,9 @@ export async function measureAgainst(
         const rows: Row[] = [];
 
         for (const sentence of said) {
+            // These are separate requests, including when the probe is called
+            // directly by a test rather than over the server's I/O boundary.
+            await setImmediate();
             const game = arranged.fresh();
             if (scenario.leadIn !== undefined) {
                 try { await game.act(scenario.leadIn); } catch { /* still a state */ }

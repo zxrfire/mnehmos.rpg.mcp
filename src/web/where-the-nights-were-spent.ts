@@ -90,9 +90,10 @@ export function chargeTheNightsInTheOpen(
         line: `${howMany(cost.nights, 'night')} in the open ${cost.nights === 1 ? 'has' : 'have'} worn the body `
             + `down to ${cost.hpAfter} of ${cultivator.maxHp}`
             + (cost.heldAtTheFloor ? ', as low as weather alone brings it.' : '.'),
-        structure: `a-night-in-the-open: ${cost.nights} night(s) outdoors below Foundation, `
-            + `${cost.rawNights} raw and ${cost.foulNights} foul; ${cost.taken} HP taken`
-            + `${cost.heldAtTheFloor ? ', held at the exposure floor' : ''}.`
+        structure: `${howMany(cost.nights, 'night')} outdoors: `
+            + `${cost.rawNights} raw and ${cost.foulNights} foul. The body lost `
+            + `${cost.taken} of ${cultivator.maxHp}`
+            + `${cost.heldAtTheFloor ? ', as low as weather alone brings it' : ''}.`
     };
 }
 

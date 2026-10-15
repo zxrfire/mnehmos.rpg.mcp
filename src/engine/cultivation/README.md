@@ -1,5 +1,19 @@
 <!-- tier: 3 -->
 
+Actual physicians read their service catalog, locality and ground. The unused
+ordinal treatment-price curve is retained only as an explicit assumption of
+the independent origin projection, beside its existing pill-price assumptions.
+The strategy probe reads the actual service quote instead of that model.
+
+Melee entry reads each side's bodily reach separately from its chosen action.
+Guarding does not concede an equal fight, and a strong person's guard does not
+end a weaker person's pending encounter as if nobody could enter it. A side
+with the only physical reach settles categorically only when it actually acts.
+
+Minor-disturbance event summaries state the body's remaining condition. The
+event data retains the exact damage for mechanical readers; the summary does
+not expose an HP label to the player.
+
 # The Cultivation Engine
 
 `plague.ts` reads susceptibility only through `satietyBurnMultiplier` and

@@ -14,6 +14,7 @@ import { makeGameInWorld } from './harness';
 import { activeWorld } from '../../src/server/state/cultivation-world';
 import { getMembersOf } from '../../src/data/cultivation/members';
 import { getSect } from '../../src/data/cultivation/sects';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 
 /** A member of whichever house actually has people standing together. */
 async function anEnrolledMemberAmongTheirOwn(worldSeed: string) {
@@ -21,19 +22,25 @@ async function anEnrolledMemberAmongTheirOwn(worldSeed: string) {
     const { cultivator } = await h.game.newRun('Elder');
     const w = await activeWorld();
 
-    let best: { place: string; house: string; n: number } | null = null;
+    let best: { place: string; house: string; n: number; area: string; ordinal: number } | null = null;
     for (const loc of w.state.locations) {
-        const here = h.game.present({ ...cultivator, location: loc.name } as never);
+      for (const area of theAreasOf(w.state, loc).areas.filter(area => !['forecourt', 'board', 'room'].includes(area.for ?? ''))) {
+        const here = h.game.present({ ...cultivator, location: loc.name, standingIn: area.id } as never);
         const byHouse = new Map<string, number>();
         for (const row of here) if (row.sectId) byHouse.set(row.sectId, (byHouse.get(row.sectId) ?? 0) + 1);
-        for (const [house, n] of byHouse) if (n > (best?.n ?? 0)) best = { place: loc.name, house, n };
+        for (const [house, n] of byHouse) if (n > (best?.n ?? 0)) best = {
+            place: loc.name, house, n, area: area.id,
+            ordinal: Math.max(25, ...here.filter(person => person.sectId === house).map(person => person.realmOrdinal))
+        };
+      }
     }
     if (!best) return null;
 
-    h.db.prepare('UPDATE cultivators SET realm_ordinal = 25, location = ? WHERE id = ?')
-        .run(best.place, cultivator.id);
+    h.db.prepare('UPDATE cultivators SET realm_ordinal = ?, location = ? WHERE id = ?')
+        .run(best.ordinal, best.place, cultivator.id);
     h.game.repos.sects.addMember(best.house, cultivator.id, 4);
-    const standing = { ...cultivator, location: best.place, realmOrdinal: 25 } as never;
+    h.repos.cultivators.standIn(cultivator.id, best.area);
+    const standing = h.game.currentRun().cultivator;
     const own = h.game.present(standing).filter(row => row.sectId === best!.house);
     return { ...h, cultivator, best, own };
 }
@@ -74,8 +81,9 @@ describe('a member standing among their own', () => {
         // nowhere. `makeGameInWorld` pins the world, so the crowd is the same.
         const outsider = await makeGameInWorld({ seed: 'out', worldSeed: 'world-mem-1' });
         const born = await outsider.game.newRun('Nobody');
-        outsider.db.prepare('UPDATE cultivators SET realm_ordinal = 25, location = ? WHERE id = ?')
-            .run(at.best.place, born.cultivator.id);
+        outsider.db.prepare('UPDATE cultivators SET realm_ordinal = ?, location = ? WHERE id = ?')
+            .run(at.best.ordinal, at.best.place, born.cultivator.id);
+        outsider.repos.cultivators.standIn(born.cultivator.id, at.best.area);
         const before = outsider.game.knowledge.awareness(born.cultivator.id, 'cultivator').length;
 
         await outsider.game.act('who could teach me');

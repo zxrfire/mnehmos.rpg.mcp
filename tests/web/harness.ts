@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
+import { setImmediate } from 'node:timers/promises';
 
 import { migrate } from '../../src/storage/migrations';
 import type { LLMProvider, ProviderCallOpts, ProviderCallResult } from '../../src/agent/provider/types';
@@ -262,6 +263,19 @@ export function makeGame(options: HarnessOptions = {}): Harness {
         seedFactory: () => options.seed ?? 'test-seed',
         idFactory: () => `cultivator-${options.seed ?? 'test-seed'}-${minted++}`
     });
+
+    // Direct test callers have no HTTP request boundary. Let pending I/O run
+    // between requests so long chains of resolved promises do not starve RPC.
+    const act = game.act.bind(game);
+    game.act = async (...args) => {
+        await setImmediate();
+        return act(...args);
+    };
+    const newRun = game.newRun.bind(game);
+    game.newRun = async (...args) => {
+        await setImmediate();
+        return newRun(...args);
+    };
 
     return { db, game, narrator, repos: ensureCultivationDb() };
 }

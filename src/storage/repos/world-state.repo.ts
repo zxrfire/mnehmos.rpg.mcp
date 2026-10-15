@@ -115,6 +115,7 @@ export class WorldStateRepository {
     private readonly deleteObjectStmt: Database.Statement;
     private readonly deleteObjectClaimsStmt: Database.Statement;
     private readonly deleteObjectProvenanceStmt: Database.Statement;
+    private readonly deleteExcessObjectProvenanceStmt: Database.Statement;
     private readonly selectClaimsStmt: Database.Statement;
     private readonly selectProvenanceStmt: Database.Statement;
     private readonly selectAbsencesStmt: Database.Statement;
@@ -123,6 +124,8 @@ export class WorldStateRepository {
     private readonly maxFactSeqStmt: Database.Statement;
     private readonly maxMemorySeqStmt: Database.Statement;
     private readonly countFactsStmt: Database.Statement;
+    private readonly pruneFactActorsStmt: Database.Statement;
+    private readonly pruneFactsStmt: Database.Statement;
 
     constructor(private db: Database.Database) {
         this.upsertRuntimeStmt = db.prepare(`
@@ -482,6 +485,8 @@ export class WorldStateRepository {
         this.deleteObjectStmt = db.prepare('DELETE FROM world_objects WHERE world_id = ? AND id = ?');
         this.deleteObjectClaimsStmt = db.prepare('DELETE FROM world_object_claims WHERE world_id = ? AND object_id = ?');
         this.deleteObjectProvenanceStmt = db.prepare('DELETE FROM world_object_provenance WHERE world_id = ? AND object_id = ?');
+        this.deleteExcessObjectProvenanceStmt = db.prepare(
+            'DELETE FROM world_object_provenance WHERE world_id = ? AND object_id = ? AND seq >= ?');
         this.selectClaimsStmt = db.prepare('SELECT * FROM world_object_claims WHERE world_id = ? ORDER BY rowid ASC');
         this.selectProvenanceStmt = db.prepare(
             'SELECT * FROM world_object_provenance WHERE world_id = ? ORDER BY object_id ASC, seq ASC'
@@ -505,9 +510,11 @@ export class WorldStateRepository {
         `);
 
         // High-water marks for the append-only fast path.
-        this.maxFactSeqStmt = db.prepare('SELECT COUNT(*) AS n FROM world_chronicle WHERE world_id = ?');
+        this.maxFactSeqStmt = db.prepare('SELECT COALESCE(MAX(CAST(SUBSTR(id, 2) AS INTEGER)), 0) AS n FROM world_chronicle WHERE world_id = ?');
         this.maxMemorySeqStmt = db.prepare('SELECT COUNT(*) AS n FROM world_memories WHERE world_id = ?');
-        this.countFactsStmt = this.maxFactSeqStmt;
+        this.countFactsStmt = db.prepare('SELECT COUNT(*) AS n FROM world_chronicle WHERE world_id = ?');
+        this.pruneFactActorsStmt = db.prepare('DELETE FROM world_chronicle_actors WHERE world_id = ? AND fact_id NOT IN (SELECT value FROM json_each(?))');
+        this.pruneFactsStmt = db.prepare('DELETE FROM world_chronicle WHERE world_id = ? AND id NOT IN (SELECT value FROM json_each(?))');
     }
 
     // SAVE
@@ -531,8 +538,8 @@ export class WorldStateRepository {
     /**
      * Write only what a tick can have changed.
      *
-     * The append-only bulk - chronicle facts, memories, location changes, object
-     * provenance - is skipped below its high-water mark, because those tables are
+     * The append-only bulk - chronicle facts, memories and location changes -
+     * is skipped below its high-water mark, because those tables are
      * never rewritten in place. A 500-year advance writes ~2818 facts once, and
      * re-writing them on every subsequent save is the single biggest avoidable
      * cost in this layer. Everything genuinely mutable is upserted, because any of
@@ -547,12 +554,19 @@ export class WorldStateRepository {
             this.upsertRuntimeStmt.run(runtimeParams(s));
 
             const storedFacts = (this.countFactsStmt.get(s.id) as { n: number }).n;
+            const storedFactSeq = (this.maxFactSeqStmt.get(s.id) as { n: number }).n;
             const storedMemories = (this.maxMemorySeqStmt.get(s.id) as { n: number }).n;
 
             this.writeEras(s);
-            // Facts and memories are append-only and id-ordered by construction
-            // (`f1..fN`, `m1..mN`), so a count is a valid high-water mark.
-            this.writeFacts(s, s.history.facts.slice(storedFacts));
+            // A retention sweep makes fact IDs sparse. A row count is no
+            // longer the next array position: it can skip a new deed outright.
+            const freshFacts = s.history.facts.filter(fact => Number(fact.id.slice(1)) > storedFactSeq);
+            if (s.history.facts.length - freshFacts.length < storedFacts) {
+                const heldIds = JSON.stringify(s.history.facts.map(fact => fact.id));
+                this.pruneFactActorsStmt.run(s.id, heldIds);
+                this.pruneFactsStmt.run(s.id, heldIds);
+            }
+            this.writeFacts(s, freshFacts);
             this.writeMemories(s, s.memories.records.slice(storedMemories));
             this.writeLocations(s);
             this.writeFactions(s);
@@ -1175,8 +1189,10 @@ export class WorldStateRepository {
                 });
             }
 
-            // Provenance has no id of its own; the chain position is the key,
-            // which is also what keeps it append-only and ordered on reload.
+            // Counted background stock can compact its chain. Upserting the
+            // remaining positions must not leave the old tail to reappear on
+            // reload. The world/object/sequence key bounds this deletion.
+            this.deleteExcessObjectProvenanceStmt.run(s.id, object.id, object.provenance.length);
             object.provenance.forEach((entry, seq) => {
                 this.insertProvenanceStmt.run({
                     worldId: s.id,

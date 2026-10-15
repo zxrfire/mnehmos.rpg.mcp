@@ -96,6 +96,10 @@ for (const situation of ['absent', 'another accepted hull'] as const) {
                 expect(commitNpcPublicPassage(h.world, h.world.npcs[h.at]!)).toBe(true);
             }
             h.game.theWorldMoved();
+            // Contact files the already accepted passage and what the present
+            // people witnessed. Establish that observation before measuring
+            // the refused rebooking's complete no-write boundary.
+            await h.game.act('I look around');
             const before = h.game.currentRun(), member = structuredClone(h.world.npcs[h.at]!), boat = structuredClone(h.boat);
             const facts = structuredClone(h.world.history.facts);
             expect(h.game.whoIsWithYouOnTheRoad(before.cultivator).some(person => person.id === h.member.id)).toBe(true);

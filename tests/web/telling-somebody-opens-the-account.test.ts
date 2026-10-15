@@ -75,6 +75,9 @@
  * Naming somebody in a claim needs that held reference, not their presence.
  * The paired absent-person arms below require a known name to attach and an
  * unknown name to remain unresolved; the listener must actually be present.
+ * Landing27511c66 also gives some lives childhood favours. These controls
+ * preserve every opening SQL row and count every newly opened account, of
+ * any kind, instead of treating those prior favours as products of a telling.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -100,11 +103,14 @@ interface LedgerRow {
     tags: string;
 }
 
+const openingLedgers = new WeakMap<object, LedgerRow[]>();
+
 function ledger(db: { prepare(sql: string): { all(): unknown } }): LedgerRow[] {
-    return db.prepare(
-        'SELECT id, severity, holder_id, subject_id, incurred_on_day, '
-        + 'triggering_event_id, from_belief, tags FROM obligations'
-    ).all() as LedgerRow[];
+    const rows = db.prepare('SELECT * FROM obligations ORDER BY id').all() as LedgerRow[];
+    const opening = openingLedgers.get(db) ?? [];
+    const ids = new Set(opening.map(row => row.id));
+    expect(rows.filter(row => ids.has(row.id)), 'the opening accounts changed').toEqual(opening);
+    return rows.filter(row => !ids.has(row.id));
 }
 
 /**
@@ -192,6 +198,8 @@ async function whoIsHere(
     cultivator: { id: string; location: string | null },
     atLeast = 2
 ) {
+    if (!openingLedgers.has(game.db)) openingLedgers.set(game.db,
+        game.db.prepare('SELECT * FROM obligations ORDER BY id').all() as LedgerRow[]);
     const world = (await game.loadWorld())! as WorldState;
     let standing = cultivator;
     if ((game.present(standing) as unknown[]).length < atLeast) {

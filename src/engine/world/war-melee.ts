@@ -456,11 +456,8 @@ function composeTheYear(
     fell: readonly string[],
     brokeOff: readonly string[]
 ): string {
-    const cost = fell.length > 0
-        ? ` ${fell.join(', ')} did not come back.`
-        : brokeOff.length > 0
-            ? ` ${brokeOff.join(', ')} broke off and got away.`
-            : '';
+    const cost = (fell.length > 0 ? ` ${fell.join(', ')} did not come back.` : '')
+        + (brokeOff.length > 0 ? ` ${brokeOff.join(', ')} broke off and got away.` : '');
 
     if (winner === null) {
         return result.outcome === 'no_contest'

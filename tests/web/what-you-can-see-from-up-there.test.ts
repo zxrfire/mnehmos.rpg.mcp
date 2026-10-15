@@ -202,7 +202,10 @@ describe('what a look from up there comes back with', () => {
         expect(read.seen).toBe(0);
         expect(read.lines.join(' ')).toContain('foundation');
         expect(read.lines.join(' ')).toContain('Ask');
-        expect(read.structure.join(' ')).toContain('the horizon is zero');
+        // Run3 found this player-visible channel exposing ordinal arithmetic.
+        // Keep the physical refusal and its ordinary route, without that rubric.
+        expect(read.structure.join(' ')).toContain('cannot yet rise above the ground');
+        expect(read.structure.join(' ')).not.toMatch(/ordinal|catalog|multiplier/);
     });
 
     it('shows the near ground at first flight and not the far', () => {

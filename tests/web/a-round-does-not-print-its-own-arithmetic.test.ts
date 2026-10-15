@@ -24,6 +24,9 @@
  *
  * This is the ratchet on that. It asserts the CHANNEL rather than any wording, so
  * the lines are free to be rewritten and not free to move back into the prose.
+ * The landing census's carriage fight also completed its clock and its round
+ * as two turns. These actual round controls require one action completion,
+ * including the ordinary ground path that reaches the same clock adapter.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -46,7 +49,10 @@ async function aFightTurn(narrator: ProviderNarrator | DeterministicNarrator) {
     });
     await game.newRun('Wen Qiu');
     await game.act('admin spawn_encounter ordinal=9 name=Road Bandit disposition=hostile');
-    return await game.act('I attack Road Bandit');
+    const before = game.currentRun().run.turn;
+    const acted = await game.act('I attack Road Bandit');
+    expect(game.currentRun().run.turn, 'one requested round completed more than one action').toBe(before + 1);
+    return acted;
 }
 
 describe('a round does not print its own arithmetic', () => {

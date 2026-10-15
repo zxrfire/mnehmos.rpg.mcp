@@ -1214,6 +1214,10 @@ describe('buying a line off the price board', () => {
     it('charges for a service and says nothing was carried away', async () => {
         const { db, game } = makeGame({ seed: 'buy-inn' });
         const { cultivator } = await game.newRun('Shi Wanjun');
+        // Even the no-world debug scene requires a real local listener to
+        // keep its counter. The parser/service test is not a phantom inn.
+        game.repos.cultivators.create({ ...cultivator, id: 'service-fixture-keeper',
+            name: 'The counter keeper', kind: 'npc' });
         db.prepare('UPDATE cultivators SET spirit_stones = 400 WHERE id = ?').run(cultivator.id);
         const before = game.state().cultivator.spiritStones;
 

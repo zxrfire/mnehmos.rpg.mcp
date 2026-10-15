@@ -212,10 +212,8 @@ function capitalise(text: string): string {
 export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
     const horizon = horizonInDays(input.ordinal);
     const structure: string[] = [
-        `Horizon ${horizon.toFixed(1)} travel days at ordinal ${input.ordinal} `
-        + `(floor ${LEAVES_THE_GROUND}, ${HORIZON_AT_FIRST_FLIGHT} days growing `
-        + `x${HORIZON_GROWTH_PER_RUNG} per rung, sustained from ${ABOVE_THE_WEATHER}). `
-        + `${input.onTheGround.length} piece(s) of ground offered.`
+        horizon > 0 ? `You can make out ground up to ${horizon.toFixed(1)} travel days away.`
+            : 'Your view stays at ground level.'
     ];
 
     if (horizon <= 0 && !input.onTheGround.some(row=>row.locallyVisible)) {
@@ -235,9 +233,7 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
             ],
             structure: [
                 ...structure,
-                `Refused: ordinal ${input.ordinal} is below ${LEAVES_THE_GROUND}, the rung the `
-                + 'catalog puts first flight at. Nothing was masked, because nothing was read - '
-                + 'the horizon is zero and the whole read is skipped.'
+                'You cannot yet rise above the ground to see further.'
             ],
             seen: 0
         };

@@ -44,6 +44,10 @@ const plainly = (person: Parameters<typeof whatTheyWouldBeHeardOnAbout>[0]) =>
     whatTheyWouldBeHeardOnAbout(person)?.plainly ?? null;
 
 describe('what somebody standing here would be heard on', () => {
+    it('lets an actual branch head speak of their own responsibility, without granting it by rank', () => {
+        expect(plainly({ ...ORDINARY, headsTheirBranch: true })).toContain('responsible for the lower cloister');
+        expect(plainly({ ...ORDINARY, headsTheirBranch: false })).toBeNull();
+    });
     it('says nothing about most people', () => {
         expect(plainly(ORDINARY)).toBeNull();
     });

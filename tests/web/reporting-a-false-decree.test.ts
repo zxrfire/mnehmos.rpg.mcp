@@ -23,7 +23,7 @@ import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
 import { SECTS } from '../../src/data/cultivation/index';
 import { getMembersOf } from '../../src/data/cultivation/members';
-import { positionIn } from '../../src/web/standing';
+import { holdTheActualPunishmentChair } from './holding-the-actual-punishment-chair';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import {
     whatTheWitnessDoesAboutIt,
@@ -95,14 +95,7 @@ async function forgerAt(rankIndex: number, seed: string) {
 }
 
 async function holdsThePunishmentRoom(harness: any, id: string) {
-    for (let rank = 0; rank < LOCAL_SECT.ranks.length; rank++) {
-        harness.repos.sects.setRank(LOCAL_SECT.id, id, rank);
-        const { portfolios } = await harness.game.theHouseAround(
-            harness.repos.cultivators.getById(id), positionIn(harness.repos, id));
-        if (portfolios.some((p: { purpose: string; holderId: string | null }) =>
-            p.purpose === 'punishment_hall' && p.holderId === id)) return;
-    }
-    throw new Error('the player could not hold the punishment room');
+    await holdTheActualPunishmentChair(harness.game, id, LOCAL_SECT.id);
 }
 
 /**

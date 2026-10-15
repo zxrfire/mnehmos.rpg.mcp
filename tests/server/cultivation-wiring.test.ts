@@ -7,6 +7,10 @@
  * prove is that the arithmetic is now connected to a tool, that what the engine
  * decided reaches SQLite, and that nothing leaks past the discovery gate on the
  * way out.
+ * Run3 measured a Work purse of 87 from an opening30: wages28, board14,
+ * a simulated cache39 and actual encounter gains4. The earlier wage-only
+ * equality ignored those real gains. The Work control now pins its world and
+ * reconciles every actual dated event delta as well as wages and board.
  */
 
 import { randomUUID } from 'crypto';
@@ -386,6 +390,7 @@ describe('the wiring', () => {
 
     describe('the low-realm loop', () => {
         it('lists work and pays for days actually worked', async () => {
+            await createWorld({ seed: 'wiring-work-world' });
             const created = await newRun();
             const before = new CultivatorRepository(db).getById(created.cultivator.id)!;
 
@@ -410,8 +415,11 @@ describe('the wiring', () => {
                 // A year of work is a year of eating, and the food comes out of
                 // the wage. The purse moves by the gross earnings less the board
                 // - not by the take-home, which is already net of the advance.
+                // Ordinary opportunities still affect the purse during work.
+                const duringWork = done.span.events.reduce((stones: number, event: { data?: { spiritStones?: number } }) =>
+                    stones + Number(event.data?.spiritStones ?? 0), 0);
                 expect(after.spiritStones).toBe(
-                    before.spiritStones - done.boardCostStones + done.grossSpiritStones
+                    before.spiritStones - done.boardCostStones + done.grossSpiritStones + duringWork
                 );
                 expect(done.boardCostStones).toBeGreaterThan(0);
                 // And the span genuinely ran. It used to stop at one full belly,

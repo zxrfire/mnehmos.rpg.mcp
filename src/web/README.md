@@ -1,10 +1,50 @@
 <!-- tier: 3 -->
 
+A fight round pays its actual body span without completing the action there.
+The round's ordinary completion owns the turn, including aboard a real carrier;
+the transport clock and the fight cannot each complete the same requested act.
+
+A completed lesson adds its art to the student's actual body after the span.
+It preserves their intervening cultivation and does not revive an absent or
+dead student by writing back the row captured when the lesson began.
+
+Exact names on actual standing offers protect their punctuation during plan
+composition, as person and place names do. A comma within a printed meal name
+does not ask the player to eat it after reading its price.
+
+Accounts opened because an agreed bout exceeded its terms point at that actual
+played deed, including accounts priced by the native fight before the deed was
+written. Pricing and the event link remain on the same ordinary account.
+
+A conditional about taking a reachable object reaches investigation, before
+the conversational split can pass through the ownership-changing intent.
+An introduction filed on approach also reaches the reply's knowledge receipt;
+the reply does not have to write the same name a second time.
+
+A newly observed fact and the player's knowledge of it commit together.
+Plague boundaries with neither a course nor a running outbreak are reads and
+open no write transaction; real contact and existing courses retain their checks.
+
+Actual starting interruptions are experienced events on the existing knowledge
+ledger. Encounter windows read those claims so a zero-time interruption cannot
+lock repeated attempts on the same announcement. No body time is invented.
+
+Destination, flight and outdoor-night facts state the known ground, visible
+range and actual cost to the body. Research percentages, raw rung arithmetic
+and HP labels do not belong in the player's log.
+
+Agreeing to give attention keeps the teacher in the actual area where the
+lesson began. The teaching activity holds that chosen area until its ordinary
+cleanup restores the previous activity; changing the activity must not move a
+present teacher to another part of town.
+
 Player favours live on the ordinary SQL ledger. Private requests derive their
 leverage from that ledger and native accounts; they never persist SQL favours
 on a world mirror. Completed private-work favour wages use the same writer.
 Legacy duplicate native favour rows are retired while preserving a settled SQL
 word, including across append saves and reopening.
+Childhood favours reach that sole SQL ledger during run creation. The opening
+must not leave an account to be materialized by the first unrelated action.
 
 
 Plague contact and real clause/span boundaries read the actual SQL body.
@@ -30,6 +70,11 @@ receipts; current purses and actual goods decide exchange after landfall.
 Public quoted fares keep their existing authority.
 
 # The Web Front Door
+
+Held-ticket purchase and actual boarding are distinct passage intents. Their
+counter phrasings are shared by both coverage walks. Personal contract intents
+are declared alongside other oaths and named in the verb glossary; accepting a
+named posted job still reaches its ordinary work handler.
 
 Private party invitations ask the actual player before admitting them. An elder's
 personal pupil can accept a private auction or expedition, and close people can

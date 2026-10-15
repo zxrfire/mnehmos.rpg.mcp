@@ -24,6 +24,10 @@ export function settlePlagueOnActualBody(game: ActualPlagueServices): string[] {
     const now = routineTime(world), life = game.currentRun();
     let body = game.repos.cultivators.getById(life.cultivator.id);
     if (!body?.alive) return [];
+    // With no course and no outbreak there is nothing to settle or transmit.
+    // Keep this read outside a write transaction, including ordinary reads.
+    if (!body.plague && !world.npcs.some(person => person.cultivation.plague)
+        && !world.statuses.some(status => status.kind === 'plague' && isStatusRunningOn(status, now))) return [];
     const lines: string[] = [], beforeFacts = world.history.facts.length;
     game.db.transaction(() => {
         for (const person of world.npcs.filter(person => person.cultivation.plague)) settleNativePlague(world, person.id, now);

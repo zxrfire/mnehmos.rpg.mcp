@@ -41,6 +41,7 @@ import {
     theComplaintYourHouseReceives
 } from '../../src/engine/social-leverage/what-a-house-does-when-it-catches-you';
 import { engineCalls, makeGameInWorld } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 /** The Azure Cloud Pavilion's own sword. One house teaches it. */
 const PAVILION = 'sect-azure-cloud-pavilion';
@@ -122,25 +123,25 @@ describe('played, by somebody who is somebody\'s', () => {
      * reaches `placed`. So the square is chosen rather than hoped for, exactly
      * as `selling-a-copy-of-somebody-elses-art.test.ts` does it.
      */
-    function standWhereOneOfTheirsIs(
+    async function standWhereOneOfTheirsIs(
         harness: Awaited<ReturnType<typeof aSellerBackedBySomebodyElse>>
-    ): void {
-        const world = (harness.game as unknown as { atHand: {
-            npcs: { status: string; factionId: string | null; locationId: string | null }[];
-            locations: { id: string; name: string }[];
-        } | null }).atHand;
+    ): Promise<void> {
+        const world = harness.game.atHand;
         const theirs = world!.npcs
             .find(n => n.status === 'alive' && n.factionId === PAVILION && n.locationId);
         expect(theirs, 'the seeded world holds nobody of the Pavilion').toBeTruthy();
         const where = world!.locations.find(l => l.id === theirs!.locationId)!;
         harness.repos.cultivators.update(harness.id, { location: where.name });
+        // Coarse co-location does not put the actual witness in the room.
+        await standWhereThePeopleAre(harness, harness.id, new Set([theirs!.id]));
+        expect(harness.game.present(harness.game.currentRun().cultivator).some(n => n.id === theirs!.id)).toBe(true);
     }
 
     it('is answered by its own house when the aggrieved one cannot reach it', async () => {
         const harness = await aSellerBackedBySomebodyElse('complaint-lands');
         const { game, db, id } = harness;
         await game.act('I look around');
-        standWhereOneOfTheirsIs(harness);
+        await standWhereOneOfTheirsIs(harness);
 
         const said = await game.act('I sell a copy of the Void-Piercing Sword Domain');
         const calls = engineCalls(said).map(c => c.name).join(' ');

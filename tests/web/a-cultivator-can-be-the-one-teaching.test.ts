@@ -52,7 +52,7 @@
  *
  * ── HOW THE SCENARIOS ARE ARRANGED ───────────────────────────────────────
  *
- * Entirely by PLAYING, with no admin at all. `I learn Swallow-Skimming Step`
+ * Mastery is reached by PLAYING. `I learn Swallow-Skimming Step`
  * opens at ordinal 0, and `I practise Swallow-Skimming Step for 3 years` takes
  * a mortal-grade art from 0 to full mastery in one turn. Both are asserted
  * rather than assumed, so a route that stops being playable fails here instead
@@ -60,15 +60,23 @@
  * Practice and provisioning now move the hour and the crowd. Before teaching,
  * stand in the live area of an eligible student; neither an empty arrival area
  * nor the opening crowd is a teaching precondition.
+ * Completion controls arrange a Foundation body and a funded purse after that
+ * practice, then buy real provisions. An actual interruption ends the attempt;
+ * another attempt pays another whole lesson. Novice and unfunded refusals keep
+ * their own arrangements. The writeback control advances the student's actual
+ * body at the end of a genuine completed span, before teaching adds the art.
  */
 
 import { makeGameInWorld } from './harness';
+import { vi } from 'vitest';
+import type { NpcRecord } from '../../src/engine/world/npc-state';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { npcsAt } from '../../src/engine/world/world-state';
 import { worldLocationFor } from '../../src/web/entities';
 import { parseIntent } from '../../src/web/verb-pattern-table';
 import { ledgerAbout, writeOneObligation } from '../../src/storage/repos/obligation.repo';
-import { upsertRelationship } from '../../src/engine/world/npc-state';
+import { upsertRelationship, setRealm } from '../../src/engine/world/npc-state';
+import { routineTime } from '../../src/engine/world/npc-routines';
 import {
     A_MASTER_STANDS_THIS_FAR_ABOVE,
     whatABondOpens,
@@ -118,6 +126,11 @@ async function holdingIt(years: number) {
     await harness.game.act(`I learn ${AN_ART_A_BEGINNER_CAN_HOLD}`);
     if (years > 0) {
         await harness.game.act(`I practise ${AN_ART_A_BEGINNER_CAN_HOLD} for ${years} years`);
+        const practiced = harness.game.currentRun().cultivator;
+        harness.repos.cultivators.advanceRealm(practiced.id, Math.max(0, 13 - practiced.realmOrdinal));
+        // This scenario measures a completed lesson, with the real food bought.
+        // The unfunded and interrupted controls below keep their own arrangements.
+        harness.repos.cultivators.update(harness.game.currentRun().cultivator.id, { spiritStones: 5000 });
         await harness.game.act('I buy a year of provisions');
     }
     const me = harness.game.state().cultivator;
@@ -126,6 +139,26 @@ async function holdingIt(years: number) {
     await standWhereThePeopleAre(harness, me.id, new Set(world!.npcs
         .filter(n => !n.cultivation.techniqueIds.includes(ITS_ID)).map(n => n.id)));
     return { ...harness, me, mastery: known?.mastery ?? null };
+}
+
+/** Real interruptions end a lesson. A later attempt pays its whole span again. */
+async function completeTheLesson(harness: Awaited<ReturnType<typeof makeGameInWorld>>,
+    student: { id: string; name: string }, art: string) {
+    for (let attempt = 0; attempt < 8; attempt++) {
+        const world = harness.game.atHand!;
+        const person = world.npcs.find(npc => npc.id === student.id)!;
+        expect(person?.status, 'a dead student cannot receive another lesson').toBe('alive');
+        expect(harness.game.currentRun().cultivator.alive).toBe(true);
+        const place = world.locations.find(place => place.id === person.locationId)!;
+        expect(place).toBeDefined();
+        harness.repos.cultivators.update(harness.game.currentRun().cultivator.id, { location: place.name });
+        await standWhereThePeopleAre(harness, harness.game.currentRun().cultivator.id, new Set([student.id]));
+        expect(harness.game.present(harness.game.currentRun().cultivator).some(npc => npc.id === student.id)).toBe(true);
+        const turn = await harness.game.act(`I teach ${student.name} ${art}`);
+        if (!turn.toolCalls.some(call => call.name === 'world.yearsToWriteOutACopy' && !call.ok)) return turn;
+        expect(turn.events.length, 'the failed whole span must name its actual interruption').toBeGreaterThan(0);
+    }
+    throw new Error('Eight actual attempts did not complete the lesson.');
 }
 
 /** Somebody standing here who does not already carry it. */
@@ -201,7 +234,21 @@ describe('a cultivator holding the whole of an art', () => {
         expect(student, 'nobody here who could take it').toBeTruthy();
 
         const owedBefore = ledgerAbout(at.db, student!.id).length;
-        const turn = await at.game.act(`I teach ${student!.name} ${AN_ART_A_BEGINNER_CAN_HOLD}`);
+        let atLessonEnd: NpcRecord['cultivation'] | undefined;
+        const skip = at.game.shortSkip.bind(at.game);
+        const observed = vi.spyOn(at.game, 'shortSkip').mockImplementation(async (...args) => {
+            const receipt = await skip(...args);
+            if (receipt.timeSkip?.simulatedDays === args[5]) {
+                const actual = at.game.atHand!;
+                const index = actual.npcs.findIndex(npc => npc.id === student!.id);
+                actual.npcs[index] = setRealm(actual.npcs[index]!,
+                    actual.npcs[index]!.cultivation.realmOrdinal + 1, routineTime(actual));
+            }
+            atLessonEnd = structuredClone(at.game.atHand!.npcs.find(npc => npc.id === student!.id)!.cultivation);
+            return receipt;
+        });
+        const turn = await completeTheLesson(at, student!, AN_ART_A_BEGINNER_CAN_HOLD);
+        observed.mockRestore();
 
         expect(gotTheBlankLook(turn)).toBe(false);
         expect(turn.toolCalls.filter(call => !call.ok && !call.name.startsWith('narrator.')))
@@ -212,6 +259,9 @@ describe('a cultivator holding the whole of an art', () => {
         const after = await at.game.loadWorld();
         const them = after!.npcs.find(npc => npc.id === student!.id);
         expect(them?.cultivation.techniqueIds).toContain(ITS_ID);
+        expect(atLessonEnd).toBeDefined();
+        expect(them?.cultivation).toEqual({ ...atLessonEnd,
+            techniqueIds: [...new Set([...atLessonEnd!.techniqueIds, ITS_ID])] });
 
         // AND IT OPENED AN ACCOUNT. `taught_technique` had no producer before.
         expect(ledgerAbout(at.db, student!.id).length).toBeGreaterThan(owedBefore);
@@ -245,7 +295,7 @@ describe('a cultivator holding the whole of an art', () => {
         const at = await holdingIt(3);
         const world = await at.game.loadWorld();
         const student = aStudentHere(at, world!);
-        const turn = await at.game.act(`I teach ${student!.name} ${AN_ART_A_BEGINNER_CAN_HOLD}`);
+        const turn = await completeTheLesson(at, student!, AN_ART_A_BEGINNER_CAN_HOLD);
 
         // Provenance is stated either way round: enough houses hand this one out
         // that none of them can call it theirs, and the engine says so rather
@@ -369,6 +419,7 @@ describe('teaching somebody who is already yours', () => {
         await harness.game.act(`I buy a copy of ${AN_ART_A_BEGINNER_CAN_HOLD}`);
         await harness.game.act(`I learn ${AN_ART_A_BEGINNER_CAN_HOLD}`);
         await harness.game.act(`I practise ${AN_ART_A_BEGINNER_CAN_HOLD} for 3 years`);
+        harness.repos.cultivators.update(harness.game.currentRun().cultivator.id, { spiritStones: 5000 });
         await harness.game.act('I buy a year of provisions');
 
         const world = await harness.game.loadWorld();
@@ -423,9 +474,7 @@ describe('teaching somebody who is already yours', () => {
         const owedBefore = ledgerAbout(harness.db, student!.id)
             .filter(row => row.cause === 'taught_technique').length;
 
-        const turn = await harness.game.act(
-            `I teach ${student!.name} ${AN_ART_A_BEGINNER_CAN_HOLD}`
-        );
+        const turn = await completeTheLesson(harness, student!, AN_ART_A_BEGINNER_CAN_HOLD);
         expect(gotTheBlankLook(turn)).toBe(false);
 
         // The art still goes in. Nothing about the bond makes the lesson cheaper.

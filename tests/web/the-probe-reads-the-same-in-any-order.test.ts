@@ -50,6 +50,11 @@
  * turns - which is a finding and not a failure. Confirm it, then delete that
  * arm rather than the file: the first one is the property worth keeping.
  */
+// Landing27511c66 profiling measured228.468s for one20-sentence arm, with
+//173.529s in live knowledge claim reads. SQLite chose holder/stance and scanned
+// unrelated claims. A same-database2000-row/3000-lookup control measured366.212ms
+// before and10.456ms after the live holder/claim/date index, with identical2600
+// positive answers. These original order/control assertions remain unchanged.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { SCENARIOS, measureAgainst, type Row } from '../../scripts/probe-what-a-refusal-is-still-for.js';

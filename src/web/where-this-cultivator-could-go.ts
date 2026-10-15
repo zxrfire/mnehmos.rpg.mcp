@@ -248,10 +248,7 @@ function occupancyIsReported(sorted: readonly Destination[]): string | null {
         : `${measured} of these ${sorted.length} rows`;
     const verb = measured === 1 || measured === sorted.length ? 'gives' : 'give';
     return `${which} ${verb} occupancy as its shape - empty, inside what the ground `
-        + 'carries, or over it - and never as a count. These are places this cultivator '
-        + 'has not been to, so a count would be a headcount of somewhere unseen. The shape '
-        + 'is what survives being passed along: measured over 5 seeds and 90 settlements '
-        + 'across 40 years, the count moved at 60% of five-year steps and the shape at 5%.';
+        + 'carries, or over it. No headcount is known for these unvisited places.';
 }
 
 /**

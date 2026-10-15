@@ -86,6 +86,7 @@ import {
 } from '../../src/engine/world/where-inside-a-house-somebody-is-standing';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
+import { worldLocationFor } from '../../src/web/entities';
 
 const PRIMER = 'lesser-qi-gathering-manual';
 
@@ -380,6 +381,32 @@ describe('asking whether somebody could be moved does not move them', () => {
         };
     }
 
+    /** Arrange each cold cost measurement beside an unused, actually present person. */
+    async function besideAnotherFace(game: Harness['game'], spokenTo: ReadonlySet<string>): Promise<string | undefined> {
+        for (let wait = 0; wait <= 4; wait++) {
+            const world = (await game.loadWorld())!;
+            const me = game.currentRun().cultivator;
+            const people = new Map(world.npcs.filter(person => person.id !== me.id && person.status === 'alive'
+                && !spokenTo.has(person.name)).map(person => [person.id, person]));
+            for (const place of world.locations.filter(place => place.kind === 'settlement')) {
+                const areas = theAreasOf(world, place);
+                for (const area of areas.areas.filter(area => !area.id.includes('#room#')
+                    && !['forecourt', 'board'].includes(area.for ?? ''))) {
+                    if (![...areas.whereIs].some(([id, at]) => at === area.id && people.has(id))) continue;
+                    game.repos.cultivators.update(me.id, { location: place.name });
+                    game.repos.cultivators.standIn(me.id, area.id);
+                    const face = game.present(game.currentRun().cultivator).find(person => !spokenTo.has(person.name));
+                    if (face) return face.name;
+                }
+            }
+            if (wait === 4) break;
+            const before = game.currentRun().run.elapsedDays;
+            await game.act('I wait for 6 hours');
+            expect(game.currentRun().run.elapsedDays, 'waiting for a public face made no progress').toBeGreaterThan(before);
+        }
+        return undefined;
+    }
+
     /** The question forms, one per intent that presses somebody. */
     const asking = [
         (who: string) => `can I bribe ${who} with 10 spirit stones`,
@@ -474,7 +501,13 @@ describe('asking whether somebody could be moved does not move them', () => {
             && call.action === 'investigate' && call.ok)).toBe(true);
         expect(crossed.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(true);
         expect(crossed.toolCalls.some(call => call.name === 'engine.lesserActionTime')).toBe(false);
-        expect(game.currentRun().cultivator.standingIn).toBe(approach.targetArea);
+        const current = game.currentRun().cultivator;
+        const worldNow = game.atHand!;
+        const placeNow = worldLocationFor(worldNow, current.location)!;
+        const targetNow = theAreasOf(worldNow, placeNow).whereIs.get(approach.id);
+        expect(targetNow, 'the approached person no longer occupies this place').toBeDefined();
+        expect(current.standingIn).toBe(targetNow);
+        expect(game.present(current).some(person => person.id === approach.id)).toBe(true);
         expect(game.state().run.elapsedDays - before).toBeCloseTo(0.25);
     }, 120_000);
 
@@ -526,7 +559,8 @@ describe('asking whether somebody could be moved does not move them', () => {
             ? theAreasOf(worldBeforeIntroduction, placeBeforeIntroduction)
             : undefined;
         const alone = [...(areasBeforeIntroduction?.whereIs ?? new Map<string, string>()).entries()]
-            .find(([, area]) => [...areasBeforeIntroduction!.whereIs.values()]
+            .find(([id, area]) => !game.knowledge.isAwareOf(playerBeforeIntroduction.id, 'cultivator', id)
+                && [...areasBeforeIntroduction!.whereIs.values()]
                 .filter(other => other === area).length === 1);
         expect(alone, 'the pinned crowded place has no one-person actual area').toBeDefined();
         const at = worldBeforeIntroduction!.npcs.findIndex(person => person.id === alone![0]);
@@ -649,7 +683,7 @@ describe('asking whether somebody could be moved does not move them', () => {
      * entirely the wrong reason.
      */
     it('spends on exactly the intents it says press somebody', async () => {
-        const { game, stillHere } = await inTheBusiestSquare('which-ones-cost');
+        const { game } = await inTheBusiestSquare('which-ones-cost');
 
         // The sentence for each intent, built around whoever that intent's turn
         // is actually spoken to. The person is chosen at the moment of speaking
@@ -680,8 +714,10 @@ describe('asking whether somebody could be moved does not move them', () => {
 
         const spokenTo = new Set<string>();
         for (const [intent, form] of forms) {
-            const here = await stillHere();
-            const who = here.find(name => !spokenTo.has(name));
+            // Sparse scenes hold at most three, and routines change while the
+            // earlier attempts spend days. Arrange the next measurement with
+            // another actual face, retaining one world and distinct people.
+            const who = await besideAnotherFace(game, spokenTo);
             expect(who, `nobody is left in the square to put ${intent} to`).toBeDefined();
             spokenTo.add(who!);
 
@@ -894,9 +930,18 @@ describe('asking whether somebody could be moved does not move them', () => {
             seed: 'work-then-go', worldSeed: 'work-then-go-world'
         });
         await game.newRun('Prober');
+        const me = game.currentRun().cultivator;
+        const world = (await game.loadWorld())!;
+        const here = worldLocationFor(world, me.location)!;
+        const road = here.links.filter(link => link.open && !link.requiresKeyId)
+            .map(link => ({ link, place: world.locations.find(place => place.id === link.toLocationId) }))
+            .filter((row): row is typeof row & { place: NonNullable<typeof row.place> } => row.place !== undefined
+                && game.canPointAtLocation(me, row.place))
+            .sort((left, right) => left.link.travelDays - right.link.travelDays)[0];
+        expect(road, 'the pinned opening has no known ordinary road for this sequencing control').toBeDefined();
         const before = game.state().run.elapsedDays;
 
-        const turn = await game.act('I look for work and then go to Cloud Gate');
+        const turn = await game.act(`I look for work and then go to ${road!.place.name}`);
 
         // The board is a read, and the turn says so where it says what it did.
         expect(

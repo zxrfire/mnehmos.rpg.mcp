@@ -93,7 +93,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`ride`](#ride) | `target` `topic` | time | yes | - | - |
 | [`fold`](#fold) | `target` | time | yes | - | - |
 | [`passage`](#passage) | `target` `intent` `topic` | time | yes | - | [5](#passage) |
-| [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [7](#oath) |
+| [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [10](#oath) |
 | [`attack`](#attack) | `target` `terms` `opening` | time | yes | - | - |
 | [`coerce`](#coerce) | `target` `intent` `opening` | time | yes | - | [8](#coerce) |
 | [`insult`](#insult) | `target` | time | yes | - | - |
@@ -251,13 +251,13 @@ Intents: `hire`, `buy`, `board`, `ticket`, `embark`.
 
 ### `oath`
 
-a word given, carried, served out or not kept, and a claim held or given up. A beast cultivation contract uses intent "beast_contract", target the beast, and topic the percentage of qi shared (default "25"). "end_beast_contract" ends that agreement early and opens its broken-oath account. "intent" is "swear", "read", "break", "release" or "serve"; "target" is who it is given to, let off or done for; "topic" is what is being sworn or undertaken, in the player's own words. Breaking one is permanent and opens an account naming them, so never choose it for a question. "serve" is DOING SOMEBODY A SERVICE, which is a rung of the offer ladder and is not a favour. A favour is an account somebody carries; a service is a stretch of days spent on their business, and it is discharged by spending them rather than by being owed. Said once it opens the term, said again to the same person it serves the term out. "I do him a service", "I do a service for her", "I serve out my term" are this. "release" is the OTHER DIRECTION from the rest, and the distinction is whose claim it is. "break" is walking out of a word this cultivator gave and costs them; the forgiving one is letting somebody off a debt, a favour or a grudge that is owed TO them, and it costs them the claim. "I forgive his debt" and "I let her off what she owes" are this; "I break my oath" is not.
+a word given, carried, served out or not kept, and a claim held or given up. "contract_offer" proposes an agreement with a reachable person; "contract_accept" and "contract_decline" answer their outstanding offer. The contract field carries both literal promises, their ending condition and the chosen word, blood, Dao or slave binding. Both people must actually agree; the model cannot declare a promise fulfilled. Accepting a named posted job remains work, rather than a personal oath. A beast cultivation contract uses intent "beast_contract", target the beast, and topic the percentage of qi shared (default "25"). "end_beast_contract" ends that agreement early and opens its broken-oath account. "intent" is "swear", "read", "break", "release" or "serve"; "target" is who it is given to, let off or done for; "topic" is what is being sworn or undertaken, in the player's own words. Breaking one is permanent and opens an account naming them, so never choose it for a question. "serve" is DOING SOMEBODY A SERVICE, which is a rung of the offer ladder and is not a favour. A favour is an account somebody carries; a service is a stretch of days spent on their business, and it is discharged by spending them rather than by being owed. Said once it opens the term, said again to the same person it serves the term out. "I do him a service", "I do a service for her", "I serve out my term" are this. "release" is the OTHER DIRECTION from the rest, and the distinction is whose claim it is. "break" is walking out of a word this cultivator gave and costs them; the forgiving one is letting somebody off a debt, a favour or a grudge that is owed TO them, and it costs them the claim. "I forgive his debt" and "I let her off what she owes" are this; "I break my oath" is not.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'oath'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
 
 Takes `target`, `intent`, `topic`.
 
-Intents: `read`, `swear`, `break`, `release`, `serve`, `beast_contract`, `end_beast_contract`.
+Intents: `break`, `swear`, `read`, `release`, `serve`, `beast_contract`, `end_beast_contract`, `contract_offer`, `contract_accept`, `contract_decline`.
 
 ### `attack`
 

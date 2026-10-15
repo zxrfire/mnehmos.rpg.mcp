@@ -46,6 +46,7 @@ import { parseIntent } from '../../src/web/actions.js';
 import { recordABondBothWays } from '../../src/web/encounters.js';
 import { upsertRelationship } from '../../src/engine/world/npc-state.js';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 const WORLD = 'a-bond-said-down';
 
@@ -81,13 +82,29 @@ describe('the sentences', () => {
 });
 
 /** A player standing with somebody they are bound to, at the end given. */
-async function aBondAtHand(seed: string, end: 'master' | 'disciple') {
+async function aBondAtHand(seed: string, end: 'master' | 'disciple', company = 1) {
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD });
     const { cultivator } = await harness.game.newRun('Walker');
     // A turn first, so the player's own world row is written and somebody is
     // standing where they are.
     await harness.game.act('I look around');
     const world = harness.game.atHand!;
+    if (company > 1) {
+        // Run3's birthplace has only one present person. A two-master scene
+        // needs two real people in one actual area, wherever that area is.
+        const alive = new Set(world.npcs.filter(npc => npc.status === 'alive' && npc.id !== cultivator.id).map(npc => npc.id));
+        let found = false;
+        for (const place of world.locations.filter(place => place.kind === 'settlement')) {
+            const read = theAreasOf(world, place);
+            const area = read.areas.find(area => [...read.whereIs].filter(([id, at]) => alive.has(id) && at === area.id).length >= company);
+            if (!area) continue;
+            harness.repos.cultivators.update(cultivator.id, { location: place.name });
+            harness.repos.cultivators.standIn(cultivator.id, area.id);
+            found = true;
+            break;
+        }
+        expect(found, 'no actual area holds the two-master scene').toBe(true);
+    }
     const other = harness.game.present(harness.repos.cultivators.getById(cultivator.id)!)[0];
     expect(other, 'nobody is standing where the run opened').toBeTruthy();
     const day = Math.floor(world.currentDay) - 40 * 365;
@@ -150,7 +167,7 @@ describe('saying it', () => {
     // be able to say which, and one that does not has to be answered rather
     // than guessed at.
     it('with two masters, naming one ends that bond and leaves the other standing', async () => {
-        const h = await aBondAtHand('bond-said-two-masters', 'disciple');
+        const h = await aBondAtHand('bond-said-two-masters', 'disciple', 2);
         const second = h.game.present(h.repos.cultivators.getById(h.cultivator.id)!)
             .find(row => row.id !== h.other.id);
         expect(second, 'only one person is standing here').toBeTruthy();
@@ -172,7 +189,7 @@ describe('saying it', () => {
     }, 120_000);
 
     it('and with two of them and neither at hand, names them and asks which', async () => {
-        const h = await aBondAtHand('bond-said-which-master', 'disciple');
+        const h = await aBondAtHand('bond-said-which-master', 'disciple', 2);
         const second = h.game.present(h.repos.cultivators.getById(h.cultivator.id)!)
             .find(row => row.id !== h.other.id);
         expect(second, 'only one person is standing here').toBeTruthy();

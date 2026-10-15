@@ -1,5 +1,16 @@
 # Played tests
 
+The direct harness yields to I/O before each new life and action. A real HTTP
+caller already has that boundary; long in-process promise chains otherwise
+starve Vitest's RPC acknowledgements and leave assertions unreported. The
+refusal probe also yields between its independently restored requests. This
+changes no engine clock, result, assertion or timeout.
+
+Witness-account controls use a real reciprocal ally tie to the victim when a
+demand for an account is their precondition. Alignment alone is a weighted
+decision. Belief, contradiction, suspicion and the unchanged deed still use
+the ordinary witness authorities; unrelated witnesses retain their own choice.
+
 `local-news-reaches-a-present-non-participant.test.ts` advances the real clock
 past two scheduled NPC meetings on separate actual grounds. The player's stored
 body receives the local report without attending either meeting; the remote
@@ -97,4 +108,3 @@ repository code (imports alone relocated), then the current native migration,
 world opening and spending authorities. Fresh DDL and repeated file reopening
 distinguish nullable absence from a real exhausted pool. These controls do not
 clear shared caches or author database balances through migration defaults.
-

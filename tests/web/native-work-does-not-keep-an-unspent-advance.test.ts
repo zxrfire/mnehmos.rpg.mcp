@@ -34,6 +34,9 @@ const errorReceipt = z.object({ error: z.string() });
 async function fixture() {
     const h = await makeGameInWorld({ seed: 'native-work-error', worldSeed: 'native-fraction-world', worldEnabled: true });
     await h.game.newRun('Actual refused worker');
+    // Native fractions promote the displayed opening hour before an attempt.
+    // Establish that actual moment before the refusal's no-write measurement.
+    h.game.atHand = await nativeClock.prepareWorldClockForPreciseSpan(h.game.currentRun().run, h.game.currentRun().cultivator);
     const world = await h.game.loadWorld();
     if (!world) throw new Error('Native Work fixture has no actual world.');
     const player = h.game.currentRun().cultivator;

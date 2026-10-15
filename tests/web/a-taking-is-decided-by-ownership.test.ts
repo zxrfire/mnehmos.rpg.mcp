@@ -24,6 +24,8 @@
  * middle one lands in the theft path that already exists rather than in a
  * second one. The played cases pin BOTH seeds: a run seed alone pins a
  * coincidence, because a run is lived inside a world.
+ * Run3 also opens real childhood accounts. Taking a free object must leave
+ * every existing account unchanged; it cannot require an empty past.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -287,9 +289,26 @@ describe('played: yours', () => {
 });
 
 describe('played: nobody\'s', () => {
+    // Run3 found that a conditional still reached taking because it shared
+    // interact with conversation. A missing manual hid the worse consequence:
+    // an actual loose object must stay loose until an attempt is made.
+    it('a conditional about taking leaves an actual reachable object where it is', async () => {
+        const { harness, world, here } = await aRunInThePinnedWorld('asking-about-a-taking');
+        const sword = aSword({ id: 'obj-question-sword', locationId: here });
+        world.objects.push(sword);
+        harness.game.theWorldMoved();
+        const before = structuredClone(sword);
+        const accounts = harness.db.prepare('SELECT * FROM obligations ORDER BY id').all();
+        const turn = await harness.game.act('would anyone stop me if I took the plain iron sword');
+        expect(turn.toolCalls.some(call => call.name === 'narrator.plan' && call.action === 'investigate')).toBe(true);
+        expect(harness.game.atHand!.objects.find(row => row.id === sword.id)).toEqual(before);
+        expect(harness.db.prepare('SELECT * FROM obligations ORDER BY id').all()).toEqual(accounts);
+    });
+
     it('picks up a thing nobody holds and nobody owns, and opens no account', async () => {
         const { harness, cultivator, world, here } = await aRunInThePinnedWorld('taking-free');
         world.objects.push(aSword({ id: 'obj-apple-sword', locationId: here }));
+        const accountsBefore = harness.db.prepare('SELECT * FROM obligations ORDER BY id').all();
 
         await harness.game.act('I pick up the plain iron sword');
 
@@ -305,9 +324,7 @@ describe('played: nobody\'s', () => {
         // other. A claim surfacing later reads where it was picked up.
         expect(after.ownerId).toBeNull();
 
-        const obligations = harness.db
-            .prepare('SELECT COUNT(*) AS n FROM obligations').get() as { n: number };
-        expect(obligations.n).toBe(0);
+        expect(harness.db.prepare('SELECT * FROM obligations ORDER BY id').all()).toEqual(accountsBefore);
     }, 120000);
 });
 

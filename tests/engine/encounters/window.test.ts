@@ -26,6 +26,25 @@ const village: EncounterPlace = { id: 'v', name: 'Burnt Earth', kind: 'settlemen
 const road: EncounterPlace = { id: 'r', name: 'the low road', kind: 'wilds', danger: 0.45, qiDensity: 20 };
 const cave: EncounterPlace = { id: 'c', name: 'a cave above Burnt Earth', kind: 'cave', danger: 0.3, qiDensity: 30 };
 
+// Run3 native foraging was locked on a starting interruption: no body time
+// passed, so the next attempt drew the very same arrival. Actual experience
+// must suppress that arrival, without suppressing one at different ground.
+it('does not deliver an experienced starting interruption as a fresh visit', () => {
+    const input: EncounterRollInput = { seed: 'occasion-receipt', startDay: 0, days: 1,
+        activity: 'gathering', cultivator: who(45), place: village };
+    const found = Array.from({ length: 100 }, (_, startDay) => ({ ...input, startDay }))
+        .map(input => ({ input, first: rollEncounters(input).occurrences.find(row => row.dayOffset === 0 && row.interrupts) }))
+        .find(row => row.first?.occasionKey);
+    expect(found, 'the actual catalog supplied no starting interruption').toBeDefined();
+    const first = found!.first!;
+    const knownOccasions = new Set([first.occasionKey!]);
+    const repeated = rollEncounters({ ...found!.input, knownOccasions });
+    expect(repeated.occurrences.some(row => row.occasionKey === first.occasionKey)).toBe(false);
+    const elsewhere = rollEncounters({ ...found!.input, knownOccasions,
+        place: { ...village, id: 'another-village' } });
+    expect(elsewhere.occurrences.some(row => row.dayOffset === 0 && row.interrupts)).toBe(true);
+});
+
 function who(ordinal: number, fortune = 1) {
     return { id: 'c1', realmOrdinal: ordinal, fortune, maxHp: 60, hp: 60, spiritStones: 40 };
 }

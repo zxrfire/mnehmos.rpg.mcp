@@ -157,10 +157,14 @@ export function reactToWhatHappenedHere(game: GameService, me: Cultivator, done:
         const added = reactToWitnessedFact(world, fact, { actorId, victimId,
             witnesses: [{ id: me.id, seen: observationOf(fact) }] });
         if (added.length === 0) return;
-        game.knowledge.learn({ holderId: me.id, kind: 'event', id: fact.id, name: fact.summary,
-            factId: fact.id, onDay: Math.floor(world.currentDay), sourceKind: 'witnessed',
-            sourceNote: 'Seen here.', statement: fact.summary, stage: 'known' });
-        game.theWorldMoved();
+        // The observed fact and the player's knowledge of it are one durable
+        // transition. A separate world commit could leave either half behind.
+        game.db.transaction(() => {
+            game.knowledge.learn({ holderId: me.id, kind: 'event', id: fact.id, name: fact.summary,
+                factId: fact.id, onDay: Math.floor(world.currentDay), sourceKind: 'witnessed',
+                sourceNote: 'Seen here.', statement: fact.summary, stage: 'known' });
+            game.theWorldMoved();
+        })();
     };
     for (const person of game.present(me)) {
         for (const body of world.npcs.filter(n => n.status === 'physically_dead'

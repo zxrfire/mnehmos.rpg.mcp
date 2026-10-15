@@ -13,6 +13,9 @@
  * metadata must stay out of that channel while the lot and entry remain told.
  * Ordinary finished gear uses its real world-object inventory. Buying it must
  * not create an herb stack; looking and selling read that same physical row.
+ * Run3 ordinary resale can choose any present willing buyer. The sell-back
+ * controls name their intended counterparty and assert real purse conservation,
+ * rather than requiring the retired exchange-only sale implementation.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
@@ -31,6 +34,7 @@ import { markDead, setRealm } from '../../src/engine/world/npc-state.js';
 import { vacanciesOnTheRolls } from '../../src/engine/world/a-house-takes-in-one-of-its-own.js';
 import { mintAMadeThing } from '../../src/engine/social-leverage/whether-the-work-holds.js';
 import { transferPossession } from '../../src/engine/world/possessions.js';
+import { actualSpiritStones } from '../../src/web/transferring-actual-spirit-stones.js';
 
 async function opened(seed: string, provider?: ScriptedProvider) {
     const h = await makeGameInWorld({ seed, worldSeed: 'capital-play', provider });
@@ -146,8 +150,12 @@ describe('capital events in player turns', () => {
         expect(listPouch(h.repos.db, h.cultivator.id).length).toBeGreaterThan(0);
         // Buying the last lot can move a seller from the exchange into the street.
         h.repos.cultivators.standIn(h.cultivator.id, theAreasOf(h.world, city).whereIs.get(seller.id)!);
-        const sold = await h.game.act(`I sell ${offered.name}`);
-        expect(sold.toolCalls.some(c => c.name === 'world.tradeExchangeObject' && c.ok), said(sold)).toBe(true);
+        const purseBefore = h.game.currentRun().cultivator.spiritStones;
+        const buyerBefore = actualSpiritStones(h.game, seller.id)!;
+        const sold = await h.game.act(`I sell ${offered.name} to ${seller.name}`);
+        const paid = h.game.currentRun().cultivator.spiritStones - purseBefore;
+        expect(paid, said(sold)).toBeGreaterThan(0);
+        expect(actualSpiritStones(h.game, seller.id)).toBe(buyerBefore - paid);
         expect(h.world.objects.find(o => o.id === offered.objectId)!.ownerId).toBe(seller.id);
     }, 120_000);
 
@@ -173,8 +181,12 @@ describe('capital events in player turns', () => {
         expect(listPouch(h.repos.db, h.cultivator.id).some(entry => entry.itemId.startsWith('made:'))).toBe(false);
         expect(said(await h.game.act('inventory'))).toContain(object.name);
         h.repos.cultivators.standIn(h.cultivator.id, theAreasOf(h.world, city).whereIs.get(seller.id)!);
-        const sold = await h.game.act(`I sell ${object.name}`);
-        expect(sold.toolCalls.some(c => c.name === 'world.tradeExchangeObject' && c.ok), said(sold)).toBe(true);
+        const purseBefore = h.game.currentRun().cultivator.spiritStones;
+        const buyerBefore = actualSpiritStones(h.game, seller.id)!;
+        const sold = await h.game.act(`I sell ${object.name} to ${seller.name}`);
+        const paid = h.game.currentRun().cultivator.spiritStones - purseBefore;
+        expect(paid, said(sold)).toBeGreaterThan(0);
+        expect(actualSpiritStones(h.game, seller.id)).toBe(buyerBefore - paid);
         expect(h.world.objects.find(o => o.id === object.id)!.ownerId).toBe(seller.id);
         expect(h.world.objects.find(o => o.id === object.id)!.possessorId).toBe(seller.id);
         expect(h.world.objects.filter(o => o.id === object.id)).toHaveLength(1);

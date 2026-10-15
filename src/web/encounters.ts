@@ -215,6 +215,8 @@ export function encounterInputFor(deps: EncounterDeps, request: EncounterRequest
     const standing = theHouseAsItStands(deps, cultivator, membership);
     return {
         seed: request.seed,
+        knownOccasions: new Set(deps.knowledge.awareness(cultivator.id, 'event')
+            .filter(event => event.id.startsWith('occasion:')).map(event => event.id)),
         startDay: request.startDay,
         days: request.days,
         activity: request.activity,
@@ -736,6 +738,13 @@ export function recordEncounters(
     const bodilyLines: string[] = [];
 
     for (const occurrence of roll.occurrences) {
+        if (occurrence.occasionKey) knowledge.learnIfNew({
+            holderId: cultivator.id, kind: 'event', id: occurrence.occasionKey,
+            name: occurrence.event.summary,
+            onDay: actualOccurrenceOnDay ?? onDay + occurrence.dayOffset,
+            sourceKind: 'witnessed', sourceNote: 'Experienced at the start of the action.',
+            statement: occurrence.event.summary, stage: 'known'
+        });
         if (occurrence.entryId && getEncounter(occurrence.entryId)?.tags.includes('plague')) {
             bodilyLines.push(...(plagueContact?.() ?? []));
         }

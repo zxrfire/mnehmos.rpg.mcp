@@ -8,6 +8,7 @@ import { npcCombatArts, writeTheNpcArtsActuallyUsed } from '../engine/world/the-
 import { routineTime } from '../engine/world/npc-routines.js';
 import { marriageAfterSubmission } from './a-marriage-after-submission.js';
 import { passHours } from './routine-invitations.js';
+import { holdTheBodyInThisDuel, releaseTheBodyInThisDuel } from './the-body-engaged-in-a-played-duel.js';
 import { LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 /**
  * Hitting somebody, and everything the world does about it afterwards.
@@ -1126,8 +1127,16 @@ export const combatVerbs = {
         held: StandingFight,
         answer: FightAnswer
     ): Promise<Execution> {
-        const advanced = await passHours(this, run, cultivator, LESSER_ACTION_DAYS.attack * 24);
-        if (!advanced.finished && advanced.spent) return advanced.spent;
+        holdTheBodyInThisDuel(this, cultivator, held);
+        const advanced = await passHours(this, run, cultivator, LESSER_ACTION_DAYS.attack * 24,
+            run.turn + 1, false);
+        if (!advanced.finished && advanced.spent) {
+            if (!this.currentRun().cultivator.alive) {
+                releaseTheBodyInThisDuel(this, held);
+                this.fight = null;
+            }
+            return advanced.spent;
+        }
         run = this.repos.runs.getById(run.id) ?? run;
         cultivator = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
         if (this.atHand) {
@@ -1581,6 +1590,9 @@ export const combatVerbs = {
             && result.winnerId !== held.opponent.id) {
             marriageAfterSubmission(this, run, cultivator, held.party.id, done);
         }
+        // Apply the actual outcome before releasing the body. A dead person's
+        // contact area must remain where they fell, not resume an old routine.
+        releaseTheBodyInThisDuel(this, held);
         return done;
     },
 
@@ -2824,7 +2836,11 @@ export const combatVerbs = {
 
         if (opens.length > 0) {
             for (const row of opens) {
-                writeOneObligation(this.db as unknown as DatabaseHandle, createObligation(row));
+                // Native resolution can price these accounts before the played
+                // deed exists. The persisted account names that same actual deed.
+                writeOneObligation(this.db as unknown as DatabaseHandle, createObligation({
+                    ...row, triggeringEventId: deed?.fact.id ?? row.triggeringEventId
+                }));
                 calls.push({
                     name: row.kind === 'blood_feud'
                         ? 'social.createBloodFeud' : 'social.createGrudge',

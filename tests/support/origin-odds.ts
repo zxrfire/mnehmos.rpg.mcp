@@ -1,5 +1,8 @@
 /**
  * What being born somewhere is actually worth, measured.
+ * This independent projection retains its explicit historical economic
+ * assumptions. Its ordinal treatment curve never priced an actual physician;
+ * those services read the current catalog, locality and ground in play.
  */
 
 import { forStream, type CultivationRNG } from '../../src/engine/cultivation/rng.js';
@@ -30,7 +33,6 @@ import {
     PRICE_GROWTH_PER_ORDINAL,
     STONES_PER_YEAR_OF_SECLUSION,
     affordablePillPotency,
-    injuryTreatmentPrice,
     getOrigin,
     originProbability,
     withOriginAccess,
@@ -44,6 +46,11 @@ import {
 
 /** Stones for a foundation-grade pill at full potency. A different market. */
 export const FOUNDATION_PILL_STONES = 1_200;
+
+/** Historical treatment-price assumption of this projection, not a played quote. */
+export function sweepInjuryTreatmentPrice(ordinal: number): number {
+    return 120 * Math.pow(PRICE_GROWTH_PER_ORDINAL, Math.max(0, ordinal));
+}
 
 /** What a breakthrough pill for this rank costs, in this sweep. */
 export function breakthroughPillPrice(ordinal: number): number {
@@ -609,7 +616,7 @@ export function simulateLife(
         // Torn meridians are the ratchet, and a healer costs stones. This is
         // the single largest thing a holding buys, and it is why a poor run
         // stalls in the low thirties on damage rather than on the clock.
-        const treatmentPrice = injuryTreatmentPrice(ordinal);
+        const treatmentPrice = sweepInjuryTreatmentPrice(ordinal);
         const affordable = Math.floor(stones / treatmentPrice);
         if (affordable > 0 && injuries.some(i => !i.treated)) {
             const healed = treatWorstInjuries(injuries, affordable);

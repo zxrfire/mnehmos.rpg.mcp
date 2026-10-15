@@ -555,9 +555,6 @@ export const STONES_PER_YEAR_OF_SECLUSION = 60;
 /** Stones for a breakthrough pill at full potency, at ordinal zero. */
 export const BREAKTHROUGH_PILL_STONES = 500;
 
-/** Stones a healer wants for one torn meridian, at ordinal zero. */
-export const TREATMENT_STONES = 120;
-
 // WHAT A YEAR OF WORK PAYS
 //
 // The other half of every price on this page, and it lived in
@@ -614,11 +611,6 @@ export function netEarningsPerYear(
  * How steeply the price of everything climbs with the rank it is for.
  */
 export const PRICE_GROWTH_PER_ORDINAL = 1.35;
-
-/** What clearing one torn meridian at this rank actually costs. */
-export function injuryTreatmentPrice(ordinal: number): number {
-    return TREATMENT_STONES * Math.pow(PRICE_GROWTH_PER_ORDINAL, Math.max(0, ordinal));
-}
 
 /**
  * Years of uninterrupted seclusion a holding funds.

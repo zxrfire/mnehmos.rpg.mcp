@@ -1,6 +1,10 @@
 /**
  * A one-stone shortfall uses the singular unit; the amount, not its pluralisation,
  * is what the refusal must carry.
+ * The landing census also exposed a printed meal name containing a comma:
+ * its price question became a price read plus an unasked meal, then the bare
+ * counteroffer lost its subject. Actual offer names protect their own separators
+ * and a present seller's quote precedes the generic board rate.
  * Haggling is a moment, and it had no resolver at all.
  *
  * ═══════════════════════════════════════════════════════════════════════════
@@ -53,6 +57,8 @@ import { resetCultivationWorlds } from '../../src/server/state/cultivation-world
 import { manualsAStallCarries } from '../../src/engine/world/what-a-copy-of-a-manual-costs-at-a-stall';
 import { readWhatIsOnOfferHere } from '../../src/web/who-here-is-offering-something';
 import type { AnOfferStandingHere } from '../../src/engine/world/what-somebody-standing-here-would-part-with';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import { worldLocationFor } from '../../src/web/entities';
 
 /**
  * A square with people in it, and a purse that cannot be the reason anything
@@ -195,13 +201,32 @@ describe('a haggle is not a day', () => {
      */
     it('tells a short offer what would close it', async () => {
         const { game, onOffer } = await inASquareWithAStall('haggle-says-what-closes-it');
-        const [standing] = onOffer;
+        let standing = onOffer.find(offer => offer.askStones > 1);
+        if (!standing) {
+            const world = game.atHand!;
+            const body = game.currentRun().cultivator;
+            const place = worldLocationFor(world, body.location)!;
+            // The first offered jar now costs one stone. A one-stone short
+            // counteroffer needs a genuinely dearer offer in an actual area.
+            for (const area of theAreasOf(world, place).areas) {
+                const at = { ...body, standingIn: area.id };
+                const offer = readWhatIsOnOfferHere(at, world).offers.find(offer => offer.askStones > 1);
+                if (!offer) continue;
+                game.repos.cultivators.standIn(body.id, area.id);
+                standing = offer;
+                break;
+            }
+        }
         expect(standing, 'nobody in the pinned square is offering anything at all')
             .toBeDefined();
+        if (!standing) throw new Error('The actual scene has no offer above one stone.');
         expect(standing.askStones, 'the thing on offer is free, so nothing can be short of it')
             .toBeGreaterThan(1);
 
-        await game.act(`how much for the ${standing.name}`);
+        const quoted = await game.act(`how much for the ${standing.name}`);
+        expect(quoted.toolCalls.filter(call => call.action === 'eat'),
+            'punctuation inside the printed item name ordered an unasked meal').toEqual([]);
+        expect(read(quoted)).toContain(standing.sellerName);
         const offered = await game.act('I offer one stone');
 
         expect(read(offered), 'a short offer was not told what would close it')

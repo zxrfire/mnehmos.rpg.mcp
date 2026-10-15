@@ -15,6 +15,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import ts from 'typescript';
 import { SECTS } from '../../src/data/cultivation/index';
 import {
     COMMON_CURRENCY_ORDINAL,
@@ -360,6 +361,34 @@ describe('the prompt states the loosened rule', () => {
  * no machinery grew underneath either.
  */
 describe('asking', () => {
+    // The contracts prompt correctly says compulsion is not persuasion. The
+    // former whole-source regex mistook that prose for an engine statistic.
+    const forbiddenSymbols = (source: string): string[] => {
+        const tree = ts.createSourceFile('asking-surface.ts', source, ts.ScriptTarget.Latest, true);
+        const found = new Set<string>();
+        const forbidden = /KEY_PHRASES|detectKeys|assessAsking|persuasion/i;
+        const visit = (node: ts.Node): void => {
+            if (ts.isIdentifier(node) && forbidden.test(node.text)) found.add(node.text);
+            if (ts.isStringLiteralLike(node) && forbidden.test(node.text)) {
+                const parent = node.parent;
+                if ('name' in parent && parent.name === node
+                    || ts.isElementAccessExpression(parent) && parent.argumentExpression === node)
+                    found.add(node.text);
+            }
+            ts.forEachChild(node, visit);
+        };
+        visit(tree);
+        return [...found].sort();
+    };
+
+    it('distinguishes forbidden machinery from prompt prose and comments', () => {
+        expect(forbiddenSymbols('const prompt = "compulsion, not persuasion"; // KEY_PHRASES'))
+            .toEqual([]);
+        expect(forbiddenSymbols('const KEY_PHRASES = []; function detectKeys() {} function assessAsking() {} person["persuasion"];'))
+            .toEqual(['KEY_PHRASES', 'assessAsking', 'detectKeys', 'persuasion']);
+        expect(forbiddenSymbols('const person = { "persuasion": 1 };')).toEqual(['persuasion']);
+    });
+
     it('adds no engine surface: there is no phrase registry to check against', async () => {
         const web = await import('node:fs');
         expect(web.existsSync('src/web/asking.ts')).toBe(false);
@@ -367,10 +396,9 @@ describe('asking', () => {
         // And nothing anywhere in the layer matches the player's text against a
         // table of magic words. The barrier is knowing what to say, which is
         // real without being enforced.
-        const sources = ['game', 'prompt', 'entities', 'hearsay', 'lore', 'knowledge', 'facts']
-            .map(name => web.readFileSync(`src/web/${name}.ts`, 'utf-8'))
-            .join('\n');
-        expect(sources).not.toMatch(/KEY_PHRASES|detectKeys|assessAsking|persuasion/i);
+        for (const name of ['game', 'prompt', 'entities', 'hearsay', 'lore', 'knowledge', 'facts']) {
+            expect(forbiddenSymbols(web.readFileSync(`src/web/${name}.ts`, 'utf-8')), name).toEqual([]);
+        }
     });
 
     it('sends the player exact words to the narrator', async () => {

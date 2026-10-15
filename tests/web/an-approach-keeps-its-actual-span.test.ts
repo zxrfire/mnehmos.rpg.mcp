@@ -5,7 +5,7 @@
  * valid reply with a later interrupted span. These controls use game.act and
  * native shortSkip/world/apply paths. The listener's actual existing public
  * area is held by an ordinary dated redirect, not by a parallel scene store.
- * An ordinary dated work deadline splits the quarter-day at .125; selected
+ * An actual scheduled world appointment splits the quarter-day at .125; selected
  * world consequences run after that real advance, never instead of it. The
  * later eighth-day must not commit after actual relocation or native death.
  * Red controls remove only deferred area commit / ordered receipt composition /
@@ -16,6 +16,7 @@ import { expect, it, vi } from 'vitest';
 import { makeGameInWorld } from './harness.js';
 import { makeLocation } from '../../src/engine/world/locations.js';
 import { createNpc } from '../../src/engine/world/npc-state.js';
+import { makeScheduledEffect } from '../../src/engine/world/world-state.js';
 import { routineTime } from '../../src/engine/world/npc-routines.js';
 import { journeyTimeHasReached } from '../../src/engine/world/places-on-the-way.js';
 import { prepareWorldClockForPreciseSpan } from '../../src/server/state/cultivation-world.js';
@@ -66,10 +67,11 @@ async function arranged() {
 
 for (const consequence of ['death', 'relocation'] as const) it('does not commit the listener area or handler after actual ' + consequence, async () => {
     const { game, db, narrator, world, now, target, fromArea, targetArea, elsewhere, receipts } = await arranged();
-    const boundary = createNpc(world.seed, { id: 'approach-boundary-body', name: 'Dated market hand',
-        onDay: now, bornOnDay: now - 20 * 365, locationId: elsewhere.id });
-    boundary.activity = { kind: 'trade', withIds: [], sinceDay: now, untilDay: now + .125, note: 'Ending actual work.' };
-    world.npcs.push(boundary); game.theWorldMoved();
+    // Distant, uninvolved work no longer splits the player's clock. Use the actual
+    // scheduled boundary whose interruption ordering this control is about.
+    world.schedule.push(makeScheduledEffect({ id: 'approach-boundary', kind: 'custom',
+        dueOnDay: now + .125, summary: 'An arranged world appointment.', interrupts: false }));
+    game.theWorldMoved();
     try {
         vi.spyOn(narrator, 'plan').mockResolvedValue({ action: { action: 'interact', target: target.name, intent: 'talk' }, source: 'fallback' });
         const handler = vi.spyOn(game, 'interact');

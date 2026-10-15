@@ -54,6 +54,9 @@
  * nobody added here is a mechanic this does not protect.
  */
 
+// Run3 on 27511c66 also found occupancy research percentages, flight ordinal
+// arithmetic, and HP labels from outdoor nights and minor disturbances in the
+// actual play log. The same unchanged channel guard covers those producers.
 // A post-fight care line and the death projection also exposed a raw rate
 // percentage and an estate taker's database id; their actual data must remain.
 import { describe, it, expect } from 'vitest';

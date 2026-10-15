@@ -17,6 +17,8 @@
  * regex: for every action, three or four of the ways a player would most
  * naturally ask for it, each asserted to route there. Adding a member to
  * ACTION_NAMES without adding phrasings here fails the last test in the file.
+ * The landing census also found held-ticket purchase and embarkation absent
+ * from both intent walks. Their phrasings now have one shared source here.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -37,6 +39,20 @@ const BEAST_OATH_PHRASINGS = {
     beast_contract: ['I make a beast cultivation contract with the fox'],
     end_beast_contract: ['I end my beast cultivation contract with the fox']
 } as const;
+
+const OPEN_CONTRACT_PHRASINGS = {
+    contract_offer: ['I offer a contract to Elder Fang: I owe a song; they owe a name; ends when both promises are kept; binding word'],
+    contract_accept: ['I accept the contract', 'I agree to the contract'],
+    contract_decline: ['I refuse the contract', 'I decline the contract']
+} as const;
+
+const PASSAGE_PHRASINGS: Record<string, readonly string[]> = {
+    board: ['what does the Span board say', 'what would a ticket to Iron Crest cost'],
+    buy: ['I buy passage to Iron Crest', 'I book a place on the next span'],
+    ticket: ['I buy a ticket to Iron Crest', 'I buy a passage tally to Iron Crest'],
+    embark: ['I board the public ship', 'I board the carriage', 'I hand in my ticket'],
+    hire: ['I hire a carriage to Iron Crest', 'I charter a whole carriage to Iron Crest', 'I hire an iron-rimmed carriage to Iron Crest']
+};
 
 /**
  * How a player asks for each action, in their own words.
@@ -785,13 +801,6 @@ describe('every intent behind a door is reachable from plain English too', () =>
      * something and the other is a read, so a step nobody can reach is either a
      * feature nobody has or a price nobody can avoid.
      */
-    const PASSAGE_PHRASINGS: Record<string, readonly string[]> = {
-        board: ['what does the Span board say', 'what would a ticket to Iron Crest cost'],
-        buy: ['I buy passage to Iron Crest', 'I book a place on the next span'],
-        // A whole carriage at a station. See `a-seat-on-a-ship-or-a-carriage.ts`.
-        hire: ['I hire a carriage to Iron Crest', 'I charter a whole carriage to Iron Crest']
-    };
-
     for (const [intent, phrasings] of Object.entries(PASSAGE_PHRASINGS)) {
         it(`passage/${intent}: ${phrasings.length} phrasings all route there`, () => {
             const misses = phrasings
@@ -821,7 +830,8 @@ describe('every intent behind a door is reachable from plain English too', () =>
         // the verb through its own branch above the gate rather than through
         // `AN_OATH`.
         serve: ['I do him a service', 'I do a service for the old man', 'I serve out my term'],
-        ...BEAST_OATH_PHRASINGS
+        ...BEAST_OATH_PHRASINGS,
+        ...OPEN_CONTRACT_PHRASINGS
     };
 
     for (const [intent, phrasings] of Object.entries(OATH_PHRASINGS)) {
@@ -888,6 +898,8 @@ describe('every intent DECLARED is a door somebody can find', () => {
      * a second place for them to drift.
      */
     const INTENT_PHRASINGS: Record<string, readonly string[]> = {
+        ...Object.fromEntries(Object.entries(PASSAGE_PHRASINGS).map(([intent, phrases]) => [`passage/${intent}`, phrases])),
+        ...Object.fromEntries(Object.entries(OPEN_CONTRACT_PHRASINGS).map(([intent, phrases]) => [`oath/${intent}`, phrases])),
         'oath/beast_contract': BEAST_OATH_PHRASINGS.beast_contract,
         'oath/end_beast_contract': BEAST_OATH_PHRASINGS.end_beast_contract,
         'cultivate/offered_self': ['I offer myself as a cultivation furnace to Qiu Fen'],
@@ -901,7 +913,6 @@ describe('every intent DECLARED is a door somebody can find', () => {
         'site/survey': ['I survey the ruin chambers'],
         'site/wear': ['I wear the old identity'],
         'site/leave': ['I leave the ruin'],
-        'passage/hire': ['I hire a carriage to Iron Crest', 'I hire an iron-rimmed carriage to Iron Crest'],
         // WHO HERE CARRIES SOMETHING ABOUT ME. Lands with a phrasing rather
         // than as a recorded gap, which is the only legal direction for that
         // list. The engine computed this every turn for the scene channel and
@@ -1358,7 +1369,6 @@ describe('every intent DECLARED is a door somebody can find', () => {
      * ONLY SHRINK IT.
      */
     const UNTESTED_DOORS: readonly string[] = [
-        'passage/board', 'passage/buy',
         'oath/read', 'oath/swear', 'oath/break',
         'sect/leave', 'sect/promote', 'sect/stipend', 'sect/standing', 'sect/join',
         'sect/siphon', 'sect/recruit', 'sect/admission', 'sect/curriculum',

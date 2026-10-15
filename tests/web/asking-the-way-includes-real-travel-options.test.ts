@@ -80,6 +80,13 @@ export async function aNativeDirectionsScene(mode: 'carriage' | 'fold' | 'name-o
             for (const destination of world.locations.filter(row => (mode === 'fold' || row.kind === 'settlement') && row.id !== venue.id)) {
                 if ((mode !== 'fold' && !land.places.some(row => row.name === destination.name && row.stage === (mode === 'name-only' ? 'named' : 'placed')))
                     || h.game.canPointAtLocation(body, destination)) continue;
+                if (mode === 'name-only') {
+                    // A public hub posted here already supplies an ordinary
+                    // route. The name-only negative needs an actual route
+                    // refusal, not merely an absent private knowledge row.
+                    const journey = h.game.whereThisJourneyGoes(body, destination.name, 'move');
+                    if (!('calls' in journey) || !journey.calls.some(call => call.name === 'knowledge.canPointAt' && !call.ok)) continue;
+                }
                 const walked = h.game.daysOnTheRoadTo(body, destination.name);
                 if (walked === null || walked <= 0) continue;
                 selection.walking++;
@@ -162,11 +169,12 @@ for (const mode of ['name-only', 'unoffered'] as const) {
     it('directions preserve an actual ' + mode + ' boundary without inventing service or route knowledge', async () => {
         const h = await aNativeDirectionsScene(mode);
         try {
+            h.game.theyGaveTheirName(h.game.currentRun().cultivator, h.game.currentRun().run, h.speaker);
             const before = h.game.currentRun();
             const prior = h.game.knowledge.provenanceOf(before.cultivator.id, 'place', h.destination.id);
-            h.plans.push(JSON.stringify({ action: 'interact', target: 'somebody', intent: 'ask',
+            h.plans.push(JSON.stringify({ action: 'interact', target: h.speaker.name, intent: 'ask',
                 topic: 'the way to ' + h.destination.name }));
-            const answered = await h.game.act('I ask somebody how do I get to ' + h.destination.name + '.');
+            const answered = await h.game.act('I ask ' + h.speaker.name + ' how do I get to ' + h.destination.name + '.');
             expect(refusedCall(answered)).toBeNull();
             expect(answered.toolCalls.some(row => row.name === 'engine.theWayTo' && row.ok)).toBe(true);
             const call = [...h.provider.calls].reverse().find(row =>

@@ -336,7 +336,7 @@ function attempt(
         spoken: outcome === 'landed'
     });
 
-    return resolveOccurrence({
+    const occurrence = resolveOccurrence({
         entry,
         activity: input.activity,
         ordinal: input.cultivator.realmOrdinal,
@@ -351,6 +351,17 @@ function attempt(
         cast: input.cast ?? [],
         outcome
     });
+    if (stage === 'occasion' && occurrence.interrupts) {
+        // A zero-time interruption can leave the next attempt on this same
+        // day. It is still the same concrete arrival, not a fresh visit.
+        // Draws above remain unconditional; a held experience suppresses only
+        // this occurrence and never rerolls a replacement.
+        const key = 'occasion:' + JSON.stringify([absoluteDay, input.place.id,
+            occurrence.entryId, occurrence.castIds, occurrence.event.summary]);
+        if (input.knownOccasions?.has(key)) return null;
+        occurrence.occasionKey = key;
+    }
+    return occurrence;
 }
 
 // BEING SENT FOR

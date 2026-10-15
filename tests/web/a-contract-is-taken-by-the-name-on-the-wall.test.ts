@@ -12,6 +12,8 @@
  * people say, which its title contains; the handle is what is matched.
  * The tribute task used to omit its "tribute carriage" handle, which also
  * parsed as taking a physical carriage. It now names the actual tribute delivery.
+ * The open-contract reader later intercepted "I accept the quay watch contract"
+ * as acceptance of personal terms. A posted job's existing handle still names work.
  */
 
 import { describe, expect, it } from 'vitest';

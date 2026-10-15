@@ -34,6 +34,7 @@ import { describe, it, expect } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { standWhereThePeopleAre } from './standing-where-the-people-are';
 import { npcsInFaction } from '../../src/engine/world/world-state';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { whoTheyCarryFor } from '../../src/web/what-a-telling-lands-on';
 import { existenceClaimKey } from '../../src/web/knowledge';
 import {
@@ -259,20 +260,29 @@ describe('an act aimed at a set, played', () => {
                 }
                 const square = [...byPlace.entries()]
                     .filter(([, n]) => members.length - n > 4)
-                    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0];
-                return square ? { house: row, locationId: square[0] } : null;
+                    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+                    .flatMap(([id]) => {
+                        const place = world!.locations.find(place => place.id === id)!;
+                        const memberIds = new Set(members.map(member => member.id));
+                        // A coarse house seat can contain only private quarters.
+                        // Select an actual area where this outsider can see a member.
+                        return theAreasOf(world!, place).areas.filter(area =>
+                            game.present({ ...game.currentRun().cultivator,
+                                location: place.name, standingIn: area.id })
+                                .some(person => memberIds.has(person.id)))
+                            .map(area => ({ locationId: id, areaId: area.id }));
+                    })[0];
+                return square ? { house: row, ...square } : null;
             })
             .filter((row: unknown) => row !== null)
             .sort((a: any, b: any) => a.house.id < b.house.id ? -1 : 1)[0] as
-            { house: any; locationId: string } | undefined;
+            { house: any; locationId: string; areaId: string } | undefined;
         expect(split, 'no house in this world is split across a square boundary')
             .toBeDefined();
         const house = split!.house;
         const square = world!.locations.find((row: any) => row.id === split!.locationId)!;
         game.repos.cultivators.update(cultivator.id, { location: square.name });
-        // A town is read into parts: stand where most of the house is.
-        await standWhereThePeopleAre({ game, repos: game.repos }, cultivator.id,
-            new Set(npcsInFaction(world!, house.id).map(one => one.id)));
+        game.repos.cultivators.standIn(cultivator.id, split!.areaId);
 
         const members = npcsInFaction(world!, house.id);
         const here = new Set(service.present(service.currentRun().cultivator)

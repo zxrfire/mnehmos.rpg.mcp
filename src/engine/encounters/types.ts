@@ -305,6 +305,8 @@ export interface Scene {
 
 /** One thing that happened, fully resolved except for anything a player decides. */
 export interface EncounterOccurrence {
+    /** An experienced starting interruption, held on the existing knowledge ledger. */
+    occasionKey?: string;
     /** Catalog row id, or `digest:<factId>` for an arrival. */
     id: string;
     entryId: string | null;
@@ -413,6 +415,8 @@ export interface EncounterRoll {
 /** The whole input to a roll. Pure data; nothing here is read from a database. */
 export interface EncounterRollInput {
     seed: string;
+    /** Actual starting interruptions this person has already experienced. */
+    knownOccasions?: ReadonlySet<string>;
     /** Absolute day the window opens. */
     startDay: number;
     /** Length of the window. One day is legal and is the ordinary turn. */

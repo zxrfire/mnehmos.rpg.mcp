@@ -1,5 +1,16 @@
 <!-- tier: 3 -->
 
+The person currently heading a lower cloister knows their own post. That
+derived responsibility reaches what they can be heard on, rather than a
+stranger's visual observations. It follows the actual people on post and is
+never copied onto the branch or person as a stored head flag.
+
+A person engaged in the stored played duel holds their actual contact area
+while its rounds spend body time. The engagement interrupts their ordinary
+activity; it supplies neither a new position nor a combat result. When the
+duel ends, that activity resumes after its actual delay. Group and carrier
+courses retain their existing authorities.
+
 Private requests accept a ledger read/write seam for externally owned people.
 The native default remains world-owned. Played requests derive SQL favour
 leverage through that seam, and private-work favour wages return to its owner
@@ -7,6 +18,9 @@ without installing a second copy on the world.
 
 
 # The World Layer
+
+War reports retain both the actual casualties and the people who withdrew.
+Neither result list suppresses the other when both occur in one battle.
 
 Public ships use finite bought-run appointments on the same actual master and
 hull. Each load and necessary empty return keeps its route, capacity, weather
@@ -4028,6 +4042,10 @@ decision.
 craft, and no verb was written for it here.
 
 ### Competition calendars and entries
+
+A retained competition entry keeps its board's actual result through the
+ordinary business sweep. Losing only that result would reopen a completed
+board and move entrants to an old event date. Unheld paperwork can still age out.
 
 `competition-calendars.ts` states each city's three-year open board, each house's
 seven-year internal board, and its fixed conclave cadence. A seeded phase and date

@@ -31,6 +31,7 @@ async function fixture(mode: 'placed' | 'named') {
     const opened = h.game.currentRun().cultivator;
     const world = await h.game.loadWorld();
     if (!world) throw new Error('The actual directions scene has no world.');
+    const observed = new Set<string>();
     // Explicit scene arrangement: move only the operator player to the actual
     // public area of an existing person. No NPC, occupation, knowledge or clock
     // is invented. Each test needs only its own speaker-knowledge mode.
@@ -39,23 +40,35 @@ async function fixture(mode: 'placed' | 'named') {
         for (const area of reading.areas.filter(row => row.for !== 'room')) {
             if (![...reading.whereIs.values()].includes(area.id)) continue;
             h.repos.cultivators.update(opened.id, { location: venue.name, standingIn: area.id });
+            if (!observed.has(venue.id)) {
+                await h.game.act('I look around');
+                observed.add(venue.id);
+            }
             const visitor = h.game.currentRun().cultivator;
-            const speaker = h.game.somebodyAtHand('somebody', visitor);
+          for (const speaker of h.game.present(visitor)) {
             if (!speaker || !world.npcs.some(person => person.id === speaker.id && person.status === 'alive')) continue;
             const land = whatThisPersonKnowsOfTheLand(h.game, visitor.id, world, speaker);
-            // Whoever "somebody" turns out to be, everybody standing here knows it the same way.
-            const lands = h.game.present(visitor).map(row => whatThisPersonKnowsOfTheLand(h.game, visitor.id, world, row));
             const place = world.locations.find(row => row.kind === 'settlement' && row.id !== venue.id
                 && land.places.some(known => known.name === row.name && known.stage === mode)
-                && lands.every(each => each.places.some(known => known.name === row.name && known.stage === mode))
                 && !h.game.knowledge.isAwareOf(visitor.id, 'place', row.id)
-                && !h.game.knowledge.isAwareOf(visitor.id, 'place', row.name));
+                && !h.game.knowledge.isAwareOf(visitor.id, 'place', row.name)
+                // A locally posted public hub is already a real way there,
+                // independent of a personal knowledge row. Ask the ordinary
+                // journey preflight rather than rebuilding its exceptions.
+                && (() => {
+                    const route = h.game.whereThisJourneyGoes(visitor, row.name, 'move');
+                    return 'calls' in route && route.calls.some(call => call.name === 'knowledge.canPointAt' && !call.ok);
+                })());
             if (!place) continue;
             expect(h.game.present(visitor).some(person => person.id === speaker.id)).toBe(true);
             expect(h.game.canPointAtLocation(visitor, place)).toBe(false);
             expect(h.game.knowledge.isAwareOf(visitor.id, 'place', place.id)).toBe(false);
             expect(h.game.knowledge.isAwareOf(visitor.id, 'place', place.name)).toBe(false);
+            // This is one person's knowledge, not the settlement's collective
+            // directions. Arrange their actual name through its ordinary writer.
+            h.game.theyGaveTheirName(visitor, h.game.currentRun().run, speaker);
             return { ...h, plans, choice: { speaker, place } };
+          }
         }
     }
     h.db.close();
@@ -79,8 +92,8 @@ it('a remembered real name is a question, and actual placed directions are what 
         expect(routineTime(h.game.atHand!)).toBe(worldMoment);
         expect(h.game.knowledge.provenanceOf(before.cultivator.id, 'place', place.id)).toEqual(targetKnowledge);
         expect(h.game.canPointAtLocation(before.cultivator, place)).toBe(false);
-        h.plans.push(JSON.stringify({ action: 'interact', target: 'somebody', topic: `the way to ${place.name}`, intent: 'ask' }));
-        const told = await h.game.act(`I ask somebody how to get to ${place.name}.`);
+        h.plans.push(JSON.stringify({ action: 'interact', target: speaker.name, topic: `the way to ${place.name}`, intent: 'ask' }));
+        const told = await h.game.act(`I ask ${speaker.name} how to get to ${place.name}.`);
         expect(refusedCall(told)).toBeNull();
         expect(told.toolCalls.some(call => call.name === 'engine.theWayTo' && call.ok)).toBe(true);
         expect(h.game.knowledge.provenanceOf(before.cultivator.id, 'place', place.id)
@@ -99,11 +112,11 @@ it('a remembered real name is a question, and actual placed directions are what 
 it('a present speaker who only knows the name does not grant its route', async () => {
     const h = await fixture('named');
     try {
-        const { place } = h.choice;
+        const { place, speaker } = h.choice;
         const before = h.game.currentRun();
         const rows = h.game.knowledge.provenanceOf(before.cultivator.id, 'place', place.id);
-        h.plans.push(JSON.stringify({ action: 'interact', target: 'somebody', topic: `the way to ${place.name}`, intent: 'ask' }));
-        const answered = await h.game.act(`I ask somebody how to get to ${place.name}.`);
+        h.plans.push(JSON.stringify({ action: 'interact', target: speaker.name, topic: `the way to ${place.name}`, intent: 'ask' }));
+        const answered = await h.game.act(`I ask ${speaker.name} how to get to ${place.name}.`);
         expect(refusedCall(answered)).toBeNull();
         expect(answered.toolCalls.some(call => call.name === 'engine.theWayTo' && call.summary.includes('named'))).toBe(true);
         expect(h.game.canPointAtLocation(h.game.currentRun().cultivator, place)).toBe(false);

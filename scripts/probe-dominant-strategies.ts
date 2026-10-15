@@ -75,9 +75,10 @@ import { stagnationYearsForOrdinal, INJURY_WEIGHTS, type Injury, type InsightDeg
 import {
     earningsPerYear,
     netEarningsPerYear,
-    injuryTreatmentPrice,
     STONES_PER_YEAR_OF_SECLUSION
 } from '../src/engine/cultivation/origin.js';
+import { carePricesOnThisGround } from '../src/engine/world/what-a-physicians-care-costs.js';
+import { HOME_REGION_ID } from '../src/data/cultivation/regions.js';
 import { purchasedQiPerYear } from '../src/engine/cultivation/buying-and-bartering-pills.js';
 import { regardFor } from '../src/engine/cultivation/regard.js';
 import { BAND_DENSITY_CENTRE } from '../src/engine/cultivation/ambient.js';
@@ -924,15 +925,16 @@ for (const untreated of [0, 1, 2, 3]) {
 // ── 7b. And the same decision with the price attached ────────────────────
 //
 // "Treat it" being better for the body is not the whole decision, because a
-// treatment costs `injuryTreatmentPrice` and those stones buy progress on the
+// treatment has an actual service quote and those stones buy progress on the
 // open market instead. The honest question is which of the two the stones do
 // more good in.
 
 console.log('\n  Treating is not free. What the same stones buy as progress instead:');
+console.log('  One wound, a capable physician, ordinary ground in the home province; availability and the month spent are separate.');
 console.log('  ' + 'rung'.padStart(6) + 'treatment'.padStart(12) + 'qi if spent'.padStart(13)
     + 'rate gain'.padStart(11) + 'payback'.padStart(12) + 'lifespan'.padStart(11) + '  verdict');
 for (const rung of [0, 8, 12, 13, 20, 24, 28]) {
-    const price = injuryTreatmentPrice(rung);
+    const price = carePricesOnThisGround(HOME_REGION_ID, 1).perWound;
     const qiInstead = purchasedQiPerYear(price, rung);
     const hurt = computeCultivationRate(
         { spiritRoot: 'single_fire', injuries: scarSet(1, false, 'u'), realmOrdinal: rung, attributes: ATTRIBUTE_SETS[1].a },

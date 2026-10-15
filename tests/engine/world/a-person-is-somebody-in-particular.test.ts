@@ -14,6 +14,8 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { whatTheyOpenAt } from '../../../src/engine/world/what-somebody-is-at-when-you-walk-up.js';
+import { getSect } from '../../../src/data/cultivation/sects.js';
 import {
     heightOfTheBirth,
     howFarFromTheStart,
@@ -131,24 +133,28 @@ describe('what somebody is like', () => {
 });
 
 describe('and it shows in what they are doing', () => {
-    it('puts the two ends of a sparring yard on the two ends of the axis', async () => {
-        // Same yard, same hour, and which end of the practice sword somebody is
-        // holding is a thing about them rather than a roll.
+    it('gives unposted people on either side of the axis their own practice, without an invented partner', async () => {
+        // The hall-post ruling moved unposted work to actual own practice. The
+        // old test required a fictional inner disciple to knock somebody down,
+        // although nobody else was in that activity. Personality still has its
+        // ordinary lenses; it does not manufacture another body in this yard.
         const state = seedWorld({ seed: 'the-two-ends', catalog: await loadCultivationCatalog() }).state;
-        let holding = 0;
-        let knockedDown = 0;
+        let positivePush = 0;
+        let negativePush = 0;
         for (const npc of state.npcs) {
-            const note = npc.activity?.note ?? '';
-            if (note.includes('holding the sword in what an inner disciple')) {
-                expect(whatSomebodyIsLike(npc).push).toBeGreaterThanOrEqual(0);
-                holding++;
-            }
-            if (note.includes('being knocked down repeatedly')) {
-                expect(whatSomebodyIsLike(npc).push).toBeLessThan(0);
-                knockedDown++;
-            }
+            const house = npc.factionId ? getSect(npc.factionId) : undefined;
+            if (!house || npc.factionRankIndex !== 0 || npc.cultivation.untreatedInjuries > 0) continue;
+            const activity = whatTheyOpenAt({ npc, groundKind: 'sect_seat',
+                rungsInTheirHouse: house.ranks.length, onDay: state.currentDay,
+                roll: .5, words: .99, office: null });
+            expect(activity.kind).toBe('the_work_of_their_rank');
+            expect(activity.withIds).toEqual([]);
+            expect(activity.note).not.toMatch(/inner disciple|knocked down/);
+            if (whatSomebodyIsLike(npc).push >= 0) positivePush++;
+            else negativePush++;
         }
-        expect(holding + knockedDown).toBeGreaterThan(0);
+        expect(positivePush).toBeGreaterThan(0);
+        expect(negativePush).toBeGreaterThan(0);
     });
 
     it('makes a shakedown out of two real people and keeps it rare', async () => {

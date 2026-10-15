@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import { REGIONS, regionIdOfPlace } from '../../src/data/cultivation/regions';
 import { makeGameInWorld, ScriptedProvider } from './harness';
+import { betweenRoadEndpoints } from '../../src/web/a-road-stopped-partway';
 
 function narrationsSince(provider: ScriptedProvider, from: number): string[] {
     return provider.calls.slice(from)
@@ -48,6 +49,14 @@ describe('how this place is', () => {
 
         const mark = provider.calls.length;
         await game.act('I travel to the Buddha Precipice');
+        // The actual road now takes sixteen days, while the first leg lived
+        // twelve and stopped between provinces. Finish that real course before
+        // asserting the customs of the province arrived in.
+        for (let attempt = 0; attempt < 4 && betweenRoadEndpoints(game.db, game.currentRun().cultivator); attempt++) {
+            expect(game.currentRun().cultivator.alive).toBe(true);
+            await game.act('I travel to the Buddha Precipice');
+        }
+        expect(betweenRoadEndpoints(game.db, game.currentRun().cultivator)).toBe(false);
         const after = game.state().cultivator.location;
         expect(after).not.toBe(before);
 

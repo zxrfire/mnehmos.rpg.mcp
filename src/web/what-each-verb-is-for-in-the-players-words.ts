@@ -59,7 +59,7 @@ import {
 } from './actions.js';
 import type { RequestKind } from './what-a-request-asks-and-of-whom.js';
 import { MOVE_INTENTS } from './planned-action.js';
-import { PASSAGE_INTENTS } from './verb-pattern-table.js';
+import { OATH_INTENTS, PASSAGE_INTENTS } from './verb-pattern-table.js';
 
 /**
  * The fields of a plan this verb reads.
@@ -262,8 +262,13 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     oath: {
         takes: ['target', 'intent', 'topic'],
-        intents: ['read', 'swear', 'break', 'release', 'serve', 'beast_contract', 'end_beast_contract'],
+        intents: OATH_INTENTS,
         says: `a word given, carried, served out or not kept, and a claim held or given up.
+            "contract_offer" proposes an agreement with a reachable person; "contract_accept"
+            and "contract_decline" answer their outstanding offer. The contract field carries
+            both literal promises, their ending condition and the chosen word, blood, Dao or
+            slave binding. Both people must actually agree; the model cannot declare a promise
+            fulfilled. Accepting a named posted job remains work, rather than a personal oath.
             A beast cultivation contract uses intent "beast_contract", target the beast,
             and topic the percentage of qi shared (default "25"). "end_beast_contract"
             ends that agreement early and opens its broken-oath account.

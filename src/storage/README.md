@@ -2,6 +2,21 @@
 
 # Storage
 
+Chronicle append uses the monotonic fact sequence, not a count or array offset.
+Ordinary retention can leave holes. Removed fact and actor rows are pruned when
+the retained prefix shrinks, including when new rows conceal that size change.
+The sequence expression index derives from the existing IDs; it stores no new
+fact or allocator counter.
+
+Object provenance follows the current authoritative chain, including ordinary
+counted-stock compaction. An append deletes positions beyond its current length
+before writing remaining links. Another object's or world's chain stays intact.
+
+Live knowledge claims have an index on holder, claim and their existing date/id
+order. This keeps one existence lookup from scanning the holder's unrelated
+beliefs. The index is derived from the same knowledge rows and is added
+idempotently to existing databases; no claim or stage is rewritten.
+
 Cultivator and native NPC plague courses use nullable JSON columns on their
 existing body rows. Older absent courses remain absent; an explicit cleared
 course remains null. No parallel disease table, mirrored player illness or

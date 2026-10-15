@@ -1,4 +1,6 @@
-import { routineTime } from '../engine/world/npc-routines.js';
+import { routineOf, routineTime } from '../engine/world/npc-routines.js';
+import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { theAreaTheyAreIn } from './walking-across-a-place.js';
 /**
  * Somebody giving their attention to the people in front of them, and what each of them gets.
  *
@@ -227,7 +229,9 @@ export const attentionVerbs = {
         forDays: number,
         note: string,
         /** Where the student is standing, so the teacher is read in the same room. */
-        placeId: string | null = null
+        placeId: string | null = null,
+        /** The local area agreed for this lesson, after the conversation's days. */
+        areaId: string | null = null
     ): (WhatTheyWereAt & { listeners: number; sinceDay: number; untilDay: number }) | null {
         const world = this.atHand;
         if (!world) return null;
@@ -242,6 +246,8 @@ export const attentionVerbs = {
         const set = unique([...already, ...studentIds]);
         const until = today + forDays;
         const was = teacher.activity;
+        const ground = world.locations.find(place => place.id === routineOf(world, teacher).locationId);
+        const standingIn = areaId ?? (ground ? theAreasOf(world, ground).whereIs.get(teacher.id) : undefined);
 
         world.npcs[at] = {
             ...teacher,
@@ -249,6 +255,7 @@ export const attentionVerbs = {
                 kind: 'teaching',
                 note: joined && was ? was.note : note,
                 withIds: set,
+                standingIn,
                 sinceDay: joined && was ? was.sinceDay : today,
                 untilDay: joined && was?.untilDay !== null && was?.untilDay !== undefined
                     ? Math.max(until, was.untilDay)
@@ -371,7 +378,8 @@ export const attentionVerbs = {
             ? this.theyGiveTheirAttention(
                 teacher.id, [cultivator.id], span,
                 `watching ${cultivator.name} sit and correcting it`,
-                this.worldPlaceOf(cultivator)
+                this.worldPlaceOf(cultivator),
+                theAreaTheyAreIn(this.atHand, cultivator)?.area.id ?? null
             )
             : null;
         if (!row || !given) {
@@ -470,7 +478,8 @@ export const attentionVerbs = {
         this.atHand = this.atHand ?? await this.loadWorld();
         const given = this.theyGiveTheirAttention(
             teacher.id, [cultivator.id], days, `walking ${cultivator.name} down ${art.name}`,
-            this.worldPlaceOf(cultivator)
+            this.worldPlaceOf(cultivator),
+            theAreaTheyAreIn(this.atHand, cultivator)?.area.id ?? null
         );
         let spent: Execution;
         try {

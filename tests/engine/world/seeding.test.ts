@@ -9,7 +9,8 @@ import { queryFacts } from '../../../src/engine/world/history.js';
 import {
     QI_DENSITY_DEFAULT,
     QI_DENSITY_MAX,
-    locationHistory
+    locationHistory,
+    routeQueriesFor
 } from '../../../src/engine/world/locations.js';
 import { nextWindow } from '../../../src/engine/world/opportunities.js';
 
@@ -133,11 +134,13 @@ describe('seeding: a world that is already running', () => {
         expect(scarwater.hazards).toContain('thin_qi');
         expect(scarwater.environment.specialRules.length).toBeGreaterThan(0);
 
-        // Places are children of their region, and roads are symmetric.
+        // Places are children of their region. Ordinary roads now hold
+        // intermediate ground, so connectivity is a route, not one edge.
         const sweptground = state.locations.find(l => l.name === 'Burnt Earth')!;
         expect(sweptground.parentId).toBe('loc-region-low-fall');
-        expect(lowFall.links.some(l => l.toLocationId === 'loc-region-scarwater')).toBe(true);
-        expect(scarwater.links.some(l => l.toLocationId === 'loc-region-low-fall')).toBe(true);
+        const routes = routeQueriesFor(state.locations);
+        expect(routes.treeFrom(lowFall.id).days.has(scarwater.id)).toBe(true);
+        expect(routes.treeFrom(scarwater.id).days.has(lowFall.id)).toBe(true);
     });
 
     it('seeds several prior ages so ruins have real events behind them', () => {

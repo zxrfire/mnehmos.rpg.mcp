@@ -120,6 +120,9 @@ export function migrateWorld(db: Database.Database): void {
 
     -- The chronicle reads a date window; every other access is by subject.
     CREATE INDEX IF NOT EXISTS idx_world_chronicle_day ON world_chronicle(world_id, day);
+    -- IDs stay monotonic when the ordinary retention sweep removes old rows.
+    CREATE INDEX IF NOT EXISTS idx_world_chronicle_sequence
+      ON world_chronicle(world_id, CAST(SUBSTR(id, 2) AS INTEGER));
     CREATE INDEX IF NOT EXISTS idx_world_chronicle_kind ON world_chronicle(world_id, kind);
     CREATE INDEX IF NOT EXISTS idx_world_chronicle_location ON world_chronicle(world_id, location_id);
     -- "What does nobody know?" is a real query a scholar or grave-reader runs.

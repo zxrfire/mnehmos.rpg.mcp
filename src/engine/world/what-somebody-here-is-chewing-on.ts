@@ -96,6 +96,8 @@ export interface SomebodyWithSomethingOnTheirMind {
     rank: string | null;
     /** Whether their house has marked them as its pick. */
     chosen: boolean;
+    /** Their own actual local post, derived from the people currently stationed there. */
+    headsTheirBranch?: boolean;
     /**
      * WHAT THEY CARRY THAT IS NOT THEIRS, as a common noun, or null.
      *
@@ -287,6 +289,12 @@ export function whatTheyWouldBeHeardOnAbout(
     // The mirror, and deliberately harder to hit: young at a rung that takes
     // other people most of a life. A house's pick reads as this from outside
     // whether or not the house has said so out loud.
+    if (person.headsTheirBranch) {
+        return {
+            state: 'responsible for the lower cloister and its posted disciples',
+            plainly: 'are responsible for the lower cloister and its posted disciples'
+        };
+    }
     if (spent <= AHEAD_OF_THE_ROAD && person.ordinal >= A_RUNG_WORTH_BEING_YOUNG_AT) {
         return {
             state: 'barely any of this rung\'s years spent, at a rung that takes most people a life',

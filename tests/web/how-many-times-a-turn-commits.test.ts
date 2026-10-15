@@ -98,6 +98,10 @@ describe('what one turn costs to make durable', () => {
     it('does not cost more than it did', async () => {
         await withAdmin(async () => {
             await harness.game.newRun('Shen Ke');
+            // Opening marked-property observations are discovery, covered by
+            // the next test. Measure this ordinary read after actually seeing
+            // the starting scene, rather than relabeling new claims as plain.
+            await harness.game.act('I look around');
             // Spy AFTER the run exists, so world seeding is not counted: the
             // claim is about a turn, not about building a world.
             const spy = spyOn(harness.db);

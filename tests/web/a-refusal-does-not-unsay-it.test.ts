@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
-import { circulating } from '../../src/engine/world/what-people-are-saying';
+import { isInTheAirFor } from '../../src/engine/world/what-people-are-saying';
 import type { WorldState } from '../../src/engine/world/world-state';
 import type { HistoricalFact } from '../../src/engine/world/history';
 
@@ -55,6 +55,9 @@ describe('a declaration nobody could carry out', () => {
      * boast from a nobody is meant to be near the bottom of what gets repeated.
      * What matters is that it is in the pool at all, because that is the whole
      * difference between a rumour system and a system with no writer.
+     * Run3's larger opening ledger can rank500 other facts above this boast.
+     * Use the existing single-fact circulation authority for this eligibility
+     * claim; it applies the same distance, age and weight as the ranked feed.
      */
     it('is something somebody could repeat', async () => {
         // ITS OWN SEED, AND NOT THE ONE ABOVE. A world is cached by its seed
@@ -74,14 +77,13 @@ describe('a declaration nobody could carry out', () => {
         expect(spoken.visibility).not.toBe('secret');
 
         const them = world.npcs.find(n => n.id !== cultivator.id && n.status === 'alive')!;
-        const inTheAir = circulating(world, {
+        expect(isInTheAirFor(world, spoken, {
             id: them.id,
             name: them.name,
             realmOrdinal: them.cultivation.realmOrdinal,
             regionId: null,
             factionId: them.factionId ?? null
-        }, world.currentDay, 500);
-        expect(inTheAir.map(f => f.id)).toContain(spoken.id);
+        }, world.currentDay)).toBe(true);
     });
 
     /**

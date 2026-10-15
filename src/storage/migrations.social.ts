@@ -320,6 +320,10 @@ export function migrateSocial(db: Database.Database): void {
     -- The core query: what does this holder hold about this topic.
     CREATE INDEX IF NOT EXISTS idx_knowledge_holder_claim
       ON knowledge_records(holder_id, claim_key);
+    -- Live claim reads also require chronological order. Without this index
+    -- SQLite preferred holder/stance and scanned unrelated claims per lookup.
+    CREATE INDEX IF NOT EXISTS idx_knowledge_live_holder_claim_day
+      ON knowledge_records(holder_id, claim_key, acquired_on_day, id) WHERE superseded = 0;
     -- Every incompatible version of a topic currently in circulation.
     CREATE INDEX IF NOT EXISTS idx_knowledge_claim ON knowledge_records(claim_key);
     CREATE INDEX IF NOT EXISTS idx_knowledge_holder_stance

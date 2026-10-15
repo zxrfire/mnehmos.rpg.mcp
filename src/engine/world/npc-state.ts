@@ -417,6 +417,8 @@ export interface NpcActivity {
     partyQuestionId?: string;
     /** Actual group fight holding this undertaking at reached ground. */
     partyFightId?: string;
+    /** The actual stored played duel interrupting this person's ordinary activity. */
+    playedFight?: { id: string; previous: NpcActivity | null };
     /** The ordinary party decision behind a changed course. */
     partyCourseDecisionId?: string;
     /** One accepted ordinary carrier appointment, never a copied fleet position. */

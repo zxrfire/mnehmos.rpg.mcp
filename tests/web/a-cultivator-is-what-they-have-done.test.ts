@@ -114,8 +114,17 @@ async function standingAmongThem(
 ): Promise<{ neighbours: string[]; rung: number }> {
     const neighbours = await whoIsHere(game);
     // Collect actual people across the place's existing areas.
-    const place = game.atHand ? worldLocationFor(game.atHand, game.currentRun().cultivator.location) : null;
-    for (const area of place && game.atHand ? theAreasOf(game.atHand, place).areas : []) {
+    const world = game.atHand!;
+    const opening = worldLocationFor(world, game.currentRun().cultivator.location);
+    // This career is eight distinct people, not eight occupants of one town.
+    // Real routines now leave seven at this opening; the next wrong already
+    // reaches its subject's actual room through meetThem below.
+    const places = [opening, ...world.locations.filter(place => place.kind === 'settlement'
+        && place.id !== opening?.id)].filter((place): place is NonNullable<typeof place> => !!place);
+    for (const place of places) {
+      if (neighbours.length >= 8) break;
+      game.repos.cultivators.update(game.currentRun().cultivator.id, { location: place.name });
+      for (const area of theAreasOf(world, place).areas) {
         if (neighbours.length >= 8) break;
         game.repos.cultivators.standIn(game.currentRun().cultivator.id, area.id);
         // Knowing these actual faces is an arranged precondition. This file
@@ -125,6 +134,7 @@ async function standingAmongThem(
             await game.act(`ADMIN grant_knowledge kind=cultivator name=${person.name}`);
         }
         for (const name of await whoIsHere(game)) if (!neighbours.includes(name)) neighbours.push(name);
+      }
     }
     const career = neighbours.slice(0, 8);
     expect(career.length, 'the ordinary career needs eight actual people, not repeated charges against one').toBe(8);

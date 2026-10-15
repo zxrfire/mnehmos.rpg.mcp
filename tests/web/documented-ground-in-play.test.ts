@@ -27,6 +27,9 @@ import { FLAG_RATIONS_HELD } from '../../src/web/flag-keys.js';
 import { theyOweTheHouseAReport, doesTheHouseExpect } from '../../src/engine/world/a-house-expects-somebody-it-took-on.js';
 import { countedHoldingKey } from '../../src/data/cultivation/what-a-house-moves-its-people-on.js';
 import { standWhereThePeopleAre } from './standing-where-the-people-are.js';
+import { theHandsAtHouseCraftWork } from '../../src/engine/world/the-people-posted-to-a-houses-halls.js';
+import { canRefineGrade } from '../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
+import { routineTime } from '../../src/engine/world/npc-routines.js';
 
 async function arrange(seed: string, ordinal = 25) {
     const harness = await makeGameInWorld({ seed, worldSeed: 'documented-ground-world' });
@@ -197,7 +200,13 @@ describe('documented ground reached in play', () => {
 
     it("retires a house's tracked core when its people build in the yearly pass", async () => {
         const { game, world } = await arrange('npc-core-hull');
-        const house = world.factions.find(house => house.seatLocationId)!;
+        // A yard balance does not supply a maker. Ask the same actual posted
+        // hands authority as the yearly pass, rather than picking the first house.
+        const makers = theHandsAtHouseCraftWork(world, 'artifact', routineTime(world));
+        const house = world.factions.find(house => house.seatLocationId
+            && makers.get(house.id)?.some(person => canRefineGrade('earth', person.cultivation.realmOrdinal))
+            && !world.objects.some(object => object.ownerId === house.id && object.data.core === true))!;
+        expect(house, 'the pinned world needs an actual earth-grade maker at a house yard').toBeDefined();
         house.resources[countedHoldingKey('conv-carriage-mortal')] = 100;
         house.resources[countedHoldingKey('conv-carriage-earth')] = 0;
         house.resources['yard.material.earth'] = 24;

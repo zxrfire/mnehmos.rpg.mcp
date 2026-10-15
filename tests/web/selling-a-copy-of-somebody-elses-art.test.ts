@@ -67,6 +67,7 @@ import { whatThisPersonWouldPartWith } from '../../src/engine/world/what-somebod
 import { SECTS } from '../../src/data/cultivation/sects';
 import { TECHNIQUES, stopsSomewhere } from '../../src/data/cultivation/techniques';
 import { makeGameInWorld, engineCalls } from './harness';
+import { standWhereThePeopleAre } from './standing-where-the-people-are';
 
 /** The Azure Cloud Pavilion's own sword. One house teaches it. */
 const PAVILION = 'sect-azure-cloud-pavilion';
@@ -381,20 +382,20 @@ describe('played: writing one out and selling it', () => {
      * world rather than invented: the house's own people are where the world
      * put them, and the player is moved to one of them.
      */
-    function standWhereOneOfTheirsIs(
-        harness: { game: unknown; repos: { cultivators: { update(id: string, patch: object): unknown } } },
+    async function standWhereOneOfTheirsIs(
+        harness: Awaited<ReturnType<typeof makeGameInWorld>>,
         id: string
-    ): string {
-        const world = (harness.game as { atHand: {
-            npcs: { name: string; factionId: string | null; status: string; locationId: string | null }[];
-            locations: { id: string; name: string }[];
-        } | null }).atHand;
+    ): Promise<string> {
+        const world = harness.game.atHand;
         expect(world, 'the world was never loaded').toBeTruthy();
         const theirs = world!.npcs
             .find(n => n.status === 'alive' && n.factionId === PAVILION && n.locationId);
         expect(theirs, 'the seeded world holds nobody of the Pavilion').toBeTruthy();
         const where = world!.locations.find(l => l.id === theirs!.locationId)!;
         harness.repos.cultivators.update(id, { location: where.name });
+        // The witness must share the actual area, not only the settlement.
+        await standWhereThePeopleAre(harness, id, new Set([theirs!.id]));
+        expect(harness.game.present(harness.game.currentRun().cultivator).some(n => n.id === theirs!.id)).toBe(true);
         return where.name;
     }
 
@@ -405,7 +406,7 @@ describe('played: writing one out and selling it', () => {
         const { game, id, db } = harness;
         // The world has to be in hand before the square can be read off it.
         await game.act('I look around');
-        standWhereOneOfTheirsIs(harness, id);
+        await standWhereOneOfTheirsIs(harness, id);
 
         const said = await game.act('I sell a copy of the Void-Piercing Sword Domain');
         const structure = engineCalls(said).map(c => c.summary).join(' ');
@@ -439,7 +440,7 @@ describe('played: writing one out and selling it', () => {
         });
         const { game, id, db } = harness;
         await game.act('I look around');
-        standWhereOneOfTheirsIs(harness, id);
+        await standWhereOneOfTheirsIs(harness, id);
 
         const said = await game.act('I sell a copy of the Void-Piercing Sword Domain');
         const structure = engineCalls(said).map(c => c.summary).join(' ');
@@ -481,7 +482,7 @@ describe('played: writing one out and selling it', () => {
         });
         const { game, id, db } = harness;
         await game.act('I look around');
-        standWhereOneOfTheirsIs(harness, id);
+        await standWhereOneOfTheirsIs(harness, id);
 
         const said = await game.act('I sell a copy of the Void-Piercing Sword Domain');
         const structure = engineCalls(said).map(c => c.summary).join(' ');

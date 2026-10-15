@@ -32,6 +32,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { makeGameInWorld } from './harness';
+import { holdTheActualPunishmentChair } from './holding-the-actual-punishment-chair';
 import { SECTS } from '../../src/data/cultivation/index';
 import { getMembersOf } from '../../src/data/cultivation/members';
 import { complaintsBroughtTo } from '../../src/web/false-decree-reports';
@@ -93,6 +94,7 @@ async function aRoomAndSomebodyInFrontOfIt(seed: string, stones = 4000) {
     harness.db.prepare('UPDATE cultivators SET realm_ordinal = 21 WHERE id = ?')
         .run(cultivator.id);
     harness.repos.sects.addMember(HOUSE.id, cultivator.id, HOUSE.ranks.length - 2);
+    await holdTheActualPunishmentChair(harness.game, cultivator.id, HOUSE.id);
 
     const other = getMembersOf(HOUSE.id).find(m => m.rankIndex === 0)
         ?? getMembersOf(HOUSE.id)[0];

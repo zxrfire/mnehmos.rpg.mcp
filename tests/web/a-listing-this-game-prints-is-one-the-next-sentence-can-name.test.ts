@@ -61,6 +61,9 @@ const WORLD = { seed: 'a-listing-named', worldSeed: 'a-listing-named-world' };
  * This run's birthplace now holds one named person. The two-person reference
  * controls arrange two cultivators waiting with the player and hear their introductions
  * through an ordinary greeting before asking for the listing.
+ * Run3 found that naming the player in withIds did not place either waiter in
+ * the player's area. Their timed activities now hold the actual chosen area;
+ * the ordinary scene and introduction readers still decide what is printed.
  */
 const AMONG_PEOPLE_IT_KNOWS = { seed: 'a-listing-named-5', worldSeed: 'a-listing-named-world' };
 
@@ -105,6 +108,7 @@ async function playThen(listing: string, followUp: string, world: typeof WORLD =
         });
         state.npcs.push(...people);
         const area = theAreasOf(state, place).areas.find(row => !row.id.includes('#room#'))!;
+        for (const person of people) person.activity = { ...person.activity!, standingIn: area.id };
         repos.cultivators.update(cultivator.id, { location: place.name });
         repos.cultivators.standIn(cultivator.id, area.id);
         game.theWorldMoved();

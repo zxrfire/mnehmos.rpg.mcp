@@ -162,7 +162,10 @@ describe('over the wall, played', () => {
                 ...npc,
                 locationId: house.seat.id,
                 cultivation: { ...npc.cultivation, realmOrdinal: ordinal },
-                activity: { kind: 'talking', note: '', withIds: [me().id], sinceDay: today, untilDay: today + 1 }
+                // The actual area is part of standing with this person. A
+                // one-sided withIds row alone does not put them beside the PC.
+                activity: { kind: 'talking', note: '', withIds: [me().id],
+                    standingIn: me().standingIn ?? undefined, sinceDay: today, untilDay: today + 1 }
             };
             harness.game.theWorldMoved();
         };

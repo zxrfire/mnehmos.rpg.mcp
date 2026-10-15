@@ -97,7 +97,16 @@ async function actualDoor() {
     h.game.theWorldMoved();
     // Normal free read refreshes the real player membership/body projection.
     await h.game.act('I look around');
-    return { ...h, ...opened, world, ...a, plans };
+    // The opening span establishes normal background counted-stock retention
+    // before the breach's full-world no-goods-transfer comparison.
+    await h.game.act('I wait for 3 hours');
+    const currentWorld = h.game.atHand!;
+    h.repos.cultivators.update(opened.cultivator.id, { location: a.parent.name });
+    h.repos.cultivators.standIn(opened.cultivator.id, null);
+    expect(h.game.worldPlaceOf(h.game.currentRun().cultivator)).toBe(a.parent.id);
+    return { ...h, ...opened, ...a, plans, world: currentWorld,
+        room: currentWorld.locations.find(place => place.id === a.room.id)!,
+        parent: currentWorld.locations.find(place => place.id === a.parent.id)! };
 }
 it('the generic destroy doorway commits the actual breach, persists it and transfers no goods', async () => {
     const h = await actualDoor();

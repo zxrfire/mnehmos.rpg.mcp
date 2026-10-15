@@ -9,7 +9,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness.js';
-import { createNpc } from '../../src/engine/world/npc-state.js';
+import { createNpc, markDead } from '../../src/engine/world/npc-state.js';
+import { theirIdentityGoesToDust } from '../../src/engine/world/when-a-disciple-dies-their-tokens-go-to-dust.js';
+import { routineTime } from '../../src/engine/world/npc-routines.js';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { capitalCalendar } from '../../src/engine/world/capital-missions-and-calendar.js';
 import { whoHasALampBurningIn } from '../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
@@ -138,8 +140,11 @@ describe('documented features reached by player turns', () => {
         const id = [...whoHasALampBurningIn(h.world.objects, house.id)][0]!;
         const at = h.world.npcs.findIndex(n => n.id === id);
         const away = h.world.locations.find(l => l.kind === 'ruin' && l.parentId !== house.seatLocationId)!;
-        h.world.npcs[at] = { ...h.world.npcs[at]!, status: 'physically_dead', diedOnDay: 0, locationId: away.id };
+        // Arrange the actual death and its consumed identity, not only one body
+        // status column while leaving a whole lamp on the staffed hall's shelf.
+        h.world.npcs[at] = { ...markDead(h.world.npcs[at]!, routineTime(h.world), 'An unreported death away from the house.'), locationId: away.id };
         h.world.history.facts = h.world.history.facts.filter(f => !f.actors.some(a => a.id === id));
+        theirIdentityGoesToDust(h.world, id, routineTime(h.world));
         house.resources.spirit_stones = 100_000;
         h.game.theWorldMoved();
         await h.game.act('I look around');

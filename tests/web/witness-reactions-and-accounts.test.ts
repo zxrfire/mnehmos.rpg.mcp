@@ -14,10 +14,19 @@
  * same paper can mean standing, warning, danger or a purse depending on who
  * reads it. The cases below pin those consequences to witnessed or circulated
  * facts rather than a global war flag.
+ *
+ * Alignment alone does not guarantee a demand for an account. The six account
+ * controls now arrange the existing ally tie to the victim, which gives this
+ * witness a real stake. Their belief still follows the evidence and trust.
+ * The unrelated-body and war controls retain their original relationships.
+ * Account controls choose an existing cultivator's body: the world forgets
+ * unrecorded mortal dead during the reply's elapsed time. The original check
+ * that belief cannot undo this person's death still applies to a retained row.
  */
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
 import { activeWorld } from '../../src/server/state/cultivation-world.js';
+import { FOUNDATION_ORDINAL } from '../../src/engine/cultivation/realms.js';
 import { markDead, upsertRelationship } from '../../src/engine/world/npc-state.js';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { witnessReactions, reactToWitnessedFact, reportFromObservation, houseHearsWitnessReport,
@@ -44,7 +53,8 @@ function putTwoHousesAtWar(world: WorldState, aId: string, bId: string) {
         data: { kind: 'war_resolution', sideA: aId, sideB: bId } }));
 }
 
-async function scene(options: { alignment?: 'righteous' | 'demonic'; old?: boolean; trust?: number; model?: boolean } = {}) {
+async function scene(options: { alignment?: 'righteous' | 'demonic'; old?: boolean; trust?: number; model?: boolean;
+    alliedWithVictim?: boolean } = {}) {
     const harness = await makeGameInWorld({ seed: 'witness-play', worldSeed: 'witness-world',
         ...(options.model ? { provider: new ScriptedProvider({ plans: [JSON.stringify({ action: 'look' }),
             JSON.stringify({ action: 'tell', deedAccount: 'found', topic: 'I only just came upon him.' })] }) } : {}) });
@@ -75,7 +85,8 @@ async function scene(options: { alignment?: 'righteous' | 'demonic'; old?: boole
     for (let i = 0; i < world.npcs.length; i++) {
         const candidate = world.npcs[i]!;
         if (candidate.status !== 'alive' || candidate.id === witness.id
-            || candidate.tags.includes('the-player')) continue;
+            || candidate.tags.includes('the-player')
+            || options.alliedWithVictim && candidate.cultivation.realmOrdinal < FOUNDATION_ORDINAL) continue;
         world.npcs[i] = markDead({ ...candidate, factionId: null, locationId: here },
             options.old === false ? day : day - 10, 'Killed on the road.');
         const where = theAreasOf(world, place);
@@ -87,6 +98,15 @@ async function scene(options: { alignment?: 'righteous' | 'demonic'; old?: boole
         world.npcs[i] = candidate;
     }
     expect(area, 'the body and witness share an area').not.toBe('');
+    if (options.alliedWithVictim) {
+        world.npcs[witnessAt] = upsertRelationship(world.npcs[witnessAt]!, {
+            targetId: victim.id, targetName: victim.name, kind: 'ally', standing: 0.8
+        }, day - 20);
+        const victimAt = world.npcs.findIndex(person => person.id === victim.id);
+        world.npcs[victimAt] = upsertRelationship(world.npcs[victimAt]!, {
+            targetId: witness.id, targetName: witness.name, kind: 'ally', standing: 0.8
+        }, day - 20);
+    }
     game.repos.cultivators.standIn(cultivator.id, area);
     game.knowledge.learn({ holderId: cultivator.id, kind: 'cultivator', id: witness.id, name: witness.name,
         onDay: 0, sourceKind: 'witnessed', sourceNote: 'Met here.', stage: 'encountered' });
@@ -106,7 +126,7 @@ describe('what a witness saw and heard, in play', () => {
     });
 
     it('believes finding an older body, with trust and no witnessed blow', async () => {
-        const s = await scene();
+        const s = await scene({ alliedWithVictim: true });
         expect((await s.game.act('look')).narration).toMatch(/asks you to explain/);
         const turn = await s.game.act('I found him like this');
         expect(turn.narration).toMatch(/believes your account/);
@@ -116,7 +136,7 @@ describe('what a witness saw and heard, in play', () => {
     });
 
     it('disbelieves the same denial when the witness saw the blow', async () => {
-        const s = await scene();
+        const s = await scene({ alliedWithVictim: true });
         const fact = appendWorldFact(s.world, makeFact({ day: s.world.currentDay, kind: 'death',
             locationId: s.game.worldPlaceOf(s.me), witnessIds: [s.witness.id],
             actors: [{ id: s.me.id, name: s.me.name, role: 'killer' }, { id: s.victim.id, name: s.victim.name, role: 'victim' }],
@@ -131,7 +151,7 @@ describe('what a witness saw and heard, in play', () => {
     });
 
     it('half believes an account with no corroboration and retains suspicion', async () => {
-        const s = await scene({ old: false, trust: 0.4 });
+        const s = await scene({ old: false, trust: 0.4, alliedWithVictim: true });
         await s.game.act('look');
         const turn = await s.game.act('I found him like this');
         expect(turn.narration).toMatch(/remains suspicious/);
@@ -142,7 +162,7 @@ describe('what a witness saw and heard, in play', () => {
     });
 
     it('accepts a model reading of the account without reading outcomes from the model', async () => {
-        const s = await scene({ model: true });
+        const s = await scene({ model: true, alliedWithVictim: true });
         await s.game.act('look');
         expect(s.game.present(s.game.currentRun().cultivator).map(n => n.id)).toContain(s.witness.id);
         const turn = await s.game.act('I only just came upon him.');
@@ -154,7 +174,7 @@ describe('what a witness saw and heard, in play', () => {
     });
 
     it('a witnessed theft can be accounted for without undoing the taking', async () => {
-        const s = await scene({ trust: 0.4 });
+        const s = await scene({ trust: 0.4, alliedWithVictim: true });
         const fact = appendWorldFact(s.world, makeFact({ day: s.world.currentDay, kind: 'grudge_opened',
             locationId: s.game.worldPlaceOf(s.me), witnessIds: [s.witness.id],
             actors: [{ id: s.me.id, name: s.me.name, role: 'actor' },
@@ -171,7 +191,7 @@ describe('what a witness saw and heard, in play', () => {
     });
 
     it('a blame account records the named person as a telling', async () => {
-        const s = await scene();
+        const s = await scene({ alliedWithVictim: true });
         await s.game.act('look');
         const blamed = s.world.npcs.find(n => n.status === 'alive' && n.id !== s.witness.id
             && !n.tags.includes('the-player'))!;

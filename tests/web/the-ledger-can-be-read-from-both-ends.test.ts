@@ -34,6 +34,7 @@ import { parseIntent } from '../../src/web/actions';
 import { DeterministicNarrator } from '../../src/web/narrator';
 import { theClausesOf, stepsOfThePlan } from '../../src/web/a-sentence-can-be-more-than-one-call';
 import { makeGameInWorld } from './harness';
+import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import { howFarOff } from '../../src/web/facts';
 import {
     SEVERITY_IN_WORDS,
@@ -132,15 +133,25 @@ describe('asking what the ledger holds', () => {
      * favours wants to hear. Then a grudge is written by leaning on somebody,
      * and the same question returns it.
      */
-    it('answers before anything has happened, and after', async () => {
+    it('answers for an empty life without a world', async () => {
+        const { game } = await makeGameInWorld({ seed: 'ledger-empty', worldSeed: 'both-ends', worldEnabled: false });
+        await game.newRun('Asker');
+        expect(said(await game.act('what am I owed'))).toMatch(/Nothing, in either direction/);
+    });
+
+    it('answers for the actual childhood accounts, and after a new wrong', async () => {
         const { game } = await makeGameInWorld({
             seed: 'ledger-read', worldSeed: 'both-ends', adminMode: true
         });
-        await game.newRun('Asker');
+        const { cultivator } = await game.newRun('Asker');
         await game.act('I look around');
 
-        const empty = said(await game.act('what am I owed'));
-        expect(empty).toMatch(/Nothing, in either direction/);
+        // Run3's ordinary childhood leaves this life holding a real favour.
+        // Its existence predates the first played act, and must be readable.
+        const opening = ledgerAbout(game.repos.db, cultivator.id);
+        expect(opening.length, 'the pinned life has an opening account').toBeGreaterThan(0);
+        const firstRead = said(await game.act('what am I owed'));
+        for (const word of opening) expect(firstRead).toContain(word.description);
 
         await game.act('ADMIN set_realm ordinal=30');
         await game.act('ADMIN spawn_encounter ordinal=8 name=Wen Shuyi');

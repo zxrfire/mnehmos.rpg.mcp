@@ -18,6 +18,10 @@
  * sixty initial and five biennial visitors after year ten on a real headland
  * road; every visit departs through startNpcJourney. No arrival is assigned.
  * This isolates finite dao study from the capital census's home-placement rule.
+ * New visitors enter the scenario at their departure date. Pre-creating the
+ * entire later intake left them free to die or leave before any journey was
+ * arranged, so visitor-78 was already absent by year sixteen. No dead person
+ * is restored; the real two-day arrival and original stock bands remain.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -103,14 +107,14 @@ describe('dao-ground stints', () => {
         const ground = { ...source, parentId: province.id, links: [] };
         const lodge = makeLocation({ id: 'shore-lodge', name: 'Stone Shore Lodge', kind: 'settlement', parentId: province.id });
         linkLocations(lodge, ground, 'road', 2); state.locations.push(province, lodge, ground);
-        for (let i = 0; i < 85; i++) state.npcs.push(setRealm(createNpc(state.seed, {
-            id: `visitor-${i}`, locationId: lodge.id, onDay: state.currentDay,
-            bornOnDay: state.currentDay - 25 * 365, physique: null
-        }), Math.max(STEP.fromOrdinal, source.thresholds.survival, source.thresholds.operational), state.currentDay));
         let nextVisitor = 0;
         const visit = (count: number) => {
             for (let i = 0; i < count; i++) {
                 const id = `visitor-${nextVisitor++}`;
+                state.npcs.push(setRealm(createNpc(state.seed, {
+                    id, locationId: lodge.id, onDay: state.currentDay,
+                    bornOnDay: state.currentDay - 25 * 365, physique: null
+                }), Math.max(STEP.fromOrdinal, source.thresholds.survival, source.thresholds.operational), state.currentDay));
                 const at = state.npcs.findIndex(npc => npc.id === id);
                 expect(at, 'the scheduled visitor remains in the live world').toBeGreaterThanOrEqual(0);
                 const npc = state.npcs[at]!;

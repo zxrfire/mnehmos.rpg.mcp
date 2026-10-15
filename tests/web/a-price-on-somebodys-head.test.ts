@@ -111,6 +111,9 @@ import { objectForBones, theBoneThisBodyYields } from '../../src/engine/world/bo
 import { transferPossession, type AcquisitionMode } from '../../src/engine/world/possessions.js';
 import { addToPouch, pouchQuantity } from '../../src/server/consolidated/cultivation-support.js';
 import { activeWorld } from '../../src/server/state/cultivation-world.js';
+import { heldItemValue, wouldBuyHeldItem } from '../../src/engine/world/a-person-is-offered-a-price-for-what-they-hold.js';
+import { routineOf, routineTime } from '../../src/engine/world/npc-routines.js';
+import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 const WORLD = 'a-price-on-a-head-w';
 
@@ -572,13 +575,39 @@ describe('bones off the body are proof', () => {
         addToPouch(harness.db, cultivator.id, bone.id, 'herb', 1);
         harness.game.theWorldMoved();
 
+        // Ordinary trade now spends a real buyer's purse. Run3's first face
+        // could not pay the 2,800-stone bone price. This identity control needs
+        // a completed sale, so find an actual presentable, funded buyer whose
+        // ordinary decision accepts it, without changing money or willingness.
+        const seller = world.npcs.find((person: any) => person.id === cultivator.id);
+        const price = heldItemValue(world, row);
+        const sale = world.npcs.filter((person: any) => person.id !== cultivator.id && person.status === 'alive'
+            && person.spiritStones >= price && wouldBuyHeldItem(world, person, seller, row, price, routineTime(world)))
+            .map((buyer: any) => {
+                const routine = routineOf(world, buyer);
+                const place = world.locations.find((place: any) => place.id === routine.locationId);
+                const area = place && !routine.home ? theAreasOf(world, place).whereIs.get(buyer.id) : undefined;
+                return { buyer, place, area };
+            }).find((sale: any) => sale.area !== undefined);
+        expect(sale, 'no actual funded buyer agrees to this bone sale').toBeDefined();
+        harness.repos.cultivators.update(cultivator.id, { location: sale.place.name });
+        harness.repos.cultivators.standIn(cultivator.id, sale.area);
+        expect(harness.game.present(harness.game.currentRun().cultivator).some((person: any) => person.id === sale.buyer.id)).toBe(true);
+        const buyerStones = sale.buyer.spiritStones;
         const stones = harness.repos.cultivators.getById(cultivator.id).spiritStones;
-        await harness.game.act(`I sell the ${bone.name}`);
+        await harness.game.act(`I sell the ${bone.name} to ${sale.buyer.name}`);
         expect(pouchQuantity(harness.db, cultivator.id, bone.id)).toBe(0);
         expect(harness.repos.cultivators.getById(cultivator.id).spiritStones).toBeGreaterThan(stones);
+        expect(world.npcs.find((person: any) => person.id === sale.buyer.id).spiritStones).toBe(buyerStones - price);
         const sold = world.objects.find((o: any) => o.id === row.id);
-        expect(sold.possessorId).toBeNull();
-        expect(sold.provenance.at(-1)?.how).toBe('sold');
+        expect(sold.possessorId).toBe(sale.buyer.id);
+        expect(sold.ownerId).toBe(sale.buyer.id);
+        const acquisition = sold.provenance.at(-1);
+        expect(acquisition?.how).toBe('bought');
+        expect(acquisition?.previousHolderId).toBe(cultivator.id);
+        expect(world.history.facts.find((fact: any) => fact.id === acquisition.factId)?.data)
+            .toMatchObject({ heldItemSale: true, objectId: row.id,
+                sellerId: cultivator.id, buyerId: sale.buyer.id, stones: price });
         expect(sold.data.deadId).toBe(target.id);
 
         const other = world.npcs.find((n: any) => n.status === 'alive' && isTheWorldsToMove(n)

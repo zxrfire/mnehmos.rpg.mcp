@@ -217,6 +217,11 @@ describe('one of these fights on its own ground, and one of the two dies', () =>
             seed: 'beast-mortality-bare', catalog: fixtureCatalog(),
             presentYear: 1000, population: 250
         }).state;
+        // Native ventures now meet beasts too. An initially unmet world with
+        // 250 people need not stay unmet for 120 years. This empty-contact control
+        // has nobody who could make that contact, while pressure still runs.
+        bare.npcs = [];
+        bare.populationTarget = 0;
         expect(bare.npcs.filter(n => theSpeciesItIs(n) !== null)).toHaveLength(0);
         const out = applyPressure(bare, bare.currentDay, bare.currentDay + 120 * YEAR);
         expect(out.events.length).toBeGreaterThan(0);

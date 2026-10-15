@@ -1578,7 +1578,7 @@ export function* simulateTimeSkipParts(
                     hp -= damage;
                     push(
                         'encounter',
-                        `A minor disturbance interrupted cultivation and cost ${damage} HP. Nothing followed it.`,
+                        `A minor disturbance interrupted cultivation and hurt the body, leaving ${hp} of ${cultivator.maxHp}. Nothing followed it.`,
                         false,
                         { severity: 'minor', passedBy: false, damage }
                     );

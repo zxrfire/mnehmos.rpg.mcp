@@ -267,7 +267,7 @@ export const teachingVerbs = {
         namedArt: string | undefined
     ): Promise<Execution> {
         this.atHand = this.atHand ?? await this.loadWorld();
-        const world = this.atHand;
+        let world = this.atHand;
 
         // ── WHAT THIS CULTIVATOR COULD HAND ANYBODY ──────────────────────
         //
@@ -311,7 +311,7 @@ export const teachingVerbs = {
             ));
         }
 
-        const student = world?.npcs.find(row => row.id === studentRow.id) ?? null;
+        let student = world?.npcs.find(row => row.id === studentRow.id) ?? null;
         if (!world || !student) {
             // The art has to land on a row the world holds. A stored-only entry
             // has no `techniqueIds`, so writing it there would be writing it
@@ -371,7 +371,7 @@ export const teachingVerbs = {
                 // are different events: holding arts none of which you hold
                 // WELL ENOUGH is not the same as holding arts they already have.
                 const short = held
-                    .filter(row => !student.cultivation.techniqueIds.includes(row.id))
+                    .filter(row => !student!.cultivation.techniqueIds.includes(row.id))
                     .filter(row => !couldWriteOutACopy(
                         { realmOrdinal: cultivator.realmOrdinal, masteryOfIt: row.mastery },
                         row.id
@@ -508,7 +508,7 @@ export const teachingVerbs = {
 
         const today = Math.floor(world.currentDay);
         const onDay = Math.floor(run.elapsedDays);
-        const others = here.filter(other => other.id !== student.id).length;
+        const others = here.filter(other => other.id !== student!.id).length;
         const inTheSquare = new Set(here.map(other => other.id));
         const watching = whoHereCouldSayWhoseItWas(
             world.npcs.filter(npc => inTheSquare.has(npc.id)), ownerFactionId, art.id
@@ -562,6 +562,17 @@ export const teachingVerbs = {
         }
 
         // ── AND THE ART IS ON THEM ───────────────────────────────────────
+        // The span advances their actual body and can replace the world handle.
+        // Add the art to that current row, never to the pre-span body.
+        world = this.atHand;
+        const currentStudent = world?.npcs.find(npc => npc.id === student!.id);
+        if (!world || !currentStudent || currentStudent.status !== 'alive') {
+            spent.facts.lines.push(`${student.name} is no longer alive to complete the lesson.`);
+            spent.calls.push({ name: 'teach.studentAbsent', action: 'teach',
+                summary: 'The actual student did not survive the teaching span; no art or favour written.', ok: false });
+            return spent;
+        }
+        student = currentStudent;
         const at = world.npcs.findIndex(npc => npc.id === student.id);
         world.npcs[at] = {
             ...student,

@@ -3087,14 +3087,15 @@ export function openMelee(sides: readonly SideInput[], ctx: MeleeContext): Melee
     const sidesThatCanReach = sides
         .map((_, index) => index)
         .filter(index => fighters.some(f =>
-            f.sideIndex === index && ctx.acts?.[f.input.id] !== 'guard'
-            && canReach(f, fighters.filter(o => o.sideIndex !== index))
+            f.sideIndex === index && canReach(f, fighters.filter(o => o.sideIndex !== index))
         ));
 
     if (sidesThatCanReach.length === 0) {
         return { state: null, result: assemble(sides, fighters, hp, injuries, exchanges, ctx, null) };
     }
-    if (sidesThatCanReach.length === 1) {
+    if (sidesThatCanReach.length === 1 && fighters.some(f =>
+        f.sideIndex === sidesThatCanReach[0] && ctx.acts?.[f.input.id] !== 'guard'
+        && canReach(f, fighters.filter(o => o.sideIndex !== f.sideIndex)))) {
         // Not a fight in either direction: one side gets what it came for, at no
         // risk, in a single action, and everybody else is a decision rather than
         // an opponent.
@@ -3107,7 +3108,8 @@ export function openMelee(sides: readonly SideInput[], ctx: MeleeContext): Melee
             if (!reachable) continue;
             f.state = 'fallen';
             f.felledVector = vector;
-            f.felledBy = fighters.find(o => o.sideIndex === winner && ctx.acts?.[o.input.id] !== 'guard')?.input.id ?? null;
+            f.felledBy = fighters.find(o => o.sideIndex === winner && ctx.acts?.[o.input.id] !== 'guard'
+                && canReach(o, fighters.filter(target => target.sideIndex !== winner)))?.input.id ?? null;
             if (theWorstItCouldDo(intent.thrown ?? AN_ORDINARY_SWING) === 'a_death') {
                 hp[f.input.id] = 0;
             } else {
