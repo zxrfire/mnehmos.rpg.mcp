@@ -279,7 +279,7 @@ repository, observer, world and place object identities share computed placement
 and capped rosters; the scope is removed in `finally`, including on failure.
 Its route context shares graph paths while each person's activity and body stay
 live inputs. It never spans an action or clock advance. Full-ground crowding
-remains separate from the three-person visible roster. Live narration does not
+remains separate from the visible roster of three others plus the active party. Live narration does not
 enter this scope. Default entrance selection reuses the existing read's areas;
 an arbitrary invalid standing marker retains the ordinary unobserved-area fallback.
 The owner's places ruling (2026-10-03) applies to the playable routes: a junior can name
@@ -297,7 +297,7 @@ Public city destinations remain discoverable when empty, including the auction h
 the existing exchange, inn, teahouse and market rows. Local area walks preserve the city
 location/calendar identity. A route never creates free stock, grants a vault key, or declares
 an NPC present who is in another area. Local walks spend 1/4 day; routine activity reads the
-arrival hour, with at most three NPCs in any area and usually one or two.
+arrival hour, with at most three other people plus the active player party in an area.
 Prepared bench work pays that same walk before its work days. Failed preparation never
 moves the maker, and an inaccessible work room refuses before materials are consumed.
 Public ship boards and crew wrappers read the engine's shared public shipping
@@ -3940,3 +3940,11 @@ including a passage tally, through its actual possession and provenance. The
 existing gift favour still applies; counted pouch stock keeps its own transfer
 path. A hand-over remains a gift when the object is named passage or ticket;
 paying for passage and handing a tally in retain the public-service routes.
+
+Area presence derives active companions and followers from the ordinary company
+activities. They join the player without using the three places for other
+people. Hearsay, greetings and scene company read that same presence; narrator
+cards no longer truncate an actual larger party at a separate six-card limit.
+A conversation focused on specified people keeps its existing focus without
+changing who is physically present. Actual rooms, hulls and road positions
+still decide whether a companion is here.

@@ -3127,7 +3127,7 @@ market is computed on arrival and nothing is stored. **What that does not give**
 gap it is: the town has no road of its own, no residents in `npcs`, and no encounters.
 Closing it needs a world population scaled to the map it is spread over.
 
-**A place is read into areas of at most three, the same way.**
+**An area holds three other people plus the active player party.**
 `where-in-a-place-somebody-is-standing.ts` reads whoever a row holds (after the compound's
 room read) into areas off what they are at: in a town a counter or a hired hand to a market or
 the street, a table or a sitting to an inn, anything else to the street; at a house's seat the
@@ -3146,13 +3146,14 @@ the earlier packing rule filled 33% of occupied areas with three. With hourly ro
 `road-world`'s busiest town has occupied-area counts (one/two/three) of 6/3/2 at 08:00,
 7/4/1 at noon and 18/0/0 at 22:00 (day 365000; `npc-routines.test.ts`).
 
-Companions take space in that same read; they are never appended afterwards. The
-optional arrivals include run sheets and separated presences. Existing occupants
-keep their space; companions use vacancies, so approaching somebody cannot send
-them elsewhere. Overflow goes to another area of the place, creating one when
-necessary. Extra companions stay
-outside a full private room. The player is excluded; individually tracked beasts
-and bodies count against three, with bodies held separately from living targets.
+Active companions and followers are derived from the existing company activities.
+They do not consume any of the three places for other people during binning,
+explicit-area placement or joining the player. Existing other occupants keep
+those three places; a party never displaces them. Expired company uses the
+ordinary allowance again. Actual room, road-edge and hull admission still
+controls who can stand here; party membership cannot recall an absent body.
+Run sheets and separated presences use the same allowance. The player is
+excluded; non-party beasts and fallen bodies still count against three.
 Placement is derived on every read, including after travel, summons and world ticks.
 Whole-row and whole-compound readers remain for population and ground mechanics.
 
@@ -4440,7 +4441,7 @@ receipts are merged once; no future departure cast is kept as current company.
 
 An observer on a known unfinished road edge uses only exact matching physical
 positions. Those already-filtered bodies share its public contact point before
-the existing three-person area cap; the coarse endpoint label supplies no rooms
+the allowance for three other people plus the active party; the coarse endpoint label supplies no rooms
 or residents. Vertex placement retains ordinary named-area draws.
 
 An owned residence's physical slab follows the actual tagged location, including

@@ -20,7 +20,7 @@ import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { routeQueriesFor, type LocationRecord, type RouteQueries } from '../engine/world/locations.js';
-import { AT_MOST_IN_AN_AREA, theAreasOf, whereInThisPlaceTheyStand, type APlaceReadIntoAreas } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { threeOthersAndTheParty, theAreasOf, whereInThisPlaceTheyStand, type APlaceReadIntoAreas } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { activeProxiesByOwner } from '../engine/world/something-acting-in-your-place.js';
 import { isActing } from '../engine/world/npc-state.js';
 import { routineOf, routineTime } from '../engine/world/npc-routines.js';
@@ -256,10 +256,11 @@ function readOthersPresent(
         row.alive &&
         (row.location ?? '').trim().toLowerCase() === here);
 
-    if (!world) return oneCrowd(stored, []).slice(0, AT_MOST_IN_AN_AREA);
+    const partyIds = new Set(world ? whoIsOnTheRoadWith(world.npcs, cultivator.id, routineTime(world)).map(person => person.id) : []);
+    if (!world) return threeOthersAndTheParty(oneCrowd(stored, []), partyIds);
 
     const place = worldLocationFor(world, cultivator.location);
-    if (!place) return oneCrowd(stored, []).slice(0, AT_MOST_IN_AN_AREA);
+    if (!place) return threeOthersAndTheParty(oneCrowd(stored, []), partyIds);
 
     const read = peopleInThisPlace(repos, cultivator, world, place);
     const area = read.areas.find(one => one.id === cultivator.standingIn)?.id
@@ -268,7 +269,7 @@ function readOthersPresent(
         ?? (betweenRoadEndpoints(repos.db, cultivator) || failedPublicPassageScene(repos,cultivator,world,routineTime(world)) ? read.areas.find(one => one.for !== 'room')?.id
             : whereInThisPlaceTheyStand(world, place, cultivator.standingIn, cultivator.sectId,
                 cultivator.standingIn == null ? read.areas : undefined).id);
-    return read.people.filter(row => read.whereIs.get(row.id) === area);
+    return threeOthersAndTheParty(read.people.filter(row => read.whereIs.get(row.id) === area), partyIds);
 }
 
 /** One placement for world people, run sheets and separated presences. */
@@ -320,6 +321,7 @@ export function peopleInThisPlace(
     }
     const read = theAreasOf(world, place, undefined, {
         id: cultivator.id, sectId: cultivator.sectId, standingIn: betweenEndpoints ? null : cultivator.standingIn,
+        partyIds: followers,
         ...(cursor || carrier ? { physical: { accepts, betweenEndpoints,
             ...(carrier ? { hull: carrierAreaBinding(carrier) } : {}) } } : {}),
         others: [

@@ -24,9 +24,6 @@ import type { Company, SomebodyInTheSquare, SomebodyWhoReplied } from './facts.j
 import type { AwarenessRow } from './knowledge.js';
 import { AN_AMBITION_IS_ANSWERED_AS_THINKING } from './the-lanes-a-sentence-can-go-down.js';
 
-/** The most people handed over as a full card. The rest are named and nothing more. */
-export const PEOPLE_GIVEN_A_CARD = 6;
-
 export const THE_STORYTELLER = `YOU ARE THE STORYTELLER OF A XIANXIA WORLD, AND YOU PLAY IT OPPOSITE ONE PERSON.
 
 The player is a cultivator, addressed as "you". You play the ground, weather, crowd and every
@@ -973,7 +970,6 @@ export function howTheRoomReadsThem(company: Company, yourOrdinal: number): stri
 function facesWithNoName(company: Company): string[] {
     return company.strangers
         .filter(face => face.sex !== undefined)
-        .slice(0, PEOPLE_GIVEN_A_CARD)
         .map(face => `- A face with no name to it: ${face.sex === 'female' ? 'a woman' : face.sex === 'male' ? 'a man' : 'somebody'}`
             + (face.at ? `, ${face.at}.` : '.'));
 }
@@ -1022,24 +1018,19 @@ export function thePeopleHere(
         || (sitsOut(a) ? 1 : 0) - (sitsOut(b) ? 1 : 0)
         || (b.looksUp ? 1 : 0) - (a.looksUp ? 1 : 0)
         || b.playsToTheRoom - a.playsToTheRoom);
-    const carded = ranked.slice(0, PEOPLE_GIVEN_A_CARD);
-    const namedOnly = ranked.slice(PEOPLE_GIVEN_A_CARD).map(person => person.name);
     const faceless = company.total - company.named.length;
 
     const room = howTheRoomReadsThem(company, yourOrdinal);
     return [
         'THE PEOPLE HERE',
         ...(room ? [room] : []),
-        ...carded.map(person => aPersonsCard(
+        ...ranked.map(person => aPersonsCard(
             asSeen(person), yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
             alreadySaid.has(person.name), alreadyShown.has(person.name), sitsOut(person),
             thePlayerIsSureItIsThem(person.name, awareness, playerSaid)
         )),
-        ...(namedOnly.filter(name => thePlayerIsSureItIsThem(name, awareness, playerSaid)).length > 0
-            ? [`- Also here, and nameable: ${namedOnly.filter(name => thePlayerIsSureItIsThem(name, awareness, playerSaid)).join(', ')}.`]
-            : []),
-        // A FACE WITH NO NAME IS STILL A CARD: an area holds three at most, and the owner's "3
-        // character cards per room" counts the faceless too.
+        // Presence already holds three other people plus the actual party.
+        // Every present face has a card; a presentation cap cannot hide a companion.
         ...facesWithNoName(company),
         ...(faceless > 0 && facesWithNoName(company).length > 0
             ? ['- They have no names on the page until they give one, and nobody counts them aloud.']
