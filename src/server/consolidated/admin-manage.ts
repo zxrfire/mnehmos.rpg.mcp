@@ -715,7 +715,7 @@ const RosterSchema = z.object({
     includeDead: z.boolean().optional().default(true)
 });
 
-const SpawnEncounterSchema = z.object({
+export const SpawnEncounterSchema = z.object({
     ...AdminSpawnSpecSchema.shape,
     worldPerson: z.boolean().optional(),
     action: z.literal('spawn_encounter'),
@@ -755,7 +755,7 @@ const SpawnEncounterSchema = z.object({
     // species that has kept every arrangement it made for a hundred and forty
     // years does not open by attacking, and a zod `.default()` leaves the
     // handler unable to tell a typed `hostile` from an assumed one.
-    disposition: z.enum(['hostile', 'wary', 'indifferent', 'friendly']).optional()
+    disposition: AdminSpawnSpecSchema.shape.disposition
         .describe('How they are disposed toward the player. Defaults to hostile, or to indifferent when `species` named somebody past the change.'),
     // Which house answers for them, and so how far they go when wronged. See
     // the comment beside `sectId` in the handler.
@@ -1269,6 +1269,14 @@ function whatSomebodyWhoTookAShapeBringsIntoTheRoom(input: {
 export async function handleSpawnEncounter(
     args: z.infer<typeof SpawnEncounterSchema>
 ): Promise<object> {
+    const result = await spawnEncounter(args);
+    const guesses = (args.guesses ?? []).map(guess => `Read '${guess.word}' as ${guess.field} ${guess.value}.`);
+    const error = result as { error?: unknown; message?: string };
+    return guesses.length ? { ...result, guesses,
+        ...(error.error && error.message ? { message: `${error.message}\n${guesses.join('\n')}` } : {}) } : result;
+}
+
+async function spawnEncounter(args: z.infer<typeof SpawnEncounterSchema>): Promise<object> {
     if (!isAdminModeEnabled()) return adminDisabled('spawn_encounter');
     const repos = ensureCultivationDb();
     const resolved = resolveActiveRun(repos, {});
@@ -1276,7 +1284,8 @@ export async function handleSpawnEncounter(
 
     const { run, cultivator } = resolved;
 
-    if (args.worldPerson || ['sex', 'age', 'house', 'rank', 'temperament'].some(k => k in args)) {
+    if (args.worldPerson || args.disposition === 'close' || args.disposition === 'sworn_sibling'
+        || ['sex', 'age', 'house', 'rank', 'temperament', 'seal', 'toward'].some(k => k in args)) {
         return spawnPersonFromSpec(repos, run, cultivator, args);
     }
 
@@ -2979,6 +2988,9 @@ Actions: ${ACTIONS.join(', ')}`,
         house: AdminSpawnSpecSchema.shape.house,
         rank: AdminSpawnSpecSchema.shape.rank,
         temperament: AdminSpawnSpecSchema.shape.temperament,
+        seal: AdminSpawnSpecSchema.shape.seal,
+        toward: AdminSpawnSpecSchema.shape.toward,
+        guesses: AdminSpawnSpecSchema.shape.guesses,
         action: z.string().describe(`Action: ${ACTIONS.join(', ')}`),
         cultivatorId: z.string().optional(),
         runId: z.string().optional(),
@@ -2995,7 +3007,7 @@ Actions: ${ACTIONS.join(', ')}`,
         location: z.string().optional(),
         species: z.string().optional()
             .describe('For spawn_encounter: a beast species past the change, stood up as a person.'),
-        disposition: z.enum(['hostile', 'wary', 'indifferent', 'friendly']).optional(),
+        disposition: AdminSpawnSpecSchema.shape.disposition,
         alignment: SectAlignmentSchema.optional(),
         itemId: z.string().optional(),
         about: z.string().optional(),
@@ -3237,6 +3249,7 @@ export async function handleAdminManage(
             if (data.worthInAFight) out.push(String(data.worthInAFight.consequence));
         } else if (data.encounterId) {
             out.push(heading('encounter spawned'));
+            if (Array.isArray(data.guesses)) for (const guess of data.guesses) out.push(String(guess));
             out.push(fields({
                 'Opponent': data.opponent?.name,
                 'Rank': data.opponent?.realm?.name ?? data.opponent?.rank,

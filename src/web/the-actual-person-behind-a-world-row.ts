@@ -14,7 +14,8 @@ export function actualPersonFor(game: GameService, id: string): NpcRecord | unde
     const row = standInTheWorld({ ...world, npcs: world.npcs.slice() }, body,
         { factionId: membership?.sectId ?? null, rankIndex: membership?.rankIndex ?? -1,
             contribution: membership?.contribution ?? 0 }, routineTime(world));
-    return row ? { ...row, locationId: game.worldPlaceOf(body), activity: body.standingIn ? {
+    return row ? { ...row, cultivation: { ...row.cultivation, seal: body.qiSeal }, soulState: body.soulState,
+        locationId: game.worldPlaceOf(body), activity: body.standingIn ? {
         kind: 'their_own_business', note: '', withIds: [], sinceDay: routineTime(world),
         standingIn: body.standingIn } : null } : undefined;
 }

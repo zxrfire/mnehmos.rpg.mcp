@@ -21,6 +21,7 @@ import { canPointAt } from '../social/discovery.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { areAtWarWithEachOther } from './war-melee.js';
+import { willTheHouseBackThis } from '../social-leverage/what-a-house-will-do-about-it.js';
 import { creditMerit, whatServiceIsWorth } from './what-a-house-counts-in-somebodys-favour.js';
 import { theirFaceMoves, whatWinningIsWorth } from './what-a-face-is-worth.js';
 import type { PersonBounty } from './a-house-puts-a-price-on-somebody.js';
@@ -193,17 +194,20 @@ export function reactToWitnessedFact(world: WorldState, fact: HistoricalFact, in
         const carriesForVictim = witness.id === input.victimId
             || (victimTie !== null && victimTie.standing > 0 && ['kin', 'spouse', 'parent', 'child', 'master', 'disciple', 'ally'].includes(victimTie.kind))
             || (victim?.factionId !== null && victim?.factionId === witness.factionId);
-        const forOwnSide = seeing.seen.wrong === 'killed' && seeing.seen.sawAct
+        const methodForbidden = fact.data.methodLeverage === 'attachment'
+            && willTheHouseBackThis(world.factions.find(house => house.id === witness.factionId)?.alignment ?? null,
+                'attachment', 'against_their_interest') === 'forbidden';
+        const forOwnSide = !methodForbidden && seeing.seen.wrong === 'killed' && seeing.seen.sawAct
             && actorHouseId !== null && actorHouseId === witness.factionId
             && victim !== undefined && victim.factionId !== null && victim.factionId !== actorHouseId
             && areAtWarWithEachOther(world, actorHouseId, victim.factionId);
         const helped = seeing.seen.wrong === null && fact.actors.some(a => a.id === actor.id
             && (a.role === 'helper' || a.role === 'rescuer'));
         const gratitude = helped && (witness.id === input.victimId || carriesForVictim);
-        const credit = forOwnSide || helped && !gratitude && (
+        const credit = !methodForbidden && (forOwnSide || helped && !gratitude && (
             witness.factionId !== null && witness.factionId === actor.factionId
             || world.factions.find(h => h.id === witness.factionId)?.alignment === 'righteous'
-            || (relationshipWith(witness, actor.id)?.standing ?? 0) > 0);
+            || (relationshipWith(witness, actor.id)?.standing ?? 0) > 0));
         const needs = doesTheDeedNeedExplaining({
             trust: trustFor(world, actor, witness, fact, input.ledger ?? world.obligations),
             seen: seeing.seen, carriesForVictim, forOwnSide,

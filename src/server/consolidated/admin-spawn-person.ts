@@ -9,7 +9,12 @@ import { SECTS } from '../../data/cultivation/sects.js';
 import { DAYS_PER_YEAR } from '../../engine/cultivation/cultivation.js';
 import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
 import { forStream } from '../../engine/cultivation/rng.js';
-import { createNpc } from '../../engine/world/npc-state.js';
+import { createNpc, upsertRelationship } from '../../engine/world/npc-state.js';
+import { holdsASlaveSeal } from '../../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
+import { releasePersonSeal, rememberForcedService } from '../../engine/world/person-seals.js';
+import { writeObligations } from '../../storage/repos/obligation.repo.js';
+import { recordSwornBrotherhood } from '../../engine/world/close-people-go-together.js';
+import { standInTheWorld } from '../../web/the-player-as-a-row-the-world-can-invite.js';
 import { theAreasOf } from '../../engine/world/where-in-a-place-somebody-is-standing.js';
 import { theSpeciesTheyMeant } from '../../engine/world/a-beast-that-took-a-shape-is-somebody.js';
 import { BEAST_TAG_PREFIX } from '../../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
@@ -38,10 +43,6 @@ export async function spawnPersonFromSpec(
     repos: CultivationRepos, run: Run, player: Cultivator,
     spec: AdminSpawnSpec & { location?: string; alignment?: string; disposition?: string }
 ): Promise<object> {
-    if (spec.disposition !== undefined) {
-        return guidingError('unsupported_disposition', 'A world NPC has no present-disposition field. '
-            + 'Use a supported temperament, or the legacy spawn_encounter disposition field without world traits. Nothing spawned.');
-    }
     if (spec.ordinal !== undefined && (!Number.isInteger(spec.ordinal) || spec.ordinal < 0 || spec.ordinal > MAX_ORDINAL)) {
         return guidingError('invalid_ordinal', `Ordinal ${spec.ordinal} is outside 0..${MAX_ORDINAL}. Nothing spawned.`);
     }
@@ -83,6 +84,14 @@ export async function spawnPersonFromSpec(
     const place = worldLocationFor(world, spec.location ?? player.location);
     if (!place) return guidingError('unknown_location', `No world place answers to "${spec.location ?? player.location}". Nothing spawned.`);
     const day = world.currentDay;
+    const toward = !spec.toward || /^(me|player)$/i.test(spec.toward) ? player
+        : world.npcs.find(person => person.status === 'alive' && person.name.toLowerCase() === spec.toward!.toLowerCase());
+    if (!toward) return guidingError('unknown_tie_subject', `No living person answers to "${spec.toward}". Nothing spawned.`);
+    const sealHolder = !spec.seal ? null : /^(me|player)$/i.test(spec.seal.holder) ? player
+        : repos.cultivators.list().find(person => person.name.toLowerCase() === spec.seal!.holder.toLowerCase())
+            ?? world.npcs.find(person => person.status === 'alive' && person.name.toLowerCase() === spec.seal!.holder.toLowerCase());
+    if (spec.seal && (!sealHolder || ('alive' in sealHolder ? !sealHolder.alive : sealHolder.status !== 'alive')))
+        return guidingError('unknown_seal_holder', `No living person answers to "${spec.seal.holder}". Nothing spawned.`);
     const age = spec.age ?? 20;
     const takenNames = new Set(world.npcs.map(n => n.name.toLowerCase()));
     if (spec.name && (takenNames.has(spec.name.toLowerCase()) || repos.cultivators.list().some(n => n.name.toLowerCase() === spec.name!.toLowerCase()))) {
@@ -107,6 +116,15 @@ export async function spawnPersonFromSpec(
         return guidingError('age_past_lifespan', `Age ${age} reaches the end of this body's ${span}-year lifespan. Nothing spawned.`);
     }
     if (species) npc = addGoal(npc, whatThisOneHasAlwaysWanted({ beast: species, locationId: place.id }), day);
+    if (spec.disposition) npc = upsertRelationship(npc, { targetId: toward.id, targetName: toward.name,
+        kind: spec.disposition === 'hostile' ? 'enemy' : 'acquaintance',
+        standing: spec.disposition === 'close' || spec.disposition === 'sworn_sibling' ? 1
+            : spec.disposition === 'friendly' ? 0.5 : spec.disposition === 'hostile' ? -0.7
+            : spec.disposition === 'wary' ? -0.15 : 0, note: 'ADMIN arranged the initial disposition.' }, day);
+    // ADMIN arranges an existing effect, as it arranges a realm; ordinary laying still has its realm/consent gate.
+    if (spec.seal && sealHolder) npc.cultivation.seal = { kind: spec.seal.kind, byId: sealHolder.id,
+        atOrdinal: 'realmOrdinal' in sealHolder ? sealHolder.realmOrdinal : sealHolder.cultivation.realmOrdinal,
+        liftsOnDay: null, sinceDay: day, note: 'ADMIN arranged an existing person seal.' };
     // The encounter shares an area with the player, subject to its three-person capacity.
     npc.activity = { kind: 'talking', note: 'Standing with the person they just encountered.',
         withIds: [player.id], sinceDay: day, untilDay: day + 1 };
@@ -120,7 +138,35 @@ export async function spawnPersonFromSpec(
                 .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })), world.npcs), onDay: day
     }) : null;
     repos.db.transaction(() => {
+        if (spec.seal?.kind === 'slave' && sealHolder) {
+            for (const old of world.npcs) if (old.status === 'alive' && holdsASlaveSeal(old.cultivation.seal, sealHolder.id, day))
+                releasePersonSeal(world, old.id, day);
+            for (const old of repos.cultivators.list()) if (old.alive && holdsASlaveSeal(old.qiSeal, sealHolder.id, day)) {
+                const before = world.obligations.length;
+                rememberForcedService(world, old.id, old.qiSeal!, day);
+                writeObligations(repos.db, world.obligations.splice(before));
+                repos.cultivators.update(old.id, { qiSeal: null });
+            }
+        }
         world.npcs.push(npc);
+        if (spec.disposition === 'close' || spec.disposition === 'sworn_sibling') {
+            let counterpart = world.npcs.find(person => person.id === toward.id);
+            if (toward.id === player.id) {
+                const member = repos.sects.getMembership(player.id);
+                counterpart = standInTheWorld(world, player, { factionId: member?.sectId ?? null,
+                    rankIndex: member?.rankIndex ?? -1, contribution: member?.contribution ?? 0 }, day) ?? undefined;
+            }
+            if (counterpart) {
+                const at = world.npcs.findIndex(person => person.id === counterpart!.id);
+                world.npcs[at] = upsertRelationship(counterpart, { targetId: npc.id, targetName: npc.name,
+                    kind: 'ally', standing: 1, note: 'ADMIN arranged an existing close tie.' }, day);
+                if (spec.disposition === 'sworn_sibling') {
+                    const before = world.obligations.length;
+                    recordSwornBrotherhood(world, npc, world.npcs[at], day);
+                    if (toward.id === player.id) writeObligations(repos.db, world.obligations.splice(before));
+                }
+            }
+        }
         if (worldLocationFor(world, player.location)?.id === place.id) {
             const area = theAreasOf(world, place, undefined, player).whereIs.get(id);
             if (area) repos.cultivators.standIn(player.id, area);
@@ -135,7 +181,10 @@ export async function spawnPersonFromSpec(
         adminMode: true, spawned: true, encounterId: id,
         opponent: { id, name: npc.name, rank: rankName(ordinal) }, location: place.name,
         sex: npc.identity.sex, age, house: house?.name, rung: house?.ranks[rankIndex],
-        species: species?.name, temperament: spec.temperament, unusedWords: spec.unusedWords ?? [],
+        species: species?.name, temperament: spec.temperament, disposition: spec.disposition,
+        alignment: house?.alignment, seal: npc.cultivation.seal,
+        guesses: (spec.guesses ?? []).map(guess => `Read '${guess.word}' as ${guess.field} ${guess.value}.`),
+        unusedWords: spec.unusedWords ?? [],
         sayThis: ['who is here', 'talk to someone'],
         gateLifted: { note: 'A real world NPC. Their name has not been introduced in play.' }
     };

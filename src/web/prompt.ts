@@ -347,6 +347,10 @@ Rules:
   Azure Dew Sect; what care do you offer?" is conversational context with a question, not
   an explanation of a witnessed deed. An explicit claim about one's identity or affiliation
   offered as an account still uses tell; so does an explicit witnessed-deed account or report.
+- Open personal agreements use action: oath, intent: contract_offer, target: the other person,
+  contract: {yourTerms, theirTerms, binding: word|dao|blood|slave, endCondition, days?, untilDeath?: you|them, bound?: you|them}.
+  Preserve the declared promises and ending condition literally. A slave seal is absolute compulsion, not persuasion.
+  Acceptance/refusal of an offered contract uses oath with intent contract_accept/contract_decline.
 - An explanation of a witnessed deed uses action: tell, target: the witness, topic: the player's words,
   and deedAccount: found, already_damaged, defence, denial, blame, permission, or admitted.
   These describe claims, never outcomes. For blame also give blamed: the person's name.

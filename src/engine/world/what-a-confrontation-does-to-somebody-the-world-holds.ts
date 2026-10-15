@@ -135,11 +135,15 @@ import { indexById, type FactionRecord, type WorldState } from './world-state.js
  * it forming a second opinion about who won.
  */
 export interface WhatTheFightDecided {
+    /** The real command behind this person's hand, when the command is established. */
+    commandedBy?: { id: string; name: string; orderId: string; present?: boolean };
     /** The world person who was fought. */
     npcId: string;
     /** Whoever fought them. A cultivator id; it need not be in `state.npcs`. */
     byId: string;
     byName: string;
+    /** False for an effect worked remotely; participation is not physical presence. */
+    byPresent?: boolean;
     /** Absolute WORLD day. Not the run's elapsed days. */
     day: number;
 
@@ -399,9 +403,11 @@ export function whatTheConfrontationDidToThem(
             summary: `${input.byName} killed ${dying.name}, `
                 + `${dying.cultivation.realmOrdinal} rungs up the ladder.`,
             actors: [
-                { id: input.byId, name: input.byName, role: 'killer' },
-                { id: dying.id, name: dying.name, role: 'victim' }
+                { id: input.byId, name: input.byName, role: 'killer', ...(input.byPresent === false ? { present: false } : {}) },
+                { id: dying.id, name: dying.name, role: 'victim' },
+                ...(input.commandedBy ? [{ id: input.commandedBy.id, name: input.commandedBy.name, role: 'commander', present: input.commandedBy.present === true }] : [])
             ],
+            ...(input.commandedBy ? { causes: [input.commandedBy.orderId] } : {}),
             locationId: dying.locationId,
             factionIds: dying.factionId ? [dying.factionId] : [],
             visibility: 'regional',
@@ -434,9 +440,10 @@ export function whatTheConfrontationDidToThem(
             // sweep and the only killings that could reach a player's opening
             // life were the ones the world was born holding. The ledger and the
             // record disagreed about whether anybody was carrying it.
-            data: theyLeft.length > 0 && followed.against
-                ? aPricedDeed(followed.against.severity)
-                : {},
+            data: {
+                ...(theyLeft.length > 0 && followed.against ? aPricedDeed(followed.against.severity) : {}),
+                ...(input.commandedBy ? { commandedBy: input.commandedBy.id, methodLeverage: 'attachment' } : {})
+            },
             consequences: fillConsequences({
                 immediate: 'One fewer, and somebody knows who did it.',
                 losers: [{ id: dying.id, name: dying.name, role: 'victim' }],

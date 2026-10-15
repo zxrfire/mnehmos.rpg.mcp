@@ -53,7 +53,7 @@ export function prepareNpcDepartureApproach(world:WorldState,npc:NpcRecord,desti
 }
 
 export function continueNpcDepartureApproach(world:WorldState,npc:NpcRecord,day:number,routes?:RouteQueries):boolean {
-    const intent=npc.activity?.departureApproach,binding=npc.activity?.capitalMissionId;
+    const intent=npc.activity?.departureApproach,binding=npc.activity?.capitalMissionId??npc.activity?.slaveOrderId;
     if(!intent||!binding)return false;
     // Explicit gathering belongs to the player's physical departure, including
     // a rider whose company agreement has not begun yet.

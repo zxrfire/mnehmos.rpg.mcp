@@ -19,6 +19,7 @@ import { askingWhatItWouldTake } from './what-a-request-asks-and-of-whom.js';
 import { SECT_SUBORDINATE_NOUNS } from './sect-phrasings.js';
 import { theFragmentIsOnlyTheDeclaration } from './what-you-are-not-showing.js';
 import { parseIntent } from './verb-pattern-table.js';
+import { openContractSaid } from './open-contract-phrasings.js';
 import { theFragmentRestrainsTheBlow } from './how-they-said-they-swung.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -432,6 +433,22 @@ export async function theWholeSentenceAsAPlan(
     read: (clause: string) => Promise<PlannedAction>,
     nameSpans: readonly ExplicitNameSpan[] = []
 ): Promise<TheSentenceAsAPlan> {
+    const afterContract = /;\s*(?:then|after that)\s+(I\s+.+)$/i.exec(input);
+    const declaration = afterContract ? input.slice(0, afterContract.index) : input;
+    const contract = openContractSaid(declaration);
+    if (contract?.contract && afterContract) {
+        const following = afterContract[1]!;
+        const rest = await theWholeSentenceAsAPlan(following, [{ action: await read(following), said: following }], read);
+        return { steps: [{ action: contract, said: declaration }, ...rest.steps], backfilled: rest.backfilled,
+            why: ['The declared terms belong to one offer; the following acts remain acts.', ...rest.why] };
+    }
+    if (contract?.contract) return {
+        steps: [{ action: contract, said: input }], backfilled: [],
+        why: ['The declared terms belong to one contract offer.']
+    };
+    if (fromTheReader.some(step => step.action.contract)) return {
+        steps: [...fromTheReader], backfilled: [], why: ['Contract terms are promises, not further performed acts.']
+    };
     const clauses = theClausesOf(input, nameSpans);
     if (nameSpans.length > 0) fromTheReader = fromTheReader.map(step => {
         const own = clauses.length === 1 ? input : step.said ?? input;

@@ -1,4 +1,5 @@
 import { rideOfferSaid } from './ride-offer-phrasings.js';
+import { openContractSaid } from './open-contract-phrasings.js';
 import { isOneInformationExchange } from './one-information-exchange.js';
 import { cultivationAgreementSaid } from './cultivation-agreement-phrasings.js';
 /**
@@ -4606,6 +4607,10 @@ function withoutWhatOnlyFillsTheFront(input: string): string {
 }
 
 export function parseIntent(rawInput: string): PlannedAction {
+    if (/\b(?:slave|qi)[ -]seal(?:ed)?\b/i.test(rawInput) && !/\bcontract\b/i.test(rawInput)
+        || /\b(?:order|command)\s+(?:my|the)\s+slave\b/i.test(rawInput)) return { action: 'oath', intent: 'read' };
+    const openContract = openContractSaid(rawInput);
+    if (openContract) return openContract;
     const input = withoutWhatOnlyFillsTheFront(inTheCharactersThePatternsUse(rawInput));
     if (/^(?:i\s+)?(?:leave|quit|depart from)\s+(?:the|this|our)\s+party[.!]?$/i.test(input)
         || /^(?:i\s+)?(?:tell|ask)\s+(?:the|our)\s+party\s+(?:to\s+)?(?:continue|press on|rest|turn back)[.!]?$/i.test(input))

@@ -21,12 +21,12 @@ export function resolveWithPlayerPresent<T>(world: WorldState, place: ContactPla
 }
 
 /** The player's actual foreground contact, when an event needs a physical witness. */
-export function playerAtTheContact(world: WorldState): { id: string; placeId: string; areaId: string | null } | null {
+export function playerAtTheContact(world: WorldState): { id: string; placeId: string; areaId: string | null; person: NpcRecord } | null {
     const contact = PLAYER_PLACES.get(world);
     const place = contact?.place;
     const player = typeof place === 'object' ? place.person ?? contact?.players[0] : contact?.players[0];
     if (!player || !place) return null;
-    return { id: player.id, placeId: typeof place === 'string' ? place : place.placeId,
+    return { id: player.id, person: player, placeId: typeof place === 'string' ? place : place.placeId,
         areaId: typeof place === 'string' ? null : place.areaId };
 }
 

@@ -33,7 +33,7 @@ export const FORCEABLE_DECISIONS: Readonly<Record<string, ForceableDecision>> = 
         decides: 'whether the person in front of you moved',
         landing: 'they did the thing that was asked, at whatever it costs them and you',
         where: 'resolveAttempt in engine/social-leverage/an-attempt-to-move-somebody.ts',
-        reachedBy: ['interact', 'request', 'propose', 'decline']
+        reachedBy: ['interact', 'request', 'propose', 'decline', 'oath']
     },
     /**
      * A house looking at a stranger who cleared its bar. The bar itself is a
@@ -259,4 +259,3 @@ export function theRollLands(decision: ForceableDecisionName): boolean {
     if (!forced.landed.includes(decision)) forced.landed.push(decision);
     return true;
 }
-
