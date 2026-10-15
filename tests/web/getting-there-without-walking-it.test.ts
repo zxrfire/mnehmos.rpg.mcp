@@ -1,3 +1,6 @@
+/* Physical public tickets require an actual attendant and a counter hand-in.
+ * The two Span purchase controls now arrange that person and existing area;
+ * their fare, purse refusal and actual crossing assertions stay unchanged. */
 /**
  * The three ways of covering ground that are not walking, reached by typing.
  *
@@ -42,6 +45,10 @@ import { describe, it, expect } from 'vitest';
 
 import { makeGameInWorld, cultivatorRow } from './harness';
 import { placeRoadDays } from '../../src/data/cultivation/regions';
+import {createNpc} from '../../src/engine/world/npc-state';
+import {routineTime} from '../../src/engine/world/npc-routines';
+import {theAreasOf} from '../../src/engine/world/where-in-a-place-somebody-is-standing';
+import {worldLocationFor} from '../../src/engine/world/place-lookup';
 import { parseIntent } from '../../src/web/actions';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import {
@@ -65,6 +72,14 @@ async function standingAt(place: string, seed: string, worldSeed = `${seed}-worl
     await harness.game.act('ADMIN grant_knowledge kind=place');
     await harness.game.act(`ADMIN set_location location=${place}`);
     return { ...harness, cultivatorId: cultivator.id };
+}
+
+function staffTheSpan(game:Awaited<ReturnType<typeof makeGameInWorld>>['game'],id:string){
+    const world=game.atHand!,body=game.currentRun().cultivator,from=worldLocationFor(world,body.location)!,now=routineTime(world);
+    const area=theAreasOf(world,from).areas.find(a=>a.for==='span_counter')!;
+    const worker=createNpc(world.seed,{id:'span-purchase-attendant',occupation:'folding attendant',locationId:from.id,onDay:now,bornOnDay:now-9000});
+    worker.activity={kind:'trade',note:'Keeping the folding counter.',withIds:[],sinceDay:now,untilDay:null,standingIn:area.id};
+    world.npcs.push(worker);game.repos.cultivators.standIn(id,area.id);game.theWorldMoved();
 }
 
 describe('the road is as long as the catalog says it is', () => {
@@ -240,6 +255,7 @@ describe('a Shrinking Earth Pavilion counter', () => {
 
     it('sells a crossing, charges the fare, and moves the body', async () => {
         const { game, db, cultivatorId } = await standingAt('Clear River Ferry', 'span-buy');
+        staffTheSpan(game,cultivatorId);
         db.prepare('UPDATE cultivators SET spirit_stones = 400 WHERE id = ?').run(cultivatorId);
 
         const before = cultivatorRow(db, cultivatorId);
@@ -254,6 +270,7 @@ describe('a Shrinking Earth Pavilion counter', () => {
 
     it('refuses on the purse and names the figure, rather than haggling', async () => {
         const { game, db, cultivatorId } = await standingAt('Clear River Ferry', 'span-poor');
+        staffTheSpan(game,cultivatorId);
         db.prepare('UPDATE cultivators SET spirit_stones = 1 WHERE id = ?').run(cultivatorId);
         const result = await game.act('I buy passage to Iron Crest');
         expect(result.narration).toMatch(/spirit stones/i);

@@ -2,6 +2,15 @@
 
 # The Web Front Door
 
+A public ship ticket stays in the buyer's pack until boarding; a full departure
+sells the same hull's later ordinary load after its real return. Its fare goes
+to the actual master. Boarding hands the tally to present crew, deletes it from
+them and binds the real SQL body to the existing voyage, with no second fare.
+A folding ticket similarly keeps the item and leaves the wait unspent. Immediate
+folding passage still spends its existing published wait, crossing hour and
+recovery, now paying the actual attendant and handing in the tally. An absent
+attendant receives neither fare nor item. Destination gate fees remain separate.
+
 Public passage tallies and personal rides remain separate authorities. A tally
 supplies its public departure seat, never consent to board a privately held
 craft. Private boarding issues and consumes no tally. Personal operator terms

@@ -2,7 +2,7 @@ import { shipHandsForHull, publicShipHullCanBeBoarded } from './a-public-ship-hu
 import { requireConveyance } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { ObjectRecord } from './possessions.js';
 import { companyDuringPassage } from './company-during-a-passage.js';
-import { handInPassageTally, unusedPassageTalliesGoToDust, passageTallySeatsForBoarding } from './a-passage-tally-is-the-seat-you-own.js';
+import { handInPassageTally, unusedPassageTalliesGoToDust, passageTallySeatsForBoarding, theHeldPassageTally, passageTallyTerms } from './a-passage-tally-is-the-seat-you-own.js';
 import { routineTime } from './npc-routines.js';
 /**
  * Where a ship puts in: every lane's landfalls, and every place on open water, each at its own dock.
@@ -248,6 +248,7 @@ function shipLinesFrom(world: DockWorld, here: string, today: number,scope?:Plac
 export interface PublicPassageLeg {
     lane: SeaLane; vesselId: string; fromId: string; toId: string;
     departureDay: number; arrivalDay: number;
+    publicDepartureId?:string; tallyDepartureDay?:number;
 }
 export interface PublicPassageQuote extends PublicPassageLeg {
     heads: number; fareStones: number; days: number;
@@ -256,6 +257,7 @@ export interface PublicPassageQuote extends PublicPassageLeg {
 }
 type ShippingWorld = NonNullable<DockWorld> & {
     npcs?: readonly NpcRecord[]; objects?: readonly ObjectRecord[]; history?: Pick<WorldState['history'], 'facts'>;
+    schedule?: readonly WorldState['schedule'][number][];
 };
 
 function shippingHasHistory(world:ShippingWorld):world is ShippingWorld & HistoryFactSource { return !!world.history; }
@@ -396,6 +398,15 @@ function knownHullLegs(world: ShippingWorld, vesselId: string,read:ShippingActor
             held.set(leg.departureDay, { leg, authority, confirmedDay });
     };
     for (const leg of activeReservedLegs(world, vesselId,read)) keep(leg, -1, leg.departureDay);
+    for (const effect of world.schedule ?? []) {
+        const d=effect.data;
+        if(d.publicCarrierDeparture!==true||d.service!=='ship'||d.vesselId!==vesselId
+            ||typeof d.fromLocationId!=='string'||typeof d.toLocationId!=='string'
+            ||typeof d.arrivalDay!=='number'||typeof d.seaLaneId!=='string')continue;
+        keep({vesselId,fromId:d.fromLocationId,toId:d.toLocationId,departureDay:effect.dueOnDay,
+            arrivalDay:d.arrivalDay,laneId:d.seaLaneId,reserved:true},-2,effect.dueOnDay);
+    }
+
     const history = world.history ? factsWithDataValue(world as WorldState, 'vesselId', vesselId) : [];
     for (const row of historicalHullLegs(history, vesselId)) keep(row.leg, 1, row.confirmedDay);
     for (const npc of read.people(vesselId)) {
@@ -479,11 +490,20 @@ function hullPositionAt(hull: HullRead, fromId: string, toId: string, departureD
     return { same, blockedUntil: changes.length ? Math.min(...changes) : null };
 }
 
+/** The real crew and its cold factory draw occupy the same finite hull berths. */
+function passengerBerths(seed:string,vesselId:string,crewHeads:number):number {
+    return requireConveyance('conv-water-ship').heads-Math.max(crewHeads,1+shipHandsForHull(seed,vesselId));
+}
+export function publicShipPassengerBerths(world:ShippingWorld,vesselId:string):number {
+    const read=readHull(world,vesselId,[]);
+    return passengerBerths(world.seed,vesselId,read.berths().crewHeads);
+}
+
 /** A first boarding realises the lane's hull at that dock, as the existing crew factory does. */
 export function quotePublicPassage(world: ShippingWorld, fromId: string, toId: string,
     departureDay: number, heads = 1, consideredLegs: readonly PublicPassageLeg[] = [],
-    crossingSeed = `${world.seed}:${departureDay}`, requestingIds: readonly string[] = [],scope?:PlaceScope): PublicPassageQuote | null {
-    return quoteAPublicPassage(world, fromId, toId, departureDay, heads, consideredLegs, crossingSeed, undefined, requestingIds,undefined,scope).quote;
+    crossingSeed = `${world.seed}:${departureDay}`, requestingIds: readonly string[] = [],scope?:PlaceScope,tallyDepartureDay?:number): PublicPassageQuote | null {
+    return quoteAPublicPassage(world, fromId, toId, departureDay, heads, consideredLegs, crossingSeed, undefined, requestingIds,undefined,scope,tallyDepartureDay).quote;
 }
 
 /** A real existing hull may take an admitted onward line only from its actual port.
@@ -504,8 +524,8 @@ export function quotePublicPassageOnActualHull(world: ShippingWorld, vesselId:st
 /** The single fare, weather and hull-position authority behind both public readers. */
 function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     departureDay: number, heads: number, consideredLegs: readonly PublicPassageLeg[],
-    crossingSeed: string, held?: HullRead, requestingIds: readonly string[] = [], actualVesselId?: string,scope?:PlaceScope): { quote: PublicPassageQuote | null; retryAt?: number | null } {
-    if (!Number.isInteger(heads) || heads < 1 || !Number.isFinite(departureDay)) return { quote: null };
+    crossingSeed: string, held?: HullRead, requestingIds: readonly string[] = [], actualVesselId?: string,scope?:PlaceScope,tallyDepartureDay?:number): { quote: PublicPassageQuote | null; retryAt?: number | null } {
+    if (!Number.isInteger(heads) || heads < 0 || !Number.isFinite(departureDay)) return { quote: null };
     scope ??= placeScopeFor(world.locations);
     const from = scope.places.get(fromId);
     const to = scope.places.get(toId);
@@ -517,6 +537,7 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     const hull = held ?? readHull(world, vesselId, consideredLegs);
     if (world.objects && world.npcs && !publicShipHullCanBeBoarded({objects:world.objects,npcs:world.npcs,locations:world.locations},
         {vesselId,fromId,departureDay}, false,{hull:hull.physicalHull,operator:hull.operator})) return {quote:null,retryAt:null};
+    if(heads===0&&(!hull.physicalHull||!hull.operator))return {quote:null};
     const legs = hull.legs;
     const position = hullPositionAt(hull, fromId, toId, departureDay, lane.id);
     if (position.blockedUntil !== undefined) return { quote: null, retryAt: position.blockedUntil };
@@ -537,7 +558,7 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     const passengers=[...aboard].filter(id=>!crewIds.has(id) && !requesting.has(id)).length;
     const tallySeats = world.objects ? passageTallySeatsForBoarding(
         { objects: world.objects },
-        { service: 'ship', vesselId, fromId, toId, departureDay }, requesting) : { used: 0, other: 0 };
+        { service: 'ship', vesselId, fromId, toId, departureDay:tallyDepartureDay??departureDay }, requesting) : { used: 0, other: 0 };
     // An older player boarding omitted its actor entirely. Do not fabricate
     // free berths from that omission: this unknown active claim blocks another
     // acceptance until the actual dated arrival. A read/refusal stores nothing.
@@ -548,11 +569,9 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     if (unknownLegacy) return {quote:null,retryAt:same?.arrivalDay ?? null};
     // Existing realised crew occupy berths too; the first boarding uses the
     // exact crew-factory draw before any people or object are materialised.
-    const crewHeads=Math.max(berths.crewHeads,
-        1+shipHandsForHull(world.seed,vesselId));
-    const capacity=requireConveyance('conv-water-ship').heads;
-    if (crewHeads+heads>capacity) return {quote:null,retryAt:null};
-    if (passengers+tallySeats.other+crewHeads+heads>capacity) return {quote:null,retryAt:same?.arrivalDay ?? null};
+    const capacity=passengerBerths(world.seed,vesselId,berths.crewHeads);
+    if (heads>capacity) return {quote:null,retryAt:null};
+    if (passengers+tallySeats.other+heads>capacity) return {quote:null,retryAt:same?.arrivalDay ?? null};
     const provision = provisionForLane(lane, heads);
     const crossing = resolveCrossing(crossingSeed, lane, provision, monthOf(departureDay));
     if (crossing.laneWasShut) return { quote: null };
@@ -646,16 +665,18 @@ export function recordPublicPassage(world: WorldState, leg: PublicPassageLeg,
     priorReceiptId?: string, boardingMoment?: PassageRunMoment,
     boardingPeople?: readonly {id:string;name:string}[], onwardAgreementId?:string, lost=false,
     beforeHandIn?: (receipt: HistoricalFact) => void): HistoricalFact {
-    const departure = { ...leg, service: 'ship' as const };
+    const departure = { ...leg, departureDay:leg.tallyDepartureDay??leg.departureDay, service: 'ship' as const };
+    const heldSeats=boardingPeople?.flatMap(person=>{const t=theHeldPassageTally(world,person.id,departure);return t?[{holderId:person.id,seat:passageTallyTerms(t)!.seat}]:[];})??[];
     const settleDeparture = (receipt: HistoricalFact): HistoricalFact => {
-        if (receipt.data.actualBoarding === true && journeyTimeHasReached(onDay, leg.departureDay)
-            && journeyTimeHasReached(routineTime(world), leg.departureDay)) {
+        if (receipt.data.actualBoarding === true && (leg.publicDepartureId || journeyTimeHasReached(onDay, leg.departureDay)
+            && journeyTimeHasReached(routineTime(world), leg.departureDay))) {
             beforeHandIn?.(receipt);
             const receiver = world.npcs.find(person => person.status === 'alive'
                 && person.tags.includes('crew-of:' + leg.vesselId)
                 && locationOfNpcOnItsJourney(world, person, routineTime(world)) === leg.fromId);
             for (const person of boardingPeople ?? []) handInPassageTally(world, person.id, departure, receiver?.id ?? null);
-            unusedPassageTalliesGoToDust(world, departure, onDay);
+            if(journeyTimeHasReached(onDay,leg.departureDay)&&journeyTimeHasReached(routineTime(world),leg.departureDay))
+                unusedPassageTalliesGoToDust(world, departure, onDay);
         }
         return receipt;
     };
@@ -700,6 +721,7 @@ export function recordPublicPassage(world: WorldState, leg: PublicPassageLeg,
         actors, data: { publicPassage: true, vesselId: leg.vesselId, seaLaneId: leg.lane.id,
             ...(typeof (leg as Partial<PublicPassageQuote>).fareStones === 'number'
                 ? {fareStones:(leg as Partial<PublicPassageQuote>).fareStones!} : {}),
+            ...(leg.publicDepartureId?{publicDepartureId:leg.publicDepartureId,passageTallySeats:JSON.stringify(heldSeats),tallyDepartureDay:departure.departureDay}:{}),
             fromLocationId: leg.fromId, toLocationId: leg.toId,
             departureDay: leg.departureDay, arrivalDay: leg.arrivalDay,
             ...(boardingPeople?.length ? {actualBoarding:true} : {}),

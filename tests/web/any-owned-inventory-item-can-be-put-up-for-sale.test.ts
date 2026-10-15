@@ -122,7 +122,11 @@ it('puts an actual price to a passenger on the full departure and buys only with
     const turn = await h.game.act(`I offer ${seller.name} ${price} spirit stones for their passage tally`);
     expect(h.world.objects.find(o => o.id === object.id)?.possessorId, turn.narration).toBe(h.cultivator.id);
     expect(h.game.currentRun().cultivator.spiritStones).toBe(before - price!);
-    expect(h.world.npcs.find(p => p.id === seller.id)!.spiritStones).toBe(200 - h.fare + price!);
+    const replacement=h.world.objects.find(o=>o.possessorId===seller.id&&passageTallyTerms(o));
+    expect(replacement,turn.narration).toBeTruthy();
+    expect(passageTallyTerms(replacement!)!.departureDay).toBeGreaterThan(h.terms.departureDay);
+    expect(h.world.npcs.find(p => p.id === seller.id)!.activity?.passageTallyId).toBe(replacement!.id);
+    expect(h.world.npcs.find(p => p.id === seller.id)!.spiritStones).toBe(200 - h.fare + price! - passageTallyTerms(replacement!)!.fareStones!);
 });
 
 async function ordinaryInventory(kind: ObjectKind, counted=false, provider?: ScriptedProvider) {

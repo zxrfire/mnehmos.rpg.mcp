@@ -1,3 +1,8 @@
+/* The owner replaced a full-departure refusal with buying the next ordinary
+ * departure. The capacity control now checks two real later tallies, the fare,
+ * an unspent wait and unchanged physical bodies/current earlier receipt. The
+ * independent-course refusal still retains its whole body state; new witnessed
+ * facts may legitimately extend historyFactIds, as the earlier header records. */
 /**
  * Source audit 2026-10-07: the played public counter quoted one head and only
  * the player id, even when canonical company named another actual body. Native
@@ -56,6 +61,7 @@ import { shipPassengerAt } from '../../src/engine/world/passenger-on-a-vessel.js
 import { stonesFor } from '../../src/engine/world/the-fare-and-calendar-of-a-passage.js';
 import { journeyTimeHasReached, locationOnNpcJourney } from '../../src/engine/world/places-on-the-way.js';
 import { passHours } from '../../src/web/routine-invitations.js';
+import {passageTallyTerms} from '../../src/engine/world/a-passage-tally-is-the-seat-you-own.js';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 
 async function scene(service: 'ship' | 'carriage', fellowCount: number, needsIndependentShip = false) {
@@ -178,24 +184,28 @@ for (const service of ['carriage', 'ship'] as const) it(`the played ${service} c
     } finally { movedBoundary.mockRestore(); narrated.mockRestore(); h.db.close(); resetCultivationWorlds(); }
 }, 180_000);
 
-it('an actual carriage with two independently booked passengers refuses two more agreed bodies before payment', async () => {
+it('an actual carriage with two independently booked passengers sells two agreed bodies the next load', async () => {
     const h = await scene('carriage', 2);
     try {
         const before = h.game.currentRun(), member = structuredClone(h.game.atHand!.npcs.find(person => person.id === h.member.id)!);
         const receipts = h.game.atHand!.history.facts.filter(fact => fact.data.publicPassage === true).map(fact => fact.id);
         h.plans.push(JSON.stringify({ action: 'passage', intent: 'buy', target: h.to.name, topic: 'carriage' }));
         const result = await h.game.act(`I buy seats on the carriage to ${h.to.name}.`);
-        expect(result.toolCalls.some(call => call.name === 'engine.publicCarriage' && !call.ok)).toBe(true);
-        const capacity = result.toolCalls.find(call => call.name === 'engine.publicCarriage' && !call.ok)!;
-        expect(capacity.summary, 'the actual refusal names the native remaining capacity').toContain('1 passenger place');
-        expect(capacity.summary, 'the actual refusal names both requested bodies').toContain('2 passengers');
-        expect(h.game.currentRun().cultivator.spiritStones).toBe(before.cultivator.spiritStones);
-        expect(h.game.currentRun().run.elapsedDays).toBe(before.run.elapsedDays);
+        expect(result.narration).toContain('tally');
+        const world=h.game.atHand!;
+        const paid=world.objects.filter(o=>[before.cultivator.id,member.id].includes(o.possessorId??'')).map(passageTallyTerms).filter(t=>t?.service==='carriage');
+        expect(paid).toHaveLength(2);expect(new Set(paid.map(t=>t!.departureDay)).size).toBe(1);
+        const priorArrival=Math.max(...world.history.facts.filter(f=>receipts.includes(f.id)).map(f=>Number(f.data.arrivalDay)));
+        expect(paid[0]!.departureDay).toBeGreaterThan(priorArrival);
+        expect(h.game.currentRun().cultivator.spiritStones).toBe(before.cultivator.spiritStones-2*stonesFor(h.line.cashPerSeat));
+        expect(h.game.currentRun().cultivator.location).toBe(before.cultivator.location);
+        expect(routineTime(world)).toBeLessThan(paid[0]!.departureDay);
+        expect(whoTheyAreOutWith(world.npcs.find(p=>p.id===member.id)!,routineTime(world))?.withIds).toContain(before.cultivator.id);
         const afterMember = h.game.atHand!.npcs.find(person => person.id === h.member.id)!;
-        expect({ activity: afterMember.activity, locationId: afterMember.locationId, status: afterMember.status,
+        expect({ locationId: afterMember.locationId, status: afterMember.status,
             spiritStones: afterMember.spiritStones, cultivation: afterMember.cultivation,
             bodyId: afterMember.bodyId, soulState: afterMember.soulState, diedOnDay: afterMember.diedOnDay })
-            .toEqual({ activity: member.activity, locationId: member.locationId, status: member.status,
+            .toEqual({ locationId: member.locationId, status: member.status,
                 spiritStones: member.spiritStones, cultivation: member.cultivation,
                 bodyId: member.bodyId, soulState: member.soulState, diedOnDay: member.diedOnDay });
         expect(h.game.atHand!.history.facts.filter(fact => fact.data.publicPassage === true).map(fact => fact.id)).toEqual(receipts);
@@ -220,7 +230,9 @@ it('a played public carriage booking cannot summon an agreed body from their ind
         expect(result.toolCalls.some(call => call.name === 'engine.actualPartyBoarding' && !call.ok)).toBe(true);
         expect(h.game.currentRun().cultivator.spiritStones).toBe(before.cultivator.spiritStones);
         expect(h.game.currentRun().run.elapsedDays).toBe(before.run.elapsedDays);
-        expect(h.game.atHand!.npcs.find(person => person.id === h.member.id)).toEqual(member);
+        const {historyFactIds:priorKnowledge,...priorBody}=member;
+        const {historyFactIds:laterKnowledge,...laterBody}=h.game.atHand!.npcs.find(person=>person.id===h.member.id)!;
+        expect(laterBody).toEqual(priorBody);expect(laterKnowledge).toEqual(expect.arrayContaining(priorKnowledge));
         expect(h.game.atHand!.history.facts.filter(fact => fact.data.publicPassage === true).map(fact => fact.id)).toEqual(receipts);
     } finally { h.db.close(); resetCultivationWorlds(); }
 }, 180_000);

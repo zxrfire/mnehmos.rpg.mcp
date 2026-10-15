@@ -1,3 +1,4 @@
+import {publicShipTalliesAtCounter} from './public-ship-tallies-at-the-counter.js';
 import {aboardAnUnfinishedRoad} from './the-actual-carrier-scene.js';
 import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
 import { walkToTheDeparture } from './walking-to-a-departure.js';
@@ -359,6 +360,8 @@ export async function aSeatOnAShipOrACarriage(
         const tallies = await publicCarriageTalliesAtCounter(game, run, cultivator, line.to, intent, askedIn, station?.id, loadAdmission);
         if (tallies) return tallies;
     }
+
+    if(line.service==='ship'&&!hiring&&(line.runsFromDay===null||intent==='ticket'||intent==='embark')){const tallies=await publicShipTalliesAtCounter(game,run,cultivator,line.to,intent,askedIn,landing?.id,loadAdmission);if(tallies)return tallies;}
 
     if (line.runsFromDay !== null) {
         return refused('engine.laneIsOpenInMonth', 'passage', factsForRefusal(

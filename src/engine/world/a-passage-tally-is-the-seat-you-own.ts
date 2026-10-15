@@ -13,7 +13,7 @@ import { hourOnTheClock, routineTime } from './npc-routines.js';
 import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 
 export interface TallyDeparture {
-    service: 'ship' | 'carriage' | 'spirit_boat' | 'air';
+    service: 'ship' | 'carriage' | 'spirit_boat' | 'air' | 'portal';
     vesselId: string;
     fromId: string;
     toId: string;
@@ -92,7 +92,7 @@ export function makePassageTally(input: {
 export function passageTallyTerms(object: ObjectRecord): PassageTallyTerms | null {
     const d = object.data;
     if (object.kind !== 'token' || !object.tags.includes('passage-tally') || d.passageTally !== true
-        || typeof d.service !== 'string' || !['ship', 'carriage', 'spirit_boat', 'air'].includes(d.service)
+        || typeof d.service !== 'string' || !['ship', 'carriage', 'spirit_boat', 'air', 'portal'].includes(d.service)
         || typeof d.vesselId !== 'string' || typeof d.fromLocationId !== 'string'
         || typeof d.toLocationId !== 'string' || typeof d.departureDay !== 'number'
         || !Number.isFinite(d.departureDay) || typeof d.seat !== 'number'

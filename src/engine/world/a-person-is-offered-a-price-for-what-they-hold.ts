@@ -15,6 +15,10 @@ import { theGroundUnderYou } from '../social-leverage/ground-trust.js';
 import { statusesInArea } from './what-is-true-of-a-place-right-now.js';
 import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { witnessIndexFor } from './witness-reaction-index.js';
+import {offerTheNextPublicCarriage,publicCarriageDepartures} from './the-next-public-carriage-is-an-ordinary-trip.js';
+import {offerTheNextPublicShip,publicShipDepartures} from './the-next-public-ship-is-an-ordinary-trip.js';
+import {publicFoldingDepartures,offerPublicFoldingDeparture} from './public-folding-departures.js';
+import {SPAN_CROSSING_DAYS,settlingDaysForPassenger} from './buying-passage-at-a-measured-span-counter.js';
 import type { WorldState } from './world-state.js';
 
 export function partyForAnItemTrade(state: WorldState, person: NpcRecord): Party {
@@ -82,6 +86,7 @@ export function completeHeldItemSale(state: WorldState, objectId: string, seller
 export function heldItemValue(state: WorldState, object: ObjectRecord): number {
     const thing = whatThisThingIs(object);
     if (thing?.marketStones != null) return thing.marketStones * thing.quantity;
+    if(typeof object.data.fareStones==='number'&&Number.isFinite(object.data.fareStones)&&object.data.fareStones>=0)return object.data.fareStones;
     if (typeof object.data.conveyanceId === 'string') {
         const made = whatACraftWouldFetch(object.data.conveyanceId); if (made != null) return made;
     }
@@ -93,17 +98,24 @@ export function heldItemValue(state: WorldState, object: ObjectRecord): number {
 
 /** A person's actual goal can point at the item, its catalog source or what it supplies. */
 export function heldItemNeed(state: WorldState, person: NpcRecord, object: ObjectRecord) {
-    const thing = whatThisThingIs(object);
-    const targets = new Set([object.id, thing?.kindId, object.data.toLocationId]);
-    const goal = activeGoals(person).find(g => g.targetId != null && targets.has(g.targetId));
-    const onDay = routineTime(state);
-    const available = typeof object.data.departureDay === 'number' ? object.data.departureDay : onDay;
-    const later = typeof object.data.vesselId === 'string' ? state.schedule.filter(e => e.dueOnDay > available
-        && e.data.vesselId === object.data.vesselId && e.data.fromLocationId === object.data.fromLocationId
-        && e.data.toLocationId === object.data.toLocationId).sort((a,b) => a.dueOnDay - b.dueOnDay)[0] : undefined;
-    const waitingDays = later ? later.dueOnDay - available : 0;
-    return { goal, replacementStones: heldItemValue(state, object), waitingDays,
-        missesTheirPurpose: !!goal && goal.deadlineOnDay != null && goal.deadlineOnDay < available + waitingDays };
+    const goal = activeGoals(person).find(g => !!g.targetId && (g.targetId===object.id || g.targetId===object.data.kindId || g.targetId===object.data.toLocationId));
+    const available = typeof object.data.departureDay==='number'?object.data.departureDay:routineTime(state);
+    const from=object.data.fromLocationId,to=object.data.toLocationId,service=object.data.service;
+    const route=typeof from==='string'&&typeof to==='string';
+    const departures=route?(service==='carriage'?publicCarriageDepartures(state):service==='ship'?publicShipDepartures(state):[]):[];
+    const current=departures.find(d=>d.terms.vesselId===object.data.vesselId&&d.terms.departureDay===available
+        &&d.terms.fromId===from&&d.terms.toId===to);
+    const next=route?(service==='carriage'?offerTheNextPublicCarriage(state,from,to,person.id)
+        :service==='ship'?offerTheNextPublicShip(state,from,to):null):null;
+    const folding=service==='portal'?publicFoldingDepartures(state).find(d=>d.terms.vesselId===object.data.vesselId&&d.terms.departureDay===available):undefined;
+    const foldedNext=folding?offerPublicFoldingDeparture(state,folding.route,folding.operatorId):null;
+    const foldCost=SPAN_CROSSING_DAYS+settlingDaysForPassenger(person.cultivation.realmOrdinal);
+    const arrival=current?.arrivalDay??(folding?available+foldCost:available);
+    const replacementArrival=next?.departure.arrivalDay??(foldedNext?foldedNext.terms.departureDay+foldCost:undefined);
+    const waitingDays=replacementArrival==null?0:Math.max(0,replacementArrival-arrival);
+    const missesTheirPurpose=!!goal&&goal.deadlineOnDay!=null&&(replacementArrival==null&&!!(current||folding)||replacementArrival!=null&&replacementArrival>goal.deadlineOnDay);
+    return {goal,replacementStones:next?.departure.fareStones??heldItemValue(state,object),waitingDays,missesTheirPurpose,
+        availableDay:arrival,replacementAvailable:!!next||!!foldedNext};
 }
 
 /** Receiving the item is a paid request too; the buyer keeps their own decision. */
@@ -127,7 +139,7 @@ export function priceOfferedForHeldItem(state: WorldState, object: ObjectRecord,
     if (!isTheWorldsToMove(buyer) || buyer.status !== 'alive' || seller.status !== 'alive'
         || object.ownerId !== seller.id || object.possessorId !== seller.id || buyer.spiritStones < 1) return null;
     const need = heldItemNeed(state, buyer, object);
-    if (!need.goal) return null;
+    if (!need.goal || need.goal.deadlineOnDay!=null&&need.availableDay>need.goal.deadlineOnDay) return null;
     if (!object.knownOwnershipBy.includes(buyer.id) && !object.provenance.some(link => link.factId
         && witnessIndexFor(state).byId.get(link.factId)?.witnessIds.includes(buyer.id))) return null;
     if (factsWithDataValue(state, 'heldItemOffer', true).some(f => f.data.objectId === object.id && f.data.buyerId === buyer.id)) return null;
@@ -138,7 +150,10 @@ export function priceOfferedForHeldItem(state: WorldState, object: ObjectRecord,
         theirTie: tie ? {active: true, strength: Math.max(0, tie.standing)} : null,
         ledger: state.obligations, onDay, rng }).odds)) return null;
     const list = heldItemValue(state, object);
-    const budget = Math.min(buyer.spiritStones, Math.floor(list + need.goal.priority * (buyer.spiritStones - list)));
+    const lostWork=need.waitingDays*earningsPerYear(buyer.cultivation.realmOrdinal)/365;
+    const purposeBudget=list+need.goal.priority*Math.max(0,buyer.spiritStones-list);
+    const replacementBudget=need.replacementAvailable&&!need.missesTheirPurpose?need.replacementStones+lostWork:purposeBudget;
+    const budget=Math.min(buyer.spiritStones,Math.floor(Math.min(purposeBudget,replacementBudget)));
     if (budget < 1) return null;
     return { stones: rng.int(Math.min(Math.ceil(list) + 1, budget), budget),
         untilDay: typeof object.data.departureDay === 'number' ? object.data.departureDay : need.goal.deadlineOnDay ?? onDay + 1 };

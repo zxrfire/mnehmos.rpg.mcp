@@ -1,3 +1,5 @@
+import {settleDuePublicFoldingDepartures} from './public-folding-departures.js';
+import { settleDuePublicShips } from './the-next-public-ship-is-an-ordinary-trip.js';
 import { isTerminal } from '../cultivation/existence.js';
 import { settleDuePublicCarriages } from './the-next-public-carriage-is-an-ordinary-trip.js';
 import { journeyTimeHasReached } from './places-on-the-way.js';
@@ -358,6 +360,8 @@ function advanceAtHand(state: WorldState, opts: AdvanceForPlayOptions): PlayAdva
         settleWorldAirTravellers(state, state.currentDay);
         if (effectivePrecision) state.currentHour = (state.currentDay - Math.floor(state.currentDay)) * 24;
         settleDuePublicCarriages(state, state.currentDay);
+        settleDuePublicShips(state, state.currentDay);
+        settleDuePublicFoldingDepartures(state, state.currentDay);
         opts.atWorldBoundary?.(state, state.currentDay);
         theWorldForgetsTheMortalDead(state);
         keepTheBusinessStillOnTheBooks(state);

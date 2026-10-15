@@ -1,3 +1,4 @@
+import {settleNativeShipTallyIntentions} from '../engine/world/the-next-public-ship-is-an-ordinary-trip.js';
 import { tradeAHeldItem, offersForYourHeldItems } from './a-price-offered-for-a-held-item.js';
 import { theHallStaff } from '../engine/world/the-people-posted-to-a-houses-halls.js';
 import { StoredStandingFight } from './a-standing-fight-is-stored-on-its-run.js';
@@ -1163,6 +1164,7 @@ import {
 } from './prompt.js';
 import { howTheyLeftTheChair, thePlayerIsSureItIsThem, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whatTheyRememberOnTheirCard, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
 import { settleWitnessesOnContact } from '../engine/world/witness-reactions.js';
+import { settleNativeCarriageTallyIntentions } from '../engine/world/the-next-public-carriage-is-an-ordinary-trip.js';
 import { settlePracticeOnContact } from '../engine/world/the-world-changing-on-its-own.js';
 import { whatSomebodyRemembers } from '../engine/world/what-somebody-remembers.js';
 import { opportunitiesTheyCanTell } from './opportunity-questions.js';
@@ -21064,7 +21066,9 @@ ${fit.line}`;
             const contacts = new Set(here.map(person => person.id));
             const practice = settlePracticeOnContact(this.atHand, contacts);
             const witnesses = settleWitnessesOnContact(this.atHand, contacts);
-            if (practice || witnesses) {
+            const continuedRoute = settleNativeCarriageTallyIntentions(this.atHand, undefined, contacts);
+            const continuedSailing = settleNativeShipTallyIntentions(this.atHand, undefined, contacts);
+            if (practice || witnesses || continuedRoute || continuedSailing) {
                 this.theWorldMoved();
                 here = this.present(cultivator);
             }

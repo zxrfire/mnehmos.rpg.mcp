@@ -7,18 +7,19 @@ import { factsWithDataValue } from './witness-reaction-index.js';
 import { publicTransportFrom } from './public-transport-at-a-place.js';
 import { routineTime } from './npc-routines.js';
 import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
+import { locationOfNpcOnItsJourney } from './places-on-the-way.js';
 import { isRuined, type ObjectRecord } from './possessions.js';
 import { whoItIsWith } from './a-vehicle.js';
 import { carriageIdForRoad, publicCarriageGround, publicCarriageRoadTerms,
     quotePublicCarriage, commitPublicCarriage, realiseAcceptedPublicCarriageSource,
     type PublicRoadQuote } from './public-carriages.js';
 import { passageDepartureKey, passageTalliesForDeparture, passageTallyTerms,
-    theHeldPassageTally, unusedPassageTalliesGoToDust, type TallyDeparture } from './a-passage-tally-is-the-seat-you-own.js';
+    theHeldPassageTally, makePassageTally, unusedPassageTalliesGoToDust, type TallyDeparture } from './a-passage-tally-is-the-seat-you-own.js';
 import { stonesFor } from './the-fare-and-calendar-of-a-passage.js';
 import { readActualDepartureApproach } from './departure-approach.js';
 import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 import { companyAgreement } from './company-during-a-passage.js';
-import { PLAYER_ROW_TAG, type NpcRecord } from './npc-state.js';
+import { PLAYER_ROW_TAG, activeGoals, type NpcRecord } from './npc-state.js';
 
 const CARRIAGE = 'conv-carriage-mortal';
 
@@ -85,13 +86,13 @@ export interface PublicCarriageOffer {
 
 /** A quote promises future work; only boarding reads the real body at that time. */
 export function offerTheNextPublicCarriage(world: WorldState, fromId: string, toId: string,
-    buyerId: string, playedPassenger?: PublicRoadQuote['playedPassenger']): PublicCarriageOffer | null {
+    buyerId: string, playedPassenger?: PublicRoadQuote['playedPassenger'],heads=1): PublicCarriageOffer | null {
     const now = routineTime(world), from = world.locations.find(place => place.id === fromId),
         to = world.locations.find(place => place.id === toId);
     if (!from || !to) return null;
     const line = publicTransportFrom(world, from.name, Math.floor(now)).find(line => line.service === 'carriage' && line.to === to.name);
     const road = publicCarriageRoadTerms(world, fromId, toId, CARRIAGE);
-    if (!line || !road) return null;
+    if (!line || !road || !Number.isInteger(heads)||heads<1||heads>road.conveyance.heads-1) return null;
     const vesselId = carriageIdForRoad(fromId, toId, CARRIAGE);
     const vehicle = world.objects.find(object => object.id === vesselId);
     const owner = vehicle ? world.npcs.find(person => person.id === vehicle.ownerId && person.status === 'alive') : undefined;
@@ -106,7 +107,7 @@ export function offerTheNextPublicCarriage(world: WorldState, fromId: string, to
     for (const departure of jobs) {
         if (departure.terms.fromId !== fromId || departure.terms.toId !== toId) continue;
         const free = freePublicCarriageSeats(world, departure);
-        if (free.length) return { departure, newAppointments: [], sourceQuote, fullDepartureDay, seat: free[0]! };
+        if (free.length>=heads) return { departure, newAppointments: [], sourceQuote, fullDepartureDay, seat: free[0]! };
         fullDepartureDay ??= departure.terms.departureDay;
     }
     let ready = now, position = vehicle ? publicCarriageGround(world, vehicle, now) : fromId;
@@ -145,10 +146,11 @@ export function offerTheNextPublicCarriage(world: WorldState, fromId: string, to
 }
 
 /** Acceptance publishes the ordinary appointments; it changes no passenger's place. */
-export function acceptPublicCarriageOffer(world: WorldState, offer: PublicCarriageOffer): NpcRecord | null {
+export function acceptPublicCarriageOffer(world: WorldState, offer: PublicCarriageOffer,publish=true): NpcRecord | null {
     const source = offer.sourceQuote ? realiseAcceptedPublicCarriageSource(world, offer.sourceQuote) : null;
     const driver = source?.driver ?? world.npcs.find(person => person.id === offer.departure.operatorId && person.status === 'alive');
     if (!driver) return null;
+    if(!publish)return driver;
     for (const effect of offer.newAppointments) if (!world.schedule.some(old => old.id === effect.id)) world.schedule.push(effect);
     const next = publicCarriageDepartures(world, offer.departure.terms.vesselId)[0];
     if (next) {
@@ -181,6 +183,34 @@ export function waitForThePublicCarriage(world: WorldState, person: NpcRecord, t
         ...(company ? { passageCompany: company } : {}) } };
 }
 
+/** One accepted paid counter commit, shared by actual SQL and native purses. */
+export function purchaseAcceptedPublicCarriageTally(world:WorldState,offer:PublicCarriageOffer,
+    buyer:{id:string;name:string},payer:{id:string;name:string},
+    pay:(carrierId:string,stones:number,commit:()=>void)=>boolean,witnessIds:readonly string[]=[]):ObjectRecord|null {
+    if(!freePublicCarriageSeats(world,offer.departure).includes(offer.seat)||buyer.id===offer.departure.operatorId)return null;
+    const driver=acceptPublicCarriageOffer(world,offer,false);if(!driver)return null;
+    let tally:ObjectRecord|null=null;
+    const paid=pay(driver.id,offer.departure.fareStones,()=>{
+        acceptPublicCarriageOffer(world,offer);
+        const t=offer.departure.terms;
+        const purchase=appendWorldFact(world,makeFact({day:routineTime(world),kind:'gathering',visibility:'secret',
+            locationId:t.fromId,witnessIds:[...witnessIds],
+            actors:[{...buyer,role:'buyer'},{...payer,role:'payer'},{id:driver.id,name:driver.name,role:'carrier'}],
+            summary:'A passage tally was bought for its named public carriage departure.',
+            data:{passageTallyPurchase:true,publicDepartureId:offer.departure.effect.id,
+                service:t.service,vesselId:t.vesselId,fromLocationId:t.fromId,toLocationId:t.toId,
+                departureDay:t.departureDay,seat:offer.seat,fareStones:offer.departure.fareStones,
+                stones:buyer.id===payer.id?offer.departure.fareStones:0,payerId:payer.id,receiverId:driver.id}}),
+            {bystanders:false,recur:false});
+        tally=makePassageTally({terms:{...t,seat:offer.seat,fareStones:offer.departure.fareStones},buyer,purchase,
+            onDay:routineTime(world),fromName:world.locations.find(p=>p.id===t.fromId)!.name,
+            toName:world.locations.find(p=>p.id===t.toId)!.name});
+        world.objects.push(tally);
+        const person=world.npcs.find(p=>p.id===buyer.id);if(person)waitForThePublicCarriage(world,person,tally);
+    });
+    return paid?tally:null;
+}
+
 export function quoteBoardingThePublicCarriage(world: WorldState, departure: PublicCarriageDeparture,
     ids: readonly string[], playedPassenger?: PublicRoadQuote['playedPassenger']): PublicRoadQuote | null {
     const day = Math.max(routineTime(world), departure.terms.departureDay);
@@ -190,8 +220,40 @@ export function quoteBoardingThePublicCarriage(world: WorldState, departure: Pub
         tallyDepartureDay: departure.terms.departureDay, playedPassenger });
 }
 
+/** Continue an accepted native route intention after its held seat changes hands. */
+export function settleNativeCarriageTallyIntentions(world:WorldState,day=routineTime(world),contactedIds?:ReadonlySet<string>):boolean {
+    const departures=publicCarriageDepartures(world);if(!departures.length)return false;
+    let changed=false;
+    const byId=new Map(departures.map(d=>[d.effect.id,d]));
+    const people=world.npcs.filter(p=>p.status==='alive'&&!p.tags.includes(PLAYER_ROW_TAG)
+        &&p.activity?.kind==='waiting_for_a_departure'&&p.activity.passageTallyId
+        &&(!contactedIds||contactedIds.has(p.id))).map(p=>p.id);
+    for(const id of people) {
+        const person=world.npcs.find(p=>p.id===id)!,doing=person.activity!;
+        const original=byId.get(doing.publicDepartureId??'');if(!original)continue;
+        const old=world.objects.find(o=>o.id===doing.passageTallyId);
+        if(old?.possessorId===id)continue;
+        const station=theAreasOf(world,world.locations.find(p=>p.id===original.terms.fromId)!).areas.find(a=>a.for==='carriage_station');
+        if(readActualDepartureApproach(world,id,{intentId:'continue-paid-public-route',target:{locationId:original.terms.fromId,areaId:station?.id??null}},day).kind!=='ready')continue;
+        const offer=offerTheNextPublicCarriage(world,original.terms.fromId,original.terms.toId,id);
+        if(!offer||person.spiritStones<offer.departure.fareStones)continue;
+        const operator=world.npcs.find(p=>p.id===offer.departure.operatorId&&p.status==='alive');
+        if(operator&&locationOfNpcOnItsJourney(world,operator,day)!==original.terms.fromId)continue;
+        const actualArea=station?theAreasOf(world,world.locations.find(p=>p.id===original.terms.fromId)!,undefined,{id,standingIn:station.id}):null;
+        const witnesses=actualArea?[...actualArea.whereIs].filter(([,area])=>area===station!.id).map(([p])=>p):[];
+        const bought=purchaseAcceptedPublicCarriageTally(world,offer,person,person,(carrierId,stones,commit)=>{
+            const payer=world.npcs.find(p=>p.id===id)!,carrier=world.npcs.find(p=>p.id===carrierId);
+            if(!carrier||payer.spiritStones<stones)return false;
+            payer.spiritStones-=stones;carrier.spiritStones+=stones;commit();return true;
+        },witnesses);
+        changed ||= !!bought;
+    }
+    return changed;
+}
+
 /** One event per bought run; there is no daily or indefinitely repeating loop. */
 export function settleDuePublicCarriages(world: WorldState, day = routineTime(world)): void {
+    settleNativeCarriageTallyIntentions(world,day);
     for (const departure of publicCarriageDepartures(world)) {
         if (departure.terms.departureDay > day) continue;
         const driver = world.npcs.find(person => person.id === departure.operatorId && person.status === 'alive');
@@ -205,7 +267,12 @@ export function settleDuePublicCarriages(world: WorldState, day = routineTime(wo
             && readActualDepartureApproach(world, person.id,
                 { intentId: departure.effect.id, target: { locationId: departure.terms.fromId, areaId: station?.id ?? null } }, day).kind === 'ready');
         tradeOwnedItemsAtAMeeting(world, atCounter.map(person => person.id), departure.terms.fromId, day);
-        const passengers = atCounter.filter(person => theHeldPassageTally(world, person.id, departure.terms)
+        settleNativeCarriageTallyIntentions(world,day,new Set(atCounter.map(p=>p.id)));
+        const passengers = atCounter.map(p=>world.npcs.find(current=>current.id===p.id)!)
+            .filter(person => theHeldPassageTally(world, person.id, departure.terms)
+            && (person.activity?.kind==='waiting_for_a_departure'&&person.activity.returnTo===departure.terms.toId
+                || activeGoals(person).some(goal=>goal.targetId===departure.terms.toId)
+                    && theHeldPassageTally(world,person.id,departure.terms)?.provenance.at(-1)?.how==='bought')
             && readActualDepartureApproach(world, person.id,
                 { intentId: departure.effect.id, target: { locationId: departure.terms.fromId, areaId: station?.id ?? null } }, day).kind === 'ready');
         if (passengers.length || !receipt) {

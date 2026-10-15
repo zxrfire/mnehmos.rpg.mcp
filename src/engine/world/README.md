@@ -2,6 +2,26 @@
 
 # The World Layer
 
+Public ships use finite bought-run appointments on the same actual master and
+hull. Each load and necessary empty return keeps its route, capacity, weather
+and time. Quoting creates no crew or hull; an accepted paid purchase uses the
+existing advertised source. Held tallies and consumed boarding seats reserve
+capacity. Boarding transfers tallies to real crew and deletes them there;
+unused tallies lapse only when the actual ship departs. A missing master or
+changed custody cannot be replaced by a forecast.
+
+Public folding keeps its published opening, crossing hour and recovery.
+Accepted crossings are finite ordinary appointments, with real attendants and
+paid physical tallies. An unstaffed opening does not expire them. Native holders
+cross on actual departure and arrival boundaries; an interrupted independent
+course cannot be overwritten by an old arrival appointment.
+
+An accepted native route intention survives sale or loss of its tally. At
+actual counter contact it can buy a replacement through the ordinary purchase
+and purse writers. The generic item decision reads actual replacement fare,
+arrival, lost work and goal deadline, without a ticket premium table or resale
+handler. A party that fits a load buys its seats on the same departure.
+
 Accepted public carriage trips use finite ordinary appointments on one actual
 driver and hull. Buying the next load can also accept its necessary empty return;
 each leg uses the native route, capacity and elapsed travel. The driver's current

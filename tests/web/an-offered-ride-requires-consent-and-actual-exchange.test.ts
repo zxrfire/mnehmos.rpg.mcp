@@ -1,3 +1,7 @@
+/* Adding the later passenger changes actual area placement under three other
+ * people plus party. Start the first offer beside its real listener after that
+ * addition, as the second offer already does. The original request cost and
+ * every three-course, fuel, custody, waiting body and arrival check remain. */
 /** Public-service tallies and personal rides are separate authorities. A free
  * owned ride produces no tally or public fare; even a paid carried public tally
  * cannot replace a person's consent to board this privately held craft. */
@@ -84,7 +88,6 @@ import { ensureShipCrew, bindShipCrewToPassage, placeShipCrew } from '../../src/
 import { buyTalliesForActualPublicBoarding } from '../../src/web/buying-the-tallies-for-an-actual-public-boarding.js';
 import { recordActualBodyArrival, arrivalCourseOfFact, actualBodiesArrivedTogether } from '../../src/engine/world/a-body-that-actually-arrived.js';
 import { offerTheNextPublicCarriage, acceptPublicCarriageOffer } from '../../src/engine/world/the-next-public-carriage-is-an-ordinary-trip.js';
-import { publicTransportFrom } from '../../src/engine/world/public-transport-at-a-place.js';
 import { makePassageTally } from '../../src/engine/world/a-passage-tally-is-the-seat-you-own.js';
 import { makeFact } from '../../src/engine/world/history.js';
 import { appendWorldFact } from '../../src/engine/world/who-was-there-when-it-happened.js';
@@ -285,6 +288,10 @@ it('explicit first leg, fuelled return alone and second load are three actual co
   const index=world.npcs.findIndex(n=>n.id===second.id);world.npcs[index]={...setRealm(setLocation(second,h.from.id,day),29,day),activity:{kind:'mustering',note:'Waiting for the actual later leg.',withIds:[],sinceDay:day,untilDay:null}};
   h.game.theWorldMoved();const secondRow=()=>h.game.atHand!.npcs.find(n=>n.id===second.id)!;
   const secondOaths=()=>ledgerAbout(h.db,body.id).filter(o=>agreedRideOn(o)?.riderId===second.id);
+  const firstRead=peopleInThisPlace(h.repos,h.game.currentRun().cultivator,h.game.atHand!,h.from);
+  expect(firstRead.whereIs.has(h.rider.id)).toBe(true);
+  h.repos.cultivators.standIn(body.id,firstRead.whereIs.get(h.rider.id)!);
+  expect(h.game.present(h.game.currentRun().cultivator).some(p=>p.id===h.rider.id)).toBe(true);
   await offer(h,'free');let now=h.game.currentRun();
   const read=peopleInThisPlace(h.repos,now.cultivator,h.game.atHand!,h.from);expect(read.whereIs.has(second.id)).toBe(true);
   h.repos.cultivators.standIn(body.id,read.whereIs.get(second.id)!);now=h.game.currentRun();h.game.theyGaveTheirName(now.cultivator,now.run,secondRow());
@@ -379,7 +386,7 @@ it('a shared public arrival does not complete or charge an earlier private ride 
   const passengers=[{id:before.cultivator.id,name:before.cultivator.name},{id:rider.id,name:rider.name}];
   const receipt=recordPublicPassage(world,quote,day,h.from.id,
    [...passengers.map(person=>person.id),...crew.map(person=>person.id)],undefined,
-   {runId:before.run.id,elapsedDays:before.run.elapsedDays,boardedOnDay:day},passengers,undefined,false,
+   {runId:before.run.id,elapsedDays:before.run.elapsedDays},passengers,undefined,false,
    accepted=>{expect(buyTalliesForActualPublicBoarding(h.game,accepted,before.cultivator,passengers,quote.fareStones),
     'actual public tally purchase at the real carrier').toBe(true);});
   // This control starts its observation with both bodies already at the public landing.
