@@ -2365,9 +2365,9 @@ export const travelVerbs = {
             `${chosen.conveyance.name} carries ${chosen.conveyance.heads} people per leg, including its driver; ${heads} were requested and need ${journey.trips} actual legs. Choose who boards the first leg. Nothing spent.`,
             'A promise does not replace capacity or grant unplayed return legs. No booking, fuel or money changed.'));
         if (chosen.conveyance.crossesGroundThatCannotBeWalked && journey.trips !== 1)
-            return refused('engine.airJourney', 'ride', factsForRefusal('This actual air course cannot depart.',
-                'The selected craft cannot carry this party in one physical trip.',
-                'No fuel, craft, passenger or time was moved. Multiple shuttle flights remain unbuilt.'));
+            return refused('engine.airJourney', 'ride', factsForRefusal('The requested riders do not fit on one actual leg.',
+                `${chosen.conveyance.name} carries ${chosen.conveyance.heads} people per leg, including its pilot; ${heads} were requested and need ${journey.trips} actual legs. Choose who boards the first leg. Nothing spent.`,
+                'No fuel, craft, passenger or time was moved. Each later load needs its actual outward and return legs.'));
 
         // THE CHEST BURNS SPIRIT STONES, and they are the rider's. The owner: "you burn spirit
         // stones as fuel". Priced here all along (`whatTheChestBurns`) and never taken, so a spirit

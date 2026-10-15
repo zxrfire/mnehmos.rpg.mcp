@@ -2,6 +2,14 @@
 
 # The Web Front Door
 
+Repeated private flights are ordinary successive legs on the actual pilot and
+craft. Every load counts the pilot's seat and pays its own fuel, route and time;
+a return is another actual leg. A request exceeding one leg's capacity names
+the counts and asks who boards first. It cannot move waiting riders or grant
+unplayed returns. After a real landing the same pilot and hull can fly again.
+Private company and ride agreements issue no public tally. Advertised public
+carriage and ship loads instead use their existing finite departure queue.
+
 A public ship ticket stays in the buyer's pack until boarding; a full departure
 sells the same hull's later ordinary load after its real return. Its fare goes
 to the actual master. Boarding hands the tally to present crew, deletes it from
