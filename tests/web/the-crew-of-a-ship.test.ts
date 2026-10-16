@@ -1,4 +1,9 @@
-/** A public sailing remains a paid service. Personal free-ride terms cannot
+import type { GameService } from '../../src/web/turn-engine.js';
+/**
+ * The return can include a real named plague death as well as a fight loss.
+ * Both crew controls read that actual boundary receipt before mortal pruning;
+ * a casualty never becomes an unexplained missing survivor or a second hire.
+ * A public sailing remains a paid service. Personal free-ride terms cannot
  * replace its real carrier's receipt, fare or physical tally hand-in. */
 import { finishTheAcceptedVoyage } from './finishing-an-accepted-voyage.js';
 /**
@@ -60,6 +65,21 @@ function namedAsFallen(said: string, people: readonly { id: string; name: string
     return people.filter(person => groups.some(group => group.includes(person.name)));
 }
 
+
+/** Read named native deaths before ordinary mortal pruning; keep the original boundary callback. */
+function namedPlagueDeathsOnTheVoyage(game: GameService, people: readonly {id:string;name:string}[]) {
+    const named = new Set<string>(), advance = game.advanceWorld.bind(game);
+    game.advanceWorld = (days, body, run, options = {}) => advance(days, body, run, {
+        ...options, atWorldBoundary: (state, day) => {
+            options.atWorldBoundary?.(state, day);
+            for (const person of people) if (state.history.facts.some(fact => fact.day <= day
+                && fact.data.plagueDeath === true && fact.summary.includes(person.name)
+                && fact.actors.some(actor => actor.id === person.id && actor.role === 'died')))
+                named.add(person.id);
+        }
+    });
+    return named;
+}
 
 async function stoppedAtSea(seed = 'booth-1') {
     // This is the independently booked passenger from real-travellers-have-a-road,
@@ -148,11 +168,13 @@ describe('the crew of a ship', () => {
         await finishTheAcceptedVoyage(game,to.name,true);
         // Arranged: a hand dies ashore. What is asserted is that nobody raises them.
         const lost = crew().find(npc => npc.identity.occupation === 'sailor')!;
+        expect(lost.status, 'the staged ashore death must begin with a living hand').toBe('alive');
         const at = game.atHand!.npcs.findIndex(npc => npc.id === lost.id);
         game.atHand!.npcs[at] = markDead(game.atHand!.npcs[at]!, Math.floor(game.atHand!.currentDay), 'Drowned in port.');
         game.theWorldMoved();
         const living = crew().filter(npc => npc.status === 'alive').length;
         const original = crew().filter(npc => npc.status === 'alive').map(npc => ({ id: npc.id, name: npc.name }));
+        const namedPlagueDeaths = namedPlagueDeathsOnTheVoyage(game, original);
 
         const nextPort=game.state().cultivator.location===to.name?from:to;
         const returned = await game.act(`I take the ship to ${nextPort.name}`);
@@ -163,10 +185,11 @@ describe('the crew of a ship', () => {
         expect(game.atHand!.npcs.filter(npc => npc.id === lost.id).every(npc => npc.status !== 'alive')).toBe(true);
         const aboard = crew().filter(npc => npc.status === 'alive');
         const fallen = namedAsFallen([returned.narration, ...continued].join('\n'), original);
-        expect(aboard, returned.narration).toHaveLength(living + 1 - fallen.length);
+        expect(aboard, returned.narration).toHaveLength(living + 1 - new Set([...fallen.map(person => person.id), ...namedPlagueDeaths]).size);
         const replacements = aboard.filter(npc => !original.some(person => person.id === npc.id));
         expect(replacements, 'the dead hand must be replaced by a different person').toHaveLength(1);
-        for (const person of original.filter(one => !fallen.some(dead => dead.id === one.id))) {
+        for (const person of original.filter(one => !fallen.some(dead => dead.id === one.id)
+            && !namedPlagueDeaths.has(one.id))) {
             expect(aboard.map(npc => npc.id), 'an original disappeared without a named death').toContain(person.id);
         }
         expect(aboard.every(npc => npc.locationId === actualPort.id),returned.narration).toBe(true);
@@ -200,19 +223,7 @@ describe('the crew of a ship', () => {
         const { game, crew, from, to } = await stoppedAtSea();
         const first = crew().map(npc => ({ id: npc.id, name: npc.name }));
         expect(first.length).toBeGreaterThanOrEqual(3);
-        const namedPlagueDeaths = new Set<string>();
-        const advance = game.advanceWorld.bind(game);
-        // Observe the real receipt before the ordinary mortal-dead pruning.
-        // The original advance and its boundary callback still run unchanged.
-        game.advanceWorld = (days, body, run, options = {}) => advance(days, body, run, {
-            ...options, atWorldBoundary: (state, day) => {
-                options.atWorldBoundary?.(state, day);
-                for (const person of first) if (state.history.facts.some(fact => fact.day <= day
-                    && fact.data.plagueDeath === true && fact.summary.includes(person.name)
-                    && fact.actors.some(actor => actor.id === person.id && actor.role === 'died')))
-                    namedPlagueDeaths.add(person.id);
-            }
-        });
+        const namedPlagueDeaths = namedPlagueDeathsOnTheVoyage(game, first);
 
         const outward = await game.act('I wait until we arrive');
         const outwardContinued = await finishTheAcceptedVoyage(game,to.name,true);

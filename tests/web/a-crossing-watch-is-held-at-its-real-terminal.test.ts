@@ -1,3 +1,6 @@
+import { setLocation } from '../../src/engine/world/npc-state.js';
+import { whoTheyAreOf } from '../../src/engine/world/who-knows-the-land.js';
+import { whatSomebodyKnowsOfTheLand } from '../../src/engine/world/what-somebody-knows-of-the-land.js';
 /** A board watch belongs to its actual owned terminal. The played case takes
  * the post, asks an informed present person for directions, boards real finite
  * ship legs and serves the full accepted span before payment. Its lanes begin
@@ -38,7 +41,6 @@ import { routineTime } from '../../src/engine/world/npc-routines.js';
  */
 import { describe, expect, it } from 'vitest';
 import { ledgerAbout } from '../../src/storage/repos/obligation.repo.js';
-import { whatThisPersonKnowsOfTheLand } from '../../src/web/the-way-to-somewhere-asked-of-somebody.js';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
 import { theFirstRungOf } from '../../src/engine/encounters/what-a-house-has-on-its-board.js';
 import { sectBoardFor } from '../../src/web/encounters.js';
@@ -123,29 +125,27 @@ describe('actual crossing watch',()=>{
     },240000);
     it('takes a board mission, learns its real route from an informed person, travels and serves at its exact terminal',async()=>{
         const h=await atTheBoard('crossing-watch-journey');
+        const world=h.game.atHand!,seat=world.locations.find(place=>place.id===h.house.seatLocationId)!;
+        const boardArea=theAreasOf(world,seat).areas.find(area=>area.for==='board')!;
+        const guide=world.npcs.find(person=>person.status==='alive'&&person.factionId===h.house.id
+            &&whatSomebodyKnowsOfTheLand(world,whoTheyAreOf(world,{id:person.id,location:null,
+                realmOrdinal:person.cultivation.realmOrdinal,sectId:person.factionId})).places
+                .some(place=>place.name===h.site.name&&place.stage==='placed'));
+        expect(guide,'the fixture requires a real member who already knows this route').toBeDefined();
+        const day=routineTime(world),at=world.npcs.findIndex(person=>person.id===guide!.id);
+        world.npcs[at]={...setLocation(guide!,seat.id,day),activity:{kind:'talking',
+            note:'Giving a new watch holder directions at the board.',withIds:[h.id],sinceDay:day,untilDay:day+1,
+            standingIn:boardArea.id}};
+        h.game.theWorldMoved();
         await buyActualTermFood(h);
         await observedAct(h, 'I take the post '+h.offer.entry.name);
         expect(theMissionPostTheyHold(h.game,h.id)?.tags).toContain('post-at:'+h.site.id);
-        // Only the initial membership/board is arranged. Every later approach,
-        // direction, journey and day uses the native played action path.
-        let learned=false;
-        const seat=h.game.atHand!.locations.find(l=>l.id===h.house.seatLocationId)!;
-        const publicAreas=theAreasOf(h.game.atHand!,seat).areas.filter(a=>a.for!=='room'&&a.for!=='gate');
-        for(const area of publicAreas) {
-            await observedAct(h, 'I walk to '+area.name+'.');
-            const body=h.game.currentRun().cultivator;
-            if(h.game.worldPlaceOf(body)!==seat.id)throw new Error('Guide search unexpectedly left accepting house');
-            const world=h.game.atHand!;
-            const speaker=h.game.somebodyAtHand('somebody',body);
-            if(!speaker)continue;
-            const land=whatThisPersonKnowsOfTheLand(h.game,h.id,world,speaker);
-            if(!land.places.some(known=>known.name===h.site.name&&known.stage==='placed'))continue;
-            const answer=await observedAct(h, 'I ask somebody how do I get to '+h.site.name+'.');
-            expect(answer.toolCalls.some(call=>call.name==='engine.theWayTo')).toBe(true);
-            expect(h.game.canPointAtLocation(h.game.currentRun().cultivator,h.site)).toBe(true);
-            learned=true;break;
-        }
-        if(!learned)throw new Error('No actual present house speaker could teach the chosen terminal route');
+        // Initial membership, board and the already-informed guide are arranged.
+        // The question, route learning, all travel and every service day are played.
+        expect(h.game.present(h.game.currentRun().cultivator).some(person=>person.id===guide!.id)).toBe(true);
+        const answer=await observedAct(h,'I ask somebody how do I get to '+h.site.name+'.');
+        expect(answer.toolCalls.some(call=>call.name==='engine.theWayTo')).toBe(true);
+        expect(h.game.canPointAtLocation(h.game.currentRun().cultivator,h.site)).toBe(true);
         const departure=h.game.currentRun(),departedOn=routineTime(h.game.atHand!);
         const beforeJourneyFacts=new Set(h.game.atHand!.history.facts.map(fact=>fact.id));
         await followTheActualOfferedRoute(h);

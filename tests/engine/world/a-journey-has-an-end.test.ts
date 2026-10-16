@@ -1,5 +1,10 @@
+import { houseAppointment } from '../../../src/engine/world/internal-affairs-puts-somebody-to-the-work.js';
+import { whenTheyReachTheirPost } from '../../../src/engine/world/places-on-the-way.js';
 /**
  * A journey has an end.
+ * Standing hall duties, introduced after this guard, deliberately have no end
+ * day. Their real appointment and finite arrival distinguish them from an
+ * unbounded journey; an unappointed or unreachable away activity still fails.
  *
  * ── WHAT WAS WRONG ───────────────────────────────────────────────────────
  *
@@ -43,6 +48,8 @@ const termless = (state: WorldState) => state.npcs
     .filter(n => n.status === 'alive'
         && n.activity !== null
         && isAwayOnSomething(n.activity.kind)
+        && !(n.activity.kind === 'stationed' && houseAppointment(state, n)
+            && whenTheyReachTheirPost(state.locations, n) !== null)
         && (n.activity.untilDay ?? null) === null)
     .map(n => `${n.name} (${n.activity!.kind} at ${n.locationId})`);
 

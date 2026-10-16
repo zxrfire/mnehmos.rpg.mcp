@@ -1,11 +1,8 @@
-/** Hypothetical staff layout and room remits. Actual appointments are read by
- * theHallStaff in the world layer; this planning deal does not post anybody. */
+/** Actual room remits read appointments from theHallStaff in the world layer. */
 
 import type { RoomPurpose } from '../world/architecture.js';
 import type { APortfolio } from './what-an-elder-is-in-charge-of.js';
-import { inTheOrderOfficesAreDealt, whoAnswersAbout } from './what-an-elder-is-in-charge-of.js';
-import type { OnTheRoll } from './what-a-body-wants-is-what-its-deciders-want.js';
-import { whoDecidesIn } from './what-a-body-wants-is-what-its-deciders-want.js';
+import { whoAnswersAbout } from './what-an-elder-is-in-charge-of.js';
 
 /** Somebody's sub-job: a person, and the room they work in. */
 export interface APost {
@@ -16,43 +13,6 @@ export interface APost {
      * nobody holds it, and then nobody selected anybody either.
      */
     selectedById: string | null;
-}
-
-/**
- * Who works in each of this house's rooms.
- *
- * Rooms in the order offices are dealt, disciples heaviest-first, round robin - the same deal
- * `whoIsInChargeOfWhat` makes, so the archive's disciple is a more senior
- * disciple than the mission hall's for the same reason the archive's elder is a
- * more senior elder. One rule, read twice.
- *
- * Empty where the house has no disciples, which is the honest answer for a body
- * that admits nobody: its rooms are run by the people who decide in it and
- * there is nobody else in them.
- */
-export function whoStaffsWhat(input: {
-    portfolios: readonly APortfolio[];
-    roll: readonly OnTheRoll[];
-    rankCount: number;
-}): APost[] {
-    const deciders = new Set(
-        whoDecidesIn({ roll: input.roll, rankCount: input.rankCount }).map(p => p.id)
-    );
-    // Everybody on the roll who is not one of the people who decide, heaviest
-    // first. `rankIndex < 0` is somebody unaffiliated standing in the list.
-    const hands = input.roll
-        .filter(person => person.rankIndex >= 0 && !deciders.has(person.id))
-        .sort((a, b) => b.rankIndex - a.rankIndex || a.id.localeCompare(b.id));
-    if (hands.length === 0) return [];
-
-    const rooms = [...input.portfolios]
-        .sort((a, b) => inTheOrderOfficesAreDealt(a.purpose, b.purpose));
-
-    return rooms.map((room, i) => ({
-        purpose: room.purpose,
-        personId: hands[i % hands.length]!.id,
-        selectedById: room.holderId
-    }));
 }
 
 /** Everybody posted to this room. */

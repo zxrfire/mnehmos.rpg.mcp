@@ -1,5 +1,12 @@
+import { aVehicleOf, A_SPIRIT_BOAT_ANSWERS_TO } from '../../../src/engine/world/a-vehicle.js';
+import { sendAnActualSelectedHouseParty } from '../../../src/engine/world/a-house-party-takes-an-actual-air-leg.js';
+import type { NpcActivity } from '../../../src/engine/world/npc-state.js';
 /**
  * A house built a thing, and a house can sell it.
+ * The fuel control formerly walked20 years with unqualified hands, no real
+ * route and no admitted flight. Modern pilot/loan gates correctly spent no
+ * fuel. It now admits an actual head-piloted house leg across unwalkable
+ * distance and compares the same starting state without its hull.
  *
  * The design owner, on sects trading with each other: *"why should they not?"*
  *
@@ -402,14 +409,38 @@ describe('the world does it', () => {
      */
     it('charges a house for running the thing over ground it cannot walk', () => {
         const withHull = build({ sellerPurse: 500_000, buyerPurse: 500_000 });
-        const without = build({ sellerPurse: 500_000, buyerPurse: 500_000 });
-        without.objects = without.objects.filter(o => o.id !== 'craft-under-test');
-        applyPressure(withHull, DAY, DAY + 20 * YEAR, { intensity: 0 });
-        applyPressure(without, DAY, DAY + 20 * YEAR, { intensity: 0 });
-
-        const purseOf = (state: WorldState) =>
-            Number(state.factions.find(f => f.id === 'house-poor')!.resources.spirit_stones);
+        withHull.currentHour = 0;
+        const house = withHull.factions.find(f => f.id === 'house-poor')!;
+        const from = withHull.locations.find(place => place.id === house.seatLocationId)!;
+        const to = withHull.locations.find(place => place.id === 'seat-house-rich')!;
+        Object.assign(from.data, { metricXLi: 0, metricYLi: 0, metricExtentLi: 3 });
+        Object.assign(to.data, { metricXLi: 48, metricYLi: 64, metricExtentLi: 3 });
+        const at = withHull.npcs.findIndex(person => person.factionId === house.id);
+        const pilot = { ...setRealm(withHull.npcs[at]!, A_SPIRIT_BOAT_ANSWERS_TO, DAY),
+            factionRankIndex: house.ranks.length - 1 };
+        withHull.npcs[at] = pilot;
+        const hull = aVehicleOf({ id: 'craft-under-test', conveyanceId: 'conv-spirit-boat',
+            ownerId: house.id, ownerName: house.name, at: from.id });
+        withHull.objects[withHull.objects.findIndex(row => row.id === hull.id)] = hull;
+        const activities = new Map<string, NpcActivity>([[pilot.id, { kind: 'out_with_a_party',
+            note: 'Inspecting the distant post.', withIds: [], sinceDay: DAY, untilDay: DAY + 2,
+            fromLocationId: from.id, returnTo: from.id }]]);
+        const roll = withHull.npcs.filter(person => person.factionId === house.id)
+            .map(person => ({ id: person.id, rankIndex: person.factionRankIndex }));
+        const without = structuredClone(withHull);
+        without.objects = without.objects.filter(row => row.id !== hull.id);
+        const refused = sendAnActualSelectedHouseParty(without, without.factions.find(f => f.id === house.id)!,
+            [without.npcs.find(person => person.id === pilot.id)!], without.npcs.find(person => person.id === pilot.id)!,
+            hull, to.id, DAY, activities, [], roll);
+        expect(refused).toBeNull();
+        const accepted = sendAnActualSelectedHouseParty(withHull, house, [pilot], pilot,
+            hull, to.id, DAY, activities, [], roll);
+        expect(accepted, 'a qualified real head can authorize and pilot its actual house hull').not.toBeNull();
+        expect(accepted!.fuel).toBeGreaterThan(0);
+        expect(withHull.npcs.find(person => person.id === pilot.id)!.locationId).toBe(accepted!.accepted.location.id);
+        const purseOf = (state: WorldState) => Number(state.factions.find(f => f.id === house.id)!.resources.spirit_stones);
         expect(purseOf(without)).toBeGreaterThan(purseOf(withHull));
+        expect(purseOf(withHull)).toBe(purseOf(without) - accepted!.fuel);
     });
 
     /** The seller stops being short, which is the whole of why it went. */

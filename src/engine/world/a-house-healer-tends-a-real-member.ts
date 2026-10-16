@@ -9,7 +9,7 @@ import { isAwayOnSomething, isTheWorldsToMove, type NpcRecord } from './npc-stat
 import { locationOfNpcOnItsJourney, whenTheyReachTheirPost } from './places-on-the-way.js';
 import { roomForHouseWork } from './where-a-house-does-its-work.js';
 import { appointHouseHealer, whoTendsTheSick, medicalGradeOf } from './who-is-actually-seeing-to-wounds.js';
-import { HOME_REGION_ID } from '../../data/cultivation/regions.js';
+import { getRegion, HOME_REGION_ID } from '../../data/cultivation/regions.js';
 import { theProvinceAround } from './ground-holder.js';
 import { priceMultiplierInArea } from './what-is-true-of-a-place-right-now.js';
 import { carePricesOnThisGround, PHYSICIAN_COURSE_PRICE } from './what-a-physicians-care-costs.js';
@@ -47,7 +47,7 @@ export function beginHouseCare(state: WorldState, patient: NpcRecord, day: numbe
     const regionId = typeof province?.data.catalogRegionId === 'string' ? province.data.catalogRegionId : HOME_REGION_ID;
     const groundPrice = priceMultiplierInArea(state.statuses, state.locations, room.id, Math.floor(day),
         getPrice(PHYSICIAN_COURSE_PRICE)!.category);
-    const quote = carePricesOnThisGround(regionId, groundPrice);
+    const quote = carePricesOnThisGround(getRegion(regionId) ? regionId : null, groundPrice);
     const purse = Number(house.resources.spirit_stones ?? 0);
     const courses = Math.min(reachable.length, Math.floor(purse / quote.perWound));
     if (courses === 0) return false;

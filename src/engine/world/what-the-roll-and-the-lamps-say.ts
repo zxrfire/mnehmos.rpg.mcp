@@ -1,6 +1,6 @@
 /** The house reads its existing member rows against the physical lamps, through its hall's work. */
 import { heldThisHiredPost } from './a-hired-duty-at-its-post.js';
-import { carriesATokenAt, thisHouseCanIssue, whatAHouseMakesOfSilence, whoHasALampBurningIn,
+import { carriesATokenAt, thisHouseCanIssue, whatTheHallSays, whoHasALampBurningIn,
     type WhatTheHallSays } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { whereThisHouseBurnsItsLamps } from './a-recruit-is-given-their-lamp-at-the-house.js';
 import { factsWithData, factsWithDataValue } from './witness-reaction-index.js';
@@ -98,18 +98,18 @@ export function readTheRollAgainstTheHall(state: WorldState, houseId: string, in
     const members = input.members ?? state.npcs.filter(person => person.factionId === houseId);
     const lamps = whoHasALampBurningIn(state.objects.filter(object => object.locationId === hall), houseId);
     const couldIssue = thisHouseCanIssue(members.map(person => person.cultivation.realmOrdinal));
-    const readings: WhatTheHallSays[] = [];
+    const roll: Parameters<typeof whatTheHallSays>[0]['roll'][number][] = [];
     for (const member of members) {
         const since = input.unseenSince?.get(member.id);
         const unseenForDays = since === undefined ? 0 : Math.max(0, day - since);
         if (lamps.has(member.id)) {
-            readings.push({ memberId: member.id, memberName: member.name, unseenForDays,
-                reading: whatAHouseMakesOfSilence({ theyHaveALamp: true, holderIsAlive: member.status === 'alive',
-                    daysSinceAnybodySawThem: unseenForDays }) });
+            roll.push({ memberId: member.id, memberName: member.name, theyHaveALamp: true,
+                holderIsAlive: member.status === 'alive', daysSinceAnybodySawThem: unseenForDays });
         } else if (couldIssue && carriesATokenAt(member.factionRankIndex)
             && whenTheHallKnowsTheirLampIsGone(state, houseId, member, day, input.checkedNow) !== null) {
-            readings.push({ memberId: member.id, memberName: member.name, unseenForDays, reading: 'they_are_dead' });
+            roll.push({ memberId: member.id, memberName: member.name, theyHaveALamp: true,
+                holderIsAlive: false, daysSinceAnybodySawThem: unseenForDays });
         }
     }
-    return readings;
+    return whatTheHallSays({ roll });
 }

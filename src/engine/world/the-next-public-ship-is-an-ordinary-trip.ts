@@ -211,7 +211,7 @@ export function boardThePublicShip(world:WorldState,departure:PublicShipDepartur
     const boarded=natives.map(p=>onSponsoredPublicPassage(world,p,quote,'Travelling on the paid ship to its destination.',p.activity?.withIds??[]));
     if(boarded.some(p=>!p))return null;
     for(const person of boarded)world.npcs[world.npcs.findIndex(p=>p.id===person!.id)]=person!;
-    const crew=world.npcs.filter(p=>p.status==='alive'&&p.tags.includes('crew-of:'+quote.vesselId));
+    const crew=ensureShipCrew(world,quote.lane,quote.fromId,routineTime(world));
     bindShipCrewToPassage(world,quote,routineTime(world));
     const receipt=recordPublicPassage(world,quote,routineTime(world),quote.fromId,[...people.map(p=>p.id),...crew.map(p=>p.id)],
         undefined,moment,people);

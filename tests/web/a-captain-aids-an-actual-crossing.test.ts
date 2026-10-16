@@ -2,6 +2,9 @@
  * only passengers on the same hull. This uses two actually admitted public
  * courses meeting at an existing canonical water vertex. A real held dose,
  * ordinary duty/disposal decisions and the actual span must produce the aid.
+ * Both ships must already have departed at the arrangement clock; a future
+ * quote is not an actual boarding. The tally hand-in ruling made this check
+ * explicit and exposed the fixture admitting a ship before its departure.
  * Sharing an ocean outside that crossing must not produce a second response.
  * Native appointments must start at the admitted year boundary, before the
  * world clock advances. Disabling only that producer made the Native control
@@ -47,7 +50,7 @@ async function crossingArrangement(){
     departure=crossing-quote.days*theirSite.days/theirRoute.at(-1)!.days;
     quote=quotePublicPassage(world,from.id,to.id,departure,1);
    }
-   if(!quote||quote.vesselId===own.vesselId)continue;
+   if(!quote||quote.vesselId===own.vesselId||quote.departureDay>day)continue;
    const person=createNpc(world.seed,{id:'patient-on-the-other-actual-hull',name:'The other passenger',
       onDay:departure,bornOnDay:departure-25*365,locationId:from.id,spiritStones:10000});
    const accepted=startNpcPassage(world.locations,person,{lane:quote.lane,destinationId:to.id,

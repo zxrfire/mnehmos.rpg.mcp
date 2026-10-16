@@ -261,9 +261,13 @@ describe('your house issues you its robes and token at its seat', () => {
         expect(large, 'this world has no large seated house').toBeTruthy();
         const { faction, seat } = large!;
 
-        // Walked there first, so the arrangement is made in the world the read sees.
+        // Gate recognition is the subject; arrange the actual gate body rather
+        // than assume an interrupted cross-province travel span reached it.
         await toldTheWayTo({ game, db: repos.db }, seat.name);
-        await game.act(`I travel to ${seat.name}`);
+        repos.cultivators.update(cultivator.id, { location: seat.name });
+        const gate = theAreasOf(game.atHand!, seat).areas.find(area => area.for === 'gate')!;
+        expect(gate).toBeDefined();
+        repos.cultivators.standIn(cultivator.id, gate.id);
         expect(repos.cultivators.getById(cultivator.id)!.location).toBe(seat.name);
         repos.sects.addMember(faction.id, cultivator.id, 0);
         theHouseHasTheWord(game, { id: cultivator.id, name: cultivator.name }, faction);

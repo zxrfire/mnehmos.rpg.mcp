@@ -5,12 +5,14 @@ import { localPrice } from '../../data/cultivation/regions.js';
 export const PHYSICIAN_VISIT_PRICE = 'price-doctor-visit';
 export const PHYSICIAN_COURSE_PRICE = 'price-splint-and-month';
 
-export function carePricesOnThisGround(regionId: string, groundHere: number) {
+export function carePricesOnThisGround(regionId: string | null, groundHere: number) {
+    // A custom province without regional prices uses the listed service price.
+    const onGround = (cash: number) => regionId === null ? cash : localPrice(regionId, cash);
     const visit = getPrice(PHYSICIAN_VISIT_PRICE)!;
     const course = getPrice(PHYSICIAN_COURSE_PRICE)!;
-    const courseCash = Math.max(1, Math.round(localPrice(regionId, course.cash) * groundHere));
+    const courseCash = Math.max(1, Math.round(onGround(course.cash) * groundHere));
     const perWound = Math.max(1, Math.ceil(cashToStones(courseCash)));
-    const visitCash = Math.max(1, Math.round(localPrice(regionId, visit.cash) * groundHere));
+    const visitCash = Math.max(1, Math.round(onGround(visit.cash) * groundHere));
     const restingPrice = Math.max(1, Math.ceil(cashToStones(visitCash)));
     return { visit, course, courseCash, perWound, visitCash, restingPrice };
 }
