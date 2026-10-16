@@ -126,3 +126,7 @@ because the repository omitted qi; this storage seam fixes that loss without
 adding recovery, a second pool or repository mechanics.
 
 WorldStateRepository persists and reloads the single sparse NPC art cooldown map, including exhausted zero values; it does not derive remaining time from dates.
+
+The NPC writer round-trips learned alchemy on snapshots and appends, including
+zero, later training and absent legacy values. It stores that practice once
+on the person's existing row and never derives it from their bodily realm.

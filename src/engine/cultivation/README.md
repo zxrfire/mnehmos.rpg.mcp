@@ -1380,3 +1380,9 @@ the existing action and exchange rules; a party victory keeps the actual winner'
 identity while reporting whether the player's side won.
 
 The existing person-seal record has qi and slave kinds. Older records without a kind are qi seals. Only qi seals cap the pool and drawing; a slave seal leaves cultivation available and binds the person to its recorded holder. Both kinds use the existing laying, realm-gap duration and breaking authorities. The seal records its cast strength and real end date, including fractional days.
+
+`canRefineGrade` accepts recorded alchemy training beside the body's realm. Both
+must reach the material grade; knowing the craft cannot bypass the bodily gate,
+and a high realm cannot replace recorded practice. Its two-argument callers
+still ask the material-only question. Refinement odds retain their actual body
+and vessel inputs after eligibility has been established.

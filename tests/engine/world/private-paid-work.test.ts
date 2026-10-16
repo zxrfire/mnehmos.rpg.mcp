@@ -16,7 +16,7 @@
  */
 import { expect, it } from 'vitest';
 import { createWorld } from '../../../src/engine/world/world-state.js';
-import { createNpc } from '../../../src/engine/world/npc-state.js';
+import { createNpc, setRealm } from '../../../src/engine/world/npc-state.js';
 import { makeLocation, linkLocations } from '../../../src/engine/world/locations.js';
 import { makeObject, transferPossession, isRuined } from '../../../src/engine/world/possessions.js';
 import { offerPrivateWork, privatePaidWorkThisYear, settlePrivateWork, type PrivateWorkTerms } from '../../../src/engine/world/private-paid-work.js';
@@ -42,6 +42,7 @@ import { RECIPES } from '../../../src/data/cultivation/recipes.js';
 import { getPill } from '../../../src/data/cultivation/pills.js';
 import { ingredientsOfPrivateRefinement } from '../../../src/engine/world/private-work-at-a-cauldron.js';
 import { refineChance } from '../../../src/engine/cultivation/the-odds-a-refinement-holds.js';
+import { daysAtTheWork } from '../../../src/engine/social-leverage/commissioning-a-craft.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { whatTheRecipeSpends } from '../../../src/data/cultivation/what-an-artifact-is-made-of.js';
 
@@ -459,4 +460,28 @@ it('the accepted word, physical activity and deferred wage survive a real databa
         expect(resumed.npcs[1].spiritStones).toBe(60);
         expect(resumed.obligations.find(term => term.id === h.term.id)!.status).toBe('settled');
     } finally { db.close(); }
+});
+
+/** A privately paid recipe uses the same learned-ability gate as house work;
+ * merely meeting the bodily material requirement cannot spend its ingredients. */
+it('a private high-realm refiner needs the recipes learned grade before bench work starts', () => {
+    const recipe = RECIPES.find(row => getPill(row.producesPillId)!.grade === 'earth')!;
+    const h = accepted({ objective: { kind: 'refine', recipeId: recipe.id, recipientId: 'employer' },
+        dueOnDay: daysAtTheWork('earth', recipe.requiredOrdinal) + 10 }, state => {
+        state.npcs[1] = setRealm(state.npcs[1]!, recipe.requiredOrdinal, 0);
+        state.npcs[1]!.cultivation.alchemyOrdinal = 0;
+        for (const ingredient of recipe.ingredients) state.objects.push(makeObject({ id: ingredient.itemId, name: ingredient.itemId,
+            kind: 'material', ownerId: 'employer', possessorId: 'employer', data: { materialId: ingredient.itemId, quantity: ingredient.quantity + 1 } }));
+    });
+    const worker = h.state.npcs.find(person => person.id === 'worker')!, start = worker.activity!.sinceDay;
+    const items = structuredClone(h.state.objects), purses = h.state.npcs.map(person => person.spiritStones);
+    settlePrivateWork(h.state, start);
+    expect(h.state.history.facts.some(fact => fact.data.privateRefinementStarted === h.offer.id)).toBe(false);
+    expect(h.state.objects).toEqual(items);
+    expect(h.state.npcs.map(person => person.spiritStones)).toEqual(purses);
+    const current = h.state.npcs.find(person => person.id === worker.id)!;
+    current.cultivation.alchemyOrdinal = current.cultivation.realmOrdinal;
+    settlePrivateWork(h.state, start);
+    expect(h.state.history.facts.some(fact => fact.data.privateRefinementStarted === h.offer.id)).toBe(true);
+    expect(worker.cultivation.realmOrdinal).toBe(recipe.requiredOrdinal);
 });

@@ -1,6 +1,11 @@
 /**
  * Rarity read off the world, rather than written down beside it.
  *
+ * 2026-10-15: realm-only eligibility counted 52 derived heaven-grade makers
+ * against 34 authored after the institutional reserve. The owner keeps the
+ * <25% guard: read learned alchemy alongside the body's material-working realm.
+ * Every living person still enters the census; no grade assertion moves.
+ *
  * ═══════════════════════════════════════════════════════════════════════════
  * WHY THIS IS A TEST AND NOT A PARAGRAPH
  * ═══════════════════════════════════════════════════════════════════════════
@@ -58,7 +63,7 @@ import {
     refiningOrdinalFor
 } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import type { TechniqueGrade } from '../../../src/schema/cultivation.js';
-import { somebodyTheCatalogWrote } from '../../../src/engine/world/npc-state.js';
+import { somebodyTheCatalogWrote, type NpcRecord } from '../../../src/engine/world/npc-state.js';
 
 /** Ascending, which is the order the claim is made in. */
 const GRADES: readonly TechniqueGrade[] = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'];
@@ -95,6 +100,7 @@ function makersIn(seed: string): {
     /** The same count, over the people a catalog wrote rather than the seeder derived. */
     byTheCatalog: Map<TechniqueGrade, number>;
     alive: number;
+    institutional: NpcRecord[];
 } {
     const { state } = seedWorld({ seed, catalog });
     const by = new Map<TechniqueGrade, number>(GRADES.map(g => [g, 0]));
@@ -104,13 +110,13 @@ function makersIn(seed: string): {
         if (npc.status !== 'alive') continue;
         alive++;
         for (const grade of GRADES) {
-            if (canRefineGrade(grade, npc.cultivation.realmOrdinal)) {
+            if (canRefineGrade(grade, npc.cultivation.realmOrdinal, npc.cultivation.alchemyOrdinal)) {
                 by.set(grade, (by.get(grade) ?? 0) + 1);
                 if (somebodyTheCatalogWrote(npc)) byTheCatalog.set(grade, (byTheCatalog.get(grade) ?? 0) + 1);
             }
         }
     }
-    return { by, byTheCatalog, alive };
+    return { by, byTheCatalog, alive, institutional: state.npcs.filter(person => person.id.startsWith('npc-hall-raised-')) };
 }
 
 const RUNS = SEEDS.map(seed => ({ seed, ...makersIn(seed) }));
@@ -250,4 +256,21 @@ describe('who can actually make each grade of medicine', () => {
             expect(run.by.get('mortal')).toBe(run.alive);
         }
     });
+});
+
+/** The rarity result must come from skill, with the real residents still alive,
+ * high in realm and doing their appointed work. The census above counts all. */
+it('keeps high institutional residents present and posted without granting them automatic alchemy mastery', () => {
+    for (const run of RUNS) {
+        const high = run.institutional.filter(person => person.cultivation.realmOrdinal >= refiningOrdinalFor('heaven'));
+        expect(high.length).toBeGreaterThan(0);
+        const ordinary = high.filter(person => !canRefineGrade('heaven', person.cultivation.realmOrdinal, person.cultivation.alchemyOrdinal));
+        expect(ordinary.length).toBeGreaterThan(high.length / 2);
+        expect(ordinary.some(person => person.activity?.kind === 'stationed')).toBe(true);
+        for (const person of run.institutional) {
+            expect(person.status).toBe('alive');
+            expect(person.cultivation.alchemyOrdinal).toBeGreaterThanOrEqual(0);
+            expect(person.cultivation.alchemyOrdinal).toBeLessThanOrEqual(person.cultivation.realmOrdinal);
+        }
+    }
 });

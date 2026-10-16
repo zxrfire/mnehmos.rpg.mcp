@@ -63,9 +63,11 @@ export function refiningRealmNameFor(grade: TechniqueGrade): string {
     return realmForOrdinal(refiningOrdinalFor(grade)).name;
 }
 
-/** Whether a cultivator standing at this rung may attempt this grade at all. */
-export function canRefineGrade(grade: TechniqueGrade, realmOrdinal: number): boolean {
-    return realmOrdinal >= refiningOrdinalFor(grade);
+/** Material reach and learned alchemy are independent limits. Omitted training
+ * preserves the material-only question and unrecorded legacy proficiency. */
+export function canRefineGrade(grade: TechniqueGrade, realmOrdinal: number, alchemyOrdinal = realmOrdinal): boolean {
+    const required = refiningOrdinalFor(grade);
+    return realmOrdinal >= required && alchemyOrdinal >= required;
 }
 
 /**

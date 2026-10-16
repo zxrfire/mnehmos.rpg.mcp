@@ -23,7 +23,7 @@ import { createWorld, makeFaction } from '../../../src/engine/world/world-state.
 import { createNpc, setRealm } from '../../../src/engine/world/npc-state.js';
 import { linkLocations, makeLocation } from '../../../src/engine/world/locations.js';
 import { seedPillStock } from '../../../src/engine/world/where-the-pills-actually-are.js';
-import { housesRefineTheirWoundMedicine } from '../../../src/engine/world/house-wound-medicine.js';
+import { housesRefineTheirWoundMedicine, onTheShelf } from '../../../src/engine/world/house-wound-medicine.js';
 import { PILLS } from '../../../src/data/cultivation/pills.js';
 import { pillStorageModel } from '../../../src/engine/cultivation/buying-and-bartering-pills.js';
 import { makeObject } from '../../../src/engine/world/possessions.js';
@@ -291,4 +291,31 @@ describe('standing medicine requires actual alchemy support', () => {
         expect(faction.resources.spirit_stones).toBe(10_000 - refined.stones);
         expect(ordinaryStock(faction.resources)).toBe(refined.set);
     });
+});
+
+/** An appointed high elder with ordinary alchemy must not manufacture a grade
+ * they never learned. Training can improve without changing their body or post. */
+it('actual house refining reads the appointed hands training without lowering their realm or removing their post', () => {
+    const { state, faction } = house(true);
+    faction.resources.spirit_stones = 1_000_000;
+    const maker = state.npcs[0]!;
+    maker.factionRankIndex = 0; maker.locationId = 'alchemy'; maker.cultivation.alchemyOrdinal = 0;
+    state.npcs.push(setRealm(createNpc(state.seed, { id: 'manager', bornOnDay: -10_000, onDay: 0,
+        factionId: faction.id, factionRankIndex: faction.ranks.length - 1, locationId: 'alchemy' }), 30, 0));
+    expect(appointHouseWorker(state, { houseId: faction.id, job: 'serving_alchemy',
+        room: state.locations.find(place => place.id === 'alchemy')!, day: 0, posted: true, initialPlacement: true,
+        eligible: person => person.id === maker.id, suitable: () => true })).not.toBeNull();
+    const posted = state.npcs.find(person => person.id === maker.id)!;
+    const before = { realm: posted.cultivation.realmOrdinal, rank: posted.factionRankIndex, activity: structuredClone(posted.activity) };
+    const earth = PILLS.filter(pill => pill.effect === 'treat_injury' && pill.grade === 'earth' && pillStorageModel(pill) === 'count');
+    expect(earth.length).toBeGreaterThan(0);
+    expect(housesRefineTheirWoundMedicine(state, 1).batches).toBeGreaterThan(0);
+    expect(ordinaryStock(faction.resources)).toBeGreaterThan(0);
+    expect(earth.every(pill => onTheShelf(faction, pill.id) === 0)).toBe(true);
+    const current = state.npcs.find(person => person.id === maker.id)!;
+    current.cultivation.alchemyOrdinal = current.cultivation.realmOrdinal;
+    expect(housesRefineTheirWoundMedicine(state, 2).batches).toBeGreaterThan(0);
+    expect(earth.some(pill => onTheShelf(faction, pill.id) > 0)).toBe(true);
+    const after = state.npcs.find(person => person.id === maker.id)!;
+    expect({ realm: after.cultivation.realmOrdinal, rank: after.factionRankIndex, activity: after.activity }).toEqual(before);
 });

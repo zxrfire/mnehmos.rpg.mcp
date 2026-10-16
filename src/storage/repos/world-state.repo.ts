@@ -240,7 +240,7 @@ export class WorldStateRepository {
                 born_on_day, origin_tier, sex, physique, bloodline_species, bloodline_tier,
                 occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
-                wounds, technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
+                wounds, technique_ids, alchemy_ordinal, specialties, lifespan_ends_on_day, last_advanced_on_day,
                 accumulating_since_day, bonded_cultivation_days, hp, qi, technique_cooldowns, insights, achievements, body_on_day, qi_seal, plague,
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
@@ -251,7 +251,7 @@ export class WorldStateRepository {
                 @bornOnDay, @origin, @sex, @physique, @bloodlineSpecies, @bloodlineTier,
                 @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
-                @wounds, @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
+                @wounds, @techniqueIds, @alchemyOrdinal, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
                 @accumulatingSinceDay, @bondedCultivationDays, @hp, @qi, @techniqueCooldowns, @insights, @achievements, @bodyOnDay, @qiSeal, @plague,
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
@@ -961,6 +961,7 @@ export class WorldStateRepository {
                 untreatedInjuries: npc.cultivation.untreatedInjuries,
                 wounds: JSON.stringify(npc.cultivation.injuries),
                 techniqueIds: JSON.stringify(npc.cultivation.techniqueIds),
+                alchemyOrdinal: npc.cultivation.alchemyOrdinal ?? null,
                 specialties: JSON.stringify(npc.cultivation.specialties),
                 lifespanEndsOnDay: npc.cultivation.lifespanEndsOnDay,
                 lastAdvancedOnDay: npc.cultivation.lastAdvancedOnDay,
@@ -1631,6 +1632,7 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
             untreatedInjuries: row.untreated_injuries,
             injuries: parseWounds(row.wounds),
             techniqueIds: parseArray(row.technique_ids),
+            ...(row.alchemy_ordinal === null ? {} : { alchemyOrdinal: row.alchemy_ordinal }),
             ...(row.bonded_cultivation_days > 0 ? { bondedCultivationDays: row.bonded_cultivation_days } : {}),
             specialties: parseArray(row.specialties),
             lifespanEndsOnDay: row.lifespan_ends_on_day,
@@ -2230,6 +2232,7 @@ interface NpcRow {
     untreated_injuries: number;
     wounds: string;
     technique_ids: string;
+    alchemy_ordinal: number | null;
     specialties: string;
     lifespan_ends_on_day: number;
     last_advanced_on_day: number;

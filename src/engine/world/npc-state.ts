@@ -575,6 +575,9 @@ export interface NpcCultivation {
      * changes on its own.
      */
     seal: AQiSeal | null;
+    /** Learned material-working reach in alchemy, independent of bodily realm.
+     * Absent on legacy people whose training was not separately recorded. */
+    alchemyOrdinal?: number;
     /** Technique ids they can actually use. */
     techniqueIds: string[];
     /** Comprehensions earned from actual lived events through understanding.ts. */

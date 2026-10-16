@@ -278,3 +278,7 @@ because the repository omitted qi; this storage seam fixes that loss without
 adding recovery, a second pool or repository mechanics.
 
 World NPC technique_cooldowns is nullable JSON holding remaining cooldowns from actual uses. A legacy missing column means no NPC art use had been recorded, and migration creates no active cooldown or resource refill.
+
+Native learned alchemy is a nullable ordinal ceiling on the existing NPC row.
+Zero is recorded ordinary training; null leaves legacy training unrecorded.
+The idempotent column migration invents no study and changes no bodily realm.
