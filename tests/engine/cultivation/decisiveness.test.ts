@@ -2,11 +2,10 @@
  * How decisive should a modest power edge be?
  *
  * An earlier ordinary-swing sweep recorded 53.5% equal-power aggressor wins.
- * On landing27511c66, the same 400-stream fixture measures 61%, failing its
- * existing 40-60% guard. Each round explicitly lets the aggressor strike first
- * and the defender answer only while standing. Whether to retain that order
- * or change initiative needs the owner's decision; no bound or damage constant
- * has been changed. The historical tables below explain the earlier inquiry.
+ * On landing27511c66, the same 400-stream fixture measures 61%.
+ * Owner ruling: keep attacker-first order because choosing the moment gives a
+ * real first-strike edge, and admit that small edge with a 40-65% guard.
+ * The historical tables below explain the earlier inquiry.
  *
  * The standoff drift, isolated to one line: a 1.60:1 composite power ratio was
  * producing 100% / 0%. If a three-fifths edge between peers is certain, a
@@ -159,7 +158,7 @@ describe('the middle of the curve, which is under review', () => {
         // The old 68.8% measurement predates the current blow resolver.
         const rate = aggressorWinRate(body(43, 'a'), body(43, 'b'));
         expect(rate).toBeGreaterThan(0.4);
-        expect(rate).toBeLessThan(0.6);
+        expect(rate).toBeLessThan(0.65);
     });
 });
 

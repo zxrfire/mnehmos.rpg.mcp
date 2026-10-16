@@ -14,7 +14,8 @@
  *
  * Postings can move a parent away from the household after its ties are seeded.
  * When current rooms differ, the shared home is read from the actual posting's
- * return ground. The rate bounds remain unchanged and require separate review.
+ * return ground. Owner ruling: compound staff and servants are institutional
+ * residents, not family households; exclude them and retain the 85% floor.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -32,6 +33,8 @@ import {
     SIBLINGS_PER_HOUSEHOLD
 } from '../../../src/engine/world/the-ties-an-ordinary-life-produces.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
+import { houseAppointment } from '../../../src/engine/world/internal-affairs-puts-somebody-to-the-work.js';
+import { houseFloorsOf } from '../../../src/data/cultivation/the-three-floors-a-house-admits-at.js';
 
 const BLOOD = new Set(['kin', 'spouse', 'parent', 'child']);
 /** Enough seeds that a rate is a rate. One world is one draw. */
@@ -56,13 +59,15 @@ function livingIn(state: WorldState): NpcRecord[] {
  * this pass produced, and counting it here measured the catalog.
  */
 function householdsOf(state: WorldState): number[] {
-    const living = livingIn(state);
-    const at = new Map(state.npcs.map(npc => [npc.id, npc]));
+    const familyResidents = state.npcs.filter(npc => !houseAppointment(state, npc)
+        && !(npc.factionId && npc.factionRankIndex === 0 && houseFloorsOf(npc.factionId)?.hasMenialTier));
+    const at = new Map(familyResidents.map(npc => [npc.id, npc]));
+    const living = familyResidents.filter(npc => isActing(npc.status));
     const seen = new Set<string>();
     const sizes: number[] = [];
     for (const npc of living) {
         if (seen.has(npc.id)) continue;
-        if (!npc.relationships.some(r => BLOOD.has(r.kind))) continue;
+        if (!npc.relationships.some(r => BLOOD.has(r.kind) && at.has(r.targetId))) continue;
         const stack = [npc.id];
         const ids: string[] = [];
         while (stack.length > 0) {
@@ -71,7 +76,7 @@ function householdsOf(state: WorldState): number[] {
             seen.add(id);
             ids.push(id);
             for (const tie of at.get(id)?.relationships ?? []) {
-                if (BLOOD.has(tie.kind) && !seen.has(tie.targetId)) stack.push(tie.targetId);
+                if (BLOOD.has(tie.kind) && at.has(tie.targetId) && !seen.has(tie.targetId)) stack.push(tie.targetId);
             }
         }
         if (ids.some(id => id.startsWith('npc-line-'))) continue;
@@ -81,6 +86,25 @@ function householdsOf(state: WorldState): number[] {
 }
 
 describe('the families a world opens holding', () => {
+    it('leaves actual appointed staff and servants out of a family component', async () => {
+        const state = await world('fam-a');
+        const staff = state.npcs.find(npc => houseAppointment(state, npc));
+        const servant = state.npcs.find(npc => !houseAppointment(state, npc)
+            && npc.factionId && npc.factionRankIndex === 0 && houseFloorsOf(npc.factionId)?.hasMenialTier);
+        const ordinary = state.npcs.filter(npc => isActing(npc.status) && !houseAppointment(state, npc)
+            && !(npc.factionId && npc.factionRankIndex === 0 && houseFloorsOf(npc.factionId)?.hasMenialTier)).slice(0, 2);
+        expect(staff, 'the fixture needs a real appointed worker').toBeDefined();
+        expect(servant, 'and an actual servant without a staff appointment').toBeDefined();
+        expect(ordinary).toHaveLength(2);
+        const people = [ordinary[0], ordinary[1], staff!, servant!];
+        const arranged = people.map((npc, at) => ({ ...npc, relationships: people.flatMap((other, next) =>
+            Math.abs(at - next) === 1 ? [{ targetId: other.id, kind: 'kin' as const,
+                targetName: other.name, standing: SIBLING_STANDING, sinceDay: state.currentDay,
+                lastChangedDay: state.currentDay, factIds: [], inheritedFromId: null,
+                note: 'Selected family-component control.' }] : []) }));
+        expect(householdsOf({ ...state, npcs: arranged })).toEqual([2]);
+    });
+
     // ─────────────────────────────────────────────────────────────────────
     // THE UNIT TIER
     // ─────────────────────────────────────────────────────────────────────
@@ -303,12 +327,12 @@ describe('the families a world opens holding', () => {
         // Measured across these six worlds: the biggest went 12 to 16, and the
         // two claims either side of this one did not move - there are still
         // more than three hundred households and more than 85% of them are
-        // still two or three people. What this line is watching for is a
+        // still at most four people. What this line is watching for is a
         // settlement collapsing into one family tree, which the note above puts
         // at thirty.
         expect(biggest, `biggest household across ${SEEDS.length} worlds`)
             .toBeLessThanOrEqual(SIBLINGS_PER_HOUSEHOLD * 4);
-        expect(smallOnes / households, 'and the ordinary one is two or three people')
+        expect(smallOnes / households, 'and the ordinary family household has at most four people')
             .toBeGreaterThan(0.85);
     }, 300000);
 

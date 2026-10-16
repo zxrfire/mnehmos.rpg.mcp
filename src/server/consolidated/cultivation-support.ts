@@ -600,9 +600,6 @@ export async function groundStandingFor(
     run: Run,
     cultivator: Cultivator
 ): Promise<GroundStanding | null> {
-    const needle = placeKey(cultivator.location ?? '');
-    if (needle.length === 0) return null;
-
     let world: WorldState;
     try {
         world = await worldForRun(run);
@@ -611,6 +608,15 @@ export async function groundStandingFor(
         // of. Not an error, and not a reason to fail a seclusion.
         return null;
     }
+
+    return groundStandingInWorld(world, run, cultivator);
+}
+
+/** The same standing read when the caller has already prepared the world. */
+export function groundStandingInWorld(world: WorldState, run: Run,
+    cultivator: Cultivator): GroundStanding | null {
+    const needle = placeKey(cultivator.location ?? '');
+    if (needle.length === 0) return null;
 
     const location = world.locations.find(
         l => placeKey(l.name) === needle || l.id === (cultivator.location ?? '')

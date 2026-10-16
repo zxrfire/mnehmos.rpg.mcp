@@ -916,6 +916,8 @@ import { unattributedTextOf } from '../engine/world/digest.js';
 import { type RosterEntry } from '../storage/repos/cultivator.repo.js';
 import {
     advanceWorldForCultivator,
+    advancePreparedWorldForCultivator,
+    commitPreparedWorldSpan,
     endRunInWorld,
     worldForRun
 } from '../server/state/cultivation-world.js';
@@ -21508,6 +21510,32 @@ ${fit.line}`;
         if (!this.worldEnabled || days <= 0) return { lines: [], structure: [] };
 
         const advance = await advanceWorldForCultivator(run, cultivator, days, options);
+
+        return this.reportWorldAdvance(advance);
+    }
+
+    /** The world/run were opened before the synchronous span transaction. */
+    advancePreparedWorld(days: number, cultivator: Cultivator, run: Run,
+        options: Parameters<typeof advanceWorldForCultivator>[3] = {}): WorldReport {
+        if (!this.worldEnabled || days <= 0) return { lines: [], structure: [] };
+        if (!this.atHand) throw new Error('An atomic span needs its prepared world.');
+        return this.reportWorldAdvance(advancePreparedWorldForCultivator(this.atHand, run, cultivator, days, options));
+    }
+
+    /** Body, appointments, knowledge and world writes share one outer commit. */
+    commitPreparedSpan<T>(body: () => T): T {
+        const worldId = this.atHand?.id;
+        const arrivals = this.pendingArrivals.length;
+        try { return commitPreparedWorldSpan(this.db, body); }
+        catch (error) {
+            if (worldId) forgetWorld(worldId);
+            this.atHand = null;
+            this.pendingArrivals.length = arrivals;
+            throw error;
+        }
+    }
+
+    private reportWorldAdvance(advance: Awaited<ReturnType<typeof advanceWorldForCultivator>>): WorldReport {
 
         // The half of the span nobody mentioned. It is not discarded: an
         // unheard consequence keeps its one lifetime chance of turning up on

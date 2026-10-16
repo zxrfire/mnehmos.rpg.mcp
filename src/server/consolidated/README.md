@@ -2,6 +2,13 @@
 
 # The MCP tool surface
 
+Native cultivation uses the prepared current-check adapter for every span,
+including whole days and immune bodies. The accepted provision charge, body
+portions, encounter knowledge, obligations and final world append commit
+together. A failed later boundary throws and rolls all those writes back;
+there is no successful body receipt beside a failed world receipt. Ground and
+scene reads use the actual prepared world synchronously inside this span.
+
 Native cultivation reuses the held current-check adapter for fractions,
 susceptible bodies and enabled encounters. Its shared SQL plague reader uses
 the actual world clock, real local outbreaks and the existing graded medicine

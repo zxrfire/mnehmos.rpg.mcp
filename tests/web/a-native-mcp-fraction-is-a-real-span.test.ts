@@ -9,7 +9,9 @@
  * paid food and world once. A longer fractional request uses current actual
  * frame inputs at each native calendar check, never a future opening cast.
  * A real boundary death preserves dead custody and cannot append another cost.
- * Whole-day callers remain on their existing route. Source/model prose is not
+ * The owner's year-span ruling now puts whole-day callers through the same
+ * prepared atomic span; the selected fault hooks use its synchronous world step.
+ * Source/model prose is not
  * acceptance; no model is involved in this bounded native proof.
  */
 import { describe, it, expect, vi } from 'vitest';
@@ -158,10 +160,10 @@ describe('the actual MCP tool can spend a positive fraction', () => {
 
     it('keeps actual boundary death, native lived receipt and completion without later body writes', async () => {
         const h = await fixture();
-        const original = worldClock.advanceWorldForCultivator;
+        const original = worldClock.advancePreparedWorldForCultivator;
         let boundarySeen = false;
-        const capture = vi.spyOn(worldClock, 'advanceWorldForCultivator').mockImplementation(async (run, body, days, options) => {
-            const native = await original(run, body, days, options);
+        const capture = vi.spyOn(worldClock, 'advancePreparedWorldForCultivator').mockImplementation((world, run, body, days, options) => {
+            const native = original(world, run, body, days, options);
             if (!boundarySeen) {
                 boundarySeen = true;
                 h.game.repos.cultivators.markDead(body.id, 'combat_defeat', run.turn, 'Killed at the actual committed world boundary.');
@@ -178,17 +180,17 @@ describe('the actual MCP tool can spend a positive fraction', () => {
             expect(after.cultivator.alive).toBe(false);
             expect(after.run.elapsedDays).toBe(before.run.elapsedDays + lived(answer));
             expect(after.run.turn).toBe(before.run.turn + 1);
-            expect(capture.mock.calls.reduce((sum, call) => sum + call[2], 0)).toBe(lived(answer));
+            expect(capture.mock.calls.reduce((sum, call) => sum + call[3], 0)).toBe(lived(answer));
             expect(after.cultivator.spiritStones).toBe(before.cultivator.spiritStones - RATION_COST_STONES);
         } finally { capture.mockRestore(); h.db.close(); }
     });
 
     it('retains every actual native portion digest without reconstructing a final observer', async () => {
         const h = await fixture();
-        const original = worldClock.advanceWorldForCultivator;
+        const original = worldClock.advancePreparedWorldForCultivator;
         const portions: worldClock.WorldAdvance[] = [];
-        const capture = vi.spyOn(worldClock, 'advanceWorldForCultivator').mockImplementation(async (...args) => {
-            const native = await original(...args);
+        const capture = vi.spyOn(worldClock, 'advancePreparedWorldForCultivator').mockImplementation((...args) => {
+            const native = original(...args);
             if (native) portions.push(native);
             return native;
         });

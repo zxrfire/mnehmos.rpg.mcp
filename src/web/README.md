@@ -1,5 +1,13 @@
 <!-- tier: 3 -->
 
+An ordinary prepared span runs its existing body/world appointment iterator in
+one synchronous SQLite transaction. Current body and appointment checks still
+run at each boundary; the world graph flushes once before the outer commit.
+Opening the world happens before the transaction, and no promise can cross it.
+A failed later appointment rolls back the whole span and discards its cached
+world and uncommitted arrival facts. Adapters with asynchronous scene checks
+retain their explicit asynchronous path; no transaction spans those awaits.
+
 A fight round pays its actual body span without completing the action there.
 The round's ordinary completion owns the turn, including aboard a real carrier;
 the transport clock and the fight cannot each complete the same requested act.

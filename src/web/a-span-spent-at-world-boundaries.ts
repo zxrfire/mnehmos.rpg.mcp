@@ -4,6 +4,7 @@ import type { Cultivator, Run, TimeSkipResult } from '../schema/cultivation.js';
 import { simulateTimeSkipParts, type TimeSkipContext, type TimeSkipScene } from '../engine/cultivation/time-skip.js';
 import { type CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { applyTimeSkip, type ApplySkipResult } from './apply.js';
+import { finishPreparedSpan } from './finishing-a-prepared-span.js';
 
 /** A cumulative target becomes one new portion, through the existing body projection. */
 export function portionOfTimeSkip(
@@ -44,7 +45,8 @@ export interface ASpanAtWorldBoundaries {
     /** Elapsed boundary of THIS held span, read again after every actual transition. */
     nextBoundary(elapsed: number, requestedDays: number): number | null;
     /** Advances the actual world by exactly the newly committed body portion. */
-    advanceWorld(portionDays: number, applied: ApplySkipResult, interval: AnArtUseInterval): Promise<void>;
+    advanceWorld(portionDays: number, applied: ApplySkipResult, interval: AnArtUseInterval):
+        Promise<void> | Generator<unknown, void, unknown>;
     /** Fresh physical sources decide whether a later portion can still happen. */
     whatStopsTheSpan(): string | null;
     /** Ground of the still-valid physical leg, including a body's death point. */
@@ -75,6 +77,13 @@ export interface ASpentWorldSpan {
 export async function spendAtWorldBoundaries(repos: CultivationRepos, run: Run,
     initial: Cultivator, days: number, context: TimeSkipContext,
     clock: ASpanAtWorldBoundaries): Promise<ASpentWorldSpan> {
+    return finishPreparedSpan(stepsAtWorldBoundaries(repos, run, initial, days, context, clock));
+}
+
+/** The appointment arithmetic is shared by synchronous and asynchronous callers. */
+export function* stepsAtWorldBoundaries(repos: CultivationRepos, run: Run,
+    initial: Cultivator, days: number, context: TimeSkipContext,
+    clock: ASpanAtWorldBoundaries): Generator<unknown, ASpentWorldSpan, unknown> {
     const parts = simulateTimeSkipParts(initial, days, context, {
         nextBoundary: clock.nextBoundary,
         preciseDays: clock.preciseDays
@@ -117,8 +126,12 @@ export async function spendAtWorldBoundaries(repos: CultivationRepos, run: Run,
         understanding = { insights: understanding.insights + latest.understanding.insights,
             achievements: understanding.achievements + latest.understanding.achievements };
         clock.commitProvisions?.(cumulative, next.done === true);
-        if (portion.simulatedDays > 0) await clock.advanceWorld(portion.simulatedDays, latest, {
-            previousElapsed: previous?.simulatedDays ?? 0, cumulativeElapsed: cumulative.simulatedDays });
+        if (portion.simulatedDays > 0) {
+            const advance = clock.advanceWorld(portion.simulatedDays, latest, {
+                previousElapsed: previous?.simulatedDays ?? 0, cumulativeElapsed: cumulative.simulatedDays });
+            if ('next' in advance) yield* advance;
+            else yield advance;
+        }
         const fresh = repos.cultivators.getById(initial.id);
         const freshRun = repos.runs.getById(run.id);
         if (!fresh || !freshRun) throw new Error('A boundary lost its authoritative sheet or run.');

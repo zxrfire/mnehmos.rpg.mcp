@@ -90,6 +90,8 @@ const runToWorld = new Map<string, string>();
 let activeId: string | null = null;
 let catalog: WorldCatalog | null = null;
 const repos = new WeakMap<Database.Database, WorldStateRepository>();
+/** References awaiting their final write, scoped strictly to a synchronous transaction. */
+const spanWrites = new WeakMap<Database.Database, Map<string, WorldState>>();
 
 /**
  * Discard everything held in this process.
@@ -388,7 +390,31 @@ export async function worldForRun(run: Run): Promise<WorldState> {
  * `saveWorld` - see `transition-runner.ts` ruling 2.
  */
 export function writeTheWorldNow(state: WorldState): void {
-    repo().appendWorld(state);
+    const batch = spanWrites.get(getDb());
+    if (batch) batch.set(state.id, state);
+    else repo().appendWorld(state);
+}
+
+/** All body portions are visible to current checks; the world graph flushes once before COMMIT. */
+export function commitPreparedWorldSpan<T>(db: Database.Database, work: () => T): T {
+    if (spanWrites.has(db)) return db.transaction(work)();
+    const worlds = new Map<string, WorldState>();
+    try {
+        return db.transaction(() => {
+            spanWrites.set(db, worlds);
+            try {
+                const result = work();
+                if (result && typeof (result as unknown as PromiseLike<unknown>).then === 'function')
+                    throw new Error('An atomic world span must finish synchronously.');
+                spanWrites.delete(db);
+                for (const state of worlds.values()) repo().appendWorld(state);
+                return result;
+            } finally { spanWrites.delete(db); }
+        })();
+    } catch (error) {
+        for (const id of worlds.keys()) forgetWorld(id);
+        throw error;
+    }
 }
 
 /**
@@ -519,8 +545,6 @@ export async function advanceWorldForCultivator(
     options: ActualWorldSpanOptions = {}
 ): Promise<WorldAdvance | null> {
     if (days <= 0) return null;
-    const span = options.preciseDays ? days
-        : Math.floor(run.elapsedDays) - Math.floor(run.elapsedDays - days);
 
     const handle = await worldHandleFor(run);
     // The run may not have been recorded yet - a cultivator created before this
@@ -528,6 +552,19 @@ export async function advanceWorldForCultivator(
     if (!handle.state.runs.some(r => r.id === run.id)) {
         await beginRunInWorld(run, cultivator);
     }
+
+    return advancePreparedWorldForCultivator(handle.state, run, cultivator, days, options);
+}
+
+/** A prepared world advances without awaiting or opening another handle. */
+export function advancePreparedWorldForCultivator(state: WorldState, run: Run,
+    cultivator: Cultivator, days: number, options: ActualWorldSpanOptions = {}): WorldAdvance | null {
+    if (days <= 0) return null;
+    const span = options.preciseDays ? days
+        : Math.floor(run.elapsedDays) - Math.floor(run.elapsedDays - days);
+    const handle: WorldHandle = { id: state.id, seed: state.seed, state };
+    if (!state.runs.some(record => record.id === run.id))
+        throw new Error('Prepare the world and its run before spending an atomic span.');
 
     // Fold in anything the run clock already knows about but the world does
     // not, so the span below is genuinely this call's span.
@@ -578,7 +615,7 @@ export async function advanceWorldForCultivator(
     // A tick, not a checkpoint: the append path skips the chronicle and memory
     // bulk below its high-water mark, which is the difference between a
     // five-century soak costing one write and costing five hundred.
-    repo().appendWorld(handle.state);
+    writeTheWorldNow(handle.state);
 
     // AND WHAT THE SPAN PUT ON THE LEDGER
     writeObligations(

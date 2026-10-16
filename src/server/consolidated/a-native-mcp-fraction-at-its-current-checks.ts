@@ -6,7 +6,7 @@ import type { WorldState } from '../../engine/world/world-state.js';
 import { routineTime } from '../../engine/world/npc-routines.js';
 import { journeyTimeHasReached } from '../../engine/world/places-on-the-way.js';
 import { encountersAtChecks } from '../../engine/encounters/window.js';
-import { advanceWorldForCultivator, worldForRun, saveWorldForRun, type WorldAdvance } from '../state/cultivation-world.js';
+import { advancePreparedWorldForCultivator, commitPreparedWorldSpan, forgetWorld, writeTheWorldNow, type WorldAdvance } from '../state/cultivation-world.js';
 import type { CultivationRepos } from './cultivation-support.js';
 import { KnowledgeGate } from '../../web/knowledge.js';
 import { encounterInputFor, recordEncounters, withEncounterDeltas, PLAYER_ROLL_IDENTITY,
@@ -32,8 +32,10 @@ export interface McpCurrentFraction {
     context: TimeSkipContext;
     activity: EncounterActivity;
     randomEvents: boolean;
+    /** Accepted provision purchase joins the body/world transaction. */
+    beforeSpan?(): void;
     /** Caller reuses its existing options, standing and discovery readers. */
-    sceneFor(body: Cultivator, run: Run): Promise<Partial<TimeSkipScene>>;
+    sceneFor(body: Cultivator, run: Run, world: WorldState | null): Partial<TimeSkipScene>;
 }
 
 /** Receipt formatting only: each portion already applied its own knowledge authority. */
@@ -55,9 +57,9 @@ export function nativeDigestOfThePortions(portions: readonly WorldAdvance[]) {
 export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFraction) {
     const { repos, run, body, days } = input;
     let actualWorld = input.world;
-    let stop: string | null = null, worldError: string | null = null;
-    const readScene = async (person: Cultivator, actualRun: Run) => {
-        const scene = await input.sceneFor(person, actualRun);
+    let stop: string | null = null;
+    const readScene = (person: Cultivator, actualRun: Run) => {
+        const scene = input.sceneFor(person, actualRun, actualWorld);
         if (!actualWorld) return scene;
         const carrier = paidCarrierSource({ atHand: actualWorld }, person.id,
             thePaidCarriageClaim(repos.db, person.id)?.receiptId,
@@ -68,7 +70,7 @@ export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFracti
         // it with a second independently chosen location id.
         return { ...scene, providedFoodUntilDay: carrier?.providedFoodUntilDay };
     };
-    let scene = await readScene(body, run);
+    let scene = readScene(body, run);
     const portions: WorldAdvance[] = [];
     const worldStart = actualWorld ? routineTime(actualWorld) : run.elapsedDays;
     const recorded: RecordedEncounters = { events: [], lines: [], structure: [], learned: [], met: [] };
@@ -80,14 +82,13 @@ export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFracti
         if (!liveBody || !liveRun) throw new Error('A native MCP fraction lost its actual body or run.');
         return { body: liveBody, run: liveRun };
     };
-    let plagueMoved = false;
     const plagueServices: ActualPlagueServices = {
         repos, db: repos.db,
         get atHand() { return actualWorld; }, set atHand(state) { actualWorld = state; },
         currentRun: () => ({ run: current().run, cultivator: current().body }),
         worldPlaceOf: person => actualWorld && !betweenRoadEndpoints(repos.db, person)
             ? worldLocationFor(actualWorld, person.location)?.id ?? null : null,
-        theWorldMoved: () => { plagueMoved = true; },
+        theWorldMoved: () => { if (actualWorld) writeTheWorldNow(actualWorld); },
         present: person => {
             const placeId = plagueServices.worldPlaceOf(person);
             const place = actualWorld?.locations.find(place => place.id === placeId);
@@ -148,7 +149,7 @@ export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFracti
     // Occasion belongs to the actual accepted starting scene, before body time.
     resolveHere();
     const initial = current();
-    scene = await readScene(initial.body, initial.run);
+    scene = readScene(initial.body, initial.run);
     const service: OrdinarySpanServices = {
         repos, worldEnabled: actualWorld !== null,
         settlePlagueAtTheBodyBoundary: () => settlePlagueOnActualBody(plagueServices),
@@ -157,36 +158,39 @@ export async function spendMcpFractionAtItsCurrentChecks(input: McpCurrentFracti
         putBackWhatWasNotEaten: (person, skip) => putBackWhatWasNotEaten(repos.db, person, skip),
         rationsHeld: person => rationsHeld(repos.db, person),
         sceneForSpan: () => scene,
-        advanceWorld: async (portion, person, actualRun, options) => {
-            try {
-                const native = await advanceWorldForCultivator(actualRun, person, portion, {
-                    ...options, preciseDays: true,
-                    atWorldBoundary: (state, onDay) => {
-                        actualWorld = state;
-                        options?.atWorldBoundary?.(state, onDay);
-                    }
-                });
-                if (native) portions.push(native);
-                actualWorld = await worldForRun(actualRun);
-                const fresh = current();
-                scene = await readScene(fresh.body, fresh.run);
-                return reportFromDigest(native?.result.digest ?? null);
-            } catch (error) {
-                worldError = error instanceof Error ? error.message : String(error);
-                stop = 'The native world could not continue this span: ' + worldError;
-                return { lines: [], structure: [] };
+        commitPreparedSpan<T>(work: () => T): T {
+            const worldId = actualWorld?.id;
+            try { return commitPreparedWorldSpan(repos.db, () => { input.beforeSpan?.(); return work(); }); }
+            catch (error) {
+                if (worldId) forgetWorld(worldId);
+                actualWorld = null;
+                throw error;
             }
+        },
+        advanceWorld: async (...args) => service.advancePreparedWorld!(...args),
+        advancePreparedWorld: (portion, person, actualRun, options) => {
+            if (!actualWorld) throw new Error('A native atomic span needs its prepared world.');
+            const native = advancePreparedWorldForCultivator(actualWorld, actualRun, person, portion, {
+                ...options, preciseDays: true,
+                atWorldBoundary: (state, onDay) => {
+                    actualWorld = state;
+                    options?.atWorldBoundary?.(state, onDay);
+                }
+            });
+            if (native) portions.push(native);
+            const fresh = current();
+            scene = readScene(fresh.body, fresh.run);
+            return reportFromDigest(native?.result.digest ?? null);
         }
     };
     // Zero-time occasion interruptions retain the old native zero-skip completion
     // and unopened reserved receipt; no extra lesser-action charge is appended.
     const spent = await spendAnOrdinarySpanAtTheActualClock(service, initial.run, initial.body,
         stop ? 0 : days, { ...input.context, ...scene }, 'reserved', undefined, run.turn + 1,
-        undefined, { dates, afterBoundary: async () => {
+        undefined, { dates, synchronous: true, afterBoundary: () => {
             resolveHere();
             const fresh = current();
-            if (fresh.body.alive) scene = await readScene(fresh.body, fresh.run);
+            if (fresh.body.alive) scene = readScene(fresh.body, fresh.run);
         }, stop: () => stop });
-    if (plagueMoved) await saveWorldForRun(current().run);
-    return { ...spent, roll, recorded, portions, digest: nativeDigestOfThePortions(portions), worldError };
+    return { ...spent, roll, recorded, portions, digest: nativeDigestOfThePortions(portions), worldError: null };
 }

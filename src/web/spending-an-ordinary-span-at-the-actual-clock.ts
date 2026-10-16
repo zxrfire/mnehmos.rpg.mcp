@@ -9,7 +9,8 @@ import { routineTime } from '../engine/world/npc-routines.js';
 import type { GameService } from './turn-engine.js';
 import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-world.js';
 import { applyTimeSkip } from './apply.js';
-import { spendAtWorldBoundaries } from './a-span-spent-at-world-boundaries.js';
+import { stepsAtWorldBoundaries, type ASpentWorldSpan } from './a-span-spent-at-world-boundaries.js';
+import { finishPreparedSpan, finishPreparedSpanNow } from './finishing-a-prepared-span.js';
 import type { WorldReport } from './tool-result-prose.js';
 import { stoppedRoadFor } from './a-road-stopped-partway.js';
 import { firstTravellerOnTheWay, roadPositionOfNpc } from '../engine/world/places-on-the-way.js';
@@ -29,19 +30,40 @@ export type OrdinarySpanServices = Pick<GameService,
     (Pick<GameService, 'groundFor' | 'rateTermsFor'> | {
         sceneForSpan(body: Cultivator, context: TimeSkipContext):
             Partial<import('../engine/cultivation/time-skip.js').TimeSkipScene>;
-    }) & Partial<Pick<GameService, 'settlePlagueAtTheBodyBoundary' | 'settlePrivateBusinessAtBodyBoundary' | 'privateBusinessBoundaryDates' | 'pendingPrivateOfferIdsAtBodyBoundary'>>;
+    }) & Partial<Pick<GameService, 'advancePreparedWorld' | 'commitPreparedSpan' | 'settlePlagueAtTheBodyBoundary' | 'settlePrivateBusinessAtBodyBoundary' | 'privateBusinessBoundaryDates' | 'pendingPrivateOfferIdsAtBodyBoundary'>>;
+
+type OrdinarySpanResult = ASpentWorldSpan & { world: WorldReport };
+type WorldStep = (...args: Parameters<GameService['advanceWorld']>) => WorldReport | Promise<WorldReport>;
 
 /** The shared entry promotes the opening clock before its first actual body portion. */
 export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServices, run: Run,
     initial: Cultivator, days: number, context: TimeSkipContext,
     provisions: 'pack' | 'reserved', beforeWorld?: (portionDays: number) => void,
     resolvesOnTurn = run.turn + 1, groundAt?: (elapsed: number) => string | undefined,
-    checks?: { dates: readonly number[]; afterBoundary(): void | Promise<void>; stop(): string | null },
+    checks?: { dates: readonly number[]; afterBoundary(): void | Promise<void>; stop(): string | null;
+        synchronous?: boolean },
     finishTurn = true) {
     if (game.worldEnabled) {
         game.atHand = await prepareWorldClockForPreciseSpan(run, initial);
         run = game.repos.runs.getById(run.id) ?? run;
     }
+    if ((!checks || checks.synchronous) && game.advancePreparedWorld && game.commitPreparedSpan) {
+        const advance = game.advancePreparedWorld.bind(game);
+        return game.commitPreparedSpan(() => finishPreparedSpanNow(ordinarySpanSteps(
+            game, run, initial, days, context, provisions, advance, beforeWorld,
+            resolvesOnTurn, groundAt, checks, finishTurn)));
+    }
+    return finishPreparedSpan(ordinarySpanSteps(game, run, initial, days, context,
+        provisions, game.advanceWorld.bind(game), beforeWorld, resolvesOnTurn, groundAt, checks, finishTurn));
+}
+
+function* ordinarySpanSteps(game: OrdinarySpanServices, run: Run,
+    initial: Cultivator, days: number, context: TimeSkipContext,
+    provisions: 'pack' | 'reserved', advance: WorldStep,
+    beforeWorld: ((portionDays: number) => void) | undefined,
+    resolvesOnTurn: number, groundAt: ((elapsed: number) => string | undefined) | undefined,
+    checks: { dates: readonly number[]; afterBoundary(): void | Promise<void>; stop(): string | null } | undefined,
+    finishTurn: boolean): Generator<unknown, OrdinarySpanResult, unknown> {
     const startingPlagueLines = game.settlePlagueAtTheBodyBoundary?.() ?? [];
     initial = game.repos.cultivators.getById(initial.id) ?? initial;
     const originalPlague = initial.plague;
@@ -62,7 +84,7 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
         const applied = applyTimeSkip(game.repos, { before: initial, run, skip,
             resolvesOnTurn, finishTurn: finishTurn && run.turn < resolvesOnTurn });
         beforeWorld?.(skip.simulatedDays);
-        const world = await game.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const world = (yield advance(skip.simulatedDays, applied.cultivator, applied.run)) as WorldReport;
         const body = game.repos.cultivators.getById(initial.id);
         const currentRun = game.repos.runs.getById(run.id);
         if (!body || !currentRun) throw new Error('A completed span lost its actual body or run.');
@@ -89,88 +111,91 @@ export async function spendAnOrdinarySpanAtTheActualClock(game: OrdinarySpanServ
         unopened = reserved;
         return reserved;
     };
-    const spent = await spendAtWorldBoundaries(game.repos, run, initial, days, context, {
-        preciseDays: true, resolvesOnTurn, finishTurn, groundAt,
-        nextBoundary: (elapsed, requested) => {
-            const state = game.atHand;
-            const body = game.repos.cultivators.getById(initial.id);
-            const held = body && state && stoppedRoadFor(game.repos.db, body, state)?.position;
-            meeting = stationary && state && sameRoadPosition(stationary, held ?? null)
-                ? firstTravellerOnTheWay({ locations: state.locations, npcs: state.npcs,
-                    fromId: initial.location ?? '', toId: initial.location ?? '', stationaryAt: stationary,
-                    onDay: start + elapsed, days: requested - elapsed, exceptIds: new Set([initial.id]) }) : null;
-            const boundary = () => state && nextWorldClockBoundary(state,
-                start + elapsed, start + requested, [...(checks?.dates ?? []), ...(game.privateBusinessBoundaryDates?.() ?? []),
-                    ...(meeting ? [start + elapsed + meeting.afterDays] : [])], {}, 'foreground');
-            // A distant person's next ordinary work hour is not this body's tick.
-            // Actual nearby people and the bounded world queue retain their dates.
-            const place = state && body && !stoppedRoadFor(game.repos.db, body, state)
-                ? worldLocationFor(state, body.location) : null;
-            const membership = body && game.repos.sects.getMembership(body.id);
-            const person = state && body && standInTheWorld({ ...state, npcs: state.npcs.slice() }, body,
-                { factionId: membership?.sectId ?? null, rankIndex: membership?.rankIndex ?? -1,
-                    contribution: membership?.contribution ?? 0 }, start + elapsed);
-            const next = state && place && person ? resolveWithPlayerPresent(state, {
-                placeId: place.id, areaId: whereInThisPlaceTheyStand(state, place,
-                    body!.standingIn, membership?.sectId ?? null).id, person
-            }, boundary, start + elapsed) : boundary();
-            return next ? next.onDay - start : null;
-        },
-        commitProvisions: cumulative => {
-            unopened = cumulative.endState.rationsRemaining;
-            game.putBackWhatWasNotEaten(initial, cumulative);
-            exposed = true;
-        },
-        advanceWorld: async (portionDays, applied, artUseInterval) => {
-            beforeWorld?.(portionDays);
-            const report = await game.advanceWorld(portionDays, applied.cultivator, applied.run, {
-                preciseDays: true, artUseInterval, atWorldBoundary: state => { game.atHand = state; }
-            });
-            world.lines.push(...report.lines); world.structure.push(...report.structure);
-            // Cursor checkpoint and native world consequences precede current check input.
-            await checks?.afterBoundary();
-            world.lines.push(...(game.settlePlagueAtTheBodyBoundary?.() ?? []));
-            world.lines.push(...(game.settlePrivateBusinessAtBodyBoundary?.() ?? []));
-            const state = game.atHand, body = game.repos.cultivators.getById(initial.id);
-            const npc = meeting && state?.npcs.find(person => person.id === meeting!.npc.id);
-            if (stationary && state && body?.alive && npc?.status === 'alive'
-                && sameRoadPosition(stationary, stoppedRoadFor(game.repos.db, body, state)?.position ?? null)
-                && sameRoadPosition(stationary, roadPositionOfNpc(state.locations, npc, routineTime(state),
-                    undefined, id => state.npcs.find(person => person.id === id)))) {
-                const place = worldLocationFor(state, body.location);
-                const area = place && peopleInThisPlace(game.repos, body, state, place).whereIs.get(npc.id);
-                if (area) {
-                    game.repos.cultivators.standIn(body.id, area);
-                    contact = 'Another traveller is here on this road.';
-                    world.lines.push(contact);
+    let spent: ASpentWorldSpan;
+    try {
+        spent = yield* stepsAtWorldBoundaries(game.repos, run, initial, days, context, {
+            preciseDays: true, resolvesOnTurn, finishTurn, groundAt,
+            nextBoundary: (elapsed, requested) => {
+                const state = game.atHand;
+                const body = game.repos.cultivators.getById(initial.id);
+                const held = body && state && stoppedRoadFor(game.repos.db, body, state)?.position;
+                meeting = stationary && state && sameRoadPosition(stationary, held ?? null)
+                    ? firstTravellerOnTheWay({ locations: state.locations, npcs: state.npcs,
+                        fromId: initial.location ?? '', toId: initial.location ?? '', stationaryAt: stationary,
+                        onDay: start + elapsed, days: requested - elapsed, exceptIds: new Set([initial.id]) }) : null;
+                const boundary = () => state && nextWorldClockBoundary(state,
+                    start + elapsed, start + requested, [...(checks?.dates ?? []), ...(game.privateBusinessBoundaryDates?.() ?? []),
+                        ...(meeting ? [start + elapsed + meeting.afterDays] : [])], {}, 'foreground');
+                // A distant person's next ordinary work hour is not this body's tick.
+                // Actual nearby people and the bounded world queue retain their dates.
+                const place = state && body && !stoppedRoadFor(game.repos.db, body, state)
+                    ? worldLocationFor(state, body.location) : null;
+                const membership = body && game.repos.sects.getMembership(body.id);
+                const person = state && body && standInTheWorld({ ...state, npcs: state.npcs.slice() }, body,
+                    { factionId: membership?.sectId ?? null, rankIndex: membership?.rankIndex ?? -1,
+                        contribution: membership?.contribution ?? 0 }, start + elapsed);
+                const next = state && place && person ? resolveWithPlayerPresent(state, {
+                    placeId: place.id, areaId: whereInThisPlaceTheyStand(state, place,
+                        body!.standingIn, membership?.sectId ?? null).id, person
+                }, boundary, start + elapsed) : boundary();
+                return next ? next.onDay - start : null;
+            },
+            commitProvisions: cumulative => {
+                unopened = cumulative.endState.rationsRemaining;
+                game.putBackWhatWasNotEaten(initial, cumulative);
+                exposed = true;
+            },
+            advanceWorld: function* (portionDays, applied, artUseInterval) {
+                beforeWorld?.(portionDays);
+                const report = (yield advance(portionDays, applied.cultivator, applied.run, {
+                    preciseDays: true, artUseInterval, atWorldBoundary: state => { game.atHand = state; }
+                })) as WorldReport;
+                world.lines.push(...report.lines); world.structure.push(...report.structure);
+                // Cursor checkpoint and native world consequences precede current check input.
+                yield checks?.afterBoundary();
+                world.lines.push(...(game.settlePlagueAtTheBodyBoundary?.() ?? []));
+                world.lines.push(...(game.settlePrivateBusinessAtBodyBoundary?.() ?? []));
+                const state = game.atHand, body = game.repos.cultivators.getById(initial.id);
+                const npc = meeting && state?.npcs.find(person => person.id === meeting!.npc.id);
+                if (stationary && state && body?.alive && npc?.status === 'alive'
+                    && sameRoadPosition(stationary, stoppedRoadFor(game.repos.db, body, state)?.position ?? null)
+                    && sameRoadPosition(stationary, roadPositionOfNpc(state.locations, npc, routineTime(state),
+                        undefined, id => state.npcs.find(person => person.id === id)))) {
+                    const place = worldLocationFor(state, body.location);
+                    const area = place && peopleInThisPlace(game.repos, body, state, place).whereIs.get(npc.id);
+                    if (area) {
+                        game.repos.cultivators.standIn(body.id, area);
+                        contact = 'Another traveller is here on this road.';
+                        world.lines.push(contact);
+                    }
                 }
-            }
-        },
-        whatStopsTheSpan: () => {
-            if (game.pendingPrivateOfferIdsAtBodyBoundary?.().some(id => !questionsBefore.has(id)))
-                return 'A person here has asked you a private question.';
-            const fresh = game.repos.cultivators.getById(initial.id);
-            const caught = fresh && activePlague(fresh, game.atHand ? routineTime(game.atHand) : run.elapsedDays);
-            return !fresh?.alive ? 'The actual body can no longer continue this span.'
-                : checks?.stop() ?? (caught && (caught.outbreakId !== originalPlague?.outbreakId
-                    || caught.contractedOnDay !== originalPlague?.contractedOnDay) ? 'Plague has begun weakening your body.' : contact);
-        },
-        sceneNow: () => {
-            const fresh = game.repos.cultivators.getById(initial.id) ?? initial;
-            if ('sceneForSpan' in game) return game.sceneForSpan(fresh, context);
-            const ground = game.groundFor(fresh);
-            return { locationId: fresh.location ?? context.locationId,
-                locationDensity: ground?.density,
-                options: { ...context.options, ...game.rateTermsFor(fresh), ground } };
-        },
-        rationsNow: reclaim
-    }).catch(error => {
+            },
+            whatStopsTheSpan: () => {
+                if (game.pendingPrivateOfferIdsAtBodyBoundary?.().some(id => !questionsBefore.has(id)))
+                    return 'A person here has asked you a private question.';
+                const fresh = game.repos.cultivators.getById(initial.id);
+                const caught = fresh && activePlague(fresh, game.atHand ? routineTime(game.atHand) : run.elapsedDays);
+                return !fresh?.alive ? 'The actual body can no longer continue this span.'
+                    : checks?.stop() ?? (caught && (caught.outbreakId !== originalPlague?.outbreakId
+                        || caught.contractedOnDay !== originalPlague?.contractedOnDay) ? 'Plague has begun weakening your body.' : contact);
+            },
+            sceneNow: () => {
+                const fresh = game.repos.cultivators.getById(initial.id) ?? initial;
+                if ('sceneForSpan' in game) return game.sceneForSpan(fresh, context);
+                const ground = game.groundFor(fresh);
+                return { locationId: fresh.location ?? context.locationId,
+                    locationDensity: ground?.density,
+                    options: { ...context.options, ...game.rateTermsFor(fresh), ground } };
+            },
+            rationsNow: reclaim
+        });
+    } catch (error) {
         // A thrown adapter cannot strand unopened goods in the suspended frame.
         // Already-exposed goods remain in their canonical actual pack instead.
         if (!exposed) game.putBackWhatWasNotEaten(initial,
             { endState: { rationsRemaining: unopened } });
         throw error;
-    });
+    }
     // A final appointment may change actual holdings too. Pack spans leave
     // their actual remainder in the pack; a sitting retains its own bundle in
     // the existing result/crossroads, as before, never both places at once.

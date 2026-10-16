@@ -117,7 +117,9 @@ it('the original last-packet fraction preserves native exhaustion, body and cloc
 it('a final native fraction boundary death remains an interruption, with no extra clock or completion', async () => {
     const h = await arrangement();
     let worldPortions = 0;
-    vi.spyOn(h.game, 'advanceWorld').mockImplementation(async (_days, body, run) => {
+    // Prepared spans now share one synchronous transaction. Select the same
+    // real boundary consequence at that adapter, retaining every body/clock claim.
+    vi.spyOn(h.game, 'advancePreparedWorld').mockImplementation((_days, body, run) => {
         worldPortions++;
         h.repos.cultivators.markDead(body.id, 'lifespan_exhausted', run.turn,
             'Explicit final-boundary consequence fixture');

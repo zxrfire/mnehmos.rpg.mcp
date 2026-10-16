@@ -1,6 +1,5 @@
 import { projectActualPassengers } from '../../web/passengers-at-the-actual-clock.js';
 import { routineTime } from '../../engine/world/npc-routines.js';
-import { plagueSusceptibility } from '../../engine/cultivation/plague.js';
 import { spendMcpFractionAtItsCurrentChecks } from './a-native-mcp-fraction-at-its-current-checks.js';
 import { prepareWorldClockForPreciseSpan } from '../state/cultivation-world.js';
 import type { TimeSkipContext } from '../../engine/cultivation/time-skip.js';
@@ -14,17 +13,8 @@ export { RATION_COST_STONES } from './what-a-ration-costs.js';
 import { z } from 'zod';
 import { assessLastCrossing } from '../../engine/cultivation/breakthrough.js';
 import { isLastCrossing } from '../../engine/cultivation/realms.js';
-import { applyTimeSkip } from '../../web/apply.js';
 import { randomUUID } from 'crypto';
-import {
-    PLAYER_ROLL_IDENTITY,
-    cutTo,
-    daysActuallySpent,
-    encountersFor,
-    recordEncounters,
-    withEncounterDeltas
-} from '../../web/encounters.js';
-import { KnowledgeGate } from '../../web/knowledge.js';
+import { PLAYER_ROLL_IDENTITY } from '../../web/encounters.js';
 import { worldForRun } from '../state/cultivation-world.js';
 import type { EncounterActivity } from '../../engine/encounters/types.js';
 import type { SessionContext } from '../types.js';
@@ -63,7 +53,6 @@ import {
     rollAttributes,
     rollOrigin,
     rollSpiritRoot,
-    simulateTimeSkip,
     triggersHeavenlyTribulation,
     tribulationStrikeCount,
     tribulationStrikeSurvival,
@@ -74,7 +63,6 @@ import { rollSex } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-
 import { STARTING_AGE } from '../../web/turn-constants.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import {
-    advanceWorldForCultivator,
     beginRunInWorld,
     listWorlds,
     seedForNextRun,
@@ -103,6 +91,7 @@ import {
     FLAG_PENDING_PILL,
     describeGround,
     groundStandingFor,
+    groundStandingInWorld,
     clearFlag,
     currentAmbient,
     describeCultivator,
@@ -549,8 +538,10 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
     }
 
     let preciseWorld: Awaited<ReturnType<typeof worldForRun>> | null = null;
-    const heldBody = !Number.isInteger(days) || plagueSusceptibility(cultivator) > 0 || args.randomEvents !== false;
-    if (heldBody) {
+    // Every native span shares one prepared body/world transaction, including
+    // immune bodies with encounters disabled. Their integer fast path is
+    // inside the same ordinary span adapter, not a separate durability path.
+    {
         try {
             preciseWorld = await prepareWorldClockForPreciseSpan(run, cultivator);
         } catch (error) {
@@ -573,7 +564,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
 
     // A named destination does not remove an actual passenger from its carrier.
     // Fractional spans project canonical custody again after the legacy move input.
-    if (heldBody && preciseWorld) {
+    if (preciseWorld) {
         projectActualPassengers(repos.db, preciseWorld, cultivator.id, routineTime(preciseWorld));
         const projected = repos.cultivators.getById(cultivator.id);
         if (!projected) throw new Error('The actual passenger body was lost before its span.');
@@ -646,10 +637,6 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
             { required: rationCost, held: cultivator.spiritStones }
         );
     }
-    if (rationCost > 0) {
-        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -rationCost });
-        cultivator = repos.cultivators.getById(cultivator.id)!;
-    }
 
     // WHO REACHES THEM WHILE THE SPAN RUNS AND IT IS THE SAME SEQUENCE, NOT A
     // SECOND ONE
@@ -669,45 +656,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
     // alive. The played cultivator has no world row and is answered correctly
     // either way, which is what kept it invisible.
     const worldHere = preciseWorld ?? await worldForRun(run).catch(() => null);
-    let arrivals: ReturnType<typeof encountersFor> | null = null;
-    let lived = days;
-    let arrivingCultivator = cultivator;
-    if (!heldBody && (args.randomEvents ?? true)) {
-        try {
-            arrivals = encountersFor(
-                {
-                    repos,
-                    knowledge: new KnowledgeGate(repos.db, () => worldHere),
-                    world: await worldForRun(run)
-                },
-                {
-                    seed: run.seed,
-                    startDay,
-                    days,
-                    activity,
-                    cultivator,
-                    // The row id is a randomUUID and would make the run
-                    // irreproducible from its seed. Same reason as the skip's
-                    // own `rollIdentity` below.
-                    rollIdentity: PLAYER_ROLL_IDENTITY
-                }
-            );
-            // Cut at the first thing that interrupts. THIS IS THE TURN: an
-            // arrival stops the span and hands control back, which is what
-            // separates being robbed from a die deciding you lost something.
-            lived = daysActuallySpent(arrivals, startDay, days);
-            arrivingCultivator = withEncounterDeltas(cultivator, arrivals);
-        } catch {
-            // A world that cannot be built is not a reason to lose the span.
-            // The cultivator's own time still passes; nobody arrives in it.
-            arrivals = null;
-            lived = days;
-            arrivingCultivator = cultivator;
-        }
-    }
-
-    // ── THE SIMULATION. Integral spans use one simulation; fractions use ──
-    // current-check portions below.
+    // The current-check iterator retains one body's stream across appointments.
     const context: TimeSkipContext = {
         seed: run.seed,
         // Judged rather than copied, because the field defaults to the row id and a
@@ -733,11 +682,14 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
         randomEvents: args.randomEvents ?? true,
         understanding: discovery.context
     };
-    const fraction = heldBody ? await spendMcpFractionAtItsCurrentChecks({
+    const fraction = await spendMcpFractionAtItsCurrentChecks({
         repos, run, body: cultivator, days, world: worldHere, context, activity,
         randomEvents: args.randomEvents ?? true,
-        sceneFor: async (person, actualRun) => {
-            const standing = await groundStandingFor(actualRun, person);
+        beforeSpan: () => {
+            if (rationCost > 0) repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -rationCost });
+        },
+        sceneFor: (person, actualRun, actualWorld) => {
+            const standing = actualWorld ? groundStandingInWorld(actualWorld, actualRun, person) : null;
             return {
                 locationId: effectiveLocationId(repos.db, actualRun.id, person.location, actualRun.elapsedDays),
                 options: cultivationOptionsFor(repos, person, focus, args.techniqueId).options,
@@ -749,13 +701,13 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
                 }).context
             };
         }
-    }) : null;
-    const result = fraction?.skip ?? simulateTimeSkip(arrivingCultivator, lived, context);
-    if (fraction) { arrivals = fraction.roll; lived = result.simulatedDays; }
+    });
+    const result = fraction.skip;
+    const arrivals = fraction.roll;
+    const lived = result.simulatedDays;
 
-    // ── INTEGRAL PERSISTENCE. One native application for this fast path. ──
-    // Fractional spans above commit actual portions at world boundaries before
-    // the final receipt is folded; already-lived portions are never rolled back.
+    // All body and world portions have committed together. A failed later
+    // appointment instead rolls the complete requested span back.
     //
     // ONE WRITER. This was a second copy of `applyTimeSkip` - the same
     // transaction over the same repos - and the copies had drifted in four
@@ -766,7 +718,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
     // bar, and `apply.ts`'s header has said since it was written that the two
     // must not disagree. They cannot now: there is one of them.
     const before = cultivator;
-    const applied = fraction?.applied ?? applyTimeSkip(repos, { before, run, skip: result });
+    const applied = fraction.applied;
     const injuries = applied.injuries;
     const tollApplications = applied.tollApplications;
 
@@ -774,28 +726,14 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
     const runAfter = applied.run;
 
     // STEP 4: what the arrivals left behind, AFTER the skip.
-    let arrivalsRecorded: ReturnType<typeof recordEncounters> | null = fraction?.recorded ?? null;
-    if (arrivals && !fraction) {
-        const reached = cutTo(arrivals, startDay, result.simulatedDays);
-        arrivalsRecorded = recordEncounters(
-            new KnowledgeGate(repos.db, () => worldHere), after,
-            startDay + result.simulatedDays, reached, repos
-        );
-    }
+    const arrivalsRecorded = fraction.recorded;
 
     // THE WORLD MOVED TOO. A ten-year seclusion is ten years of somebody else's
     // decisions. The world advances by exactly the span that was LIVED, not the
     // span that was asked for, and what comes back is filtered through what this
     // cultivator has a knowledge record for - so a faction they have never heard of
     // arrives as a closed road rather than as a named report.
-    let world: Awaited<ReturnType<typeof advanceWorldForCultivator>> = null;
-    let worldError: string | null = fraction?.worldError ?? null;
-    try {
-        world = fraction ? fraction.portions[fraction.portions.length - 1] ?? null
-            : await advanceWorldForCultivator(runAfter, after, result.simulatedDays);
-    } catch (error) {
-        worldError = error instanceof Error ? error.message : String(error);
-    }
+    const worldError = fraction.worldError;
 
     const rate = computeCultivationRate(
         before,
@@ -804,7 +742,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
     );
 
     // WHAT WAS ASKED FOR, NOT WHAT THE ARRIVAL LEFT OF IT
-    const cutShortByAnArrival = lived < days && (!fraction || arrivals?.occurrences.some(row => row.interrupts) === true);
+    const cutShortByAnArrival = lived < days && arrivals.occurrences.some(row => row.interrupts);
     // The one that stopped it. There is at most one, by construction: the
     // window is cut at its first interrupting occurrence.
     const interrupting = arrivals?.occurrences.find(o => o.interrupts) ?? null;
@@ -846,8 +784,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
         simulatedYears: round2(result.simulatedDays / DAYS_PER_YEAR),
         stoppedEarly: result.interrupted,
         interruptReason: result.interruptReason,
-        died: result.died || (!!fraction && !after.alive),
-        deathCause: fraction && !after.alive ? after.deathCause : result.deathCause,
+        died: result.died || !after.alive,
+        deathCause: !after.alive ? after.deathCause : result.deathCause,
         rate: {
             perDay: round4(rate.perDay),
             base: rate.base,
@@ -904,21 +842,9 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>,
             accessHeld: discovery.sources
         },
         // The world, over the same span, as it actually reached them.
-        worldDigest: fraction ? fraction.digest : world
-            ? {
-                fromDay: world.result.digest?.fromDay ?? world.fromDay,
-                toDay: world.result.digest?.toDay ?? world.toDay,
-                headline: world.result.digest?.headline ?? null,
-                heard: world.result.digest?.lines ?? [],
-                unheard: world.result.digest?.unheard ?? 0,
-                unattributed: world.result.digest?.unattributed ?? 0,
-                note:
-                    'Filtered through this cultivator\'s knowledge records. Anything named here ' +
-                    'is a name they hold; anything unattributed must stay unattributed in narration.'
-            }
-            : null,
-        // Set only when the world pass itself failed. The cultivation result
-        // above still stands and was written; nothing about it is in doubt.
+        worldDigest: fraction.digest,
+        // A failed world write throws and rolls back the whole span; successful
+        // receipts retain this field with no independent partial-world result.
         worldUnavailable: worldError,
         events: [...result.events, ...(arrivalsRecorded?.events ?? [])]
             .sort((a, b) => a.dayOffset - b.dayOffset)

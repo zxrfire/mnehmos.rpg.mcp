@@ -57,7 +57,7 @@ async function arrangement(active: boolean, days: number) {
 it('nonactive final observations use the actual post-world SQL ground and purse', async () => {
     const h = await arrangement(false, 1);
     const elsewhere = h.world.locations.find(l => l.name !== h.body.location)!;
-    vi.spyOn(h.game, 'advanceWorld').mockImplementation(async (_days, body) => {
+    vi.spyOn(h.game, 'advancePreparedWorld').mockImplementation((_days, body) => {
         h.repos.cultivators.update(body.id, { location: elsewhere.name });
         h.repos.cultivators.applyDeltas(body.id, { spiritStones: 7 });
         return { lines: [], structure: [] };
@@ -75,12 +75,12 @@ for (const phase of ['intermediate', 'final'] as const) {
         const due = 0.125;
         const h = await arrangement(true, due);
         let actualFoodAtDeath = -1;
-        vi.spyOn(h.game, 'advanceWorld').mockImplementation(async (days, body, run) => {
-            // A real callback on a committed body portion, not an endpoint
+        vi.spyOn(h.game, 'advancePreparedWorld').mockImplementation((days, body, run) => {
+            // A real callback on an applied body portion, not an endpoint
             // delivery. The canonical moment becomes the reached appointment.
             h.world.currentDay = routineTime(h.world) + days;
             h.world.currentHour = (h.world.currentDay % 1) * 24;
-            expect(h.game.rationsHeld(body), 'real unopened food must exist after the committed body portion and before death').toBeGreaterThan(0);
+            expect(h.game.rationsHeld(body), 'real unopened food must exist after the applied body portion and before death').toBeGreaterThan(0);
             h.repos.cultivators.markDead(body.id, 'lifespan_exhausted', run.turn, 'Explicit boundary consequence fixture');
             actualFoodAtDeath = h.game.rationsHeld(body);
             return { lines: [], structure: [] };

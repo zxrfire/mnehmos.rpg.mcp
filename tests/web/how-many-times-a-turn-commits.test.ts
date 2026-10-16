@@ -1,9 +1,9 @@
 /**
  * How many times one turn reaches durability.
  *
- * The original refactor sought one turn, one commit. The current runner commits
- * each synchronous transition atomically; a turn can contain several. Counting
- * `db.transaction(` call sites cannot measure what the player actually did.
+ * Owner ruling: a year keeps one atomic body/world write, with a few surrounding
+ * commits, so a crash during an appointment cannot leave part of the year saved.
+ * Counting `db.transaction(` call sites cannot measure that property.
  *
  * This counts what actually happens: outermost transactions, plus every write
  * statement that ran with no transaction open, which is an autocommit and
@@ -16,10 +16,15 @@
  * commits: three newly learned claims and the play log, not repeated writes.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type Database from 'better-sqlite3';
 
 import { makeGameInWorld, type Harness } from './harness';
+import * as worldClock from '../../src/server/state/cultivation-world.js';
+import { WorldStateRepository } from '../../src/storage/repos/world-state.repo.js';
+import { handleCultivate } from '../../src/server/consolidated/cultivation-manage.js';
+import { REALM_TIERS } from '../../src/engine/cultivation/realms.js';
+import { stillNeedsToEat } from '../../src/engine/cultivation/survival.js';
 
 /** Outermost transactions and bare autocommitting writes, counted separately. */
 interface Spy { commits: number; autocommits: number }
@@ -77,15 +82,18 @@ async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
  * encounters - plus an unknown number of bare autocommitting statements.
  *
  * Measured with an inventory read: ONE transaction and ZERO autocommits. A
- * turn that spends a year is six and zero. The discovery bound above accounts
+ * full year is six and zero. The discovery bound above accounts
  * for learning new claims without raising either fixed high-water mark.
  *
  * Zero autocommits is the stronger half: it says every write in a turn is
  * inside some transaction, so there is no statement that can land alone.
  */
 const A_PLAIN_TURN = { commits: 1, autocommits: 0 };
-// Six since a person met settles on contact what the background rates skipped (the owner: background
-// people move into the foreground when met): one commit when somebody in the scene is settled.
+// The span itself is one transaction. World preparation and the surrounding
+// ADMIN audit, current contact and transcript retain their separate boundaries.
+// The old unfed novice stopped after roughly 60 days. This fixture uses the
+// first real realm whose body no longer eats and asserts 365 actual lived days;
+// its 111 actual body/world portions still require only six outer commits.
 const A_YEAR_LONG_TURN = { commits: 6, autocommits: 0 };
 
 describe('what one turn costs to make durable', () => {
@@ -138,13 +146,64 @@ describe('what one turn costs to make durable', () => {
     it('and a turn that spends a year does not cost unboundedly more', async () => {
         await withAdmin(async () => {
             await harness.game.newRun('Shen Ke');
+            const fedByQi = REALM_TIERS.find(realm => !stillNeedsToEat(realm.ordinalStart))!;
+            await harness.game.act('ADMIN set_realm ordinal=' + fedByQi.ordinalStart);
+            const initial = harness.game.currentRun();
             const spy = spyOn(harness.db);
             await harness.game.act('ADMIN advance_days years=1');
+            const after = harness.game.currentRun();
+            expect(after.run.elapsedDays - initial.run.elapsedDays).toBe(365);
+            expect(after.cultivator.alive).toBe(true);
             // A span is a span whatever its length: the world advance is one
             // append and the accounts are one write. If this ever scales with
             // the number of days, something is committing per day.
-            expect(spy.commits).toBeLessThanOrEqual(A_YEAR_LONG_TURN.commits);
+            expect(spy.commits).toBe(A_YEAR_LONG_TURN.commits);
             expect(spy.autocommits).toBeLessThanOrEqual(A_YEAR_LONG_TURN.autocommits);
         });
     });
+
+    for (const failedAt of ['appointment', 'final_world_append'] as const) {
+        it('rolls back every body and world portion after failure at ' + failedAt, async () => {
+            await withAdmin(async () => {
+                await harness.game.newRun('Shen Ke');
+                const original = harness.game.currentRun();
+                harness.repos.cultivators.update(original.cultivator.id, { spiritStones: 1000 });
+                // Complete preparation first: rollback protects the requested span,
+                // not an already owed fractional clock correction.
+                const world = await worldClock.prepareWorldClockForPreciseSpan(original.run, original.cultivator);
+                const beforeBody = harness.repos.cultivators.getById(original.cultivator.id);
+                const beforeRun = harness.repos.runs.getById(original.run.id);
+                const worlds = new WorldStateRepository(harness.db);
+                const beforeWorld = worlds.loadWorld(world.id);
+                const advance = worldClock.advancePreparedWorldForCultivator;
+                let portions = 0;
+                const atBoundary = vi.spyOn(worldClock, 'advancePreparedWorldForCultivator').mockImplementation((...args) => {
+                    const receipt = advance(...args);
+                    if (++portions === 3 && failedAt === 'appointment') throw new Error('Selected span write failed.');
+                    return receipt;
+                });
+                const append = WorldStateRepository.prototype.appendWorld;
+                const atAppend = vi.spyOn(WorldStateRepository.prototype, 'appendWorld').mockImplementation(function(this: WorldStateRepository, state) {
+                    append.call(this, state);
+                    if (failedAt === 'final_world_append' && state.currentDay > beforeDay)
+                        throw new Error('Selected span write failed.');
+                });
+                const beforeDay = world.currentDay;
+                try {
+                    await expect(handleCultivate({ action: 'cultivate', cultivatorId: original.cultivator.id,
+                        days: 365, focus: 'idle', autoBreakthrough: false, randomEvents: false,
+                        rations: 2, carriedRations: 0 }))
+                        .rejects.toThrow('Selected span write failed.');
+                    if (failedAt === 'appointment') expect(portions).toBe(3);
+                    else expect(portions).toBeGreaterThan(0);
+                    expect(harness.repos.cultivators.getById(original.cultivator.id)).toEqual(beforeBody);
+                    expect(harness.repos.runs.getById(original.run.id)).toEqual(beforeRun);
+                    expect(worlds.loadWorld(world.id)).toEqual(beforeWorld);
+                    const reloaded = await worldClock.worldForRun(original.run);
+                    expect(reloaded.currentDay).toBe(beforeWorld!.currentDay);
+                    expect(reloaded).not.toBe(world);
+                } finally { atBoundary.mockRestore(); atAppend.mockRestore(); }
+            });
+        });
+    }
 });

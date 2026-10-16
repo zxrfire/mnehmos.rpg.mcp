@@ -2,6 +2,13 @@
 
 # Server-lifetime state
 
+`advancePreparedWorldForCultivator` is the synchronous body of the ordinary
+world advance, after opening and clock preparation. `commitPreparedWorldSpan`
+nests repository writes under one transaction and holds only references to
+the changed worlds until their final append before COMMIT. There is no pending
+write outside that synchronous scope. Failure rolls back SQL and evicts the
+mutable graph; intermediate appointments are simulation boundaries, not saves.
+
 Precise native spans persist the fractional world day, from which the hour derives.
 Legacy whole-day reads can still derive their hour from the run's fraction until
 native clock preparation materializes it. Clock comparisons use that actual time
@@ -57,4 +64,3 @@ anchors were added. Existing assigned points survive subsequent loads; nested
 rooms and road midpoints derive instead of keeping position copies. No world
 reseed, road-duration change, knowledge record or observer map disclosure follows.
 Unanchored legacy roots remain honestly unavailable rather than being guessed.
-
