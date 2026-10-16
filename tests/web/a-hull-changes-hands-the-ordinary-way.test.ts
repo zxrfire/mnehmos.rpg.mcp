@@ -43,10 +43,12 @@
  * Oct11: the seller's base compound is not their current room or area. The
  * played fixture now joins their actual routine before asking and offering.
  *
- * The social roll IS seeded and the outcome here was stable over three
- * consecutive runs of the same two seeds. If it drifts, the thing that moved is
- * `resolveAttempt` or what feeds it, not this file's subject - the register
- * assertions are the point and the `taken` is the fixture.
+ * The landing census found a fair offer to a stranger legitimately countered.
+ * The paired control keeps that counter and both objects unchanged. The sale
+ * fixture supplies an existing reciprocal trading tie and an unpaid cargo
+ * rescue favour through the ordinary ledger writers; the same resolver decides.
+ * No roll or willingness is overridden. Its payment is a single tracked object,
+ * transferred from its initial holder rather than duplicated under one id.
  *
  * Red-checked, run and reverted: putting `transferPossession` back at the close
  * fails on *the hull was towed onto the buyer*, with `possessorId` holding the
@@ -57,12 +59,15 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { recordTheTieAnAttemptLeft } from '../../src/web/encounters.js';
+import { createObligation } from '../../src/engine/social/grudges.js';
+import { writeOneObligation } from '../../src/storage/repos/obligation.repo.js';
 
 import { makeGameInWorld } from './harness.js';
 import { parseIntent } from '../../src/web/actions.js';
 import { ARTIFACTS } from '../../src/data/cultivation/artifacts.js';
 import { FALSE_IMMORTAL_ORDINAL } from '../../src/engine/cultivation/realms.js';
-import { makeObject } from '../../src/engine/world/possessions.js';
+import { makeObject, transferPossession } from '../../src/engine/world/possessions.js';
 import { whereCompoundsAre, whereTheyAreStanding } from '../../src/engine/world/where-inside-a-house-somebody-is-standing.js';
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing.js';
 import { whatACraftWouldFetch } from '../../src/engine/world/a-house-sells-what-it-built.js';
@@ -134,8 +139,8 @@ describe('a hull is reachable by a sentence', () => {
 });
 
 describe('played: a hull changes hands through the ordinary trade path', () => {
-    it('is asked after, priced, and bought, with no verb of its own', async () => {
-        const { game, repos } = await makeGameInWorld({ seed: RUN, worldSeed: WORLD });
+    it.each([false, true])('prices and exchanges a real hull with prior dealings: %s', async priorDealings => {
+        const { game, repos, db } = await makeGameInWorld({ seed: RUN, worldSeed: WORLD });
         const { cultivator } = await game.newRun('Shipwright');
         const world = (await game.loadWorld())!;
 
@@ -149,6 +154,16 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
             n => n.factionId === house.id && n.status === 'alive'
                 && n.locationId === house.seatLocationId)!;
         expect(speaker, 'nobody of that house is standing on its own ground').toBeTruthy();
+        if (priorDealings) {
+            const side = { type: 'ally', strength: .8, significance: 'major', roles: ['trading partner'] };
+            recordTheTieAnAttemptLeft(repos, cultivator.id, speaker.id, 0, {
+                theirs: side, yours: side,
+                event: { onDay: 0, kind: 'other', summary: 'Kept their earlier trading agreements.' }
+            });
+            writeOneObligation(db as never, createObligation({ kind: 'favor', cause: 'other',
+                holderId: cultivator.id, subjectId: speaker.id, severity: 'serious', onDay: 0,
+                description: 'Saved their cargo on an earlier journey.' }));
+        }
         const where = world.locations.find(l => l.id === whereTheyAreStanding(world, whereCompoundsAre(world),
             speaker, new Set(world.npcs.map(person => person.id))))!;
         expect(where, 'the seller must occupy actual ground').toBeDefined();
@@ -179,7 +194,12 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
             // A work beyond the mortal ceiling forces a Lid crossing on its holder.
             .filter(a => (a.power ?? 0) >= 30 && (a.power ?? 0) < FALSE_IMMORTAL_ORDINAL && a.significance !== 'mundane')
             .sort((a, b) => (b.power ?? 0) - (a.power ?? 0))[0]!;
-        world.objects.push(makeObject({
+        const existing = world.objects.findIndex(row => row.id === heavy.id);
+        const payment = existing >= 0
+            ? transferPossession(world.objects[existing]!, { onDay: world.currentDay,
+                toHolderId: cultivator.id, toHolderName: cultivator.name, how: 'awarded',
+                source: 'An earlier award.', transfersOwnership: true })
+            : makeObject({
             id: heavy.id,
             name: heavy.name,
             kind: 'artifact',
@@ -188,7 +208,8 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
             ownerId: cultivator.id,
             ownerName: cultivator.name,
             possessorId: cultivator.id
-        }));
+        });
+        if (existing < 0) world.objects.push(payment); else world.objects[existing] = payment;
         game.theWorldMoved();
         const offerGround = world.locations.find(l => l.id === whereTheyAreStanding(world, whereCompoundsAre(world),
             world.npcs.find(person => person.id === speaker.id)!, new Set(world.npcs.map(person => person.id))))!;
@@ -201,6 +222,20 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
 
         const traded = await game.act(
             `I offer ${speaker.name} ${heavy.name} for a spirit boat`);
+        const decision = traded.toolCalls.find(call => call.name === 'engine.whatItWouldTake');
+        expect(decision, 'the offer must reach the ordinary resolver').toBeDefined();
+        if (!priorDealings) {
+            expect(decision!.ok).toBe(false);
+            expect(decision!.summary).toMatch(/price met; attempt countered/);
+            const retainedHull = game.atHand!.objects.find(row => row.id === hull.id)!;
+            expect(retainedHull.ownerId).toBe(house.id);
+            expect(retainedHull.possessorId).toBeNull();
+            const retainedPayment = game.atHand!.objects.find(row => row.id === payment.id)!;
+            expect(retainedPayment.ownerId).toBe(cultivator.id);
+            expect(retainedPayment.possessorId).toBe(cultivator.id);
+            return;
+        }
+        expect(decision!.ok, decision!.summary).toBe(true);
         expect(traded.narration ?? '', 'the trade did not land on this seed').toMatch(
             /takes what you offered/i);
 
@@ -222,6 +257,8 @@ describe('played: a hull changes hands through the ordinary trade path', () => {
         // A sale that was not for stones says so rather than recording a price
         // of nothing.
         expect(claim!.note).not.toMatch(/for 0 stones/);
+
+        expect(game.atHand!.objects.find(row => row.id === payment.id)!.ownerId).not.toBe(cultivator.id);
 
         // AND THE PROSE AGREES WITH THE ROW IT JUST WROTE.
         expect(traded.narration ?? '').not.toMatch(/spirit boat is in your pouch/i);

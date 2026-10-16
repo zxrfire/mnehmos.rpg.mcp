@@ -1,3 +1,4 @@
+import * as encounterWindow from '../../src/engine/encounters/window.js';
 /**
  * A correct sea encounter frame still admitted a literal sealed cave mouth:
  * the web scene carried only LocationKind (open water is a region), while the
@@ -5,7 +6,10 @@
  * seeded public vessel, pays its actual fare and lets the native fractional
  * passage clock project this passenger. The scene and pool are then read from
  * that actual body, not a fabricated 'water' location or injected encounter.
- * Direct MCP cultivation already shares encountersFor/placeFor; the recording
+ * Direct MCP cultivation now uses the held current-check encounter window.
+ * Observe that one actual window, rather than the retired whole-span batch
+ * wrapper, retaining the exact one-window and real water-scene assertions.
+ * Direct MCP cultivation shares encounterInputFor/placeFor; the recording
  * wrapper delegates its actual roll and proves it receives this same current
  * water scene, rather than requiring a second time-skip substrate authority.
  * Root sea02 paired control: red2 failures; green3 passes and this MCP read
@@ -85,10 +89,10 @@ it('distinguishes a real onboard water pool after native passage time from the a
             .some(one => one.entry.id === 'enc-sealed-cave-mouth')).toBe(true);
         expect(game.currentRun()).toEqual(after);
         const seen: ReturnType<typeof encounterReads.encounterInputFor>[] = [];
-        const native = encounterReads.encountersFor;
-        const capture = vi.spyOn(encounterReads, 'encountersFor').mockImplementation((deps, request) => {
-            seen.push(encounterReads.encounterInputFor(deps, request));
-            return native(deps, request);
+        const native = encounterWindow.encountersAtChecks;
+        const capture = vi.spyOn(encounterWindow, 'encountersAtChecks').mockImplementation((input, window) => {
+            seen.push(input);
+            return native(input, window);
         });
         try {
             const mcpBefore = game.currentRun();

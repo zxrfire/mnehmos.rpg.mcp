@@ -620,6 +620,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const reserve = seedThePeopleAHouseRaised(state, opts.catalog, presentDay,
         new Set(state.npcs.map(person => person.name)), rollWorthModelling, true);
     everybody.push(...reserve);
+    state.objects.push(...theRingsAWorldOpensWith({ ...state, npcs: reserve }));
     state.populationTarget += reserve.length;
     for (const person of reserve) {
         const house = state.factions.find(row => row.id === person.factionId)!;

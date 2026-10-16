@@ -71,3 +71,7 @@ cache. Ordinary runs use current-source canonical checkpoints only.
 current-source checkpoints for longer acceptance samples. A missing long sample
 fails with its regeneration command; CI never silently starts a centuries-long
 exploration. Regenerate before running the long acceptance files.
+
+`forecast-hall-staff.ts` arranges hypothetical posts for pure remit fixtures.
+It preserves the retired round-robin forecast without supplying any actual
+appointment; production staffing belongs to Internal Affairs.

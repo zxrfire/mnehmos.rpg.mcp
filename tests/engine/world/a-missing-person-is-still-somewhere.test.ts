@@ -1,5 +1,9 @@
+import { issueTo, lampsAreLitAt } from '../../../src/engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 /**
  * A missing person is still somewhere.
+ * Learning a death now requires the physical lamp hall and its actual daily
+ * checker; the old death case supplied neither and relied on omniscient life
+ * status. It arranges those real objects and a posted clerk before the death.
  * An absence sweep shares house marks before any house learns or clears them;
  * duplicate marks retain the first valid house entry and pending world loss
  * still participates in the earliest date. A later sweep reads changed houses.
@@ -39,7 +43,7 @@ import { describe, expect, it } from 'vitest';
 
 import { migrate } from '../../../src/storage/migrations.js';
 import { WorldStateRepository } from '../../../src/storage/repos/world-state.repo.js';
-import { createNpc, markMissing, theWorldLoses, type NpcRecord } from '../../../src/engine/world/npc-state.js';
+import { createNpc, setRealm, markMissing, theWorldLoses, type NpcRecord } from '../../../src/engine/world/npc-state.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { advanceTime } from '../../../src/engine/world/time.js';
 import { readTie } from '../../../src/engine/world/reading-a-tie-against-the-roster.js';
@@ -113,11 +117,22 @@ describe('somebody the world loses is still a living person', () => {
 
     it('dies of old age like anybody, and their house learns it when the lamp goes out', () => {
         const { state, person } = aWorld();
+        state.locations.push(makeLocation({ id: 'lamp-hall', name: 'Life Lamp Hall', kind: 'hall',
+            parentId: 'seat', data: { factionId: HOUSE, purpose: 'life_lamp_hall' } }));
+        const issued = issueTo({ memberId: person.id, memberName: person.name, houseId: HOUSE,
+            houseName: state.factions[0]!.name, lampRoomId: 'lamp-hall', onDay: DAY - YEAR });
+        state.objects.push(issued.token, issued.lamp);
+        const clerk = setRealm(createNpc(state.seed, { id: 'daily-lamp-clerk', locationId: 'lamp-hall',
+            onDay: DAY, bornOnDay: DAY - 30 * YEAR }), lampsAreLitAt(), DAY);
+        state.npcs.push({ ...clerk, factionId: HOUSE, factionRankIndex: 1,
+            activity: { kind: 'stationed', note: 'Checking the roll each day.', withIds: [],
+                sinceDay: DAY, untilDay: DAY + 60, returnTo: 'seat' } });
         state.npcs[0] = { ...person, cultivation: { ...person.cultivation, lifespanEndsOnDay: DAY + 10 } };
         state.factions[0] = theHouseLosesTrackOf(state.factions[0]!, 'lost-one', DAY - YEAR);
 
         const out = advanceTime(state, 30, { inPlace: true });
         expect(out.deaths.map(d => d.npcId)).toContain('lost-one');
+        expect(state.objects.some(object => object.id === issued.lamp.id || object.id === issued.token.id)).toBe(false);
 
         const learned = whatHousesLearnOfTheirOwn(state, DAY + 30);
         expect(learned.theLampWentOut).toBe(1);

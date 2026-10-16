@@ -1,4 +1,8 @@
+import { theHouseHasHoldingCells } from '../../src/engine/world/where-a-house-does-its-work.js';
 /**
+ * The owner separated discipline from functioning holding cells. Sealing
+ * fixtures select a house whose actual arrays can hold a cultivator; the
+ * largest roll alone no longer establishes that physical prerequisite.
  * Three of the four sentences carried out on a person happened with nobody there.
  *
  * `whoIsSentToCarryItOut` was written to close exactly this - the object that
@@ -133,6 +137,7 @@ async function aRoomAndAParty(seed: string) {
     const world = await harness.game.loadWorld();
 
     const biggest = world.factions
+        .filter((faction: any) => theHouseHasHoldingCells(world, faction.id))
         .map((faction: any) => ({
             faction,
             people: world.npcs.filter((npc: any) =>
@@ -143,6 +148,7 @@ async function aRoomAndAParty(seed: string) {
         .sort((a: any, b: any) =>
             b.people.length - a.people.length
             || (a.faction.id < b.faction.id ? -1 : 1))[0];
+    expect(biggest, 'the fixture requires actual working holding cells').toBeDefined();
     const house = biggest.faction;
     const [offenderRow, hand, elder] = biggest.people;
     expect(elder, 'the world seeds some house with three people standing').toBeDefined();

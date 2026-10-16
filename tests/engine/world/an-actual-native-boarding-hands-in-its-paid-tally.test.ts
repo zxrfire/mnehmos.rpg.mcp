@@ -4,20 +4,23 @@
  * those stones. The same gap affected already prepaid mission legs. These
  * controls keep the existing personal debit or actual dispatch payment and
  * require one real carrier credit and item hand-in, with no second charge.
+ * Landing also found public-ticket boarding reusing a depleted crew without
+ * calling the ordinary replacement path. A lost hand is replaced by a new
+ * real person before boarding, while the dead row stays dead.
  * A rates boarding settled when met later must use its actual earlier source
  * date; it cannot require the ship to still be at that source port now.
  */
 import {afterEach,expect,it,vi} from 'vitest';
 import {loadCultivationCatalog} from '../../../src/engine/world/catalog';
 import {seedWorld} from '../../../src/engine/world/seeding';
-import {createNpc} from '../../../src/engine/world/npc-state';
+import {createNpc,markDead} from '../../../src/engine/world/npc-state';
 import {publicShipLinesFrom,quotePublicPassage,onSponsoredPublicPassage} from '../../../src/engine/world/public-shipping';
 import {settleNpcTravelOnContact} from '../../../src/engine/world/npc-departure-approaches';
 import {passageTallyTerms} from '../../../src/engine/world/a-passage-tally-is-the-seat-you-own';
 import {theAreasOf} from '../../../src/engine/world/where-in-a-place-somebody-is-standing';
 import {bookNpcPassageForRoute,startNpcPassage} from '../../../src/engine/world/places-on-the-way';
 import {ensureShipCrew,commitNpcPublicPassage} from '../../../src/engine/world/ship-crew';
-import {offerTheNextPublicShip,purchaseAcceptedPublicShipTally} from '../../../src/engine/world/the-next-public-ship-is-an-ordinary-trip';
+import {offerTheNextPublicShip,purchaseAcceptedPublicShipTally,boardThePublicShip} from '../../../src/engine/world/the-next-public-ship-is-an-ordinary-trip';
 import {keepTheBusinessStillOnTheBooks} from '../../../src/engine/world/the-business-the-world-still-keeps';
 import {routineTime} from '../../../src/engine/world/npc-routines';
 import {makeFact} from '../../../src/engine/world/history';
@@ -128,4 +131,27 @@ it('an empty-purse native uses the ordinary gifted held seat without buying anot
     expect(waiting).toBeTruthy();expect(waiting!.spiritStones).toBe(0);expect(waiting!.activity?.passageTallyId).toBe(ticket.id);
     expect(h.world.history.facts.filter(f=>f.data.passageTallyPurchase===true)).toHaveLength(before);
     expect(h.world.objects.find(o=>o.id===ticket.id)?.possessorId).toBe(h.buyer.id);
+});
+
+
+it('replaces a dead hand with a new person when the paid public load boards',()=>{
+    const h=prepared(),original=h.world.npcs.filter(p=>p.status==='alive'&&p.tags.includes('crew-of:'+h.quote.vesselId));
+    const lost=original.find(p=>p.identity.occupation==='sailor')!;expect(lost).toBeTruthy();
+    const offer=offerTheNextPublicShip(h.world,h.from.id,h.to.id)!;expect(offer).toBeTruthy();
+    const tally=purchaseAcceptedPublicShipTally(h.world,offer,h.buyer,h.buyer,(id,stones,commit)=>{
+        h.world.npcs.find(p=>p.id===h.buyer.id)!.spiritStones-=stones;
+        h.world.npcs.find(p=>p.id===id)!.spiritStones+=stones;commit();return true;
+    })!;expect(tally).toBeTruthy();
+    const lostAt=h.world.npcs.findIndex(p=>p.id===lost.id);
+    h.world.npcs[lostAt]=markDead(h.world.npcs[lostAt]!,h.day,'Died ashore after the ticket was sold.');
+    h.world.currentDay=h.day+1/24;
+    const boarded=boardThePublicShip(h.world,offer.departure,[{id:h.buyer.id,name:h.buyer.name}]);
+    expect(boarded).toBeTruthy();
+    const living=h.world.npcs.filter(p=>p.status==='alive'&&p.tags.includes('crew-of:'+h.quote.vesselId));
+    expect(h.world.npcs.find(p=>p.id===lost.id)?.status).not.toBe('alive');
+    expect(living).toHaveLength(original.length);
+    const replacements=living.filter(p=>!original.some(one=>one.id===p.id));
+    expect(replacements).toHaveLength(1);expect(replacements[0]!.identity.occupation).toBe('sailor');
+    expect(boarded!.crew).toBe(original.length);
+    for(const survivor of original.filter(p=>p.id!==lost.id))expect(living.some(p=>p.id===survivor.id)).toBe(true);
 });

@@ -1,16 +1,22 @@
+import { shipIdForLane } from '../../../src/engine/world/the-ship-on-a-lane.js';
 /** The integrated travel clock cost 2.2-2.9 seconds per full-catalog year.
  * Distant people must use actual route dates without walked station scenes or
  * speculative berth records. Meeting one realizes their current native hull,
  * keeps their paid fare and dates, and makes subsequent travel exact through
  * the existing player-area/party reader. No persistent foreground flag exists.
- * These controls use the same contact settlement called before company cards. */
+ * These controls use the same contact settlement called before company cards.
+ * Landing exposed nine-day rates estimates becoming thirteen days on contact:
+ * the distant planner omitted actual calendar weather. A lane identifier is
+ * allowed on its pending activity; no hull, receipt or berth is created.
+ * The cap fixture uses a competition: auctions separately require their real
+ * host witnesses, even when that host is outside the background sample. */
 import { expect, it } from 'vitest';
 import { createWorld, makeFaction } from '../../../src/engine/world/world-state.js';
 import { createNpc, PLAYER_ROW_TAG } from '../../../src/engine/world/npc-state.js';
 import { makeLocation, linkLocations, walkingDaysFrom } from '../../../src/engine/world/locations.js';
 import { bookNpcPassageForRoute, locationOnNpcJourney, addPlacesOnTheWay } from '../../../src/engine/world/places-on-the-way.js';
 import { startNpcJourney } from '../../../src/engine/world/dao-ground-stints.js';
-import { publicShipLinesFrom } from '../../../src/engine/world/public-shipping.js';
+import { publicShipLinesFrom, quotePublicPassage } from '../../../src/engine/world/public-shipping.js';
 import { settlePracticeOnContact } from '../../../src/engine/world/the-world-changing-on-its-own.js';
 import { nextWorldClockBoundary } from '../../../src/engine/world/world-clock-boundaries.js';
 import { isPlayerInvolved } from '../../../src/engine/world/background-incident-draw.js';
@@ -38,10 +44,12 @@ function passage() {
 it('a distant passage has its real calendar, duration and fare without a scene or hull booking', () => {
     const h = passage(), doing = h.travelling.activity!;
     expect(doing.departureApproach).toBeUndefined();
-    expect(doing.vesselId).toBeUndefined();
+    expect(doing.vesselId).toBe(shipIdForLane(h.line.lane));
     expect(doing.seaLaneId).toBe(h.line.lane.id);
     expect(doing.sinceDay).toBe(h.line.runsFromDay ?? h.world.currentDay);
-    expect(doing.untilDay! - doing.sinceDay).toBe(h.line.days);
+    const actual = quotePublicPassage(h.world, h.from.id, h.to.id, doing.sinceDay)!;
+    expect(actual).toBeTruthy();
+    expect(doing.untilDay! - doing.sinceDay).toBe(actual.days);
     expect(h.travelling.spiritStones).toBeLessThan(h.person.spiritStones);
     expect(h.world.objects).toHaveLength(0);
     expect(h.world.history.facts).toHaveLength(0);
@@ -73,8 +81,10 @@ it('contact realizes the actual ship once without moving the person or charging 
         sinceDay: h.world.currentDay, untilDay: null };
     h.world.npcs.push(player);
     expect(isPlayerInvolved(h.world, exact)).toBe(true);
-    expect(nextWorldClockBoundary(h.world, h.world.currentDay, doing.untilDay! + 1,
-        [], { intensity: 0 }, 'transport')?.onDay).toBe(doing.untilDay);
+    // Ordinary world appointments can fall before a weather-delayed landfall.
+    const arrival = nextWorldClockBoundary(h.world, doing.untilDay! - 1 / 24, doing.untilDay! + 1,
+        [], { intensity: 0 }, 'transport');
+    expect(arrival).toMatchObject({ onDay: doing.untilDay, cause: 'journey_due', sourceId: exact.id });
 });
 
 it('a background walker uses the real road and remains on intermediate ground until arrival', () => {
@@ -98,9 +108,9 @@ it('a background walker uses the real road and remains on intermediate ground un
 
 it('capital appointments cap distant resolutions while keeping an involved house exact', () => {
     const seed = Array.from({ length: 100 }, (_, n) => `bounded-capital-${n}`).find(candidate =>
-        Array.from({ length: 10 }, (_, n) => forStream(candidate, 'capital-delegation', 'city', 'auction', 20,
+        Array.from({ length: 10 }, (_, n) => forStream(candidate, 'capital-delegation', 'city', 'competition', 20,
             `house-${n}`).chance(0.75)).filter(Boolean).length >= 6
-        && forStream(candidate, 'capital-delegation', 'city', 'auction', 20, 'house-0').chance(0.75))!;
+        && forStream(candidate, 'capital-delegation', 'city', 'competition', 20, 'house-0').chance(0.75))!;
     expect(seed).toBeTruthy();
     const world = createWorld({ seed, regionCount: 0, skipPriorAges: true });
     const city = makeLocation({ id: 'city', name: 'Pine Bridge', kind: 'settlement', tags: ['city'] });
@@ -122,7 +132,7 @@ it('capital appointments cap distant resolutions while keeping an involved house
         withIds: foreground.npcs.filter(person => person.factionId === 'house-0').map(person => person.id),
         sinceDay: 0, untilDay: null };
     foreground.npcs.push(player);
-    const occasion = { venueId: city.id, hostId: 'house-0', kind: 'auction' as const,
+    const occasion = { venueId: city.id, hostId: 'house-0', kind: 'competition' as const,
         opensOnDay: 0, onDay: 20, endsOnDay: 27 };
     sendCapitalDelegations(world, occasion);
     sendCapitalDelegations(foreground, occasion);

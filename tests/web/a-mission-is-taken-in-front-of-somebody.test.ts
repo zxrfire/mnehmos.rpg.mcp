@@ -1,4 +1,8 @@
+import { whoStaffsWhat } from '../support/forecast-hall-staff.js';
 /**
+ * The pure layout cases use fixture forecasts; the game reads actual posted people.
+ * The old production round-robin planner was retired when Internal Affairs began
+ * making real appointments. Remit and reporting assertions below stay unchanged.
  * Taking work off the wall is said to a person, and a hall has people in it.
  *
  * ── WHAT WAS WRONG ───────────────────────────────────────────────────────
@@ -42,7 +46,6 @@ import { makeGameInWorld } from './harness';
 import { theRoomsThisHouseHas, portfoliosIn } from '../../src/engine/social-leverage/authority-for-an-order';
 import {
     remitOf,
-    whoStaffsWhat,
     whoTakesAReportAt,
     whoWorksIn
 } from '../../src/engine/social-leverage/who-works-in-an-elders-hall';

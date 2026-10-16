@@ -522,6 +522,12 @@ export function quotePublicPassageOnActualHull(world: ShippingWorld, vesselId:st
         undefined,requestingIds,vesselId).quote;
 }
 
+/** Calendar weather and provisions shared by rates estimates and actual hull quotes. */
+export function publicShipCrossing(crossingSeed: string, lane: SeaLane, departureDay: number, heads = 1) {
+    const provision = provisionForLane(lane, heads);
+    return { provision, crossing: resolveCrossing(crossingSeed, lane, provision, monthOf(departureDay)) };
+}
+
 /** The single fare, weather and hull-position authority behind both public readers. */
 function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     departureDay: number, heads: number, consideredLegs: readonly PublicPassageLeg[],
@@ -573,8 +579,7 @@ function quoteAPublicPassage(world: ShippingWorld, fromId: string, toId: string,
     const capacity=passengerBerths(world.seed,vesselId,berths.crewHeads);
     if (heads>capacity) return {quote:null,retryAt:null};
     if (passengers+tallySeats.other+heads>capacity) return {quote:null,retryAt:same?.arrivalDay ?? null};
-    const provision = provisionForLane(lane, heads);
-    const crossing = resolveCrossing(crossingSeed, lane, provision, monthOf(departureDay));
+    const { provision, crossing } = publicShipCrossing(crossingSeed, lane, departureDay, heads);
     if (crossing.laneWasShut) return { quote: null };
     const days = same ? same.arrivalDay - same.departureDay : crossing.daysTaken;
     const arrivalDay = departureDay + days;

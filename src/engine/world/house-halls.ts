@@ -63,17 +63,6 @@ export const HOUSE_HALLS: readonly HouseHall[] = [
         duties: ['members gear and repair', 'maintain buildings', 'inspect formations and recharge them on schedule'] }
 ];
 
-export function theHallFor(purpose: RoomPurpose): HouseHall | null {
-    return HOUSE_HALLS.find(hall => hall.rooms.includes(purpose)) ?? null;
-}
-
-/** The grouping reads existing construction and never supplies a missing room. */
-export function theHallsPresentIn(purposes: Iterable<RoomPurpose>): readonly HouseHall[] {
-    const present = new Set(purposes);
-    return HOUSE_HALLS.filter(hall => hall.rooms.some(purpose => present.has(purpose)));
-}
-
-
 export function hallForRoom(purpose: RoomPurpose): HouseHall | null {
     return HOUSE_HALLS.find(hall => hall.rooms.includes(purpose)) ?? null;
 }

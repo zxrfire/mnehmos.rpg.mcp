@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { roomForHouseWork, nameOfTheCareRoom, theHouseHasHoldingCells } from '../../../src/engine/world/where-a-house-does-its-work.js';
 import { makeFaction } from '../../../src/engine/world/world-state.js';
-import { theHallsPresentIn } from '../../../src/engine/world/house-halls.js';
+import { hallsForRooms } from '../../../src/engine/world/house-halls.js';
 
 const rooms = ['dormitory', 'residence', 'forecourt'].map(purpose => makeLocation({
     id: purpose, name: `Small House ${purpose}`, kind: 'hall',
@@ -35,7 +35,7 @@ describe('a house does its work with its actual rooms', () => {
     it('supplies neither a physical craft facility nor a resource arrangement', () => {
         for (const purpose of ['vein_chamber', 'tribute_room', 'alchemy_hall', 'artifact_refining_hall'] as const)
             expect(roomForHouseWork(rooms, 'small-house', purpose)).toBeNull();
-        expect(theHallsPresentIn(['dormitory', 'residence', 'forecourt']).map(hall => hall.id))
+        expect(hallsForRooms(['dormitory', 'residence', 'forecourt']).map(hall => hall.id))
             .toEqual(['outer-affairs', 'internal-affairs']);
     });
 

@@ -1,4 +1,8 @@
 /**
+ * The landing census found eligible hall-reserve elders without rings: they
+ * entered after the original ring pass. Both cohorts use the same ring rule,
+ * while the original holders and their items stay unchanged.
+ *
  * A world opens with storage rings on the hands of the people rich or high enough to own one.
  *
  * Rings are bartered for, looted, given or folded, never bought at a counter, so looting and

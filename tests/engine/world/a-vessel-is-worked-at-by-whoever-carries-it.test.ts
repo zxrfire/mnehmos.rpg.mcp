@@ -1,6 +1,10 @@
+import { housesWithACraftHall } from '../../../src/engine/world/where-a-house-does-its-work.js';
+import { sectThreat } from '../../../src/data/cultivation/sects.js';
 /**
  * A cauldron or a refining furnace counts for whoever is carrying it, and every
- * house keeps both.
+ * house keeps the vessels of each craft it institutionally supports.
+ * The universal-crafts ruling was overturned: a medicine workshop no longer
+ * implies an artifact workshop. Focus still doubles its supported cupboard.
  *
  *   THE READ     the best vessel of a kind somebody carries is the one that adds
  *                most for their hand, a lent one included; a vessel above their
@@ -8,7 +12,7 @@
  *   THE ODDS     a worked thing is rolled at the yard's figure for a hull of its
  *                grade, and the furnace adds its grade's value on top; a slip is
  *                not rolled
- *   THE HOUSES   every house keeps plain cauldrons and plain refining furnaces in
+ *   THE HOUSES   supported crafts keep plain vessels in
  *                the rooms those crafts are done in; a graded vessel no better
  *                at what its best hand can work; and a house focused on the craft
  *                keeps more of them: twice the cupboard and a second graded vessel
@@ -39,7 +43,7 @@ import {
     theBestHandOnTheRoll,
     theGradeOfTheVesselAHouseKeeps
 } from '../../../src/engine/world/what-a-house-refines-in.js';
-import { bestFurnaceAHouseCouldKeep } from '../../../src/engine/world/what-a-house-keeps-in-its-treasury.js';
+import { bestFurnaceAHouseCouldKeep, howManyPlainCauldrons } from '../../../src/engine/world/what-a-house-keeps-in-its-treasury.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog, type WorldCatalog } from '../../../src/engine/world/catalog.js';
 import { purposeOf } from '../../../src/engine/world/architecture.js';
@@ -133,16 +137,22 @@ describe('what a house refines in', () => {
             state = seedWorld({ seed: 'vessels-in-their-rooms', catalog }).state;
         }, 120_000);
 
-        it('every house that keeps clay cauldrons keeps plain refining furnaces in its Artifact Refining Hall', () => {
+        it('keeps each plain vessel only for its supported craft, in that craft hall', () => {
             const byId = new Map(state.locations.map(row => [row.id, row]));
-            const cauldrons = state.objects.filter(row => row.id.startsWith('cauldrons-plain-'));
-            expect(cauldrons.length).toBeGreaterThan(1);
-            for (const lot of cauldrons) {
-                const houseId = lot.ownerId!;
-                const furnaces = state.objects.find(row => row.id === `refining_furnaces-plain-${houseId}`);
-                expect(furnaces, houseId).toBeDefined();
-                const where = furnaces!.locationId === null ? undefined : byId.get(furnaces!.locationId);
-                expect(where ? purposeOf(where) : null, houseId).toBe('artifact_refining_hall');
+            for (const [hall, prefix, room] of [
+                ['alchemy_hall', 'cauldrons-plain-', 'furnace_room'],
+                ['artifact_refining_hall', 'refining_furnaces-plain-', 'artifact_refining_hall']
+            ] as const) {
+                const supported = housesWithACraftHall(state.locations, hall);
+                expect(supported.size).toBeGreaterThan(1);
+                for (const house of state.factions) {
+                    const lot = state.objects.find(row => row.id === prefix + house.id);
+                    expect(!!lot, house.id + ' ' + hall).toBe(supported.has(house.id));
+                    if (!lot) continue;
+                    expect(Number(lot.data.quantity)).toBeGreaterThan(0);
+                    const where = lot.locationId === null ? undefined : byId.get(lot.locationId);
+                    expect(where ? purposeOf(where) : null, house.id).toBe(room);
+                }
             }
         });
 
@@ -156,22 +166,25 @@ describe('what a house refines in', () => {
             }
         });
 
-        it('the house whose trade is medicine keeps twice the cauldrons it keeps furnaces', () => {
+        it('the medicine-focused house keeps twice the ordinary cauldron cupboard', () => {
             const houseId = 'sect-cinnabar-crucible-sect';
             const count = (id: string) => Number(state.objects.find(row => row.id === id)?.data.quantity ?? 0);
             const cauldrons = count(`cauldrons-plain-${houseId}`);
             expect(cauldrons).toBeGreaterThan(0);
-            expect(cauldrons).toBe(2 * count(`refining_furnaces-plain-${houseId}`));
+            expect(cauldrons).toBe(2 * howManyPlainCauldrons(sectThreat(houseId)!.acting));
+            expect(!!state.objects.find(row => row.id === `refining_furnaces-plain-${houseId}`))
+                .toBe(housesWithACraftHall(state.locations, 'artifact_refining_hall').has(houseId));
         });
 
-        it('every house with a hand past mortal grade keeps a graded vessel of each kind, and the focused house a second cauldron', () => {
+        it('keeps graded vessels for supported crafts, and the focused house a second cauldron', () => {
             let houses = 0;
-            for (const lot of state.objects.filter(row => row.id.startsWith('cauldrons-plain-'))) {
-                const houseId = lot.id.slice('cauldrons-plain-'.length);
-                if (theBestHandOnTheRoll(state, houseId) < CORE) continue;
-                houses++;
-                expect(state.objects.some(row => row.id === `furnace-${houseId}`), houseId).toBe(true);
-                expect(state.objects.some(row => row.id === `vessel-refining-furnace-${houseId}`), houseId).toBe(true);
+            for (const [hall, prefix] of [['alchemy_hall', 'furnace-'],
+                ['artifact_refining_hall', 'vessel-refining-furnace-']] as const) {
+                for (const houseId of housesWithACraftHall(state.locations, hall)) {
+                    if (theBestHandOnTheRoll(state, houseId) < CORE) continue;
+                    houses++;
+                    expect(state.objects.some(row => row.id === prefix + houseId), houseId).toBe(true);
+                }
             }
             expect(houses).toBeGreaterThan(1);
             const crucible = 'sect-cinnabar-crucible-sect';

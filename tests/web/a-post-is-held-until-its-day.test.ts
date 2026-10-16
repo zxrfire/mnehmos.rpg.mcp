@@ -1,3 +1,5 @@
+import { summonsPool } from '../../src/engine/encounters/duties';
+import { dutyFromOffer, membershipFor } from '../../src/web/encounters';
 /**
  * A mission above the outer rung is a post: taken at the board, held where it is, and served when
  * its day passes. Leaving early ends it cleanly where the house would welcome the change - the
@@ -6,6 +8,8 @@
  * Arranged: a place on the roll, the realm, where they stand, and the days passing (the run's
  * clock moved forward, which is what any span of living there does). Played: the taking, the
  * sheet, the leaving and the settling.
+ * The later-summons case arranges its real catalog ask: a held post no longer
+ * produces an automatic competing posting. Its clean release stays asserted.
  * Taking the post now spends its conversational eighth-day, from the 08:00
  * opening. It still must not spend the post's years in the acceptance turn.
  */
@@ -15,7 +19,7 @@ import { theFirstRungOf } from '../../src/engine/encounters/what-a-house-has-on-
 import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
 import { faceOf } from '../../src/engine/world/what-a-face-is-worth';
 import { REGIONS, HOME_REGION_ID } from '../../src/data/cultivation/regions';
-import { clearPendingSummons, readPendingSummons } from '../../src/web/pending-summons';
+import { clearPendingSummons, readPendingSummons, rememberSummons } from '../../src/web/pending-summons';
 import { theDaysAPostsMeritCounts } from '../../src/engine/encounters/duties';
 import { makeGameInWorld } from './harness';
 
@@ -117,7 +121,15 @@ describe('a post held until its day', () => {
 
     it('ends cleanly when the house has sent for them since', async () => {
         const at = await onPost('post-sent-for');
-        // Played: the house puts a posting to them after they took the post, and it is waiting.
+        // Arrange a real catalog ask through its normal writer. Holding a post
+        // suppresses automatic new postings; it does not suppress a later summons.
+        const body = at.game.currentRun().cultivator;
+        const deps = { repos: at.repos, knowledge: at.game.knowledge, world: at.game.atHand };
+        const membership = membershipFor(deps, body);
+        const offer = summonsPool(body.realmOrdinal, membership)[0]!;
+        expect(offer).toBeDefined();
+        rememberSummons(at.repos, at.id, { duty: dutyFromOffer(offer, membership, at.days()),
+            entryId: offer.entry.id, what: offer.entry.summaryTemplate, spokenOnDay: at.days() });
         expect(at.sentFor(), 'the house sent for nobody in this world').not.toBeNull();
         const before = at.face();
         const left = (await at.game.act('I leave my post')).narration ?? '';

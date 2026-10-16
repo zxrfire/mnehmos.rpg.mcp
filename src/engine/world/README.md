@@ -1,5 +1,10 @@
 <!-- tier: 3 -->
 
+House clinical care reads regional prices only where that province has a
+shipped price row. A custom province without regional pricing uses the
+listed service price and its actual local status multiplier; it does not
+borrow the home province?s price or refuse a real appointed clinician.
+
 The person currently heading a lower cloister knows their own post. That
 derived responsibility reaches what they can be heard on, rather than a
 stranger's visual observations. It follows the actual people on post and is
@@ -5247,3 +5252,24 @@ is neither an actual boarding nor an occupied berth. Later contact settles
 the actual boarding and hand-in at their original date, with a real receiver
 there then; it does not require the vessel to remain at that port today.
 A held tally, however acquired, boards without another fare.
+
+Later-seeded institutional residents receive their own eligible storage rings
+through the same no-draw opening factory. Existing holders and rings stay put.
+
+Physical lamp checks filter the existing member rows by actual lamps and known
+missing lamps, then use the common hall reading to classify silence. Duplicate
+hall selectors do not keep another room-to-hall mapping.
+
+Distant paid ship estimates and actual hull quotes use the same calendar
+crossing and provisions reader. Meeting a passenger does not replace the
+weather duration with a different clock. Rates estimates still create no
+hull, boarding receipt or berth reservation.
+
+Actual public-ticket boarding replenishes the working crew through the same
+factory as other ship boardings. A hand lost after ticket sale is replaced
+by a new real person; surviving identities and the dead row are preserved.
+
+A native person answers land questions from their actual faction, cultivation
+and life, even when an observer cannot identify their house or perceive their
+realm. A supplied external person or SQL-owned player body remains authoritative
+over an absent or stale world mirror. Hidden attributes stay off scene cards.

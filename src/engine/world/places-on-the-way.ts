@@ -19,7 +19,7 @@ import type { Posting } from './who-goes-out-for-a-house-and-what-comes-back.js'
 import { waterUnderSeaPassage } from './the-water-under-a-passage.js';
 import type { SeaLane } from './what-a-sea-crossing-costs.js';
 import { shipIdForLane } from './the-ship-on-a-lane.js';
-import { activityOfAPublicPassage, publicShipLinesFrom, quotePublicPassage } from './public-shipping.js';
+import { activityOfAPublicPassage, publicShipLinesFrom, publicShipCrossing, quotePublicPassage } from './public-shipping.js';
 import { isTerminal } from '../cultivation/existence.js';
 import { rowById, type WorldState } from './world-state.js';
 import { prepareNpcDepartureApproach } from './npc-departure-approaches.js';
@@ -80,9 +80,11 @@ export function bookNpcPassageForRoute(state: { locations: readonly LocationReco
             const fare = stonesFor(line.cashPerSeat);
             if (npc.status !== 'alive' || npc.spiritStones < fare) return null;
             const leaves = Math.max(day, line.runsFromDay ?? day);
+            const { crossing } = publicShipCrossing(`${world.seed}:${leaves}`, line.lane, leaves);
+            if (crossing.laneWasShut) return null;
             return { ...npc, locationId: ground!.id, spiritStones: npc.spiritStones - fare,
                 activity: companyDuringPassage(npc.activity, {
-                    kind: 'travelling', note: purpose, sinceDay: leaves, untilDay: leaves + line.days, publicFarePaid:fare,
+                    kind: 'travelling', note: purpose, sinceDay: leaves, untilDay: leaves + crossing.daysTaken, publicFarePaid:fare,
                     // The lane's hull, so a passenger met on it can be put aboard the actual ship.
                     fromLocationId: ground!.id, returnTo: destinationId, seaLaneId: line.lane.id,
                     vesselId: shipIdForLane(line.lane), withIds: []
