@@ -270,7 +270,6 @@ export function housesRefineTheirWoundMedicine(state: WorldState, year: number, 
         if (house.dissolvedOnDay !== null || !isBelowTheLid(house) || !makers.has(house.id)) continue;
         const hands = workers.get(house.id);
         if (!hands?.length) continue;
-        const hand = Math.max(...hands.map(person => person.cultivation.realmOrdinal));
         const reach = theHeightAHouseWorksAt(house);
         const had = Number(house.resources.spirit_stones ?? 0);
         let purse = had;
@@ -278,7 +277,8 @@ export function housesRefineTheirWoundMedicine(state: WorldState, year: number, 
         let rng: ReturnType<typeof forStream> | null = null;
 
         for (const pill of countedWoundMedicine()) {
-            if (!canRefineGrade(pill.grade, hand)) continue;
+            if (!hands.some(person => canRefineGrade(pill.grade,
+                person.cultivation.realmOrdinal, person.cultivation.alchemyOrdinal))) continue;
             const want = theShelfAHouseKeeps(reach, pill) - onTheShelf(house, pill.id);
             if (want <= 0) continue;
             const recipe = getRecipesForPill(pill.id)[0];

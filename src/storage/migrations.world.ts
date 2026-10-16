@@ -1161,6 +1161,9 @@ function addWorldColumns(db: Database.Database): void {
         console.error('[Migration] Adding qi_seal column to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN qi_seal TEXT;');
     }
+    if (!npcColumns.includes('alchemy_ordinal')) {
+        db.exec('ALTER TABLE world_npcs ADD COLUMN alchemy_ordinal INTEGER;');
+    }
     if (!npcColumns.includes('plague')) {
         console.error('[Migration] Adding plague course to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN plague TEXT;');

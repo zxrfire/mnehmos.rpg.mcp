@@ -2241,6 +2241,12 @@ function seedThePeopleAHouseRaised(
                 if (state.npcs.some(n => n.id === id)) { raised++; continue; }
                 const rng = forStream(state.seed, 'a-house-raises-its-own', id);
                 const ordinal = clampOrdinal(rng.int(band.minOrdinal, band.maxOrdinal));
+                // The low of three independent study draws keeps ordinary training common;
+                // a high realm alone does not confer mastery of alchemy.
+                const study = forStream(state.seed, 'seed-alchemy-training', id);
+                const alchemyOrdinal = institutionalReserve
+                    ? Math.min(study.int(0, ordinal), study.int(0, ordinal), study.int(0, ordinal))
+                    : undefined;
 
                 // Old enough to have got there and young enough to still be
                 // here. The first half is the same expression the named figures
@@ -2264,7 +2270,8 @@ function seedThePeopleAHouseRaised(
                     cultivation: {
                         spiritRoot: drawRootForSomebodyAlreadyInAHouse(
                             forStream(state.seed, 'seed-root', id).next(), road, ordinal, rung
-                        ).key
+                        ).key,
+                        ...(alchemyOrdinal === undefined ? {} : { alchemyOrdinal })
                     },
                     // NO `region:` TAG, and the omission is the same one the
                     // catalog figures already have. That tag says somebody was

@@ -165,3 +165,20 @@ describe('the catalog obeys the ladder', () => {
         expect(openAtZero.length).toBeGreaterThan(0);
     });
 });
+
+/** The institutional reserve exposed realm-only eligibility: every high elder
+ * counted as a master alchemist. Training and bodily reach are separate limits;
+ * neither can substitute for the other, and ordinary mortal work stays open. */
+describe('learned alchemy is separate from the bodily material gate', () => {
+    it('does not turn an ordinary trained elder into a heaven-grade maker', () => {
+        expect(canRefineGrade('heaven', FALSE_IMMORTAL_ORDINAL, refiningOrdinalFor('earth'))).toBe(false);
+        expect(canRefineGrade('earth', FALSE_IMMORTAL_ORDINAL, refiningOrdinalFor('earth'))).toBe(true);
+        expect(canRefineGrade('mortal', FALSE_IMMORTAL_ORDINAL, 0)).toBe(true);
+    });
+    it('allows real mastery but still requires the body to work those materials', () => {
+        const heaven = refiningOrdinalFor('heaven');
+        expect(canRefineGrade('heaven', heaven, heaven)).toBe(true);
+        expect(canRefineGrade('heaven', heaven - 1, heaven)).toBe(false);
+        expect(canRefineGrade('immortal', FALSE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL)).toBe(false);
+    });
+});

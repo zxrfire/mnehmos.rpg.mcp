@@ -13,6 +13,7 @@ import { whatThisPersonHasOnTheBench, theIdsOnTheBench } from './what-is-on-the-
 import { takeWhatTheRecipeNames } from './taking-the-materials-off-the-bench.js';
 import { daysAtTheWork } from '../social-leverage/commissioning-a-craft.js';
 import { refineChance } from '../cultivation/the-odds-a-refinement-holds.js';
+import { canRefineGrade } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import { whatAnIngredientIs } from '../cultivation/what-a-cauldron-will-take.js';
 import { whatTheRecipeSpends, type Recipe as BenchRecipe } from '../../data/cultivation/what-an-artifact-is-made-of.js';
 import { getRecipe } from '../../data/cultivation/recipes.js';
@@ -66,6 +67,7 @@ export function servePrivateRefinement(state: WorldState, offer: HistoricalFact,
     const recipe = getRecipe(objective.recipeId), pill = recipe && getPill(recipe.producesPillId);
     const slots = ingredientsOfPrivateRefinement(objective.recipeId);
     if (!recipe || !pill || !slots || recipe.requiredOrdinal > worker.cultivation.realmOrdinal
+        || !canRefineGrade(pill.grade, worker.cultivation.realmOrdinal, worker.cultivation.alchemyOrdinal)
         || !disciplineWorksIn(regionCatalogIdOf(state, worker.locationId) ?? HOME_REGION_ID, 'alchemy')) return;
     const recipient = bodies?.person(objective.recipientId) ?? state.npcs.find(person => person.id === objective.recipientId);
     const employer = bodies?.person(term.subjectId ?? '') ?? state.npcs.find(person => person.id === term.subjectId);

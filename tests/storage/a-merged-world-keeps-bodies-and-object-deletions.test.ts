@@ -32,7 +32,7 @@ function prepared() {
 
 it('upgrades an older NPC table once and can repeat the migration', () => {
     const { db, repo, world, person } = prepared();
-    db.exec('ALTER TABLE world_npcs DROP COLUMN insights; ALTER TABLE world_npcs DROP COLUMN achievements;');
+    db.exec('ALTER TABLE world_npcs DROP COLUMN insights; ALTER TABLE world_npcs DROP COLUMN achievements; ALTER TABLE world_npcs DROP COLUMN alchemy_ordinal;');
     migrate(db);
     migrate(db);
     person.cultivation.insights = [];
@@ -111,4 +111,25 @@ it('does not restore a removed object or its children on reopening', () => {
     }
     repo.appendWorld(loaded);
     expect(repo.loadWorld(world.id)!.objects.map(object => object.id)).toEqual([kept.id]);
+});
+
+/** Recorded training is not a realm. Zero must survive reopening, later study
+ * must survive append, and a legacy absence must remain genuinely absent. */
+it('keeps learned alchemy separate from the body across snapshot and append saves', () => {
+    const { repo, world, person } = prepared();
+    const realm = person.cultivation.realmOrdinal;
+    person.cultivation.alchemyOrdinal = 0;
+    repo.saveWorld(world);
+    let resumed = repo.loadWorld(world.id)!;
+    expect(resumed.npcs[0]!.cultivation.alchemyOrdinal).toBe(0);
+    expect(resumed.npcs[0]!.cultivation.realmOrdinal).toBe(realm);
+    resumed.npcs[0]!.cultivation.alchemyOrdinal = 17;
+    repo.appendWorld(resumed);
+    resumed = repo.loadWorld(world.id)!;
+    expect(resumed.npcs[0]!.cultivation.alchemyOrdinal).toBe(17);
+    delete resumed.npcs[0]!.cultivation.alchemyOrdinal;
+    repo.appendWorld(resumed);
+    const legacy = repo.loadWorld(world.id)!.npcs[0]!;
+    expect(legacy.cultivation.alchemyOrdinal).toBeUndefined();
+    expect(legacy.cultivation.realmOrdinal).toBe(realm);
 });

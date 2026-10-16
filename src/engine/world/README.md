@@ -5273,3 +5273,10 @@ A native person answers land questions from their actual faction, cultivation
 and life, even when an observer cannot identify their house or perceive their
 realm. A supplied external person or SQL-owned player body remains authoritative
 over an absent or stale world mirror. Hidden attributes stay off scene cards.
+
+Additional institutional residents receive learned alchemy reach on a separate
+seeded stream: the lowest of three study draws bounded by their bodily realm.
+Their realms, rank bands, chairs, posts and existing random streams stay put.
+House medicine and private paid refining require both bodily material reach
+and recorded training through the common grade reader; a post supplies no
+mastery. Unrecorded legacy training retains its prior compatibility.
