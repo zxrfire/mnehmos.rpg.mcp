@@ -39,10 +39,21 @@
  * was 17 of 157 catalog rows, permanently unextendable by anybody. A road the
  * art does not name is not the wrong road; the art asks for none, and runs off
  * whatever qi the reader has.
+ *
+ * Certification on 8210cf97 timed out the ceiling check after323.528s and
+ * reported eight RPC errors; seven later cases remained unexecuted. These
+ * manual/body preconditions are immediate. The focused world retains real
+ * ground, the native body/world writers and every charged year, with no house
+ * politics or demographic target. All manual, Dao, survival, interruption,
+ * payment, progress and cap assertions remain, with their existing budgets.
+ * The unfinished-work case starts with a small pack, then replenishes it;
+ * its partial sitting no longer depends on a random world interruption.
+ * The quiet catalog contains no claimed veins needing absent house grantors.
  */
 
 import { describe, it, expect } from 'vitest';
-import { makeGameInWorld, engineCalls, planned } from './harness';
+import { engineCalls, planned } from './harness';
+import { makeQuietGameInWorld as makeGameInWorld } from '../support/quiet-played-world.js';
 import { parseIntent } from '../../src/web/actions';
 import { writeFlag } from '../../src/server/consolidated/cultivation-support';
 import { FLAG_RATIONS_HELD } from '../../src/web/flag-keys';
@@ -150,17 +161,19 @@ describe('the sentence reaches the verb', () => {
 /**
  * Say it until the manuscript is finished, and answer with how it went.
  *
- * NOT A LOOP FOR CONVENIENCE. `daysActuallySpent` cuts every stretch in this
- * game at its first encounter, so a nineteen-year project is never one sitting:
- * measured on this fixture, the first attempt lived 450 days of 6,935. The
- * player's own answer to that is to go back to it, and this is that, played.
+ * `daysActuallySpent` cuts a stretch at its first encounter. On the original
+ * populated fixture the first attempt lived 450 days of 6,935. A quiet first
+ * sitting can finish; otherwise the player returns to the same manuscript.
  */
 async function writeItToTheEnd(
     game: { act: (text: string) => Promise<{ state: { run: { elapsedDays: number } } }> },
+    initial?: { state: { run: { elapsedDays: number } } },
     sittings = 60
 ) {
     let turns = 0;
-    let last: Awaited<ReturnType<typeof game.act>> | null = null;
+    let last: Awaited<ReturnType<typeof game.act>> | null = initial ?? null;
+    if (last && engineCalls(last as never).some(call => call.name === 'engine.writeNextStage' && call.ok))
+        return { turns, last };
     while (turns < sittings) {
         last = await game.act(SAYING_IT);
         turns++;
@@ -184,7 +197,7 @@ describe('a cultivator writes what comes next', () => {
         // was interrupted still cost what it cost.
         expect(first.state.run.elapsedDays).toBeGreaterThan(before);
 
-        const { turns, last } = await writeItToTheEnd(game);
+        const { turns, last } = await writeItToTheEnd(game, first);
         expect(turns, 'the manuscript never finished').toBeLessThan(60);
 
         // THE PRICE. 19 years off the curve for this manual at this rung, and
@@ -221,6 +234,9 @@ describe('a cultivator writes what comes next', () => {
         // ever finish one.
         const { game, repos, db, cultivatorId } = await standingAtTheCap('derive-banked');
 
+        // A small pack cannot feed the whole manuscript. Partial work must
+        // keep even when a quieter world supplies no earlier interruption.
+        writeFlag(db, cultivatorId, FLAG_RATIONS_HELD, '30');
         const first = await game.act(SAYING_IT);
         expect(stagesWrittenSince(repos, MANUAL)).toBe(0);
         expect(first.narration).toMatch(/are in it|not finished/i);
@@ -237,6 +253,7 @@ describe('a cultivator writes what comes next', () => {
 
         // The second sitting starts from what is already in it rather than from
         // nothing, which is the whole claim.
+        writeFlag(db, cultivatorId, FLAG_RATIONS_HELD, '20000');
         await game.act(SAYING_IT);
         const after = daysInIt();
         // Either it banked more, or the stage landed and the bank was cleared.
@@ -288,7 +305,7 @@ describe('a manual on no road in particular is extended by whatever road you hav
         expect(engineCalls(first).find(c => c.name === 'engine.writeNextStage')?.summary ?? '')
             .not.toMatch(/wrong_dao/);
 
-        const { turns, last } = await writeItToTheEnd(game);
+        const { turns, last } = await writeItToTheEnd(game, first);
         expect(turns, 'the manuscript never finished').toBeLessThan(60);
 
         // It is not free. The general case is a gate that does not bite, not a

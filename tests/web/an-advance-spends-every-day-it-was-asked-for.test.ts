@@ -41,10 +41,17 @@
  *
  * Pinned worlds, four of them, because the brief that produced this measured
  * the defect as world-seed independent and that property is worth keeping.
+ * The 8210cf97 certification exceeded 900 seconds in both played loops.
+ * The defect concerns idle body time, with no historical precondition. These
+ * focused worlds keep real region ground and the ordinary ADMIN/body/world
+ * writers, with no houses or demographic target. All four seeds and the full
+ * 120-year request remain; unrelated institutional history is explored elsewhere.
+ * The quiet catalog has no claimed veins needing absent house grantors.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { makeGameInWorld } from './harness.js';
+// atHand is the world; player injury assertions read the persisted player body.
+import { makeQuietGameInWorld as makeGameInWorld } from '../support/quiet-played-world.js';
 import { DAYS_PER_YEAR } from '../../src/engine/cultivation/cultivation.js';
 import { MAX_ORDINAL, lifespanForOrdinal } from '../../src/engine/cultivation/realms.js';
 import { stillNeedsToEat } from '../../src/engine/cultivation/survival.js';
@@ -89,8 +96,8 @@ describe('an advance spends every day it was asked for', () => {
     it('simulates the whole span, to the day, and takes no wounds doing it', async () => {
         const expected = SPAN_YEARS * DAYS_PER_YEAR;
         for (const worldSeed of WORLDS) {
-            const { game } = await makeGameInWorld({ seed: 'wrong-a', worldSeed });
-            await game.newRun('Walker');
+            const { game, repos } = await makeGameInWorld({ seed: 'wrong-a', worldSeed });
+            const { cultivator } = await game.newRun('Walker');
             const say = (s: string) => game.act(s) as Promise<Said>;
             await say(`ADMIN set_realm ordinal=${NO_HUNGER_ORDINAL}`);
             const said = (await say(`ADMIN advance_days years=${SPAN_YEARS}`)).narration ?? '';
@@ -105,10 +112,7 @@ describe('an advance spends every day it was asked for', () => {
             expect(said, where).not.toContain('qi_deviation');
             expect(said, where).not.toContain('lethal_injury_threshold');
 
-            const cultivator = (game as unknown as {
-                atHand: { cultivator?: { injuries?: unknown[] } };
-            }).atHand?.cultivator;
-            expect(cultivator?.injuries ?? [], where).toHaveLength(0);
+            expect(repos.cultivators.getById(cultivator.id)!.injuries, where).toHaveLength(0);
         }
     }, 900_000);
 
@@ -120,8 +124,8 @@ describe('an advance spends every day it was asked for', () => {
         // original report used; the figure is the same on every world seed
         // because hunger is arithmetic and nothing else is running.
         for (const worldSeed of WORLDS) {
-            const { game } = await makeGameInWorld({ seed: 'wrong-a', worldSeed });
-            await game.newRun('Walker');
+            const { game, repos } = await makeGameInWorld({ seed: 'wrong-a', worldSeed });
+            const { cultivator } = await game.newRun('Walker');
             const say = (s: string) => game.act(s) as Promise<Said>;
             await say('ADMIN set_realm ordinal=20');
             const said = (await say(`ADMIN advance_days years=${SPAN_YEARS}`)).narration ?? '';
@@ -129,10 +133,7 @@ describe('an advance spends every day it was asked for', () => {
             const where = `${worldSeed}: ${said.slice(0, 400)}`;
             expect(said, where).toContain('starvation_begun');
             expect(said, where).not.toContain('lethal_injury_threshold');
-            const cultivator = (game as unknown as {
-                atHand: { cultivator?: { injuries?: unknown[] } };
-            }).atHand?.cultivator;
-            expect(cultivator?.injuries ?? [], where).toHaveLength(0);
+            expect(repos.cultivators.getById(cultivator.id)!.injuries, where).toHaveLength(0);
         }
     }, 900_000);
 
