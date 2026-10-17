@@ -1,4 +1,7 @@
 /** The landing census found native care throwing for valid custom-world provinces.
+ * On the 27511c66 diagnostic run, six of fourteen fixture builds failed at
+ * localPrice("region-scarwater"). That region is declared in the custom catalog;
+ * it needs no shipped-map price row. Care there charges the listed service fee.
  * The service still pays its actual clinician and spends the same month there.
  * House care needs an appointed clinician, payment and the real month.
  * The same month can treat several paid wounds, as for the player. A
@@ -10,7 +13,7 @@ import { meritWith } from '../../../src/engine/world/what-a-house-counts-in-some
 import { expect, it } from 'vitest';
 import { advanceWorldForPlay } from '../../../src/engine/world/driver';
 import { woundsCloseThisYear } from '../../../src/engine/world/what-a-house-does-about-its-people-being-hurt';
-import { DAYS_PER_MONTH, getOccupation, MORTAL_PHYSICIAN_JOB } from '../../../src/data/cultivation/mortal-world';
+import { DAYS_PER_MONTH, getOccupation, getPrice, MORTAL_PHYSICIAN_JOB, stonesForACashPrice } from '../../../src/data/cultivation/mortal-world';
 import { createWorld, makeFaction } from '../../../src/engine/world/world-state';
 import { createNpc, setRealm } from '../../../src/engine/world/npc-state';
 import { makeLocation, linkLocations } from '../../../src/engine/world/locations';
@@ -265,7 +268,7 @@ it('pays for a real course in a custom province without a shipped-catalog price 
     h.state.locations.find(place => place.id === 'seat')!.parentId = 'custom-province';
     expect(beginHouseCare(h.state, h.patient, 0)).toBe(true);
     const paid = 100 - h.house.resources.spirit_stones!;
-    expect(paid).toBeGreaterThan(0);
+    expect(paid).toBe(stonesForACashPrice(getPrice('price-splint-and-month')!.cash));
     expect(h.state.npcs.find(person => person.id === h.chosen.id)!.spiritStones).toBe(before + paid);
     expect(settleHouseCare(h.state, DAYS_PER_MONTH - 1)).toBe(0);
     expect(settleHouseCare(h.state, DAYS_PER_MONTH)).toBe(1);

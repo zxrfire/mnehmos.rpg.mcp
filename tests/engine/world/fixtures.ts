@@ -18,6 +18,11 @@ import type {
  * applicants, symmetric rivalries, a rich region and a poor one, and a region
  * whose local ceiling is low enough that nobody born there gets out on talent
  * alone.
+ *
+ * Region ids belong to this catalog. In particular, region-scarwater is the
+ * custom region declared below, not the shipped map's Scarwater prefecture.
+ * Services on custom ground can lack a shipped regional price row; that does
+ * not invalidate the province or move its houses to the shipped map.
  */
 
 function faction(init: Partial<CatalogFaction> & Pick<CatalogFaction, 'id' | 'name'>): CatalogFaction {
