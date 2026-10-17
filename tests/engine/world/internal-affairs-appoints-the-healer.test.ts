@@ -1,4 +1,7 @@
 /** A house's medicine clerk was mistaken for its appointed healer. Internal
+ * The 8210cf97 aged census also found appointment facts absent from their
+ * subjects' histories: the writer restored its pre-fact candidate over the linked
+ * row. The actual returned worker and stored worker must both carry that fact.
  * Affairs chooses through ordinary odds; the appointment uses existing quarters
  * and leaves busy, absent or dead people out of the work. */
 import { expect, it } from 'vitest';
@@ -33,6 +36,8 @@ it('appoints a real healer without adding a dedicated room, and retains the appo
     const chosen = appointHouseHealer(state, house.id, 0);
     expect(chosen).not.toBeNull();
     const fact = houseAppointment(state, chosen!)!;
+    expect(chosen!.historyFactIds).toContain(fact.id);
+    expect(state.npcs.find(person => person.id === chosen!.id)!.historyFactIds).toContain(fact.id);
     expect(fact.locationId).toBe('quarters');
     expect(fact.actors.find(actor => actor.role === 'personnel_manager')?.id).toBe('manager');
     let foundWorking = false;

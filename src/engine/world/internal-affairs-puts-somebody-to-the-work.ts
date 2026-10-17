@@ -100,7 +100,7 @@ export function appointHouseWorker(state: WorldState, input: {
     if (!chosen) return null;
     const at = state.npcs.findIndex(person => person.id === chosen.id);
     const from = locationOfNpcOnItsJourney(state, chosen, input.day);
-    const appointed: NpcRecord = { ...chosen, ...(input.posted ? { locationId: input.room.id } : {}),
+    const appointed: NpcRecord = { ...(input.applicant ? chosen : state.npcs[at]!), ...(input.posted ? { locationId: input.room.id } : {}),
         activity: { kind: input.posted ? 'stationed' : 'the_work_of_their_rank',
             note: input.note ?? input.job.replaceAll('_', ' ') + '.', withIds: [], sinceDay: input.day,
             untilDay: null, houseWorkFactId: fact.id,

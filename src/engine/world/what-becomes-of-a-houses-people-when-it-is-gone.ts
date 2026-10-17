@@ -338,7 +338,7 @@ export function releaseTheRoll(state: WorldState, house: FactionRecord, day: num
             ? whoWouldTakeThemIn(state, house, npc, strongest)
             : null;
         if (next !== null) {
-            state.npcs[i] = { ...npc, factionId: next.id, factionRankIndex: 0, updatedOnDay: day };
+            state.npcs[i] = { ...offTheRoll(npc, day, `${tag}${house.id}`), factionId: next.id, factionRankIndex: 0 };
             out.takenIn.push({ npcId: npc.id, houseId: next.id });
         } else {
             state.npcs[i] = offTheRoll(npc, day, `${tag}${house.id}`);

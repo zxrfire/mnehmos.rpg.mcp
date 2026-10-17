@@ -1,14 +1,19 @@
 /** Hall staffing used to be an imaginary round-robin read and native pay only
  * arrived after years away. Internal Affairs now appoints real available people;
  * they walk to their rooms and earn modest contribution for elapsed service.
- * Repeated reads and promotion must not pay that same service again. */
+ * Repeated reads and promotion must not pay that same service again.
+ * The landing census also exposed pay restoring a pre-receipt person row,
+ * discarding the newly written service fact from the worker's history.
+ * A worker taken in after their house falls must leave its old assignment;
+ * changing membership alone left an indefinite job in a different house. */
 import { createObligation } from '../../../src/engine/social/grudges';
 import { onTheirHallShift } from '../../../src/engine/world/a-hall-workers-shift';
 
 import { expect, it } from 'vitest';
 import { growCompound, type CompoundInput } from '../../../src/engine/world/architecture';
 import { createWorld, makeFaction } from '../../../src/engine/world/world-state';
-import { createNpc, setRealm } from '../../../src/engine/world/npc-state';
+import { createNpc, setRealm, setLocation } from '../../../src/engine/world/npc-state';
+import { releaseTheRoll, ROGUE_HOUSE_FELL } from '../../../src/engine/world/what-becomes-of-a-houses-people-when-it-is-gone';
 import { makeLocation } from '../../../src/engine/world/locations';
 import { hallServiceWorth, staffTheHalls, settleHallService, theHallStaff } from '../../../src/engine/world/the-people-posted-to-a-houses-halls';
 import { houseAppointment, personnelManager } from '../../../src/engine/world/internal-affairs-puts-somebody-to-the-work';
@@ -17,8 +22,8 @@ import { meritWith, whatServiceIsWorth } from '../../../src/engine/world/what-a-
 import { witnessIndexFor } from '../../../src/engine/world/witness-reaction-index';
 import { appendFact, makeFact } from '../../../src/engine/world/history';
 
-function houseAtWork() {
-    const state = createWorld({ seed: 'hall-posts-have-actual-people', regionCount: 0, skipPriorAges: true });
+function houseAtWork(seed = 'hall-posts-have-actual-people') {
+    const state = createWorld({ seed, regionCount: 0, skipPriorAges: true });
     state.currentDay = 50;
     const house = makeFaction({ id: 'house', name: 'Reed House', seatLocationId: 'seat',
         ranks: ['Outer Disciple', 'Inner Disciple', 'Elder', 'Grand Elder', 'Head'] });
@@ -59,6 +64,41 @@ it('appoints real roll members through Internal Affairs and keeps their actual w
     expect(new Set(appointed.map(person => houseAppointment(state, person)!.data.job)).size).toBe(appointed.length);
 });
 
+it('ends the fallen house assignment when another house takes its actual worker in', () => {
+    let reached = 0;
+    for (let draw = 0; draw < 16; draw++) {
+        const { state, house } = houseAtWork(`fallen-hall-worker-${draw}`);
+        const region = makeLocation({ id: 'province', name: 'The Province', kind: 'region' });
+        state.locations.find(place => place.id === house.seatLocationId)!.parentId = region.id;
+        const nextSeat = makeLocation({ id: 'next-seat', name: 'The Next Hall', kind: 'sect_seat', parentId: region.id });
+        const next = makeFaction({ id: 'next-house', name: 'The Next House', seatLocationId: nextSeat.id,
+            tags: ['recruits'], resources: { admission_ordinal: 0 } });
+        state.locations.push(region, nextSeat); state.factions.push(next);
+        state.npcs.push(setRealm(createNpc(state.seed, { id: 'next-head', factionId: next.id,
+            factionRankIndex: next.ranks.length - 1, locationId: nextSeat.id, bornOnDay: -7300, onDay: 50 }), 30, 50));
+        staffTheHalls(state, house.id, 50);
+        const workers = new Map(state.npcs.filter(person => houseAppointment(state, person)).map(person => {
+            const appointment = houseAppointment(state, person)!;
+            const at = state.npcs.findIndex(row => row.id === person.id);
+            state.npcs[at] = setLocation(person, appointment.locationId, 80);
+            return [person.id, { locationId: appointment.locationId, appointmentId: appointment.id }] as const;
+        }));
+        expect(workers.size).toBeGreaterThan(0);
+        house.dissolvedOnDay = 80;
+        const released = releaseTheRoll(state, house, 80, ROGUE_HOUSE_FELL);
+        for (const member of released.takenIn) {
+            const old = workers.get(member.npcId); if (!old) continue;
+            reached++;
+            const person = state.npcs.find(row => row.id === member.npcId)!;
+            expect(person.factionId).toBe(next.id);
+            expect(person.locationId).toBe(old.locationId);
+            expect(person.activity?.houseWorkFactId).toBeUndefined();
+            expect(state.history.facts.some(fact => fact.id === old.appointmentId)).toBe(true);
+        }
+    }
+    expect(reached, 'real appointed workers take the existing taken-in branch').toBeGreaterThan(0);
+});
+
 it('pays elapsed service before the term ends, once, below board work', () => {
     const { state, house } = houseAtWork();
     staffTheHalls(state, house.id, 50);
@@ -67,6 +107,8 @@ it('pays elapsed service before the term ends, once, below board work', () => {
     const arrival = whenTheyReachTheirPost(state.locations, worker)!;
     expect(settleHallService(state, arrival, only)).toBe(0);
     const first = settleHallService(state, arrival + 30, only);
+    const paidWorker = state.npcs.find(person => person.id === worker.id)!;
+    expect(paidWorker.historyFactIds).toContain(paidWorker.activity!.houseWorkPayFactId);
     expect(first).toBeGreaterThan(0);
     expect(first).toBeLessThan(whatServiceIsWorth(worker.cultivation.realmOrdinal, 30));
     expect(meritWith(state.npcs.find(person => person.id === worker.id)!, house.id)).toBe(first);

@@ -4,10 +4,13 @@
  * melee bodies and pick up actual materials. No house, merit or contribution
  * is introduced. These are native controls; player admission/following and its
  * foreground fight still depend on transport's separate 130/131 adapter.
+ * A native500-year composition found three hunt-ending facts missing from
+ * hunters' careers. Returning pre-receipt survivor rows let the continuation
+ * restore those stale careers. Returned survivors must carry their ending.
  */
 import { expect, it } from 'vitest';
 import { createWorld } from '../../../src/engine/world/world-state.js';
-import { createNpc, upsertRelationship, woundsCarriedBy } from '../../../src/engine/world/npc-state.js';
+import { createNpc, upsertRelationship, woundsCarriedBy, maxBodyOf } from '../../../src/engine/world/npc-state.js';
 import { makeLocation, linkLocations } from '../../../src/engine/world/locations.js';
 import { formPrivateParty, closePeopleThisYear } from '../../../src/engine/world/close-people-go-together.js';
 import { advancePublicCapitalMission } from '../../../src/engine/world/capital-missions-and-calendar.js';
@@ -86,6 +89,25 @@ it('a wounded hunter risks their actual body and named ending through the common
             expect(fact.actors.some(actor => actor.role === 'victim' && h.world.npcs.some(person => person.id === actor.id))).toBe(true);
     }
     expect(consequences).toBeGreaterThan(0);
+});
+
+it('returns surviving hunters with the ending already linked to their careers', () => {
+    let returned = 0;
+    for (let seed = 0; seed < 16; seed++) {
+        const h = arrangement(seed), day = 10;
+        for (const person of h.world.npcs) {
+            person.locationId = h.ground.id;
+            person.cultivation.hp = maxBodyOf(person); person.cultivation.bodyOnDay = day;
+        }
+        const mission = appendWorldFact(h.world, makeFact({ day: 0, kind: 'gathering', visibility: 'secret',
+            summary: 'A healthy private party set out.', data: { privateHunt: true, leaderId: 'leader' } }));
+        const survivors = finishPrivatePartyHunt(h.world, mission, h.world.npcs.slice(), h.ground, day);
+        const ending = h.world.history.facts.find(fact => fact.data.privateHuntResolved === mission.id)!;
+        expect(ending).toBeDefined();
+        for (const survivor of survivors) expect(survivor.historyFactIds).toContain(ending.id);
+        returned += survivors.length;
+    }
+    expect(returned, 'the return assertion must inspect actual surviving hunters').toBeGreaterThan(0);
 });
 
 it('the rate producer actually chooses a known private hunt without a house', () => {

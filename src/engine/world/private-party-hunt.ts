@@ -29,6 +29,8 @@ import { putTheRouteToTheParty } from './a-party-answers-its-leader.js';
 /** Background company resolves here; a met human party hands the real beast to shared combat. */
 export function finishPrivatePartyHunt(state: WorldState, mission: HistoricalFact,
     members: NpcRecord[], venue: LocationRecord, day: number): NpcRecord[] {
+    const currentRows = (people: readonly NpcRecord[]) => people.map(person =>
+        state.npcs.find(row => row.id === person.id) ?? person);
     if (state.history.facts.some(fact => fact.data.privateHuntResolved === mission.id))
         return members.map(person => state.npcs.find(row => row.id === person.id)!).filter(person => person.status === 'alive');
     const pending = state.history.facts.find(fact => fact.data.privateHuntPending === mission.id);
@@ -59,7 +61,7 @@ export function finishPrivatePartyHunt(state: WorldState, mission: HistoricalFac
             causes: [mission.id], actors: party.map(person => ({ id: person.id, name: person.name, role: 'hunter' })),
             summary: 'The private hunt found no reachable beast.', data: { privateHuntResolved: mission.id, missionWork: mission.id, finished: false } }),
             { recur: false, bystanders: false });
-        return party;
+        return currentRows(party);
     }
     const beastId = pendingBeast?.id ?? (bandOf(species) === 'counted' ? `npc-private-hunt:${mission.id}` : idOfTheOneOnThisGround(species.id, venue.id));
     let beast = state.npcs.find(person => person.id === beastId);
@@ -75,7 +77,7 @@ export function finishPrivatePartyHunt(state: WorldState, mission: HistoricalFac
             data: { privateHuntPending: mission.id, beastId: beast.id } }), { recur: false, bystanders: false });
         putTheRouteToTheParty(state, String(mission.data.leaderId), contact!.id, day, pending.id,
             `The private hunt has met ${beast.name}. Continue the hunt, rest or turn back?`);
-        return members;
+        return currentRows(members);
     }
     const inputs = [...party, beast].map(person => combatantOf(person, clock));
     const byId = new Map([...party, beast].map(person => [person.id, person]));
@@ -127,5 +129,5 @@ export function finishPrivatePartyHunt(state: WorldState, mission: HistoricalFac
         summary: `The private hunt of ${beast.name} ended: ${result.outcome}.`,
         data: { privateHuntResolved: mission.id, missionWork: mission.id, finished: killed } }), { recur: false, bystanders: false });
     if (killed) collectPrivatePartyFinds(state, venue.id, survivors, String(mission.data.leaderId), day, fact.id, false, pieces);
-    return survivors;
+    return currentRows(survivors);
 }

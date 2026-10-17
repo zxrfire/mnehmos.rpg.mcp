@@ -195,8 +195,8 @@ export function settleHallService(state: WorldState, day: number, only?: Readonl
             data: { houseHallService: true, houseId: person.factionId, servedSinceDay: since,
                 servedUntilDay: through, totalContribution: earned, contribution: gain, serviceOrdinal: ordinal,
                 ...(appointment ? { appointmentId: appointment.id } : {}) } }), { bystanders: false, recur: false });
-        const paid = creditMerit(person, gain);
-        state.npcs[at] = { ...paid, activity: { ...person.activity, houseWorkPayFactId: fact.id } };
+        const paid = creditMerit(state.npcs[at]!, gain);
+        state.npcs[at] = { ...paid, activity: { ...paid.activity!, houseWorkPayFactId: fact.id } };
         credited += gain;
     }
     return credited;
