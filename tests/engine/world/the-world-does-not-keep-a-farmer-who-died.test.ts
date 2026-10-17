@@ -65,8 +65,10 @@
  * naming forgotten people. Participant lists now lose those references too.
  * The current world contract also preserves immutable evidence cited by a
  * surviving receipt. A later walk found twenty such archival references.
- * This guard still checks live state and uncited history; it exempts only
- * evidence actually cited through the existing witness index.
+ * A later60-year sample retained seven identity occurrences through actual
+ * auction-lot and competition-entry settlement dependencies. The guard reads
+ * these existing reverse indices as well as direct citations; live state and
+ * genuinely unheld historical references still fail.
  *
  * NOTE ON WHERE THE SWEEP IS CALLED FROM. `seedWorld` calls it; the yearly line
  * in `driver.ts` does not yet, because that file belongs to somebody else. The
@@ -84,7 +86,7 @@ import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms';
 import { whatATellingLandsOn } from '../../../src/web/what-a-telling-lands-on';
 import type { WorldState } from '../../../src/engine/world/world-state';
 import type { NpcRecord } from '../../../src/engine/world/npc-state';
-import { witnessIndexFor } from '../../../src/engine/world/witness-reaction-index';
+import { whatStillNames } from '../../support/forgotten-body-references.js';
 
 const BLOOD = new Set(['kin', 'spouse', 'parent', 'child']);
 
@@ -116,39 +118,6 @@ function farmersTheWorldIsStillCarrying(state: WorldState): NpcRecord[] {
         && !isACultivator(npc)
         && !somebodyTheCatalogWrote(npc)
         && !remembered.has(npc.id));
-}
-
-/** Every string anywhere in the world that is one of these ids. */
-function whatStillNames(state: WorldState, ids: ReadonlySet<string>): string[] {
-    const found: string[] = [];
-    const seen = new WeakSet<object>();
-    const walk = (node: unknown, path: string): void => {
-        if (typeof node === 'string') {
-            if (ids.has(node)) found.push(`${path} = ${node}`);
-            return;
-        }
-        if (node === null || typeof node !== 'object') return;
-        if (seen.has(node as object)) return;
-        seen.add(node as object);
-        if (Array.isArray(node)) { for (const v of node) walk(v, `${path}[]`); return; }
-        for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
-            if (ids.has(key)) found.push(`${path}.{key} = ${key}`);
-            walk(value, `${path}.${key}`);
-        }
-    };
-    for (const [key, value] of Object.entries(state as unknown as Record<string, unknown>)) {
-        if (key !== 'history') { walk(value, key); continue; }
-        walk(state.history.eras, 'history.eras');
-        const references = witnessIndexFor(state).references;
-        for (const fact of state.history.facts) {
-            // Existing factual receipts retain the original archival evidence
-            // they cite. They do not retain a body or any live placement. Only
-            // a fact actually referenced by another surviving row is archival.
-            const archival = [...references.get(fact.id) ?? []].some(row => row.id !== fact.id);
-            if (!archival) walk(fact, `history.facts[${fact.id}]`);
-        }
-    }
-    return found;
 }
 
 /** A world lived through, with the sweep on the yearly line. */
@@ -269,7 +238,7 @@ describe('the world does not keep a farmer who died', () => {
     /**
      * Nothing live points at somebody who is gone. The later archival-evidence
      * contract retains original participant identity in facts still cited by
-     * actual surviving receipts; the census found 20 such historical references,
+     * actual surviving receipts or retained lot/entry settlements; the census found 20 such historical references,
      * with no body or present position retained. All uncited and live references
      * remain subject to the original whole-world guard.
      *
