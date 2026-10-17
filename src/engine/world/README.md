@@ -24,6 +24,19 @@ without installing a second copy on the world.
 
 # The World Layer
 
+The native craft pass reads and stores its partial berth through the same
+resource writer used to arrange a focused yard. Material, labour, launch odds
+and the actual appointed hands keep their existing authorities.
+
+A native appointment or service payment keeps the person row already updated
+by its fact writer. Applying the work/pay delta cannot restore the pre-receipt
+trajectory. A fallen house's worker taken in by another house leaves the old
+assignment through the ordinary roll-release writer. The original appointment
+remains historical evidence; it supplies no continuing work for the new house.
+Private hunts return current participants after writing their ending receipt,
+so a mission continuation keeps the same updated career and physical costs.
+
+
 War reports retain both the actual casualties and the people who withdrew.
 Neither result list suppresses the other when both occur in one battle.
 
@@ -5280,3 +5293,10 @@ Their realms, rank bands, chairs, posts and existing random streams stay put.
 House medicine and private paid refining require both bodily material reach
 and recorded training through the common grade reader; a post supplies no
 mastery. Unrecorded legacy training retains its prior compatibility.
+
+A concealed killing is a priced `grudge_opened` deed, distinct from the death
+and its wake. Its participants remain carried even while its cause is unknown.
+`what-comes-to-light-about-a-killing.ts` reads the yearly discovery chance;
+`a-hidden-killing-becomes-known.ts` applies the existing disclosure, relationships
+and house sentence. The native reader and focused scenarios share that writer;
+extracting it changes neither the chance nor its random stream.
