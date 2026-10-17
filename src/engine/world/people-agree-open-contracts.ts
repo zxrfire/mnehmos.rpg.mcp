@@ -4,7 +4,7 @@ import { createObligation, settleObligation } from '../social/grudges.js';
 import { whatWalkingOutOfItCosts } from '../social-leverage/what-would-settle-an-account-this-heavy.js';
 import { weatherTheStrikes, strikesForABrokenDaoOath, WHAT_A_WEATHERED_STRIKE_STILL_TAKES } from '../cultivation/existence.js';
 import { realmIndexOf } from '../cultivation/realms.js';
-import { woundsCarriedBy, carryingWounds, bodyStandingOn, maxBodyOf, markDead } from './npc-state.js';
+import { woundsCarriedBy, carryingWounds, bodyStandingOn, maxBodyOf, theWorldEnds } from './npc-state.js';
 import { settleNpcDeath } from './time.js';
 import { forStream } from '../cultivation/rng.js';
 import { privatePeopleCanSpeak, putPrivateRequest, privatePartyOf } from './private-requests.js';
@@ -102,7 +102,9 @@ export function breakOpenContract(state: WorldState, personId: string, wordId: s
             bodyOnDay: day } };
         if (!struck.survived) {
             const dying = state.npcs[bodyAt];
-            state.npcs[bodyAt] = markDead(dying, day, 'The backlash of the broken dao oath ended their life.');
+            const ended = theWorldEnds(dying, day, 'The backlash of the broken dao oath ended their life.');
+            if (!ended) return true;
+            state.npcs[bodyAt] = ended;
             settleNpcDeath(state, dying, day);
             appendWorldFact(state, makeFact({ day, kind: 'death', visibility: 'regional', locationId: dying.locationId,
                 actors: [{ id: dying.id, name: dying.name, role: 'victim' }], causes: word.triggeringEventId ? [word.triggeringEventId] : [],
