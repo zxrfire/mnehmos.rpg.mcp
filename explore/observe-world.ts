@@ -17,7 +17,7 @@ import { exteriorGroundOfDeparture } from '../src/engine/world/departure-approac
 import { howManyPeopleAHouseHas } from '../src/engine/world/how-many-people-a-house-has.js';
 import { routeQueriesFor } from '../src/engine/world/locations.js';
 import { woundsCarriedBy, type NpcRecord } from '../src/engine/world/npc-state.js';
-import { locationOnNpcJourney } from '../src/engine/world/places-on-the-way.js';
+import { locationOfNpcOnItsJourney } from '../src/engine/world/places-on-the-way.js';
 import { theRollItsPostsNeed } from '../src/engine/world/what-a-houses-standing-posts-need.js';
 import { publicWatchTargetsOf } from '../src/engine/world/where-a-house-keeps-its-public-watch.js';
 import { priceMultiplierInArea } from '../src/engine/world/what-is-true-of-a-place-right-now.js';
@@ -122,7 +122,7 @@ export function inspectWorld(world: WorldState): Census {
         if (!Number.isInteger(ordinal) || ordinal < 0 || ordinal > MAX_ORDINAL)
             note('invalid-realm', person.id, `ordinal=${ordinal}`);
         else add(populationByRealm, realmForOrdinal(ordinal).key);
-        const actual = locationOnNpcJourney(world.locations, person, world.currentDay, routes);
+        const actual = locationOfNpcOnItsJourney(world, person, world.currentDay, routes);
         if (!actual || !places.has(actual)) note('no-physical-place', person.id, `stored=${person.locationId}; actual=${actual}`);
         const house = person.factionId ? houses.get(person.factionId) : null;
         if (!house || house.dissolvedOnDay !== null) continue;

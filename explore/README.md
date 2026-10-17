@@ -55,8 +55,9 @@ when handing off an exploration rather than automatically adding every run.
 
 The checks derive their scope from existing authorities:
 
-- Physical whereabouts use `locationOnNpcJourney` and `exteriorGroundOfDeparture`.
-  A living member of a standing house away from its seat needs an activity.
+- Physical whereabouts use `locationOfNpcOnItsJourney` and `exteriorGroundOfDeparture`.
+  Carriage passengers follow their actual current driver. A living member of a
+  standing house away from its seat needs an activity.
 - Stocks are purses, nonnegative resource counts and counted object quantities.
   Resource date/ordinal metadata is excluded from the stock check.
 - Dead actors mean physically dead bodies. Active goals and new explicit trade,
@@ -75,7 +76,7 @@ The checks derive their scope from existing authorities:
 - Plague checks read a newly dated bodily course at a native boundary through
   `stillNeedsToEat` and `woundsCarriedBy`, so a partial bodily transformation still
   counts as needing food. Historical courses after immunity are not new illness.
-  This branch has no plague writer yet; coverage is recorded rather than claimed.
+  Each report records how many newly contracted courses were actually observed.
 - Price series use fixed catalog goods and units with `priceMultiplierInArea`.
   They describe the area dial, not full player quotes or transaction prices.
 
