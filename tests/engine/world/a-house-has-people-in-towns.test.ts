@@ -20,7 +20,8 @@
  */
 
 import { beforeAll, describe, expect, it } from 'vitest';
-import { soakedWorld } from '../../support/soaked-world.js';
+import { sampledWorld as soakedWorld } from '../../support/sampled-world.js';
+import { houseAppointment } from '../../../src/engine/world/internal-affairs-puts-somebody-to-the-work.js';
 import { isElderRank } from '../../../src/engine/cultivation/leadership';
 import { getSect } from '../../../src/data/cultivation/sects';
 import type { WorldState } from '../../../src/engine/world/world-state';
@@ -53,7 +54,11 @@ async function worldsLived(): Promise<WorldState[]> {
 }
 
 const living = (s: WorldState) => s.npcs.filter(n => n.status === 'alive');
-const stationed = (s: WorldState) => living(s).filter(n => n.activity?.kind === 'stationed');
+// The merged world also stations appointed hall workers indefinitely in their
+// actual rooms. These claims are about external town postings; an appointment
+// is read from its own fact instead of treating every stationed body as one.
+const stationed = (s: WorldState) => living(s).filter(n => n.activity?.kind === 'stationed'
+    && !houseAppointment(s, n));
 const cameDown = (s: WorldState) => s.history.facts.filter(f => f.summary.includes('came down on'));
 
 // The original walks are shared by every claim; cold setup gets the file budget.

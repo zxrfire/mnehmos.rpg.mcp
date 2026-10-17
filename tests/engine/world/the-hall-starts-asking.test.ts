@@ -12,12 +12,17 @@
  * can name the missing person by name, and one who cannot as a compound asking
  * after somebody.
  *
+ * The 8210cf97 checkpoints contained 248/324 original notices and two later
+ * retellings. Quoting a notice does not make its speaker the missing person or
+ * turn that public retelling into the house's original notice. Select the
+ * original absence records by their actual subject fields, not copied prose.
+ *
  * DERIVED FROM THE TERM. Nothing marks anybody overdue. A party carries the day
  * it is due back, so being late is arithmetic and a keeper cannot forget.
  */
 
 import { describe, expect, it } from 'vitest';
-import { soakedWorld } from '../../support/soaked-world.js';
+import { sampledWorld as soakedWorld } from '../../support/sampled-world.js';
 import type { WorldState } from '../../../src/engine/world/world-state';
 
 const SEEDS = ['asking-a', 'asking-b'];
@@ -34,7 +39,8 @@ async function worldsLived(): Promise<WorldState[]> {
 }
 
 const noticesIn = (s: WorldState) =>
-    s.history.facts.filter(f => f.summary.includes('The hall has started asking'));
+    s.history.facts.filter(f => typeof f.data.overduePersonId === 'string'
+        || (typeof f.data.lostTrackOf === 'string' && f.data.outcome === 'lost'));
 
 describe('the hall starts asking', () => {
     it('notices somebody who did not come back', async () => {

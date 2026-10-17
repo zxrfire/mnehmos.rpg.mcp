@@ -41,7 +41,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
-import { soakedWorld } from '../../support/soaked-world.js';
+import { sampledWorld as soakedWorld } from '../../support/sampled-world.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { createWorld, npcsAt, type WorldState } from '../../../src/engine/world/world-state.js';
 import { worldShape } from '../../support/the-shape-of-a-world.js';
@@ -179,10 +179,16 @@ describe('a newborn is born somewhere somebody can stand', () => {
         // equals forty, which its own note calls the property the whole layer
         // is built on. So one world walked to each mark reads the same four
         // numbers for six hundred years of simulation.
+        // The 8210cf97 samples had 0/2/0/2 travellers passing region nodes,
+        // but no stored region placements at any age. Birth placement is the
+        // assigned location, rather than npcsAt's current journey position.
         const marks = [100, 250, 400, 600];
         const counts: number[] = [];
         for (const years of marks) {
-            counts.push(headcount(await soakedWorld('demography', { years }), 'region'));
+            const world = await soakedWorld('demography', { years });
+            const regions = new Set(world.locations.filter(place => place.kind === 'region').map(place => place.id));
+            counts.push(world.npcs.filter(person => person.status === 'alive'
+                && regions.has(person.locationId ?? '')).length);
         }
         for (let i = 1; i < counts.length; i++) {
             expect(
