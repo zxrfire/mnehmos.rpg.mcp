@@ -61,16 +61,27 @@ The player learns a real catalog cultivation method through repository writers; 
 report includes gained progress. Reported actual days distinguish interruption/refusal
 from a completed request. --native-only measures years without played actions;
 --decade also measures an uninterrupted native ten-year advance.
-For an explicit diagnostic before/after, `--arm before` loads only the two
-original profiled source modules from 056c7114; `--arm current` uses disk source.
-Both arms can consume the same `--snapshot-root` diagnostic checkpoint family.
-Those inputs are labelled in the report and are never published into the canonical
-cache. Ordinary runs use current-source canonical checkpoints only.
+The historical `--arm before` loads the two original profiled modules from
+056c7114 only when both current files still match their e7ef3a9f versions.
+Later merged edits make that whole-file override an invalid isolated control,
+so the script rejects it. A new paired comparison must remove only its intended
+change. `--arm current` uses disk source and records the checkpoint source key.
+Explicit diagnostic arms can read the same `--snapshot-root` family; they never
+publish it into the canonical cache. Ordinary runs require current checkpoints.
 
 `sampledWorld` keeps opening/decade controls inexpensive and requires completed
 current-source checkpoints for longer acceptance samples. A missing long sample
 fails with its regeneration command; CI never silently starts a centuries-long
 exploration. Regenerate before running the long acceptance files.
+
+`existingSerializedFixture` reads completed source-keyed bytes without building
+anything. The native driver's cumulative five-century acceptance sample uses
+this read-only path: its original deaths, heirs, digest and final state stay
+together, while a separate low-priority `scripts/regenerate-driver-fixture.mjs`
+owns the actual walk. Its builder checks the source again before publication.
+CI keeps the observable history/state claims and exact elapsed game days;
+cold wall/CPU cost is reported as a diagnostic yardstick rather than a fixed
+wall-clock assertion under shared execution slots.
 
 `forecast-hall-staff.ts` arranges hypothetical posts for pure remit fixtures.
 It preserves the retired round-robin forecast without supplying any actual

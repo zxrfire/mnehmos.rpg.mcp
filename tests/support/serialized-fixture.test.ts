@@ -9,9 +9,17 @@ import { promisify } from 'node:util';
 import { build } from 'esbuild';
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
-import { fixtureSourceHash, serializedFixture } from './serialized-fixture.js';
+import { fixtureSourceHash, serializedFixture, existingSerializedFixture } from './serialized-fixture.js';
 
 describe('serialized fixtures', () => {
+    it('reads only completed bytes and leaves a missing sample missing', async () => {
+        const key = randomUUID(), entries = ['tests/support/serialized-fixture.ts'];
+        expect(existingSerializedFixture('read-only-cache-test', entries, key)).toBeNull();
+        await serializedFixture('read-only-cache-test', entries, key, async () => Buffer.from('completed'));
+        const first = existingSerializedFixture('read-only-cache-test', entries, key)!;
+        first.fill(0);
+        expect(existingSerializedFixture('read-only-cache-test', entries, key)!.toString()).toBe('completed');
+    });
     it('waits for a live builder even when its lock is older than thirty minutes', async () => {
         const key = randomUUID(), entries = ['tests/support/serialized-fixture.ts'];
         const hash = createHash('sha256').update(fixtureSourceHash(entries)).update(JSON.stringify(key)).digest('hex');

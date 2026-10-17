@@ -21,6 +21,10 @@ if (years.some(year => !Number.isSafeInteger(year) || year < 0)) throw new Error
 const originals = new Map();
 const overridden = new Set();
 if (arm === 'before') for (const file of ['src/engine/world/a-capital-auction.ts', 'src/engine/world/the-business-the-world-still-keeps.ts']) {
+    const compatible = spawnSync('git', ['-c', 'safe.directory=*', 'show', `e7ef3a9f:${file}`], { cwd: root, encoding: 'utf8' });
+    if (compatible.status !== 0) throw new Error(compatible.stderr);
+    if (readFileSync(path.resolve(root, file), 'utf8').replaceAll('\r\n', '\n') !== compatible.stdout.replaceAll('\r\n', '\n'))
+        throw new Error(`The historical before arm would discard later edits in ${file}. Use the current arm here; a new paired comparison must remove only its intended change.`);
     const read = spawnSync('git', ['-c', 'safe.directory=*', 'show', `056c7114:${file}`], { cwd: root, encoding: 'utf8' });
     if (read.status !== 0) throw new Error(read.stderr);
     originals.set(path.resolve(root, file).replaceAll('\\', '/'), read.stdout);
@@ -36,7 +40,12 @@ const server = await createServer({ root, configFile: false, appType: 'custom',
     server: { middlewareMode: true, watch: null, hmr: false, ws: false } });
 const report = [];
 try {
-    const { preBakedWorld } = await server.ssrLoadModule('/tests/support/soaked-world.ts');
+    const { preBakedWorld, soakedWorldSourceHash } = await server.ssrLoadModule('/tests/support/soaked-world.ts');
+    const checkpointSourceKey = soakedWorldSourceHash();
+    const assertSourceStable = () => {
+        if (soakedWorldSourceHash(true) !== checkpointSourceKey)
+            throw new Error('Simulation source changed during measurement; no mixed-source result is current.');
+    };
     const { advanceWorldForPlay } = await server.ssrLoadModule('/src/engine/world/driver.ts');
     const { makeGame, ScriptedProvider } = await server.ssrLoadModule('/tests/web/harness.ts');
     const { WorldStateRepository } = await server.ssrLoadModule('/src/storage/repos/world-state.repo.ts');
@@ -56,6 +65,7 @@ try {
         return { seconds: (performance.now() - start) / 1000, cpuSeconds: (used.user + used.system) / 1e6, result };
     };
     for (const age of years) {
+        assertSourceStable();
         const read = () => {
             let world;
             if (snapshotRoot) {
@@ -73,7 +83,7 @@ try {
             return world;
         };
         const loaded = read();
-        const row = { seed, age, arm, protocol: 'aged-actions-v2-useful-method-and-physical-routes', input: snapshotRoot ?? 'current-source canonical checkpoint',
+        const row = { seed, age, arm, checkpointSourceKey, protocol: 'aged-actions-v2-useful-method-and-physical-routes', input: snapshotRoot ?? 'current-source canonical checkpoint',
             rows: { npcs: loaded.npcs.length, facts: loaded.history.facts.length, objects: loaded.objects.length }, actions: [] };
         report.push(row);
         const session = new Session(); session.connect(); await session.post('Profiler.enable'); await session.post('Profiler.start');
@@ -83,6 +93,7 @@ try {
             return { actualDays: result.daysAdvanced };
         });
         const { profile } = await session.post('Profiler.stop'); session.disconnect();
+        assertSourceStable();
         writeFileSync(`${output}.year${age}.cpuprofile`, JSON.stringify(profile));
         if (args.includes('--decade')) row.nativeDecade = await measure(() => {
             const result = advanceWorldForPlay(read(), { days: 3650, stopOnInterrupt: false });
@@ -173,6 +184,7 @@ try {
                         calls: result.toolCalls, narration: result.narration };
                 });
                 const { profile } = await actionProfile.post('Profiler.stop'); actionProfile.disconnect();
+                assertSourceStable();
                 writeFileSync(`${output}.year${age}.${action}.cpuprofile`, JSON.stringify(profile));
                 row.actions.push({ action, ...timed });
                 if (action === 'look') row.warmLook = await measure(async () => {
@@ -183,7 +195,7 @@ try {
                 console.log(JSON.stringify({ age, action, seconds: timed.seconds, actualDays: timed.result.actualDays }));
             } finally { resetCultivationWorlds(); h.db.close(); }
         }
+        assertSourceStable();
         writeFileSync(output, JSON.stringify(report, null, 2));
     }
 } finally { await server.close(); }
-

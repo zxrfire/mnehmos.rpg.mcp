@@ -38,17 +38,26 @@ export function lockOwnerHasExited(lock: string): boolean {
     }
 }
 
+function fixtureFileFor(namespace: string, entries: string[], key: unknown): string {
+    const hash = createHash('sha256').update(fixtureSourceHash(entries))
+        .update(JSON.stringify(key)).digest('hex');
+    return path.join(os.tmpdir(), 'mnehmos-fixtures', namespace, hash + '.snapshot');
+}
+
+/** Read a completed source-keyed fixture without ever starting a builder. */
+export function existingSerializedFixture(namespace: string, entries: string[], key: unknown): Buffer | null {
+    const file = fixtureFileFor(namespace, entries, key);
+    return fs.existsSync(file) ? fs.readFileSync(file) : null;
+}
+
 export async function serializedFixture(
     namespace: string,
     entries: string[],
     key: unknown,
     build: () => Promise<Buffer>
 ): Promise<Buffer> {
-    const hash = createHash('sha256').update(fixtureSourceHash(entries))
-        .update(JSON.stringify(key)).digest('hex');
-    const dir = path.join(os.tmpdir(), 'mnehmos-fixtures', namespace);
-    fs.mkdirSync(dir, { recursive: true });
-    const file = path.join(dir, `${hash}.snapshot`);
+    const file = fixtureFileFor(namespace, entries, key);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
     let pending = held.get(file);
     if (!pending) {
         pending = readOrBuild(file, build);
