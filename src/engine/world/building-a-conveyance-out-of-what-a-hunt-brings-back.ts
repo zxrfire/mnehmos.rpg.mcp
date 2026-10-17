@@ -410,3 +410,18 @@ export function launch(
                 + 'and there is nothing on the slip worth the wood it is lying on.'
     };
 }
+
+/** A slip has one resource representation, shared by native work and arrangements. */
+const berthResourceKey = (recipeId: string, field: string): string => `berth.${recipeId}.${field}`;
+
+export function berthOnTheBooks(resources: Readonly<Record<string, number>>, recipe: ConveyanceRecipe): Berth {
+    return { ...layDownKeel(recipe),
+        delivered: recipe.components.map((_, i) => resources[berthResourceKey(recipe.id, 'line' + i)] ?? 0),
+        workDaysDone: resources[berthResourceKey(recipe.id, 'work')] ?? 0 };
+}
+
+/** Store only the current slip, preserving every unrelated resource. */
+export function putBerthOnTheBooks(resources: Record<string, number>, berth: Berth): void {
+    berth.delivered.forEach((count, i) => { resources[berthResourceKey(berth.recipeId, 'line' + i)] = count; });
+    resources[berthResourceKey(berth.recipeId, 'work')] = berth.workDaysDone;
+}

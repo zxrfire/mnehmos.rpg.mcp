@@ -406,6 +406,8 @@ import { bestForThisRoad, priceJourney } from './what-a-conveyance-does-to-a-jou
 import { whatThisHouseCouldTakeOut } from './what-a-house-can-take-out.js';
 import {
     conveyanceKeptAs,
+    berthOnTheBooks,
+    putBerthOnTheBooks,
     deliver,
     launch,
     layDownKeel,
@@ -5539,10 +5541,6 @@ function yardKey(grade: TechniqueGrade, core: boolean): string {
     return `yard.${core ? 'core' : 'material'}.${grade}`;
 }
 
-/** How far the slip has got. One cell per line of the bill, plus the work. */
-function berthKey(recipeId: string, what: string): string {
-    return `berth.${recipeId}.${what}`;
-}
 
 /**
  * What a finished sending after materials brought home.
@@ -5629,13 +5627,7 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
         // The slip, off the cells that hold it. `spent` is not carried across
         // years: what it is for is the argument about a build that failed, and
         // the argument the world can have is the fact this writes.
-        let berth: Berth = {
-            ...layDownKeel(recipe),
-            delivered: recipe.components.map(
-                (_, i) => faction.resources[berthKey(recipe.id, `line${i}`)] ?? 0
-            ),
-            workDaysDone: faction.resources[berthKey(recipe.id, 'work')] ?? 0
-        };
+        let berth: Berth = berthOnTheBooks(faction.resources, recipe);
 
         berth = deliver(berth, recipe, lotsInTheYard(state, faction, objects));
         // Delivery spends ledger stock by key and tracked cores by object id.
@@ -5650,10 +5642,7 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
         const worked = workOn(berth, recipe, { days: DAYS_PER_YEAR, hands });
         berth = worked.berth;
 
-        for (let i = 0; i < recipe.components.length; i++) {
-            faction.resources[berthKey(recipe.id, `line${i}`)] = berth.delivered[i] ?? 0;
-        }
-        faction.resources[berthKey(recipe.id, 'work')] = berth.workDaysDone;
+        putBerthOnTheBooks(faction.resources, berth);
 
         if (!readyToLaunch(berth, recipe)) continue;
 
@@ -5661,10 +5650,7 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
         // the same best hand do not get the same answer - which they would off
         // the recipe and the ordinal alone.
         const outcome = launch(`${state.seed}:${faction.id}:${year}`, berth, recipe, best);
-        for (let i = 0; i < recipe.components.length; i++) {
-            faction.resources[berthKey(recipe.id, `line${i}`)] = 0;
-        }
-        faction.resources[berthKey(recipe.id, 'work')] = 0;
+        putBerthOnTheBooks(faction.resources, layDownKeel(recipe));
         if (!outcome.launched) {
             // A failure consumes the materials and leaves the yard with
             // nothing. That is the honest price and it is why a heaven-grade
