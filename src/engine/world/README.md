@@ -33,6 +33,11 @@ the provenance chain). Gifts stay theirs. Remote, inaccessible or missing
 property stays house-owned and creates an ordinary debt; no departure penalty
 or automatic seizure is added. Existing unpaid accounts stay open.
 
+Departure vacancies use the ordinary readers and yearly postings pass: a
+remaining senior holds or covers the chair, and `staffTheHalls` appoints
+available members to the vacated hall job and chore rota. The focused refill
+test arranges all three departures together and reads their actual replacements.
+
 Voluntary walkers need an actual accepted course before any departure, oath or
 reaction is recorded. No course means no walk-out that year. Migration records
 name the departure ground and intended destination separately; actual arrival

@@ -13,6 +13,9 @@ import { routineOf } from '../../../src/engine/world/npc-routines';
 import { whereCompoundsAre, whereTheyAreStanding } from '../../../src/engine/world/where-inside-a-house-somebody-is-standing';
 import { meritWith, whatServiceIsWorth } from '../../../src/engine/world/what-a-house-counts-in-somebodys-favour';
 import type { RoomPurpose } from '../../../src/engine/world/architecture';
+import { settleLeavingHouse } from '../../../src/engine/world/leaving-a-house.js';
+import { portfoliosIn } from '../../../src/engine/social-leverage/authority-for-an-order.js';
+import { applyPostings } from '../../../src/engine/world/the-world-changing-on-its-own.js';
 
 function build() {
     const state = createWorld({ seed: 'a-real-chore-rota', regionCount: 0, skipPriorAges: true });
@@ -37,6 +40,49 @@ function build() {
     expect(rota.length).toBeGreaterThan(0);
     return { state, house, rota };
 }
+
+/** Leaving must free actual vacancies for the ordinary yearly pass: a senior
+ * covers the chair, and Internal Affairs appoints the posted work and rota. */
+it('refills a departed office holder, hall worker and rota member through the ordinary yearly pass', () => {
+    const { state, house, rota } = build();
+    // A remaining senior can cover; available juniors can accept the two jobs.
+    state.npcs.push(...Array.from({ length: 17 }, (_, i) => setRealm(createNpc(state.seed, {
+        id: `reserve-${i}`, onDay: 50, bornOnDay: -7300, locationId: house.seatLocationId,
+        factionId: house.id, factionRankIndex: i === 0 ? house.ranks.length - 2 : i < 9 ? 1 : 0
+    }), 3, 50)));
+    const offices = () => portfoliosIn({ locations: state.locations, npcs: state.npcs, sectId: house.id,
+        roll: state.npcs.filter(person => person.status === 'alive' && person.factionId === house.id)
+            .map(person => ({ id: person.id, rankIndex: person.factionRankIndex })), rankCount: house.ranks.length });
+    const office = offices().find(row => row.holderId !== null && row.actingId === null)!;
+    const holder = state.npcs.find(person => person.id === office?.holderId)!;
+    const worker = state.npcs.find(person => person.activity?.kind === 'stationed'
+        && !person.activity.houseWorkSchedule?.rota && houseAppointment(state, person))!;
+    const chores = rota[0]!;
+    expect(holder).toBeDefined();
+    expect(worker).toBeDefined();
+    expect(chores).toBeDefined();
+    const jobs = [worker, chores].map(person => ({ job: houseAppointment(state, person)!.data.job,
+        rota: person.activity?.houseWorkSchedule?.rota === true }));
+    const departed = new Set([holder.id, worker.id, chores.id]);
+    expect(departed.size).toBe(3);
+    for (const person of [holder, worker, chores]) settleLeavingHouse(state, person, house.id, 80);
+
+    state.currentDay = 415;
+    applyPostings(state, 1, state.currentDay);
+
+    const filled = offices().find(row => row.hallId === office.hallId)!;
+    const onRoll = (id: string | null) => state.npcs.some(person => person.id === id
+        && person.status === 'alive' && person.factionId === house.id && !departed.has(person.id));
+    expect(onRoll(filled?.holderId)).toBe(true);
+    if (filled.actingId !== null) expect(filled.actingId).toBe(filled.holderId);
+    for (const job of jobs) {
+        const replacement = state.npcs.find(person => houseAppointment(state, person)?.data.job === job.job);
+        expect(replacement, `unfilled ${job.job}`).toBeDefined();
+        expect(onRoll(replacement!.id)).toBe(true);
+        expect(replacement!.activity?.kind).toBe('stationed');
+        expect(replacement!.activity?.houseWorkSchedule?.rota === true).toBe(job.rota);
+    }
+});
 
 it('covers alternate days with actual appointed people in the hall where the work is done', () => {
     const { state, house, rota } = build();
