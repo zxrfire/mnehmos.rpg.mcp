@@ -1,3 +1,4 @@
+import { offTheRoll, ROGUE_EXPELLED } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { factsWithDataValue, factsInSpan, witnessIndexFor } from './witness-reaction-index.js';
 /**
  * A house puts a price on somebody: a paper on its walls naming the person, the
@@ -89,7 +90,7 @@ import { whatItWasWorth } from '../social-leverage/what-a-deed-leaves.js';
 import { A_BILL_STAYS_UP_FOR_DAYS, BILLS_A_WALL_CARRIES, reachesThisGround } from './houses-that-have-to-advertise-for-disciples.js';
 import { aNoticeId, theDaySomebodyElseTurnsItIn } from '../encounters/a-notice-is-turned-in.js';
 import { postingGroundOf, provinceOfPlace } from './the-doors-and-walls-a-house-takes-people-at.js';
-import { isTheWorldsToMove, setLocation, type NpcRecord } from './npc-state.js';
+import { isTheWorldsToMove, type NpcRecord } from './npc-state.js';
 import { isBelowTheLid } from './layers.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -493,8 +494,8 @@ export function housesAnswerKnownDeeds(state: WorldState, accounts: readonly AHo
         const delivers = isTheWorldsToMove(doer) && victimHouse.seatLocationId !== null && quarrel > value;
         if (delivers) {
             const at = indexById(state.npcs, doer.id);
-            state.npcs[at] = setLocation({ ...state.npcs[at]!, factionId: null, factionRankIndex: -1,
-                activity: null }, victimHouse.seatLocationId, day);
+            state.npcs[at] = offTheRoll(state, state.npcs[at]!, day,
+                `${ROGUE_EXPELLED}${doerHouse.id}`, victimHouse.seatLocationId);
         }
         written.push(appendWorldFact(state, makeFact({ day, kind: 'said_in_public',
             locationId: doerHouse.seatLocationId, factionIds: [victimHouse.id, doerHouse.id],

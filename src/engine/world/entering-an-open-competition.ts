@@ -1,3 +1,4 @@
+import { offTheRoll } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { competitionBoardKey, witnessIndexFor } from './witness-reaction-index.js';
 import { drawBackgroundIncidents, isPlayerInvolved, resolveWithPlayerPresent } from './background-incident-draw.js';
 /** Open boards use the same realm brackets and power reading as closed gatherings. */
@@ -235,7 +236,11 @@ function settleTheOpenCompetitions(state: WorldState, fromDay: number, toDay: nu
                         ? handOverExchangeConsignment(state, chosen, fellowFactor, day) : false;
                     const returnsCargoHome = hasCargo && !handedOff;
                     const member = state.npcs[at]!;
-                    const taken = { ...member, factionId: host.id, factionRankIndex: 0,
+                    // The played sheet settles its own accounts when it accepts this selection.
+                    const released = isTheWorldsToMove(member)
+                        ? offTheRoll(state, member, day, 'transferred-to:' + host.id)
+                        : { ...member, activity: null };
+                    const taken = { ...released, factionId: host.id, factionRankIndex: 0,
                         tags: member.tags.filter(tag => tag !== 'chosen'),
                         updatedOnDay: day };
                     const homeward = returnsCargoHome && taken.activity?.capitalMissionId

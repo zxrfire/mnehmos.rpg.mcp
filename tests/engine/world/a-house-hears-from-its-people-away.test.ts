@@ -103,7 +103,7 @@ import {
 } from '../../../src/engine/world/a-pair-of-communication-jade.js';
 import { settleNpcDeath } from '../../../src/engine/world/time.js';
 import { refiningOrdinalFor } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
-import { handBackWhatTheyNoLongerBelongTo } from '../../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
+import { offTheRoll } from '../../../src/engine/world/what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import {
@@ -706,9 +706,7 @@ describe('a slip is half of a pair, keyed to its holder', () => {
         wordFromThePeopleAway(state, { day: DAY + 10 });
         const treasury = howManyTheHouseHas(state.objects, HOUSE);
         const at = state.npcs.findIndex(n => n.id === 'posted');
-        state.npcs[at] = { ...state.npcs[at]!, factionId: null };
-        const rollOf = (id: string) => state.npcs.find(n => n.id === id && n.status === 'alive')?.factionId;
-        handBackWhatTheyNoLongerBelongTo(state.objects, rollOf);
+        state.npcs[at] = offTheRoll(state, state.npcs[at]!, DAY + 10, 'walked-out:their own road');
         expect(howManyTheyCarry(state.objects, 'posted', HOUSE)).toBe(0);
         expect(howManyTwinsTheHallKeeps(state.objects, HOUSE, 'posted')).toBe(0);
         expect(howManyTheHouseHas(state.objects, HOUSE), 'nothing keyed goes back as a blank').toBe(treasury);

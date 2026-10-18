@@ -1,4 +1,5 @@
 /** Scouts offer exposure; probation never grants a house's name or protection. */
+import { offTheRoll, ROGUE_EXPELLED } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { AZURE_CLOUD_INTAKE } from '../../data/cultivation/governance-and-water-rights.js';
 import { PRICES, CASH_PER_STONE } from '../../data/cultivation/mortal-world.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
@@ -62,6 +63,9 @@ export function scoutsPlaceChildren(state: WorldState, year: number, day: number
                 continue;
             }
             const destination = state.factions.find(f => f.id === judgement.factionId);
+            if (child.factionId !== null && child.factionId !== judgement.factionId) {
+                child = offTheRoll(state, child, day, `${ROGUE_EXPELLED}${child.factionId}`);
+            }
             child = { ...child, tags: child.tags.filter(t => !t.startsWith(PROBATION)),
                 factionId: judgement.factionId, factionRankIndex: judgement.factionId ? 0 : -1, activity: null };
             state.npcs[at] = setLocation(child, destination?.seatLocationId ?? (home || null), day);

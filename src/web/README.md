@@ -3067,6 +3067,15 @@ geology disagree - because those are what break, not the volume.
 
 ## The player is a row on the world's roster
 
+The played leave handler and membership projection use the engine's shared
+house-departure settlement. SQL keeps the player's membership and obligations;
+the world keeps property and the released appointment. Returns, token
+cancellation and unpaid property debts follow the same rules as native people.
+When a house ends, this projection releases its SQL membership too; the native
+roll release leaves the played sheet's choice and obligation ownership to it.
+The issuing pass can finish a return when former house property reaches home;
+it never confiscates a remote person's clothes.
+
 [`the-player-as-a-row-the-world-can-invite.ts`](the-player-as-a-row-the-world-can-invite.ts).
 The world layer keys everything on `NpcRecord`, and below the Lid the player had none - so
 every system reading `state.npcs` was running on a population the person playing was not

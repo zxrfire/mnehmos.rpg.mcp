@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { settlePlayedHouseDeparture } from './settling-a-house-departure.js';
 import { theseDaysPassedInTheWorldToo } from '../state/cultivation-world.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
@@ -740,6 +741,7 @@ export async function handleLeave(args: z.infer<typeof LeaveSchema>): Promise<ob
                 repos.cultivators.update(cultivator.id, { sectId: null });
                 repos.runs.incrementTurn(run.id, 1);
             })();
+            const settlement = await settlePlayedHouseDeparture(run, cultivator, cultivator.sectId);
             const after = repos.cultivators.getById(cultivator.id)!;
             return {
                 left: true,
@@ -748,6 +750,7 @@ export async function handleLeave(args: z.infer<typeof LeaveSchema>): Promise<ob
                     : { id: cultivator.sectId },
                 formerRank: null,
                 contributionForfeited: 0,
+                settlement,
                 cultivator: describeCultivator(repos, after, repos.runs.getById(run.id)!),
                 note: `${born?.name ?? 'The house'} takes ${cultivator.name} off its roll. `
                     + 'There was no rank to give up and no contribution to forfeit, because '
@@ -775,6 +778,7 @@ export async function handleLeave(args: z.infer<typeof LeaveSchema>): Promise<ob
         return ok;
     })();
 
+    const settlement = removed ? await settlePlayedHouseDeparture(run, cultivator, membership.sectId) : null;
     const after = repos.cultivators.getById(cultivator.id)!;
     const runAfter = repos.runs.getById(run.id)!;
 
@@ -783,9 +787,12 @@ export async function handleLeave(args: z.infer<typeof LeaveSchema>): Promise<ob
         sect: sect ? { id: sect.id, name: sect.name } : { id: membership.sectId },
         formerRank: membership.rankTitle,
         contributionForfeited: membership.contribution,
+        settlement,
         oath: { answer: atTheDoor.answer, obligationId: atTheDoor.record.id },
         cultivator: describeCultivator(repos, after, runAfter),
         note: `Contribution does not travel. Whatever was earned here stays here. ${atTheDoor.line}`
+            + (settlement?.returned.length ? ` ${settlement.returned.join(', ')} went back to it.` : '')
+            + (settlement?.stillOwed.length ? ` Still owed: ${settlement.stillOwed.join(', ')}.` : '')
     };
 }
 
@@ -1094,6 +1101,7 @@ export async function handleSiphon(args: z.infer<typeof SiphonSchema>): Promise<
         writeFlag(repos.db, cultivator.id, FLAG_MARKED_THIEF, sect.id);
     })();
 
+    await settlePlayedHouseDeparture(run, cultivator, sect.id);
     const after = repos.cultivators.getById(cultivator.id)!;
     const runAfter = repos.runs.getById(run.id)!;
     return {

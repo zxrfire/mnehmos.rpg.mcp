@@ -29,7 +29,6 @@ import {
     closeGoal,
     isActing,
     isUnadjudicated,
-    setFaction,
     theTieBecomes,
     upsertRelationship,
     type NpcRecord,
@@ -48,7 +47,7 @@ import {
     whoTheHouseHasLostTrackOf
 } from './who-a-house-has-lost-track-of.js';
 import { whenTheHallKnowsTheirLampIsGone } from './what-the-roll-and-the-lamps-say.js';
-import { handBackWhatTheyNoLongerBelongTo } from './a-recruit-is-given-their-lamp-at-the-house.js';
+import { offTheRoll } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RATES
@@ -571,20 +570,8 @@ export function whatHousesLearnOfTheirOwn(state: WorldState, onDay: number): Wha
                 };
                 learned.headedHome++;
             } else {
-                row = { ...setFaction(row, null, -1, since), activity: null };
+                row = offTheRoll(state, row, since, `rogue:lost:${house.id}`);
                 learned.wentTheirOwnWay++;
-                // HANDED BACK HERE, NOT LEFT TO THE NEXT LAMP PASS. A house
-                // that re-admits this same person before `enterWhoeverHasReachedTheHouse`
-                // next runs (it can, the same year: `applyRecruitment` reads
-                // the roll before that pass does) would otherwise find them
-                // still wearing this house's robes - never handed back
-                // because the gap off the roll never outlasted a scan - and
-                // read them as a standing member owed nothing but a possible
-                // token trip, stranding them wherever they went missing for
-                // good. Measured on `town-a`/`town-b` at 200 years: three
-                // people this happened to, all still on the house they went
-                // missing from, none ever sent home.
-                handBackWhatTheyNoLongerBelongTo(state.objects, id => (id === npc.id ? null : undefined), since);
             }
         }
         // AND THE ROW THE FACT WAS JUST LINKED ONTO IS THE ONE THAT SURVIVES.
@@ -1267,7 +1254,7 @@ function stepWriteOff(
         // `struck` was read before the fact existed. `appendWorldFact` links a
         // fact onto everybody it names, so by this line `state.npcs[seat]` is a
         // NEWER object carrying the expulsion in its `historyFactIds` - and
-        // writing `setFaction(struck, ...)` put the pre-fact copy back, taking
+        // writing the old `struck` snapshot put the pre-fact copy back, taking
         // the link with it.
         //
         // Measured: nine facts in an eighty-year world named somebody who did
@@ -1275,7 +1262,7 @@ function stepWriteOff(
         // off. The one thing `what-a-world-must-never-contain.ts` calls a fact
         // that cannot be reached from the person it is about - and here it was
         // the person's own removal.
-        state.npcs[seat] = setFaction(state.npcs[seat], null, -1, day);
+        state.npcs[seat] = offTheRoll(state, state.npcs[seat]!, day, `rogue:presumed-dead:${struck.factionId}`);
         consequences.push({
             kind: 'struck_from_the_rolls',
             onDay: day,

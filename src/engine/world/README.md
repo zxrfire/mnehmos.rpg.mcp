@@ -24,6 +24,20 @@ without installing a second copy on the world.
 
 # The World Layer
 
+`leaving-a-house.ts` settles every departure before another admission. The roll
+and its activity release offices, hall appointments and rota places. The house
+cancels its token and keyed slips; its old lamp remains an object, read as a
+member's lamp only while that person is on the roll. Issued property and loans
+return at the compound through ordinary possession transfers (`returned` on
+the provenance chain). Gifts stay theirs. Remote, inaccessible or missing
+property stays house-owned and creates an ordinary debt; no departure penalty
+or automatic seizure is added. Existing unpaid accounts stay open.
+
+Voluntary walkers need an actual accepted course before any departure, oath or
+reaction is recorded. No course means no walk-out that year. Migration records
+name the departure ground and intended destination separately; actual arrival
+is proved by its own receipt, never by the person's final location.
+
 The native craft pass reads and stores its partial berth through the same
 resource writer used to arrange a focused yard. Material, labour, launch odds
 and the actual appointed hands keep their existing authorities.

@@ -423,7 +423,7 @@ export function aRoomHearsIt(
         theRoomTurnedThemOut(state, holder.id, day, place === 'expelled');
     }
     if (place === 'expelled') {
-        state.npcs[at] = offTheRoll(state.npcs[at]!, day, `${ROGUE_EXPELLED}${house.id}`, whereTheyRunTo(state, house));
+        state.npcs[at] = offTheRoll(state, state.npcs[at]!, day, `${ROGUE_EXPELLED}${house.id}`, whereTheyRunTo(state, house));
     } else if (place === 'removed from office') {
         const row = state.npcs[at]!;
         state.npcs[at] = { ...row, tags: Array.from(new Set([...row.tags, `${REMOVED_FROM_OFFICE}${house.id}:${day}`])), updatedOnDay: day };

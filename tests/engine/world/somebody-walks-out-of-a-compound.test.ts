@@ -50,7 +50,6 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { isLostTrackOf } from '../../../src/engine/world/who-a-house-has-lost-track-of.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../../support/advance-world-years.js';
@@ -67,6 +66,10 @@ import {
     type WhatStayingIsCostingThem
 } from '../../../src/engine/world/why-somebody-walks-out-of-a-compound.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
+import { createWorld, makeFaction } from '../../../src/engine/world/world-state.js';
+import { createNpc } from '../../../src/engine/world/npc-state.js';
+import { linkLocations, makeLocation } from '../../../src/engine/world/locations.js';
+import { applyPeopleWalkingOut } from '../../../src/engine/world/the-world-changing-on-its-own.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE REASONS ARE READ, NOT INVENTED
@@ -304,16 +307,15 @@ describe('a world where people decide for themselves, against one where they do 
         // is why the assertion below is about where somebody is standing.
         void off;
 
-        // THEY WENT SOMEWHERE. The whole of the change is that a person is no
-        // longer where their house is, and `roadsInReachOf` reads the province
-        // off exactly that.
-        const arrived = on.departures.length > 0 && on.state.history.facts
+        // A final location cannot prove a past arrival: somebody may have left
+        // again, and losing track of them proves nothing about reaching ground.
+        // Match a real arrival receipt after its departure, at its destination.
+        const arrived = on.state.history.facts
             .filter(f => f.data?.walkedOut === true)
-            .some(f => f.actors.some(a => {
-                const who = on.state.npcs.find(n => n.id === a.id);
-                return who !== undefined
-                    && (who.locationId === f.locationId || isLostTrackOf(on.state, who));
-            }));
+            .some(f => on.state.history.facts.some(arrival => arrival.data.actualBodyArrival === true
+                && arrival.day >= f.day && arrival.data.departureDay === f.data.departureDay
+                && arrival.data.toLocationId === f.data.destinationId
+                && f.actors.some(actor => actor.id === arrival.data.bodyId)));
         expect(arrived, 'nobody who left ever reached what they left for').toBe(true);
     }, 900_000);
 
@@ -377,4 +379,47 @@ describe('a world where people decide for themselves, against one where they do 
         expect(off.state.npcs.some(n => n.tags.some(t => t.startsWith('walked-out:'))))
             .toBe(false);
     }, 900_000);
+});
+
+/** A failed start used to clear the roll and manufacture activity { withIds: [] }. */
+describe('focused walk-out reproduction', () => {
+    function ground(linked: boolean) {
+        const state = createWorld({ seed: 'a-walk-out-needs-a-course', skipPriorAges: true, regionCount: 0 });
+        const province = makeLocation({ id: 'province', name: 'Province', kind: 'region' });
+        const seat = makeLocation({ id: 'seat', name: 'House', kind: 'sect_seat', parentId: province.id });
+        const ruin = makeLocation({ id: 'ruin', name: 'Open Ruin', kind: 'ruin', parentId: province.id,
+            discovered: true, tags: ['route-stop'], thresholds: { entry: 0, survival: 0, mastery: 10, operational: 0 } });
+        if (linked) linkLocations(seat, ruin, 'road', 3);
+        state.locations.push(province, seat, ruin);
+        state.factions.push(makeFaction({ id: 'house', name: 'House', alignment: 'demonic',
+            seatLocationId: seat.id, resources: { spirit_stones: 0 } }));
+        const npc = createNpc(state.seed, { id: 'walker', bornOnDay: 0, onDay: 1,
+            factionId: 'house', factionRankIndex: 0, locationId: seat.id, spiritStones: 0 });
+        npc.cultivation.techniqueIds = [];
+        npc.activity = { kind: 'the_work_of_their_rank', note: 'Hall work.', withIds: [], sinceDay: 1,
+            untilDay: null, houseWorkFactId: 'old-work' };
+        state.npcs.push(npc);
+        return state;
+    }
+
+    it('keeps membership, work and accounts when the same chosen departure has no course', () => {
+        const open = ground(true);
+        const shut = ground(false);
+        const before = structuredClone(shut.npcs[0]!);
+        let left = 0;
+        // Bounded decision samples, without advancing or simulating a world.
+        for (let year = 0; year < 2_000 && !left; year++) {
+            expect(applyPeopleWalkingOut(shut, year, 10, true)).toBe(0);
+            left = applyPeopleWalkingOut(open, year, 10, true);
+        }
+        expect(left, 'the reachable control must actually choose to leave').toBe(1);
+        expect(shut.npcs[0]).toEqual(before);
+        expect(shut.obligations).toEqual([]);
+        expect(shut.history.facts.some(fact => fact.data.walkedOut === true)).toBe(false);
+        expect(open.npcs[0]!.factionId).toBeNull();
+        expect(open.npcs[0]!.activity?.kind).toBe('travelling');
+        expect(open.npcs[0]!.activity?.returnTo).toBe('ruin');
+        expect(open.npcs[0]!.activity?.houseWorkFactId).toBeUndefined();
+        expect(open.npcs[0]!.locationId).toBe('seat');
+    });
 });

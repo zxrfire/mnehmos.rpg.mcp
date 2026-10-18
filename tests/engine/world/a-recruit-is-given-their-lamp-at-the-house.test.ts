@@ -66,6 +66,7 @@ import {
 } from '../../../src/engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import { theyOweTheHouseAReport } from '../../../src/engine/world/a-house-expects-somebody-it-took-on.js';
 import { createNpc, setRealm, type NpcRecord } from '../../../src/engine/world/npc-state.js';
+import { offTheRoll } from '../../../src/engine/world/what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { linkLocations, makeLocation } from '../../../src/engine/world/locations.js';
 import { locationOnNpcJourney } from '../../../src/engine/world/places-on-the-way.js';
 import { createWorld, makeFaction, type WorldState } from '../../../src/engine/world/world-state.js';
@@ -246,12 +247,15 @@ describe('a recruit joins where they stand and has nothing to show for it', () =
         // world open, and was never sent to the house.
         const state = build();
         const i = at(state, 'founder');
-        state.npcs[i] = { ...state.npcs[i]!, factionId: null, factionRankIndex: -1 };
+        // Returns happen at the house through the departure writer, rather than
+        // a later issuing pass confiscating a remote person's clothes.
+        state.npcs[i] = { ...state.npcs[i]!, locationId: SEAT };
+        state.npcs[i] = offTheRoll(state, state.npcs[i]!, DAY, 'walked-out:their own road');
         enterWhoeverHasReachedTheHouse(state, DAY);
         expect(wearsTheRobesOf(state.objects, 'founder', HOUSE)).toBe(false);
         expect(carries(state, tokenIdFor('founder'), 'founder')).toBe(false);
 
-        state.npcs[i] = { ...state.npcs[i]!, factionId: HOUSE, factionRankIndex: 0 };
+        state.npcs[i] = { ...state.npcs[i]!, locationId: VILLAGE, factionId: HOUSE, factionRankIndex: 0 };
         enterWhoeverHasReachedTheHouse(state, DAY + YEAR);
         expect(npc(state, 'founder').activity?.kind).toBe('travelling');
         expect(npc(state, 'founder').activity?.returnTo, 'taken back on, they go to live there').toBe(SEAT);

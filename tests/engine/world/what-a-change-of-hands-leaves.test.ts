@@ -41,7 +41,7 @@ import type { WorldState } from '../../../src/engine/world/world-state.js';
  * type.
  */
 const EVERY_MODE = [
-    'found', 'inherited', 'bought', 'sold', 'stolen', 'looted', 'gifted', 'lent',
+    'found', 'inherited', 'bought', 'sold', 'stolen', 'looted', 'gifted', 'lent', 'returned',
     'crafted', 'awarded', 'confiscated', 'lost', 'unknown'
 ] as const;
 type _everyModeIsHere =
@@ -67,6 +67,10 @@ function aChange(over: Partial<AChangeOfHands> = {}): AChangeOfHands {
 }
 
 describe('which way the account points is what the mode decides', () => {
+    // Returning property repays its existing terms; it creates neither a gift nor a wrong.
+    it('leaves no new account for an ordinary return', () => {
+        expect(whatAChangeOfHandsLeaves(aChange({ how: 'returned' }))).toEqual([]);
+    });
     /**
      * WHOEVER ENDS UP WITH THE THING CARRIES THE ACCOUNT.
      *

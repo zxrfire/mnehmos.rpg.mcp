@@ -79,8 +79,8 @@ import {
     type NpcRecord
 } from './npc-state.js';
 import { isWorn, makeObject, WORN_TAG, type ObjectRecord } from './possessions.js';
-import { handBackTheirSlips } from './a-communication-talisman-carries-word-home.js';
 import type { WorldState } from './world-state.js';
+import { offTheRoll, ROGUE_EXPELLED } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { journeySelectedToHouseSeat } from './capital-missions-and-calendar.js';
 import { keepTheirQuartersInOrder, handBackVacatedQuarters } from './what-somebody-keeps-in-their-quarters.js';
 import {
@@ -244,43 +244,6 @@ export function whereThisHouseBurnsItsLamps(
 }
 
 /**
- * LEAVING MEANS HANDING IT BACK, which the token's own doc has always said and
- * nothing did. Somebody alive and off the roll that issued a robe or a token is
- * not carrying it any more. Without this a disciple who walked out and was later
- * taken back on, somewhere else, still wore the old robes and read as already
- * entered - measured on `town-b`: out in year 188, back on the same roll at a
- * dao ground in 192, and never sent to the house.
- *
- * AND THE HOUSE'S SLIPS GO BACK WITH THEM, into its own stock
- * (`handBackTheirSlips`): a house asks the people who leave for its
- * communication talismans as it asks for its robes.
- *
- * `rollOf` answers the house somebody is on today, null for none, and undefined
- * for somebody the caller is not asking about - who is skipped. Mutates in place
- * and returns how many things were handed back, a stack of slips counting once.
- */
-export function handBackWhatTheyNoLongerBelongTo(
-    objects: ObjectRecord[],
-    rollOf: (personId: string) => string | null | undefined,
-    onDay = 0
-): number {
-    let handed = 0;
-    for (let i = 0; i < objects.length; i++) {
-        const object = objects[i]!;
-        if (object.possessorId === null || !object.tags.includes('issued')) continue;
-        // Only from the person it was issued to. A robe or a token in somebody
-        // else's hands is the seam the lamp file keeps open on purpose - a
-        // genuine tag in the wrong hands still reads as the house's.
-        if (object.data?.memberId !== object.possessorId) continue;
-        const onRoll = rollOf(object.possessorId);
-        if (onRoll === undefined || onRoll === object.ownerId) continue;
-        objects[i] = { ...object, possessorId: null };
-        handed++;
-    }
-    return handed + (handBackTheirSlips(objects, rollOf, onDay) > 0 ? 1 : 0);
-}
-
-/**
  * What a house gives one of its own who is standing in its compound.
  *
  * THE ONE ANSWER, asked by the yearly pass for the world's people and by the
@@ -329,12 +292,13 @@ export function whatTheHouseGivesThem(input: {
 
 /** Whether this person is carrying a token this house cut for them. */
 export function holdsTheTokenOf(
-    objects: readonly Pick<ObjectRecord, 'id' | 'possessorId' | 'ownerId'>[],
+    objects: readonly Pick<ObjectRecord, 'id' | 'possessorId' | 'ownerId' | 'tags'>[],
     personId: string,
     houseId: string
 ): boolean {
     const id = tokenIdFor(personId);
-    return objects.some(o => o.id === id && o.possessorId === personId && o.ownerId === houseId);
+    return objects.some(o => o.id === id && o.possessorId === personId && o.ownerId === houseId
+        && o.tags.includes('identity'));
 }
 
 export interface WhatTheHouseDidAboutItsRoll {
@@ -391,15 +355,11 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
         const at = objectAt.get(objectId);
         if (at === undefined) return false;
         const object = state.objects[at]!;
-        return object.possessorId === npc.id && object.ownerId === houseId;
+        return object.possessorId === npc.id && object.ownerId === houseId && object.tags.includes('identity');
     };
 
-    // Leaving means handing it back. See `handBackWhatTheyNoLongerBelongTo`.
-    const onRollOf = new Map<string, string | null>();
-    for (const npc of state.npcs) if (npc.status === 'alive') onRollOf.set(npc.id, npc.factionId);
-    handBackWhatTheyNoLongerBelongTo(state.objects, id => onRollOf.get(id), state.currentDay);
-
-    // Who is wearing whose robes, gathered once after the hand-back.
+    // Departures settle at the roll writer. Issuing does not confiscate remote property.
+    const onRollOf = new Map(state.npcs.filter(npc => npc.status === 'alive').map(npc => [npc.id, npc.factionId]));
     const robed = new Set<string>();
     for (const object of state.objects) {
         if (object.possessorId !== null && object.tags.includes('uniform')) {
@@ -493,7 +453,7 @@ export function enterWhoeverHasReachedTheHouse(state: WorldState, day: number): 
                     if (made.reading === 'rejected on questioning') {
                         theyAreEntered(state, house.id, npc.id);
                         const row = state.npcs[at]!;
-                        state.npcs[at] = { ...row, factionId: null, factionRankIndex: -1, updatedOnDay: day };
+                        state.npcs[at] = offTheRoll(state, row, day, `${ROGUE_EXPELLED}${house.id}`);
                         done.rejected++;
                         continue;
                     }

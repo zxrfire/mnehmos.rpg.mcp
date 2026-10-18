@@ -70,7 +70,8 @@ import { theHouseWhoseGateThisIs, whatTheGateOfThisHouseSays } from '../../src/w
 import type { FactionRecord, WorldState } from '../../src/engine/world/world-state';
 import { howManyAHouseReallyHas } from '../../src/engine/social/how-a-house-reads-a-face';
 import { A_ROLL_A_PLAYER_COULD_KNOW } from '../../src/engine/world/a-house-raises-its-own';
-import { writeOneObligation } from '../../src/storage/repos/obligation.repo';
+import { ledgerAbout, writeOneObligation } from '../../src/storage/repos/obligation.repo';
+import { makeObject, transferPossession } from '../../src/engine/world/possessions';
 import { createDebt } from '../../src/engine/social/grudges';
 import { getSect } from '../../src/data/cultivation/sects';
 import { SENDING_REASONS } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
@@ -174,15 +175,39 @@ describe('your house issues you its robes and token at its seat', () => {
         const current = repos.cultivators.getById(cultivator.id)!;
         expect(whatTheGateOfThisHouseSays(game, current, house).way).toBe('on the roll');
 
-        // LEAVING HANDS IT BACK.
-        repos.sects.removeMember(faction.id, cultivator.id);
-        const left = await game.act('I look around');
+        // The played leave verb must settle property and use the SQL account owner.
+        const loan = transferPossession(makeObject({ id: 'played-house-loan', name: 'Loaned blade',
+            kind: 'artifact', power: 1, ownerId: faction.id, ownerName: faction.name }), {
+            onDay: world.currentDay, toHolderId: cultivator.id, toHolderName: cultivator.name, how: 'lent' });
+        world.objects.push(loan, { ...loan, id: 'played-missing-loan', possessorId: 'someone-else' });
+        const debt = createDebt({ holderId: cultivator.id, subjectId: faction.id, cause: 'lent_resource',
+            severity: 'slight', onDay: world.currentDay, description: 'Unpaid stones.' });
+        writeOneObligation(repos.db, debt);
+        game.theWorldMoved();
+        const left = await game.act('I leave the sect');
+        expect(repos.sects.getMembership(cultivator.id)).toBeNull();
         world = game.atHand!;
         expect(holdsTheRobesOf(world.objects, cultivator.id, faction.id)).toBe(false);
         expect(tokenOf(world, cultivator.id)).toBeNull();
+        expect(world.objects.find(object => object.id === loan.id)?.possessorId).toBeNull();
+        expect(world.objects.find(object => object.id === 'played-missing-loan')?.possessorId).toBe('someone-else');
+        const debts = ledgerAbout(repos.db, cultivator.id).filter(row => row.kind === 'debt');
+        expect(debts.some(row => row.id === debt.id && row.status === 'open')).toBe(true);
+        expect(debts.some(row => row.tags.some(tag => tag.includes('played-missing-loan'))
+            && row.subjectId === faction.id && row.status === 'open')).toBe(true);
+        expect(world.obligations.some(row => row.holderId === cultivator.id
+            && row.tags.some(tag => tag.startsWith('house-property:')))).toBe(false);
         expect(left.narration ?? '').toMatch(/went back to it/);
         expect(whatTheGateOfThisHouseSays(game, repos.cultivators.getById(cultivator.id)!, house).way)
             .toBe('turned away');
+
+        // A house ending also ends the played SQL membership, before it can restore the mirror row.
+        repos.sects.addMember(faction.id, cultivator.id, 1);
+        world.factions.find(row => row.id === faction.id)!.dissolvedOnDay = world.currentDay;
+        game.theWorldMoved();
+        await game.act('I look around');
+        expect(repos.sects.getMembership(cultivator.id)).toBeNull();
+        expect(game.atHand!.npcs.find(row => row.id === cultivator.id)?.factionId).toBeNull();
     }, 240_000);
 
     /**

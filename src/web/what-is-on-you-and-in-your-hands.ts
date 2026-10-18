@@ -394,7 +394,7 @@ export function whatTheirTokenProves(
         : world.objects.filter(o =>
             o.possessorId === cultivator.id
             && o.id === tokenIdFor(cultivator.id)
-            && o.ownerId !== null);
+            && o.ownerId !== null && holdsTheTokenOf(world.objects, cultivator.id, o.ownerId));
     const robes = world === null || world === undefined
         ? []
         : theRobesOnThem(world, cultivator.id);

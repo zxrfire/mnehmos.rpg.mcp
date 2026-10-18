@@ -2,6 +2,7 @@
  * Authority inside a house: ordering the rungs below, and running the place.
  */
 
+import { settleNamedHouseDepartures, settlePlayedHouseDeparture } from './settling-a-house-departure.js';
 import { z } from 'zod';
 import { theseDaysPassedInTheWorldToo } from '../state/cultivation-world.js';
 import { CultivationRNG } from '../../engine/cultivation/rng.js';
@@ -464,12 +465,12 @@ interface Applied {
     narration: string;
 }
 
-function applyOutcome(
+async function applyOutcome(
     repos: CultivationRepos,
     view: HouseView,
     outcome: ActOutcome,
     rng: CultivationRNG
-): Applied {
+): Promise<Applied> {
     const ledger = view.ledger;
     ledger.standing = outcome.standingAfter;
 
@@ -483,6 +484,7 @@ function applyOutcome(
     const parts: string[] = [];
 
     if (outcome.eldersLeaving.length > 0) {
+        await settleNamedHouseDepartures(view.run, view.sectId, outcome.eldersLeaving.map(elder => elder.id), 'rogue:left:');
         for (const elder of outcome.eldersLeaving) ledger.departed.push(elder.id);
         ledger.membersLost += outcome.eldersLeaving.length + outcome.disciplesLeaving;
         const named = outcome.eldersLeaving
@@ -540,6 +542,7 @@ function applyOutcome(
     } else if (outcome.dismissedFromTheHouse) {
         dismissed = true;
         repos.sects.removeMember(view.sectId, view.cultivator.id);
+        await settlePlayedHouseDeparture(view.run, view.cultivator, view.sectId);
         parts.push(
             `${view.sectName} does not keep a rung nobody below it will work for. The rank is struck, ` +
             'the room is reassigned, and the reason given is administrative.'
@@ -900,7 +903,7 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
     const rng = new CultivationRNG(
         `${view.run.seed}:order:${view.cultivator.id}:${view.sectId}:${view.run.elapsedDays}:${errand}`
     );
-    const applied = applyOutcome(repos, view, outcome, rng);
+    const applied = await applyOutcome(repos, view, outcome, rng);
 
     // AN ORDER NOBODY RECOGNISES IS AN ORDER NOBODY CARRIES OUT
     const delivered = !authority.legitimate
@@ -1054,7 +1057,7 @@ export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promis
         const rng = new CultivationRNG(
             `${view.run.seed}:recruit_elder:${view.cultivator.id}:${view.sectId}:${view.run.elapsedDays}`
         );
-        const applied = applyOutcome(repos, view, outcome, rng);
+        const applied = await applyOutcome(repos, view, outcome, rng);
 
         const seated: string[] = [];
         if (!applied.obstructed && !applied.lostTheHouse) {
@@ -1139,7 +1142,7 @@ export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promis
     const rng = new CultivationRNG(
         `${view.run.seed}:recruit:${view.cultivator.id}:${view.sectId}:${view.run.elapsedDays}`
     );
-    const applied = applyOutcome(repos, view, outcome, rng);
+    const applied = await applyOutcome(repos, view, outcome, rng);
 
     view.ledger.ownFollowing += plan.count;
     view.ledger.membersAdded += plan.count;
@@ -1248,7 +1251,7 @@ export async function handleAdmission(args: z.infer<typeof AdmissionSchema>): Pr
     const rng = new CultivationRNG(
         `${view.run.seed}:admission:${view.cultivator.id}:${view.sectId}:${args.ordinal}`
     );
-    const applied = applyOutcome(repos, view, outcome, rng);
+    const applied = await applyOutcome(repos, view, outcome, rng);
 
     const landed = !applied.obstructed && !applied.lostTheHouse;
     if (landed) view.ledger.admissionOrdinal = args.ordinal;
@@ -1405,7 +1408,7 @@ export async function handleCurriculum(args: z.infer<typeof CurriculumSchema>): 
     const rng = new CultivationRNG(
         `${view.run.seed}:curriculum:${view.cultivator.id}:${view.sectId}:${next.join(',')}`
     );
-    const applied = applyOutcome(repos, view, outcome, rng);
+    const applied = await applyOutcome(repos, view, outcome, rng);
 
     const landed = !applied.obstructed && !applied.lostTheHouse;
     if (landed) {
@@ -1516,11 +1519,12 @@ export async function handleExpel(args: z.infer<typeof ExpelSchema>): Promise<ob
     const rng = new CultivationRNG(
         `${view.run.seed}:expel:${view.cultivator.id}:${view.sectId}:${elder.id}`
     );
-    const applied = applyOutcome(repos, view, outcome, rng);
+    const applied = await applyOutcome(repos, view, outcome, rng);
 
     const landed = !applied.obstructed && !applied.lostTheHouse;
     if (landed) {
         view.ledger.expelled.push(elder.id);
+        await settleNamedHouseDepartures(view.run, view.sectId, [elder.id], 'rogue:expelled:');
         view.ledger.membersLost += 1 + elder.following;
         view.ledger.externalElders = view.ledger.externalElders.filter(e => e.id !== elder.id);
     }
@@ -1623,7 +1627,7 @@ export async function handleGrow(args: z.infer<typeof GrowSchema>): Promise<obje
     const rng = new CultivationRNG(
         `${view.run.seed}:grow:${view.cultivator.id}:${view.sectId}:${view.run.elapsedDays}`
     );
-    const applied = applyOutcome(repos, view, outcome, rng);
+    const applied = await applyOutcome(repos, view, outcome, rng);
 
     view.ledger.membersAdded += plan.intake;
     if (channel === 'head') view.ledger.ownFollowing += plan.intake;

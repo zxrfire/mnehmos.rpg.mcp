@@ -22,6 +22,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { sampledWorld as soakedWorld } from '../../support/sampled-world.js';
 import { houseAppointment } from '../../../src/engine/world/internal-affairs-puts-somebody-to-the-work.js';
+import { createWorld, makeFaction } from '../../../src/engine/world/world-state.js';
+import { createNpc } from '../../../src/engine/world/npc-state.js';
+import { offTheRoll, ROGUE_EXPELLED } from '../../../src/engine/world/what-becomes-of-a-houses-people-when-it-is-gone.js';
+import { makeFact } from '../../../src/engine/world/history.js';
+import { appendWorldFact } from '../../../src/engine/world/who-was-there-when-it-happened.js';
 import { isElderRank } from '../../../src/engine/cultivation/leadership';
 import { getSect } from '../../../src/data/cultivation/sects';
 import type { WorldState } from '../../../src/engine/world/world-state';
@@ -62,9 +67,9 @@ const stationed = (s: WorldState) => living(s).filter(n => n.activity?.kind === 
 const cameDown = (s: WorldState) => s.history.facts.filter(f => f.summary.includes('came down on'));
 
 // The original walks are shared by every claim; cold setup gets the file budget.
-beforeAll(async () => { await worldsLived(); }, 900_000);
 
 describe('a house stations people outside itself', () => {
+    beforeAll(async () => { await worldsLived(); }, 900_000);
     it('has people posted at any given moment', async () => {
         for (const state of await worldsLived()) {
             expect(stationed(state).length).toBeGreaterThan(0);
@@ -215,6 +220,7 @@ describe('a house stations people outside itself', () => {
 });
 
 describe('something comes out of the treeline', () => {
+    beforeAll(async () => { await worldsLived(); }, 900_000);
     it('at towns, over a long enough span', async () => {
         for (const state of await worldsLived()) {
             expect(cameDown(state).length).toBeGreaterThan(0);
@@ -271,5 +277,33 @@ describe('something comes out of the treeline', () => {
             }
         }
         expect(named).toBeGreaterThan(0);
+    });
+});
+
+/** At ages 175/200 a new-house member still served the old indefinite hall post. */
+describe('focused roll-change reproduction', () => {
+    it('ends an indefinite hall appointment before admission to another house', () => {
+        const state = createWorld({ seed: 'a-post-ends-on-leaving', skipPriorAges: true, regionCount: 0 });
+        const oldHouse = makeFaction({ id: 'old', name: 'Old House' });
+        const nextHouse = makeFaction({ id: 'next', name: 'Next House' });
+        state.factions.push(oldHouse, nextHouse);
+        const person = createNpc(state.seed, { id: 'worker', bornOnDay: 0, onDay: 1,
+            factionId: oldHouse.id, factionRankIndex: 1 });
+        state.npcs.push(person);
+        const fact = appendWorldFact(state, makeFact({ day: 1, kind: 'gathering', summary: 'Hall appointment.',
+            actors: [{ id: person.id, name: person.name, role: 'appointed_worker' }],
+            data: { houseWorkAppointment: true, houseId: oldHouse.id, job: 'hall_work' } }),
+        { bystanders: false, recur: false });
+        state.npcs[0] = { ...state.npcs[0]!, activity: { kind: 'stationed', note: 'Hall work.',
+            withIds: [], sinceDay: 1, untilDay: null, houseWorkFactId: fact.id,
+            houseWorkSchedule: { rota: true, shift: 'day', periodDays: 7, offset: 0 } } };
+        expect(houseAppointment(state, state.npcs[0]!)).toBe(fact);
+        state.npcs[0] = offTheRoll(state, state.npcs[0]!, 2, `${ROGUE_EXPELLED}${oldHouse.id}`);
+        state.npcs[0] = { ...state.npcs[0]!, factionId: nextHouse.id, factionRankIndex: 0 };
+        expect(state.npcs[0]!.activity?.kind).not.toBe('stationed');
+        expect(state.npcs[0]!.activity?.houseWorkFactId).toBeUndefined();
+        expect(state.npcs[0]!.activity?.houseWorkSchedule).toBeUndefined();
+        expect(houseAppointment(state, state.npcs[0]!)).toBeNull();
+        expect(state.history.facts.some(row => row.id === fact.id)).toBe(true);
     });
 });

@@ -390,6 +390,7 @@ import { aWorkTopic, theGateAStrangerStandsAt, theGateIsAsked, theTownBelowTheGa
 import { whereFoodComesFromHere, whereFoodIsSoldInstead } from './where-food-is-sold.js';
 import { theNoticesTurnedIn, turnInWhatANoticeAsks } from './turning-in-what-a-notice-asks.js';
 import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
+import { settleLeavingHouse } from '../engine/world/leaving-a-house.js';
 import { mastersNoticeAHeavenlySeedling } from './masters-notice-a-heavenly-seedling.js';
 import { whoIsTakingPeopleOnHere, whoTookYouOn } from './who-takes-you-on.js';
 import { theHouseExpects } from '../engine/world/a-house-expects-somebody-it-took-on.js';
@@ -3488,6 +3489,9 @@ export class GameService {
                             throw new Error('The selected disciple could not be entered on the receiving roll.');
                         }
                     })();
+                    settleLeavingHouse(this.atHand, { ...cultivator, atLocationId: this.worldPlaceOf(cultivator) },
+                        from, today, { rows: ledgerAbout(this.db as never, cultivator.id),
+                            put: row => { writeOneObligation(this.db, row); } });
                     after.cultivator = this.currentRun().cultivator;
                 }
                 sayThisWhateverTheNarratorDoes(execution.facts, selectedUpward.summary);
@@ -21602,10 +21606,27 @@ ${fit.line}`;
      */
     private refreshThePlayerRow(cultivator: Cultivator): void {
         if (!this.atHand) return;
-        const membership = this.repos.sects.getMembership(cultivator.id);
+        let membership = this.repos.sects.getMembership(cultivator.id);
         const before = getNpc(this.atHand, cultivator.id);
         const wasIn = before?.factionId ?? null;
         const wasAt = before?.factionRankIndex ?? -1;
+        const onRoll = membership?.sectId ?? cultivator.sectId ?? null;
+        const ended = onRoll !== null && this.atHand.factions.some(house => house.id === onRoll
+            && house.dissolvedOnDay !== null);
+        if (ended) {
+            if (membership) this.repos.sects.removeMember(membership.sectId, cultivator.id);
+            this.repos.cultivators.update(cultivator.id, { sectId: null });
+            cultivator.sectId = null;
+            membership = null;
+        }
+        const departed = ended ? onRoll : wasIn;
+        if (departed !== null && departed !== (membership?.sectId ?? null)) {
+            settleLeavingHouse(this.atHand, { ...cultivator, atLocationId: this.worldPlaceOf(cultivator) }, departed, this.atHand.currentDay, {
+                rows: ledgerAbout(this.db as never, cultivator.id),
+                put: row => { writeOneObligation(this.db, row); }
+            });
+            this.theWorldMoved();
+        }
         // What the house counted last time this row was written. The projection
         // carries the membership's `contribution`, and a promotion pass reads it
         // off the row, so a count that moved has to reach disk like a rung.

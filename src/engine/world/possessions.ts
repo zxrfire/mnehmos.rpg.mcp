@@ -33,6 +33,7 @@ export type AcquisitionMode =
      * thing is still the house's, which is the whole point of it.
      */
     | 'lent'
+    | 'returned'
     | 'crafted'
     | 'awarded'
     | 'confiscated'

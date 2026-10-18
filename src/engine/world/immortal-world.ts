@@ -2,6 +2,7 @@
  * The other side of the Lid.
  */
 
+import { offTheRoll } from './what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
 import { DESCENT_TRIBULATION_STRIKES } from '../cultivation/existence.js';
@@ -914,7 +915,7 @@ export function ascend(state: WorldState, input: AscendInput): AscendResult {
         standing: null, readings: null
     };
 
-    const npc = getNpc(state, input.npcId);
+    let npc = getNpc(state, input.npcId);
     if (!npc) {
         return { ...empty, reason: 'no_such_person', detail: 'Nobody by that id is in this world.' };
     }
@@ -942,10 +943,11 @@ export function ascend(state: WorldState, input: AscendInput): AscendResult {
     const fromFactionId = npc.factionId;
     const faction = fromFactionId ? getFaction(state, fromFactionId) : null;
     const rng = forStream(state.seed, 'ascension', npc.id);
+    if (fromFactionId !== null) npc = offTheRoll(state, npc, onDay, 'rogue:ascended');
 
     // ── Divestment, and the door somebody put on it ──────────────────────
     const held = input.divest
-        ? state.objects.filter(o => input.divest!.includes(o.id))
+        ? state.objects.filter(o => o.possessorId === npc.id && input.divest!.includes(o.id))
         : state.objects.filter(o => o.possessorId === npc.id);
 
     // A parting gift is the clean route and it is the rare one: it requires

@@ -349,7 +349,7 @@ function applyScatter(
 ): CascadeStep {
     // Nobody dissolved it, so nobody took them in: they are on the road.
     for (const npc of members) {
-        replaceNpc(state, offTheRoll(npc, precipitant.day, `${ROGUE_FLED}${house.id}`));
+        replaceNpc(state, offTheRoll(state, npc, precipitant.day, `${ROGUE_FLED}${house.id}`));
     }
     house.tags = Array.from(new Set(house.tags.concat('scattered')));
     house.resources.members = 0;

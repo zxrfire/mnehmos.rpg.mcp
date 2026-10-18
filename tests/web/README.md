@@ -1,5 +1,11 @@
 # Played tests
 
+The focused issuing test plays `I leave the sect` through the real turn handler
+and checks the same-turn roll removal, returned robes, cancelled token and gate
+access. Departure mechanics are held by `tests/engine/world/leaving-a-house.test.ts`;
+the two certification files have small roll-change and unreachable-course
+reproductions that require no aged world.
+
 The direct harness yields to I/O before each new life and action. A real HTTP
 caller already has that boundary; long in-process promise chains otherwise
 starve Vitest's RPC acknowledgements and leave assertions unreported. The

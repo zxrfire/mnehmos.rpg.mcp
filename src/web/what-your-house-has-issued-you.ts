@@ -35,7 +35,6 @@ import {
     thisHouseCanIssue
 } from '../engine/world/a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import {
-    handBackWhatTheyNoLongerBelongTo,
     holdsTheTokenOf,
     isInsideTheCompound,
     theInternalAffairsElderIn,
@@ -45,6 +44,8 @@ import {
 } from '../engine/world/a-recruit-is-given-their-lamp-at-the-house.js';
 import { theyAreEntered } from '../engine/world/a-house-expects-somebody-it-took-on.js';
 import { theirSlipsBreak } from '../engine/world/a-communication-talisman-carries-word-home.js';
+import { settleLeavingHouse } from '../engine/world/leaving-a-house.js';
+import { ledgerAbout, writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { removeFromPouch } from '../server/consolidated/cultivation-support.js';
 import {
     pouchIdForCommunicationTalismans,
@@ -86,23 +87,18 @@ export function settleWhatYourHouseHasIssuedYou(
     const structure: string[] = [];
 
     // ── LEAVING MEANS HANDING IT BACK ────────────────────────────────────
-    const leaving = world.objects.filter(o =>
-        o.possessorId === cultivator.id
-        && o.tags.includes('issued')
-        && o.data?.memberId === cultivator.id
-        && o.ownerId !== houseId);
-    if (handBackWhatTheyNoLongerBelongTo(world.objects, id => (id === cultivator.id ? houseId : undefined), world.currentDay) > 0) {
-        const byHouse = new Map<string, string[]>();
-        for (const row of leaving) {
-            const names = byHouse.get(row.ownerName) ?? [];
-            names.push(row.tags.includes('uniform') ? 'its robes' : 'its token');
-            byHouse.set(row.ownerName, names);
-        }
-        for (const [name, what] of byHouse) {
-            lines.push(`You are not on the roll of ${name} any more, and ${what.join(' and ')} `
-                + `went back to it.`);
-        }
-        structure.push(`handBackWhatTheyNoLongerBelongTo: ${leaving.map(o => o.id).join(', ')}.`);
+    const formerHouses = new Set(world.objects.filter(object => object.possessorId === cultivator.id
+        && object.ownerId !== houseId && (object.tags.includes('issued') && object.data.memberId === cultivator.id
+            || [...object.provenance].reverse().find(link => link.holderId === cultivator.id)?.how === 'lent'))
+        .map(object => object.ownerId).filter((id): id is string => id !== null));
+    for (const formerHouse of formerHouses) {
+        const settled = settleLeavingHouse(world, { ...cultivator, atLocationId: game.worldPlaceOf(cultivator) },
+            formerHouse, world.currentDay, {
+                rows: ledgerAbout(game.db, cultivator.id),
+                put: row => { writeOneObligation(game.db, row); }
+            });
+        if (settled.returned.length) lines.push(`${settled.returned.join(', ')} went back to the house.`);
+        game.theWorldMoved();
     }
     for (const slips of theCommunicationTalismansOnYou(game.db, cultivator.id)) {
         if (slips.houseId === houseId) continue;

@@ -375,8 +375,13 @@ describe('applyAbsence', () => {
     });
 
     it('a house stops counting a member it has written off', () => {
+        // Certification at ages 175/200 found an old hall post surviving a new
+        // admission. Presumed-dead removal cleared the roll but retained activity.
         const { state, day } = bench('abs-rolls');
-        person(state, 'him', { factionId: 'fac-a', rank: 2 });
+        const worker = person(state, 'him', { factionId: 'fac-a', rank: 2 });
+        worker.activity = { kind: 'stationed', note: 'Hall work.', withIds: [], sinceDay: day,
+            untilDay: null, houseWorkFactId: 'old-appointment',
+            houseWorkSchedule: { periodDays: 7, offset: 0, shift: 'day', rota: true } };
         person(state, 'her');
         tie(state, 'her', 'him', 'spouse', 0.9);
 
@@ -389,6 +394,9 @@ describe('applyAbsence', () => {
         const him = state.npcs.find(n => n.id === 'him')!;
         expect(him.factionId).toBeNull();
         expect(him.factionRankIndex).toBe(-1);
+        expect(him.activity?.kind).not.toBe('stationed');
+        expect(him.activity?.houseWorkFactId).toBeUndefined();
+        expect(him.activity?.houseWorkSchedule).toBeUndefined();
     });
 
     it('telling somebody buys time that merely being seen leaving does not', () => {

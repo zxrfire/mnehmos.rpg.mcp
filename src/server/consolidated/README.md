@@ -172,3 +172,8 @@ field or an action-router SessionContext callback.
 The proposed pill-dose extraction preserves PC consume_pill stream names, draw order, grade consequences, poisoning, stock debit and repository effects. Only pure dose/toxicity/restoration reads move into an engine leaf. An NPC adapter must consume finite actual medicine and persist its actual body effects; creating a second SQL cultivator for it is not an adapter. Preparation not yet runtime verified.
 
 ADMIN spawn prose and the spawn handler share AdminSpawnSpecSchema; the model JSON schema is generated from it. Disposition is the person's present relation toward the player or a named person, distinct from temperament. Close writes real reciprocal strong ties; sworn_sibling uses the existing brotherhood oath and lineage writer. Both qi and slave seals can be arranged by the player or a named real holder. Slave replacement frees the old slave and preserves their account. ADMIN arranges the effect; ordinary casting still has its realm and consent/submission gates. Exact words win; nearest-value interpretations are listed in the reply, and only facts outside every field remain unused.
+House departure uses `settling-a-house-departure.ts` to run the engine's one
+settlement against world property and the player's SQL obligation ledger.
+Leaving, birth-house departure, embezzlement expulsion and administrative
+dismissal use it; the played membership projection covers other roll changes.
+Contribution forfeiture and the existing departure oath retain their authorities.

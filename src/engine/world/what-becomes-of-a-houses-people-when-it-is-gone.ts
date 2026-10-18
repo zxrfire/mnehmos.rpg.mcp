@@ -1,6 +1,6 @@
 /**
- * What becomes of a house's people when they leave its roll other than by
- * choosing to, and where the world's rogues come from in numbers.
+ * What becomes of a house's people when they leave its roll, and where the
+ * world's rogues come from in numbers.
  *
  * `rogues.ts` says rogues are most of the player's peers, and `WHY_UNAFFILIATED`
  * names where they come from: refused, born too far from a gate, thrown out, and
@@ -53,13 +53,14 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { regardFor } from '../cultivation/regard.js';
 import { whoAHouseWillTake } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
 import { isBelowTheLid } from './layers.js';
-import { setLocation, type NpcRecord } from './npc-state.js';
+import { isTheWorldsToMove, setLocation, type NpcRecord } from './npc-state.js';
 import { theSpeciesItIs } from './a-beast-with-a-core-is-somebody-in-particular.js';
 import { theMarketOf } from './where-somebody-with-no-house-goes.js';
 import { regionOf } from './what-people-are-saying.js';
 import { lostChance } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import { STAYED_WITH, wouldGoDownWithTheHouse } from './who-goes-down-with-the-house.js';
 import type { FactionRecord, WorldState } from './world-state.js';
+import { settleLeavingHouse } from './leaving-a-house.js';
 
 /** The tag every rogue row carries, naming how they came to be on no roll. */
 export const ROGUE = 'rogue:';
@@ -224,11 +225,11 @@ export const THE_WAYS_A_FALLEN_HOUSES_PEOPLE_GO = 3;
 /**
  * Somebody off their roll and on their own, standing where they will stand next.
  *
- * The one writer for leaving a roll other than by walking out: `factionId` and
- * the rung cleared, the tag saying why, and nothing taken off them - they keep
- * their ties, their accounts, their arts and what they know.
+ * House property goes back and appointments end. Personal property, ties,
+ * unpaid accounts, arts and knowledge survive leaving.
  */
-export function offTheRoll(npc: NpcRecord, day: number, tag: string, toLocationId?: string | null): NpcRecord {
+export function offTheRoll(state: WorldState, npc: NpcRecord, day: number, tag: string, toLocationId?: string | null): NpcRecord {
+    if (npc.factionId !== null) settleLeavingHouse(state, npc, npc.factionId, day);
     const moved = toLocationId === undefined || toLocationId === null ? npc : setLocation(npc, toLocationId, day);
     return {
         ...moved,
@@ -324,13 +325,15 @@ export function releaseTheRoll(state: WorldState, house: FactionRecord, day: num
     }
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i]!;
-        if (npc.factionId !== house.id || npc.status !== 'alive' || theSpeciesItIs(npc) !== null) continue;
+        // The played sheet releases its membership and accounts on its next projection.
+        if (npc.factionId !== house.id || npc.status !== 'alive' || !isTheWorldsToMove(npc)
+            || theSpeciesItIs(npc) !== null) continue;
         // THE ONES WHO DO NOT SCATTER, FIRST. Somebody who would go down with
         // this house is not looking for the next hall and is not on the road:
         // they stay where it stood. The roll is gone either way, so what is
         // written is where they are and the tag saying why.
         if (wouldGoDownWithTheHouse(state.seed, npc, house)) {
-            state.npcs[i] = offTheRoll(npc, day, `${STAYED_WITH}${house.id}`, house.seatLocationId);
+            state.npcs[i] = offTheRoll(state, npc, day, `${STAYED_WITH}${house.id}`, house.seatLocationId);
             out.stayed.push(npc.id);
             continue;
         }
@@ -338,10 +341,10 @@ export function releaseTheRoll(state: WorldState, house: FactionRecord, day: num
             ? whoWouldTakeThemIn(state, house, npc, strongest)
             : null;
         if (next !== null) {
-            state.npcs[i] = { ...offTheRoll(npc, day, `${tag}${house.id}`), factionId: next.id, factionRankIndex: 0 };
+            state.npcs[i] = { ...offTheRoll(state, npc, day, `${tag}${house.id}`), factionId: next.id, factionRankIndex: 0 };
             out.takenIn.push({ npcId: npc.id, houseId: next.id });
         } else {
-            state.npcs[i] = offTheRoll(npc, day, `${tag}${house.id}`);
+            state.npcs[i] = offTheRoll(state, npc, day, `${tag}${house.id}`);
             out.rogues.push(npc.id);
         }
     }

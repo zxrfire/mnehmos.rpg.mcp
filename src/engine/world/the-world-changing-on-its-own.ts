@@ -298,7 +298,6 @@ import {
     ROGUE_FLED,
     ROGUE_HOUSE_FELL,
     aHouseWouldTakeThemAnyway,
-    CAME_OFF_A_ROLL_AT,
     whatTakingInSomebodysCastOffStirs,
     offTheRoll,
     releaseTheRoll,
@@ -1645,7 +1644,8 @@ function placeAChildTheirHouseWillNotKeep(
     // having met its admission ordinal. That exception is the whole of what the
     // word bought, and `barSkipped` on the result is the figure it skipped.
     let updated: NpcRecord = {
-        ...child,
+        ...(child.factionId !== null && child.factionId !== placed.houseId
+            ? offTheRoll(state, child, day, `transferred-to:${placed.houseId}`) : child),
         factionId: placed.houseId,
         factionRankIndex: 0,
         tags: [
@@ -1779,6 +1779,9 @@ function applyFosterageReturns(state: WorldState, day: number): number {
         if (answer.returns) {
             // Back onto the sending house's roll, at the bottom of it. The
             // assessment moved a person; it conferred nothing.
+            if (updated.factionId !== null && updated.factionId !== terms.factionId) {
+                updated = offTheRoll(state, updated, day, `transferred-to:${terms.factionId}`);
+            }
             updated = { ...updated, factionId: terms.factionId, factionRankIndex: 0 };
         }
         state.npcs[i] = updated;
@@ -4469,7 +4472,7 @@ const HOW_OFTEN_SOMEBODY_WEIGHS_IT = 5;
  * `somewhere_else` for every dao ground in a province they are not in. Walking
  * there is the whole of the change. Nothing had ever walked.
  */
-function applyPeopleWalkingOut(
+export function applyPeopleWalkingOut(
     state: WorldState,
     year: number,
     day: number,
@@ -4493,6 +4496,7 @@ function applyPeopleWalkingOut(
         house: FactionRecord;
         reasons: readonly WhyTheyWentOut[];
         to: SomewhereWorthGoing;
+        journey: NpcRecord;
     }[] = [];
     const walkedOut = new Set<string>();
 
@@ -4555,7 +4559,19 @@ function applyPeopleWalkingOut(
                     && housesByPerson.get(id) === house.id
             })
         )) continue;
-        leaving.push({ npc, house, reasons, to });
+        // An intention with no course is not a departure. Do not carry an old
+        // indefinite hall appointment into the attempted journey.
+        const free = { ...npc, activity: null };
+        const journey = startNpcJourney(state, free, to.locationId, day, `Travelling. ${to.why}`);
+        if (journey.activity === null) {
+            // A dose used while attempting flight remains used even if no course began.
+            if (journey !== free) {
+                const at = state.npcs.findIndex(row => row.id === npc.id);
+                state.npcs[at] = { ...journey, activity: npc.activity };
+            }
+            continue;
+        }
+        leaving.push({ npc, house, reasons, to, journey });
         // Later people weigh what is left after the earlier departure, as they
         // did when this pass wrote each departure immediately.
         walkedOut.add(npc.id);
@@ -4589,27 +4605,27 @@ function applyPeopleWalkingOut(
             if (at < 0) continue;
             const npc = state.npcs[at]!;
             const companions = party.map(other => other.npc.id).filter(id => id !== npc.id);
-            const journey = startNpcJourney(state, npc, member.to.locationId, day,
-                `Travelling. ${member.to.why}`);
+            const journey = member.journey;
             state.npcs[at] = addGoal({
-                ...journey,
-                factionId: null,
-                factionRankIndex: -1,
-                tags: [...npc.tags, `${WALKED_OUT}${member.reasons[0]}`, `${CAME_OFF_A_ROLL_AT}${npc.cultivation.realmOrdinal}`],
+                ...offTheRoll(state, { ...npc, spiritStones: journey.spiritStones,
+                    cultivation: journey.cultivation, locationId: journey.locationId }, day,
+                    `${WALKED_OUT}${member.reasons[0]}`),
                 activity: {
                     ...journey.activity!,
                     withIds: companions
                 }
             }, { kind: 'cultivation', text: member.to.why, priority: 0.7, obstacles: [...member.reasons] }, day);
-            if (journey !== npc) commitNpcPublicPassage(state, state.npcs[at]!);
+            commitNpcPublicPassage(state, state.npcs[at]!);
             appendWorldFact(state, makeFact({
                 day, kind: 'migration', scale: 'local',
                 summary: `${npc.name} left ${houseName(member.house.name)} for ${member.to.name}. ${reasonSaidPlainly(member.reasons[0])}`,
-                actors: [{ id: npc.id, name: npc.name, role: 'left' }], locationId: member.to.locationId,
+                actors: [{ id: npc.id, name: npc.name, role: 'left' }], locationId: npc.locationId,
                 factionIds: [member.house.id], visibility: 'faction',
                 magnitude: howLoudALeavingIs(member.npc.factionRankIndex, member.house.ranks.length),
                 data: {
-                    walkedOut: true, why: member.reasons.join('; '), party: party.length,
+                    walkedOut: true, destinationId: member.to.locationId,
+                    departureDay: journey.activity!.sinceDay,
+                    why: member.reasons.join('; '), party: party.length,
                     fellInOnTheRoad: others.fellInOnTheRoad.length, lost: 0
                 }
             }));
@@ -6795,7 +6811,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
             for (const npc of fled) {
                 const at = indexById(state.npcs, npc.id);
                 if (at < 0 || !isTheWorldsToMove(state.npcs[at]!)) continue;
-                state.npcs[at] = offTheRoll(state.npcs[at]!, day, `${ROGUE_FLED}${victim.id}`, runTo);
+                state.npcs[at] = offTheRoll(state, state.npcs[at]!, day, `${ROGUE_FLED}${victim.id}`, runTo);
             }
             const deaths: DeathHandoff[] = [];
             // READ THE ROW BACK BEFORE WRITING IT. `losses` is a snapshot taken
@@ -7631,7 +7647,8 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
             for (const npc of [founder, ...leavers]) {
                 replaceNpc(state, {
                     // As it now stands, for the reason the walk-out above gives.
-                    ...(state.npcs.find(row => row.id === npc.id) ?? npc),
+                    ...offTheRoll(state, state.npcs.find(row => row.id === npc.id) ?? npc,
+                        day, `${WALKED_OUT}founded a house`),
                     factionId: splinter.id,
                     factionRankIndex: npc.id === founder.id ? splinter.ranks.length - 1 : 1,
                     updatedOnDay: day

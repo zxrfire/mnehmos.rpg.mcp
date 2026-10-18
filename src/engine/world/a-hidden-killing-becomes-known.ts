@@ -113,7 +113,7 @@ function theRoomHearsOfIt(state: WorldState, killer: NpcRecord, fact: Historical
         theRoomTurnedThemOut(state, killer.id, day, place === 'expelled');
     }
     if (at >= 0 && place === 'expelled') {
-        state.npcs[at] = offTheRoll(state.npcs[at]!, day, `${ROGUE_EXPELLED}${house.id}`, whereTheyRunTo(state, house));
+        state.npcs[at] = offTheRoll(state, state.npcs[at]!, day, `${ROGUE_EXPELLED}${house.id}`, whereTheyRunTo(state, house));
     } else if (at >= 0 && place === 'removed from office') {
         const row = state.npcs[at]!;
         state.npcs[at] = {
