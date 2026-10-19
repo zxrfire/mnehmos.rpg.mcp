@@ -20,6 +20,12 @@ export function resolveWithPlayerPresent<T>(world: WorldState, place: ContactPla
     }
 }
 
+/** One synchronous calendar read shares its player lookup. An active contact
+ * keeps its exact place, proximity and date, including inside a dated task. */
+export function readPlayerInvolvementTogether<T>(world: WorldState, read: () => T): T {
+    return PLAYER_PLACES.has(world) ? read() : resolveWithPlayerPresent(world, undefined, read);
+}
+
 /** The player's actual foreground contact, when an event needs a physical witness. */
 export function playerAtTheContact(world: WorldState): { id: string; placeId: string; areaId: string | null; person: NpcRecord } | null {
     const contact = PLAYER_PLACES.get(world);

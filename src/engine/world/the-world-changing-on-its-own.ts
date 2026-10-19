@@ -32,7 +32,7 @@ import { A_BRANCH_HOLDS, templeBranchesOf } from './a-temple-branch.js';
 import { physicalRetrievalDeadlines } from './continuing-a-physical-store-retrieval.js';
 import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js';
 import { ordinaryAdultsTakeWork } from './the-work-an-ordinary-mortal-does.js';
-import { drawBackgroundIncidents, isPlayerInvolved, resolveWithPlayerPresent } from './background-incident-draw.js';
+import { drawBackgroundIncidents, isPlayerInvolved, readPlayerInvolvementTogether, resolveWithPlayerPresent } from './background-incident-draw.js';
 import { loadExchangeConsignment, returnExchangeConsignment, tradeAtCapitalExchanges } from './wares-at-a-capital-exchange.js';
 import { theyAreRelieved } from './a-house-posts-the-one-being-played.js';
 import { offeredRitesThisYear } from './willing-rites-between-world-people.js';
@@ -1159,7 +1159,8 @@ export function nextPressureTaskOn(state: WorldState, afterDay: number, untilDay
     if (!(untilDay > afterDay)) return null;
     const year = Math.floor(afterDay / DAYS_PER_YEAR);
     const cursor = pressureCursorForYear(state, year, opts.intensity ?? 1);
-    const work = pressureTasksForYear(state, year, cursor, opts, [], () => {});
+    const work = readPlayerInvolvementTogether(state,
+        () => pressureTasksForYear(state, year, cursor, opts, [], () => {}));
     let next: number | null = null;
     for (const task of work.tasks) {
         if (work.completed.has(task.key) || task.day <= afterDay || task.day > untilDay) continue;
