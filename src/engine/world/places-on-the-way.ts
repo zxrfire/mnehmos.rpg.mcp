@@ -325,6 +325,9 @@ export function whenTheyReachTheirPost(locations: readonly LocationRecord[], npc
 function passageToAPost(locations: readonly LocationRecord[], npc: NpcRecord, routes?: RouteQueries) {
     const doing = npc.activity;
     if (doing?.kind !== 'stationed' || doing.fromLocationId == null || npc.locationId == null) return null;
+    // Keep the checked scope used for the path so its place map serves the
+    // physical read too, instead of rebuilding that map for every posting.
+    routes ??= routeQueriesFor(locations);
     const route = heldWalkingRoute(locations, doing.fromLocationId, npc.locationId, routes);
     if (!route) return null;
     const places = (routes?.locations === locations ? routes.places : new Map(locations.map(place => [place.id, place])));
