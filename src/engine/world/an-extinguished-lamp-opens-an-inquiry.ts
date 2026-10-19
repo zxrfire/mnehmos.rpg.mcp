@@ -1,7 +1,7 @@
 import { factsWithDataValue, witnessIndexFor } from './witness-reaction-index.js';
 /** A lamp proves death. The house still needs somebody to bring the account or remains. */
 import { carriesATokenAt } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
-import { whenTheHallKnowsTheirLampIsGone } from './what-the-roll-and-the-lamps-say.js';
+import { readTheHallLampsTogether } from './what-the-roll-and-the-lamps-say.js';
 import { makeFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { A_PRICE_STANDS_FOR_DAYS, A_PURSE_NOBODY_CROSSES_A_ROAD_FOR,
@@ -12,6 +12,7 @@ export function extinguishedLampsOpenInquiries(state: WorldState, day: number): 
     const index = witnessIndexFor(state);
     for (const house of state.factions) {
         if (house.dissolvedOnDay !== null) continue;
+        const whenKnown = readTheHallLampsTogether(state, house.id);
         for (const member of state.npcs.filter(person => person.factionId === house.id && carriesATokenAt(person.factionRankIndex))) {
             const id = member.id;
             if (!member || member.status === 'alive' || member.diedOnDay === null || member.diedOnDay > day) continue;
@@ -30,7 +31,7 @@ export function extinguishedLampsOpenInquiries(state: WorldState, day: number): 
             }
             if (atHome) continue;
             // Already accounted-for deaths need no repeated hall or posting-route read.
-            const knownOnDay = whenTheHallKnowsTheirLampIsGone(state, house.id, member, day);
+            const knownOnDay = whenKnown(member, day);
             if (knownOnDay === null) continue;
             const inquiry = appendWorldFact(state, makeFact({ day: knownOnDay, kind: 'said_in_public', visibility: 'faction',
                 summary: `${house.name} opened an inquiry after ${member.name}'s life lamp went to dust. No account of the death has reached the house.`,

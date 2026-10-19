@@ -1,13 +1,18 @@
 /** A member can pay a person off the roll to serve their hall duty. The real
  * hand counts as staff and makes the same daily check; leaving or dying cannot
- * erase what their completed checks already told the house. No day is ticked. */
+ * erase what their completed checks already told the house. No day is ticked.
+ * The aged first-look profile also showed repeated lamp/object/posting reads.
+ * Sharing physical inputs within a hall read must still see new inquiry facts
+ * and a subsequent read must see a clerk who has left their post. */
 import { expect, it } from 'vitest';
 import { createWorld, makeFaction } from '../../../src/engine/world/world-state';
 import { createNpc, markDead } from '../../../src/engine/world/npc-state';
 import { makeLocation } from '../../../src/engine/world/locations';
 import { createObligation } from '../../../src/engine/social/grudges';
 import { settleHiredDuties } from '../../../src/engine/world/a-hired-duty-is-served';
-import { whenTheHallKnowsTheirLampIsGone } from '../../../src/engine/world/what-the-roll-and-the-lamps-say';
+import { readTheHallLampsTogether, whenTheHallKnowsTheirLampIsGone } from '../../../src/engine/world/what-the-roll-and-the-lamps-say';
+import { appendWorldFact } from '../../../src/engine/world/who-was-there-when-it-happened';
+import { makeFact } from '../../../src/engine/world/history';
 import { theHallStaff } from '../../../src/engine/world/the-people-posted-to-a-houses-halls';
 
 function arrangement() {
@@ -34,6 +39,22 @@ it('counts the actual hired hand and derives the next check day without adding d
     const facts = h.state.history.facts.length;
     expect(whenTheHallKnowsTheirLampIsGone(h.state, 'house', h.member, 15)).toBe(13);
     expect(h.state.history.facts.length).toBe(facts);
+});
+
+it('reads newly recorded knowledge and releases physical inputs after the hall query', () => {
+    const h = arrangement();
+    const read = readTheHallLampsTogether(h.state, 'house');
+    expect(read(h.member, 15)).toBe(13);
+    appendWorldFact(h.state, makeFact({ day: 12.5, kind: 'said_in_public', summary: 'The earlier actual inquiry.',
+        factionIds: ['house'], data: { lampInquiry: h.member.id } }), { bystanders: false });
+    expect(read(h.member, 15)).toBe(12.5);
+    h.worker.activity = null;
+    // The earlier inquiry still reaches this member, but a new dead member has
+    // neither a clerk nor testimony after the first physical read is over.
+    const other = markDead(createNpc(h.state.seed, { id: 'other', bornOnDay: -7300, onDay: 0,
+        factionId: 'house', factionRankIndex: 1 }), 14, 'Died away from the hall.');
+    h.state.npcs.push(other);
+    expect(readTheHallLampsTogether(h.state, 'house')(other, 20)).toBeNull();
 });
 
 it.each(['term ends', 'worker dies'] as const)('keeps the completed check after %s', ending => {

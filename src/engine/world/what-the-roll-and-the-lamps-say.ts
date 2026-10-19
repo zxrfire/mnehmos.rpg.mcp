@@ -11,16 +11,17 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { missingMembersInRollCheck } from './life-lamp-roll-check-findings.js';
 import type { NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
+import { routeQueriesFor, type RouteQueries } from './locations.js';
 
 function theirDailyCheck(state: WorldState, houseId: string, hall: string, disciple: NpcRecord,
-    member: NpcRecord, day: number): number | null {
+    member: NpcRecord, day: number, routes?: RouteQueries): number | null {
     // Only a stationed person in this hall can have made its daily check.
     // Rule out everybody else before looking through their possible hire terms.
     if (disciple.locationId !== hall || disciple.activity?.kind !== 'stationed'
         || member.diedOnDay === null) return null;
     const hire = state.obligations.find(term => term.tags.includes('hall-duty') && heldThisHiredPost(disciple, term));
     if (disciple.factionId !== houseId && !hire) return null;
-    const reached = whenTheyReachTheirPost(state.locations, disciple);
+    const reached = whenTheyReachTheirPost(state.locations, disciple, routes);
     if (reached === null) return null;
     const check = Math.max(Math.floor(member.diedOnDay) + 1, Math.ceil(reached));
     const house = state.factions.find(row => row.id === houseId);
@@ -61,33 +62,45 @@ export function keepTheirHallCheckOnLeaving(state: WorldState, disciple: NpcReco
 /** A daily check is settled from an actual hall posting, never by enumerating the days. */
 export function whenTheHallKnowsTheirLampIsGone(state: WorldState, houseId: string, member: NpcRecord,
     day: number, checkedNow = false): number | null {
+    return readTheHallLampsTogether(state, houseId)(member, day, checkedNow);
+}
+
+/** One synchronous hall read shares its physical lamps and stationed clerks.
+ * Do not retain across a world mutation; facts remain live during inquiries. */
+export function readTheHallLampsTogether(state: WorldState, houseId: string):
+    (member: NpcRecord, day: number, checkedNow?: boolean) => number | null {
     const hall = whereThisHouseBurnsItsLamps(state.locations, houseId);
-    if (!hall || member.diedOnDay === null || member.diedOnDay > day) return null;
     const house = state.factions.find(row => row.id === houseId);
-    if (!house) return null;
-    const lamp = state.objects.find(object => object.tags.includes('life-lamp')
-        && object.ownerId === houseId && object.data.memberId === member.id && object.locationId === hall);
-    if (lamp) return null;
-    let known = checkedNow ? day : Infinity;
-    for (const fact of factsWithDataValue(state, 'lampInquiry', member.id)) {
-        if (fact.day <= day && fact.factionIds.includes(houseId)) known = Math.min(known, fact.day);
-    }
-    for (const fact of factsWithData(state, 'lampRollCheck')) {
-        if (fact.day <= day && fact.factionIds.includes(houseId)
-            && missingMembersInRollCheck(fact).includes(member.id)) known = Math.min(known, fact.day);
-    }
-    // Somebody actually in the hall saw it crumble and can tell the rest of the house.
-    for (const fact of factsWithDataValue(state, 'memberId', member.id)) {
-        if (fact.day > day || fact.data.lifeLamp !== true || fact.data.madeTokenDust !== true || fact.locationId !== hall) continue;
-        if (fact.witnessIds.some(id => state.npcs.some(person => person.id === id && person.factionId === houseId))) {
-            known = Math.min(known, fact.day);
+    let lamps: Set<string> | undefined;
+    let clerks: NpcRecord[] | undefined;
+    let routes: RouteQueries | undefined;
+    return (member, day, checkedNow = false) => {
+        if (!hall || !house || member.diedOnDay === null || member.diedOnDay > day) return null;
+        lamps ??= whoHasALampBurningIn(state.objects.filter(object => object.locationId === hall), houseId);
+        if (lamps.has(member.id)) return null;
+        let known = checkedNow ? day : Infinity;
+        for (const fact of factsWithDataValue(state, 'lampInquiry', member.id)) {
+            if (fact.day <= day && fact.factionIds.includes(houseId)) known = Math.min(known, fact.day);
         }
-    }
-    for (const disciple of state.npcs) {
-        const check = theirDailyCheck(state, houseId, hall, disciple, member, day);
-        if (check !== null) known = Math.min(known, check);
-    }
-    return Number.isFinite(known) ? known : null;
+        for (const fact of factsWithData(state, 'lampRollCheck')) {
+            if (fact.day <= day && fact.factionIds.includes(houseId)
+                && missingMembersInRollCheck(fact).includes(member.id)) known = Math.min(known, fact.day);
+        }
+        // Somebody actually in the hall saw it crumble and can tell the rest of the house.
+        for (const fact of factsWithDataValue(state, 'memberId', member.id)) {
+            if (fact.day > day || fact.data.lifeLamp !== true || fact.data.madeTokenDust !== true || fact.locationId !== hall) continue;
+            if (fact.witnessIds.some(id => state.npcs.some(person => person.id === id && person.factionId === houseId))) {
+                known = Math.min(known, fact.day);
+            }
+        }
+        clerks ??= state.npcs.filter(person => person.locationId === hall && person.activity?.kind === 'stationed');
+        if (clerks.length) routes ??= routeQueriesFor(state.locations);
+        for (const disciple of clerks) {
+            const check = theirDailyCheck(state, houseId, hall, disciple, member, day, routes);
+            if (check !== null) known = Math.min(known, check);
+        }
+        return Number.isFinite(known) ? known : null;
+    };
 }
 
 /** Nothing new is kept for the roll: what the house knows of its own people is their rows. */
@@ -101,6 +114,7 @@ export function readTheRollAgainstTheHall(state: WorldState, houseId: string, in
     const members = input.members ?? state.npcs.filter(person => person.factionId === houseId);
     const lamps = whoHasALampBurningIn(state.objects.filter(object => object.locationId === hall), houseId);
     const couldIssue = thisHouseCanIssue(members.map(person => person.cultivation.realmOrdinal));
+    const whenKnown = readTheHallLampsTogether(state, houseId);
     const roll: Parameters<typeof whatTheHallSays>[0]['roll'][number][] = [];
     for (const member of members) {
         const since = input.unseenSince?.get(member.id);
@@ -109,7 +123,7 @@ export function readTheRollAgainstTheHall(state: WorldState, houseId: string, in
             roll.push({ memberId: member.id, memberName: member.name, theyHaveALamp: true,
                 holderIsAlive: member.status === 'alive', daysSinceAnybodySawThem: unseenForDays });
         } else if (couldIssue && carriesATokenAt(member.factionRankIndex)
-            && whenTheHallKnowsTheirLampIsGone(state, houseId, member, day, input.checkedNow) !== null) {
+            && whenKnown(member, day, input.checkedNow) !== null) {
             roll.push({ memberId: member.id, memberName: member.name, theyHaveALamp: true,
                 holderIsAlive: false, daysSinceAnybodySawThem: unseenForDays });
         }
