@@ -5,7 +5,12 @@
  * invocation, and require later cadence checks to use their supplied actual
  * scene. The old module is an independent test-only oracle, not a runtime arm.
  * No seed hunt, world rollback, horizon cap or encounter suppression is used.
- * SCRATCH review: these controls have not yet run.
+ * A later census passed five controls and first diverged in the fixed native
+ * batch because an interruption gained occasionKey. The independent original
+ * predates that held-occasion identity. Compare every legacy field, omitting
+ * only that named addition from the new receipt; leave the oracle untouched.
+ * The same fixed batch must encounter actual keys and prove that holding each
+ * one suppresses its occasion on replay. No legacy result field is relaxed.
  */
 import { describe, expect, it } from 'vitest';
 import { rollEncounters, encountersAtChecks } from '../../../src/engine/encounters/window.js';
@@ -18,6 +23,15 @@ function input(seed: string, startDay = 0, days = 45): EncounterRollInput {
         cultivator: { id: 'player', realmOrdinal: 20, fortune: 1, hp: 1000, maxHp: 1000, spiritStones: 1000 },
         place: { id: 'departure', name: 'Actual departure dock', kind: 'settlement', danger: .3 },
         cast: [{ id: 'dock-person', name: 'Person ashore', realmOrdinal: 20, known: true }] };
+}
+
+/** All original receipt fields; only the later held-occasion identity is new. */
+function legacyFields(roll: ReturnType<typeof rollEncounters>) {
+    return { ...roll, occurrences: roll.occurrences.map(occurrence => {
+        const legacy = { ...occurrence };
+        delete legacy.occasionKey;
+        return legacy;
+    }) };
 }
 
 describe('the existing encounter cadence with a fresh scene at each check', () => {
@@ -72,19 +86,30 @@ describe('the existing encounter cadence with a fresh scene at each check', () =
                     limit: startDay === 14 ? 1 : 32,
                     arrivable: Array.from({ length: 140 }, (_, i) => ({ factId: `actual-fact-${i}`,
                         day: i, text: 'An actual recorded event.', magnitude: i % 3 ? .35 : .75 })) };
-                expect(rollEncounters(given)).toEqual(beforeExtraction(given));
+                expect(legacyFields(rollEncounters(given))).toEqual(beforeExtraction(given));
             }
         }
     });
 
     it('matches the independent original full receipt over sixty-four fixed native windows', () => {
+        let heldOccasions = 0;
         for (let sample = 0; sample < 64; sample++) {
             const given = { ...input('same-invocation-original-' + sample, sample, 365),
                 activity: (['travel', 'abroad', 'seclusion', 'sealed'] as const)[sample % 4],
                 limit: sample % 3 === 0 ? 1 : 32,
                 arrivable: [{ factId: 'actual-observed-fact', day: sample + 3, text: 'An actual recorded event.', magnitude: .75 }] };
-            expect(rollEncounters(given)).toEqual(beforeExtraction(given));
+            const current = rollEncounters(given);
+            expect(legacyFields(current)).toEqual(beforeExtraction(given));
+            for (const occurrence of current.occurrences) {
+                const key = occurrence.occasionKey;
+                if (!key) continue;
+                heldOccasions++;
+                const repeated = rollEncounters({ ...given, knownOccasions: new Set([key]) });
+                expect(repeated.occurrences.some(row => row.occasionKey === key),
+                    'an experienced departure occasion was offered again').toBe(false);
+            }
         }
+        expect(heldOccasions, 'the fixed batch did not exercise held occasions').toBeGreaterThan(0);
     });
 
     it('offers its departure check before any elapsed time and never offers that occasion again', () => {
@@ -99,7 +124,7 @@ describe('the existing encounter cadence with a fresh scene at each check', () =
             next = held.next(given);
         }
         expect(occasions).toBe(1);
-        expect(next.value).toEqual(beforeExtraction(given));
+        expect(legacyFields(next.value)).toEqual(beforeExtraction(given));
     });
 
     it('does not grant or name a departed actor when later checks are supplied actual current company', () => {
