@@ -24,6 +24,7 @@ import { whatTheConfrontationDidToThem, whatTheirFlightsCost } from '../engine/w
 import { npcsInTheArea, whereInThisPlaceTheyStand, theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
 import { isActing } from '../engine/world/npc-state.js';
+import { routeQueriesFor } from '../engine/world/locations.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { whatTheySaidInTheFight } from './fight-answers.js';
 
@@ -238,8 +239,16 @@ export function settleTheSeparatedBody(game: GameService, beforeDay: number): st
     }
     if (world.currentDay <= beforeDay) return lines;
     const bodyPlace = game.worldPlaceOf(body);
-    const physicalPlaces = new Map(world.npcs.map(n => [n.id,
-        n.status === 'physically_dead' ? n.locationId : routineOf(world, n).locationId]));
+    // Keep the original complete position snapshot when possession can change
+    // relationships. Otherwise only a hostile/returning person can reach below.
+    const soulPresent = world.npcs.some(n => ['remnant', 'soul_preserved'].includes(n.status));
+    const relevant = soulPresent ? world.npcs : world.npcs.filter(n => n.id !== body.id
+        && isActing(n.status) && hasBody(n.status)
+        && (n.goals.some(g => ['revenge', 'reunion'].includes(g.kind) && g.status === 'active' && g.targetId === body.id)
+            || n.relationships.some(t => t.targetId === body.id && t.kind === 'enemy')));
+    const routes = relevant.length ? routeQueriesFor(world.locations) : undefined;
+    const physicalPlaces = new Map(relevant.map(n => [n.id,
+        n.status === 'physically_dead' ? n.locationId : routineOf(world, n, routes).locationId]));
     for (const npc of world.npcs.slice()) {
         if (npc.id === body.id || !isActing(npc.status) || !hasBody(npc.status) || physicalPlaces.get(npc.id) === bodyPlace
             || !npc.goals.some(g => ['revenge', 'reunion'].includes(g.kind) && g.status === 'active' && g.targetId === body.id)
@@ -265,17 +274,20 @@ export function settleTheSeparatedBody(game: GameService, beforeDay: number): st
         if (result.ok) return lines;
     }
     if (!hasBody(body.existenceState) || !bodyPlace) return lines;
+    const exposed = whatIsLeftUnguarded(world, body.id, beforeDay);
+    const local = exposed ? world.npcs.filter(n => n.id !== body.id && isActing(n.status) && hasBody(n.status)
+        && physicalPlaces.get(n.id) === bodyPlace
+        && n.relationships.some(t => t.targetId === body.id && t.kind === 'enemy')) : [];
+    const remoteCandidates = world.objects.filter(o => o.tags.includes('acting-proxy') && o.ownerId !== body.id
+        && o.data.endedOnDay === undefined && Number(o.data.lapsesOnDay) > world.currentDay
+        && o.locationId === bodyPlace
+        && getNpc(world, o.ownerId ?? '')?.goals.some(g => g.kind === 'revenge' && g.status === 'active' && g.targetId === body.id));
+    if (!local.length && !remoteCandidates.length) return lines;
     const place = world.locations.find(p => p.id === bodyPlace)!;
     const bodyArea = whereInThisPlaceTheyStand(world, place, body.standingIn, body.sectId).id;
-    const positions = theAreasOf(world, place).whereIs;
-    const exposed = whatIsLeftUnguarded(world, body.id, beforeDay);
-    const attackers = world.npcs.filter(n => n.id !== body.id && isActing(n.status) && hasBody(n.status)
-        && exposed && physicalPlaces.get(n.id) === bodyPlace && positions.get(n.id) === bodyArea
-        && n.relationships.some(t => t.targetId === body.id && t.kind === 'enemy'));
-    const remote = world.objects.find(o => o.tags.includes('acting-proxy') && o.ownerId !== body.id
-        && o.data.endedOnDay === undefined && Number(o.data.lapsesOnDay) > world.currentDay
-        && o.locationId === bodyPlace && o.data.standingIn === bodyArea
-        && getNpc(world, o.ownerId ?? '')?.goals.some(g => g.kind === 'revenge' && g.status === 'active' && g.targetId === body.id));
+    const positions = local.length ? theAreasOf(world, place).whereIs : null;
+    const attackers = local.filter(n => positions?.get(n.id) === bodyArea);
+    const remote = remoteCandidates.find(o => o.data.standingIn === bodyArea);
     const attacker = attackers[0] ? combatantOf(attackers[0], world) : remote ? proxyCombatant(world, remote) : null;
     if (!attacker) return lines;
     const result = resolveConfrontation(attacker, { ...body, qi: exposed ? 0 : body.qi }, {
