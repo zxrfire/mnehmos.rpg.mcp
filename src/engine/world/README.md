@@ -24,6 +24,10 @@ without installing a second copy on the world.
 
 # The World Layer
 
+History indexes belong to the history ledger itself. A dated world projection
+sharing that ledger shares its append/prune reading; a cloned or loaded ledger
+builds its own. Clock projections do not re-index all historical facts.
+
 Native air landfall records actual arrival through the shared body-arrival
 authority before generic journey cleanup. A booked course supplies no arrival;
 revisiting the same landfall supplies no second receipt. Splinter departures

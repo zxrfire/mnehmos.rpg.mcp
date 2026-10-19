@@ -61,7 +61,10 @@ function boardKeyOf(fact: HistoricalFact): string {
 }
 
 export type HistoryFactSource = {history:Pick<WorldState['history'],'facts'>};
-const INDEXES = new WeakMap<HistoryFactSource, WitnessIndex>();
+// Clock projections share the same ledger. Key its reading there, so a
+// temporary WorldState wrapper does not index centuries of facts again.
+// A cloned or loaded history owns its own reading; pruning keeps its hooks.
+const INDEXES = new WeakMap<HistoryFactSource['history'], WitnessIndex>();
 export function referenceKeys(fact: HistoricalFact): string[] {
     return [...fact.actors.map(actor => actor.id), ...fact.witnessIds, ...fact.causes,
         ...Object.values(fact.data).filter((value): value is string => typeof value === 'string'),
@@ -324,7 +327,7 @@ function removeFact(index: WitnessIndex, fact: HistoricalFact, dropped: boolean,
 
 export function witnessIndexFor(world: HistoryFactSource): WitnessIndex {
     const facts = world.history.facts;
-    let index = INDEXES.get(world);
+    let index = INDEXES.get(world.history);
     if (!index || index.facts !== facts || index.length > facts.length
         || index.length > 0 && facts[index.length - 1] !== index.tail) {
         const previous = index;
@@ -343,7 +346,7 @@ export function witnessIndexFor(world: HistoryFactSource): WitnessIndex {
             pending: new Set(), pendingByPlace: new Map(), pendingByPerson: new Map(),
             seenBody: new Set(), seenEvidence: new Set(),
             reports: new Map(), warnings: new Set() };
-        INDEXES.set(world, index);
+        INDEXES.set(world.history, index);
     }
     for (let at = index.length; at < facts.length; at++) addFact(index, facts[at]!);
     index.length = facts.length;
@@ -441,7 +444,7 @@ export function recordWitnessObservations(world: WorldState, fact: HistoricalFac
 
 /** A recurrence can acquire witnesses and causes without appending another row. */
 export function noteFactReferences(world: WorldState, fact: HistoricalFact): void {
-    const index = INDEXES.get(world);
+    const index = INDEXES.get(world.history);
     if (!index?.byId.has(fact.id)) return;
     rememberReferences(index, fact);
     groundReferences(index, fact, true);
@@ -456,7 +459,7 @@ export function noteFactReferences(world: WorldState, fact: HistoricalFact): voi
 export function witnessHistoryWasPruned(world: WorldState,
     previous: readonly HistoricalFact[], dropped: ReadonlySet<string>,
     replaced?: ReadonlyMap<string, HistoricalFact>): void {
-    const index = INDEXES.get(world);
+    const index = INDEXES.get(world.history);
     if (!index || index.facts !== previous) return;
     const replacements = new Map<string, HistoricalFact>(replaced);
     if (!replaced) for (const fact of world.history.facts) {

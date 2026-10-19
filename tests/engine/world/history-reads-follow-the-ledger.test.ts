@@ -3,16 +3,41 @@
  * catalog. Sparse readings now follow appended rows and the mortal-dead sweep.
  * This compares them with the ledger itself, including a recurrence that gains
  * a witness; a copied or pruned world must give the same answers as a fresh read.
+ * At walked age 1000, two dated knowledge views rebuilt the same 121,048-fact
+ * ledger, costing about 1.3 sampled seconds per steady year. The index now
+ * belongs to that ledger. Clock views must follow its appends and pruning;
+ * a genuinely copied history must continue to own independent facts.
  */
 import { expect, it } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { makeFact, reserveFactSlot } from '../../../src/engine/world/history.js';
 import { appendWorldFact } from '../../../src/engine/world/who-was-there-when-it-happened.js';
-import { factsAddedSince, factsInSpan, factsWithData, factsWithDataValue, pendingAuctionLots, witnessIndexFor } from '../../../src/engine/world/witness-reaction-index.js';
-import { cloneWorld, theWorldForgetsTheMortalDead, type WorldState } from '../../../src/engine/world/world-state.js';
+import { factsAddedSince, factsInSpan, factsWithData, factsWithDataValue, pendingAuctionLots, witnessIndexFor, witnessHistoryWasPruned } from '../../../src/engine/world/witness-reaction-index.js';
+import { cloneWorld, createWorld, theWorldForgetsTheMortalDead, type WorldState } from '../../../src/engine/world/world-state.js';
 import { whatStandingOnItGives, whatAHousesOwnErrandsBringBack } from '../../../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import { reactToWitnessedFact, observationOf } from '../../../src/engine/world/witness-reactions.js';
+
+it('clock views follow one ledger through appends and pruning while a clone stays independent', () => {
+    const state = createWorld({ seed: 'dated-ledger-views', skipPriorAges: true, regionCount: 0 });
+    const view = { ...state, currentDay: state.currentDay + 12, currentHour: 6 };
+    const put = (world: WorldState, marker: string) => appendWorldFact(world, makeFact({
+        day: world.currentDay, kind: 'said_in_public', summary: marker, data: { marker }
+    }), { recur: false, bystanders: false });
+    const first = put(state, 'first');
+    expect(factsWithData(view, 'marker').map(row => row.id)).toEqual([first.id]);
+    const second = put(view, 'second');
+    expect(factsWithData(state, 'marker').map(row => row.id)).toEqual([first.id, second.id]);
+    const previous = state.history.facts;
+    state.history.facts = previous.filter(row => row.id !== first.id);
+    witnessHistoryWasPruned(state, previous, new Set([first.id]), new Map());
+    expect(factsWithData(view, 'marker').map(row => row.id)).toEqual([second.id]);
+    const copy = cloneWorld(state);
+    const isolated = put(copy, 'isolated');
+    expect(factsWithDataValue(copy, 'marker', 'isolated').map(row => row.id)).toEqual([isolated.id]);
+    expect(factsWithDataValue(view, 'marker', 'isolated')).toEqual([]);
+    agrees(state); agrees(view); agrees(copy);
+});
 
 function agrees(state: WorldState): void {
     const index = witnessIndexFor(state);
