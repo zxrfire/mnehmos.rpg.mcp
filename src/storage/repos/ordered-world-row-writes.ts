@@ -37,7 +37,16 @@ export class OrderedWorldRowWrites {
      * Input keys follow the table's primary-key order, excluding world_id.
      */
     forOrder(worldId: string, incoming: readonly RowKey[]): Database.Statement {
-        const existing = (this.keys.all(worldId) as string[][]).map(row => JSON.stringify(row));
+        const rows = this.keys.all(worldId) as string[][];
+        // The ordinary unchanged snapshot already has REPLACE's final order.
+        // Compare actual key columns first, without serializing keys or building
+        // the four sets/arrays needed for omissions, reorders and duplicates.
+        if (rows.length === incoming.length && rows.every((row, at) => {
+            const key = incoming[at]!;
+            return typeof key === 'string' ? row.length === 1 && row[0] === key
+                : row.length === key.length && row.every((value, column) => value === key[column]);
+        })) return this.update;
+        const existing = rows.map(row => JSON.stringify(row));
         const written = incoming.map(key => JSON.stringify(typeof key === 'string' ? [key] : key));
         const last = new Set<string>();
         const tail: string[] = [];
