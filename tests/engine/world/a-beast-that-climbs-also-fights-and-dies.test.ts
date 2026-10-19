@@ -21,7 +21,15 @@
  *   THE BODY IS FINDABLE. `possessorId: null, ownerId: null, locationId` is
  *   exactly what `whatIsStandingFreeAt` looks for, so a core on the ground is
  *   reachable by the taking verb with no new read anywhere. That triple is the
- *   assertion, not the tags.
+ *   assertion at creation, not a promise that it stays unclaimed forever.
+ *   A later 500-year census found a tagged piece held by npc-266. Native hunts
+ *   also use this body-piece writer, then legitimately carry their pieces out;
+ *   source-keyed checkpoints contain those later claimed origin-marked rows.
+ *   The former end-of-walk custody loop confused origin with current custody.
+ *   The creation controls here and a-body-piece-can-be-carried-away.test.ts
+ *   now check actual native drops, findability, subsequent pickup and the body
+ *   status clock at the moment they matter, with no history precondition.
+ *   The separate mortality controls below retain their death and news checks.
  *
  *   AND A KILL IS A MEAL. What eats one climbs for it, and the climb reading
  *   never reads that rung back down, because `theRungThisRowShouldBeAt` takes
@@ -29,7 +37,8 @@
  *
  * RED-CHECKED. Setting `WHETHER_IT_COMES_TO_A_FIGHT` to zero fails the world
  * assertions; setting `transfersOwnership: true` on the body rows fails the
- * findability one; removing the `Math.max` in `theRungThisRowShouldBeAt` fails
+ * original findability control; its current native-drop/pickup replacement
+ * checks both custody phases. Removing the `Math.max` in `theRungThisRowShouldBeAt` fails
  * the meal.
  */
 
@@ -248,21 +257,5 @@ describe('one of these fights on its own ground, and one of the two dies', () =>
         expect(said.length, 'nothing was written about any of it').toBeGreaterThan(0);
     });
 
-    it('leaves what nobody could cut lying where the body fell', () => {
-        const state = worldWithSomeStandingOnItsGround('beast-mortality');
-        applyPressure(state, state.currentDay, state.currentDay + 500 * YEAR);
 
-        // Where a person did it and could not take everything, what stood
-        // above them is on the ground for whoever walks up next.
-        const left = state.objects.filter(o => o.tags.includes('off_a_body_nobody_claimed'));
-        for (const row of left) {
-            expect(row.possessorId).toBeNull();
-            expect(row.ownerId).toBeNull();
-            expect(row.locationId).not.toBeNull();
-        }
-        // And the ground says a body is on it for exactly as long as one is.
-        for (const status of state.statuses.filter(s => s.kind === 'a_body_on_the_ground')) {
-            expect(status.reviewOnDay - status.beganOnDay).toBe(DAYS_A_BODY_IS_STILL_THERE);
-        }
-    });
 });
