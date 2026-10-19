@@ -8,6 +8,13 @@
  * every errand the Court had: looking for disciples, an escort, a visit, and a
  * ruin whose own survival ask is 12.
  *
+ * The merged afford-a world at year 300 exposed a stale historical read:
+ * three reports were compared with roads that became forbidden decades after
+ * the errands. Their survival ask was 0 when reported and is 6 now. Read the
+ * ground as of each report instead of treating its present state as its past.
+ * Report dates are not invented departure dates. The nonzero-ground check
+ * below must still encounter real work, alongside the per-person protections.
+ *
  * RED-CHECKED. Drawing the losses off the party's tier again turns the
  * per-person test red; pitching the yearly pass's errands off the house's own
  * best again turns the world test red.
@@ -16,6 +23,7 @@ import { describe, it, expect } from 'vitest';
 
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { soakedWorld } from '../../support/soaked-world.js';
+import { stateAsOfDay } from '../../../src/engine/world/locations.js';
 import { summonable } from '../../../src/engine/encounters/duties.js';
 import { regardFor } from '../../../src/engine/cultivation/regard.js';
 import {
@@ -81,6 +89,7 @@ describe('who goes', () => {
         const overpitched: string[] = [];
         const seatsBeneath: string[] = [];
         let counted = 0;
+        let groundPitches = 0;
         for (const fact of state.history.facts) {
             if (before.has(fact.id)) continue;
             const pitch = Number(/at ordinal (\d+)/.exec(fact.summary)?.[1] ?? NaN);
@@ -89,9 +98,13 @@ describe('who goes', () => {
             // its people walks onto ground that would, with whoever it has, and
             // its elders decide that knowing what it is.
             if (/taking what pays/.test(fact.summary)) continue;
-            const ground = state.locations.find(l => l.id === fact.locationId);
-            if (ground && ground.thresholds.survival > 0 && pitch > ground.thresholds.survival) {
-                overpitched.push(`${ground.name} asks ${ground.thresholds.survival}: ${fact.summary}`);
+            const location = state.locations.find(l => l.id === fact.locationId);
+            const ground = location ? stateAsOfDay(location, fact.day) : null;
+            if (ground && ground.thresholds.survival > 0) {
+                groundPitches++;
+                if (pitch > ground.thresholds.survival) {
+                    overpitched.push(`${ground.name} asks ${ground.thresholds.survival}: ${fact.summary}`);
+                }
             }
             for (const actor of fact.actors) {
                 if (actor.role !== WENT_AND_CAME_BACK && actor.role !== WENT_AND_DID_NOT) continue;
@@ -103,6 +116,7 @@ describe('who goes', () => {
             }
         }
         expect(counted, 'no house put anybody on an errand in three centuries').toBeGreaterThan(50);
+        expect(groundPitches, 'no errand tested a nonzero historical ground ask').toBeGreaterThan(0);
         expect(overpitched.slice(0, 5)).toEqual([]);
         // And not one of the Court's Seats went on work beneath them.
         expect(seatsBeneath).toEqual([]);
