@@ -5,6 +5,8 @@
  * reload sequence, including omitted historical rows and repeated identities.
  * Each arm below starts with the same rows in the same command and compares all
  * persisted values in reload order. No simulation or second row store is needed.
+ * Positional bindings derive from that same SQL VALUES list: object property
+ * order, punctuation, nulls and numeric values must retain their named meaning.
  */
 import Database from 'better-sqlite3';
 import { expect, it } from 'vitest';
@@ -27,6 +29,20 @@ function arrangement() {
     };
     return { db, replace, writer, read, write };
 }
+
+it('binds values by the original SQL names regardless of object property order', () => {
+    const h = arrangement();
+    try {
+        for (const worldId of ['control', 'optimized']) {
+            h.replace.run({ worldId, id: 'a', kind: 'kin', note: 'before', amount: 1 });
+            const row = { amount: -2.75, note: 'A quoted "name" and 雪', kind: 'kin', id: 'a', worldId };
+            (worldId === 'control' ? h.replace : h.writer.forOrder(worldId, [['a', 'kin']])).run(row);
+        }
+        expect(h.read('optimized')).toEqual(h.read('control'));
+        h.writer.forOrder('optimized', [['a', 'kin']]).run({ note: null, worldId: 'optimized', amount: null, id: 'a', kind: 'kin' });
+        expect(h.read('optimized')).toEqual([{ world_id: 'same-world', id: 'a', kind: 'kin', note: null, amount: null }]);
+    } finally { h.db.close(); }
+});
 
 it('matches replacement values and ordering across every short sequence, omissions and duplicate IDs', () => {
     const h = arrangement();

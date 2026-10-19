@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { OrderedWorldRowWrites } from './ordered-world-row-writes.js';
+import { OrderedWorldRowWrites, type WorldRowWrite } from './ordered-world-row-writes.js';
 import { THE_WORLD_LOST_SIGHT_OF, lostSightOnDay } from '../../engine/world/who-a-house-has-lost-track-of.js';
 import type {
     FactionRecord,
@@ -1239,7 +1239,7 @@ export class WorldStateRepository {
     }
 
     private rowsInOrder(statement: Database.Statement, worldId: string,
-        keys: readonly (string | readonly string[])[]): Database.Statement {
+        keys: readonly (string | readonly string[])[]): WorldRowWrite {
         let writer = this.orderedWrites.get(statement);
         if (!writer) { writer = new OrderedWorldRowWrites(this.db, statement); this.orderedWrites.set(statement, writer); }
         return writer.forOrder(worldId, keys);

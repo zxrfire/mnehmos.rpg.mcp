@@ -22,6 +22,9 @@ insert and primary key. It reads current row order for each batch; a reorder,
 omission or repeated identity that needs replacement retains the ordinary
 replacement writer. Reloaded array order and stale-row merge semantics remain
 the same. No body values, dirty flags or database snapshots are cached.
+Conditional row writes derive positional binding order from the existing named
+VALUES list. Property order remains irrelevant, every column is still compared
+by SQLite, and only statement metadata survives the batch.
 
 One class per table, each owning the SQL for it. Nothing above this layer writes SQL, and
 nothing here decides anything: a repository stores what it is given and returns what it

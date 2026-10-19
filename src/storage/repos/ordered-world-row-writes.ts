@@ -2,6 +2,7 @@
 import type Database from 'better-sqlite3';
 
 type RowKey = string | readonly string[];
+export interface WorldRowWrite { run(params: Record<string, unknown>): Database.RunResult }
 
 /** No row values are cached: each batch reads the current transaction's keys,
  * and SQLite compares its actual columns. Rollbacks and other writers therefore
@@ -9,7 +10,7 @@ type RowKey = string | readonly string[];
  */
 export class OrderedWorldRowWrites {
     private readonly keys: Database.Statement;
-    private readonly update: Database.Statement;
+    private readonly update: WorldRowWrite;
 
     constructor(db: Database.Database, private readonly replace: Database.Statement) {
         // These are this repository's own single-row, named-parameter inserts.
@@ -25,10 +26,18 @@ export class OrderedWorldRowWrites {
         const mutable = columns.filter(column => !primary.includes(column));
         const identity = primary.filter(column => column !== 'world_id');
         this.keys = db.prepare(`SELECT ${identity.join(', ')} FROM ${table} WHERE world_id = ? ORDER BY rowid ASC`).raw();
-        this.update = db.prepare(`${replace.source.replace('INSERT OR REPLACE', 'INSERT')}
+        const updateSql = `${replace.source.replace('INSERT OR REPLACE', 'INSERT')}
             ON CONFLICT(${primary.join(', ')}) DO UPDATE SET
                 ${mutable.map(column => `${column} = excluded.${column}`).join(', ')}
-            WHERE ${mutable.map(column => `${table}.${column} IS NOT excluded.${column}`).join(' OR ')}`);
+            WHERE ${mutable.map(column => `${table}.${column} IS NOT excluded.${column}`).join(' OR ')}`;
+        // Derive binding order from the repository's actual VALUES list. An
+        // object's property order is immaterial, and no row values are retained.
+        const parameters = match[3].split(',').map(parameter => parameter.trim());
+        if (parameters.some(parameter => !/^@\w+$/.test(parameter)))
+            throw new Error('Expected named world row values');
+        const names = parameters.map(parameter => parameter.slice(1));
+        const positional = db.prepare(updateSql.replace(/@\w+/g, '?'));
+        this.update = { run: params => positional.run(names.map(name => params[name])) };
     }
 
     /** REPLACE moves a row to the tail, including on repeated identities.
@@ -36,7 +45,7 @@ export class OrderedWorldRowWrites {
      * yields that exact same sequence; otherwise retain the original writer.
      * Input keys follow the table's primary-key order, excluding world_id.
      */
-    forOrder(worldId: string, incoming: readonly RowKey[]): Database.Statement {
+    forOrder(worldId: string, incoming: readonly RowKey[]): WorldRowWrite {
         const rows = this.keys.all(worldId) as string[][];
         // The ordinary unchanged snapshot already has REPLACE's final order.
         // Compare actual key columns first, without serializing keys or building
