@@ -14,9 +14,12 @@ import type { WorldState } from './world-state.js';
 
 function theirDailyCheck(state: WorldState, houseId: string, hall: string, disciple: NpcRecord,
     member: NpcRecord, day: number): number | null {
-    const hire = state.obligations.find(term => term.tags.includes('hall-duty') && heldThisHiredPost(disciple, term));
-    if (disciple.factionId !== houseId && !hire || disciple.locationId !== hall || disciple.activity?.kind !== 'stationed'
+    // Only a stationed person in this hall can have made its daily check.
+    // Rule out everybody else before looking through their possible hire terms.
+    if (disciple.locationId !== hall || disciple.activity?.kind !== 'stationed'
         || member.diedOnDay === null) return null;
+    const hire = state.obligations.find(term => term.tags.includes('hall-duty') && heldThisHiredPost(disciple, term));
+    if (disciple.factionId !== houseId && !hire) return null;
     const reached = whenTheyReachTheirPost(state.locations, disciple);
     if (reached === null) return null;
     const check = Math.max(Math.floor(member.diedOnDay) + 1, Math.ceil(reached));
