@@ -26,7 +26,7 @@
  *
  * AND THE REPUTATION IS NOT A NUMBER ON THE KILLER. It is what the people who
  * watched hold about them afterwards, which is where standing already lives.
- * See AGENTS.md: objects are dead, people are alive.
+ * See src/engine/AGENTS.md#traits-and-actors: objects are dead, people are alive.
  */
 
 import { evaluateDeathConditions } from '../cultivation/survival.js';
@@ -118,7 +118,7 @@ export function whetherTheyGotUp(input: {
  * READ OFF WHAT THE TWO OF THEM ALREADY HOLD. No new field, no roll: the
  * standing between them is written by every bout, insult and inheritance that
  * came before, so who fights to hurt is a fact the world has been accumulating
- * for two centuries. AGENTS.md: objects are dead, people are alive.
+ * for two centuries. src/engine/AGENTS.md#traits-and-actors: objects are dead, people are alive.
  */
 export type WhatTheyStoodUpFor =
     /** Two people finding out where they are. What a gathering is for. */

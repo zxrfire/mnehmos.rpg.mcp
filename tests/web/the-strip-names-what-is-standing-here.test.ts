@@ -31,7 +31,7 @@
  *      that was reported. So the rate below is measured where the player
  *      looks: after the client's own cut to five.
  *
- * `AGENTS.md`, on the two tiers: a unit test says what happens, a rate test
+ * `tests/AGENTS.md#two-tiers-of-test-outcomes-and-rates`, on the two tiers: a unit test says what happens, a rate test
  * says the thing happens at all, at a sane rate, at the point the player would
  * notice. This is the second one, and it is a CENSUS rather than a sample -
  * every settlement in the catalog, on pinned worlds, so the number is exact

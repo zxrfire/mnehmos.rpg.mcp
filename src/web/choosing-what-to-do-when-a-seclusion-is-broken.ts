@@ -150,7 +150,7 @@ export interface SeclusionCrossroads {
  * and going needs no vocabulary.
  *
  * Deliberately generous, and every phrasing here was chosen by asking how
- * somebody would actually answer the two sentences the engine printed. AGENTS.md:
+ * somebody would actually answer the two sentences the engine printed. src/web/AGENTS.md#the-model-reads-intent:
  * "if a near-synonym works, the phrasing that fails is a bug", and the failing
  * half is usually the more natural one. `tests/web/a-broken-seclusion-is-a-fork.test.ts`
  * holds the list.

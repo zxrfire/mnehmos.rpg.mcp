@@ -73,7 +73,7 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     // The impersonal forms of the same question. `safe` and `dangerous` were absent
     // and the gap was found by playing: "is it wise to sit and cultivate here" was
     // a question and "is it SAFE to sit and cultivate here" was not, which is
-    // `AGENTS.md`'s near-synonym rule exactly - the phrasing that fails is the one
+    // `src/web/AGENTS.md#the-model-reads-intent`'s near-synonym rule exactly - the phrasing that fails is the one
     // a player reaches for first, and they cannot find the working half except by
     // guessing. The antonym is here with it because "is it dangerous to X" is the
     // same question asked from the other end and would have been the next report.
@@ -471,7 +471,7 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
  * standing in the house - correct, every one of them.
  *
  * The two words in front were the whole difference. That is the near-synonym
- * rule in AGENTS.md: the phrasing a player reaches for first is the one that
+ * rule in src/web/AGENTS.md#the-model-reads-intent: the phrasing a player reaches for first is the one that
  * fails, and there is no way to find the working half except by guessing.
  *
  * SO THIS ONLY EVER FIRES WHERE THE PARSER ALREADY FOUND NOBODY. The target has

@@ -5,7 +5,7 @@
  * world. 120 transfers among three houses is a different world from 120 across
  * forty, and no aggregate can tell you which.
  *
- * This is the second of the two questions `AGENTS.md` names under *How often,
+ * This is the second of the two questions `src/engine/world/AGENTS.md#how-often-and-on-whom-the-two-questions-that-catch-a-dead-mechanism` names under *How often,
  * and on whom*. `probe-which-passes-ever-fire.probe.ts` answers the first: does
  * this mechanism ever act at all. This one answers the second: when it acts,
  * across how much of the world does it spread. The two defects they catch are

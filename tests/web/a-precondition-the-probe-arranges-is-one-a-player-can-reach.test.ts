@@ -9,8 +9,8 @@
  * cannot get there by playing, that part of the game does not exist however
  * well the engine models it.
  *
- * This repo has found that exact shape repeatedly; AGENTS.md keeps the roll of
- * them under *a module nothing calls is not a feature*.
+ * AGENTS.md#look-before-you-build requires a live caller and a played path;
+ * a module nothing calls is not a feature.
  *
  * So: no ADMIN verb anywhere in this file. Fresh run, sentences a player would
  * type, and the assertion is on what the ENGINE REPORTS rather than on rows.
@@ -176,7 +176,7 @@ describe('given a beginner, when they ask a house to take them', () => {
     /**
      * AND THE NEAR-SYNONYM THAT DOES NOT WORK, pinned so it goes red when
      * somebody fixes it. "If a near-synonym works, the phrasing that fails is a
-     * bug" - AGENTS.md. This one was arranging a probe situation for as long as
+     * bug" - src/web/AGENTS.md#the-model-reads-intent. This one was arranging a probe situation for as long as
      * the situation had existed.
      */
     it('but "I join the nearest sect" joins nothing, which is the defect', async () => {

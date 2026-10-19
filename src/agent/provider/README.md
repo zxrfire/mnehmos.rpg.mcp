@@ -121,7 +121,7 @@ env vars above.
 
 ## Related
 
-- [`../../../AGENTS.md`](../../../AGENTS.md) - the provider-neutrality working agreement
+- [General working agreement](../../../AGENTS.md#the-model-is-the-game) - model play and the provider boundary
 - [`../../web/README.md`](../../web/README.md) - how the narrator consumes a provider
 - [`../../../context.md`](../../../context.md) - the runtime agent architecture
 

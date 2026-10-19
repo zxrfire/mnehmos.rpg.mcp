@@ -196,7 +196,7 @@ export interface WhatTheFightDecided {
     /**
      * Who can put a name to it. Omit and everybody the account names can.
      *
-     * The seam for AGENTS.md's *a fact reaches a person* ruling, carried
+     * The seam for src/engine/AGENTS.md#a-fact-reaches-a-person-and-reaching-them-is-an-event's *a fact reaches a person* ruling, carried
      * through to `theAccountsAFightOpens` and read there. See its own comment
      * for why it defaults open rather than shut.
      */

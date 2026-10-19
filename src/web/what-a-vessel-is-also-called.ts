@@ -15,7 +15,7 @@
  *     "pill furnace"                  ->  a Qi Gathering Pill
  *
  * The first two are a rename leaving its old name reaching nowhere, which is
- * the near-synonym defect AGENTS.md opens with. The third is worse and is the
+ * the near-synonym defect src/web/AGENTS.md#the-model-reads-intent opens with. The third is worse and is the
  * reason this file is not just a list: `pill furnace` is the owner's own
  * sentence - *"a player may call it a pill furnace and mean the same thing"* -
  * and the loose resolver, which walks the words of a phrase longest first and

@@ -21,7 +21,7 @@
  *                      whole of what somebody in that state needs to be told,
  *                      and the shrug told them nothing.
  *
- * The bar for these is the one AGENTS.md sets for every tier including the
+ * The bar for these is the one src/web/AGENTS.md#it-has-to-play-as-a-game-not-as-a-command-line sets for every tier including the
  * bottom one: a refusal names a route. The engine already holds every fact
  * needed - `daoRequired` and `daoHeld` are on the same `EligibilityCheck` - so
  * nothing here is computed, and the played case below is the witness that the

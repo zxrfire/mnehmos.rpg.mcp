@@ -59,7 +59,7 @@ import type { FightAnswer } from '../engine/cultivation/unfinished-fight.js';
 // THE PHRASINGS
 //
 // Every one of these was written by asking how somebody would actually answer
-// the sentence the engine prints, not by inverting a verb name. AGENTS.md: "if
+// the sentence the engine prints, not by inverting a verb name. src/web/AGENTS.md#the-model-reads-intent: "if
 // a near-synonym works, the phrasing that fails is a bug", and the failing half
 // is usually the more natural one.
 // ─────────────────────────────────────────────────────────────────────────

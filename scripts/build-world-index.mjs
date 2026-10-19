@@ -255,7 +255,7 @@ function renderCatalog(rows) {
 //
 // A catalog file can hold a fully argued design as an exported constant that
 // nothing in the engine ever looks at. That is this repo's signature defect -
-// AGENTS.md calls it "a module nothing calls is not a feature" - and it is
+// AGENTS.md#look-before-you-build calls it "a module nothing calls is not a feature" - and it is
 // invisible, because a dead constant compiles, tests clean, and reads like
 // settled design to the next person who finds it.
 //

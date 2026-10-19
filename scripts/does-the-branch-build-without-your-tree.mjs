@@ -11,7 +11,7 @@
  *   src/web/game.ts committed, importing ../engine/world/what-a-confrontation-
  *   does-to-somebody-the-world-holds.js, which was never added.
  *
- * AGENTS.md has said "a file you never committed is invisible to everyone else"
+ * AGENTS.md#commits-and-parallel-ownership has said "a file you never committed is invisible to everyone else"
  * for some time, and it kept happening anyway. A rule that is only in prose gets
  * followed by whoever remembers to look; this is the same rule as a command, so
  * nobody has to remember.

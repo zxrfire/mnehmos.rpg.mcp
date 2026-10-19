@@ -1,7 +1,7 @@
 /**
  * The flower road, and the two decisions in it that live only as numbers.
  *
- * AGENTS.md: a design decision that lives only as a number needs a test that
+ * tests/AGENTS.md#tests-test-behaviour-not-implementation: a design decision that lives only as a number needs a test that
  * says so in its name, because prose gets read and argued about and a number
  * does not. There are two here and both have already been "fixed" once in
  * drafting:

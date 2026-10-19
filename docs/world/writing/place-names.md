@@ -317,7 +317,7 @@ Standing prohibitions:
   conflict with verbs even fuzzy"*. Peak (*speak*), Ridge (*ride*), Ford (*food*), Wall
   (*will*), Bell (*sell*), Hollow (*follow*), Cold (*could*) and Green (*greet*) all went
   for it, from the catalog and from the generator's word lists alike. The rule is
-  AGENTS.md's fifth naming rule, and
+  [the root naming rule](../../../AGENTS.md#a-name-evokes-what-it-is-and-is-tellable-from-every-other-name), and
   `tests/docs/a-name-is-never-a-word-the-player-types.test.ts` holds every name to it.
 
 Region IDS still carry retired names - `region-low-fall`, `region-quiet-marches` - and that

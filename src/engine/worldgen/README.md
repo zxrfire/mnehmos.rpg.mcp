@@ -6,7 +6,7 @@ Building a world from a seed: who exists, where they are standing, and what they
 on the day a run opens. Everything here is deterministic from the world seed.
 
 The population it produces is a law rather than a preference - see "The population pyramid is
-a law, not a preference" in [`AGENTS.md`](../../../AGENTS.md). If a number here looks wrong,
+a law, not a preference" in [world guidance](../world/AGENTS.md#the-population-pyramid-is-a-law-not-a-preference). If a number here looks wrong,
 the fix is usually the pyramid, not the draw.
 
 | file | what it is |

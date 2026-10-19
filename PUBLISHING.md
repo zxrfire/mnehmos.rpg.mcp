@@ -42,7 +42,7 @@ The site is the *fan-out* of one committed event: one ledger entry can produce a
                  and - if voiced - its narration player.
 
 5. SHIP        commit docs/ + source; push to main. GitHub Pages serves docs/.
-                 (continuation of the existing push pattern - see CLAUDE.md git-pulse.)
+                 (repository commit rules: AGENTS.md, Commits and parallel ownership.)
 ```
 
 ### Step 1 - PLAY
@@ -81,7 +81,7 @@ Open `docs/` locally. Verify:
 - if voiced, the audio player works on the chapter page and on the biography ToC.
 
 ### Step 5 - SHIP
-Commit `docs/` together with the source content/theme changes; push to `main`. GitHub Pages serves `docs/`. This is a continuation of the existing push pattern documented in `CLAUDE.md` (the git-pulse rule).
+Commit `docs/` together with the source content/theme changes; push to `main`. GitHub Pages serves `docs/`. Follow [the repository commit rules](AGENTS.md#commits-and-parallel-ownership).
 
 One biography update = one build = one commit. The git history reads as a publishing log.
 
@@ -118,4 +118,4 @@ If all five hold, the publish is done. If any fails, fix at the corresponding st
 
 ---
 
-*See also:* `CLAUDE.md` for the repository's working conventions.
+*See also:* [AGENTS.md](AGENTS.md) for the repository's working conventions (`CLAUDE.md` imports it).

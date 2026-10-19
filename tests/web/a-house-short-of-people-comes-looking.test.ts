@@ -47,7 +47,7 @@ async function standingIn(where: string) {
 
 describe('the sentences reach the wall', () => {
     /**
-     * `docs/world/` and AGENTS.md both say it: if a near-synonym works and the
+     * `docs/world/` and src/web/AGENTS.md#the-model-reads-intent both say it: if a near-synonym works and the
      * phrasing that fails is the more natural one, that is a bug rather than a
      * parser preference. These are the ways somebody actually asks.
      */

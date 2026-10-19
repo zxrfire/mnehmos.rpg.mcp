@@ -49,7 +49,7 @@ import { observable, type EngineFacts } from './facts.js';
  * What a body does with nobody on the other end of it, and the noun each takes
  * when a player writes it as a thing rather than as a verb.
  *
- * The nouns are AGENTS.md's near-synonym rule: without them "I sing" is
+ * The nouns are src/web/AGENTS.md#the-model-reads-intent's near-synonym rule: without them "I sing" is
  * answered and "I sing a song" is refused, and nothing tells the player which
  * is which. An empty list is a verb whose noun form belongs on the refusing
  * side - "a cry" is a shout, and a shout is aimed.

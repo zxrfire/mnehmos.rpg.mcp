@@ -319,7 +319,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             // nobody agreed to, and being sat as a furnace. Every one of them
             // is the version of an act somebody uses to get ahead at another
             // person's expense, and a glossary that lists only the other four
-            // is the softening AGENTS.md names - the polite half of the
+            // is the softening src/web/AGENTS.md#the-parser-names-the-act-the-engine-is-the-one-that-says-no names - the polite half of the
             // vocabulary reachable and the rest of it reachable by accident.
             'swallow', 'marry', 'furnace', 'soul_search'
         ],

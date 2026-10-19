@@ -32,7 +32,7 @@
  * inside it. The vein count said 120 and hid *one edge*; this numerator says
  * *ties passed* and hides *to the first heir only*. In both cases the aggregate
  * was not merely incomplete - it was confidently answering a question nobody had
- * asked. See `AGENTS.md`, *How often, and on whom*.
+ * asked. See `src/engine/world/AGENTS.md#how-often-and-on-whom-the-two-questions-that-catch-a-dead-mechanism`, *How often, and on whom*.
  *
  * ── IT MIRRORS THE TEST'S HARNESS ON PURPOSE ─────────────────────────────
  *

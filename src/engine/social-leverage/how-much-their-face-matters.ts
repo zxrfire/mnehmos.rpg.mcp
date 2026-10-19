@@ -2,7 +2,7 @@
  * How much somebody's face matters to them: one of a person's traits, drawn from their id on a
  * stream of its own, like `openHandednessOf` and `reticenceOf`.
  *
- * A trait reads every fact, not one situation (AGENTS.md, "A trait reads every fact"). This one
+ * A trait reads every fact, not one situation (src/engine/AGENTS.md#traits-and-actors, "A trait reads every fact"). This one
  * reads a stolen robe, a duel lost in front of the hall, an insult and a refusal alike: how much
  * being seen to have lost costs them, beside what was lost. Not read off an alignment, a house
  * or a rung.

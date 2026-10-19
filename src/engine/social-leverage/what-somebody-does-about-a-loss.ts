@@ -10,7 +10,7 @@
  * after you. None of this is special to robes.
  *
  * "Depends on personality" is `faceOf`, a trait that reads every fact and not this one alone;
- * see AGENTS.md, "A trait reads every fact".
+ * see src/engine/AGENTS.md#traits-and-actors, "A trait reads every fact".
  */
 
 import type { CultivationRNG } from '../cultivation/rng.js';
@@ -39,7 +39,7 @@ export interface WhatTheyDoAboutALoss {
 }
 
 /**
- * What they do about it, drawn: the trait moves the odds and does not decide (AGENTS.md, "A trait
+ * What they do about it, drawn: the trait moves the odds and does not decide (src/engine/AGENTS.md#traits-and-actors, "A trait
  * reads every fact"). The prouder they are, the likelier silence or settling it themselves and
  * the less likely a report; the less face they have, the likelier a report, and the likelier
  * they come for you as they are. `canDo` is what the rung gap lets them do to you

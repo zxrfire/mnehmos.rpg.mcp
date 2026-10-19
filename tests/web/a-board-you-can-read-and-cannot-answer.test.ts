@@ -132,7 +132,7 @@ describe('an order can say whose it is', () => {
      * FOUND IN THE SAME PASS. `i accept the order` matched the summons row and
      * `i accept the elder's order` did not, because the noun had to sit
      * immediately after the verb. Naming who sent for you is the more natural
-     * sentence and it was the one that failed - the near-synonym trap AGENTS.md
+     * sentence and it was the one that failed - the near-synonym trap src/web/AGENTS.md#the-model-reads-intent
      * names, where the phrasing a player reaches for first is the broken one.
      */
     it('accepts an order named by who sent it', () => {

@@ -366,7 +366,7 @@ full. The files, briefly:
 
 - [`AGENTS.md`](AGENTS.md) - the coding-agent working agreement: conventions, commands,
   parallel-work boundaries, and the acceptance test the design is frozen against.
-  `CLAUDE.md` is a symlink to it.
+  `CLAUDE.md` imports it with `@AGENTS.md`; area guidance is indexed there.
 - [`README.md`](README.md) - the player-facing introduction and how to run it.
 
 ## Who parses what the player meant

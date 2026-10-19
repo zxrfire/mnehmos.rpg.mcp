@@ -604,7 +604,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             });
             // AND THE OTHER HALF OF THE SAME MOMENT.
             //
-            // Only the taking half was sayable. AGENTS.md: where one of two
+            // Only the taking half was sayable. src/web/AGENTS.md#the-parser-names-the-act-the-engine-is-the-one-that-says-no: where one of two
             // opposed acts is reachable and the other is not, the engine has an
             // opinion - and here it was the harsh one, which is the same defect
             // as the polite one and not a virtue.

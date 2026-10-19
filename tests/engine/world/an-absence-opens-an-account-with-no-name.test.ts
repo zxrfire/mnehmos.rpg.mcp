@@ -2,7 +2,7 @@
  * An absence is opened by the world, survives a restart, and leaves somebody
  * holding a wrong they cannot put a name to.
  *
- * Two tiers, as AGENTS.md asks for.
+ * Two tiers, as tests/AGENTS.md#two-tiers-of-test-outcomes-and-rates asks for.
  *
  * The unit tier says WHAT HAPPENS: who opens an absence, that it is opened
  * once, what a giving-up leaves on the ledger, and that an explained absence

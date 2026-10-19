@@ -1,7 +1,7 @@
 /**
  * The counted stock is reached by playing, not only by a unit test.
  *
- * AGENTS.md's most-repeated defect is a module nothing calls: a subsystem that
+ * AGENTS.md#look-before-you-build's most-repeated defect is a module nothing calls: a subsystem that
  * is designed, written, tested and rendered, and that nothing in the running
  * game ever reaches. `what-a-place-still-has-in-the-ground.ts` is exactly the
  * shape that happens to - a pure module with its own unit tests - so the

@@ -1,7 +1,7 @@
 /**
  * The killing does not open the account. The telling does.
  *
- * AGENTS.md, *a fact reaches a person, and reaching them is an event*. These
+ * src/engine/AGENTS.md#a-fact-reaches-a-person-and-reaching-them-is-an-event, *a fact reaches a person, and reaching them is an event*. These
  * pin the four rulings that follow from it, and one of them is a decision
  * rather than a behaviour and would otherwise live only as an absent branch:
  *

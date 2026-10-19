@@ -2,7 +2,7 @@
 
 # Cutting comments without losing what they know
 
-The bar is in AGENTS.md under *Comments earn their keep*. This is how to apply it to a file
+The bar is in [AGENTS.md, Conventions and brevity](../AGENTS.md#conventions-and-brevity). This is how to apply it to a file
 that is already over, and what must survive the cut.
 
 Measure before and after with `npx tsx scripts/comments-earn-their-keep.ts --dir <path>`.

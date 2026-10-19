@@ -8,7 +8,7 @@
  * the fact was already computed, already printed for a DIFFERENT phrasing, and
  * denied to this one.
  *
- * Every pair here is the near-synonym defect AGENTS.md names: one wording works
+ * Every pair here is the near-synonym defect src/web/AGENTS.md#the-model-reads-intent names: one wording works
  * and the wording a player reaches for first does not.
  *
  *   what is my cultivation  status, and it prints the spirit root and the four

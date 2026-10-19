@@ -1527,7 +1527,7 @@ ${unnamed}`;
         //
         // `commissioning-a-craft.ts` has answered this since it was written and
         // nothing has ever called it - the whole module was reachable only from
-        // a barrel re-export, which is the thing AGENTS.md means by a module
+        // a barrel re-export, which is the thing AGENTS.md#look-before-you-build means by a module
         // nothing calls not being a feature. Played, the sentence filed a
         // requisition against a HOUSE and came back with a list of sect names.
         if (kind === 'a_making') {
@@ -2344,7 +2344,7 @@ ${done.span.facts.prose}`;
      *
      * `askingSomebodyToMakeYouSomething` has answered exactly this since it was
      * written, and until now nothing called it: the module was reachable only
-     * through a barrel re-export, which is what AGENTS.md means by a module
+     * through a barrel re-export, which is what AGENTS.md#look-before-you-build means by a module
      * nothing calls not being a feature. Played, the sentence filed a
      * requisition against a HOUSE and the player was handed a list of sect
      * names.

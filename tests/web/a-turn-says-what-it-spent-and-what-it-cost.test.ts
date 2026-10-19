@@ -4,7 +4,7 @@
  * Every block is one thing found by playing with no model in front of the
  * engine, and every one of them reads identically with a model in front of it,
  * because a model narrates the facts the composer built and cannot narrate one
- * the composer dropped. `AGENTS.md`, "It has to play as a game, not as a
+ * the composer dropped. `src/web/AGENTS.md#it-has-to-play-as-a-game-not-as-a-command-line`, "It has to play as a game, not as a
  * command line": you are told what happened.
  */
 
@@ -187,7 +187,7 @@ describe('the listings say what you are holding', () => {
 
 describe('a duty runs under the words a person uses for it', () => {
     /**
-     * `AGENTS.md` cites this by name under "if a near-synonym works, the
+     * `src/web/AGENTS.md#the-model-reads-intent` cites this by name under "if a near-synonym works, the
      * phrasing that fails is a bug". Played: `I take a duty`, `I take the duty`
      * and `I accept the commission` all re-listed the wall, and only
      * `I take Culling Work in a Thin District` ran - so the whole

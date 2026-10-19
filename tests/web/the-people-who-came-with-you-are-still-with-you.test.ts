@@ -158,7 +158,7 @@ function standWhereTwoOthersAre(game: any, cultivator: any): any {
  * them.
  *
  * Arranged by calling the producer rather than by playing an escort, per
- * AGENTS.md on preconditions: the escort path is played in its own test below,
+ * tests/AGENTS.md#three-layers-and-the-cheap-one-carries-the-weight on preconditions: the escort path is played in its own test below,
  * and a fixture that needs a 2.8% summons roll to land is a fixture that goes
  * flaky.
  */

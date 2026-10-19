@@ -10,7 +10,7 @@ import {
 /**
  * THE SENTENCE THE DESIGN OWNER ASKED FOR, AND THE WAYS SOMEBODY WRITES IT.
  *
- * `AGENTS.md`: *"if a near-synonym works, the phrasing that fails is a bug."*
+ * `src/web/AGENTS.md#the-model-reads-intent`: *"if a near-synonym works, the phrasing that fails is a bug."*
  * Every one of these reached `{"action":"unclear"}` or resolved a party whose
  * name had half the sentence stuck to it before this existed.
  */

@@ -1,7 +1,7 @@
 /**
  * HOW MANY PEOPLE WERE BORN AS SOMETHING, AND HOW MANY ARE STILL STANDING.
  *
- * `engine/cultivation/physiques.ts` makes a rarity claim, and AGENTS.md is
+ * `engine/cultivation/physiques.ts` makes a rarity claim, and src/engine/AGENTS.md#what-npcs-do-is-emergent-never-enumerate-it is
  * specific that rarity here is a POPULATION STATEMENT rather than a price. The
  * claim has two halves and this measures both:
  *

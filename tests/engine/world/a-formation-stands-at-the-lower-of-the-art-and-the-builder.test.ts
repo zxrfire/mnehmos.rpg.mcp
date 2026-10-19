@@ -230,7 +230,7 @@ describe('the min, in both directions', () => {
 
 describe('somebody in a generated world can actually reach one', () => {
     /**
-     * The check AGENTS.md's "a module nothing calls" section asks for, applied
+     * The check AGENTS.md#look-before-you-build's "a module nothing calls" section asks for, applied
      * to content rather than code: two arts in a 138-row catalog could easily
      * be held by nobody, and then the system is unreachable in play for a
      * reason that has nothing to do with the engine.

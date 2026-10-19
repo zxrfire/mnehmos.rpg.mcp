@@ -34,7 +34,7 @@
  *
  * WHY IT IS A TEST AND NOT ONLY AN NPM SCRIPT. `npm run typecheck:all` exists
  * and is the thing to run while working. But a command nobody is required to
- * run is how this rotted the first time - the config in AGENTS.md had been
+ * run is how this rotted the first time - the config in tests/AGENTS.md#nothing-typechecks-the-tests-unless-you-ask-it-to had been
  * written down and deliberately left unwired, and the count went from 521 to
  * 733 in the interval. A ratchet is what makes it somebody's problem on the
  * commit that breaks it rather than a year later.

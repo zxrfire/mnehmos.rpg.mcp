@@ -405,7 +405,7 @@ describe('the accounts it hands back', () => {
     });
 
     /**
-     * The seam for AGENTS.md's *a fact reaches a person, and reaching them is
+     * The seam for src/engine/AGENTS.md#a-fact-reaches-a-person-and-reaching-them-is-an-event's *a fact reaches a person, and reaching them is
      * an event* - corrected by the design owner, and this test used to assert
      * the reading he corrected.
      *

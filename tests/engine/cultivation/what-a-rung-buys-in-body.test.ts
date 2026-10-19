@@ -119,7 +119,7 @@ describe('a realm doubles the body', () => {
     });
 
     it('force outruns the vessel, at every realm', () => {
-        // AGENTS.md, "nothing in this world is invincible", expressed as a
+        // src/engine/AGENTS.md#nothing-in-this-world-is-invincible, "nothing in this world is invincible", expressed as a
         // curve rather than as a branch: power is x4 a realm and the body is
         // x2, so climbing never accumulates enough body to stop dying. If the
         // body ever catches power, a long enough fight becomes unwinnable by

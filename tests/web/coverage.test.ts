@@ -524,7 +524,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
      * Every one of these reached a different lookup before the verb existed,
      * and none of them reached a person: the roster, a description of the
      * person, the almanac entry for the book, and a bribe that landed on
-     * nothing. The list is long on purpose - `AGENTS.md` files "if a
+     * nothing. The list is long on purpose - `src/web/AGENTS.md#the-model-reads-intent` files "if a
      * near-synonym works, the phrasing that fails is a bug", and a request is
      * the verb people phrase the most different ways.
      */
@@ -1341,7 +1341,7 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // ── AND THE THREE COERCIONS ONLY THE TABLE KNEW ABOUT ────────────
         //
         // The polite four were named and these were not, which is the
-        // softening AGENTS.md describes: a vocabulary that can only say the
+        // softening src/web/AGENTS.md#the-parser-names-the-act-the-engine-is-the-one-that-says-no describes: a vocabulary that can only say the
         // mild version of an act has taken a side.
         'coerce/swallow': [
             'I force him to swallow the pill',

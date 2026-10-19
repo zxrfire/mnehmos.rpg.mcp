@@ -36,7 +36,7 @@
  *
  * IT VERIFIES NOTHING. The name the player used is handed on exactly as typed,
  * whether or not that person did it, whether or not anybody did anything, and
- * whether or not the player has any grounds at all. AGENTS.md, *the parser names
+ * whether or not the player has any grounds at all. src/web/AGENTS.md#the-parser-names-the-act-the-engine-is-the-one-that-says-no, *the parser names
  * the act, the engine is the one that says no* - and `hearing-of-a-wrong.ts` is
  * explicit that a hearer who could tell a true telling from a false one would
  * need the omniscient view the whole knowledge layer exists to deny.

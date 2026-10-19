@@ -24,7 +24,7 @@
  * ── WHY `unclear` IS NOT A FAILURE HERE ──────────────────────────────────
  *
  * The bar is deliberately "not somewhere else" rather than "reaches its verb",
- * and `AGENTS.md` is the reason: *a table entry that guesses at context is
+ * and `src/web/AGENTS.md#the-model-reads-intent` is the reason: *a table entry that guesses at context is
  * worse than no entry, because it is confidently wrong in the cases it was
  * reaching for. When a phrasing is ambiguous by nature, the table should leave
  * it alone.* A phrasing the table declines is answered by the tier below it,

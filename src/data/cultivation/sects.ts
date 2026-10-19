@@ -1626,7 +1626,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // in a fight and no teaching capacity at all. That gap between what
         // somebody IS and what they can PASS ON is the setting's own subject -
         // see `Holding a thing and being able to pass it on are different
-        // facts` in AGENTS.md - and this is the smallest clean instance of it
+        // facts` in src/engine/world/AGENTS.md#a-houses-shelf-outruns-its-people-and-the-gap-is-the-content - and this is the smallest clean instance of it
         // in the catalog.
         powerOrdinal: 38,
         ranks: ['Tethered', 'First Cut', 'Third Cut', 'Ninth Cut', 'Nameless', 'First Among the Nameless', 'The Severed Themselves'],

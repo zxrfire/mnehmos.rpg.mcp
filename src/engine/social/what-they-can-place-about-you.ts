@@ -34,7 +34,7 @@
  *
  * ── IT RUNS BOTH WAYS ─────────────────────────────────────────────────────
  *
- * `AGENTS.md`: every read runs both ways unless there is a reason it cannot.
+ * `AGENTS.md#look-before-you-build`: every read runs both ways unless there is a reason it cannot.
  * The mirror of *what can they place about me* is *what can I place about
  * them*, and it is this function with the two sides swapped - the reader is
  * whoever is looking, the read is whoever is being looked at, and neither

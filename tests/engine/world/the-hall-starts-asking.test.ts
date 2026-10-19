@@ -107,7 +107,7 @@ describe('the hall starts asking', () => {
         // and was lost again. Four disappearances, four alarms, and the house
         // was right every time.
         //
-        // ON A CULTIVATOR'S CLOCK SEVENTY-TWO YEARS IS NOTHING. `AGENTS.md`
+        // ON A CULTIVATOR'S CLOCK SEVENTY-TWO YEARS IS NOTHING. `src/engine/world/AGENTS.md#measure-a-world-on-a-cultivators-clock-not-a-mortal-one`
         // is explicit that a rate is only wrong if it is wrong over a life and
         // a life here is centuries; the old assertion was a human intuition -
         // *surely not the same person twice* - applied to people who live for

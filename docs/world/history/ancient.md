@@ -449,7 +449,7 @@ the way in.
 
 **It is one object.** For a short while this catalog carried two: the existing pill and a
 separate "thousand-year medicine" added beside it. They were always the same thing, and two
-rows for one object is the parallel-catalog mistake [`../../AGENTS.md`](../../../AGENTS.md)
+rows for one object is the parallel-catalog mistake [`AGENTS.md`](../../../AGENTS.md)
 forbids, committed where it does the most damage - nobody in play could have told them
 apart. The second row is retired.
 
@@ -632,7 +632,7 @@ before they could use it.**
 
 <!-- tier: 3 -->
 
-Per [`../../AGENTS.md`](../../../AGENTS.md): **no arithmetic in a lore file.** An object made in
+Per [`AGENTS.md`](../../../AGENTS.md): **no arithmetic in a lore file.** An object made in
 a richer age is an ordinary row with an ordinary `power`, ordered against everything else by
 the same resolver. What makes it remarkable is that nothing can produce another.
 

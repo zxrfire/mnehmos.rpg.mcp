@@ -11,7 +11,7 @@
  * unresolved fallback ordering produces a question and spends nothing; and that the answer to
  * that question runs the act the player picked.
  *
- * `worldEnabled: true` throughout, because `AGENTS.md` is explicit that hand-
+ * `worldEnabled: true` throughout, because `tests/AGENTS.md#engine-only-and-played-tests` is explicit that hand-
  * playing with the world off is playing a configuration where every guard that
  * needs a world to check against is skipped by design.
  *

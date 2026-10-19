@@ -35,7 +35,7 @@
  * get to it by naming it. Neither is a test - `coverage.test.ts` owns whether
  * a verb is reachable by SOME phrasing, and every one of them is. What this
  * measures is whether the most obvious phrasing is among them, which is the
- * standing rule in AGENTS.md: if a near-synonym works, the phrasing that
+ * standing rule in src/web/AGENTS.md#the-model-reads-intent: if a near-synonym works, the phrasing that
  * fails is a bug, and the failing half is usually the more natural one.
  *
  * A miss here is not automatically something to fix, and this must not be

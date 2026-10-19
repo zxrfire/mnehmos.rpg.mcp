@@ -563,7 +563,7 @@ describe('a plan that stops halfway is an outcome, not an error', () => {
      *
      * The middle step - a free `interact` whose target was "merchants" - matched
      * nobody, stopped the plan, and threw away the buy the whole sentence was
-     * for. A free read that outranks a costly act is the exact thing AGENTS.md
+     * for. A free read that outranks a costly act is the exact thing src/web/AGENTS.md#a-sentence-is-a-plan
      * forbids: the one act a turn spends must be the one they asked for.
      */
     /**

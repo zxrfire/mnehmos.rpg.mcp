@@ -2,7 +2,7 @@
 
 Who the engine models of a sect, how they are arranged, and what the words
 mean. The rule lives here rather than in `AGENTS.md` because it is about this
-world rather than about working in this repo; `AGENTS.md` links to it.
+world rather than about working in this repo; [world guidance](AGENTS.md#how-many-people-a-house-has) links to it.
 
 Read alongside:
 

@@ -10,7 +10,7 @@
  *     "I interfere with her breakthrough"    unclear, refused 6 / 6
  *
  * Twelve turns on the two phrasings a player is likelier to type, and the
- * failing half is the more natural one - which is the case AGENTS.md names as a
+ * failing half is the more natural one - which is the case src/web/AGENTS.md#the-model-reads-intent names as a
  * bug rather than a gap.
  *
  * ── WHAT THE ENGINE ACTUALLY HAS, AND WHAT IT DOES NOT ───────────────────

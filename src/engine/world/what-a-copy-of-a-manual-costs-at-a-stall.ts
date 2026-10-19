@@ -20,7 +20,7 @@
  * NOTHING HERE IS A NUMBER SOMEBODY PICKED
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * `AGENTS.md` says a count needs a physical reason and that scarcity is
+ * `src/engine/AGENTS.md#what-npcs-do-is-emergent-never-enumerate-it` says a count needs a physical reason and that scarcity is
  * measured rather than authored, so both halves of the price are read off
  * catalogs that already exist and neither is written down here.
  *

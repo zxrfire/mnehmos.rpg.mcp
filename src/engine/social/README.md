@@ -119,7 +119,7 @@ editing a table. A `switch` on a cause that decides an outcome is a bug, not a f
 
 ### An account opens when somebody finds out, not when it happens
 
-**The deed does not open the account. The telling does.** AGENTS.md's *a fact reaches a
+**The deed does not open the account. The telling does.** [engine guidance](../AGENTS.md#a-fact-reaches-a-person-and-reaching-them-is-an-event)'s *a fact reaches a
 person, and reaching them is an event* is the ruling; `hearing-of-a-wrong.ts` is the join
 and `accounts-with-no-name.ts` is the state it needs that the ledger did not have.
 

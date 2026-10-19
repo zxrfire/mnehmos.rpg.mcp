@@ -3,7 +3,7 @@
  *
  * FOUND BY PLAYING IT, and every one of these is the same shape: the question
  * works, and the same question with the player saying they are asking it does
- * not. That is the near-synonym rule in AGENTS.md - the phrasing somebody
+ * not. That is the near-synonym rule in src/web/AGENTS.md#the-model-reads-intent - the phrasing somebody
  * reaches for first is the one that fails, and there is no way to find the
  * working half except by guessing.
  *

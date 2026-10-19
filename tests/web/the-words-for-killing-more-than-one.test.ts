@@ -8,7 +8,7 @@
  *   I exterminate his family   -> unclear
  *   I wipe out the Duan family -> unclear
  *
- * `AGENTS.md`, twice over. *"If a near-synonym works, the phrasing that fails
+ * `src/web/AGENTS.md#the-model-reads-intent`, twice over. *"If a near-synonym works, the phrasing that fails
  * is a bug"* - a player cannot find the working half except by guessing. And
  * *"read the genre before you read the sentence"* - house extermination is the
  * setting's own set piece, and **a reader that can say the one-person version

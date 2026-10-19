@@ -21,7 +21,7 @@
  * So a debt the world had written down, and would charge the player for, was a
  * thing the player could not ask about in any words at all.
  *
- * `AGENTS.md`: every read runs both ways unless there is a reason it cannot.
+ * `AGENTS.md#look-before-you-build`: every read runs both ways unless there is a reason it cannot.
  * There is no reason this one cannot.
  *
  * ── FOUR BUCKETS, AND WHY THEY ARE NOT TWO ────────────────────────────────

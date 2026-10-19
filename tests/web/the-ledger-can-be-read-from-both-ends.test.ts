@@ -1,7 +1,7 @@
 /**
  * THE LEDGER, ASKED ABOUT.
  *
- * `AGENTS.md`: every read runs both ways unless there is a reason it cannot.
+ * `AGENTS.md#look-before-you-build`: every read runs both ways unless there is a reason it cannot.
  *
  * The obligation ledger is written from everywhere - a landed approach leaves a
  * favour, a refused one a grudge, a bout past what was agreed a blood feud, a

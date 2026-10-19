@@ -311,7 +311,7 @@ function nothing(landed: NothingLanded, note: string): WhatATellingLandsOn {
  * answered instantly, and produced from the branch where the game had already
  * worked out exactly who the player meant. That is the game saying *I did not
  * understand you* dressed as *the world did not care*, and a player cannot tell
- * the two apart. AGENTS.md's line about a sentence being a plan applies at full
+ * the two apart. src/web/AGENTS.md#a-sentence-is-a-plan's line about a sentence being a plan applies at full
  * strength: a coherent sentence gets a real answer.
  *
  * So there is no branch here that says the sentence was unintelligible. Every

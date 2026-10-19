@@ -10,7 +10,7 @@
  * passed `'failed'`, on the branch where the cultivator had died: the sole way
  * to not finish a duty was to be killed doing it.
  *
- * Two tiers, per AGENTS.md. The unit tests below say what happens; the rate test
+ * Two tiers, per tests/AGENTS.md#two-tiers-of-test-outcomes-and-rates. The unit tests below say what happens; the rate test
  * at the bottom says it happens at all, measured where a player would meet it.
  */
 

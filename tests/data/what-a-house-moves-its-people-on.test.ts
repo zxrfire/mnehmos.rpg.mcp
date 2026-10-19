@@ -1,7 +1,7 @@
 /**
  * The conveyance catalog, and the decisions in it that live only as numbers.
  *
- * AGENTS.md: a design decision that lives only as a number needs a test, and a
+ * tests/AGENTS.md#tests-test-behaviour-not-implementation: a design decision that lives only as a number needs a test, and a
  * bill of materials is entirely numbers. Four rulings are pinned here and each
  * case is named after the ruling rather than after the function it calls:
  *

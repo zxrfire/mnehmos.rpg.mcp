@@ -25,7 +25,7 @@
  *
  * A FRESH RUN PER SENTENCE. The alternative is one run played down the list,
  * and then turn twelve inherits the days, the stones and the standing fight of
- * everything before it - which is the defect `AGENTS.md` records under "a
+ * everything before it - which is the defect `tests/AGENTS.md#a-corpus-is-a-set-not-a-sequence` records under "a
  * corpus is a set, not a sequence". The world is off: it costs minutes to seed
  * and the sentences that need one are marked, so what they produce is read as
  * "no world" rather than as an answer.

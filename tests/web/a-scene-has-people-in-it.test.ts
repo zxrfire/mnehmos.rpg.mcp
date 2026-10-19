@@ -23,7 +23,7 @@
  *
  * `scene-person-readings.test.ts` drives the same module directly and is the
  * better instrument for what the sentences say. What it cannot say is whether
- * anybody ever sees them. AGENTS.md's second tier: *a unit test says what
+ * anybody ever sees them. tests/AGENTS.md#two-tiers-of-test-outcomes-and-rates's second tier: *a unit test says what
  * happens when an event happens; a rate test says the event happens at all.*
  * Every defect this channel was written against passed the first tier forever.
  *

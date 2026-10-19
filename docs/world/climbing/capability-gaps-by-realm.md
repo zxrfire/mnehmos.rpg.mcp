@@ -446,7 +446,7 @@ and now holds for a stated reason: a fold needs a fix, and the far rooms of a ru
 the ground nobody has stood on and nobody can see.
 
 The sharpest cost is the one no number carries. **A road is where encounters, hearsay and
-everything AGENTS.md means by having been places and survived things come from.** Somebody who
+everything [world guidance](../../../src/engine/world/AGENTS.md#repetition-should-cost-a-narrow-life-makes-a-narrower-cultivator) means by having been places and survived things come from.** Somebody who
 folds everywhere has been nowhere, and arrives at a crossing that asks what they understood with
 nothing to bring. That is the greenhouse rule applied to transport and it needs no penalty,
 because it is not one: the experiences simply did not happen.
@@ -780,7 +780,7 @@ Two transcendents do not fight for days because each blow is small. They fight f
 **every approach stops working once either of them has leaned on it**, and both keep having to
 find another thing to do. The length comes out of the exchange rather than out of a constant.
 
-**Note what it rhymes with.** AGENTS.md already carries the owner's principle that a repetitive
+**Note what it rhymes with.** [world guidance](../../../src/engine/world/AGENTS.md#repetition-should-cost-a-narrow-life-makes-a-narrower-cultivator) already carries the owner's principle that a repetitive
 strategy should cost you, stated about a whole life. The tribulation body is that same idea
 compressed into a single fight: repetition stops working, and the cultivator with one narrow art
 is the one it stops working for first.

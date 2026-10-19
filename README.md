@@ -273,8 +273,7 @@ npx tsc --noEmit                         # typecheck
 npm run build
 ```
 
-Contributor and agent guidance lives in [`AGENTS.md`](AGENTS.md) (`CLAUDE.md` is a
-symlink to it). The short version: balance constants live in
+Contributor and agent guidance lives in [`AGENTS.md`](AGENTS.md) (`CLAUDE.md` imports it with `@AGENTS.md`). The short version: balance constants live in
 `src/schema/cultivation.ts` and nowhere else, ladder bounds live in
 `src/engine/cultivation/realms.ts`, relative imports carry `.js` extensions, and no code
 path may ever let the model become authoritative over state.

@@ -14,7 +14,7 @@
  *
  * `REAL_OPTIONS` has nine entries and **five of them have no verb behind
  * them**. Printing all nine is the narrator inventing affordances - the
- * failure AGENTS.md names by example, *"it writes 'you could try climbing the
+ * failure src/web/AGENTS.md#if-you-are-the-narrator names by example, *"it writes 'you could try climbing the
  * wall' where there is no climb verb"* - in the one moment a player is
  * desperate enough to try every line in the paragraph.
  *

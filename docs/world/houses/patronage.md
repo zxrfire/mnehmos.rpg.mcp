@@ -89,7 +89,7 @@ world should be entirely unapologetic about it.
 - **Both are separated by realm.** Entrants compete against their own band, never across it.
 - **Both are calendar events.** Each competition is a fixed event that recurs every so many
   years. It is a schedule, not a draw, so it is exempt from life-span thresholds (see
-  AGENTS.md, "Calendars are exempt").
+  [world guidance: calendars are exempt](../../../src/engine/world/AGENTS.md#measure-a-world-on-a-cultivators-clock-not-a-mortal-one)).
 
 The big sects are the most populous places in the world, and that is correct. A capital is
 not filled by emptying them. It is filled by giving people a reason to come:

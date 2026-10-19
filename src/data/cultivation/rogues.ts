@@ -34,7 +34,7 @@
  * the point of them.
  *
  * So the difficulty is finding one and being worth their hours, not being
- * permitted. AGENTS.md: a rule modelled as an impossibility throws away the
+ * permitted. src/engine/AGENTS.md#traits-and-actors: a rule modelled as an impossibility throws away the
  * rare event that makes the ordinary case worth having. The ordinary case is
  * that there is nothing to join and nobody owes you an afternoon. The rare
  * one is a person who could, and might.

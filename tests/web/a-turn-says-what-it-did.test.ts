@@ -1,7 +1,7 @@
 /**
  * Four things a turn owes the player, all found by playing with no model.
  *
- * `AGENTS.md`, "It has to play as a game, not as a command line", names a floor
+ * `src/web/AGENTS.md#it-has-to-play-as-a-game-not-as-a-command-line`, "It has to play as a game, not as a command line", names a floor
  * that holds at every reading tier because none of it costs a model: you are
  * told what happened, you can find out what you could do, a refusal names a
  * route, and nothing contradicts itself. Each block below is one place the

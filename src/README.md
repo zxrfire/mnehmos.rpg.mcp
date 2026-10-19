@@ -7,8 +7,8 @@ narrates but never decides. Read [`../context.md`](../context.md) first; it is s
 indexes everything.
 
 **The rule that overrides everything: the AI narrates, the engine decides.** Before writing
-anything, check which side of that line it falls on - [`AGENTS.md`](../AGENTS.md) has the
-table.
+anything, check which side of that line it falls on - [`AGENTS.md`](../AGENTS.md) defines the
+authority boundary.
 
 ---
 
@@ -121,7 +121,7 @@ does, so search for the CONCEPT under several words:
 - [`../context.md`](../context.md) - the authority rule and the priority order that resolves
   conflicts between design goals. Short, and it indexes the rest.
 - [`../AGENTS.md`](../AGENTS.md) - how to work in this repo. The rules general enough to apply
-  anywhere; anything that governs one directory is in that directory's README instead.
+  anywhere; area instructions live in nested AGENTS.md files, with contracts in their READMEs.
 - [`../docs/world/README.md`](../docs/world/README.md) - the setting bible, split by topic.
   The prose half of what `data/cultivation/` holds as tables.
 - [`../docs/verbs.md`](../docs/verbs.md) - every verb a player can reach, in the player's own

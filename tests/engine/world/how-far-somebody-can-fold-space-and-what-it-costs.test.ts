@@ -1,7 +1,7 @@
 /**
  * The range curve is entirely numbers, so every decision in it is named here.
  *
- * AGENTS.md: a design decision that lives only as a number gets silently
+ * tests/AGENTS.md#tests-test-behaviour-not-implementation: a design decision that lives only as a number gets silently
  * reverted by the next person who finds it surprising. These cases state the
  * decisions in their own names, and the ones that read a figure off the region
  * catalog fail loudly if a content pass moves a road.

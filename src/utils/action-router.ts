@@ -331,7 +331,7 @@ export function formatMcpError(
  *
  * This used to answer "Validation failed for action X" with the hint "Check the
  * parameter types and required fields", which names nothing the caller can act
- * on - the exact shape AGENTS.md records under "a fallback written in ordinary
+ * on - the exact shape src/web/AGENTS.md#a-fallback-written-in-ordinary-english-is-invisible records under "a fallback written in ordinary
  * English is invisible". The issue list was in the body and every renderer
  * dropped it, so `ADMIN spawn_encounter` with no rung reported a failure
  * without ever saying the word `ordinal`.

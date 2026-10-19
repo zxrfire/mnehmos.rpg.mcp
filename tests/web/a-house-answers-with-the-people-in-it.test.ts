@@ -25,7 +25,7 @@
  *                so somebody past what a favour can buy is told so
  *   against      who was overruled, so a costly disagreement is not a free one
  *
- * AGENTS.md's most-repeated defect is a value computed and never printed, and
+ * AGENTS.md#look-before-you-build's most-repeated defect is a value computed and never printed, and
  * the second-most is a module nothing calls. This asserts against both.
  * The conversation is arranged with a member in the current area; membership
  * somewhere else in the compound does not put somebody in speaking distance.

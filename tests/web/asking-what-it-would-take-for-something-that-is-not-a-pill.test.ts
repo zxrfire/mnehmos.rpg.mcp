@@ -16,7 +16,7 @@
  * every artifact, every volume and every manual: a player could offer a rated
  * blade at 46 and could not ask for one at all.
  *
- * `AGENTS.md`, "every read runs both ways unless there is a reason it cannot".
+ * `AGENTS.md#look-before-you-build`, "every read runs both ways unless there is a reason it cannot".
  * Here there was none - the arithmetic is the same in both directions, because
  * the question is the same one: how high does this carry whoever ends up with
  * it.

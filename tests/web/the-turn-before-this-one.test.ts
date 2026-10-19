@@ -13,7 +13,7 @@
  * one turn after cultivating for a year, and one turn after the market had
  * listed two manuals with their prices.
  *
- * `worldEnabled: true` throughout - `AGENTS.md` is explicit that hand-playing
+ * `worldEnabled: true` throughout - `tests/AGENTS.md#engine-only-and-played-tests` is explicit that hand-playing
  * with the world off is playing a configuration where every guard that needs a
  * world is skipped - and the world seed is pinned, because a played test that
  * pins a run seed and not a world seed is pinning a coincidence.

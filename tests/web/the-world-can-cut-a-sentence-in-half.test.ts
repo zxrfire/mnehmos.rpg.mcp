@@ -40,7 +40,7 @@ const MANUAL = 'lesser-qi-gathering-manual';
 /**
  * Somebody who can actually sit for a decade.
  *
- * Arranged rather than played, which AGENTS.md allows for a precondition - the
+ * Arranged rather than played, which tests/AGENTS.md#three-layers-and-the-cheap-one-carries-the-weight allows for a precondition - the
  * played half is the sentence typed below it. Without a manual the ceiling
  * refuses every long stretch before a day is spent, and without a purse the
  * pack runs out inside a fortnight; neither is what any of this measures.

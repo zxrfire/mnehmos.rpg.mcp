@@ -4,8 +4,8 @@
 # What the genre does, and whether we model it
 
 The tropes this setting runs on, both signs, with what already exists beside them.
-Companion to the "Read the genre before you read the sentence" section of
-[`../../AGENTS.md`](../../AGENTS.md), which is the rule; this is the list.
+Companion to [the reader/engine boundary](../../src/web/AGENTS.md#the-parser-names-the-act-the-engine-is-the-one-that-says-no),
+which states the rule; this is the list.
 
 Two things govern everything below.
 
@@ -457,7 +457,7 @@ compared to each other, never switched on.
 
 ### Rarity is the beast population, not a dial
 
-AGENTS.md: rarity is a population statement, not a price. Measured in the catalog today:
+[Engine guidance](../../src/engine/AGENTS.md#what-npcs-do-is-emergent-never-enumerate-it): rarity is a population statement, not a price. Measured in the catalog today:
 
 | | |
 |---|---|

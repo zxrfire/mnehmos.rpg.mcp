@@ -21,7 +21,7 @@
  * WHY THIS IS PLAYED
  * ═════════════════════════════════════════════════════════════════════════
  *
- * AGENTS.md, *a module nothing calls is not a feature*. The first test here
+ * AGENTS.md#look-before-you-build, *a module nothing calls is not a feature*. The first test here
  * types the sentence a player types and then reads the ledger out of SQLite.
  * The deed itself is written through `aDeedEntersTheWorld` - the same call
  * `combat-verbs.ts` makes when a played bout goes too far - because arranging

@@ -17,3 +17,12 @@ It is independent of `test` and `test:ci`.
 `measure-aged-world.mjs` times current-source completed checkpoints and records
 their source key. Its historical before arm rejects later merged versions of
 the two old profiled files, so a comparison cannot discard unrelated changes.
+
+## The shipped binary
+
+Vitest imports the real better-sqlite3 module, not the packaged driver's replacement
+wrapper. A green suite alone cannot validate behaviour invented in `esbuild.config.mjs`.
+Do not implement behaviour in that config's template literals. Put required wrapper
+logic in `scripts/`, import it in the build and a test, and inline the tested function's
+own source. `packaged-better-sqlite3-driver.mjs` is the pattern; nested transactions
+must retain their savepoint/depth semantics.

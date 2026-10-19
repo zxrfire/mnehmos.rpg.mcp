@@ -10,7 +10,7 @@
  * than from the top down. So the histogram is the thing to check, before and
  * after, and it is checked on the SHAPE rather than on any single band.
  *
- * Read it as AGENTS.md describes it - nine buckets, chained, each one's outflow
+ * Read it as src/engine/world/AGENTS.md#every-realm-is-a-bucket-with-an-inflow-and-an-outflow describes it - nine buckets, chained, each one's outflow
  * being the next one's inflow. What is wanted at every stage is a steady volume
  * turning over slowly. What is not wanted is the middle climbing.
  *

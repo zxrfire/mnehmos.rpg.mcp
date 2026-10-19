@@ -34,7 +34,7 @@
  * was written, so the hunk was handed over rather than applied, and this note
  * stands until it lands. Until then a death still leaves nothing behind in a
  * played run - the code exists and the world does not reach it, which is
- * exactly the shape AGENTS.md files under "a module nothing calls is not a
+ * exactly the shape AGENTS.md#look-before-you-build files under "a module nothing calls is not a
  * feature", said out loud rather than left to be discovered.
  *
  * Two properties make the call site cheap and safe: it is idempotent (the

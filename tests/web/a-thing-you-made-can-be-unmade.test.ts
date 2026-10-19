@@ -88,7 +88,7 @@ describe('a player can break what they are carrying', () => {
 
     // ── AND THE SAME STATE, REACHED BY PLAYING ───────────────────────────
     //
-    // The sibling AGENTS.md asks for. `addToPouch` above is an arrangement;
+    // The sibling tests/AGENTS.md#three-layers-and-the-cheap-one-carries-the-weight asks for. `addToPouch` above is an arrangement;
     // this earns the stones at a job and buys the pill off the stall a player
     // can actually see, so the precondition is a state somebody can occupy
     // rather than one only a test can build.

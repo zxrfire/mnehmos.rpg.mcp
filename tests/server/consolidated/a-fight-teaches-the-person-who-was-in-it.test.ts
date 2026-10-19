@@ -2,7 +2,7 @@
  * A fight teaches the person who was in it - through the tool, into the row.
  *
  * The engine half is pinned in `tests/engine/cultivation/what-a-fight-teaches.test.ts`.
- * This is the other half, and it is the one AGENTS.md keeps saying is the one
+ * This is the other half, and it is the one AGENTS.md#look-before-you-build keeps saying is the one
  * that goes missing: **a module nothing calls is not a feature.** So what is
  * under test here is not the arithmetic, it is that
  *

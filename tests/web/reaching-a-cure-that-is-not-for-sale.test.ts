@@ -76,7 +76,7 @@ async function standWithSpeaker(
  *   they need it now, so there is no figure and no trade.
  *
  * That is `will_not_part_with_it_at_any_price` out of the want model, driven by
- * a deadline derived from that person's own clocks - the case `AGENTS.md` says
+ * a deadline derived from that person's own clocks - the case `src/engine/world/AGENTS.md#measure-a-world-on-a-cultivators-clock-not-a-mortal-one` says
  * the design cares about most, and which the model's author measured as
  * impossible to reach before the derivation landed. Somebody whose own need is
  * present is not a seller at any figure.

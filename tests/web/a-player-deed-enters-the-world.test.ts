@@ -23,7 +23,7 @@
  * WHY THESE ARE PLAYED RATHER THAN UNIT TESTS
  * ═════════════════════════════════════════════════════════════════════════
  *
- * AGENTS.md, *a module nothing calls is not a feature*: the definition of done
+ * AGENTS.md#look-before-you-build, *a module nothing calls is not a feature*: the definition of done
  * is that somebody in the running world reaches it by doing something. A unit
  * test on the writer proves the writer writes. These type the sentence a player
  * would type, then go and look for the fact - and then ask whether anybody

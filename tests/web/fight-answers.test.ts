@@ -63,7 +63,7 @@ describe('the five sentences that had nowhere to land', () => {
 });
 
 describe('how somebody actually says each of them', () => {
-    // AGENTS.md: "if a near-synonym works, the phrasing that fails is a bug",
+    // src/web/AGENTS.md#the-model-reads-intent: "if a near-synonym works, the phrasing that fails is a bug",
     // and the failing half is usually the more natural one. Each list below is
     // the three or four ways somebody would really type it.
     const cases: Array<[string, string[]]> = [

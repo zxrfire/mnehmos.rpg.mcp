@@ -210,7 +210,7 @@ describe('what the person in front of you can place about you', () => {
 /**
  * THE PREDICATE ITSELF, WHICH IS PURE AND RUNS BOTH WAYS.
  *
- * `AGENTS.md`: every read runs both ways unless there is a reason it cannot.
+ * `AGENTS.md#look-before-you-build`: every read runs both ways unless there is a reason it cannot.
  * The mirror of *what can they place about me* is *what can I place about
  * them*, and it is this function with the two sides swapped. Neither position
  * is the player's by construction, so the arms below are stated in the module's

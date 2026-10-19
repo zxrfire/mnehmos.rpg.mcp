@@ -14,7 +14,7 @@
  *      -> attack(Ji Wanniang). combat_manage.resolve.
  *
  * Three samples of the same sentence gave three different verbs. But agreement
- * is the wrong invariant and `AGENTS.md` says why: the same act means different
+ * is the wrong invariant and `src/web/AGENTS.md#the-model-reads-intent` says why: the same act means different
  * things in different situations, the table cannot see the situation, and a
  * model that agreed with the table in every case would be a slower table.
  *

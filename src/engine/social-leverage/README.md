@@ -319,7 +319,7 @@ alignment, a faction or a rung could reach it. What comes back is one number on
 uncommon without being absent.
 
 **Nothing switches on a personality, because there is no personality to switch
-on.** AGENTS.md forbids enumerating what NPCs do, and greed and generosity are an
+on.** [Engine guidance](../AGENTS.md#what-npcs-do-is-emergent-never-enumerate-it) forbids enumerating what NPCs do, and greed and generosity are an
 example of a disposition rather than the set of them - so the shape has to be one
 where a tenth kind of person costs no code. The inversion that gets there is to
 stop asking *what kind of person is this* and start asking *how heavily does what
@@ -418,7 +418,7 @@ only about persuasion. `going-further-than-an-agreed-bout-allowed.ts` answers
 the same question for a spar, a duel, a challenge - and it obeys the same rule
 as `an-attempt-to-move-somebody.ts`, in the place that rule matters most.
 
-The design owner's ruling, from AGENTS.md:
+The agreed-bout rule in [root guidance](../../../AGENTS.md#the-agency-rule):
 
 > **Kill somebody during an agreed bout and you will obviously face
 > consequences.**

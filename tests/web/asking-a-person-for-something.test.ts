@@ -125,7 +125,7 @@ describe('what a request asks, and of whom', () => {
 
     /**
      * Every phrasing of the same request, because a verb that fires on one
-     * exact sentence is a verb the player has to guess. `AGENTS.md`: if a
+     * exact sentence is a verb the player has to guess. `src/web/AGENTS.md#the-model-reads-intent`: if a
      * near-synonym works, the phrasing that fails is a bug.
      */
     it('takes every ordinary way of saying it', () => {
@@ -231,7 +231,7 @@ describe('a request outranks the roster question', () => {
 // ─────────────────────────────────────────────────────────────────────────
 // PLAYED
 //
-// The parse is half the verb. `AGENTS.md` is emphatic that a module nothing
+// The parse is half the verb. `AGENTS.md#look-before-you-build` is emphatic that a module nothing
 // calls is not a feature and that the test for a system is somebody in the
 // running world reaching it by doing something - so everything below drives
 // the real endpoint, in a world pinned by its own seed as well as the run's.
@@ -696,7 +696,7 @@ describe('a request reaches the person, played', () => {
 // and all three sentences were typed back by somebody reading them. `I buy X a
 // drink` reached the price board; the other two reached nothing at all.
 //
-// `AGENTS.md` has an entry called "the player must be able to type back what
+// `src/web/AGENTS.md#the-model-reads-intent` has an entry called "the player must be able to type back what
 // the game printed", and a refusal is where that rule bites hardest, because a
 // refusal is the one place the game is telling the player what to do next.
 // ─────────────────────────────────────────────────────────────────────────

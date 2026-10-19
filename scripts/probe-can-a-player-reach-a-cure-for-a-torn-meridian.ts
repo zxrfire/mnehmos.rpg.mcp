@@ -8,7 +8,7 @@
  * ordinary English reach one".
  *
  * This drives the real `GameService` with `worldEnabled: true`, which is the
- * configuration the browser runs (AGENTS.md: the harness default of `false`
+ * configuration the browser runs (tests/AGENTS.md#engine-only-and-played-tests: the harness default of `false`
  * skips every guard that needs a world, and reads as bugs).
  */
 import { randomUUID } from 'node:crypto';

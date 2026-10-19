@@ -60,7 +60,7 @@
  * THE OPENINGS, BECAUSE A DEFENCE THAT ZEROES NEEDS THEM NAMED
  * ═════════════════════════════════════════════════════════════════════════
  *
- * AGENTS.md is explicit that nothing in this world is invincible and that every
+ * src/engine/AGENTS.md#nothing-in-this-world-is-invincible is explicit that nothing in this world is invincible and that every
  * defence has a window, a cost or a condition. This one categorically stops
  * everything under a rung, so the openings are load-bearing and all four are
  * structural rather than tuned:

@@ -16,7 +16,7 @@
  * four world seeds identically.** The number came back in the digest and
  * nothing made anybody read it, so a test that wanted a century of world got a
  * fortnight and could not tell. That was fixed in `time-skip.ts` - see the
- * banner over `DEVIATION_CHECK_DAYS`, and AGENTS.md's *a wound has a cause you
+ * banner over `DEVIATION_CHECK_DAYS`, and src/engine/AGENTS.md#a-wound-has-a-cause-you-can-point-at's *a wound has a cause you
  * can point at* - and nothing guarded it afterwards. This is the guard.
  *
  * ── The expectations are closed form, not sampled ─────────────────────────

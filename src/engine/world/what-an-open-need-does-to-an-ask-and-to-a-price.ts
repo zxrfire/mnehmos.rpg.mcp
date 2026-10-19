@@ -149,7 +149,7 @@ export function whatTheyWantThatYouCouldReach(
 //
 // ── THERE IS NO LIST OF REASONS HERE, AND THERE MUST NEVER BE ────────────
 //
-// `AGENTS.md`: "what NPCs do is emergent. Never enumerate it. Model what
+// `src/engine/AGENTS.md#what-npcs-do-is-emergent-never-enumerate-it`: "what NPCs do is emergent. Never enumerate it. Model what
 // somebody wants and let the behaviour fall out. If a new case requires a new
 // branch, the shape is wrong."
 //

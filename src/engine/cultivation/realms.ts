@@ -392,7 +392,7 @@ export function powerMultiplierForOrdinal(ordinal: number): number {
 // outruns the vessel by a factor of two every realm, so a fight between peers
 // is settled in the same handful of exchanges at the top of the ladder as at
 // the bottom, and nobody anywhere accumulates enough body to stop dying. See
-// AGENTS.md, "nothing in this world is invincible" - this is that law
+// src/engine/AGENTS.md#nothing-in-this-world-is-invincible, "nothing in this world is invincible" - this is that law
 // expressed as a curve rather than as a branch.
 
 /**
