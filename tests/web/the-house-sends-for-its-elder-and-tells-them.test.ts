@@ -6,6 +6,12 @@
  * a real member, in a real house, in a pinned world, reached by the encounter
  * window the game actually rolls.
  *
+ * A later census stopped four cases before their assertions: the fixture's
+ * partial knowledge stub had no awareness reader when encounter input began
+ * reading known occasions. Use the game's actual knowledge gate and typed
+ * encounter dependencies, so this join follows real held knowledge rather
+ * than an unsafe cast asserting that everybody knows everything.
+ *
  * ── WHAT WAS MEASURED, BEFORE ANY OF THIS ────────────────────────────────
  *
  * `summonsPool` reads eight hand-authored entries and filters them on their
@@ -67,7 +73,9 @@ import {
     encountersFor,
     membershipFor,
     sectBoardFor,
-    theHouseAsItStands
+    theHouseAsItStands,
+    type EncounterDeps,
+    type EncounterRequest
 } from '../../src/web/encounters';
 import { MAX_ORDINAL } from '../../src/engine/cultivation/realms';
 import { makeGameInWorld } from './harness';
@@ -94,10 +102,7 @@ async function anElderOf(house: string, ordinal: number) {
         .run(ordinal, cultivator.id);
 
     const world = await game.loadWorld();
-    const deps = {
-        repos, world,
-        knowledge: { knows: () => true, isAwareOf: () => true, learn: () => undefined }
-    } as never;
+    const deps: EncounterDeps = { repos, world, knowledge: game.knowledge };
     return { game, repos, db, deps, sect, cultivator: repos.cultivators.getById(cultivator.id)! };
 }
 
@@ -108,7 +113,7 @@ async function anElderOf(house: string, ordinal: number) {
  * asserted is that the house CAN send for somebody at this rung, and one seed
  * answering no proves nothing either way.
  */
-function summonsesAcrossSeeds(deps: never, cultivator: never, seeds: number) {
+function summonsesAcrossSeeds(deps: EncounterDeps, cultivator: EncounterRequest['cultivator'], seeds: number) {
     const out: { posture: string; entryId: string }[] = [];
     for (let i = 0; i < seeds; i += 1) {
         const roll = encountersFor(deps, {
@@ -136,7 +141,7 @@ function summonsesAcrossSeeds(deps: never, cultivator: never, seeds: number) {
 describe('the house sends for its elder', () => {
     it('sends for somebody standing above every window the catalogue has', async () => {
         const at = await anElderOf(A_HOUSE, ABOVE_THE_CATALOGUE);
-        const sent = summonsesAcrossSeeds(at.deps, at.cultivator as never, 40);
+        const sent = summonsesAcrossSeeds(at.deps, at.cultivator, 40);
         expect(sent.length).toBeGreaterThan(0);
         // And what reached them is the house's own business rather than a
         // catalogue row that happened to have a wide enough window.
@@ -145,7 +150,7 @@ describe('the house sends for its elder', () => {
 
     it('and what it sends them on is told, not asked', async () => {
         const at = await anElderOf(A_HOUSE, ABOVE_THE_CATALOGUE);
-        const sent = summonsesAcrossSeeds(at.deps, at.cultivator as never, 40)
+        const sent = summonsesAcrossSeeds(at.deps, at.cultivator, 40)
             .filter(row => row.entryId.startsWith('posted-'));
         expect(sent.length).toBeGreaterThan(0);
         for (const row of sent) expect(row.posture).toBe('told');
@@ -260,10 +265,7 @@ describe('the house sends for its elder', () => {
         });
         const { cultivator } = await game.newRun('Rogue');
         const world = await game.loadWorld();
-        const deps = {
-            repos, world,
-            knowledge: { knows: () => true, isAwareOf: () => true, learn: () => undefined }
-        } as never;
-        expect(summonsesAcrossSeeds(deps, cultivator as never, 20)).toEqual([]);
+        const deps: EncounterDeps = { repos, world, knowledge: game.knowledge };
+        expect(summonsesAcrossSeeds(deps, cultivator, 20)).toEqual([]);
     }, 300_000);
 });
