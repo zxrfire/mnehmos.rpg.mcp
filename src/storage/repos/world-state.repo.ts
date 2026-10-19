@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { OrderedWorldRowWrites } from './ordered-world-row-writes.js';
 import { THE_WORLD_LOST_SIGHT_OF, lostSightOnDay } from '../../engine/world/who-a-house-has-lost-track-of.js';
 import type {
     FactionRecord,
@@ -64,6 +65,7 @@ export function removeWorldObligations(db: Database.Database, worldId: string, i
  * What is written when: see `saveWorld` and `appendWorld`.
  */
 export class WorldStateRepository {
+    private readonly orderedWrites = new WeakMap<Database.Statement, OrderedWorldRowWrites>();
     private readonly upsertRuntimeStmt: Database.Statement;
     private readonly selectRuntimeStmt: Database.Statement;
     private readonly listRuntimeStmt: Database.Statement;
@@ -957,8 +959,12 @@ export class WorldStateRepository {
     }
 
     private writeNpcs(s: WorldState): void {
+        const people = this.rowsInOrder(this.insertNpcStmt, s.id, s.npcs.map(person => person.id));
+        const goals = this.rowsInOrder(this.insertGoalStmt, s.id, s.npcs.flatMap(person => person.goals.map(goal => goal.id)));
+        const relationships = this.rowsInOrder(this.insertRelationshipStmt, s.id,
+            s.npcs.flatMap(person => person.relationships.map(tie => [person.id, tie.targetId, tie.kind])));
         for (const npc of s.npcs) {
-            this.insertNpcStmt.run({
+            people.run({
                 id: npc.id,
                 worldId: s.id,
                 name: npc.name,
@@ -1020,10 +1026,10 @@ export class WorldStateRepository {
             });
 
             for (const goal of npc.goals) {
-                this.insertGoalStmt.run(goalParams(s.id, npc.id, goal));
+                goals.run(goalParams(s.id, npc.id, goal));
             }
             for (const relationship of npc.relationships) {
-                this.insertRelationshipStmt.run(relationshipParams(s.id, npc.id, relationship));
+                relationships.run(relationshipParams(s.id, npc.id, relationship));
             }
         }
     }
@@ -1170,8 +1176,9 @@ export class WorldStateRepository {
             this.deleteObjectProvenanceStmt.run(s.id, stored.id);
             this.deleteObjectStmt.run(s.id, stored.id);
         }
+        const objects = this.rowsInOrder(this.insertObjectStmt, s.id, s.objects.map(object => object.id));
         for (const object of s.objects) {
-            this.insertObjectStmt.run({
+            objects.run({
                 id: object.id,
                 worldId: s.id,
                 name: object.name,
@@ -1229,6 +1236,13 @@ export class WorldStateRepository {
                 });
             });
         }
+    }
+
+    private rowsInOrder(statement: Database.Statement, worldId: string,
+        keys: readonly (string | readonly string[])[]): Database.Statement {
+        let writer = this.orderedWrites.get(statement);
+        if (!writer) { writer = new OrderedWorldRowWrites(this.db, statement); this.orderedWrites.set(statement, writer); }
+        return writer.forOrder(worldId, keys);
     }
 
     private writeObligations(s: WorldState): void {

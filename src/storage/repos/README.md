@@ -16,6 +16,13 @@ Unchanged object provenance links use a conditional SQLite upsert. Every field
 is still compared, including nulls; changed links retain their authoritative
 values. Chain order derives from object and sequence, independently of rowid.
 
+NPCs, goals, relationships and objects compare their columns in SQLite before
+updating. `ordered-world-row-writes.ts` derives those updates from the existing
+insert and primary key. It reads current row order for each batch; a reorder,
+omission or repeated identity that needs replacement retains the ordinary
+replacement writer. Reloaded array order and stale-row merge semantics remain
+the same. No body values, dirty flags or database snapshots are cached.
+
 One class per table, each owning the SQL for it. Nothing above this layer writes SQL, and
 nothing here decides anything: a repository stores what it is given and returns what it
 holds.
