@@ -328,6 +328,17 @@ export interface APlaceReadIntoAreas {
     whereBodiesAre: Map<string, string>;
 }
 
+let areaReadScope: Map<State, Map<LocationRecord, APlaceReadIntoAreas>> | null = null;
+
+/** A synchronous observation can share its unchanged default area reads. Physical
+ * or roster mutations belong outside the scope; finally releases every reading. */
+export function withPlaceAreaReadScope<T>(read: () => T): T {
+    const previous = areaReadScope;
+    areaReadScope = new Map();
+    try { return read(); }
+    finally { areaReadScope = previous; }
+}
+
 /**
  * Every area of a place, and where each of the people standing in it is.
  *
@@ -335,6 +346,26 @@ export interface APlaceReadIntoAreas {
  * forecourt are somewhere to stand even with nobody in them.
  */
 export function theAreasOf(
+    state: State,
+    place: LocationRecord,
+    compounds?: WhereCompoundsAre,
+    standingWith?: StandingWith,
+    routes?: RouteQueries
+): APlaceReadIntoAreas {
+    // Observer/carrier constraints and explicitly supplied compounds/routes keep
+    // their own ordinary read. Only the default observation is shared here.
+    const scope = compounds === undefined && standingWith === undefined && routes === undefined ? areaReadScope : null;
+    if (!scope) return readTheAreasOf(state, place, compounds, standingWith, routes);
+    let places = scope.get(state);
+    if (!places) { places = new Map(); scope.set(state, places); }
+    const held = places.get(place);
+    if (held) return held;
+    const read = readTheAreasOf(state, place);
+    places.set(place, read);
+    return read;
+}
+
+function readTheAreasOf(
     state: State,
     place: LocationRecord,
     compounds: WhereCompoundsAre = whereCompoundsAre(state),

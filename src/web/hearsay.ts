@@ -20,7 +20,7 @@ import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { routeQueriesFor, type LocationRecord, type RouteQueries } from '../engine/world/locations.js';
-import { threeOthersAndTheParty, theAreasOf, whereInThisPlaceTheyStand, type APlaceReadIntoAreas } from '../engine/world/where-in-a-place-somebody-is-standing.js';
+import { threeOthersAndTheParty, theAreasOf, whereInThisPlaceTheyStand, withPlaceAreaReadScope, type APlaceReadIntoAreas } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { activeProxiesByOwner } from '../engine/world/something-acting-in-your-place.js';
 import { isActing } from '../engine/world/npc-state.js';
 import { routineOf, routineTime } from '../engine/world/npc-routines.js';
@@ -218,7 +218,7 @@ let presenceReadScope: PresenceReadScope | null = null;
 export function withPresenceReadScope<T>(read: () => T): T {
     const previous = presenceReadScope;
     presenceReadScope = { present: [], places: [], routes: new Map() };
-    try { return read(); }
+    try { return withPlaceAreaReadScope(read); }
     finally { presenceReadScope = previous; }
 }
 

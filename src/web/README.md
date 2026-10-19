@@ -1,5 +1,10 @@
 <!-- tier: 3 -->
 
+The synchronous presence observation also shares default place-area reads.
+Explicit observer, carrier, compound and route projections retain their own
+read. Neither scope crosses an await or physical/roster mutation, and both
+release their readings on normal return and failure.
+
 Prepared physical passages use the same synchronous body/world boundary iterator
 and outer transaction as ordinary prepared spans. Departure checks, each actual
 boundary and arrival remain in order; current SQL body reads remain visible.
