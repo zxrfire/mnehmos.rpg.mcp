@@ -28,6 +28,11 @@
  * So: the shape and the ground's carrying capacity stay, because both are
  * standing properties and both are what teaches the mechanic. The headcount
  * goes.
+ *
+ * A later census caught this test quoting an obsolete explanatory phrase even
+ * though the read still states that no headcount is known. Keep that knowledge
+ * claim and compare the complete read for two hidden counts in the same band:
+ * changing unseen people must not change the answer. Capacity remains visible.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -144,10 +149,12 @@ describe('what the travel list may say about a place nobody has been to', () => 
      * there either - and its absence is stated rather than left to be noticed.
      */
     it('keeps the count out of the engine channel, and says why it is not there', () => {
-        const { engine, engineRows } = read([place({ occupants: 9, supportedDraw: 7 })]);
+        const first = read([place({ occupants: 9, supportedDraw: 7 })]);
+        const { engine, engineRows } = first;
         expect(engineRows).not.toMatch(/\b9\b/);
         expect(engineRows).toContain('7');
-        expect(engine).toContain('never as a count');
+        expect(engine).toMatch(/\b(?:no (?:live )?headcount|headcount (?:is |remains )?(?:unknown|not known))\b/i);
+        expect(read([place({ occupants: 13, supportedDraw: 7 })]).all).toBe(first.all);
     });
 
     /**
