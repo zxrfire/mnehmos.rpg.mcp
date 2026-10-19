@@ -1,5 +1,11 @@
 <!-- tier: 3 -->
 
+Prepared physical passages use the same synchronous body/world boundary iterator
+and outer transaction as ordinary prepared spans. Departure checks, each actual
+boundary and arrival remain in order; current SQL body reads remain visible.
+The current world appends once before COMMIT, including the arrival settlement.
+World-clock preparation remains outside the transaction; no await crosses it.
+
 The synchronous end-of-turn lamp, auction and competition settlement shares
 the existing prepared-span transaction. Nested writers retain their revisions
 and body changes, then append the current world once before COMMIT. Failure

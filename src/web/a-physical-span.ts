@@ -6,7 +6,8 @@ import type { WorldReport } from './tool-result-prose.js';
 import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-world.js';
 import { nextWorldClockBoundary } from '../engine/world/world-clock-boundaries.js';
 import { routineTime } from '../engine/world/npc-routines.js';
-import { spendAtWorldBoundaries, type ASpentWorldSpan } from './a-span-spent-at-world-boundaries.js';
+import { stepsAtWorldBoundaries, type ASpentWorldSpan } from './a-span-spent-at-world-boundaries.js';
+import { finishPreparedSpanNow } from './finishing-a-prepared-span.js';
 import { daoHeartConditions, tollConditionsFor } from '../server/consolidated/cultivation-support.js';
 import { PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { activePlague } from '../engine/cultivation/plague.js';
@@ -36,6 +37,15 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
         finishTurn?: boolean;
     } = {}): Promise<ASpentWorldSpan & { world: WorldReport }> {
     game.atHand = await prepareWorldClockForPreciseSpan(run, body);
+    return game.commitPreparedSpan(() => spendPreparedPhysicalCarrier(game, run, body,
+        days, focus, source, grainAbstinence, events));
+}
+
+/** The world and run are already open; every physical boundary is synchronous. */
+export function spendPreparedPhysicalCarrier(...args: Parameters<typeof spendWithPhysicalCarrier>):
+    ASpentWorldSpan & { world: WorldReport } {
+    let [game, run, body, days, focus, source, grainAbstinence = false, events = {}] = args;
+    if (!game.atHand) throw new Error('Prepare the world before spending a physical span.');
     const questionsBefore = new Set(game.pendingPrivateOfferIdsAtBodyBoundary());
     const startingPlagueLines = [...game.settlePlagueAtTheBodyBoundary(), ...game.settleCaptainTroubleAtTheBodyBoundary()];
     let captainStop: string | null = null;
@@ -61,7 +71,7 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
     let packDrawn = true;
     let unopened = held;
     try {
-        const spent = await spendAtWorldBoundaries(game.repos, run, body, days, {
+        const spent = finishPreparedSpanNow(stepsAtWorldBoundaries(game.repos, run, body, days, {
             seed: run.seed, rollIdentity: PLAYER_ROLL_IDENTITY, turn: (events.resolvesOnTurn ?? run.turn + 1) - 1,
             startDay: start, ...actualScene(), rations: held, grainAbstinence,
             autoBreakthrough: false, randomEvents: true, spanIsASitting: false,
@@ -86,9 +96,9 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
                 game.putBackWhatWasNotEaten(body, cumulative);
                 packDrawn = false;
             },
-            advanceWorld: async (portion, applied, artUseInterval) => {
+            advanceWorld: function* (portion, applied, artUseInterval) {
                 const leg = source();
-                const report = await game.advanceWorld(portion, applied.cultivator, applied.run, {
+                const report = game.advancePreparedWorld(portion, applied.cultivator, applied.run, {
                     preciseDays: true, artUseInterval, passageDates: leg ? [leg.endsOnDay] : [],
                     atWorldBoundary: state => { game.atHand = state; }
                 });
@@ -118,7 +128,7 @@ export async function spendWithPhysicalCarrier(game: GameService, run: Run, body
                 unopened = game.drawFromPack(fresh, days);
                 return unopened;
             }
-        });
+        }));
         return { ...spent, world };
     } finally {
         // A thrown world adapter must not strand unopened provisions in a local frame.

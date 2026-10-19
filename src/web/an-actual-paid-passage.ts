@@ -13,7 +13,7 @@ import type { Cultivator, Run } from '../schema/cultivation.js';
 import type { GameService } from './turn-engine.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { AVoyage } from './a-ship-at-sea.js';
-import { spendWithPhysicalCarrier, type PhysicalCarrier } from './a-physical-span.js';
+import { spendPreparedPhysicalCarrier, type PhysicalCarrier } from './a-physical-span.js';
 import { whatTheHullFed, whatWasEatenOnBoard } from './what-a-journey-eats.js';
 import { recordedVoyage, endTheVoyage, theVoyageUnderWay, whereTheShipIs } from './a-ship-at-sea.js';
 import { leaveThePaidCarriage, thePaidCarriageClaim } from './a-paid-carriage-on-the-road.js';
@@ -72,6 +72,13 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
     resolvesOnTurn = run.turn + 1, finishTurn = true): Promise<Execution> {
     // Promotion resolves real legacy-clock effects before choosing a contact or spending.
     game.atHand = await prepareWorldClockForPreciseSpan(run, body);
+    return game.commitPreparedSpan(() => executePreparedActualPaidPassage(game, run, body,
+        trip, afterArrival, binding, resolvesOnTurn, finishTurn));
+}
+
+function executePreparedActualPaidPassage(...args: Parameters<typeof executeActualPaidPassage>): Execution {
+    let [game, run, body, trip, afterArrival, binding, resolvesOnTurn = run.turn + 1, finishTurn = true] = args;
+    if (!game.atHand) throw new Error('Prepare the world before executing a physical passage.');
     projectActualPassengers(game.db, game.atHand, body.id, routineTime(game.atHand));
     const freshStart = game.currentRun();
     run = freshStart.run; body = freshStart.cultivator;
@@ -232,7 +239,7 @@ export async function executeActualPaidPassage(game: GameService, run: Run, body
         return halted;
     }
     const rationsBefore = game.rationsHeld(body);
-    const spent = await spendWithPhysicalCarrier(game, run, body, trip.days,
+    const spent = spendPreparedPhysicalCarrier(game, run, body, trip.days,
         trip.focus ?? TRAVEL_FOCUS, source, false, {
             dates: binding?.contact ? onDay => {
                 const contact = binding.contact!(onDay, Math.max(0, start + trip.days - onDay));
