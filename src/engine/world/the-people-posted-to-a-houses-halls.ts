@@ -165,7 +165,9 @@ export function staffTheHalls(state: WorldState, houseId: string, day: number, i
 /** Settle completed service once. The receipt, not a second contribution balance, holds what was paid. */
 export function settleHallService(state: WorldState, day: number, only?: ReadonlySet<string>): number {
     let credited = 0;
-    const places = new Map(state.locations.map(place => [place.id, place]));
+    // Paying service changes people and receipts, never this walking graph.
+    const routes = routeQueriesFor(state.locations);
+    const places = routes.places;
     const hired = new Set(state.obligations.filter(term => term.status === 'open' && term.tags.includes('hired-duty'))
         .map(term => term.holderId));
     for (let at = 0; at < state.npcs.length; at++) {
@@ -177,7 +179,7 @@ export function settleHallService(state: WorldState, day: number, only?: Readonl
         // Older real hall posts also qualify, using their own actual term as the authority.
         const room = places.get(person.locationId ?? '');
         if (!room || room.data.factionId !== person.factionId || !hallForRoom(purposeOf(room)!)) continue;
-        const since = whenTheyReachTheirPost(state.locations, person);
+        const since = whenTheyReachTheirPost(state.locations, person, routes);
         if (since === null || since >= day) continue;
         const through = day;
         const receipt = person.activity.houseWorkPayFactId
