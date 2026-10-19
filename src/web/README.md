@@ -1,5 +1,11 @@
 <!-- tier: 3 -->
 
+The synchronous end-of-turn lamp, auction and competition settlement shares
+the existing prepared-span transaction. Nested writers retain their revisions
+and body changes, then append the current world once before COMMIT. Failure
+rolls back the whole block and discards the in-memory graph; no write remains
+pending across an await or outside this transaction.
+
 Purchased vessels and objects drawn from pouch stacks for hand-in choose unused
 world object ids. Consuming another row between transactions cannot merge two
 possessions by reusing the collection length.

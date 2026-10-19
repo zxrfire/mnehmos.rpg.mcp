@@ -3466,64 +3466,67 @@ export class GameService {
 
         // AND WHAT THEY HAVE PLACED WITH A MAKER, made, handed over or set down.
         if (this.atHand) {
-            const today = Math.floor(this.atHand.currentDay);
-            const factsBefore = this.atHand.history.facts.length;
-            extinguishedLampsOpenInquiries(this.atHand, routineTime(this.atHand));
-            for (const line of settleYourCapitalAuctions(this, this.currentRun().cultivator)) {
-                sayThisWhateverTheNarratorDoes(execution.facts, line);
-            }
-            after.cultivator = this.currentRun().cultivator;
-            const boardsJustSettled = settleOpenCompetitions(this.atHand, today, today, {
-                id: this.currentRun().cultivator.id,
-                locationId: this.worldPlaceOf(this.currentRun().cultivator)
-            });
-            const selectedUpward = boardsJustSettled.find(f => f.data.feederSelection === true
-                && f.actors.some(a => a.id === cultivator.id));
-            if (selectedUpward) {
-                const from = String(selectedUpward.data.fromHouseId);
-                const to = String(selectedUpward.data.toHouseId);
-                if (this.repos.sects.getMembership(cultivator.id)?.sectId === from) {
-                    this.db.transaction(() => {
-                        if (!this.repos.sects.removeMember(from, cultivator.id)
-                            || !this.repos.sects.addMember(to, cultivator.id, 0, today)) {
-                            throw new Error('The selected disciple could not be entered on the receiving roll.');
-                        }
-                    })();
-                    settleLeavingHouse(this.atHand, { ...cultivator, atLocationId: this.worldPlaceOf(cultivator) },
-                        from, today, { rows: ledgerAbout(this.db as never, cultivator.id),
-                            put: row => { writeOneObligation(this.db, row); } });
+            const world = this.atHand;
+            this.commitPreparedSpan(() => {
+                const today = Math.floor(world.currentDay);
+                const factsBefore = world.history.facts.length;
+                extinguishedLampsOpenInquiries(world, routineTime(world));
+                for (const line of settleYourCapitalAuctions(this, this.currentRun().cultivator)) {
+                    sayThisWhateverTheNarratorDoes(execution.facts, line);
+                }
+                after.cultivator = this.currentRun().cultivator;
+                const boardsJustSettled = settleOpenCompetitions(world, today, today, {
+                    id: this.currentRun().cultivator.id,
+                    locationId: this.worldPlaceOf(this.currentRun().cultivator)
+                });
+                const selectedUpward = boardsJustSettled.find(f => f.data.feederSelection === true
+                    && f.actors.some(a => a.id === cultivator.id));
+                if (selectedUpward) {
+                    const from = String(selectedUpward.data.fromHouseId);
+                    const to = String(selectedUpward.data.toHouseId);
+                    if (this.repos.sects.getMembership(cultivator.id)?.sectId === from) {
+                        this.db.transaction(() => {
+                            if (!this.repos.sects.removeMember(from, cultivator.id)
+                                || !this.repos.sects.addMember(to, cultivator.id, 0, today)) {
+                                throw new Error('The selected disciple could not be entered on the receiving roll.');
+                            }
+                        })();
+                        settleLeavingHouse(world, { ...cultivator, atLocationId: this.worldPlaceOf(cultivator) },
+                            from, today, { rows: ledgerAbout(this.db as never, cultivator.id),
+                                put: row => { writeOneObligation(this.db, row); } });
+                        after.cultivator = this.currentRun().cultivator;
+                    }
+                    sayThisWhateverTheNarratorDoes(execution.facts, selectedUpward.summary);
+                }
+                for (const fact of boardsJustSettled.filter(f => f.actors.some(a => a.id === cultivator.id))) {
+                    const learningDays = Number(fact.data.trainingDays ?? 0);
+                    if (learningDays <= 0) continue;
+                    const learner = this.currentRun().cultivator;
+                    const learned = accrueProgress(learner, learningDays, {
+                        ambient: this.ambientFor(learner, this.currentRun().run), options: this.rateTermsFor(learner)
+                    });
+                    this.repos.cultivators.update(learner.id, { cultivationProgress: learned.newProgress });
                     after.cultivator = this.currentRun().cultivator;
                 }
-                sayThisWhateverTheNarratorDoes(execution.facts, selectedUpward.summary);
-            }
-            for (const fact of boardsJustSettled.filter(f => f.actors.some(a => a.id === cultivator.id))) {
-                const learningDays = Number(fact.data.trainingDays ?? 0);
-                if (learningDays <= 0) continue;
-                const learner = this.currentRun().cultivator;
-                const learned = accrueProgress(learner, learningDays, {
-                    ambient: this.ambientFor(learner, this.currentRun().run), options: this.rateTermsFor(learner)
-                });
-                this.repos.cultivators.update(learner.id, { cultivationProgress: learned.newProgress });
-                after.cultivator = this.currentRun().cultivator;
-            }
-            for (const fact of this.atHand.history.facts.filter(f => f.data.openCompetition === true
-                && f.data.result === true && f.day >= worldDayBeforeTheTurn && f.day <= today
-                && f.actors.some(a => a.id === this.currentRun().cultivator.id))) {
-                sayThisWhateverTheNarratorDoes(execution.facts, fact.summary);
-                if (typeof fact.data.place === 'number') {
-                    const board = this.atHand.history.facts.filter(f => f.data.openCompetition === true
-                        && f.data.result === true && f.data.hostId === fact.data.hostId
-                        && f.data.contestDay === fact.data.contestDay && f.data.venueId === fact.data.venueId
-                        && f.data.bracket === fact.data.bracket && typeof f.data.place === 'number')
-                        .sort((a, b) => Number(a.data.place) - Number(b.data.place));
-                    sayThisWhateverTheNarratorDoes(execution.facts, theBoardAsItIsCalledOut(board.map(f => {
-                        const entrant = this.atHand!.npcs.find(n => n.id === f.actors[0]?.id);
-                        return { place: Number(f.data.place), name: f.actors[0]!.name,
-                            houseName: this.atHand!.factions.find(h => h.id === entrant?.factionId)?.name ?? null };
-                    })));
+                for (const fact of world.history.facts.filter(f => f.data.openCompetition === true
+                    && f.data.result === true && f.day >= worldDayBeforeTheTurn && f.day <= today
+                    && f.actors.some(a => a.id === this.currentRun().cultivator.id))) {
+                    sayThisWhateverTheNarratorDoes(execution.facts, fact.summary);
+                    if (typeof fact.data.place === 'number') {
+                        const board = world.history.facts.filter(f => f.data.openCompetition === true
+                            && f.data.result === true && f.data.hostId === fact.data.hostId
+                            && f.data.contestDay === fact.data.contestDay && f.data.venueId === fact.data.venueId
+                            && f.data.bracket === fact.data.bracket && typeof f.data.place === 'number')
+                            .sort((a, b) => Number(a.data.place) - Number(b.data.place));
+                        sayThisWhateverTheNarratorDoes(execution.facts, theBoardAsItIsCalledOut(board.map(f => {
+                            const entrant = world!.npcs.find(n => n.id === f.actors[0]?.id);
+                            return { place: Number(f.data.place), name: f.actors[0]!.name,
+                                houseName: world!.factions.find(h => h.id === entrant?.factionId)?.name ?? null };
+                        })));
+                    }
                 }
-            }
-            if (this.atHand.history.facts.length > factsBefore) this.theWorldMoved();
+                if (world.history.facts.length > factsBefore) this.theWorldMoved();
+            });
         }
         for (const line of offersForYourHeldItems(this, this.currentRun().cultivator))
             sayThisWhateverTheNarratorDoes(execution.facts, line);
