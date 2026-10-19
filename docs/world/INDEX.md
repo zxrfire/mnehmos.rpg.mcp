@@ -727,10 +727,10 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 12 | 20 |
 | `CUSTODY_TAKERS` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 13 | 5 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 13 | 10 |
-| `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 13 | 17 |
+| `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 13 | 19 |
 | `HOUSE_MISSIONS` | [`what-a-house-posts-for-its-own.ts`](../../src/data/cultivation/what-a-house-posts-for-its-own.ts) | 13 | 22 |
 | `THE_PAIRED_COMMUNICATION_JADE` | [`communication-talismans.ts`](../../src/data/cultivation/communication-talismans.ts) | 15 | 2 |
-| `TRACKED_CRAFT` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 15 | 18 |
+| `TRACKED_CRAFT` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 15 | 17 |
 | `SEA_LANES` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 15 | 29 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 16 | 15 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 16 | 53 |
@@ -742,16 +742,16 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 20 | 33 |
 | `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 20 | 37 |
 | `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 50 |
-| `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 20 | 128 |
+| `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 20 | 130 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 23 | 100 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 25 | 25 |
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 27 | 53 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 28 | 43 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 96 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 35 | 134 |
-| `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 46 | 94 |
+| `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 46 | 95 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 47 | 238 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 99 | 471 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 99 | 470 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 108 | 149 |
 
 <!-- END GENERATED: design-constants -->
