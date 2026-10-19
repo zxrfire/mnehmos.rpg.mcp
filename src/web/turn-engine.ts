@@ -19775,7 +19775,8 @@ ${fit.line}`;
         // AND WHAT THEY ARE CARRYING
         const world = this.atHand;
         if (!world) return context;
-        const here = world.locations.find(place => place.id === this.worldPlaceOf(cultivator));
+        const groundId = this.worldPlaceOf(cultivator);
+        const here = world.locations.find(place => place.id === groundId);
         // A Dao house's principle, open to whoever stands on its ground and is let in to it: its own
         // members, and at the Karma Palace anybody who comes (the owner: people visit it to learn karma).
         const principle = here ? aHousePrincipleOpenHere(world, here, cultivator.sectId ?? null) : null;

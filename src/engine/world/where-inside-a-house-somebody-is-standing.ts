@@ -52,7 +52,7 @@ import {
 import { getPill } from '../../data/cultivation/pills.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { THE_COMMUNICATION_TALISMAN } from '../../data/cultivation/communication-talismans.js';
-import type { LocationRecord, RouteQueries } from './locations.js';
+import { routeQueriesFor, type LocationRecord, type RouteQueries } from './locations.js';
 import { isActing, type NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 import { whoDispensesAtTheHouse } from './who-is-actually-seeing-to-wounds.js';
@@ -303,6 +303,7 @@ export function npcsStandingIn(
     compounds: WhereCompoundsAre = whereCompoundsAre(state),
     routes?: RouteQueries
 ): NpcRecord[] {
+    routes ??= routeQueriesFor(state.locations);
     const seatId = compounds.seatOf.get(locationId);
     if (seatId === undefined) {
         return state.npcs.filter(n => isActing(n.status)
@@ -332,10 +333,11 @@ export function npcsWithin(
     locationId: string,
     compounds: WhereCompoundsAre = whereCompoundsAre(state)
 ): NpcRecord[] {
+    const routes = routeQueriesFor(state.locations);
     const compound = compounds.bySeat.get(locationId);
     return state.npcs
         .filter(n => {
-            const at = routineLocationOf(state,n);
+            const at = routineLocationOf(state,n,routes);
             return isActing(n.status) && at !== null
                 && (at === locationId || (compound?.inside.has(at) ?? false));
         })

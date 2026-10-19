@@ -28,7 +28,8 @@ export function enteringAtTheJadeGate(game: GameService, before: Pick<Cultivator
     if (!world) return [];
     const now = game.repos.cultivators.getById(before.id);
     if (!now?.alive || !now.location || now.location === before.location) return [];
-    const city = world.locations.find(l => l.id === game.worldPlaceOf(now));
+    const groundId = game.worldPlaceOf(now);
+    const city = world.locations.find(l => l.id === groundId);
     if (!city || theShopfrontOf(world, THE_REGISTER_HOUSE_ID, city) === null) return [];
     const hall = world.factions.find(h => h.id === THE_REGISTER_HOUSE_ID)!;
     const day = Math.floor(world.currentDay);

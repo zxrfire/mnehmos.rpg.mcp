@@ -56,6 +56,7 @@ import { noteLedgerPruned } from './a-fact-that-keeps-happening-is-one-row.js';
 import {
     locationsFromPriorAges,
     makeLocation,
+    routeQueriesFor,
     settleTheSeededPastIntoProvinces,
     type LocationRecord
 } from './locations.js';
@@ -504,9 +505,10 @@ export function upsertObject(state: WorldState, object: ObjectRecord): WorldStat
 
 export function npcsAt(state: Pick<WorldState, 'npcs'> & Partial<Pick<WorldState, 'locations' | 'currentDay'>>,
     locationId: string): NpcRecord[] {
+    const routes = state.locations && state.currentDay !== undefined ? routeQueriesFor(state.locations) : undefined;
     return state.npcs
         .filter(n => isActing(n.status) && (state.locations && state.currentDay !== undefined
-            ? locationOfNpcOnItsJourney({ locations: state.locations, npcs: state.npcs }, n, state.currentDay) : n.locationId) === locationId)
+            ? locationOfNpcOnItsJourney({ locations: state.locations, npcs: state.npcs }, n, state.currentDay, routes) : n.locationId) === locationId)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
 }
 
