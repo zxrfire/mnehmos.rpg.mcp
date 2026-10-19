@@ -34,6 +34,26 @@ function fixture(){
     world.npcs.push(npc);return {world,npc,from,to,day};
 }
 
+/** The walk-out certification's new arrival check found no receipt. Native air
+ * landfall moved the body but did not enter the shared actual-arrival authority.
+ * Prove that seam directly, before any later generic journey cleanup. */
+it('certification regression: native air landfall records one actual arrival, never a booking',()=>{
+    const h=fixture(),travelling=startNpcJourney(h.world,h.npc,h.to.id,h.day,'An actual ground visit');
+    h.world.npcs[0]=travelling;
+    const leg=travelling.activity!;
+    expect(leg.airCourseLocationId).toBeDefined();
+    const arrivals=()=>h.world.history.facts.filter(fact=>fact.data.actualBodyArrival===true&&fact.data.bodyId===h.npc.id);
+    settleWorldAirTravellers(h.world,h.day);
+    expect(arrivals()).toEqual([]);
+    settleWorldAirTravellers(h.world,leg.untilDay!);
+    expect(h.world.npcs[0]!.locationId).toBe(h.to.id);
+    expect(arrivals()).toHaveLength(1);
+    expect(arrivals()[0]!.data).toMatchObject({fromLocationId:h.from.id,toLocationId:h.to.id,
+        departureDay:leg.sinceDay,arrivalDay:leg.untilDay});
+    settleWorldAirTravellers(h.world,leg.untilDay!+1);
+    expect(arrivals()).toHaveLength(1);
+});
+
 it('the generic NPC starter charges once and reaches a metric target while alive',()=>{
     const h=fixture(),before=h.npc.cultivation.qi;
     if(before===undefined)throw new Error('Native new NPC has no qi balance');

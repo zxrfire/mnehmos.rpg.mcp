@@ -1,4 +1,4 @@
-import type { ActualArrivalBody } from './a-body-that-actually-arrived.js';
+import { recordNpcActualArrival, type ActualArrivalBody } from './a-body-that-actually-arrived.js';
 import type { NpcRecord } from './npc-state.js';
 import { setLocation, isTheWorldsToMove, PLAYER_ROW_TAG } from './npc-state.js';
 import { whoItIsWith, itWantsAPilot, A_SPIRIT_BOAT_ANSWERS_TO } from './a-vehicle.js';
@@ -246,5 +246,6 @@ export function settleWorldAirTravellers(world: WorldState, onDay: number, perso
         }
         const arrived=setLocation(npc,data.toLocationId,onDay);
         world.npcs[at]={...arrived, activity:{...npc.activity,airCourseLocationId:undefined}};
+        recordNpcActualArrival(world, world.npcs[at]!, npc.activity!, onDay);
     }
 }

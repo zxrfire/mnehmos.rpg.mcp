@@ -24,6 +24,12 @@ without installing a second copy on the world.
 
 # The World Layer
 
+Native air landfall records actual arrival through the shared body-arrival
+authority before generic journey cleanup. A booked course supplies no arrival;
+revisiting the same landfall supplies no second receipt. Splinter departures
+settle through the ordinary house-leaving path, with their own `left-to-found:`
+cause tag rather than the independently enabled walk-out motive's tag.
+
 New yard cores and reissued clothes choose an unused object id against the
 current object table. Consuming unrelated stock cannot alias a surviving thing.
 The same allocator serves pouch hand-ins, purchased vessels and granted rings.

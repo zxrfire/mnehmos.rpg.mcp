@@ -49,6 +49,7 @@ import {
     type WhyTheyWentOut
 } from '../../../src/engine/world/why-somebody-walks-out-of-a-compound.js';
 import { whoSplitsAHouse } from '../../../src/engine/world/who-splits-a-house-and-who-goes-with-them.js';
+import { PRESSURE_TEMPLATES } from '../../../src/engine/world/the-world-changing-on-its-own.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
 import { lifespanForOrdinal } from '../../../src/engine/cultivation/realms.js';
@@ -185,6 +186,23 @@ describe('a splinter is somebody\'s decision', () => {
         const { state, day } = aHouseWithAGrievance();
         for (const npc of state.npcs) npc.tags = [];
         for (let i = 0; i < 50; i++) expect(whoSplitsAHouse(state, day, forStream('own-clock', 'none', i))).toBeNull();
+    });
+
+    /** House-leaving settlement added the wanderer's motive tag to founders.
+     * Founding still runs when ordinary walk-outs are disabled; its own fact
+     * and membership must describe that separate decision. */
+    it('certification regression: founding a splinter does not claim the ordinary walk-out motive', () => {
+        const { state, day, founder, junior } = aHouseWithAGrievance();
+        const founding = PRESSURE_TEMPLATES.find(template => template.kind === 'faction_founded')!;
+        let event = null;
+        for (let i = 0; i < 50 && event === null; i++) event = founding.apply(state, day, forStream('own-clock', 'split', i));
+        expect(event).not.toBeNull();
+        for (const id of [founder.id, junior.id]) {
+            const person = state.npcs.find(person => person.id === id)!;
+            expect(person.factionId).not.toBe('house-a');
+            expect(person.factionId).not.toBeNull();
+            expect(person.tags.some(tag => tag.startsWith('walked-out:'))).toBe(false);
+        }
     });
 });
 

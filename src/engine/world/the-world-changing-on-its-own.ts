@@ -7652,7 +7652,7 @@ export const PRESSURE_TEMPLATES: readonly Template[] = [
                 replaceNpc(state, {
                     // As it now stands, for the reason the walk-out above gives.
                     ...offTheRoll(state, state.npcs.find(row => row.id === npc.id) ?? npc,
-                        day, `${WALKED_OUT}founded a house`),
+                        day, `left-to-found:${splinter.id}`),
                     factionId: splinter.id,
                     factionRankIndex: npc.id === founder.id ? splinter.ranks.length - 1 : 1,
                     updatedOnDay: day
