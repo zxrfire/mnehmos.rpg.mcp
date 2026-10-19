@@ -33,16 +33,25 @@
  * over them. Red-checked by unwiring the pass: nobody moves at all.
  * With the year cursor, later tasks can return or reassign them. Observe the
  * departure during the year, rather than requiring the party to remain out at its end.
+ *
+ * Certification's drift-guard 600-year checkpoint also held Gu Rongping and
+ * Kong Rongshi at Ashen Anvil with null activities. They arrived on a 60-day
+ * progress on day 583796, then the door sending on 583800 took them away before
+ * the progress's 583858 return. The short errand returned them to Ashen Anvil,
+ * losing the original itinerary. An awarded place cannot displace a real course.
  */
 
 import { describe, expect, it } from 'vitest';
 
-import { applyPressure } from '../../../src/engine/world/the-world-changing-on-its-own.js';
+import { applyPressure, thePeopleAConclaveChoseWalkThrough } from '../../../src/engine/world/the-world-changing-on-its-own.js';
+import { applyDoorsAndTheirPlaces } from '../../../src/engine/world/a-year-at-the-doors.js';
+import { sendHouseMission, advancePublicCapitalMission } from '../../../src/engine/world/capital-missions-and-calendar.js';
 import { whatADoorAdmits } from '../../../src/engine/world/a-door-with-a-count-on-it.js';
 import { createNpc, setRealm } from '../../../src/engine/world/npc-state.js';
 import {
     makeLocation,
     makeThresholds,
+    linkLocations,
     type LocationRecord,
     type OpeningCycle
 } from '../../../src/engine/world/locations.js';
@@ -125,6 +134,32 @@ function advanceUntilTheySetOut(state: WorldState): void {
 }
 
 describe('the people a conclave chose walk through', () => {
+    it('keeps an awarded person on their actual mission and its return when the door party leaves', () => {
+        const state = build();
+        const day = DAY + 165;
+        const doors = applyDoorsAndTheirPlaces(state, 200, day);
+        const decided = doors.flatMap(door => door.conclaves).find(conclave => conclave.going.length)!;
+        expect(decided).toBeDefined();
+        const person = state.npcs.find(npc => npc.id === decided.going[0]!.npcId)!;
+        const house = state.factions.find(house => house.id === person.factionId)!;
+        const home = state.locations.find(place => place.id === house.seatLocationId)!;
+        const away = makeLocation({ id: 'receiving-ground', name: 'Receiving Ground', kind: 'sect_seat', parentId: 'loc-region' });
+        linkLocations(home, away, 'road', 2);
+        state.locations.push(away);
+        const mission = sendHouseMission(state, house, away, [person], 'visiting another house', day, { days: 60 })!;
+        expect(mission).not.toBeNull();
+        advancePublicCapitalMission(state, person.id, day + 2);
+        const serving = state.npcs.find(npc => npc.id === person.id)!;
+        expect(serving.locationId).toBe(away.id);
+        expect(serving.activity?.capitalMissionId).toBe(mission.id);
+
+        thePeopleAConclaveChoseWalkThrough(state, doors, day + 3, day + 3);
+        expect(state.npcs.find(npc => npc.id === person.id)!.activity).toEqual(serving.activity);
+        expect(state.npcs.find(npc => npc.id === person.id)!.locationId).toBe(away.id);
+        advancePublicCapitalMission(state, person.id, Number(mission.data.plannedReturnDay));
+        expect(state.npcs.find(npc => npc.id === person.id)!.locationId).toBe(home.id);
+    });
+
     it('deals places at all, which is the precondition and not the claim', () => {
         const state = build();
         const door = state.locations.find(l => l.id === 'loc-door')!;

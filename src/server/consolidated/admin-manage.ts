@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { AdminSpawnSpecSchema } from '../../web/admin-spawn-spec.js';
 import { spawnPersonFromSpec } from './admin-spawn-person.js';
 import { createHash } from 'crypto';
+import { unusedObjectId } from '../../engine/world/possessions.js';
 
 
 /**
@@ -1720,7 +1721,7 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
         const grade = args.grade ?? 'mortal';
         const world = await worldForRun(run as never);
         const ring = aStorageRing({
-            id: `ring-${cultivator.id}-${world.objects.length}`,
+            id: unusedObjectId(world.objects, `ring-${cultivator.id}`),
             grade,
             ownerId: cultivator.id,
             ownerName: cultivator.name,

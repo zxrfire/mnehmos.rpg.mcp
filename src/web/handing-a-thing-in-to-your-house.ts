@@ -33,6 +33,7 @@ import {
     howMuchAGradeIsWorthTracking,
     isRuined,
     makeObject,
+    unusedObjectId,
     type ObjectRecord
 } from '../engine/world/possessions.js';
 import {
@@ -91,7 +92,7 @@ function aRowForOneOf(
         power: null,
         locationId: null
     };
-    const id = `handed-in-${holder.id}-${itemId}-${onDay}-${world.objects.length}`;
+    const id = unusedObjectId(world.objects, `handed-in-${holder.id}-${itemId}-${onDay}`);
     if (pouchKind === 'manual') {
         const art = getTechnique(itemId);
         if (!art) return null;

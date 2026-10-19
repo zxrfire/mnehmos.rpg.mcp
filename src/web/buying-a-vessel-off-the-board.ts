@@ -18,6 +18,7 @@ import {
     howMuchAGradeIsWorthTracking,
     keptAs,
     makeObject,
+    unusedObjectId,
     makeResourceLot,
     transferPossession
 } from '../engine/world/possessions.js';
@@ -59,7 +60,7 @@ export async function buyAVesselOffTheBoard(
 
     const vessel = REFINING_VESSELS[gives.vessel];
     const day = Math.floor(run.elapsedDays);
-    const id = `obj-bought-${gives.vessel}-${cultivator.id}-${day}-${world.objects.length}`;
+    const id = unusedObjectId(world.objects, `obj-bought-${gives.vessel}-${cultivator.id}-${day}`);
     const significance = howMuchAGradeIsWorthTracking(gives.grade);
     const blank = keptAs(significance) === 'counted'
         ? (() => {

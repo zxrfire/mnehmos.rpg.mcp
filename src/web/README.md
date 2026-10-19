@@ -1,5 +1,9 @@
 <!-- tier: 3 -->
 
+Purchased vessels and objects drawn from pouch stacks for hand-in choose unused
+world object ids. Consuming another row between transactions cannot merge two
+possessions by reusing the collection length.
+
 An ordinary prepared span runs its existing body/world appointment iterator in
 one synchronous SQLite transaction. Current body and appointment checks still
 run at each boundary; the world graph flushes once before the outer commit.

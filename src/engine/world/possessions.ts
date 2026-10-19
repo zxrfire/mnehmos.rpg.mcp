@@ -354,6 +354,14 @@ export function isRuined(object: ObjectRecord): boolean {
     return object.tags.includes('ruined');
 }
 
+/** Collection size and issuing counts can shrink. Never alias a surviving thing. */
+export function unusedObjectId(objects: readonly Pick<ObjectRecord, 'id'>[], stem: string): string {
+    const used = new Set(objects.map(object => object.id));
+    let id = stem;
+    for (let suffix = 1; used.has(id); suffix++) id = `${stem}-${suffix}`;
+    return id;
+}
+
 export function makeObject(
     init: Partial<ObjectRecord> & Pick<ObjectRecord, 'id' | 'name' | 'kind'>
 ): ObjectRecord {

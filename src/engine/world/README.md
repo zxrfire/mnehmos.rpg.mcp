@@ -24,6 +24,15 @@ without installing a second copy on the world.
 
 # The World Layer
 
+New yard cores and reissued clothes choose an unused object id against the
+current object table. Consuming unrelated stock cannot alias a surviving thing.
+The same allocator serves pouch hand-ins, purchased vessels and granted rings.
+
+A conclave's awarded place does not recall somebody from another mission.
+The departure rechecks the current roll, commitments and compound before moving
+the winner, as ordinary door departures do. An unavailable winner is not replaced;
+their actual itinerary and homeward course retain control of their body.
+
 `leaving-a-house.ts` settles every departure before another admission. The roll
 and its activity release offices, hall appointments and rota places. The house
 cancels its token and keyed slips; its old lamp remains an object, read as a

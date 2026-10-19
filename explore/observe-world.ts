@@ -12,9 +12,7 @@ import { stillNeedsToEat } from '../src/engine/cultivation/survival.js';
 import { aRollWorthModelling } from '../src/engine/world/a-house-raises-its-own.js';
 import { A_SHOPFRONT_HOLDS, shopfrontSitesOf } from '../src/engine/world/a-dao-house-shopfront.js';
 import { A_BRANCH_HOLDS, templeBranchesOf } from '../src/engine/world/a-temple-branch.js';
-import { purposeOf, roomAuthorityOf } from '../src/engine/world/architecture.js';
 import { exteriorGroundOfDeparture } from '../src/engine/world/departure-approach.js';
-import { howManyPeopleAHouseHas } from '../src/engine/world/how-many-people-a-house-has.js';
 import { routeQueriesFor } from '../src/engine/world/locations.js';
 import { woundsCarriedBy, type NpcRecord } from '../src/engine/world/npc-state.js';
 import { locationOfNpcOnItsJourney } from '../src/engine/world/places-on-the-way.js';
@@ -37,7 +35,6 @@ export const CHECKS = [
     'Unique IDs in each authoritative collection; finite nonnegative purses, faction stock/count resources and counted object quantities. Resource dates and ordinal metadata are not stocks.',
     'Living people have an actual recorded physical place; a standing house member away from its seat has a concrete activity.',
     'Physically dead people have no active goals, and no new buyer/seller/bidder/crafter/traveller act between observations while remaining physically dead.',
-    'A house with zero actual people (including its unmodelled population) has no standing office rooms.',
     'Unexpired stationed assignments at shopfronts/public watches and temple branches fit their existing staff caps; visiting delegations are not staff.',
     'Recruiting living rolls exceeding the existing intake/post budget are review candidates, because births and family placement can legitimately exceed it.',
     'Living cultivation ordinals and house rank indices are within their actual ladders.',
@@ -138,13 +135,6 @@ export function inspectWorld(world: WorldState): Census {
     for (const object of world.objects) {
         if (typeof object.data.quantity === 'number') stock(`${object.id}:quantity`, object.data.quantity);
     }
-    const offices = new Map<string, string[]>();
-    for (const place of world.locations) {
-        const purpose = purposeOf(place);
-        if (place.kind === 'ruin' || !place.controllingFactionId || !purpose || !roomAuthorityOf(purpose).office) continue;
-        const list = offices.get(place.controllingFactionId) ?? [];
-        list.push(place.id); offices.set(place.controllingFactionId, list);
-    }
     const index = witnessIndexFor(world);
     for (const house of world.factions) {
         for (const [resource, value] of Object.entries(house.resources)) {
@@ -153,9 +143,6 @@ export function inspectWorld(world: WorldState): Census {
         if (house.dissolvedOnDay !== null) continue;
         const roll = rolls.get(house.id) ?? [];
         add(housesByStrongestRealm, roll.length ? realmForOrdinal(Math.max(...roll.map(n => n.cultivation.realmOrdinal))).key : 'empty');
-        const held = offices.get(house.id) ?? [];
-        if (held.length && howManyPeopleAHouseHas(world, house.id) === 0)
-            note('empty-house-standing-offices', house.id, `roll=0; actual people=0; rooms=${held.join(', ')}`);
         const catalog = getSect(house.id);
         if (house.tags.includes('recruits')) {
             const budget = Math.max(aRollWorthModelling({ rankCount: house.ranks.length,

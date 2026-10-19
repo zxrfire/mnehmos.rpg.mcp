@@ -116,7 +116,7 @@ import {
 } from './what-a-house-opens-its-treasury-for.js';
 import { takeFromTheHouse } from './a-house-holds-its-own.js';
 import { HALLS_DOWN } from './what-a-year-of-war-does-to-a-compound.js';
-import { transferPossession, makeObject, ruin, isRuined, howAGradeIsStored, type ObjectRecord } from './possessions.js';
+import { transferPossession, makeObject, unusedObjectId, ruin, isRuined, howAGradeIsStored, type ObjectRecord } from './possessions.js';
 import { theArtLeftInThisGround } from './a-legacy-has-a-name-on-it-and-a-treasury-has-stock.js';
 import { recordCrossing } from './recording-what-a-crossing-did.js';
 import { aCrossingEntersTheWorld } from './a-crossing-enters-the-world-as-news.js';
@@ -5572,7 +5572,7 @@ function creditWhatCameBack(state: WorldState, faction: FactionRecord, partyOrdi
         const material = BEAST_MATERIALS.filter(row => row.core && row.harvestOrdinal <= partyOrdinal)
             .sort((a, b) => b.harvestOrdinal - a.harvestOrdinal)[0];
         if (material) {
-            const id = `obj-yard-core-${faction.id}-${onDay}-${state.objects.length}`;
+            const id = unusedObjectId(state.objects, `obj-yard-core-${faction.id}-${onDay}`);
             state.objects.push(transferPossession(makeObject({ id, name: material.name, kind: 'material',
                 ownerId: faction.id, ownerName: faction.name, locationId: faction.seatLocationId,
                 tags: ['yard-stock'], data: { materialId: material.id, core: true, grade: material.grade } }),
@@ -6070,7 +6070,7 @@ function applyLastCrossing(
  * running past the end of the span, the move, the loss, the news - because a
  * place at a door is an errand a house was given rather than one it opened.
  */
-function thePeopleAConclaveChoseWalkThrough(
+export function thePeopleAConclaveChoseWalkThrough(
     state: WorldState,
     doors: readonly ADoorsYear[],
     day: number,
@@ -6080,6 +6080,7 @@ function thePeopleAConclaveChoseWalkThrough(
     const at = new Map<string, number>();
     for (let i = 0; i < state.npcs.length; i++) at.set(state.npcs[i]!.id, i);
     const errand = theErrandADoorIs();
+    const places = routeQueriesFor(state.locations).places;
     let walked = 0;
 
     for (const row of doors) {
@@ -6090,14 +6091,17 @@ function thePeopleAConclaveChoseWalkThrough(
         for (const decided of row.conclaves) {
             const faction = state.factions.find(f => f.id === decided.factionId);
             if (!faction || faction.dissolvedOnDay !== null) continue;
-            // The world's to move, and alive. A conclave ranks whoever was on
-            // the roll when it sat; the player's mirror row is never spent by
-            // the world, and neither is somebody the year has since killed.
+            // An awarded place does not recall somebody from another course.
+            // Recheck the current roll, commitment and compound, just as an
+            // ordinary door departure does. An unavailable winner is not replaced.
             const party: Candidate[] = [];
             for (const going of decided.going) {
                 const index = at.get(going.npcId);
                 const npc = index === undefined ? undefined : state.npcs[index];
-                if (!npc || npc.status !== 'alive' || !isTheWorldsToMove(npc)) continue;
+                if (!npc || npc.status !== 'alive' || !isTheWorldsToMove(npc) || npc.factionId !== faction.id) continue;
+                if (npc.activity && (isAwayOnSomething(npc.activity.kind)
+                    || npc.activity.untilDay != null && npc.activity.untilDay > day)) continue;
+                if (!faction.seatLocationId || !isInsideTheCompound(places, npc.locationId, faction.seatLocationId)) continue;
                 party.push({ id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal });
             }
             if (party.length === 0) continue;

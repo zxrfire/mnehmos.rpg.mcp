@@ -1,5 +1,8 @@
 <!-- tier: 3 -->
 
+Admin ring grants choose an unused id in the world object table. Removing other
+stock between grants cannot alias a ring somebody still owns.
+
 # The MCP tool surface
 
 Native cultivation uses the prepared current-check adapter for every span,

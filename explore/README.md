@@ -63,10 +63,10 @@ The checks derive their scope from existing authorities:
 - Dead actors mean physically dead bodies. Active goals and new explicit trade,
   craft or travel actor roles are suspicious. Preserved souls and reconstructed
   bodies are not corpses; a retained activity alone does not prove action.
-- Empty-house offices use actual room purposes and `howManyPeopleAHouseHas`,
-  which includes the unmodelled population rather than treating the sampled roll
-  as the whole institution. Dissolved institutions are outside this live-office
-  check; their surviving architecture can be ruins the player explores.
+- Physical office rooms can survive an empty roll. The former empty-house check
+  mistook those buildings for held institutional offices (Lantern Hall's seven
+  saved holder fields were all null). It is removed; the ordinary portfolio reader
+  derives holders and coverage from the roll. Architecture does not keep an office alive.
 - Staff caps come from `A_SHOPFRONT_HOLDS` and `A_BRANCH_HOLDS` at existing
   shopfronts, public watches and branches. Unexpired stationed assignments include
   actual air-duty receipt destinations. Visiting parties are not shop staff.

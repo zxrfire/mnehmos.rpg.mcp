@@ -10,7 +10,7 @@
  * Clothes are equipment like anything else: worn, held or in somebody's inventory (`howItIsHad`).
  */
 
-import { hadAs, isWorn, makeObject, WORN_TAG, type ObjectRecord } from './possessions.js';
+import { hadAs, isWorn, makeObject, unusedObjectId, WORN_TAG, type ObjectRecord } from './possessions.js';
 
 /** The tag on anything somebody wears that is not a house's robes. */
 export const CLOTHING_TAG = 'clothing';
@@ -29,8 +29,7 @@ export function whatTheyHaveOn(objects: readonly ObjectRecord[], personId: strin
 
 /**
  * The clothes somebody stands up in, as a row they own. One per issuing, like the robes: a set
- * handed out again is a new set, so `among` is every row already in the world, and the id counts
- * past any set this person was given on the same day.
+ * handed out again is a new set, so `among` is every row already in the world.
  */
 export function theClothesTheyStandUpIn(input: {
     personId: string;
@@ -39,9 +38,8 @@ export function theClothesTheyStandUpIn(input: {
     among?: readonly Pick<ObjectRecord, 'id'>[];
 }): ObjectRecord {
     const stem = `clothes-${input.personId}-${Math.floor(input.onDay)}`;
-    const before = (input.among ?? []).filter(object => object.id === stem || object.id.startsWith(`${stem}-`)).length;
     return makeObject({
-        id: before === 0 ? stem : `${stem}-${before + 1}`,
+        id: unusedObjectId(input.among ?? [], stem),
         name: 'plain clothes',
         kind: 'other',
         significance: 'mundane',
