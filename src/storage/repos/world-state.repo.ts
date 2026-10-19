@@ -412,14 +412,32 @@ export class WorldStateRepository {
             )
         `);
 
+        // Most chains have not changed on a player turn. Compare in SQLite,
+        // including nulls, instead of rewriting every index entry. Reloads use
+        // object_id/seq order, so retaining these rowids cannot reorder a chain.
         this.insertProvenanceStmt = db.prepare(`
-            INSERT OR REPLACE INTO world_object_provenance (
+            INSERT INTO world_object_provenance (
                 world_id, object_id, seq, on_day, holder_id, holder_name, how, source,
                 previous_holder_id, previous_holder_name, fact_id, note
             ) VALUES (
                 @worldId, @objectId, @seq, @onDay, @holderId, @holderName, @how, @source,
                 @previousHolderId, @previousHolderName, @factId, @note
             )
+            ON CONFLICT(world_id, object_id, seq) DO UPDATE SET
+                on_day = excluded.on_day, holder_id = excluded.holder_id,
+                holder_name = excluded.holder_name, how = excluded.how, source = excluded.source,
+                previous_holder_id = excluded.previous_holder_id,
+                previous_holder_name = excluded.previous_holder_name,
+                fact_id = excluded.fact_id, note = excluded.note
+            WHERE world_object_provenance.on_day IS NOT excluded.on_day
+                OR world_object_provenance.holder_id IS NOT excluded.holder_id
+                OR world_object_provenance.holder_name IS NOT excluded.holder_name
+                OR world_object_provenance.how IS NOT excluded.how
+                OR world_object_provenance.source IS NOT excluded.source
+                OR world_object_provenance.previous_holder_id IS NOT excluded.previous_holder_id
+                OR world_object_provenance.previous_holder_name IS NOT excluded.previous_holder_name
+                OR world_object_provenance.fact_id IS NOT excluded.fact_id
+                OR world_object_provenance.note IS NOT excluded.note
         `);
 
         // An absence is keyed on the absentee rather than on an id of its own,

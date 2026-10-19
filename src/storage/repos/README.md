@@ -12,6 +12,10 @@ body's current course supplies its derived calendar dates.
 
 # The repositories
 
+Unchanged object provenance links use a conditional SQLite upsert. Every field
+is still compared, including nulls; changed links retain their authoritative
+values. Chain order derives from object and sequence, independently of rowid.
+
 One class per table, each owning the SQL for it. Nothing above this layer writes SQL, and
 nothing here decides anything: a repository stores what it is given and returns what it
 holds.
