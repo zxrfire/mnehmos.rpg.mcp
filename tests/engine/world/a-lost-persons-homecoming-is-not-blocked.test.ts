@@ -4,8 +4,9 @@
  * arrival must clear. Other lost errands must still remain unclosed.
  * A person who left the roll could also be re-admitted before the next issue
  * pass, retaining their old robes and never receiving an entry journey. Their
- * issued holdings must be handed back at departure, while other members keep
- * theirs. These probes reach the ordinary pressure/absence paths directly.
+ * accessible issued holdings return at departure. Remote holdings stay with
+ * their actual carrier as house property owed, while other members keep theirs.
+ * These probes reach the ordinary pressure/absence paths directly.
  * Legacy ordinary journeys could also reach an island by their due date alone.
  * The return pass now checks the canonical road projection before settling:
  * an unwalkable crossing ends on real ground without pay or service credit,
@@ -97,7 +98,7 @@ describe('a lost person can finish the road home', () => {
         expect(isLostTrackOf(elsewhere, elsewhere.npcs[0]!)).toBe(true);
     });
 
-    it('returns issued robes immediately when the lost person leaves the roll', () => {
+    it('keeps remote issued robes owed when the lost person leaves the roll', () => {
         let departures = 0;
         for (let seed = 0; seed < 12; seed++) {
             const state = bench(`a-lost-person-leaves-${seed}`);
@@ -110,7 +111,12 @@ describe('a lost person can finish the road home', () => {
             if (learned.wentTheirOwnWay === 0) continue;
             departures++;
             expect(state.npcs[0]!.factionId).toBeNull();
-            expect(state.objects.find(o => o.data.memberId === 'lost')!.possessorId).toBeNull();
+            const robes = state.objects.find(o => o.data.memberId === 'lost')!;
+            expect(robes.possessorId).toBe('lost');
+            expect(robes.ownerId).toBe('house');
+            expect(state.obligations.some(word => word.kind === 'debt' && word.status === 'open'
+                && word.holderId === 'lost' && word.subjectId === 'house'
+                && word.tags.some(tag => tag.includes(robes.id)))).toBe(true);
             expect(state.objects.find(o => o.data.memberId === 'stays')!.possessorId).toBe('stays');
         }
         expect(departures, 'the control must actually leave the roll').toBeGreaterThan(0);
