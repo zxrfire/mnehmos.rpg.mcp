@@ -33,7 +33,7 @@ import {
     ROGUE_HOUSE_FELL
 } from '../../../src/engine/world/what-becomes-of-a-houses-people-when-it-is-gone.js';
 import { createNpc, type NpcRecord } from '../../../src/engine/world/npc-state.js';
-import { makeFaction, type FactionRecord, type WorldState } from '../../../src/engine/world/world-state.js';
+import { createWorld, makeFaction, type FactionRecord, type WorldState } from '../../../src/engine/world/world-state.js';
 
 const SEED = 'who-stays';
 const SEAT = 'loc-the-seat';
@@ -55,8 +55,9 @@ function aRoll(house: FactionRecord, howMany: number): NpcRecord[] {
 
 function aWorld(house: FactionRecord, people: NpcRecord[]): WorldState {
     return {
-        seed: SEED, currentDay: 1000, factions: [house], npcs: people, locations: []
-    } as unknown as WorldState;
+        ...createWorld({ seed: SEED, skipPriorAges: true, regionCount: 0 }),
+        currentDay: 1000, factions: [house], npcs: people, locations: []
+    };
 }
 
 describe('how many would not walk away', () => {
