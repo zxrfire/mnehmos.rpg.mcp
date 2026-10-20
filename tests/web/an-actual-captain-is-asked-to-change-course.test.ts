@@ -3,7 +3,7 @@
  * native traits/ties/odds may consent; an always-no branch is wrong. This uses
  * the already native-proven public-passenger boarding arrangement, keeps the
  * merchant's actual different purpose, scripts intention only, and demands a
- * real .125 exchange plus the original hull/fare/history. Controls are UNRUN.
+ * real .125 exchange plus the original hull/fare/history.
  * Root authorised existing withTheAttemptLanding ADMIN positive arrangements;
  * these prove accepted effects and boundary gates, not natural consent frequency.
  * Engine odds, actor traits, marks and counter-obligation are still native.
@@ -12,7 +12,7 @@
  * control must actually accept before testing its fresh-source rejection.
  * Separate ordinary unforced refusal below preserves the user's usual-no case.
  * Supported shorter-way return is existing canTurnBack/turnBackPublicPassage.
- * Arbitrary ports, carriage partial-edge and owned course-change remain gaps.
+ * This fixture covers public returns; other course-change shapes are outside it.
  */
 import { expect, it } from 'vitest';
 import { withTheAttemptLanding } from '../../src/server/consolidated/forcing-an-attempt-to-land.js';
@@ -105,9 +105,9 @@ it('keeps native consent historical but does not start a changed course after th
   const before=game.currentRun(),moment=routineTime(world),index=world.npcs.findIndex(npc=>npc.id===captain.id);
   world.npcs[index]=upsertRelationship(world.npcs[index]!,{targetId:before.cultivator.id,
    targetName:before.cultivator.name,kind:'ally',standing:1,note:'A trusted ally.'},moment);
-  const nativeAdvance=game.advanceWorld.bind(game);
-  game.advanceWorld=async(...args:Parameters<typeof game.advanceWorld>)=>{
-   const report=await nativeAdvance(...args);
+  const nativeAdvance=game.advancePreparedWorld.bind(game);
+  game.advancePreparedWorld=(...args:Parameters<typeof game.advancePreparedWorld>)=>{
+   const report=nativeAdvance(...args);
    const current=world.npcs.findIndex(npc=>npc.id===captain.id);
    if(world.npcs[current]?.status==='alive') {
     const actualGround=locationOnNpcJourney(world.locations,world.npcs[current]!,routineTime(world));

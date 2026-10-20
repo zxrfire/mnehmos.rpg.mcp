@@ -116,9 +116,9 @@ it('actual hull ruin at the final boundary ends the accepted owned passage', asy
     try {
         const listener = listenerInTheActualCarrierScene(h.game, h.pilot!.id, 'deck');
         const claim = ownedPassageClaim(h.db, h.playerId)!;
-        const advance = h.game.advanceWorld.bind(h.game);
-        h.game.advanceWorld = async (...args: Parameters<typeof h.game.advanceWorld>) => {
-            const result = await advance(...args);
+        const advance = h.game.advancePreparedWorld.bind(h.game);
+        h.game.advancePreparedWorld = (...args: Parameters<typeof h.game.advancePreparedWorld>) => {
+            const result = advance(...args);
             const world = h.game.atHand!;
             const at = world.objects.findIndex(row => row.id === h.boat.id);
             if (!isRuined(world.objects[at]!)) world.objects[at] = ruin(world.objects[at]!,

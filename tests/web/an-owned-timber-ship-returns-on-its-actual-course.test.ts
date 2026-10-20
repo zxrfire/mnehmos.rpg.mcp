@@ -1,7 +1,7 @@
 /** Diagnostic carriage16649 found deleting founding uniform objects changes
  * opening-day authority to -Infinity and triggers year-zero contact practice.
  * This water fixture now preserves real founding objects; no mortality rule
- * or expected native operator outcome is changed. This successor is unrun.
+ * or expected native operator outcome is changed.
  * A timber ship is not a flying spirit boat or a public ticket. Its real
  * owner/pilot boards an existing admitted dock lane, pays the existing chest
  * authority, eats actual native pack stock and occupies the lane's water.
@@ -103,8 +103,8 @@ for(const lost of [false,true])it(lost?'does not accept a private return after t
  const h=await aboard(true);try{
   const before=h.game.currentRun(),at=routineTime(h.world),oldGround=before.cultivator.location;
   expect(h.game.present(before.cultivator).some(p=>p.id===h.pilot!.id)).toBe(true);
-  if(lost){const advance=h.game.advanceWorld.bind(h.game);let once=false;
-   h.game.advanceWorld=async(...args)=>{const report=await advance(...args);if(!once){once=true;const i=h.world.objects.findIndex(o=>o.id===h.hull.id);
+  if(lost){const advance=h.game.advancePreparedWorld.bind(h.game);let once=false;
+   h.game.advancePreparedWorld=(...args)=>{const report=advance(...args);if(!once){once=true;const i=h.world.objects.findIndex(o=>o.id===h.hull.id);
     h.world.objects[i]=ruin(h.world.objects[i]!,{onDay:routineTime(h.world),source:'operator-arranged boundary loss'});}return report;};}
   h.plans.push(JSON.stringify({action:'request',target:'captain',intent:'course_change',topic:'take me back to '+h.from.name}));
   const result=(await withTheAttemptLanding('request',()=>h.game.act('I ask the captain to take me back to '+h.from.name+'.'))).result;

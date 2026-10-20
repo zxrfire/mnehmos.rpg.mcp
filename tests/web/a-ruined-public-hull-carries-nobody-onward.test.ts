@@ -42,8 +42,8 @@ it('clamps the pure current read and the surviving real crew at the dated wreck 
 });
 it('stops an actual played continuation at loss without spending its later course or arriving at the port',async()=>{
  const f=await atTheActualCaptain();try{
-  const before=f.game.currentRun(),advance=f.game.advanceWorld.bind(f.game);let lost=false;
-  f.game.advanceWorld=async(...args:Parameters<typeof f.game.advanceWorld>)=>{const report=await advance(...args);if(!lost){lost=true;wreck(f);}return report;};
+  const before=f.game.currentRun(),advance=f.game.advancePreparedWorld.bind(f.game);let lost=false;
+  f.game.advancePreparedWorld=(...args:Parameters<typeof f.game.advancePreparedWorld>)=>{const report=advance(...args);if(!lost){lost=true;wreck(f);}return report;};
   f.plans.push(JSON.stringify({action:'move',target:f.to.name,intent:'travel'}));
   const continued=await f.game.act('I continue sailing to '+f.to.name+'.');
   expect(lost,JSON.stringify(continued.toolCalls)).toBe(true);

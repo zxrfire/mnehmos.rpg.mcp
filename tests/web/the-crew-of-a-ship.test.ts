@@ -68,8 +68,8 @@ function namedAsFallen(said: string, people: readonly { id: string; name: string
 
 /** Read named native deaths before ordinary mortal pruning; keep the original boundary callback. */
 function namedPlagueDeathsOnTheVoyage(game: GameService, people: readonly {id:string;name:string}[]) {
-    const named = new Set<string>(), advance = game.advanceWorld.bind(game);
-    game.advanceWorld = (days, body, run, options = {}) => advance(days, body, run, {
+    const named = new Set<string>(), advance = game.advancePreparedWorld.bind(game);
+    game.advancePreparedWorld = (days, body, run, options = {}) => advance(days, body, run, {
         ...options, atWorldBoundary: (state, day) => {
             options.atWorldBoundary?.(state, day);
             for (const person of people) if (state.history.facts.some(fact => fact.day <= day

@@ -105,9 +105,9 @@ it('a quiet paid carriage physically carries its passenger through B before C on
     const h=await boarding();const {game,b,c,quote,receipt,middleOn}=h;
     try {
         const before=game.currentRun();const visits:{day:number;body:string|null;driver:string|null}[]=[];
-        const advance=game.advanceWorld.bind(game);
-        vi.spyOn(game,'advanceWorld').mockImplementation(async(...args)=>{
-            const report=await advance(...args), day=routineTime(game.atHand!);
+        const advance=game.advancePreparedWorld.bind(game);
+        vi.spyOn(game,'advancePreparedWorld').mockImplementation((...args)=>{
+            const report=advance(...args), day=routineTime(game.atHand!);
             const passage=publicCarriagePassage(game.atHand!,receipt.id,h.me.id,day);
             visits.push({day,body:game.currentRun().cultivator.location,driver:passage?.locationId??null});return report;
         });

@@ -1,6 +1,6 @@
 /** Existing sea authority commitDayOf says that turning back beyond it is
  * longer, not impossible. Captain05 deliberately proved only the shorter-way
- * convenience. These UNRUN controls extend explicit native consent to the
+ * convenience. These controls extend explicit native consent to the
  * longer actual return, preserving its accepted storm-duration progress, real
  * operator/hull/fare/history and original provision expiry. Fixture advancement
  * below is the real independent world driver (other actors can advance the
@@ -64,9 +64,9 @@ it('accepts a longer return after the midpoint without port teleport, new fare o
 for(const loss of ['operator','hull'] as const)it('keeps the old actual course when '+loss+' is lost during the longer-return request',async()=>{
  const {game,db,plans,world,from,receipt,captain}=await pastMiddle();
  try{
-  const before=game.currentRun(),advance=game.advanceWorld.bind(game);
-  game.advanceWorld=async(...args:Parameters<typeof game.advanceWorld>)=>{
-   const report=await advance(...args),day=routineTime(world);
+  const before=game.currentRun(),advance=game.advancePreparedWorld.bind(game);
+  game.advancePreparedWorld=(...args:Parameters<typeof game.advancePreparedWorld>)=>{
+   const report=advance(...args),day=routineTime(world);
    if(loss==='operator'){
     const at=world.npcs.findIndex(n=>n.id===captain.id),npc=world.npcs[at]!;
     if(npc.status==='alive')world.npcs[at]=markDead(setLocation(npc,locationOnNpcJourney(world.locations,npc,day)!,day),day,'Actual boundary loss.');

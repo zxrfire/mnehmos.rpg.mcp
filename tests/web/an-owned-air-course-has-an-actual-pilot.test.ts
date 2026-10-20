@@ -10,7 +10,8 @@
  * A dead passenger cannot steer, but a genuine surviving pilot retains custody
  * but its personal purse does not inherit the owner's incremental fuel bill.
  * Both deaths therefore freeze the actual paid reached point in this fixture;
- * the surviving pilot can retain custody without acquiring unpaid motion. No model acceptance is claimed; successor unrun.
+ * the surviving pilot can retain custody without acquiring unpaid motion.
+ * These controls arrange the operator rather than test model acceptance.
  * Native04 measured the shared landing assertion against a stale fixture NPC.
  * Diagnostic01 showed actual world day exactly equal its accepted arrival,
  * SQL body and live pilot at the destination, restored company, fraction1 and
@@ -156,10 +157,10 @@ it('actual shared spiritboat has the same airborne body site and reaches its met
 for(const companion of [false,true])it('actual SQL passenger death preserves custody without unfunded motion; companion='+companion,async()=>{
     const h=await departure(companion);
     try{
-        const original=h.game.advanceWorld.bind(h.game);
+        const original=h.game.advancePreparedWorld.bind(h.game);
         let consequences=0;
-        vi.spyOn(h.game,'advanceWorld').mockImplementation(async(days,body,run,options)=>{
-            const receipt=await original(days,body,run,options);
+        vi.spyOn(h.game,'advancePreparedWorld').mockImplementation((days,body,run,options)=>{
+            const receipt=original(days,body,run,options);
             if(consequences++===0)h.repos.cultivators.markDead(body.id,'lifespan_exhausted',run.turn,
                 'Explicit native final-boundary operator consequence');
             return receipt;
