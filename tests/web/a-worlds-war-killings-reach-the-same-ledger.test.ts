@@ -2,7 +2,9 @@
  * is an actual open war with living, killable combatants and surviving kin.
  * The scenario takes that WorldState and spends at most three ordinary years
  * through the played ADMIN surface. An engine-opened arranged war and a real
- * sampled war use the same scenario; a separate two-seed100/250/300-year check proves reach.
+ * sampled war use the same scenario. Four seeds at 100-500 years sample both
+ * transient open wars and living kin; six snapshots on two seeds missed that
+ * intersection on 7be5ec6b. The shared predicate and scenario stay unchanged.
  * SQL account, open/severity, deed dedupe and alignment claims remain. Actual
  * battle participants/death dates distinguish war accounts from unrelated bouts. */
 import { beforeAll, afterAll } from 'vitest';
@@ -113,7 +115,9 @@ describe('and the world\'s own killers are on the ledger too', () => {
     }
 
     const samples = [['demography', 100], ['drift-guard', 100],
-        ['demography', 250], ['drift-guard', 250], ['demography', 300], ['drift-guard', 300]] as const;
+        ['demography', 250], ['drift-guard', 250], ['demography', 300], ['drift-guard', 300],
+        ['demography', 400], ['drift-guard', 500],
+        ['area-occupancy-census-2026-10-01', 100], ['pyr-a', 200]] as const;
     it('reaches the same active-war state in sampled walked worlds', async () => {
         const found: boolean[] = [];
         for (const [seed, years] of samples) found.push(hasAFightWithPeopleToCarryItsAccounts(await sampledWorld(seed, { years })));
