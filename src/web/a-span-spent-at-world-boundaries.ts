@@ -4,7 +4,6 @@ import type { Cultivator, Run, TimeSkipResult } from '../schema/cultivation.js';
 import { simulateTimeSkipParts, type TimeSkipContext, type TimeSkipScene } from '../engine/cultivation/time-skip.js';
 import { type CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { applyTimeSkip, type ApplySkipResult } from './apply.js';
-import { finishPreparedSpan } from './finishing-a-prepared-span.js';
 
 /** A cumulative target becomes one new portion, through the existing body projection. */
 export function portionOfTimeSkip(
@@ -68,16 +67,6 @@ export interface ASpanAtWorldBoundaries {
 export interface ASpentWorldSpan {
     skip: TimeSkipResult;
     applied: ApplySkipResult;
-}
-
-/**
- * No resimulation, body rollback or stream restart. The iterator retains its own
- * original action turn and arithmetic; every portion persists only new quantities.
- */
-export async function spendAtWorldBoundaries(repos: CultivationRepos, run: Run,
-    initial: Cultivator, days: number, context: TimeSkipContext,
-    clock: ASpanAtWorldBoundaries): Promise<ASpentWorldSpan> {
-    return finishPreparedSpan(stepsAtWorldBoundaries(repos, run, initial, days, context, clock));
 }
 
 /** The appointment arithmetic is shared by synchronous and asynchronous callers. */

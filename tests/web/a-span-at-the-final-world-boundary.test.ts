@@ -3,13 +3,17 @@
  * world effects. Even with an exhausted iterator, a lost carrier must prevent
  * arrival, and actual SQL damage, purse changes and death must reach the caller.
  * These adapter controls use the real repository/apply path and an arranged
- * dated consequence; full public/owned transport wiring is a separate pending
- * played proof. No model, world horizon or accepted fare is simulated here.
+ * dated consequence; public/owned transport wiring has its separate played
+ * controls. No model, world horizon or accepted fare is simulated here.
  */
 import { expect, it } from 'vitest';
 import { makeGame } from './harness.js';
 import { simulateTimeSkipParts } from '../../src/engine/cultivation/time-skip.js';
-import { spendAtWorldBoundaries } from '../../src/web/a-span-spent-at-world-boundaries.js';
+import { stepsAtWorldBoundaries } from '../../src/web/a-span-spent-at-world-boundaries.js';
+import { finishPreparedSpan } from '../../src/web/finishing-a-prepared-span.js';
+
+const spendAtWorldBoundaries = (...args: Parameters<typeof stepsAtWorldBoundaries>) =>
+    finishPreparedSpan(stepsAtWorldBoundaries(...args));
 
 /**
  * A passenger reply has already recorded its enclosing action before its lesser
