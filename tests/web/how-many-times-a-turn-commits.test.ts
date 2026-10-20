@@ -9,7 +9,10 @@
  * statement that ran with no transaction open, which is an autocommit and
  * therefore a commit of its own.
  *
- * It is a RATCHET, not a target. A plain inventory read costs one commit.
+ * It is a RATCHET, not a target. A plain inventory read costs two commits:
+ * the transcript and the synchronous end-of-turn lamp/auction/board settlement.
+ * The latter became one atomic boundary on 7be5ec6b, adding exactly one to
+ * both read fixtures. It must not add autocommits or a per-day transaction.
  * Looking at a new square also learns claims, each an atomic transition under
  * `transition-runner.ts`; those commits are bounded by the claims learned.
  * The old look fixture counted discovery as a plain read and failed at four
@@ -81,14 +84,14 @@ async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
  * commit points minimum, 10-20 typical, and unbounded in the number of
  * encounters - plus an unknown number of bare autocommitting statements.
  *
- * Measured with an inventory read: ONE transaction and ZERO autocommits. A
+ * Measured on 7be5ec6b with an inventory read: TWO transactions and ZERO autocommits. A
  * full year is six and zero. The discovery bound above accounts
  * for learning new claims without raising either fixed high-water mark.
  *
  * Zero autocommits is the stronger half: it says every write in a turn is
  * inside some transaction, so there is no statement that can land alone.
  */
-const A_PLAIN_TURN = { commits: 1, autocommits: 0 };
+const A_PLAIN_TURN = { commits: 2, autocommits: 0 };
 // The span itself is one transaction. World preparation and the surrounding
 // ADMIN audit, current contact and transcript retain their separate boundaries.
 // The old unfed novice stopped after roughly 60 days. This fixture uses the
