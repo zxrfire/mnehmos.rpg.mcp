@@ -8,7 +8,11 @@
  * Certification on 8210cf97 measured 318 distinct deaths, all on their actual
  * pre-advance lifespan deadline: 317 opening-roster members and one later
  * modelled person. The former 300 total ceiling is now 350 (about 10% margin);
- * the annual maximum of 40 and all other population/cohort bounds stay fixed.
+ * 7be5ec6b recorded 329 distinct deaths, all on their actual pre-advance
+ * deadlines, with 41 in year ten. Its annual guard is now 46 (10% over 41,
+ * rounded up), still rejecting the original 90/93-person spike. Deadline and
+ * distinct-person checks also prevent a bookkeeping spike passing the bound.
+ * All other population/cohort bounds stay fixed.
  * The first repair had 216 old-age deaths, maximum 25 in a year; villages
  * averaged 6.9/7.1 and towns 13.9/14.6 people at years 100/500.
  * It also grew house grounds to 49.3 people per place: outside intake and
@@ -18,7 +22,7 @@
  * 19.1/19.1 and house grounds 10.6/12.6 people at years 100/500. Living
  * population stays at 1669-1794 from year 100 onward, against 2810-2886
  * over the control's last two centuries. Both source arms ran in one command.
- * The 0-40 yearly band rejects
+ * The yearly band rejects
  * the original spike; the century ratios reject ongoing drain or growth.
  * The behavior half, local-replacement-uses-the-actual-vacancy.test.ts, arranges
  * full global population beside a local vacancy. This reachability half uses
@@ -336,13 +340,16 @@ it('keeps the early old-age cohort without a single-year spike', async () => {
     expect(top).toBeLessThan(middle);
     if (collectingControl()) return;
     // The cohort should remain visible, but no single year should hold it all.
-    expect(Math.max(...result.deaths)).toBeLessThanOrEqual(40);
+    expect(Math.max(...result.deaths)).toBeLessThanOrEqual(46);
+    expect(new Set(result.mortality.records.map(death => death.npcId)).size)
+        .toBe(result.mortality.records.length);
+    expect(result.mortality.records.every(death => death.onDay === death.lifespanBeforeAdvance)).toBe(true);
     expect(result.deaths.reduce((sum, n) => sum + n, 0)).toBeGreaterThanOrEqual(180);
     // The 8210cf97 census measured 318 distinct deaths, 317 from the opening
     // roster and one later-modelled, all on their pre-advance deadline.
     // That merged-world total exceeds the earlier 216/235 measurements;
-    // 350 leaves about 10% headroom over 318. Keep the 40-death annual guard,
-    // the 180 floor and the year 10-14 cohort check unchanged.
+    // 350 leaves about 10% headroom over 318. The current annual guard is
+    // explained above; the 180 floor and year 10-14 cohort check stay unchanged.
     expect(result.deaths.reduce((sum, n) => sum + n, 0)).toBeLessThanOrEqual(350);
     expect(result.deaths.slice(10, 15).reduce((sum, n) => sum + n, 0)).toBeGreaterThanOrEqual(50);
 }, 3_600_000);
