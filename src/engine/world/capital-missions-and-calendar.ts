@@ -943,7 +943,10 @@ function finishMissionWork(state: WorldState, mission: HistoricalFact, members: 
         data: { missionWork: mission.id, finished: result.outcome === 'finished' } }), { recur: false });
     for (const missing of lost) {
         const at = state.npcs.findIndex(person => person.id === missing.id);
-        state.npcs[at] = theWorldLoses(state.npcs[at]!, day, `Lost on ${reason.name.toLowerCase()}.`) ?? state.npcs[at]!;
+        const person = theWorldLoses(state.npcs[at]!, day, `Lost on ${reason.name.toLowerCase()}.`) ?? state.npcs[at]!;
+        // The work ended even for somebody who did not return. Its receipt and
+        // lost-sight mark survive; an old due activity must not resolve it again.
+        state.npcs[at] = privateVenture ? { ...person, activity: null } : person;
     }
     const returned = members.filter(member => !lost.some(lost => lost.id === member.id));
     if (privateVenture && result.outcome === 'finished')

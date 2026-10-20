@@ -24,6 +24,13 @@ without installing a second copy on the world.
 
 # The World Layer
 
+Feeder admission publishes the receiving roll before its actual journey writer
+reads that person. The departure settlement still closes old appointments and
+accounts for old-house cargo; the new journey cannot restore the released row.
+A private expedition's completed work also ends for its lost participants.
+Their living bodies stay on the reached ground, with the lost-sight mark and
+dated work receipt intact. A later boundary cannot resolve the same work again.
+
 History indexes belong to the history ledger itself. A dated world projection
 sharing that ledger shares its append/prune reading; a cloned or loaded ledger
 builds its own. Clock projections do not re-index all historical facts.

@@ -137,11 +137,16 @@ describe('a capital board selects a feeder disciple', () => {
         expect(consignment.possessorId).toBe(champion.id);
         expect(locationOnNpcJourney(state.locations, member, 7)).toBe('capital');
         expect(settleOpenCompetitions(state, 7, 7).filter(f => f.data.feederSelection)).toHaveLength(0);
-        advanceWorldForPlay(state, { days: 21, pressure: { intensity: 0 }, stopOnInterrupt: false });
+        // Departure ended the old appointment. Cargo now follows its actual
+        // newly accepted homeward leg, rather than that appointment's old term.
+        advanceWorldForPlay(state, { days: member.activity!.untilDay! - state.currentDay,
+            preciseDays: true, pressure: { intensity: 0 }, stopOnInterrupt: false });
         expect(state.objects.find(o => o.id === 'house-consignment')!.possessorId).toBeNull();
         expect(state.objects.find(o => o.id === 'house-consignment')!.locationId).toBe(home.seatLocationId);
         expect(state.npcs.find(n => n.id === champion.id)!.activity?.returnTo).toBe(host.seatLocationId);
-        advanceWorldForPlay(state, { days: 6, pressure: { intensity: 0 }, stopOnInterrupt: false });
+        const next = state.npcs.find(n => n.id === champion.id)!.activity!;
+        advanceWorldForPlay(state, { days: next.untilDay! - state.currentDay,
+            preciseDays: true, pressure: { intensity: 0 }, stopOnInterrupt: false });
         expect(state.npcs.find(n => n.id === champion.id)!.locationId).toBe(host.seatLocationId);
     });
 

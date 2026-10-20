@@ -8,7 +8,7 @@ import { rankAField, type GatheringPlacing } from './gatherings.js';
 import { theDayItFallsIn } from './a-competition-anybody-may-enter.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact, whoWasThere } from './who-was-there-when-it-happened.js';
-import { isTheWorldsToMove, setLocation, type NpcRecord } from './npc-state.js';
+import { isTheWorldsToMove, setFaction, setLocation, type NpcRecord } from './npc-state.js';
 import { howAnEntrantIsAnnounced } from './how-an-entrant-is-announced.js';
 import { realmForOrdinal, realmIndexOf } from '../cultivation/realms.js';
 import { theirFaceMoves, whatWinningIsWorth, whatLosingCosts } from './what-a-face-is-worth.js';
@@ -240,9 +240,10 @@ function settleTheOpenCompetitions(state: WorldState, fromDay: number, toDay: nu
                     const released = isTheWorldsToMove(member)
                         ? offTheRoll(state, member, day, 'transferred-to:' + host.id)
                         : { ...member, activity: null };
-                    const taken = { ...released, factionId: host.id, factionRankIndex: 0,
-                        tags: member.tags.filter(tag => tag !== 'chosen'),
-                        updatedOnDay: day };
+                    const taken = { ...setFaction(released, host.id, 0, day),
+                        tags: released.tags.filter(tag => tag !== 'chosen') };
+                    // The journey writer reads the current row after departure settled it.
+                    state.npcs[at] = taken;
                     const homeward = returnsCargoHome && taken.activity?.capitalMissionId
                         ? taken
                         : returnsCargoHome && taken.activity?.returnTo === home.seatLocationId
