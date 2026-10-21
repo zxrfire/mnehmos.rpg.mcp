@@ -28,6 +28,7 @@ import type { WorldState } from '../engine/world/world-state.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { thePlayerIsSureItIsThem } from './the-narrator-plays-the-world.js';
 import { worldLocationFor } from './entities.js';
+import { personNamedByAddress } from './person-addresses.js';
 import { factsForRefusal, factsForToolResult } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
@@ -355,7 +356,8 @@ export function crossToWhoeverTheyNamed(
     const { areas, whereIs, people } = peopleInThisPlace(game.repos, cultivator, game.atHand, here.place);
     here.area = areas.find(area => area.id === cultivator.standingIn) ?? here.area;
     // The name, or the name with the rest of the sentence after it: "Kong Kelin with 200 stones".
-    const named = people
+    const addressed = personNamedByAddress(wanted, people.filter(npc => whereIs.has(npc.id)));
+    const named = addressed ?? people
         .filter(npc => whereIs.has(npc.id)
             && (wanted === npc.name.toLowerCase() || wanted.startsWith(`${npc.name.toLowerCase()} `)))
         .sort((a, b) => b.name.length - a.name.length)[0];

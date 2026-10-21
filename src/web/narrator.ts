@@ -435,7 +435,8 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     // "forget the board, i just walk to silver island myself" - the model read move(Silver
     // Island), the table read the duty board off "board", and the walk was dropped. "I ask about
     // Moraine Gate" has no going word in front of the name, so it still reads cheaper.
-    if (GOES_TO_A_PLACE.has(fromModel.action) && aGoingWordLeadsTo(input, fromModel.target)) {
+    if (GOES_TO_A_PLACE.has(fromModel.action) && aGoingWordLeadsTo(input, fromModel.target,
+        fromModel.action === 'move' && fromModel.intent === 'approach')) {
         return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
     }
 
@@ -489,7 +490,7 @@ const A_GOING_WORD_BEFORE_IT = new RegExp(
  * this runs (`names-as-they-are-spelled.ts`), so "Silver Island" is capitalised in the sentence
  * and "the market", which is somewhere to go over to and not a journey, is not.
  */
-function aGoingWordLeadsTo(input: string, target: string | undefined): boolean {
+function aGoingWordLeadsTo(input: string, target: string | undefined, aPersonAddress = false): boolean {
     const plain = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim()} `;
     const named = plain(target ?? '').replace(/^ the /, ' ');
     const goesTo = (said: string) => {
@@ -497,6 +498,7 @@ function aGoingWordLeadsTo(input: string, target: string | undefined): boolean {
         return said.trim().length >= 3 && at >= 0 && A_GOING_WORD_BEFORE_IT.test(plain(input).slice(0, at + 1));
     };
     if (goesTo(named)) {
+        if (aPersonAddress) return true;
         const first = named.trim().split(' ')[0]!;
         const written = new RegExp(String.raw`\b${first.replace(/[^a-z0-9]/g, '')}`, 'i').exec(input);
         if (written !== null && /[A-Z]/.test(written[0][0]!)) return true;

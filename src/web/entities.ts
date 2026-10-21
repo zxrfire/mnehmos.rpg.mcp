@@ -3,6 +3,7 @@
  */
 
 import type Database from 'better-sqlite3';
+import { personNamedByAddress } from './person-addresses.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
@@ -522,7 +523,8 @@ export function resolveCultivator(
         return scope.gate.isAwareOf(scope.holderId, 'cultivator', entry.id);
     });
 
-    const match = best(query, rows, everyNameThisRowAnswersTo);
+    const address = personNamedByAddress(query, rows);
+    const match = address === undefined ? best(query, rows, everyNameThisRowAnswersTo) : address;
     if (!match) return null;
 
     // Every name inside these facts is redacted independently. Being able to

@@ -415,8 +415,8 @@ Rules:
   and you answer with it as it is written there.
 - A pointing phrase that means ONE person - "him", "the man", "whoever is nearest",
   "the strongest person here", "the oldest one" - means somebody under STANDING HERE.
-  Bind it: answer with a name off that list rather than echoing the phrase back,
-  because a phrase resolves to nobody and costs them the turn. A SUPERLATIVE IS ONE OF
+  Bind it against that actual scene: use a known name when the description unambiguously
+  identifies somebody named there; otherwise retain the pointing phrase. A SUPERLATIVE IS ONE OF
   THESE. "who is the strongest person here" is a question about the people standing in
   front of them, so it is "look" - or, if they want that one person read, "investigate"
   with a NAME off the list and never with the phrase itself. Measured: echoing it back
@@ -432,6 +432,10 @@ Rules:
   resolves actual existence, presence and access; a name never supplies an absent listener.
   Do not add names absent from the square and HAS HEARD OF. For an unnamed visible face,
   use a pointing phrase such as "the nearest" and let the engine resolve it.
+- Approaching a PERSON in this place is move with intent: approach, never a geographic
+  destination or a house posture. Keep the following requested question or blow as its
+  next step. A familiar honorific plus name is still that person, not a house rank.
+  Do not drop "ask what she is selling" or a punch because the sentence begins with a walk.
 - Never invent fields for game state. Realm, spirit stones, HP, injuries, progress and death are
   decided by the engine and any such field you emit is discarded.
 - Never answer with an outcome. You are choosing what is ATTEMPTED, not what happens. "I sneak
@@ -842,8 +846,9 @@ export function describeWhoIsHere(company: Company, yourOrdinal: number): string
         '  A target may be a DESCRIPTION as well as a name, and the fields above are what a '
         + 'description reads: "the youngest woman here", "the oldest man", "the one nearest to '
         + 'me", "the elder", "senior brother", "you, void refinement cultivator", "a demonic '
-        + 'cultivator". Pass the phrase the player used through as the target. Do not turn a '
-        + 'description into a name and do not invent one.'
+        + 'cultivator". An unambiguous face already named here may use that known name; '
+        + 'otherwise preserve the pointing phrase. Keep a familiar honorific plus name '
+        + 'as supplied so the engine can resolve it. Never invent a person or database id.'
     );
     return lines;
 }

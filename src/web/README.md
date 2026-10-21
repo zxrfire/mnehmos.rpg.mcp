@@ -100,6 +100,12 @@ Public quoted fares keep their existing authority.
 
 # The Web Front Door
 
+Honorifics plus an actual name resolve uniquely against the same eligible
+people as ordinary name reads. They grant no relationship or unseen person.
+The local approach shares that name read, and a lowercase addressed person
+does not become a house-posture reading. Phase 1 retains the question or blow
+after the approach; the existing crossing still pays its actual physical cost.
+
 The configured reader receives the actual standing fight and can supply a
 closed `fightAnswer` choice on an interaction. Apology and pleas for mercy can
 therefore reach ordinary yielding without another phrase-table row. The choice
