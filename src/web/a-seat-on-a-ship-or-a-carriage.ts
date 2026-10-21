@@ -42,6 +42,8 @@ import { prepareWorldClockForPreciseSpan } from '../server/state/cultivation-wor
  */
 
 import { publicShipLinesFrom, quotePublicPassage } from '../engine/world/public-shipping.js';
+import type { LocationRecord } from '../engine/world/locations.js';
+import { ordinarySettlementKind } from '../engine/world/the-work-an-ordinary-mortal-does.js';
 import { assessPublicCarriage, commitPublicCarriage, carriageIdForRoad } from '../engine/world/public-carriages.js';
 import { shipIdForLane } from '../engine/world/the-ship-on-a-lane.js';
 import { passageTalliesForDeparture, passageTallyTerms } from '../engine/world/a-passage-tally-is-the-seat-you-own.js';
@@ -202,9 +204,17 @@ function whatStopsTheLoad(game: GameService, cultivator: Cultivator, hired: stri
 }
 
 /** The line to where they asked, by the service they named where they named one. */
-export function theLineTo(lines: readonly ALine[], wanted: string, service: AService | null): ALine | null {
+export function theLineTo(lines: readonly ALine[], wanted: string, service: AService | null,
+    locations?: readonly LocationRecord[]): ALine | null {
     const bare = (name: string) => name.toLowerCase().replace(/^the\s+/, '').trim();
     const said = bare(wanted);
+    if (/^(?:closest|nearest)\s+city$/.test(said) && locations) {
+        return lines.filter(line => service === null || line.service === service)
+            .filter(line => {
+                const place = worldLocationFor({ locations }, line.to);
+                return place !== null && ordinarySettlementKind(place) === 'city';
+            }).sort((a, b) => a.walkingDays - b.walkingDays)[0] ?? null;
+    }
     const matches = lines.filter(line => said.length >= 2
         && (bare(line.to) === said || bare(line.to).includes(said) || said.includes(bare(line.to))))
         .filter(line => service === null || line.service === service);
@@ -265,7 +275,7 @@ export async function aSeatOnAShipOrACarriage(
             return refused('engine.actualPartyBoarding','passage',factsForRefusal('Your agreed company cannot board here together.',
                 'An agreed traveller is absent, no longer alive, or already on another actual passage. Nothing spent.',
                 'Party membership does not recall a body or replace its accepted course.'));
-        const offered=ground&&theLineTo(whatRunsFromHere(game,{...cultivator,location:ground.name},Math.floor(game.atHand.currentDay)),target,service);
+        const offered=ground&&theLineTo(whatRunsFromHere(game,{...cultivator,location:ground.name},Math.floor(game.atHand.currentDay)),target,service,game.atHand.locations);
         if(ground&&offered?.service==='carriage' && intent === 'hire'){
             const to=worldLocationFor(game.atHand,offered.to),grade=intent==='hire'?theGradeAskedFor(`${target} ${askedIn}`):null;
             const hired=grade?theHireOf(offered,grade):null;
@@ -308,7 +318,7 @@ export async function aSeatOnAShipOrACarriage(
     }
 
     const wanted = (target ?? '').trim();
-    const line = wanted.length >= 2 ? theLineTo(lines, wanted, service) : null;
+    const line = wanted.length >= 2 ? theLineTo(lines, wanted, service, game.atHand?.locations) : null;
     const reading = !['buy', 'hire', 'ticket', 'embark'].includes(intent);
     if (reading || line === null) {
         const displayed = theNearestOf(lines);
@@ -320,7 +330,7 @@ export async function aSeatOnAShipOrACarriage(
             ...(displayed.more > 0 ? [`And ${displayed.more} more, further off, sold by name.`] : [])
         ];
         if (!reading && wanted.length >= 2) {
-            const other = theLineTo(all, wanted, null);
+            const other = theLineTo(all, wanted, null, game.atHand?.locations);
             board.unshift(other
                 ? `Nothing to ${wanted} by ${service}; it goes by ${other.service}.`
                 : `Nothing from ${here} goes to ${wanted}.`);

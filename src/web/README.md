@@ -100,6 +100,13 @@ Public quoted fares keep their existing authority.
 
 # The Web Front Door
 
+A public seat request reaches passage-ticket purchase even if phase 1 calls it
+buying the vehicle. The existing counter must resolve an actual line before
+charging; an absent destination shows its board. Closest/nearest city selects
+an actual advertised city route by walking distance, within the named service.
+The held tally, next departure, boarding hand-in and separate vehicle ownership
+keep their existing authorities. Buying a ticket alone never departs.
+
 Honorifics plus an actual name resolve uniquely against the same eligible
 people as ordinary name reads. They grant no relationship or unseen person.
 The local approach shares that name read, and a lowercase addressed person

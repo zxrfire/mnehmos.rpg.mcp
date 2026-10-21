@@ -28,6 +28,7 @@ import { openContractsWithAPerson, contractOffersAtBody } from './open-contracts
 import { usingAPersonSeal } from './using-a-person-seal.js';
 import { bindingOf } from '../engine/social/open-contracts.js';
 import { theOrderOnTheActualPlayer } from './slave-orders-at-the-actual-body.js';
+import { passagePurchase } from './passage-purchase.js';
 import { finishSlaveOrder } from '../engine/world/slave-orders.js';
 import { privateWorkWithAPerson, privateWorkOffersAtTheBody, settlePrivateWorkAtTheBody, privateBusinessBoundaryDates } from './private-work-with-a-person.js';
 import { thePlayerReceivesPrivatePartyFinds } from './the-player-receives-a-private-party-find.js';
@@ -13768,6 +13769,8 @@ ${opened.text}` : receipt,
         target: string | undefined,
         rawInput = ''
     ): Promise<Execution> {
+        const passage = passagePurchase(rawInput, target);
+        if (passage) return this.passage(run, cultivator, passage.destination, 'ticket', undefined, passage.words);
         const heldTrade = tradeAHeldItem(this, run, cultivator, undefined, rawInput, 'buy', target);
         if (heldTrade) return heldTrade;
         const query = (target ?? '').trim();

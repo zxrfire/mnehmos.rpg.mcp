@@ -436,6 +436,11 @@ Rules:
   destination or a house posture. Keep the following requested question or blow as its
   next step. A familiar honorific plus name is still that person, not a house rank.
   Do not drop "ask what she is selling" or a punch because the sentence begins with a walk.
+- A SEAT ON A PUBLIC SERVICE IS A TICKET, not its vehicle. Use passage with intent: ticket,
+  target: the requested destination, topic: the service. Buying it does not board it or
+  travel there; do not invent a separate move to the destination. Preserve relative
+  destinations such as "closest city" for the actual route board to resolve. Buying a
+  carriage of your own remains buy. If no destination was supplied, show the actual board.
 - Never invent fields for game state. Realm, spirit stones, HP, injuries, progress and death are
   decided by the engine and any such field you emit is discarded.
 - Never answer with an outcome. You are choosing what is ATTEMPTED, not what happens. "I sneak
