@@ -100,6 +100,11 @@ Public quoted fares keep their existing authority.
 
 # The Web Front Door
 
+A partial-name pointer such as "the qi gathering one" resolves against the
+previous printed listing before catalog lookup. It can correct a model's
+premature expansion to a different catalog item. Multiple printed matches
+remain unresolved; an explicitly named purchase keeps its own subject.
+
 Played tool refusals retain the handler's actual explanation and next step in
 both the narrator facts and the tool receipt. An error code alone is not the
 player's answer, including when a manual is already known.

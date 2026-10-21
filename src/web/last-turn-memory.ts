@@ -7,6 +7,7 @@ import {
     parseDuration,
     type PlannedAction
 } from './actions.js';
+import { WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG } from './planned-action.js';
 import {
     whatThisStepIsCalled,
     type PlanStep,
@@ -492,6 +493,9 @@ export function askingForTheRestOfIt(
  * A phrase that points at something the last turn listed rather than naming it.
  */
 const A_BARE_ONE = /^(?:the\s+)?(?:that|this|it|one|same|other)(?:\s+one)?$/i;
+const A_NAMED_ONE = /^(?:the|that|this)\s+([\p{L}\p{N}]+(?:[\s-]+[\p{L}\p{N}]+)*)\s+one$/iu;
+const A_NAMED_ONE_IN_SPEECH = /\b(?:the|that|this)\s+[\p{L}\p{N}]+(?:[\s-]+[\p{L}\p{N}]+){0,7}\s+one\b/iu;
+const nameWords = (value: string): string[] => value.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
 
 /**
  * A thing named by what it IS, where the last turn printed only one of them.
@@ -588,6 +592,7 @@ export function standsForSomethingNamedLastTurn(value: string | undefined): bool
     const text = value.trim();
     if (text.length === 0) return false;
     if (A_BARE_ONE.test(text)) return true;
+    if (A_NAMED_ONE.test(text)) return true;
     if (A_THING_BY_ITS_KIND.test(text)) return true;
     if (THE_LAST_ONE.test(text)) return true;
     if (THE_CHEAPER.test(text) || THE_DEARER.test(text)) return true;
@@ -699,6 +704,12 @@ export function whichOfTheNamedThings(
             if (!pattern.test(text)) continue;
             if (!/\bone\b/i.test(text) && !withANounOnIt) continue;
             if (named[at]) return named[at]!;
+        }
+        const fragment = A_NAMED_ONE.exec(text.trim());
+        if (fragment) {
+            const words = nameWords(fragment[1]);
+            const matches = named.filter(thing => words.every(word => nameWords(thing.name).includes(word)));
+            return matches.length === 1 ? matches[0]! : null;
         }
         // A demonstrative with one thing to point at points at it. With two it
         // points at nothing, and saying so is better than choosing.
@@ -843,8 +854,14 @@ export function resolvingAgainstTheLastTurn(
     const resolutions: AReferenceResolved[] = [];
     const unsettled: string[] = [];
 
-    const resolve = (action: PlannedAction): PlannedAction => {
+    const resolve = (action: PlannedAction, said = input): PlannedAction => {
         let changed: PlannedAction = action;
+        // The player's pointer precedes a model's catalog expansion. Resolve
+        // it on the actual printed list, never on every similarly named item.
+        const pointer = WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG.includes(action.action)
+            ? A_NAMED_ONE_IN_SPEECH.exec(said)?.[0] : undefined;
+        if (pointer && (!action.target || !nameWords(said).join(' ').includes(nameWords(action.target).join(' '))))
+            changed = { ...changed, target: pointer };
         for (const field of ['target', 'topic'] as const) {
             const value = changed[field];
             if (!standsForSomethingNamedLastTurn(value)) continue;
@@ -885,7 +902,7 @@ export function resolvingAgainstTheLastTurn(
     };
 
     const steps = plan.steps?.map(step => {
-        const action = resolve(step.action);
+        const action = resolve(step.action, step.said ?? input);
         return action === step.action ? step : { ...step, action };
     });
 
