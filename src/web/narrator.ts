@@ -8,13 +8,11 @@ import { readAdminSpawnSpec, type AdminSpawnSpec } from './admin-spawn-spec.js';
 import {
     FALLBACK_ACTION,
     TIME_CONSUMING_ACTIONS,
-    carryWhatOnlyTheSentenceKnows,
-    extractJsonObject,
     parseIntent,
-    validatePlan,
     type ActionName,
     type PlannedAction
 } from './actions.js';
+import { carryWhatOnlyTheSentenceKnows, extractJsonObject, validatePlan } from './planned-action.js';
 import {
     EXCHANGES_REMEMBERED,
     INTENT_SYSTEM_PROMPT,

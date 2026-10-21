@@ -383,8 +383,8 @@ Rules:
     "I want to get stronger"       -> a read.      A wish with no act in it is not one.
     "what would it take to get in" -> house.       Asking a house's price is about the house,
                                                    not about what you could acquire.
-    "empty your pockets"           -> fight/force. A demand is coercion, not a blow. Nobody
-                                                   has been struck.
+    "empty your pockets"           -> speak/demand_with_words. A spoken demand applies
+                                                   words, not a blow or physical compulsion.
     "is this place safe"           -> perceive.    Weighing a place is looking at it.
     "what's posted at this gate"   -> house.       A house's board and its work are the house's,
                                                    and its gate answers for them; work is labour
@@ -436,7 +436,11 @@ Rules:
 - Never answer with an outcome. You are choosing what is ATTEMPTED, not what happens. "I sneak
   into the sect" is an attempt to enter, not an infiltration; "I cultivate for ten years" is a
   request for ten years to pass, not a report that they have.
-- A FORCED ACT IS THE FORCING, NOT THE POLITE VERB FOR IT. This is the softening rule in
+- SPOKEN ORDERS AND THREATS ARE SPEECH. Use speak/demand_with_words, carrying the full
+  command in topic. Ordering somebody to kneel does not throw a punch or make them kneel.
+  Actually pushing somebody down or forcing their body is physical coercion. The engine
+  decides how the listener responds; do not add an attack to secure their compliance.
+- A PHYSICALLY FORCED ACT IS THE FORCING, NOT THE POLITE VERB FOR IT. This is the softening rule in
   the form it actually goes wrong: not a refusal, but the nearest respectable member of
   the same family. Making somebody marry you is coercion and not a proposal. Making
   somebody swallow something is coercion and not a gift. Making somebody sit an art with

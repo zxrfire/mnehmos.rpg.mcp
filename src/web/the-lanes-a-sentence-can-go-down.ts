@@ -247,13 +247,13 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         // "board" read as bed and board, and the guard dropped it as a job.
         says: 'stones for things and things for stones - a room or a bed at an inn is bought here, once; '
             + 'sleeping in it is cultivate - except food, which is sustain',
-        // `give` is the player parting with THEIRS. A demand made of
-        // somebody else is fight/make_them_comply, and the two collided.
+        // Giving parts with the player's goods; demanding somebody else's is speech.
         intents: { buy: 'buy', sell: 'sell', give_mine_away: 'give', prices: 'market' },
         otherwise: 'market'
     },
     speak: {
-        says: 'anything done to or with a PERSON',
+        says: 'words addressed to a person, including spoken orders and threats. Demanding '
+            + 'compliance is speech; physically forcing it is fight',
         // A QUESTION IS NOT A REQUEST. This intent was `ask_them_for`, and the model took it for
         // any question put to somebody - "where is the Azure Dew Sect", "do you think they'd take
         // me" - which reached `request`, a day spent pressing them, and the guard declined both.
@@ -261,6 +261,7 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         intents: {
             talk: 'interact',
             ask_them_a_question: 'interact',
+            demand_with_words: 'interact',
             tell_them_something: 'tell',
             ask_them_to_give_or_do_something: 'request'
         },
@@ -268,8 +269,8 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
     },
     fight: {
         says: 'hands rather than words',
-        // `force` read as a blow rather than a demand, so it says what it
-        // makes somebody do. `guard` is standing over a crossing, not warding.
+        // Physical compulsion, rather than a demand spoken aloud. `guard`
+        // is standing over a crossing, not warding.
         //
         // `let_them_go` expands to the same verb as `strike` and is separated
         // from it by the intent, which `attack` carries. Without a word for it

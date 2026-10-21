@@ -100,6 +100,11 @@ Public quoted fares keep their existing authority.
 
 # The Web Front Door
 
+Spoken demands use the speak lane's `demand_with_words`, carried as an
+ordinary threatening interaction with the command in its topic. Coercion's
+fight lane applies physical compulsion. An order alone adds no player blow
+and guarantees no compliance; the actual listener retains their response.
+
 A partial-name pointer such as "the qi gathering one" resolves against the
 previous printed listing before catalog lookup. It can correct a model's
 premature expansion to a different catalog item. Multiple printed matches
