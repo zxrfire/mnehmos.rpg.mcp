@@ -13070,10 +13070,9 @@ ${opened.text}` : receipt,
             const execution = refused(name, action, factsForRefusal(
                 `${subject}: refused.`,
                 result.message,
-                'The engine declined, and the reason it filed is '
-                + `${String(result.error).replace(/_/g, ' ')}.`
+                result.message + (hint ? ` ${hint}` : '')
             ));
-            execution.calls[0].summary = `${result.error}${hint ? `. ${hint}` : ''}`;
+            execution.calls[0].summary = `${result.error}: ${result.message}${hint ? ` ${hint}` : ''}`;
             return execution;
         }
 

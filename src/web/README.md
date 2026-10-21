@@ -100,6 +100,10 @@ Public quoted fares keep their existing authority.
 
 # The Web Front Door
 
+Played tool refusals retain the handler's actual explanation and next step in
+both the narrator facts and the tool receipt. An error code alone is not the
+player's answer, including when a manual is already known.
+
 Held fights pass the actual choice and HP from before their final round to
 settlement. Breaking off never counts as forcing combat, including when the
 escape fails. Choosing to fight on while barely standing retains its death
