@@ -2983,6 +2983,8 @@ export class GameService {
                 // `names-as-they-are-spelled.ts`.
                 planningInput,
                 composeStateSummary({
+                    fight: inAFight ? { opponent: inAFight.party.name,
+                        yourHp: inAFight.state.hp[cultivator.id], theirHp: inAFight.state.hp[inAFight.party.id] } : null,
                     hour: this.atHand?.currentHour ?? 8,
                     cultivator: presenceForScene(this, cultivator),
                     run,
@@ -3223,6 +3225,7 @@ export class GameService {
                 // question is not, which is the safe direction for a charge
                 // that has cost a permanent wound.
                 aFightChargesNothingFor(theTurnsPlan.action.action)
+                    || theTurnsPlan.action.fightAnswer !== undefined
                     || aFightChargesNothingFor(parseIntent(trimmed).action)
             ));
 
@@ -4491,6 +4494,9 @@ export class GameService {
     private async executeAction(
         action: PlannedAction, run: Run, cultivator: Cultivator, ambient: AmbientQi, rawInput: string
     ): Promise<Execution> {
+        if (action.fightAnswer && theFightStillStands(this.fight, run.id, cultivator.id)) {
+            return this.answerTheFight(run, cultivator, ambient, this.fight!, { kind: action.fightAnswer });
+        }
         const resolvesOnTurn = run.turn + 1;
         const carriedUp = enforceCarriedCeiling(this, run, cultivator);
         if (carriedUp) return carriedUp;

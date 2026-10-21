@@ -285,6 +285,13 @@ export const ACTION_NAMES = [
 
 export type ActionName = typeof ACTION_NAMES[number];
 
+/** Inert target metadata: context readers must not initialize the parser to read it. */
+export const WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG: readonly ActionName[] = [
+    'buy', 'sell', 'consume_pill', 'destroy', 'stow',
+    'learn_technique', 'list_techniques', 'train_technique', 'acquisition', 'derive',
+    'refine'
+] as const;
+
 /**
  * Actions that pass no in-world time and change no cultivator state.
  */

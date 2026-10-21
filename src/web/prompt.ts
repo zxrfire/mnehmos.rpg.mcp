@@ -329,6 +329,7 @@ Schema:
   {"lane": <one of: ${LANE_NAMES.join(' | ')}>,
    "intent": <one of the intents listed under that lane>,
 ${composePlanSchemaFields()}
+   "fightAnswer": <optional, only on interact during an actual standing fight>,
    "reason": <one short sentence>}
 
 Lanes. Pick the LANE first - what the player is doing - and then the intent inside it.
@@ -440,6 +441,12 @@ Rules:
   command in topic. Ordering somebody to kneel does not throw a punch or make them kneel.
   Actually pushing somebody down or forcing their body is physical coercion. The engine
   decides how the listener responds; do not add an attack to secure their compliance.
+- WHILE A FIGHT IS IN PROGRESS, an answer to that fight may use action: interact and
+  fightAnswer: strike | guard | press | break_off | call_for_help | spare | yield.
+  This is a choice, never a guaranteed outcome. Read frightened or apologetic speech
+  in context: bowing and begging the opponent for forgiveness or mercy is yielding,
+  just as explicit surrender is. Merely ordering the opponent to surrender is speech,
+  not the player's yield. Preserve distinct requested acts as separate ordered steps.
 - A PHYSICALLY FORCED ACT IS THE FORCING, NOT THE POLITE VERB FOR IT. This is the softening rule in
   the form it actually goes wrong: not a refusal, but the nearest respectable member of
   the same family. Making somebody marry you is coercion and not a proposal. Making
@@ -491,6 +498,7 @@ export function narrationSystemPrompt(): string {
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface StateSummaryInput {
+    fight?: { opponent: string; yourHp: number; theirHp: number } | null;
     hour?: number;
     cultivator: Cultivator;
     run: Run;
@@ -724,6 +732,7 @@ export function composeStateSummary(input: StateSummaryInput): string {
 
     return [
         `Cultivator: ${cultivator.name}`,
+        ...(input.fight ? [`FIGHT IN PROGRESS against ${input.fight.opponent}. Your body: ${input.fight.yourHp}; their body: ${input.fight.theirHp}. Read an answer to this fight through fightAnswer.`] : []),
         // The ceiling is read off the ladder rather than written out. It was
         // written out here as 44, and it had been 46 for some time.
         `Rank: ${rankName(cultivator.realmOrdinal)} (ordinal ${cultivator.realmOrdinal} of ${MAX_ORDINAL})`,

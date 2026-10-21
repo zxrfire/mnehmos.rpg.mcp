@@ -5,9 +5,9 @@
 import {
     costsTheAskerNothing,
     parseDuration,
-    WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG,
     type PlannedAction
 } from './actions.js';
+import { WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG } from './action-set.js';
 import {
     whatThisStepIsCalled,
     type PlanStep,

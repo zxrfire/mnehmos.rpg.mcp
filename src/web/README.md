@@ -100,6 +100,14 @@ Public quoted fares keep their existing authority.
 
 # The Web Front Door
 
+The configured reader receives the actual standing fight and can supply a
+closed `fightAnswer` choice on an interaction. Apology and pleas for mercy can
+therefore reach ordinary yielding without another phrase-table row. The choice
+uses the existing round/terms resolver and guarantees no mercy. Distinct later
+acts retain their order; outside a fight this field supplies no fight.
+Catalog-target metadata stays in the inert action-set owner; parser functions
+are imported from their owner so circular action barrels cannot lose exports.
+
 Spoken demands use the speak lane's `demand_with_words`, carried as an
 ordinary threatening interaction with the command in its topic. Coercion's
 fight lane applies physical compulsion. An order alone adds no player blow

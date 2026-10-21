@@ -18,6 +18,8 @@ import {
     TOPIC_ACTIONS,
     INTENT_ACTIONS
 } from './action-set.js';
+import { WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG } from './action-set.js';
+export { WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG } from './action-set.js';
 import {
     DEFAULT_CULTIVATION_DAYS,
     DEFAULT_SECLUSION_DAYS,
@@ -45,6 +47,8 @@ export const INTERACT_INTENTS = [
 
 export const PlannedActionSchema = z.object({
     action: z.enum(ACTION_NAMES),
+    /** A semantic answer to a currently standing fight, never a declared ending. */
+    fightAnswer: z.enum(['strike', 'guard', 'press', 'break_off', 'call_for_help', 'spare', 'yield']).optional(),
     contract: z.object({
         yourTerms: z.string().min(1), theirTerms: z.string().min(1),
         binding: z.enum(['word', 'dao', 'blood', 'slave']),
@@ -323,6 +327,7 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     const { action: name, days, target, intent, topic, terms, reason,
         deedAccount, blamed, reportWitnessedEvent } = parsed.data;
     const action: PlannedAction = { action: name };
+    if (name === 'interact' && parsed.data.fightAnswer) action.fightAnswer = parsed.data.fightAnswer;
     if (name === 'oath' && parsed.data.contract) action.contract = parsed.data.contract;
     if (name === 'tell' && deedAccount) action.deedAccount = deedAccount;
     if (name === 'tell' && deedAccount === 'blame' && blamed) action.blamed = blamed;
@@ -400,12 +405,6 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
  * table's reading of those is the whole tail of the sentence - so carrying one
  * across turns "whoever is at hand" into "nobody here is called that".
  */
-export const WHOSE_TARGET_IS_AN_OBJECT_OFF_A_CATALOG: readonly PlannedAction['action'][] = [
-    'buy', 'sell', 'consume_pill', 'destroy', 'stow',
-    'learn_technique', 'list_techniques', 'train_technique', 'acquisition', 'derive',
-    'refine'
-] as const;
-
 /**
  * Put back the facts about the SENTENCE that a model's answer cannot carry.
  */
