@@ -1605,7 +1605,9 @@ export function foldTheCallsIntoOneTurn<Event, Skip, Break, Heard, Seen>(
     };
     const facts: EngineFacts = {
         headline: headline ?? first.facts.headline,
-        lines: inOccurrenceOrder(facts => facts.lines),
+        // A receipt can name its outcome only in its headline. Keep each call's
+        // outcome beside its details when several calls share one overlay title.
+        lines: inOccurrenceOrder(facts => [facts.headline, ...facts.lines]),
         structure: once(calls.flatMap(call => call.facts.structure)),
         prose: inOccurrenceOrder(facts => facts.prose.length > 0 ? [facts.prose] : []).join('\n\n')
     };

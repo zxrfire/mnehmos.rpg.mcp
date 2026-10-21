@@ -60,7 +60,7 @@ async function holdingAnArt(seed: string): Promise<Playing> {
     // the refusal names the stall and the figure.
     await game.act(`i buy a copy of ${ART}`);
     const held = await game.act(`i learn ${ART}`);
-    expect(held.narration ?? '', 'the art was taken up').toMatch(/held now/i);
+    expect(held.narration ?? '', 'the art was learned').toMatch(/learned now/i);
     return game;
 }
 

@@ -646,6 +646,7 @@ export function describeWhatIsWithinReach(reach: readonly ThingWithinReach[]): s
  * the short list of standing facts a sentence about the world can contradict.
  */
 export interface WhereTheyStandNow {
+    name?: string;
     /** The rung, in the engine's own spelling. */
     rank: string;
     age: number;
@@ -721,7 +722,8 @@ export function whereTheyStandNow(state: WhereTheyStandNow | null | undefined): 
         '  method".',
         '  no house - nobody\'s colours on them where everyone else is wearing some. NOT "you',
         '  serve no house".',
-        `- The player: ${state.sex ? `${state.sex === 'female' ? 'a woman' : 'a man'}, ` : ''}${state.rank}, `
+        'A name on the player is never a name for a stranger. Unintroduced people remain unnamed.',
+        `- The player: ${state.name ? `${state.name}, ` : ''}${state.sex ? `${state.sex === 'female' ? 'a woman' : 'a man'}, ` : ''}${state.rank}, `
             + `${state.age} years old, ${state.house ?? 'no house behind them'}`,
         `- The player has ${state.spiritStones} spirit stone${state.spiritStones === 1 ? '' : 's'}, ${carrying}`,
         `- The player ${practising}; ${body}`
@@ -1073,6 +1075,7 @@ export function composeNarrationUser(
         `Place: ${scene.place}`,
         `The ground: ${describeAmbientPerceived(scene.ambient)}`
             + (!arrived && told.ambientIsNews === false ? ' (Unchanged since last turn.)' : ''),
+        "Do not invent a comparison with another place's qi. A change of scenery alone supplies no improvement or decline.",
         ...whatThisProvinceIsLikeLines(scene.whatThisProvinceIsLike, arrived, scene.whatThisAreaIsLike),
         ...(scene.standing?.dayOfTheRun === undefined
             ? []
@@ -1145,7 +1148,10 @@ export function composeNarrationUser(
             ]
             : []),
         'WHAT THE ENGINE RULED. Every ruling is true and must reach the page; none of its wording may.',
+        ...(facts.headline && !facts.lines.includes(facts.headline) ? [`- ${facts.headline}`] : []),
         ...facts.lines.map(line => `- ${line}`),
+        'Keep each outcome with its own subject: a quote transfers nothing; a purchase transfers only the bought item and its stated payment. '
+            + 'A learned art is learned, even when further practice remains. A completed payment must reach the page.',
         ...(facts.required && facts.required.length > 0
             ? [
                 '',
@@ -1272,8 +1278,8 @@ function theTurnBefore(previous: { said: string | null; shown: string } | null):
         : previous.shown;
     return [
         '',
-        'THE TURN BEFORE - already happened and already read. Continue from it; do not repeat it, and',
-        'let anybody who spoke remember what they said.',
+        'THE TURN BEFORE - already read. Continue the conversation without repeating its prose.',
+        'Previous narration is prose, not evidence of possession, identity, learning or presence. Current engine rulings and state override it.',
         ...(previous.said ? [`The player: "${previous.said}"`] : []),
         shown
     ];

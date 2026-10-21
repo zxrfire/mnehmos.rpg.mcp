@@ -990,6 +990,7 @@ export function thePeopleHere(
         return ['THE PEOPLE HERE: nobody. The player is alone, and the turn is their act and the place.'];
     }
     const asSeen = theOthersAsTheyAreSeen(company, name => thePlayerIsSureItIsThem(name, awareness, playerSaid));
+    const presence = 'Omitting a person from prose does not make them absent. These people are present; when asked who is here, describe them within the supplied naming permissions.';
 
     // A CONVERSATION WITH ONE PERSON is the two of them. Everybody else is handed over as background
     // and nothing more, because the model plays whoever it is handed the most about. See
@@ -1000,6 +1001,7 @@ export function thePeopleHere(
         const rest = company.total - kept.length;
         return [
             'THE PEOPLE HERE',
+            presence,
             ...kept.map(person => aPersonsCard(
                 asSeen(person), yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,
                 alreadySaid.has(person.name), alreadyShown.has(person.name), false,
@@ -1023,6 +1025,7 @@ export function thePeopleHere(
     const room = howTheRoomReadsThem(company, yourOrdinal);
     return [
         'THE PEOPLE HERE',
+        presence,
         ...(room ? [room] : []),
         ...ranked.map(person => aPersonsCard(
             asSeen(person), yourOrdinal, whatTheyAreToYou(person.name, awareness), person.name === addressing,

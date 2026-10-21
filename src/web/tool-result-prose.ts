@@ -563,9 +563,9 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
     if (body.learned === true) {
         const art = body.technique as { name?: string; element?: string | null; grade?: string } | undefined;
         lines.push(
-            `${art?.name ?? 'The art'} is held now, at nothing like mastery` +
+            `${art?.name ?? 'The art'} is learned now` +
             `${art?.element ? `, and it runs on ${art.element}` : ''}. ` +
-            'Holding it is not being able to use it. Practice is what closes that.'
+            'Further practice can develop mastery; it does not undo this learning.'
         );
         // Said once, where it went in, rather than on every stretch of practice.
         if (body.transmission === 'read') {

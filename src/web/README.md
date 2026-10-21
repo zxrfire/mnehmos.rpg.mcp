@@ -5,6 +5,13 @@ their requested value without consuming the following description. The Zod
 schema supplies the realm ladder, trait meanings and the handler's age default;
 explicitly unaffiliated people use a null house.
 
+Narration receives each executed call's outcome headline beside its details,
+including within a folded turn. Quotes remain quotes, purchases retain their
+payment, and learning remains learned. The player has a named identity separate
+from the present cast; leaving somebody out of prose does not empty the scene.
+Previous model prose supplies conversation continuity, not evidence against the
+current engine state. A change of scene alone implies no change in qi quality.
+
 The synchronous presence observation also shares default place-area reads.
 Explicit observer, carrier, compound and route projections retain their own
 read. Neither scope crosses an await or physical/roster mutation, and both

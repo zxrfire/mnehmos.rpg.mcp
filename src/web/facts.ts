@@ -57,11 +57,11 @@ import { PLACE } from '../data/cultivation/place-names.js';
 export { describeAmbientPerceived };
 
 export interface EngineFacts {
-    /** One-line summary. Used as the overlay title and the log's first line. */
+    /** Resolved outcome, also used as the overlay title and the log's first line. */
     headline: string;
     /**
-     * The complete factual content of the outcome, one statement per entry. This is
-     * what a narrator is allowed to know. Nothing else is sent.
+     * Outcome details, one statement per entry. The narrator receives these and
+     * the headline; structure stays outside the prose channel.
      */
     lines: string[];
     /**

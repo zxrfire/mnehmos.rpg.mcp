@@ -18691,6 +18691,7 @@ ${fit.line}`;
         const house = onTheRoll?.factionName
             ?? (cultivator.sectId ? getSect(cultivator.sectId)?.name ?? null : null);
         return {
+            name: cultivator.name,
             rank: rankName(cultivator.realmOrdinal),
             age: Math.floor(cultivator.age),
             // WHICH THE NARRATOR CALLED EVERY PLAYER A BOY WITHOUT. Reported

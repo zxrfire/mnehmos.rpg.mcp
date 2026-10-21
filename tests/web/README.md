@@ -1,5 +1,10 @@
 # Played tests
 
+`narration-keeps-resolved-facts.test.ts` captures the ProviderNarrator user card
+with scripted replies: purchase versus quote, learned arts, player identity,
+present people and current state over previous prose. It proves the supplied
+facts and instructions, not universal model compliance.
+
 The focused issuing test plays `I leave the sect` through the real turn handler
 and checks the same-turn roll removal, returned robes, cancelled token and gate
 access. Departure mechanics are held by `tests/engine/world/leaving-a-house.test.ts`;
