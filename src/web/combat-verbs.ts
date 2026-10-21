@@ -1145,6 +1145,7 @@ export const combatVerbs = {
                 if (npc && isTheWorldsToMove(npc)) side.input = { ...side.input, ...npcCombatArts(npc,routineTime(this.atHand)) };
             }
         }
+        const choiceBeforeRound = { act: answer.kind, hp: held.state.hp[cultivator.id] };
         const turn = (held.foregroundParty ? (_state: typeof held.state, answer: FightAnswer, ctx: Parameters<typeof takeAFightTurn>[2]) => takeTheForegroundPartyRound(held, answer, ctx) : takeAFightTurn)(held.state, answer, {
             ambient,
             turn: run.turn + 1,
@@ -1171,7 +1172,7 @@ export const combatVerbs = {
                 onTurn: run.turn
             };
             this.fight = null;
-            return this.concludeTheFight(run, cultivator, held, turn.finished, turn);
+            return this.concludeTheFight(run, cultivator, held, turn.finished, turn, choiceBeforeRound);
         }
 
         this.fight = { ...held, state: turn.fight! };
@@ -1381,7 +1382,8 @@ export const combatVerbs = {
         cultivator: Cultivator,
         held: StandingFight,
         result: ConfrontationResult,
-        lastRound?: FightTurn
+        lastRound?: FightTurn,
+        choiceBeforeRound?: Parameters<typeof settleAFight>[0]['choiceBeforeRound']
     ): Execution {
         if (this.atHand) writeTheNpcArtsActuallyUsed(this.atHand,result.exchanges,
             'played:'+held.runId+':'+held.state.id,routineTime(this.atHand));
@@ -1398,6 +1400,7 @@ export const combatVerbs = {
             opponentIdOnRecord: held.opponentIdOnRecord,
             edges: [],
             playerIsAggressor: held.cameAtYou === undefined,
+            choiceBeforeRound,
             rescue: body => somebodyAtHandSavesYou(this, run, body,
                 held.opponentIdOnRecord ? [held.opponentIdOnRecord] : [])
         });

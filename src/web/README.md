@@ -100,6 +100,11 @@ Public quoted fares keep their existing authority.
 
 # The Web Front Door
 
+Held fights pass the actual choice and HP from before their final round to
+settlement. Breaking off never counts as forcing combat, including when the
+escape fails. Choosing to fight on while barely standing retains its death
+rule; newly lost HP does not rewrite a healthier earlier choice.
+
 Held-ticket purchase and actual boarding are distinct passage intents. Their
 counter phrasings are shared by both coverage walks. Personal contract intents
 are declared alongside other oaths and named in the verb glossary; accepting a

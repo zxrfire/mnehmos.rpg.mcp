@@ -5,6 +5,11 @@ stock between grants cannot alias a ring somebody still owns.
 
 # The MCP tool surface
 
+Fight settlement reads the actual choice and HP before the final round.
+Breaking off, yielding and sparing do not force combat. A round that newly
+leaves somebody barely standing cannot relabel their earlier choice; an empty
+HP bar retains its ordinary death authority.
+
 Native cultivation uses the prepared current-check adapter for every span,
 including whole days and immune bodies. The accepted provision charge, body
 portions, encounter knowledge, obligations and final world append commit

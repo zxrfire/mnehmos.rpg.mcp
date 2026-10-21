@@ -35,7 +35,8 @@ import {
     type Edge,
     type InsightCandidate
 } from '../../engine/cultivation/index.js';
-import { describeDeath } from '../../engine/cultivation/survival.js';
+import { assessSuicidalCombat, describeDeath } from '../../engine/cultivation/survival.js';
+import type { FightAnswer } from '../../engine/cultivation/unfinished-fight.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { CombatRepository } from '../../storage/repos/combat.repo.js';
 import { AgentRepository } from '../../storage/repos/agent.repo.js';
@@ -709,6 +710,8 @@ export function settleAFight(input: {
     edges: readonly Edge[];
     /** False where the other side opened the fight. Picks which priced side is whose. */
     playerIsAggressor?: boolean;
+    /** The held fight's actual choice and HP before its final round. */
+    choiceBeforeRound?: { act: FightAnswer['kind']; hp: number };
     /**
      * Somebody at hand who may spend their medicine on a body about to die of a fight it forced
      * while barely standing (the owner: "medicine from someone at hand may save you"). Read only
@@ -894,11 +897,15 @@ export function settleAFight(input: {
         // The death gate. Combat produced damage; survival.ts decides whether
         // that was an ending, and nothing else in this file may.
         const after = repos.cultivators.getById(cultivator.id)!;
-        // Somebody who was attacked did not force anything, so the barely-standing
-        // clause does not apply to them; an empty bar still kills.
+        // Opening aggression is not a later choice to fight on. Flight, yielding
+        // and sparing force nothing; newly lost HP cannot rewrite an earlier choice.
+        const choice = input.choiceBeforeRound ?? { act: 'strike', hp: cultivator.hp };
+        const forcingCombat = input.playerIsAggressor !== false
+            && !['break_off', 'yield', 'spare'].includes(choice.act)
+            && assessSuicidalCombat({ ...cultivator, hp: choice.hp }).suicidal;
         const cause = result.outcome === 'body_destroyed' && result.loserId === cultivator.id
             ? 'combat_defeat'
-            : evaluateDeathConditions(after, { forcingCombat: input.playerIsAggressor !== false });
+            : evaluateDeathConditions(after, { forcingCombat });
         const saved = cause === 'obviously_fatal_choice' && input.rescue ? input.rescue(after) : null;
         if (saved) rescued = saved.lines;
         else if (cause) {
