@@ -1,5 +1,11 @@
 # admin.md - the operator surface
 
+Spawn requests accept prose before or after explicit pairs. Realm names map to
+the catalog ladder, independently of house ranks. The reader omits an unstated
+numeric age; the handler uses 20. Rogue, no house and unaffiliated mean a null
+house. Alignment alone selects a house of that leaning; personal alignment is
+read from actual deeds. Trait words without an exact value produce shown guesses.
+
 > **"The admin panel can set preconditions, but it allows me to test outcomes."**
 > - the design owner
 

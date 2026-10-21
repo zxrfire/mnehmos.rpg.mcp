@@ -56,7 +56,7 @@ import { aBeastCultivationAgreement } from './agreeing-to-share-cultivation-with
  */
 
 import { whatSomebodyKnowsOfTheOldWorld, keepOldWorldKnowledge, oldWorldYear } from './what-somebody-knows-of-the-old-world.js';
-import { needsSpawnReading, readAdminSpawnSpec } from './admin-spawn-spec.js';
+import { explicitSpawnArgs, needsSpawnReading, readAdminSpawnSpec } from './admin-spawn-spec.js';
 
 
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
@@ -12923,7 +12923,7 @@ ${line}`;
             const firstPair = /\b[A-Za-z_][A-Za-z0-9_]*=/.exec(request);
             spawnArgs = {
                 ...spec,
-                ...(firstPair ? parseAdminCommand(`spawn_encounter ${request.slice(firstPair.index)}`).args : {}),
+                ...(firstPair ? explicitSpawnArgs(parseAdminCommand(`spawn_encounter ${request.slice(firstPair.index)}`).args) : {}),
                 worldPerson: true
             };
         }

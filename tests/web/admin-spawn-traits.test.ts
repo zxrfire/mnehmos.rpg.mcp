@@ -55,6 +55,20 @@ async function spawned(h: Harness, line: string) {
 }
 
 describe('ADMIN spawn reads traits into real people', () => {
+    it('keeps model facts after an explicit ordinal in live ADMIN (findings 16, 19, 25, 34, 40)', async () => {
+        const provider = new ScriptedProvider({ narrations: ['', JSON.stringify({
+            ordinal: 29, sex: 'female', temperament: 'expressive', disposition: 'sworn_sibling',
+            seal: { kind: 'qi', holder: 'me' }, guesses: [{ word: 'cheerful', field: 'temperament', value: 'expressive' }]
+        }), ''] });
+        const h = await operating(provider);
+        const { npc, result } = await spawned(h, 'ADMIN spawn_encounter ordinal=29 a cheerful young woman, my sworn sister whose qi I have sealed');
+        expect(npc.cultivation.realmOrdinal).toBe(29);
+        expect(npc.identity.sex).toBe('female');
+        expect(npc.cultivation.seal).toMatchObject({ kind: 'qi', byId: h.game.state().cultivator.id });
+        expect(npc.relationships.some(tie => tie.targetId === h.game.state().cultivator.id && tie.standing === 1)).toBe(true);
+        expect(result.narration).toContain('cheerful');
+        expect(provider.calls.some(call => call.messages[0]?.content.startsWith('You read an ADMIN spawn'))).toBe(true);
+    });
     it('keeps a bare ordinal equivalent to the existing explicit command', async () => {
         const first = await operating();
         const world = await worldForRun(first.repos.runs.getActiveRun()!);
@@ -69,6 +83,18 @@ describe('ADMIN spawn reads traits into real people', () => {
         expect({ name: bare.name, ordinal: bare.realmOrdinal, root: bare.spiritRoot, attributes: bare.attributes })
             .toEqual({ name: explicit.name, ordinal: explicit.realmOrdinal, root: explicit.spiritRoot, attributes: explicit.attributes });
         expect(bare.realmOrdinal).toBe(29);
+    });
+
+    it('keeps an explicitly unaffiliated hostile person on the real world stance path (findings 18, 26, 27)', async () => {
+        const provider = new ScriptedProvider({ narrations: ['', JSON.stringify({
+            ordinal: 14, house: null, disposition: 'hostile'
+        }), ''] });
+        const h = await operating(provider);
+        const { npc } = await spawned(h, 'ADMIN spawn_encounter ordinal=14 a hostile rogue cultivator');
+        expect(npc.factionId).toBeNull();
+        expect(npc.relationships).toContainEqual(expect.objectContaining({
+            targetId: h.game.state().cultivator.id, kind: 'enemy', standing: -0.7
+        }));
     });
 
     it('creates the ordinal 29 girl transformed from a fox, without a model', async () => {

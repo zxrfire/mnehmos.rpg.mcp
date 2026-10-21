@@ -1,5 +1,10 @@
 <!-- tier: 3 -->
 
+Spawn disposition and alignment use the ordinary world-person writer, including
+when supplied as explicit pairs. A null house means explicitly unaffiliated;
+an omitted house may be selected by its requested alignment. Personal alignment
+still derives from deeds, rather than a new trait on the person.
+
 Admin ring grants choose an unused id in the world object table. Removing other
 stock between grants cannot alias a ring somebody still owns.
 

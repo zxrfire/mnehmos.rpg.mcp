@@ -1,12 +1,33 @@
 /** The hand-written model schema omitted disposition/alignment. Near words now map visibly,
  * without mistaking someone's disposition toward you for their durable temperament. */
 import { describe, expect, it } from 'vitest';
-import { readAdminSpawnSpec, adminSpawnJsonSchema, AdminSpawnSpecSchema } from '../../src/web/admin-spawn-spec.js';
+import { readAdminSpawnSpec, adminSpawnJsonSchema, AdminSpawnSpecSchema, needsSpawnReading } from '../../src/web/admin-spawn-spec.js';
 import { SpawnEncounterSchema } from '../../src/server/consolidated/admin-manage.js';
 import { REALM_TIERS } from '../../src/engine/cultivation/realms.js';
 import { ScriptedProvider } from './harness.js';
 
 describe('all spoken spawn facts reach the reader', () => {
+    it('supplies a meaning for every allowed enum value, including seal kinds', () => {
+        const check = (node: unknown): void => {
+            if (!node || typeof node !== 'object') return;
+            const schema = node as { enum?: string[]; description?: string };
+            for (const value of schema.enum ?? []) expect(schema.description).toContain(value);
+            for (const child of Object.values(node)) check(child);
+        };
+        check(adminSpawnJsonSchema);
+    });
+    it('reads the description after ordinal=14 (finding 16)', () => {
+        expect(needsSpawnReading('spawn_encounter ordinal=14 a cheerful young woman, my sworn sister',
+            { ordinal: '14 a cheerful young woman, my sworn sister' })).toBe(true);
+        expect(needsSpawnReading('spawn_encounter ordinal=14', { ordinal: 14 })).toBe(false);
+        expect(needsSpawnReading('spawn_encounter ordinal=14 disposition=hostile', { ordinal: 14, disposition: 'hostile' })).toBe(true);
+    });
+    it('gives the reader the realm ladder and the real age default (findings 15, 18)', () => {
+        const json = adminSpawnJsonSchema as { properties: Record<string, { description?: string }> };
+        for (const tier of REALM_TIERS) expect(json.properties.ordinal.description).toContain(tier.name);
+        expect(json.properties.age.description).toContain('20');
+        expect(AdminSpawnSpecSchema.safeParse({ house: null }).success).toBe(true);
+    });
     it('sends every spawn fact from the same Zod shape', () => {
         const json = adminSpawnJsonSchema as { properties: Record<string, unknown> };
         expect(Object.keys(json.properties).sort()).toEqual(Object.keys(AdminSpawnSpecSchema.shape).sort());

@@ -51,9 +51,9 @@ export async function spawnPersonFromSpec(
         ? spec.alignment === undefined ? null : SECTS.filter(s => s.alignment === spec.alignment)
             .sort((a, b) => Math.abs(a.powerOrdinal - (spec.ordinal ?? 0)) - Math.abs(b.powerOrdinal - (spec.ordinal ?? 0))
                 || a.id.localeCompare(b.id))[0] ?? null
-        : resolveSect(repos, spec.house);
+        : spec.house === null ? null : resolveSect(repos, spec.house);
     const house = resolvedHouse === null ? null : world.factions.find(f => f.id === resolvedHouse.id && f.dissolvedOnDay === null) ?? null;
-    if (spec.house !== undefined && house === null) {
+    if (spec.house != null && house === null) {
         return guidingError('unknown_house', `No living house answers to "${spec.house}". Nothing spawned.`);
     }
     if (spec.rank !== undefined && !house) {

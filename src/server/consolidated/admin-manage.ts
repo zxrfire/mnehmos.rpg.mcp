@@ -1286,7 +1286,7 @@ async function spawnEncounter(args: z.infer<typeof SpawnEncounterSchema>): Promi
     const { run, cultivator } = resolved;
 
     if (args.worldPerson || args.disposition === 'close' || args.disposition === 'sworn_sibling'
-        || ['sex', 'age', 'house', 'rank', 'temperament', 'seal', 'toward'].some(k => k in args)) {
+        || ['sex', 'age', 'house', 'rank', 'temperament', 'seal', 'toward', 'disposition', 'alignment'].some(k => k in args)) {
         return spawnPersonFromSpec(repos, run, cultivator, args);
     }
 

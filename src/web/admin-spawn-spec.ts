@@ -2,18 +2,19 @@
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { LLMProvider } from '../agent/provider/types.js';
-import { MAX_ORDINAL } from '../engine/cultivation/realms.js';
+import { MAX_ORDINAL, REALM_TIERS } from '../engine/cultivation/realms.js';
 import { SECTS } from '../data/cultivation/sects.js';
 import { HOUSE_TYPE_NOUNS, theHouseNameSaid } from './what-a-house-is-called.js';
 import { ordinalNamed } from '../server/consolidated/admin-said-as-a-sentence.js';
 import { extractJsonObject } from './actions.js';
 
 export const AdminSpawnSpecSchema = z.object({
-    ordinal: z.number().int().min(0).max(MAX_ORDINAL).optional(),
+    ordinal: z.number().int().min(0).max(MAX_ORDINAL).optional().describe('Cultivation realm, not a house rank. For a realm without a subrank use its first ordinal: '
+        + REALM_TIERS.map(tier => `${tier.name}: ${tier.subRanks.map((rank, i) => `${rank}=${tier.ordinalStart + i}`).join(', ')}`).join('; ')),
     sex: z.enum(['female', 'male']).optional().describe('female: girl, woman or lady; male: boy, man or fellow.'),
-    age: z.number().finite().nonnegative().optional(),
-    house: z.string().min(1).max(120).optional(),
-    rank: z.string().min(1).max(100).optional(),
+    age: z.number().finite().nonnegative().optional().describe('Explicit age in years only. Omit for young or adult without a number; the handler defaults to 20.'),
+    house: z.string().min(1).max(120).nullable().optional().describe('Named house membership. null means rogue cultivator, no house or unaffiliated. Omit if unspecified.'),
+    rank: z.string().min(1).max(100).optional().describe('A rank on a house roll, never a cultivation realm.'),
     species: z.string().min(1).max(80).optional(),
     name: z.string().min(1).max(100).optional(),
     temperament: z.enum(['generous', 'stingy', 'reticent', 'expressive', 'proud', 'unassuming']).optional()
@@ -22,7 +23,7 @@ export const AdminSpawnSpecSchema = z.object({
         .describe('hostile: enemy or means harm; wary: suspicious or cautious; indifferent: neither friendly nor hostile; friendly: nice, kind or helpful now, without changing character; close: best friend or old companion, a strong real tie; sworn_sibling: sworn brother or sister, close with the real oath and lineage bond. Generous describes temperament, not disposition.'),
     toward: z.string().min(1).optional().describe('Whom disposition concerns: me for the player, or a named real world person.'),
     alignment: z.enum(['righteous', 'neutral', 'demonic']).optional()
-        .describe('righteous: a house of righteous leaning; neutral: a neutral house; demonic: evil or demonic house leaning, not an invented moral judgment.'),
+        .describe('righteous: righteous leaning; neutral: neutral leaning; demonic: demonic leaning, the nearest value for evil (report that guess). Selects a house of this leaning unless explicitly unaffiliated; personal alignment is read from actual deeds.'),
     location: z.string().optional(),
     seal: z.object({
         kind: z.enum(['qi', 'slave']).describe('qi: locks qi; slave: absolute compulsion by the holder.'),
@@ -41,14 +42,26 @@ export type AdminSpawnSpec = z.infer<typeof AdminSpawnSpecSchema>;
 
 /** A bare ordinal and explicit legacy pairs keep the existing spawn path. */
 export function needsSpawnReading(request: string, args: Record<string, unknown>): boolean {
-    if (['sex', 'age', 'house', 'rank', 'temperament', 'seal'].some(k => args[k] !== undefined)) return true;
-    const prose = request.split(/\b[a-z_]+=/i)[0]!;
+    if (['sex', 'age', 'house', 'rank', 'temperament', 'seal', 'disposition', 'alignment', 'toward'].some(k => args[k] !== undefined)) return true;
+    const prose = request.replace(/\b[a-z_]+=(?:"[^"]*"|'[^']*'|\S+)/gi, '');
     let remainder = prose.toLowerCase()
         .replace(/\b(?:spawn_encounter|spawn_npc|spawn_person|spawn_cultivator|stage_encounter)\b/g, '')
         .replace(/\b(?:spawn|an?|the|encounter|of|at|ordinal|npc|person|cultivator|enemy|opponent|in|front|me)\b/g, '')
         .replace(/\d+/g, '').trim();
     for (const word of ordinalNamed(prose)?.words ?? []) remainder = remainder.replace(new RegExp(`\\b${word}\\b`, 'i'), '').trim();
     return remainder.length > 0;
+}
+
+/** Explicit numeric pairs end at their number; following prose belongs to the reader. */
+export function explicitSpawnArgs(args: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(args).map(([key, value]) => {
+        const field = AdminSpawnSpecSchema.shape[key as keyof typeof AdminSpawnSpecSchema.shape];
+        if (field?.unwrap() instanceof z.ZodNumber && typeof value === 'string') {
+            const first = value.trim().split(/\s+/)[0]!;
+            if (first !== '' && Number.isFinite(Number(first))) return [key, Number(first)];
+        }
+        return [key, value];
+    }));
 }
 
 /** The supported word table, used when no model answers. */
@@ -162,6 +175,7 @@ export async function readAdminSpawnSpec(
                 messages: [
                     { role: 'system', content: 'You read an ADMIN spawn request into facts, never an outcome. '
                         + 'Return only one JSON object. Omit unspecified fields; do not invent a name, ordinal, age or house. '
+                        + 'Mapping a stated realm or subrank through the ordinal schema is reading it, not inventing an ordinal. Read the whole request, including prose after explicit pairs. '
                         + 'Preserve unknown house and rank names so the engine can refuse them. '
                         + 'A girl is female, a boy is male. A fox transformed into a person has species="fox". '
                         + 'An exact allowed value always wins in its field. For words with no exact fit, best-guess the nearest allowed value in the most fitting field: '

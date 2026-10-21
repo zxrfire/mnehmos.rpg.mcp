@@ -1,5 +1,10 @@
 <!-- tier: 3 -->
 
+ADMIN spawn reading includes prose after explicit pairs. Numeric pairs retain
+their requested value without consuming the following description. The Zod
+schema supplies the realm ladder, trait meanings and the handler's age default;
+explicitly unaffiliated people use a null house.
+
 The synchronous presence observation also shares default place-area reads.
 Explicit observer, carrier, compound and route projections retain their own
 read. Neither scope crosses an await or physical/roster mutation, and both
