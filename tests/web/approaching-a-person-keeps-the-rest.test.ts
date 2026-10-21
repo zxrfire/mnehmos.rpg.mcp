@@ -13,7 +13,7 @@ it('resolves an honorific and surname without inventing a relationship', async (
     try {
         await h.game.newRun('Visitor');
         const me = h.game.currentRun().cultivator;
-        const actual = { ...h.repos.cultivators.roster()[0], id: 'guardian', name: 'Ning Jingzhi', sex: 'female' };
+        const actual = { ...h.repos.cultivators.roster()[0], id: 'guardian', name: 'Ning Jingzhi', sex: 'female' as const };
         const scope = { gate: h.game.knowledge, holderId: me.id, here: me.location, present: [actual] };
         expect(resolveCultivator(h.repos, 'grandma ning', me.id, scope)?.id).toBe(actual.id);
         expect(resolveCultivator(h.repos, 'grandma nobody', me.id, scope)).toBeNull();

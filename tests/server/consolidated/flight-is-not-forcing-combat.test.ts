@@ -27,7 +27,7 @@ it.each([
         const self = combatantFromCultivator(body, h.repos);
         const opponent = { ...self, id: 'other', name: 'The other fighter', hp: 50, maxHp: 50 };
         const priced = resolveConfrontation(self, opponent, {
-            rng: forStream('reading-flight-settlement', 'arrange'), ambient: 'ordinary', turn: 1,
+            rng: forStream('reading-flight-settlement', 'arrange'), ambient: 'normal', turn: 1,
             intent: { thrown: AN_ORDINARY_SWING, willWithdraw: true }
         });
         const result = { ...priced, outcome: 'stalemate' as const, finished: false,
