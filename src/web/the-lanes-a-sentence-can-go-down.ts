@@ -162,7 +162,8 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         // WHAT IS IN THIS PLACE IS LOOKED AT. Played: "any inn round here? could use a bed tonight"
         // went to consult/places_within_reach, the roads out, and the inn was never said.
         says: 'looking at what is in front of you, or at one thing in particular - and what this place '
-            + 'has in it, an inn, a market, a counter',
+            + 'has in it, an inn, a market, a counter. Asking where you are now or looking for '
+            + 'a corner here stays in this place; it is not a list of journeys',
         // `qi` and `ground` both reach `look` on purpose. Measured against the
         // local model, a lane intent named `place` caught "I sense the qi here"
         // and sent it to `recognise`, which reads a person rather than a

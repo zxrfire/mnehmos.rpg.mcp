@@ -394,6 +394,10 @@ Rules:
                                                    houses, never of who here teaches.
     "is there an inn here"         -> perceive.    What a place has in it is looked at, not
                                                    travelled to.
+    "where am I"                   -> perceive/around. The current place, not destinations.
+    "I find a quiet corner here"   -> perceive/around. Look within the current place; no journey
+                                                   was requested. Keep later acts in the plan.
+    "where could I travel"         -> consult/places_within_reach. A list of journeys.
     "I go up to my room"           -> travel.      A room is walked to, never a site.
     "I sleep till morning"         -> cultivate/sleep. A night slept is time spent, not a room
                                                    bought again.

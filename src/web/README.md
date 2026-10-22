@@ -746,6 +746,10 @@ nowhere.
 it - the sentence still has to work when no model answers - and it must not become
 the primary reader by accretion.
 
+Local orientation and looking for a corner here use `perceive/around`; a question
+about journeys uses `consult/places_within_reach`. The router examples distinguish
+them without replacing model reading with a sentence-specific pattern.
+
 The point of this game is that the AI works out what somebody meant. Phase 1 has the
 square, the player's own words, the previous turn and every name it printed in front
 of it. It is far better placed to read an ordinary English sentence than a regular
