@@ -1,5 +1,9 @@
 # Played tests
 
+`player-rulings.test.ts` separates the player rendering from the inspector and
+private narrator material. It checks ids, routine names and calibration language
+on played reads, while requiring the structural account to remain inspectable.
+
 `narration-keeps-resolved-facts.test.ts` captures the ProviderNarrator user card
 with scripted replies: purchase versus quote, learned arts, player identity,
 present people and current state over previous prose. It proves the supplied

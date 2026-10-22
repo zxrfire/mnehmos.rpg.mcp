@@ -76,7 +76,9 @@ describe('a hallucinating model cannot mutate state', () => {
         //    asserting an outcome - and it moves no column on the cultivator,
         //    which assertion 1 has already checked byte for byte.
         const calls = engineCalls(result).map(c => c.name);
-        expect(calls.filter(name => name !== 'knowledge.learn')).toEqual(['engine.readState']);
+        // Structural account rows report the read; they invoke no additional action.
+        expect(calls.filter(name => name !== 'knowledge.learn' && name !== 'engine.structure'))
+            .toEqual(['engine.readState']);
         // `freeAction`'s own summary wording, since lesser acts started
         // spending time: reads stay free and say so by naming the executor
         // as where any charge would come from, not by claiming no time

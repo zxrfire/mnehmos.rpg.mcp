@@ -61,11 +61,13 @@ export interface EngineFacts {
     headline: string;
     /**
      * Outcome details, one statement per entry. The narrator receives these and
-     * the headline; structure stays outside the prose channel.
+     * the headline, including private context and voicing instructions. The
+     * player reads `prose`; structure stays outside the narration channel.
      */
     lines: string[];
     /**
-     * The structural truth: governance, ladders, grades, ordinals, thresholds.
+     * The inspector's structural account: governance, ladders, grades, ordinals,
+     * thresholds and diagnostics. Never rendered into the player log.
      */
     structure: string[];
     /** The deterministic rendering, ready to show a player as-is. */
@@ -1270,7 +1272,7 @@ export function factsForLook(
     // version of this: the right answer existed in the same function.
     //
     // The sheet is not lost. `standingStructure` carries it in `structure`,
-    // which is the play log and the operator's channel, and `status` is one
+    // which is the operator's channel, and `status` is one
     // word away for a player who wants it.
     const lines = [`${where}.`];
     if (standing) lines.push(standing);

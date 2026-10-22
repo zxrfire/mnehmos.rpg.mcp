@@ -560,9 +560,9 @@ describe('gather and refine', () => {
         const pouch = db
             .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE holder_id = ?')
             .all(cultivator.id) as Array<{ item_id: string; quantity: number }>;
-        const call = engineCalls(result)[engineCalls(result).length - 1];
+        const call = engineCalls(result).find(row => row.name === 'storage.addToPouch');
 
-        if (call.name === 'storage.addToPouch') {
+        if (call) {
             expect(pouch.length).toBeGreaterThan(0);
             expect(HERBS.some(h => h.id === pouch[0].item_id)).toBe(true);
         } else {

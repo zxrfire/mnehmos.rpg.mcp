@@ -2416,9 +2416,8 @@ apology rather than a mode.
 This module is the single place where a `TimeSkipResult`, a `BreakthroughResult` or a
 survival state becomes a sentence, and **neither narrator path may bypass it**:
 
-- the provider narrator is handed `lines` as the *entire* factual content of its phase-3
-  prompt, so the model has nothing to narrate from except what the engine actually
-  returned;
+- the provider narrator receives each outcome's `headline` and `lines`, including
+  outcomes retained through a folded turn, so the model writes from resolved facts;
 - the deterministic narrator ships `prose` verbatim.
 
 That symmetry is the point. With no provider configured the player reads the engine's own
@@ -2436,15 +2435,18 @@ where the string is assigned, never by the name of the function that built it:
 
 | Where the string is assigned | Where it is read | Format |
 |---|---|---|
-| `EngineFacts.structure` (including `factsForRefusal`'s third argument) | `engineEntries` renders player facts into the **play log**, beside the prose; `Roll: `, `World digest: ` and `Operator: ` diagnostics remain in the inspector | sentences for player facts, every perceived figure kept |
-| `EngineFacts.headline`, `lines`, `prose` | the play log and the narrator | sentences |
+| `EngineFacts.structure` (including `factsForRefusal`'s third argument) | the **inspector**, including structural lines absent from a routine's own summary | diagnostics and mechanical reasoning |
+| `EngineFacts.headline`, `prose` | the play log; `prose` is also the deterministic narration | perceived facts in sentences |
+| `EngineFacts.lines` | the narrator, including private material and voicing instructions | facts to write from, not a player transcript |
 | `SimEvent.summary` | the play log, as `Day N: ...` | sentences |
 | `ToolCallRecord.summary` and `.note` | the **inspector** only - nothing reads a call into the log | a compact field dump is correct here |
 
-The asymmetry is one-directional and worth knowing: `refused()` sources its call summary
-from `facts.structure[0]`, and `structureCalls` builds rows out of structure lines - so
-structure reaches both surfaces and `calls[]` reaches only one. **Where an emitter reaches
-both, the player's surface decides the format.**
+`engineEntries` reads `headline` and the player rendering `prose`, never `structure` or
+the narrator-only material on `lines`. Phase 3 keeps the same
+factual input. `refused()` sources its call summary from `facts.structure[0]`; the turn
+response also supplies every structural line not already present in a routine summary.
+The player gets places, prices, counts and elapsed time. Database identities, function
+names and calibration belong in the inspector; design explanations belong beside code.
 
 A resolved fight reads the actual world ending before opening the resolver's
 additional personal accounts. A remnant or a dead person holds no new bodily
@@ -2459,16 +2461,13 @@ The inspector's rows carry `name` and `action` as separate fields with the routi
 identifier in a `<code>`, which is why a field dump reads correctly there and does not read
 correctly in a log entry rendered as a line of the transcript.
 
-### A handler name is a second shape of the same defect, and it has three escapes
+### Keep diagnostic identities out of factual lines
 
-`withoutTheHandlerName` strips a `module.function:` prefix off every structure line before
-it reaches the log. It is narrow on purpose - lowercase, dotted, no spaces, a colon - and
-three shapes get past it and were found in play: a head with parentheses
-(`getHoldingsOf(sect-x): ...`), a head in capitals (`SECT_ANCESTRY[sect-x].dormant is
-null`), and a handler named **mid-sentence** rather than at the head. The narrowness is
-right, so those were fixed at the string rather than by widening the regex. The six
-surviving `handler.name:` heads are left as they are: the helper is what defends them, and
-rewriting them would leave it with nothing to do and no guard for the next one.
+Stripping a routine prefix cannot make a structural account player-facing: identities
+and implementation reasoning also occur mid-sentence. Keep those on `structure` or
+`ToolCallRecord`, and put the perceived result on `prose` and narrator facts on `lines`.
+The player-rulings guard
+checks the log and proves the corresponding inspector detail survives.
 
 The worst case was general rather than local. `fromToolResult`'s guiding-error branch had
 a comment saying `hint` "is a tool invocation for a developer, and never goes to a player"

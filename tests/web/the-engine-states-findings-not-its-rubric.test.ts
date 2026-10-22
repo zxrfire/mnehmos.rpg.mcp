@@ -16,9 +16,8 @@
  * this cultivator draws" is a fact somebody can act on. "element match" is a
  * column heading.
  *
- * `structure` is the mechanical channel and it is shown to the player in every
- * mode, so "mechanical" has never meant "may be unreadable". It means the fact
- * without the mood - not the fact replaced by its own arithmetic.
+ * The player rendering and narrator facts state the finding. Structural
+ * arithmetic belongs in the inspector, separate from those two channels.
  */
 
 import { describe, it, expect } from 'vitest';

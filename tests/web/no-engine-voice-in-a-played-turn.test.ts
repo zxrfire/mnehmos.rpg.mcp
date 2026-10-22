@@ -12,12 +12,9 @@
  * WHAT THIS PLAYS AND WHERE IT LOOKS. Twelve mechanics, a handful of sentences
  * each, through the real service - and then it reads EVERY channel a player can
  * end up in front of, which is the half that matters. The narration was already
- * clean; `structure`, rendered into the play log, was not. Its player facts
- * remain subject to the rule:
- *
- *   *"`structure` is the mechanical channel and it is shown to the player in
- *   every mode, so 'mechanical' has never meant 'may be unreadable'. It means
- *   the fact without the mood - not the fact replaced by its own arithmetic."*
+ * clean; the former structure-to-log path was not. The log now uses the player
+ * rendering and the structural account stays in the inspector. The player
+ * still reads findings, never the arithmetic used to decide them.
  *
  * EIGHT LEAKS, ALL FOUND BY PLAYING, ALL IN THAT CHANNEL:
  *
@@ -110,7 +107,7 @@ describe('what a played turn puts in front of a player', () => {
                         events?: Array<{ summary: string }>;
                         state: { log: Array<{ text: string }> };
                     };
-                    // Every transcript channel, including rendered structure.
+                    // Every transcript channel, including the player rulings.
                     out = [
                         r.narration,
                         ...(r.events ?? []).map(e => e.summary),

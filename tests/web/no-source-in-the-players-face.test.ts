@@ -159,10 +159,10 @@ describe('nothing in the narration comes out of the source', () => {
  * AND THE SAME RULE ON THE CHANNEL THAT IS NOT REWRITTEN.
  *
  * The guard above reads `answer.narration`, which is the channel a narrator
- * RE-WRITES. `facts.structure` is the other one, and `engineEntries` pushes it
- * to the play log verbatim as ENGINE RULING rows that sit on screen beside the
- * prose. Nothing checked it, so everything the rule above forbids arrived there
- * instead. Read off a live run before this existed:
+ * RE-WRITES. The former `facts.structure` path printed ENGINE RULING rows
+ * beside that prose. The log now uses the player rendering and the structural
+ * account stays in the inspector. These were read off a live run before the
+ * guard existed:
  *
  *   whatIsWrongWithThisGround: 9 line(s) at stage encountered over 2 status(es)
  *   whoHoldsTheGround: held (name withheld from the player), answered at

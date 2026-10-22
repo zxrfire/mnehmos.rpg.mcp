@@ -3324,10 +3324,8 @@ export class GameService {
             : naming;
         if (dropped) {
             const said = sayingWhatWasNotDone(dropped);
-            // All three channels, because they are read by three different
-            // people. `lines` is what the narrator may know, `prose` is what
-            // the deterministic narrator ships verbatim, and `structure` is the
-            // log, which is the only one of the three that cannot be dressed.
+            // Narrator material, player rendering and inspector account each
+            // retain the part of the sentence that did not run.
             execution.facts.lines.push(said);
             execution.facts.prose = `${execution.facts.prose}\n\n${said}`;
             execution.facts.structure.push(
@@ -3753,6 +3751,8 @@ export class GameService {
             toolCalls: [
                 routingCall(plan),
                 ...execution.calls,
+                ...structureCalls(execution.facts.structure.filter(line =>
+                    !execution.calls.some(call => call.summary.includes(line)))),
                 narrationCall(narration)
             ],
             state: this.stateView(after.run, after.cultivator)
@@ -22730,7 +22730,7 @@ ${fit.line}`;
     }
 
     /**
-     * Engine rulings, as log lines. Sourced only from facts.ts and SimEvents.
+     * Perceived facts, as log lines. The structural account belongs to the inspector.
      */
     private engineEntries(execution: Execution, turn: number, narration?: string): LogEntry[] {
         // The headline goes in UNLESS the narration already opens with it.
@@ -22739,9 +22739,12 @@ ${fit.line}`;
         const entries: LogEntry[] = opensWithIt
             ? []
             : [{ role: 'engine', turn, text: execution.facts.headline }];
-        for (const line of execution.facts.structure) {
+        // `lines` can carry private narrator material and voicing instructions.
+        // `prose` is the existing rendering for a player without a model.
+        for (const line of execution.facts.prose.split(/\n\s*\n/).map(line => line.trim()).filter(Boolean)) {
             if (onlyForOperator(line)) continue;
-            entries.push({ role: 'engine', turn, text: withoutTheHandlerName(line) });
+            if (line === execution.facts.headline) continue;
+            entries.push({ role: 'engine', turn, text: line });
         }
         for (const event of execution.events.slice(0, MAX_LOGGED_EVENTS)) {
             entries.push({ role: 'engine', turn, text: `Day ${Math.round(event.dayOffset)}: ${event.summary}` });

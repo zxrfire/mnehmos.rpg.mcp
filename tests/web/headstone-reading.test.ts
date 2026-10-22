@@ -53,12 +53,12 @@ describe('what cultivation level the expert was', () => {
      * AND THE NUMBER IS NOT KEPT THERE EITHER, BECAUSE THERE IS ON SCREEN.
      *
      * This used to say the ordinal was "kept where an operator sorts on it, and
-     * only there". The premise was wrong: `engineEntries` pushes every
+     * only there". At that time `engineEntries` pushed every
      * `facts.structure` line into the play log as an ENGINE RULING row, in every
      * mode, beside the prose. `adminMode` gates the roster and the admin menu and
-     * not that. So the mechanical channel is a second player-facing surface that
-     * nothing was checking, and the ladder index reached a reader through it on
-     * every reading of anybody's standing.
+     * not that. The ladder index reached a reader through that former path on
+     * every reading of anybody's standing. The structural account now belongs
+     * to the inspector; the perceived headstone reading still names the rung.
      *
      * The design owner: *"just don't say the ordinal number."* Both channels name
      * the rung now, and the rung is the fact anybody in this world would state.

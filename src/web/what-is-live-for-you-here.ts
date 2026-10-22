@@ -314,7 +314,7 @@ export function whatIsLiveForYouHere(input: WhatIsLiveInput): TheLiveSituation {
         const gain =
             AMBIENT_QI_RATE_MULTIPLIER[better.ambient] / AMBIENT_QI_RATE_MULTIPLIER[input.ambient];
         const walk = better.travelDays === null
-            ? 'The catalog prices no road to it, which puts it inside this province.'
+            ? 'No travel time is known.'
             : `It is ${better.travelDays} day${better.travelDays === 1 ? '' : 's'} off.`;
         facts.push({
             key: `road:${better.name}`,

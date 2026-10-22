@@ -799,7 +799,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
         const best = somewhereBetter;
         const gain = AMBIENT_QI_RATE_MULTIPLIER[best.ambient] / rateHere;
         const walk = best.travelDays === null
-            ? 'The catalog prices no road to it, which means it is inside this province.'
+            ? 'No travel time is known.'
             : `It is ${best.travelDays} day${best.travelDays === 1 ? '' : 's'} off.`;
         add(naming('better_ground', `I travel to ${best.name}`, 'move',
             rateHere < 1 ? 'soon' : 'open',
