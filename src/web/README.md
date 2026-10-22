@@ -2451,6 +2451,8 @@ factual input. `refused()` sources its call summary from `facts.structure[0]`; t
 response also supplies every structural line not already present in a routine summary.
 The player gets places, prices, counts and elapsed time. Database identities, function
 names and calibration belong in the inspector; design explanations belong beside code.
+The one-turn account used by "why" stores these same player-facing rulings, so a
+follow-up cannot read the structural account back through narration.
 
 A resolved fight reads the actual world ending before opening the resolver's
 additional personal accounts. A remnant or a dead person holds no new bodily

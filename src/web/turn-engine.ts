@@ -3362,7 +3362,8 @@ export class GameService {
             // arrives, so a follow-up about the answer has nothing to read but
             // this record.
             headline: execution.facts.headline,
-            account: [...execution.facts.structure],
+            account: this.engineEntries(execution, after.run.turn)
+                .filter(row => row.text !== execution.facts.headline).map(row => row.text),
             namedOutOf: this.namedOutOfThisTurn
         };
         // And again, now the turn is over, BEFORE the write below. The refresh

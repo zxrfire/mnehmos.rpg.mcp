@@ -52,13 +52,13 @@ export interface WhatTheLastTurnDid {
     /** Things the turn named to the player, in the order it named them. */
     readonly named: readonly ThingNamed[];
     /**
-     * What the turn answered with, and how it arrived there.
+     * What the turn told the player.
      *
      * The two fields "why" is answered out of, and the reason it could not be
      * answered before: the previous screen is gone by the time the next
      * sentence arrives, so this record is the only place either can live.
-     * `account` is the structure channel, which is the engine's own one-line
-     * report of every routine that ran - the same text the inspector shows.
+     * `account` holds the player-facing rulings. Structural diagnostics stay
+     * in the inspector and must not be read back by a follow-up.
      */
     readonly headline?: string;
     readonly account?: readonly string[];
@@ -383,11 +383,8 @@ export const MOST_ACCOUNT_LINES_PUT_BACK = 8;
 /**
  * "Why", answered out of what the engine did rather than out of a reading of it.
  *
- * The structure channel is the engine's report of every routine that ran, and
- * it is the only honest answer to this question: anything else would be the
- * engine reasoning in prose about a refusal nothing computed, which is a
- * narrator settling an outcome. Where the account is empty the answer says so
- * rather than filling it.
+ * Repeat the resolved facts the player was given. A follow-up neither invents
+ * a reason nor promotes the inspector's diagnostics into character knowledge.
  */
 export function askingWhyThatAnswer(
     record: WhatTheLastTurnDid | null
@@ -409,17 +406,15 @@ export function askingWhyThatAnswer(
     if (account.length === 0) {
         return {
             headline: 'That is all there is to it.',
-            prose: `${answered} There is nothing behind it that is not in it - the engine kept no `
-                + 'account of that turn beyond what it printed. Nothing was spent finding that out.',
+            prose: `${answered} You know no further reason for it. No time passed.`,
             lines: [],
             structure: `why: the turn on ${record.onTurn} ${record.outcome === 'refused' ? 'was refused' : 'ran'} `
-                + 'and filed no structure lines. No day passed and nothing was spent.'
+                + 'and remembered no player facts. No day passed and nothing was spent.'
         };
     }
     return {
         headline: 'Why that answer.',
-        prose: `${answered} What the engine did to arrive at it is below, and that is the whole `
-            + 'of it. Nothing was spent finding that out.',
+        prose: [answered, ...account].join('\n\n'),
         lines: account,
         structure: `why: the turn on ${record.onTurn} ${record.outcome === 'refused' ? 'was refused' : 'ran'} `
             + `${record.acts.length} act(s) and filed ${record.account?.length ?? 0} account line(s), `

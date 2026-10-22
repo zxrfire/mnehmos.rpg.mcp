@@ -123,4 +123,18 @@ describe('player rulings and the engine account have different audiences', () =>
                 .not.toMatch(/Something is wrong with this ground/);
         } finally { db.close(); }
     }, 120_000);
+
+    it('does not read the inspector back when the player asks why', async () => {
+        const { game, db } = makeGame({ seed: 'ruling-follow-up' });
+        try {
+            const { cultivator } = await game.newRun('Reader');
+            await game.act('what am I carrying');
+            const elapsed = game.currentRun().run.elapsedDays;
+            const answer = await game.act('why');
+            const lines = answer.state.log.filter(row => row.role === 'engine' && row.turn === answer.state.run.turn).map(row => row.text);
+            expect(offences([...lines, answer.narration])).toEqual([]);
+            expect(lines.join('\n')).toContain(`${cultivator.spiritStones} spirit stones`);
+            expect(answer.state.run.elapsedDays).toBe(elapsed);
+        } finally { db.close(); }
+    });
 });
