@@ -6269,7 +6269,7 @@ ${noticedWaiting}`;
                         });
                     }
                 }
-                if (wrong) {
+                if (wrong && wrong.lines.length > 0) {
                     for (const line of wrong.lines) {
                         looking.facts.lines.push(line);
                         looking.facts.prose = `${looking.facts.prose}

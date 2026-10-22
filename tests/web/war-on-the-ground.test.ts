@@ -244,15 +244,15 @@ describe('what a war does to the ground it is fought on', () => {
 
         const onTheSeat = await game.act('I look around');
         expect(onTheSeat.narration).toMatch(/fighting/i);
-        // Was the function's own name in the log. Says it in words now.
-        expect(logOf(onTheSeat)).toMatch(/Something is wrong with this ground/);
+        // The log states the perceived fighting, not a diagnostic about the read.
+        expect(logOf(onTheSeat)).toMatch(/fighting/i);
 
         // The same sentence, the same day, somewhere nothing is true of.
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(quiet.name, cultivator.id);
         const elsewhere = await game.act('I look around');
         expect(elsewhere.narration).not.toMatch(/fighting/i);
-        expect(logOf(elsewhere)).toMatch(/0 things about it can be told/);
+        expect(logOf(elsewhere)).not.toMatch(/fighting|Something is wrong with this ground/i);
     }, 300_000);
 
     /**
@@ -300,7 +300,8 @@ describe('what a war does to the ground it is fought on', () => {
 const QUIET_DAY_LINE = new RegExp(
     QUIET_DAY.map(line => line.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i');
 
-/** Every engine row this turn wrote, which is where `structure` lands. */
-function logOf(result: { state: { log: Array<{ role: string; text: string }> } }): string {
-    return result.state.log.filter(e => e.role === 'engine').map(e => e.text).join('\n');
+/** Only this turn's player-facing rows; earlier fighting remains in history. */
+function logOf(result: { state: { run: { turn: number }; log: Array<{ role: string; text: string; turn: number }> } }): string {
+    return result.state.log.filter(e => e.role === 'engine' && e.turn === result.state.run.turn)
+        .map(e => e.text).join('\n');
 }

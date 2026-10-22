@@ -11,6 +11,7 @@ import { composeNarrationUser } from '../../src/web/prompt';
 import type { Execution } from '../../src/web/turn-wire-shapes';
 import type { LogEntry } from '../../src/web/log';
 import { makeGame, makeGameInWorld } from './harness';
+import { whatIsWrongWithThisGround } from '../../src/web/ground-status-lines';
 import { getPill } from '../../src/data/cultivation/pills';
 
 // Camel case needs a case-sensitive read; ordinary words must remain ordinary.
@@ -102,4 +103,24 @@ describe('player rulings and the engine account have different audiences', () =>
         } finally { db.close(); }
     });
 
+    it('does not claim something is wrong on ordinary ground, even in the account', async () => {
+        const { game, db } = await makeGameInWorld({ seed: 'quiet-ruling', worldSeed: 'quiet-ruling' });
+        try {
+            await game.newRun('Reader');
+            const { cultivator } = game.currentRun();
+            const world = game.atHand!;
+            const reading = whatIsWrongWithThisGround({
+                statuses: world.statuses, locations: world.locations,
+                locationId: game.worldPlaceOf(cultivator)!, day: Math.floor(world.currentDay),
+                heldStage: 'encountered', standingHere: true
+            });
+            expect(reading.lines).toEqual([]);
+            expect(reading.running).toBe(0);
+            const answer = await game.act('I look around');
+            expect(answer.state.log.filter(row => row.role === 'engine').map(row => row.text).join('\n'))
+                .not.toMatch(/Something is wrong with this ground/);
+            expect(answer.toolCalls.map(call => call.summary).join('\n'))
+                .not.toMatch(/Something is wrong with this ground/);
+        } finally { db.close(); }
+    }, 120_000);
 });
