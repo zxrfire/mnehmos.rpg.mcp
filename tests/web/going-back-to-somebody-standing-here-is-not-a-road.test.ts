@@ -47,7 +47,7 @@ describe('going back to somebody standing here', () => {
     afterEach(() => { delete process.env.ADMIN_MODE; });
 
     it('crosses to them instead of looking for a road', async () => {
-        const { game, db, repos } = await makeGameInWorld({
+        const { game, repos } = await makeGameInWorld({
             seed: 'crossing', worldSeed: 'parting', adminMode: true
         });
         await game.newRun('Shen Wuyou');
