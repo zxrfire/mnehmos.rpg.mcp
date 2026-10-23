@@ -529,21 +529,23 @@ The offer list has four item slots (`OFFERS_SHOWN`), drawn from at most three
 local sellers. Its former name, `SELLERS_SHOWN`, described the wrong count.
 
 `lesser-action-costs.ts` covers every action. Existing day spans retain their costs;
-otherwise each reply, meal and quick trade takes 1/8 day, local walks take 1/4,
-and a thorough investigation takes 1/2. Scene and sheet reads stay free.
+otherwise meals and quick trades take 1/8 day, local walks take 1/4,
+and a thorough investigation takes 1/2. Conversation and passage-counter exchanges
+add no hours. A same-area person approach adds no walk or waiting span.
+Scene and sheet reads stay free.
 Visible ground and buildings use `investigation-targets.ts` for the same free
 read regardless of the parsed verb. This dependency-free classifier is shared
 by investigation and action pricing; pricing does not import verb handlers.
 Resolved visible-person/self investigations and the generic look branch set
 `Execution.timeDisposition = 'free_read'`. The charge wrapper honors this internal
 read disposition without undoing approach time. A `freeAction` receipt alone
-does not declare a free read: replies and thorough investigations retain their costs.
+does not declare a free read: thorough investigations retain their costs.
 Successful no-ops such as an already-paid room set `timeDisposition = 'no_op'`.
 Neither disposition is inferred from a fact or narration line, including the words
 "no time passed".
 When a named person is in another area of this same place, the crossing itself is
-the `move` and carries `approach_only`; a reply or search after that crossing still
-adds its ordinary lesser-action cost.
+the `move` and carries `approach_only`; a search after that crossing still
+adds its ordinary lesser-action cost. A reply adds no waiting span.
 Fractional acts add within a plan; only spans of a day or more compete for its long act.
 `routine-invitations.ts` persists fractions on `run.elapsedDays`, then passes them through
 `theseDaysPassedInTheWorldToo` after commit. Midnight advances the world with the player
@@ -655,7 +657,7 @@ reads deep-road teacher capacity through `teachersAtDepth`. Wound advice uses th
 cheapest qualifying pill when it needs the medicine that reaches every rung.
 
 A successful reply keeps its responder's card from after the handler's immediate writes
-and before the reply's lesser-action time advances. Phase three then computes physical
+and before any subsequent requested span advances. Phase three then computes physical
 `THE PEOPLE HERE` afresh and puts a departed responder only in the separate
 `THE PERSON JUST ADDRESSED` prompt block. Those headings and card annotations are
 internal facts, never narration: the narrator writes the person's reply in their own
@@ -3468,8 +3470,8 @@ Actual local investigation and door, admission, provider and distance checks rem
 
 The questions in one information exchange are answered in order through the
 existing single-question authorities and folded by `foldTheCallsIntoOneTurn`.
-Only the outer conversation registers a turn and bears the ordinary lesser
-conversation cost; no question is replayed to assemble its facts. Knowledge,
+Only the outer conversation registers a turn; speaking adds no waiting span,
+and no question is replayed to assemble its facts. Knowledge,
 hearing, perception, calls and results from each actual answer are retained.
 An ordinary public direction to their house's actual mission room uses existing
 public-record authority. It grants no posting, mission, wage, private-office

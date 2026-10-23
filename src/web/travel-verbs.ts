@@ -970,10 +970,10 @@ export const travelVerbs = {
                 const crossTo = (put ? here.find(row => row.id === put.id) : undefined)
                     ?? (named.length > 0 ? this.somebodyAtHand(named, cultivator) : null);
                 if (crossTo) {
-                    return this.freeAction(run, 'move', factsForToolResult(
+                    return { ...this.freeAction(run, 'move', factsForToolResult(
                         `You cross to ${crossTo.name}.`,
                         [`${crossTo.name} is standing here, so there was no road to take.`]
-                    ));
+                    )), timeDisposition: 'approach_only' };
                 }
             }
 

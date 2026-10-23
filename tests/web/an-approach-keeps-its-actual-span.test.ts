@@ -7,7 +7,7 @@
  * area is held by an ordinary dated redirect, not by a parallel scene store.
  * An actual scheduled world appointment splits the quarter-day at .125; selected
  * world consequences run after that real advance, never instead of it. The
- * later eighth-day must not commit after actual relocation or native death.
+ * reply adds no waiting span (replay R1/R3); actual approach interruptions still apply.
  * Red controls remove only deferred area commit / ordered receipt composition /
  * deferred native completion respectively, keeping the same fixture and world.
  * Candidate controls remain pending root compiler and runtime verification.
@@ -125,7 +125,7 @@ it('keeps the actual successful approach receipt when the following object reque
     } finally { vi.restoreAllMocks(); db.close(); }
 }, 120_000);
 
-it('retains the reply and both actual native spans with one action completion', async () => {
+it('retains the reply and actual approach span with one action completion', async () => {
     const { game, db, narrator, target, receipts, narrated } = await arranged();
     try {
         vi.spyOn(narrator, 'plan').mockResolvedValue({ action: { action: 'interact', target: target.name, intent: 'talk' }, source: 'fallback' });
@@ -134,14 +134,14 @@ it('retains the reply and both actual native spans with one action completion', 
         const result = await game.act('I greet ' + target.name);
         expect(handler).toHaveBeenCalledOnce();
         const reply = await handler.mock.results[0]!.value;
-        expect(receipts.map(receipt => receipt.timeSkip?.simulatedDays)).toEqual([.25, .125]);
+        expect(receipts.map(receipt => receipt.timeSkip?.simulatedDays)).toEqual([.25]);
         const facts = narrated.mock.calls.at(-1)![0];
         for (const receipt of receipts) for (const line of receipt.facts.lines) expect(facts.lines).toContain(line);
         expect(result.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(true);
         for (const line of reply.facts.lines) expect(facts.lines).toContain(line);
-        expect(result.toolCalls.some(call => call.name === 'engine.lesserActionTime')).toBe(true);
-        expect(journeyTimeHasReached(game.currentRun().run.elapsedDays, before.run.elapsedDays + .375)).toBe(true);
-        expect(journeyTimeHasReached(before.run.elapsedDays + .375, game.currentRun().run.elapsedDays)).toBe(true);
+        expect(result.toolCalls.some(call => call.name === 'engine.lesserActionTime')).toBe(false);
+        expect(journeyTimeHasReached(game.currentRun().run.elapsedDays, before.run.elapsedDays + .25)).toBe(true);
+        expect(journeyTimeHasReached(before.run.elapsedDays + .25, game.currentRun().run.elapsedDays)).toBe(true);
         expect(game.currentRun().run.turn).toBe(before.run.turn + 1);
     } finally { vi.restoreAllMocks(); db.close(); }
 }, 120_000);

@@ -1,8 +1,10 @@
 /**
- * Meals, replies and local walks passed no time; the same people stood in each
+ * Meals and local walks passed no time; the same people stood in each
  * square forever. Fractions now advance one run clock and move the world's
  * whole day at midnight with the player present. Scene light is perceived,
  * never a clock reading through rock. Fractional clauses add within a plan.
+ * Replay R1/R3: an ordinary reply is not a three-hour wait. Talking stays at
+ * the actual meeting time; meals and real walks still advance the clock.
  * Looking at visible buildings formerly spent a search's half-day. Its read
  * stays free; pricing a sought thing still requires the search's half-day.
  * Compare actual routine time with the run clock: world days may retain their
@@ -122,7 +124,7 @@ describe('lesser acts spend the same clock', () => {
         } finally { db.close(); }
     }, 180_000);
 
-    it('a meal and a reply add, while look and checking the pouch are free', async () => {
+    it('a reply adds no hours to a meal, and scene and pouch reads stay free', async () => {
         const { game, repos, db } = await open([
             { steps: [{ action: 'eat', said: 'I eat a meal' }, { action: 'interact', intent: 'talk', target: 'her', said: 'I greet her' }] },
             { action: 'look' }, { action: 'inventory' }, { action: 'status' }
@@ -137,9 +139,9 @@ describe('lesser acts spend the same clock', () => {
             const start = repos.runs.getById(game.state().run.id)!.elapsedDays;
             repos.cultivators.applyDeltas(game.state().cultivator.id, { satiety: -50 });
             const turn = await game.act('I eat a meal and I greet her');
-            expect(repos.runs.getById(game.state().run.id)!.elapsedDays - start, JSON.stringify(turn.toolCalls)).toBeCloseTo(1 / 4);
+            expect(repos.runs.getById(game.state().run.id)!.elapsedDays - start, JSON.stringify(turn.toolCalls)).toBeCloseTo(1 / 8);
             for (const read of ['I look around', 'I check my inventory', 'I check my status']) await game.act(read);
-            expect(repos.runs.getById(game.state().run.id)!.elapsedDays - start).toBeCloseTo(1 / 4);
+            expect(repos.runs.getById(game.state().run.id)!.elapsedDays - start).toBeCloseTo(1 / 8);
         } finally { db.close(); }
     }, 180_000);
 

@@ -513,10 +513,10 @@ describe('asking whether somebody could be moved does not move them', () => {
 
     /**
      * A crossing does not turn the action reached at its end into a read. The
-     * same actual-area setup proves that an ordinary reply is additive: the
-     * quarter-day walk reaches the person and the reply still takes its eighth.
+     * same actual-area setup proves the walk retains its cost, while the
+     * reply adds no hours (owner ruling after replay R1/R3).
      */
-    it('adds the conversational reply after crossing to a known person [crossing-reply-additive]', async () => {
+    it('keeps the crossing cost without charging hours for the reply [crossing-reply-additive]', async () => {
         const { game, approach } = await inTheBusiestSquare('reply-across-a-place');
         const me = game.currentRun().cultivator;
 
@@ -528,8 +528,8 @@ describe('asking whether somebody could be moved does not move them', () => {
         expect(turn.toolCalls.find(call => call.name === 'narrator.plan')?.action).toBe('interact');
         expect(turn.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(true);
         expect(turn.toolCalls.some(call => call.name === 'engine.lesserActionTime'
-            && call.action === 'interact')).toBe(true);
-        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.375);
+            && call.action === 'interact')).toBe(false);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.25);
     }, 120_000);
 
     /**
@@ -538,11 +538,11 @@ describe('asking whether somebody could be moved does not move them', () => {
      * for the ordinary reply that a model can understand. The test-only person
      * below is given a literal trigger name in the world's own roster, so the
      * completed reply's ENGINE FACTS, not only player input, contain it. The
-     * completed interaction, not those words, decides the eighth-day cost. The
+     * completed interaction, not those words, determines its time disposition. The
      * neighbouring visible-read and already-paid-room checks retain the two
      * genuine zero-time outcomes, each through explicit execution metadata.
      */
-    it('charges a real reply even when its words contain no time passed [quote-no-time-passed]', async () => {
+    it('keeps conversation free even when its words contain no time passed [quote-no-time-passed]', async () => {
         const plans: string[] = [];
         const provider = new ScriptedProvider({ plans, narrations: ['(scripted)'] });
         const { game } = await inTheBusiestSquare('reply-is-not-a-pricing-string', provider);
@@ -617,17 +617,15 @@ describe('asking whether somebody could be moved does not move them', () => {
             && call.action === 'talk' && call.ok)).toBe(true);
         expect(turn.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(false);
         expect(turn.toolCalls.some(call => call.name === 'engine.lesserActionTime'
-            && call.action === 'interact')).toBe(true);
-        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.125);
+            && call.action === 'interact')).toBe(false);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(0);
         const routerInput = provider.calls.filter(call => call.messages.some(message =>
             message.role === 'system' && message.content.startsWith('You are the intent router')
         )).at(-1)?.messages.find(message => message.role === 'user')?.content;
         expect(routerInput).toContain('no time passed');
-        // The old charge guard read `done.facts.lines`, not player input. This
-        // normal answer names the test-only person the engine holds, so the
-        // phrase is present in WHAT THE ENGINE RULED as well. Restoring that
-        // regex would skip `engine.lesserActionTime` and make the .125 assertion
-        // above red; the narrator is only a witness to the already-filed fact.
+        // Fact strings remain narration, never a timing protocol. The owner
+        // removed the implicit conversation charge after replay R1/R3; actual
+        // movement and requested spans still determine their own costs.
         const narrationInput = provider.calls.filter(call => call.messages.some(message =>
             message.role === 'system' && message.content.startsWith('YOU ARE THE STORYTELLER')
         )).at(-1)?.messages.find(message => message.role === 'user')?.content;

@@ -9,8 +9,8 @@ import { LOCAL_WALK_DAYS } from '../engine/world/local-walking-cost.js';
 /** Existing spans win; these costs apply only when the handler spent no time. */
 export const LESSER_ACTION_DAYS: Readonly<Record<ActionName, 0 | 0.125 | 0.25 | 0.5>> = {
     project: 0.25, possess: 0.25, reconstruct: 0.5,
-    interact: 0.125, investigate: 0.5, move: LOCAL_WALK_DAYS, ride: 0.25, fold: 0.25,
-    passage: 0.125, oath: 0.125, attack: 0.125, coerce: 0.125, insult: 0.125,
+    interact: 0, investigate: 0.5, move: LOCAL_WALK_DAYS, ride: 0.25, fold: 0.25,
+    passage: 0, oath: 0.125, attack: 0.125, coerce: 0.125, insult: 0.125,
     cultivate: 0.125, seclude: 0.125, breakthrough: 0.125, train_technique: 0.125,
     refine: 0.125, craft: 0.125, gather: 0.5, hunt: 0.5,
     eat: 0.125, provision: 0.125, treat: 0.125, buy: 0.125, sell: 0.125,
