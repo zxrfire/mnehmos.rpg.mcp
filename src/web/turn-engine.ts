@@ -7575,6 +7575,22 @@ ${noticed}`;
             this.namesGivenThisTurn.push(party.name);
         }
 
+        // A command's topic is the requested act, not a name to ask about.
+        // A held slave seal has already reached its actual order writer in carryOut.
+        if (intent === 'command' && party.kind === 'cultivator') {
+            const words = topic?.trim() ?? '';
+            const terms = ledgerAbout(this.db, party.id).filter(word => word.kind === 'oath'
+                && word.status === 'open' && word.holderId === party.id && word.subjectId === cultivator.id);
+            const facts = factsForToolResult(`${party.name} hears your command.`, [
+                `${cultivator.name} says to ${party.name}: ${words || rawInput}`,
+                ...terms.map(word => `Their existing promise to you: ${word.terms}`),
+                'The words were spoken. No obedience or physical act has been resolved.'
+            ]);
+            const spoken = this.freeAction(run, 'interact', facts);
+            spoken.calls.push({ name: 'engine.spokenCommand', action: 'interact', summary: facts.lines[0]!, ok: true });
+            return this.replyFrom(spoken, party.id);
+        }
+
         // A question was asked of a person, so a person answers it. This
         // used to reach the sect register instead, which replied with a
         // list and a policy note and called the player "this cultivator".

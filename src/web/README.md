@@ -150,6 +150,13 @@ ordinary threatening interaction with the command in its topic. Coercion's
 fight lane applies physical compulsion. An order alone adds no player blow
 and guarantees no compliance; the actual listener retains their response.
 
+An addressed command uses `speak/command_person`, expanded to interact/command.
+Its topic is the act ordered, never a subject for the knowledge reader. A live
+held slave seal reaches `commandAtTheActualBody` with the actual listener and
+full order, including a named victim. Without that compulsion the listener
+hears the words with any actual open contract terms; no physical compliance
+is invented. Ordinary promises retain their own enforcement, not slave compulsion.
+
 A partial-name pointer such as "the qi gathering one" resolves against the
 previous printed listing before catalog lookup. It can correct a model's
 premature expansion to a different catalog item. Multiple printed matches

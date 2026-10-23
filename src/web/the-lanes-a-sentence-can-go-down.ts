@@ -264,6 +264,7 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
             talk: 'interact',
             ask_them_a_question: 'interact',
             demand_with_words: 'interact',
+            command_person: 'interact',
             tell_them_something: 'tell',
             ask_them_to_give_or_do_something: 'request'
         },

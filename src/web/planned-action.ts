@@ -300,6 +300,7 @@ function theLaneExpanded(raw: unknown): unknown {
     // A QUESTION PUT TO SOMEBODY IS TALK to the engine, which reads its intents by that word.
     if (lane === 'speak' && intent === 'ask_them_a_question') return { ...said, action, intent: 'talk' };
     if (lane === 'speak' && intent === 'demand_with_words') return { ...said, action, intent: 'threaten' };
+    if (lane === 'speak' && intent === 'command_person') return { ...said, action, intent: 'command' };
     if (lane === 'travel' && intent === 'buy_ticket') return { ...said, action, intent: 'ticket' };
     if (lane === 'travel' && intent === 'board_passage') return { ...said, action, intent: 'embark' };
     // A HOUSE'S BOARD IS READ BY `duty`, which the house verb knows by that word. Played blind: the

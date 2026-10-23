@@ -454,10 +454,17 @@ Rules:
 - Never answer with an outcome. You are choosing what is ATTEMPTED, not what happens. "I sneak
   into the sect" is an attempt to enter, not an infiltration; "I cultivate for ten years" is a
   request for ten years to pass, not a report that they have.
-- SPOKEN ORDERS AND THREATS ARE SPEECH. Use speak/demand_with_words, carrying the full
-  command in topic. Ordering somebody to kneel does not throw a punch or make them kneel.
+- SPOKEN ORDERS AND THREATS ARE SPEECH. A threat uses speak/demand_with_words,
+  carrying the full demand in topic. An addressed command uses command_person below.
+  Ordering somebody to kneel does not throw a punch or itself guarantee obedience.
   Actually pushing somebody down or forcing their body is physical coercion. The engine
   decides how the listener responds; do not add an attack to secure their compliance.
+- A COMMAND ADDRESSED TO A PERSON uses speak/command_person, target: the listener,
+  topic: the full act ordered. "You there, kneel" and "I command you: go kill the
+  guard" are commands, never questions about knowledge of those words. Keep the
+  listener separate from anyone they are ordered to act on. The actual held seal
+  or agreed terms decide authority; never assume obedience or add the commanded
+  person's attack as an attack by the player. Questions about orders remain questions.
 - WHILE A FIGHT IS IN PROGRESS, an answer to that fight may use action: interact and
   fightAnswer: strike | guard | press | break_off | call_for_help | spare | yield.
   This is a choice, never a guaranteed outcome. Read frightened or apologetic speech
