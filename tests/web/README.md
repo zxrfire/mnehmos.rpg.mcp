@@ -9,6 +9,11 @@ hostile controls also read both ends without writing extra knowledge records.
 scripted narrator and checks that the card explicitly says nothing was bought
 or paid, including an unsuccessful destination lookup. The purse is unchanged.
 
+`long-acts-run-as-a-chain.test.ts` keeps a month of meditation and an actual
+two-day road in one ordered chain, including fallback reading without "then".
+An actual scheduled interruption stops the sitting before the movement handler
+is called; later clauses neither run nor spend time. No ordering question is held.
+
 `player-rulings.test.ts` separates the player rendering from the inspector and
 private narrator material. It checks ids, routine names and calibration language
 on played reads, while requiring the structural account to remain inspectable.

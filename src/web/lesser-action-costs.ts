@@ -2,7 +2,6 @@
 import type { ActionName } from './action-set.js';
 import { thePlanIsTheReadInsideTheVerb } from './action-set.js';
 import type { PlannedAction } from './planned-action.js';
-import { PRESSING_SOMEBODY } from './asking-is-not-doing.js';
 import { isAskingAboutWhatIsAlreadyInFrontOfThem } from './investigation-targets.js';
 import { LOCAL_WALK_DAYS } from '../engine/world/local-walking-cost.js';
 
@@ -37,17 +36,4 @@ export function lesserActionDays(plan: PlannedAction): number {
     // deliberate search, and must not be priced as one.
     if (plan.action === 'investigate' && isAskingAboutWhatIsAlreadyInFrontOfThem(plan.target ?? '')) return 0;
     return LESSER_ACTION_DAYS[plan.action];
-}
-
-/** Only day-long spans compete for the sentence's one long act. */
-export function isDayLongAct(plan: PlannedAction): boolean {
-    if (thePlanIsTheReadInsideTheVerb(plan)) return false;
-    if (plan.action === 'move' && /^(?:(?:the|my|our|a)\s+)?(?:room|street|market|table|gate|far gate|forecourt|courtyard|upstairs|downstairs)$/i.test(plan.target ?? '')) return false;
-    if (plan.action === 'wait' && plan.days !== undefined && plan.days < 1) return false;
-    if (plan.action === 'interact') return PRESSING_SOMEBODY.has(plan.intent ?? '');
-    if (plan.action === 'request' && ['end_company', 'course_change'].includes(plan.intent ?? '')) return false;
-    return ['cultivate', 'seclude', 'train_technique', 'refine', 'craft', 'gather', 'hunt',
-        'wait', 'work', 'treat', 'learn_technique', 'teach', 'derive', 'guard', 'propose',
-        'decline', 'child', 'request', 'move', 'ride', 'fold', 'passage', 'site', 'legacy',
-        'project', 'possess', 'reconstruct'].includes(plan.action);
 }

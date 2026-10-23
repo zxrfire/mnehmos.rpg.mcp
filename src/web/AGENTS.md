@@ -43,12 +43,9 @@ existing day spans retain their costs. Budget actual cost, not number of calls.
 Fractional acts add in requested order. Never infer an extra time-spending act, quietly
 truncate the sentence, or decide outcomes to improve reach.
 
-The original executor convention allows at most one requested act of a day or more.
-If two are requested, it runs free reads, does neither long act and asks which comes
-first in the player's terms, at no cost. **Retained conflict:** the root agency rule
-rejects sentence-shape limits and allows chains interrupted by the world. Do not treat
-this older convention as authority to add a new limit; reconcile it with the owner
-before changing that contract. Both instructions are preserved here for audit.
+Requested acts, including multiple long spans, run in the order supplied by the
+sentence's reading. No ordering question holds the chain. The world can interrupt
+at any act; the remaining acts do not run and cost nothing. Report where it stopped.
 
 Composition acceptance needs a model attached (play against Ollama); a fallback's
 single act does not measure plan comprehension. Scripted plans can test execution.

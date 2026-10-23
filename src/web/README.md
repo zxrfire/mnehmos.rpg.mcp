@@ -557,7 +557,9 @@ Neither disposition is inferred from a fact or narration line, including the wor
 When a named person is in another area of this same place, the crossing itself is
 the `move` and carries `approach_only`; a search after that crossing still
 adds its ordinary lesser-action cost. A reply adds no waiting span.
-Fractional acts add within a plan; only spans of a day or more compete for its long act.
+Fractional and whole-day acts run in their supplied order within a plan. No act-count
+or ordering-question budget holds them. The existing refusal, death and interruption
+checks stop the chain; unreached clauses do not run or spend anything.
 `routine-invitations.ts` persists fractions on `run.elapsedDays`, then passes them through
 `theseDaysPassedInTheWorldToo` after commit. Midnight advances the world with the player
 present. Routines read the derived hour; no hourly simulation pass or clock column exists.
@@ -1287,8 +1289,8 @@ The earlier one-action interpretation is retired by the owner's agency ruling.
 A sentence may contain any coherent ordered acts; each runs against the world left
 by the previous act. No six-call truncation or first-costly-act partition remains.
 A genuine refusal, interruption, death or lifespan limit still stops execution,
-and unreached clauses are reported. The fallback may ask about order it cannot
-resolve; a model's ordered plan or explicit player order is already an answer.
+and unreached clauses are reported. The fallback and model both supply ordered
+steps; neither needs a sequencing word or a second answer about their order.
 
 An information exchange is one conversation: greeting, origin and questions to
 one person reach one full-topic interact. `one-information-exchange.ts` supplies

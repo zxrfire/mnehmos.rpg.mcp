@@ -11,8 +11,8 @@
  * manual", "the hunt a boar" and "the gathering herbs" were all one played turn
  * away.
  *
- * WORTH FIXING INDEPENDENTLY OF THE SPLITTING, because it reads badly on every
- * turn this question fires - including the turns where the split is correct.
+ * The ordering question is retired. These same act names still reach the
+ * receipts that explain which clauses an actual interruption left unreached.
  */
 
 import { whatThisStepIsCalled } from '../../src/web/a-sentence-can-be-more-than-one-call';

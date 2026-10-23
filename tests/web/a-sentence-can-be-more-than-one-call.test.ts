@@ -3,12 +3,13 @@
  *
  * 2026-10-03: the agency ruling retires the six-call and one-costly-act caps.
  * Earlier tests pinned those limits; ordered acts now all reach the current
- * world, which can refuse or interrupt each. Fallback unresolved ordering remains a question.
+ * world, which can refuse or interrupt each. The 2026-10-22 ruling also removes
+ * the fallback ordering question: listed acts run in their supplied order.
  *
  * Read as a law rather than as a behaviour: every case here is a claim about
  * what a turn may spend and in what order, and none of them needs a database.
  * The played half - that a plan actually reaches the engine, in order, and that
- * unresolved fallback ordering asks a question - is in
+ * actual interruptions stop the chain - is in
  * `tests/web/a-sentence-that-contains-a-plan.test.ts`.
  * Oct11 integration found a claimed house order losing its authority at the
  * comma and becoming the player's own gathering trip. That claim must reach
@@ -36,14 +37,10 @@ import {
     theThingThisStepNamed,
     stepsOfThePlan,
     theClauseThisStepQuotes,
-    theQuestionStillStands,
     whatThisStepIsCalled,
-    whatTheQuestionAsks,
     whatThisTurnMayRun,
-    whichOneTheyChose,
     type OneCall,
-    type PlanStep,
-    type WhichComesFirst
+    type PlanStep
 } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 import { ACTION_NAMES, parseIntent, type ActionName, type PlannedAction } from '../../src/web/actions.js';
 import { costsTheAskerNothing } from '../../src/web/asking-is-not-doing.js';
@@ -91,13 +88,11 @@ describe('the budget', () => {
     it('lets free reads chain, as many as the sentence needs', () => {
         const budget = whatThisTurnMayRun([LOOK, step('recall'), step('status'), step('inventory')]);
         expect(budget.toRun).toHaveLength(4);
-        expect(budget.askAbout).toHaveLength(0);
     });
 
     it('runs one costly act with free reads around it', () => {
         const budget = whatThisTurnMayRun([LOOK, THEFT, step('status')]);
         expect(budget.toRun.map(s => s.action.action)).toEqual(['look', 'interact', 'status']);
-        expect(budget.askAbout).toHaveLength(0);
     });
 
     it('KEEPS THE PLAYER\'S ORDER - a free step after a costly one is not sorted forward', () => {
@@ -119,19 +114,16 @@ describe('the budget', () => {
     it('runs the framing sentence with its fractional departure', () => {
         const budget = whatThisTurnMayRun([THEFT, HANDOFF, WALK]);
         expect(budget.toRun.map(s => s.action.action)).toEqual(['interact', 'interact', 'move']);
-        expect(budget.askAbout).toHaveLength(0);
     });
 
-    it('stops at the FIRST costly act when there are two, and runs nothing costly', () => {
+    it('keeps both long acts after the opening read', () => {
         const budget = whatThisTurnMayRun([LOOK, THEFT, step('cultivate', { days: 3650 })]);
-        expect(budget.toRun.map(s => s.action.action)).toEqual(['look']);
-        expect(budget.askAbout.map(s => s.action.action)).toEqual(['interact', 'cultivate']);
-        expect(budget.heldForTheQuestion.map(s => s.action.action)).toEqual(['interact', 'cultivate']);
+        expect(budget.toRun.map(s => s.action.action)).toEqual(['look', 'interact', 'cultivate']);
     });
 
-    it('the reads before the question still run, so the question can name them', () => {
+    it('keeps the read before both requested acts', () => {
         const budget = whatThisTurnMayRun([LOOK, THEFT, step('move', { target: 'Cloud Gate' })]);
-        expect(budget.toRun.map(s => s.action.action)).toEqual(['look']);
+        expect(budget.toRun.map(s => s.action.action)).toEqual(['look', 'interact', 'move']);
     });
 
     it('keeps all requested reads beyond the retired six-call cap', () => {
@@ -158,7 +150,6 @@ describe('one clause is one act, however many patterns claim it', () => {
             step('work', { target: 'manual' }),
             step('train_technique', { target: 'manual' })
         ]);
-        expect(budget.askAbout).toHaveLength(0);
         expect(budget.toRun.map(s => s.action.action)).toEqual(['work']);
     });
 
@@ -177,8 +168,6 @@ describe('one clause is one act, however many patterns claim it', () => {
             step('attack', { target: 'him' }, 'I hit him'),
             step('interact', { target: 'him', intent: 'steal' }, 'then take his purse')
         ]);
-        // A fight exchange is now an eighth-day act, beside the day-long theft.
-        expect(budget.askAbout).toHaveLength(0);
         expect(budget.toRun).toHaveLength(2);
         expect(budget.secondReadings).toHaveLength(0);
     });
@@ -204,7 +193,6 @@ describe('one clause is one act, however many patterns claim it', () => {
             step('buy', { target: 'bowl of noodles' }),
             step('request', { intent: 'a_making', topic: 'bowl of noodles' })
         ]);
-        expect(budget.askAbout).toHaveLength(0);
         expect(budget.toRun.map(s => s.action.action)).toEqual(['buy']);
         expect(budget.secondReadings).toHaveLength(1);
     });
@@ -214,7 +202,8 @@ describe('one clause is one act, however many patterns claim it', () => {
             step('work', {}, 'work at the manual'),
             step('train_technique', {}, 'work at the manual until I can break through')
         ]);
-        expect(budget.askAbout).toHaveLength(0);
+        expect(budget.toRun.map(step => step.action.action)).toEqual(['work']);
+        expect(budget.secondReadings).toHaveLength(1);
     });
 });
 
@@ -233,21 +222,14 @@ describe('where the sentence gives its own order, the turn takes it', () => {
 
     it('runs both ordered acts and asks nothing', () => {
         const budget = whatThisTurnMayRun(
-            [JOURNEY, SITTING], 'I go to Cloud Gate and then sit down and cultivate for a year'
-        );
-        expect(budget.askAbout).toHaveLength(0);
-        expect(budget.theOrderWasGiven).toBe(true);
+            [JOURNEY, SITTING]);
         expect(budget.toRun.map(s => s.action.action)).toEqual(['move', 'cultivate']);
-        expect(budget.heldForTheQuestion).toHaveLength(0);
     });
 
-    it('still asks where the sentence gives no order', () => {
+    it('uses listed order without requiring a sequencing word', () => {
         const budget = whatThisTurnMayRun(
-            [JOURNEY, SITTING], 'I go to Cloud Gate and sit down and cultivate for a year'
-        );
-        expect(budget.theOrderWasGiven).toBe(false);
-        expect(budget.askAbout).toHaveLength(2);
-        expect(budget.toRun).toHaveLength(0);
+            [JOURNEY, SITTING]);
+        expect(budget.toRun).toEqual([JOURNEY, SITTING]);
     });
 
     it('names what a refused preceding act leaves unspent', () => {
@@ -478,58 +460,6 @@ describe('reading a sequence out of a model response', () => {
             'I threaten the steward into handing over the ledger'
         );
         expect(steps![0]!.action.leverage).toBe('force');
-    });
-});
-
-describe('two costly acts raise a question rather than a truncation', () => {
-    const fork: WhichComesFirst = {
-        runId: 'r', cultivatorId: 'c', raisedOnTurn: 4, acts: [THEFT, WALK]
-    };
-
-    it('asks in the player\'s own words, and does not read as a refusal', () => {
-        const asked = whatTheQuestionAsks(fork);
-        expect(asked).toContain("take Cao Antao's purse");
-        expect(asked).toContain('walk away');
-        expect(asked).toContain('Which comes first?');
-        // Nothing failed here. The sentence was understood in full.
-        expect(asked).not.toMatch(/cannot|could not|unable|failed|refus/i);
-    });
-
-    it('takes an ordinal for an answer', () => {
-        expect(whichOneTheyChose('the second one', fork)).toBe(WALK);
-        expect(whichOneTheyChose('first', fork)).toBe(THEFT);
-    });
-
-    it('takes a distinctive word for an answer', () => {
-        expect(whichOneTheyChose('the purse', fork)).toBe(THEFT);
-        expect(whichOneTheyChose('walk', fork)).toBe(WALK);
-    });
-
-    it('CHOOSES NOTHING when the answer fits both, because that is not a choice', () => {
-        const two: WhichComesFirst = {
-            ...fork,
-            acts: [step('cultivate', {}, 'sit for a year'), step('cultivate', {}, 'sit for a decade')]
-        };
-        expect(whichOneTheyChose('cultivate', two)).toBeNull();
-    });
-
-    it('IS NOT A MODAL JAIL - any other sentence is an ordinary turn', () => {
-        expect(whichOneTheyChose('I go and look for work in the next county instead', fork)).toBeNull();
-        expect(whichOneTheyChose('what can I do', fork)).toBeNull();
-        expect(whichOneTheyChose('', fork)).toBeNull();
-    });
-
-    it('lapses with the run and the cultivator it was raised against', () => {
-        expect(theQuestionStillStands(fork, 'r', 'c')).toBe(true);
-        expect(theQuestionStillStands(fork, 'other-run', 'c')).toBe(false);
-        expect(theQuestionStillStands(fork, 'r', 'somebody-else')).toBe(false);
-        expect(theQuestionStillStands(null, 'r', 'c')).toBe(false);
-    });
-
-    it('falls back to the verb\'s own name when the reader gave no words', () => {
-        expect(whatThisStepIsCalled(step('cultivate'))).toBe('sitting down to cultivate');
-        expect(whatThisStepIsCalled(step('move', { target: 'Clear River Ferry' })))
-            .toBe('the journey to Clear River Ferry');
     });
 });
 
@@ -1068,39 +998,28 @@ describe('the sentence composes without a model', () => {
     it('puts back a clause the reader did not answer', () => {
         const gather: PlanStep = { action: { action: 'gather' } };
         const composed = whatThisTurnMayRun(
-            [{ action: { action: 'move', intent: 'travel', target: 'Moraine Gate' } }, gather],
-            'I go to Moraine Gate and gather herbs'
-        );
-        expect(composed.toRun.length + composed.askAbout.length).toBe(2);
-    });
-
-    /** And the order is nobody's to invent where the words do not say it. */
-    it('asks rather than guessing, which is what a table can honestly do', () => {
-        const composed = whatThisTurnMayRun(
-            [
-                { action: { action: 'move', intent: 'travel', target: 'Moraine Gate' } },
-                { action: { action: 'gather' } }
-            ],
-            'I go to Moraine Gate and gather herbs'
-        );
-        expect(composed.theOrderWasGiven).toBe(false);
-        expect(composed.askAbout).toHaveLength(2);
-    });
-
-    /** Unless a reader says it settled it, which a table never can. */
-    it('takes an order a reader says it worked out', () => {
-        const composed = whatThisTurnMayRun(
-            [
-                { action: { action: 'move', intent: 'travel', target: 'Moraine Gate' } },
-                { action: { action: 'gather' } }
-            ],
-            'I go to Moraine Gate and gather herbs',
-            true
-        );
-        expect(composed.theOrderWasGiven).toBe(true);
-        expect(composed.askAbout).toHaveLength(0);
+            [{ action: { action: 'move', intent: 'travel', target: 'Moraine Gate' } }, gather]);
         expect(composed.toRun).toHaveLength(2);
-        expect(composed.heldForTheQuestion).toHaveLength(0);
+    });
+
+    /** The fallback supplies the clauses in their original order too. */
+    it('runs the supplied clauses without another ordering decision', () => {
+        const composed = whatThisTurnMayRun(
+            [
+                { action: { action: 'move', intent: 'travel', target: 'Moraine Gate' } },
+                { action: { action: 'gather' } }
+            ]);
+        expect(composed.toRun.map(step => step.action.action)).toEqual(['move', 'gather']);
+    });
+
+    /** Both actual acts survive the clause filter. */
+    it('keeps both acts in the supplied sequence', () => {
+        const composed = whatThisTurnMayRun(
+            [
+                { action: { action: 'move', intent: 'travel', target: 'Moraine Gate' } },
+                { action: { action: 'gather' } }
+            ]);
+        expect(composed.toRun).toHaveLength(2);
     });
 });
 

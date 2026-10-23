@@ -33,7 +33,6 @@ import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
 import { ProviderNarrator } from '../../src/web/narrator.js';
 import {
-    theSentenceSaysItsOwnOrder,
     thisClauseIsAReasonNotAnAct,
     whatThisTurnMayRun,
     type PlanStep
@@ -50,11 +49,7 @@ describe('a stated need, and the act it is the reason for', () => {
             [
                 step('eat', 'I need to eat'),
                 step('work', 'so I take whatever work will feed me for a season', 'any')
-            ],
-            'I need to eat, so I take whatever work will feed me for a season'
-        );
-
-        expect(budget.askAbout).toHaveLength(0);
+            ]);
         expect(budget.toRun.map(one => one.action.action)).toEqual(['work']);
         // Nothing vanishes silently. The reason is named in the engine channel.
         expect(budget.statedReasons.map(one => one.action.action)).toEqual(['eat']);
@@ -65,7 +60,7 @@ describe('a stated need, and the act it is the reason for', () => {
      * request, and a hungry player typing exactly that gets fed.
      */
     it('feeds somebody who only says they need to eat', () => {
-        const budget = whatThisTurnMayRun([step('eat', 'I need to eat')], 'I need to eat');
+        const budget = whatThisTurnMayRun([step('eat', 'I need to eat')]);
         expect(budget.toRun.map(one => one.action.action)).toEqual(['eat']);
         expect(budget.statedReasons).toHaveLength(0);
     });
@@ -77,11 +72,8 @@ describe('a stated need, and the act it is the reason for', () => {
      */
     it('keeps every need when nothing else in the sentence is an act', () => {
         const budget = whatThisTurnMayRun(
-            [step('eat', 'I need to eat'), step('work', 'and I need work', 'any')],
-            'I need to eat and I need work'
-        );
+            [step('eat', 'I need to eat'), step('work', 'and I need work', 'any')]);
         expect(budget.statedReasons).toHaveLength(0);
-        expect(budget.askAbout).toHaveLength(0);
         expect(budget.toRun.map(one => one.action.action)).toEqual(['eat', 'work']);
     });
 
@@ -92,31 +84,6 @@ describe('a stated need, and the act it is the reason for', () => {
         for (const said of ['I eat', 'I take the work going', 'I sit down and breathe']) {
             expect(thisClauseIsAReasonNotAnAct(step('eat', said)), said).toBe(false);
         }
-    });
-});
-
-describe('a reason joined to a consequence says which came first', () => {
-    it('reads the connectives people actually use', () => {
-        for (const said of [
-            'I need to eat, so I take whatever work will feed me',
-            'I have no manual, so I go to the market',
-            'I am broke and so I take the work going',
-            'I take the work because I need to eat',
-            'since I have no stones I take the work'
-        ]) {
-            expect(theSentenceSaysItsOwnOrder(said), said).toBe(true);
-        }
-    });
-
-    /**
-     * A sentence with no order in it still gets the question, which is the
-     * whole point of the question: *"I sit for a year and take work for a
-     * season"* names two things with nothing between them.
-     */
-    it('still asks where the sentence genuinely gives no order', () => {
-        expect(
-            theSentenceSaysItsOwnOrder('I sit for a year and take work for a season')
-        ).toBe(false);
     });
 });
 

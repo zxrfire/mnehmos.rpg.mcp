@@ -13,7 +13,6 @@ import {
     type PlannedAction
 } from './actions.js';
 import type { EngineFacts } from './facts.js';
-import { isDayLongAct } from './lesser-action-costs.js';
 import { isOneInformationExchange } from './one-information-exchange.js';
 import { askingWhatItWouldTake } from './what-a-request-asks-and-of-whom.js';
 import { SECT_SUBORDINATE_NOUNS } from './sect-phrasings.js';
@@ -885,44 +884,12 @@ export function theRowForAResolvedPronoun(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE LAW
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * What is left over when a turn cannot do everything it understood.
- */
-export interface WhichComesFirst {
-    readonly runId: string;
-    readonly cultivatorId: string;
-    /** The turn it was raised on. It answers on the next one and then it is gone. */
-    readonly raisedOnTurn: number;
-    /** The costly acts, in the order the sentence put them. Always two or more. */
-    readonly acts: readonly PlanStep[];
-}
-
 /** What this turn is going to do, decided before any of it runs. */
 export interface WhatThisTurnMayRun {
     /**
      * The steps to run, IN THE ORDER THE PLAYER SAID THEM.
      */
     readonly toRun: readonly PlanStep[];
-    /**
-     * The costly acts to ask about. Empty unless there are two or more AND the
-     * player did not already say which comes first - see
-     * {@link theSentenceSaysItsOwnOrder}.
-     */
-    readonly askAbout: readonly PlanStep[];
-    /**
-     * Steps the turn did not reach, whether it stopped to ask or stopped
-     * because their order needs clarification. Named, never dropped.
-     */
-    readonly heldForTheQuestion: readonly PlanStep[];
-    /**
-     * Whether the player's own sentence settled the order, so nothing was
-     * asked. Ordered acts all run; only an unresolved order holds acts.
-     */
-    readonly theOrderWasGiven: boolean;
     /**
      * One clause the reader read twice, and which reading was taken.
      */
@@ -960,7 +927,7 @@ export function thisClauseIsAReasonNotAnAct(step: PlanStep): boolean {
  * day on either way.
  *
  * Only a going with NO destination. "I go to the market and ask what pills are
- * for sale" names two places to be and is a real question about order.
+ * for sale" names actual movement followed by its requested question.
  */
 function aGoingThatNamesNowhereIsTheApproach(steps: readonly PlanStep[]): PlanStep[] {
     const namesNowhere = (step: PlanStep): boolean =>
@@ -994,103 +961,16 @@ function tellingReasonsFromActs(
 /**
  * The whole law, as a pure function of the steps.
  */
-export function whatThisTurnMayRun(
-    steps: readonly PlanStep[],
-    input = '',
-    /**
-     * Whether a READER decided this order, as against the words alone.
-     *
-     * The design owner, settling which layer answers this:
-     *
-     *   > this needs to be two steps without an LLM ... but the llm should
-     *   > reason what comes first, right? or if the order doesn't matter
-     *   > ... asking is okay cuz an embedding can't tell, that's too hard and
-     *   > would make it too brittle
-     *
-     * So the question belongs to whoever can actually answer it. A model was
-     * told to answer with one step per act IN THAT ORDER, so a multi-step plan
-     * from one is a decision already taken - it either worked out what has to
-     * happen first or decided nothing turns on it, and either way it committed.
-     * Asking the player to say it again is asking them to redo work that was
-     * done. A pattern table cannot reason about order at all, and forcing it to
-     * try is the brittleness that ruling warns against, so where the words do
-     * not say, it asks.
-     */
-    theReaderDecidedTheOrder = false,
-    spansADay: (action: PlannedAction) => boolean = isDayLongAct
-): WhatThisTurnMayRun {
+export function whatThisTurnMayRun(steps: readonly PlanStep[]): WhatThisTurnMayRun {
     const withoutDoubleReadings = oneClauseIsOneAct(steps);
-    // A CLAUSE THAT SAID WHY IS NOT A SECOND THING TO DO. A reason was never
-    // one of the turn's calls -
-    // "I need to eat, so I take whatever work will feed me" is one act, and a
-    // question about which of the two comes first has nothing in it to answer.
     const { acts: withoutReasons, reasons: statedReasons } =
         tellingReasonsFromActs(withoutDoubleReadings.acts);
-    // AND A GOING THAT NAMED NOWHERE IS NOT ONE OF THE TURN'S CALLS EITHER.
-    const withoutEmptyGoings = aGoingThatNamesNowhereIsTheApproach(withoutReasons);
-    const kept = withoutEmptyGoings;
-    const secondReadings = withoutDoubleReadings.secondReadings;
-
-    const dayLong = (step: PlanStep) => !step.selects && spansADay(step.action);
-    const costly = kept.filter(dayLong);
-    if (costly.length < 2) {
-        return {
-            toRun: kept, askAbout: [], heldForTheQuestion: [],
-            theOrderWasGiven: false, secondReadings, statedReasons
-        };
-    }
-
-    const first = kept.findIndex(dayLong);
-
-    // THE PLAYER MAY HAVE ALREADY ANSWERED THE QUESTION, or a reader may have
-    // answered it for them. See `theReaderDecidedTheOrder`.
-    if (theReaderDecidedTheOrder || theOrderIsAlreadySettled(kept, input)) {
-        return {
-            toRun: kept,
-            askAbout: [],
-            heldForTheQuestion: [],
-            theOrderWasGiven: true,
-            secondReadings,
-            statedReasons
-        };
-    }
-
     return {
-        toRun: kept.slice(0, first),
-        askAbout: costly,
-        heldForTheQuestion: kept.slice(first),
-        theOrderWasGiven: false,
-        secondReadings,
+        toRun: aGoingThatNamesNowhereIsTheApproach(withoutReasons),
+        secondReadings: withoutDoubleReadings.secondReadings,
         statedReasons
     };
 }
-
-/**
- * Whether the player's own sentence already says which comes first.
- */
-export function theOrderIsAlreadySettled(
-    steps: readonly PlanStep[],
-    input: string
-): boolean {
-    if (theSentenceSaysItsOwnOrder(input)) return true;
-
-    // A BACK-REFERENCE FIXES THE ORDER AS FIRMLY AS "THEN" DOES
-    return steps.some((step, at) =>
-        at > 0
-        && (standsForTheLastThing(step.action.topic)
-            || standsForTheLastThing(step.action.target)));
-}
-
-export function theSentenceSaysItsOwnOrder(input: string): boolean {
-    return /\b(?:and then|then|afterwards?|after that|after which|before|first(?:ly)?|next|finally|once (?:i|that|it)|when (?:i|that|it)(?:'s| is| am)? (?:done|finished|over))\b/i.test(input)
-        || THE_CLAUSE_THAT_SAYS_WHY.test(input);
-}
-
-/**
- * The forms that say what an act is for, and so say what comes after it.
- */
-const THE_CLAUSE_THAT_SAYS_WHY =
-    /\b(?:until|so (?:i|that i) (?:can|could|have|am)|in order to|so as to|to pay for|to afford|enough (?:for|to)|so (?:i|we)\b|and so\b|because\b|since (?:i|we)\b)/i;
 
 /**
  * COUNT SPANS OF THE SENTENCE, NEVER PATTERN HITS.
@@ -1275,124 +1155,6 @@ function plainNameOf(action: ActionName): string {
     return PLAINLY[action] ?? action.replace(/_/g, ' ');
 }
 
-/**
- * The question, in the player's own terms, answerable in one word.
- */
-export function whatTheQuestionAsks(fork: WhichComesFirst): string {
-    const named = fork.acts.map(whatThisStepIsCalled);
-    const list = named.length === 2
-        ? `${named[0]} and ${named[1]}`
-        : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
-
-    return `You mean to do both. ${capitalise(list)} each take real time, and there is only `
-        + 'one of you, so one of them is going to happen first and the other is going to happen '
-        + `after - or not at all, if the first one changes things. Which comes first? ${
-            named.map(name => `"${name}"`).join(' or ')} is answer enough.`;
-}
-
-/** The same question for the engine channel, which keeps every figure. */
-export function whatTheQuestionAsksStructurally(fork: WhichComesFirst): string {
-    return 'The order of these acts was not resolved. This sentence read as '
-        + `${fork.acts.length}: `
-        + fork.acts
-            .map(step => `${step.action.action}${step.action.target ? `(${step.action.target})` : '()'}`)
-            .join(', ')
-        + '. None of them ran and nothing was spent. The choice is held for one turn and then '
-        + 'lapses; any other sentence next turn is an ordinary turn.';
-}
-
-function capitalise(text: string): string {
-    return text.length === 0 ? text : text[0]!.toUpperCase() + text.slice(1);
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// WHAT THE PLAYER SAYS BACK
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Whether a fork still belongs to the cultivator and run in front of us.
- */
-export function theQuestionStillStands(
-    fork: WhichComesFirst | null,
-    runId: string,
-    cultivatorId: string
-): fork is WhichComesFirst {
-    return fork !== null
-        && fork.runId === runId
-        && fork.cultivatorId === cultivatorId
-        && fork.acts.length >= 2;
-}
-
-/**
- * Which of the two the player picked, or null if they said something else.
- */
-export function whichOneTheyChose(
-    answer: string,
-    fork: WhichComesFirst
-): PlanStep | null {
-    const said = answer.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
-    if (said.length === 0) return null;
-    // A long sentence is a new turn, not an answer to a question that could be
-    // answered in one word. Twelve words is generous for "the second one".
-    if (said.split(' ').length > 12) return null;
-
-    const byOrdinal = ordinalIn(said);
-    if (byOrdinal !== null && byOrdinal < fork.acts.length) return fork.acts[byOrdinal]!;
-
-    const words = new Set(said.split(' ').filter(word => !NOISE.has(word)));
-    if (words.size === 0) return null;
-
-    const hits = fork.acts.filter(step => {
-        const own = distinctiveWordsOf(step, fork.acts);
-        for (const word of words) if (own.has(word)) return true;
-        return false;
-    });
-
-    return hits.length === 1 ? hits[0]! : null;
-}
-
-/** "first", "the second one", "2". Zero-based, or null. */
-function ordinalIn(said: string): number | null {
-    if (/^(?:the )?(?:1|first|former|one)(?: one)?$/.test(said)) return 0;
-    if (/^(?:the )?(?:2|second|latter|two)(?: one)?$/.test(said)) return 1;
-    if (/^(?:the )?(?:3|third|three)(?: one)?$/.test(said)) return 2;
-    return null;
-}
-
-/**
- * Words that pick this act out from the others in the fork.
- */
-function distinctiveWordsOf(step: PlanStep, all: readonly PlanStep[]): Set<string> {
-    const mine = wordsOf(step);
-    for (const other of all) {
-        if (other === step) continue;
-        for (const word of wordsOf(other)) mine.delete(word);
-    }
-    // The verb itself is always available as an answer even when two acts share
-    // it - in which case it matches both, and `whichOneTheyChose` returns null,
-    // which is correct: it did not choose.
-    mine.add(step.action.action);
-    return mine;
-}
-
-function wordsOf(step: PlanStep): Set<string> {
-    const text = [
-        whatThisStepIsCalled(step),
-        step.action.action,
-        step.action.target ?? '',
-        step.action.intent ?? '',
-        step.action.topic ?? ''
-    ].join(' ').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ');
-    return new Set(text.split(/\s+/).filter(word => word.length > 1 && !NOISE.has(word)));
-}
-
-/** Words that appear in everything and therefore choose nothing. */
-const NOISE: ReadonlySet<string> = new Set([
-    'i', 'the', 'a', 'an', 'to', 'of', 'and', 'or', 'my', 'me', 'do', 'go',
-    'it', 'is', 'be', 'for', 'with', 'that', 'this', 'then', 'one', 'ill',
-    'lets', 'let', 'us', 'we', 'want', 'try', 'first', 'please', 'yes', 'ok'
-]);
-
 // ─────────────────────────────────────────────────────────────────────────
 // FOLDING SEVERAL CALLS INTO ONE TURN
 // ─────────────────────────────────────────────────────────────────────────
@@ -1442,7 +1204,7 @@ export type HowItWent = 'ran' | 'landed' | 'did_not_come_off';
 /** Rows this module writes about the sequence, which are not the engine speaking. */
 const THE_EXECUTORS_OWN_ROWS: ReadonlySet<string> = new Set([
     'engine.step', 'engine.planStopped', 'engine.stillToCome',
-    'engine.stepNotRun', 'engine.whichComesFirst'
+    'engine.stepNotRun'
 ]);
 
 export function howTheStepWent(
@@ -1656,18 +1418,6 @@ export function theRowThatOpensAStep(
             + `${step.action.target ? `(${step.action.target})` : '()'}`
             + `, ${free}.`
             + (step.said ? ` Read out of: "${step.said}".` : ''),
-        ok: true
-    };
-}
-
-/**
- * The row that says the turn asked instead of choosing.
- */
-export function theRowThatAsksWhichFirst(fork: WhichComesFirst): ToolCallRecordish {
-    return {
-        name: 'engine.whichComesFirst',
-        action: 'ask',
-        summary: whatTheQuestionAsksStructurally(fork),
         ok: true
     };
 }

@@ -8,8 +8,7 @@
  * The law is unit-tested next door. This file asserts the things only a real
  * run can say - that several engine calls actually happen in one turn, in the
  * order the player said them, against the world each previous step left; that
- * unresolved fallback ordering produces a question and spends nothing; and that the answer to
- * that question runs the act the player picked.
+ * the fallback's supplied order runs too, with no question that holds the acts.
  *
  * `worldEnabled: true` throughout, because `tests/AGENTS.md#engine-only-and-played-tests` is explicit that hand-
  * playing with the world off is playing a configuration where every guard that
@@ -25,7 +24,6 @@ import { makeGameInWorld, ScriptedProvider } from './harness.js';
 import { ProviderNarrator } from '../../src/web/narrator.js';
 import type { LLMProvider } from '../../src/agent/provider/types.js';
 import { whatThisTurnMayRun } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
-import { theSentenceSaysItsOwnOrder } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 import { stepsInTheResponse } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 import { peopleInThisPlace } from '../../src/web/hearsay.js';
 import { thePlayerIsSureItIsThem } from '../../src/web/the-narrator-plays-the-world.js';
@@ -36,24 +34,6 @@ import { FALSE_IMMORTAL_ORDINAL, maxHpForOrdinal } from '../../src/engine/cultiv
 /** A provider whose phase-1 answers are the plans below, one per turn. */
 function planning(plans: string[]): LLMProvider {
     return new ScriptedProvider({ plans, narrations: ['The moment passes.'] });
-}
-
-/**
- * A game whose PLAN comes from the table and whose NARRATION comes from a
- * model, which is what the fork's own tests need: the question is the
- * deterministic tier's, and the thing it has to survive is a narrator.
- *
- * The plan text is deliberately not a plan. `ProviderNarrator` rejects it and
- * falls back to reading the sentence itself, so `source` is `fallback` and the
- * order is nobody's decision - while `narrate` still goes to the provider.
- */
-async function askedRatherThanReasoned(narrations: string[], seed = 'plan-seed') {
-    const provider = new ScriptedProvider({ plans: ['not a plan at all'], narrations });
-    return await makeGameInWorld({
-        worldSeed: 'plan-world',
-        seed,
-        narrator: new ProviderNarrator(provider, { model: 'test-model', timeoutMs: 5000 })
-    });
 }
 
 async function playing(plans: string[], seed = 'plan-seed') {
@@ -195,93 +175,6 @@ describe('whose order it is', () => {
         expect(turn.toolCalls.filter(row => row.name === 'engine.step').map(row => row.action)).toEqual(['wait', 'wait']);
         expect(game.state().run.elapsedDays - before).toBeCloseTo(3);
         expect(turn.toolCalls.some(row => row.name === 'engine.stillToCome')).toBe(false);
-    });
-});
-
-
-describe('fallback unresolved ordering', () => {
-    it('two costly acts ask which comes first, and spend nothing', async () => {
-        const { game } = await askedRatherThanReasoned(['(scripted)']);
-        await game.newRun('Probe');
-        const before = game.state().run.elapsedDays;
-
-        const turn = await game.act('I sit for a year and take work for a season');
-
-        // Nothing was spent. This is the whole point: the question costs the
-        // player a moment and not a season.
-        expect(game.state().run.elapsedDays).toBe(before);
-
-        const asked = turn.toolCalls.find(row => row.name === 'engine.whichComesFirst');
-        expect(asked).toBeDefined();
-        expect(asked!.ok).toBe(true);
-        expect(turn.narration).toContain('Which comes first?');
-        expect(turn.narration).toContain('sit for a year');
-        expect(turn.narration).toContain('take work for a season');
-    });
-
-    /**
-     * MEASURED AGAINST A LIVE MODEL, AND IT IGNORED THE QUESTION.
-     *
-     * Handed a turn whose only fact was that it was asking, ollama/gemma4:26b
-     * wrote *"You reach for Cao Antao's purse and press it into Shen Liefeng's
-     * hand. Then you walk away."* - three acts, none of which happened, on a
-     * turn that spent nothing. A question the player never sees is worse than
-     * no question, because they believe the turn ran.
-     *
-     * `required` is the channel that survives a model, and a question about how
-     * the next years of somebody's life are spent is exactly what it is for.
-     */
-    it('and the question survives a narrator that writes something else entirely', async () => {
-        const { game } = await askedRatherThanReasoned([
-            'You settle in for the year, and afterwards you take the work.'
-        ]);
-        await game.newRun('Probe');
-
-        const turn = await game.act('I sit for a year and take work for a season');
-        expect(turn.narration).toContain('Which comes first?');
-        expect(game.state().run.elapsedDays).toBeCloseTo(1 / 3);
-    });
-
-    it('the free read before the question still runs, so the question is informed', async () => {
-        const { game } = await askedRatherThanReasoned(['(scripted)']);
-        await game.newRun('Probe');
-        const turn = await game.act('look about, sit a year, take work');
-
-        expect(turn.toolCalls.filter(row => row.name === 'engine.step').map(r => r.action))
-            .toEqual(['look']);
-    });
-
-    it('the question is answered in one word, and the chosen act then runs', async () => {
-        // The fork is the deterministic tier's, so the question is raised from
-        // there. Phase 1 must not be reached on the ANSWERING turn either, and
-        // is not: the provider's plan text is never a plan, so a turn that
-        // reached it would read the word "work" as a verb and spend a season.
-        const { game } = await askedRatherThanReasoned(['(scripted)']);
-        await game.newRun('Probe');
-        await game.act('I sit for a year and take work for a season');
-
-        const before = game.state().run.elapsedDays;
-        const answer = await game.act('work');
-
-        const routing = answer.toolCalls.find(row => row.name === 'narrator.plan')!;
-        expect(routing.action).toBe('work');
-        expect(routing.summary).toContain('the player chose this one');
-        expect(game.state().run.elapsedDays).toBeGreaterThan(before);
-    });
-
-    it('IS NOT A MODAL JAIL - another sentence next turn is an ordinary turn', async () => {
-        const { game } = await playing([
-            STEPS(
-                { action: 'cultivate', days: 365, said: 'sit for a year' },
-                { action: 'work', days: 90, said: 'take work' }
-            ),
-            JSON.stringify({ action: 'status' })
-        ]);
-        await game.newRun('Probe');
-        await game.act('I sit for a year and take work');
-
-        const next = await game.act('what am I');
-        expect(next.toolCalls.find(row => row.name === 'narrator.plan')!.action).toBe('status');
     });
 });
 
@@ -602,30 +495,6 @@ describe('a step reads its own clause', () => {
     });
 });
 
-describe('a clause that says why says when', () => {
-    // Played at 1 of 40 health and 2 spirit stones, with the game's own refusal
-    // saying "Earning is the move before either of them". The sentence came
-    // back as work(water), buy(physician's visit) and a question about which
-    // came first - a question with nothing in it to answer, because you cannot
-    // buy a thing with money you are still working to earn.
-    it('reads a purpose clause as the order it is', () => {
-        expect(theSentenceSaysItsOwnOrder(
-            'I keep my head down and work the water for a year until I have enough for the physician'
-        )).toBe(true);
-        expect(theSentenceSaysItsOwnOrder('I take work so I can pay the physician')).toBe(true);
-        expect(theSentenceSaysItsOwnOrder('I sell the manual to afford a room')).toBe(true);
-        expect(theSentenceSaysItsOwnOrder('I gather herbs until I have enough to buy passage')).toBe(true);
-    });
-
-    // The other half of the rule, and the reason bare `to` is not a purpose
-    // word: an infinitive of motion is not a plan with two halves.
-    it('leaves a sentence with no order between its halves alone', () => {
-        expect(theSentenceSaysItsOwnOrder('I go to Cloud Gate')).toBe(false);
-        expect(theSentenceSaysItsOwnOrder('I sit for a year and take work for a season')).toBe(false);
-        expect(theSentenceSaysItsOwnOrder('I talk to the elder')).toBe(false);
-    });
-});
-
 /**
  * THE OWNER'S ACCEPTANCE SENTENCE, END TO END.
  *
@@ -675,10 +544,7 @@ describe("the owner's acceptance sentence", () => {
             { action: { action: 'give' as const, target: 'Shen Liefeng', topic: 'it' } },
             { action: { action: 'move' as const, target: 'away' } }
         ];
-        // No sequencing word anywhere, and nothing to ask: the pressing cannot
-        // precede the taking, because "it" is the purse.
-        expect(whatThisTurnMayRun(chained, SAID).askAbout).toHaveLength(0);
-        expect(whatThisTurnMayRun(chained, SAID).theOrderWasGiven).toBe(true);
+        expect(whatThisTurnMayRun(chained).toRun).toEqual(chained);
     });
 
     /**

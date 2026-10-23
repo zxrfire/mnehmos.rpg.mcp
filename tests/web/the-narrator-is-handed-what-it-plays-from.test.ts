@@ -9,7 +9,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { composeNarrationUser, theSeasonOn, whereTheyStandNow } from '../../src/web/prompt';
-import { whatTheQuestionAsks } from '../../src/web/a-sentence-can-be-more-than-one-call';
 import { ProviderNarrator } from '../../src/web/narrator';
 import { makeGameInWorld, ScriptedProvider } from './harness';
 
@@ -221,30 +220,10 @@ describe('the way a place does things arrives when it is touched, and not as new
 });
 
 /**
- * Played: the engine ran neither of two acts and asked which came first, and the narration read
- * out a task from the board anyway - a different invented task in each of three runs.
+ * A genuinely refused span supplies no time for the narrator to invent.
  */
-describe('a turn that ran nothing is written stopping at the start', () => {
-    const question = whatTheQuestionAsks({
-        runId: 'r', cultivatorId: 'c', raisedOnTurn: 1,
-        acts: [
-            { action: { action: 'move', target: 'board' }, said: 'I go over to the board' },
-            { action: { action: 'sect' }, said: 'read the task posted for someone of my standing' }
-        ]
-    } as never);
-    const facts = (required: string[]) => ({ headline: 'x', lines: ['Both take time.'], structure: [], prose: '', required });
+describe('a refused span is written stopping at the start', () => {
     const lastLine = (message: string) => message.slice(message.lastIndexOf('NOW WRITE THE TURN'));
-
-    it('says nothing ran when the engine asks which comes first', () => {
-        expect(lastLine(composeNarrationUser(facts([question]), { place: 'Plum Village', ambient: 'normal' })))
-            .toContain('NOTHING RAN THIS TURN');
-    });
-
-    it('says nothing of the kind on an ordinary turn', () => {
-        expect(composeNarrationUser(facts([]), { place: 'Plum Village', ambient: 'normal' }))
-            .not.toContain('NOTHING RAN THIS TURN');
-    });
-
     /**
      * Played: "I cultivate until the day of the intake" was ruled no time passed, and the narration
      * sat the player until their legs went numb.

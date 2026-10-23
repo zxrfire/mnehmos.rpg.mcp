@@ -1186,7 +1186,7 @@ export function composeNarrationUser(
         '',
         ...theRegisterBlock(scene.realmOrdinal, aSittingAndNothingElse(told.acts)),
         theTurnToWrite(scene, addressing, alone, somebodyToPlay, arrived, howTheAddressedStand(scene, addressing),
-            whatTheAddressedDidForYou(scene, addressing), theTurnAsksWhichComesFirst(facts), told.noTimePassed === true,
+            whatTheAddressedDidForYou(scene, addressing), told.noTimePassed === true,
             aLifeTurnsOnThisTurn(scene),
             whoStaysOnThePage(facts, scene, addressing, told.acts) !== null,
             somebodyIsNewHere(scene, addressing, told.alreadyShown, whoStaysOnThePage(facts, scene, addressing, told.acts)),
@@ -1372,18 +1372,6 @@ function whatAFamilyTieIs(statement: string | null): string | null {
 }
 
 /**
- * Whether the engine ran nothing and is asking the player which of their acts comes first.
- *
- * Played: "I go over to the board and read the task posted for someone of my standing" read as
- * two acts, ran neither, and asked which came first - and the narration read the task anyway, a
- * different invented one in each of three runs (spirit-grass, a blocked culvert, a sealed letter).
- * Said on the last line, the same turn stopped at the step toward the board in three of three.
- */
-function theTurnAsksWhichComesFirst(facts: EngineFacts): boolean {
-    return (facts.required ?? []).some(line => /\bWhich comes first\?/.test(line));
-}
-
-/**
  * A PERSON IS SEEN BEFORE THEY ARE NAMED. The owner, on "Mo Minbo is the first to speak": "you
  * don't start with their names... think xianxia... you start with a description, like a man in
  * xyz (that falls out of their character sheet)... he introduces himself as abc". Replayed on the
@@ -1506,7 +1494,6 @@ function theTurnToWrite(
     arrived: boolean,
     addressedStands: string | null = null,
     addressedDid: string | null = null,
-    nothingRan = false,
     noTimePassed = false,
     aLifeTurns = false,
     oneToOne = false,
@@ -1613,15 +1600,10 @@ function theTurnToWrite(
             ? ' A life turns on this turn, so the feeling goes all the way - grief ugly, triumph loud, '
                 + 'and the heavens unmoved.'
             : '')
-        + (nothingRan
-            ? ' NOTHING RAN THIS TURN: the player is asked which of their acts comes first. Write them '
-                + 'at the point of starting - a step toward it, a hand, a look - and stop there. Nothing '
-                + 'is read, found, bought, learned or answered.'
-            : '')
         // Played: "I cultivate until the day of the intake" was ruled no time passed, and the
         // narration sat the player "until your legs go numb" in three runs of three. Said here,
         // the long sitting went in two runs of three.
-        + (noTimePassed && !nothingRan
+        + (noTimePassed
             ? ' NO TIME PASSED THIS TURN: whatever the player meant to spend time on did not begin. '
                 + 'Write them at the point of starting - a first step, settling, a first breath - and stop there.'
             : '')

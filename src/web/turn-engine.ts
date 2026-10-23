@@ -253,7 +253,7 @@ import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { routineOf, routineTime } from '../engine/world/npc-routines.js';
 import { invitationsDue, waitForHour, passHours } from './routine-invitations.js';
-import { isDayLongAct, lesserActionDays, LESSER_ACTION_DAYS } from './lesser-action-costs.js';
+import { lesserActionDays, LESSER_ACTION_DAYS } from './lesser-action-costs.js';
 import { perceivedDaylight } from './perceived-daylight.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import { makeObject, howItIsHad, transferPossession, isRuined, isTracked, ruin, type ObjectRecord } from '../engine/world/possessions.js';
@@ -1115,7 +1115,6 @@ import {
     foldTheCallsIntoOneTurn,
     sayingWhereItStopped,
     stepsOfThePlan,
-    theQuestionStillStands,
     carryingTheReferentForward,
     howTheStepWent,
     whatTheChoiceFoundNobody,
@@ -1131,23 +1130,18 @@ import {
     theRowForADroppedClause,
     theseWereThePlayersOwnWords,
     theRowForAStatedReason,
-    theRowThatAsksWhichFirst,
     theRowForAResolvedPronoun,
     theRowThatOpensAStep,
     theThingThisStepNamed,
     theRowThatSaysWhereItStopped,
-    whatTheQuestionAsks,
-    whatTheQuestionAsksStructurally,
     whatThisTurnMayRun,
-    whichOneTheyChose,
     type ASelection,
     type PlanStep,
-    type PlanWithSteps,
-    type WhichComesFirst
+    type PlanWithSteps
 } from './a-sentence-can-be-more-than-one-call.js';
 // One turn of memory, so "keep at it for ten years" and "I will take the
 // cheaper one" have something to refer to. The record is held on this service
-// beside `crossroads` and `whichComesFirst`; what it means is that module's.
+// beside `crossroads`; what it means is that module's.
 import {
     askingForTheRestOfIt,
     askingWhichOfWhatWasNamed,
@@ -2170,10 +2164,6 @@ export class GameService {
      */
     fightJustEnded: { runId: string; cultivatorId: string; onTurn: number } | null = null;
     /**
-     * Two costly acts in one sentence, with the choice still owed.
-     */
-    private whichComesFirst: WhichComesFirst | null = null;
-    /**
      * What the turn before this one did, and what it told the player.
      */
     private lastTurn: WhatTheLastTurnDid | null = null;
@@ -2839,13 +2829,6 @@ export class GameService {
                     ? 'go' as const
                     : null;
 
-        // AND SO IS "WHICH OF THOSE TWO FIRST"
-        const asked = theQuestionStillStands(this.whichComesFirst, run.id, cultivator.id)
-            ? this.whichComesFirst
-            : null;
-        this.whichComesFirst = null;
-        const picked = asked === null ? null : whichOneTheyChose(trimmed, asked);
-
         // AND THE TURN BEFORE THIS ONE, WHICH IS ALL THERE IS
         const before = theLastTurnStillStands(
             this.lastTurn, run.id, cultivator.id, run.turn
@@ -2862,7 +2845,7 @@ export class GameService {
         this.namedOutOfThisTurn = null;
 
         // "KEEP AT IT" IS A VERB THE PLAYER ALREADY SAID
-        const carriesOn = fightAnswer === null && picked === null
+        const carriesOn = fightAnswer === null
             && forced === null && answered === null && heldBack === null
             ? theSentenceCarriesOn(trimmed)
             : null;
@@ -2874,7 +2857,7 @@ export class GameService {
         // No model is asked either, for the reason "keep at it" is not: what
         // they mean is entirely in the record, which no reader downstream can
         // see, and there is no second reading of a bare "why" to fall back on.
-        const followUp = fightAnswer === null && picked === null
+        const followUp = fightAnswer === null
             && forced === null && answered === null && heldBack === null && carriesOn === null
             ? theSentenceAsksAboutTheLastAnswer(trimmed)
             : null;
@@ -2925,14 +2908,6 @@ export class GameService {
                 },
                 source: 'fallback',
                 note: `the sentence held a hand back: ${heldBack}.`
-            }
-            : picked !== null
-            ? {
-                action: picked.action,
-                steps: [picked],
-                source: 'fallback',
-                note: 'two costly acts were read out of the previous sentence and the player '
-                    + 'chose this one. No model read this line; the plan was already validated.'
             }
             : forced !== null
             ? {
@@ -4094,33 +4069,8 @@ export class GameService {
             return only;
         }
 
-        // WHOSE ORDER IT IS.
-        //
-        // The design owner, settling it: *if the order is wrong, we don't try
-        // to determine it, we just act confused. the llm should just try it in
-        // the order and give back whatever error the world state gave.*
-        //
-        // So a reader that can reason gets its order run, and the engine does
-        // not second-guess it or ask a model to predict whether it will work.
-        // Running "I break through and then cultivate for a year" in the order
-        // given answers with the barrier's own refusal - *not enough has
-        // accumulated: 0 of 101443 qi-units* - which is a better sentence than
-        // anything a reader could have said about the order in advance, and it
-        // is TRUE rather than predicted.
-        //
-        // A pattern table cannot reason about order at all, and the design
-        // owner ruled on that half too: *asking is okay cuz an embedding can't
-        // tell, that's too hard and would make it too brittle.* So it asks.
-        const budget = whatThisTurnMayRun(steps, rawInput, plan.source === 'model', action => {
-            if (action.action === 'move' || action.action === 'site') {
-                const named = (action.target ?? '').trim().toLowerCase().replace(/^the\s+/, '');
-                if (namesALocalArea(this, cultivator, action.target)
-                    || theDoorsOffThisYard(this, cultivator).some(door => door.toLowerCase().replace(/^the\s+/, '') === named)) return false;
-                const days = action.action === 'move' ? this.daysOnTheRoadTo(cultivator, action.target ?? '') : null;
-                if (days !== null && days < 1) return false;
-            }
-            return isDayLongAct(action);
-        });
+        // Run each requested act against the state left by its predecessor.
+        const budget = whatThisTurnMayRun(steps);
         const done: Execution[] = [];
         let stoppedOn: PlanStep | null = null;
         /** Whether the step that stopped the plan had LANDED. See `howTheStepWent`. */
@@ -4236,29 +4186,6 @@ export class GameService {
             }
         }
 
-        // TWO COSTLY ACTS: ASK, AND SAY IT EXACTLY ONCE
-        const fork: WhichComesFirst | null = budget.askAbout.length > 0
-            ? {
-                runId: run.id,
-                cultivatorId: cultivator.id,
-                raisedOnTurn: this.currentRun().run.turn,
-                acts: budget.askAbout
-            }
-            : null;
-
-        let alreadySaid = false;
-        if (fork !== null) {
-            this.whichComesFirst = fork;
-            if (done.length === 0) {
-                done.push(this.freeAction(run, plan.action.action, factsForRefusal(
-                    'Both of those take time.',
-                    whatTheQuestionAsks(fork),
-                    whatTheQuestionAsksStructurally(fork)
-                )));
-                alreadySaid = true;
-            }
-        }
-
         const folded: Execution = foldTheCallsIntoOneTurn(done);
 
         if (stoppedOn !== null && notReached.length > 0) {
@@ -4278,25 +4205,6 @@ export class GameService {
                     ? theRowForAPlanTheWorldCutOff(stoppedOn, notReached, cutShortBy)
                     : theRowThatSaysWhereItStopped(stoppedOn, notReached, stoppedHavingLanded)
             );
-        }
-
-        if (fork !== null) {
-            if (alreadySaid) {
-                // Already the whole of `prose`, so saying it again is the
-                // double-printed ruling a played turn caught. What it still needs
-                // is the `required` channel: measured, a model handed nothing but
-                // this question wrote "You reach for Cao Antao's purse and press it
-                // into Shen Liefeng's hand. Then you walk away." - three acts, none
-                // of which happened, off a turn whose only fact was that it was
-                // ASKING. `withRequiredLines` appends what the prose left out, at
-                // both front doors, so the question reaches the player whatever the
-                // narrator felt like writing.
-                (folded.facts.required ??= []).push(whatTheQuestionAsks(fork));
-            } else {
-                sayThisWhateverTheNarratorDoes(folded.facts, whatTheQuestionAsks(fork));
-                folded.facts.structure.push(whatTheQuestionAsksStructurally(fork));
-            }
-            folded.calls.push(theRowThatAsksWhichFirst(fork));
         }
 
         // One clause the reader read two ways. The losing reading is shown
