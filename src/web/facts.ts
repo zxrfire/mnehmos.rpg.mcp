@@ -1465,6 +1465,8 @@ export interface SomebodyWhoReplied extends SomebodyInTheSquare {
 }
 
 export interface SomebodyInTheSquare {
+    /** The speaker's actual directed ties, distinct from what the player heard. */
+    towardPlayer?: string | null;
     /**
      * Engine-only identity of this card's person. It is never rendered, but keeps a
      * reply that was resolved to somebody from being re-matched by their name after

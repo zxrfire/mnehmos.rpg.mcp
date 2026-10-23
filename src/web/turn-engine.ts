@@ -1183,7 +1183,7 @@ import {
     composeStateSummary,
     LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
 } from './prompt.js';
-import { howTheyLeftTheChair, thePlayerIsSureItIsThem, whatSomebodyHoldsPrivately, whatTheyHaveToReachFor, whatTheyRememberOnTheirCard, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
+import { howTheyLeftTheChair, thePlayerIsSureItIsThem, whatSomebodyHoldsPrivately, whatTheyHoldTowardThePlayer, whatTheyHaveToReachFor, whatTheyRememberOnTheirCard, whoTheActWasPutTo } from './the-narrator-plays-the-world.js';
 import { settleWitnessesOnContact } from '../engine/world/witness-reactions.js';
 import { settleNativeCarriageTallyIntentions } from '../engine/world/the-next-public-carriage-is-an-ordinary-trip.js';
 import { settlePracticeOnContact } from '../engine/world/the-world-changing-on-its-own.js';
@@ -21310,6 +21310,7 @@ ${fit.line}`;
                     .filter(id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id))
                     .map(nameOf);
                 named.push({
+                    towardPlayer: row && this.atHand ? whatTheyHoldTowardThePlayer(this.atHand, row, cultivator) : null,
                     id: person.id,
                     name: person.name,
                     ordinal: person.realmOrdinal,

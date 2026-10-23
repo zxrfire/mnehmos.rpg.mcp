@@ -1,5 +1,11 @@
 <!-- tier: 3 -->
 
+Personal recognition derives from directed world ties, including the player's
+row, without granting common-land knowledge. ADMIN dispositions arrange both
+ends through the ordinary tie writer; only close ties set mutual warmth.
+Speaker cards read their real stance and sworn lineage independently of old
+awareness prose. A cultivation gap supplies no personal attitude.
+
 ADMIN spawn reading includes prose after explicit pairs. Numeric pairs retain
 their requested value without consuming the following description. The Zod
 schema supplies the realm ladder, trait meanings and the handler's age default;

@@ -24,6 +24,7 @@ import {
     stageOfRecord,
     stageRank,
     stageTag,
+    stageCeilingFor,
     stanceForStage,
     type KnowingStage
 } from '../engine/social/discovery.js';
@@ -255,40 +256,11 @@ export class KnowledgeGate {
     }
 
     /**
-     * What the world itself says about a holder it holds a row for.
-     *
-     * `unaware` with no world, with no world loaded, for every holder the world
-     * does not have, AND FOR THE PLAYER - who is now a holder the world does
-     * have, and must not be one this read answers about.
-     *
-     * `newRun` writes the player's roster row before the household is bound,
-     * because the kin ties need somewhere to land. The row is correct and is
-     * wanted. What came with it was this read treating the player as one of
-     * the world's own people: `whatOneOfTheWorldsOwnPeopleKnows` says in its
-     * own name what it is for, and it hands somebody standing in a province
-     * the things a person of that province would obviously know.
-     *
-     * A PLAYER HAS TO LEARN. Measured the hour the row moved: a run opened
-     * knowing the house whose ground it was standing on at `placed`, where the
-     * gate expects `unaware` until they have looked - which is the whole of
-     * what `being-on-their-ground` is about, and it is the difference between
-     * a world that tells you things and a world you find things out in.
-     *
-     * The predicate is the one the simulation already uses to know whose
-     * decisions are whose: if a row is not the world's to MOVE, it is not the
-     * world's to KNOW for either. Built once per world handle otherwise: the
-     * reading walks the ledger, and a long-lived world's ledger is long.
-     *
-     * THAT IS WHY THE PLAYER'S KIN ARE NOT IN THE KNOWLEDGE TABLE, and anybody
-     * who comes looking for the missing rows should stop here. `ofAPerson`
-     * returns the top stage for anybody the holder holds a tie to, so once a
-     * household is bound onto the player's row the tie IS the awareness -
-     * `learnIfNew` finds them already known and writes nothing. Measured: one
-     * row per kin before the row was written first, and ZERO across twenty
-     * lives after. Nothing is missing. The opening reads the faces it was
-     * handed rather than the table, `isAwareOf` and `canPointAt` answer true
-     * off the tie, and a fact derived from another fact is the shape AGENTS.md
-     * asks for - it cannot drift and no call site can forget it.
+     * Personal ties supply recognition for every holder, including the player.
+     * Other world readings belong only to the world's own people: mirroring a
+     * player once granted unvisited houses and ground without an acquisition.
+     * Sparse personal ties do not grant that common-land knowledge. They are
+     * read directly, without copying another awareness record into SQLite.
      */
     private whatTheWorldSays(
         holderId: string, kind: KnownEntityKind, id: string
@@ -297,6 +269,9 @@ export class KnowledgeGate {
         const world = this.worldAtHand();
         if (!world) return 'unaware';
         const holder = world.npcs.find(npc => npc.id === holderId);
+        // Personal recognition applies to the player too; it grants no local lore.
+        if (kind === 'cultivator' && holder?.relationships.some(tie =>
+            theOneIdAPersonIsKnownBy(tie.targetId) === theOneIdAPersonIsKnownBy(id))) return stageCeilingFor('witnessed');
         if (holder && !isTheWorldsToMove(holder)) return 'unaware';
         if (world !== this.theWorldItReads || this.readingTheWorld === null) {
             this.readingTheWorld = whatOneOfTheWorldsOwnPeopleKnows(world);
@@ -333,11 +308,8 @@ export class KnowledgeGate {
     /**
      * Everything this holder has heard of, optionally of one kind.
      *
-     * ROWS ONLY, DELIBERATELY. The world reading answers about one named thing;
-     * enumerating it would mean walking several hundred people, several hundred
-     * houses and every place in the world per call, which is the combinatorial
-     * walk the absent table would have been. Every caller of this is asking
-     * about the player or an operator's character, who have rows.
+     * Stored claims and the holder's sparse personal ties. Enumerating common
+     * land knowledge would grant the player unvisited places and house names.
      */
     awareness(holderId: string, kind?: KnownEntityKind): AwarenessRow[] {
         const rows = this.listStmt.all(holderId) as RawRow[];
@@ -355,6 +327,21 @@ export class KnowledgeGate {
             // put them where they stand is the one that speaks for them.
             if (!held || stageRank(entry.stage) > stageRank(held.stage)) {
                 best.set(row.claim_key, entry);
+            }
+        }
+        const world = this.worldAtHand?.();
+        const holder = world?.npcs.find(person => person.id === holderId);
+        if (holder && (!kind || kind === 'cultivator')) {
+            for (const tie of holder.relationships) {
+                const person = world!.npcs.find(person => person.id === tie.targetId);
+                if (!person) continue;
+                const key = existenceClaimKey('cultivator', person.id);
+                const stage = stageCeilingFor('witnessed');
+                if (best.has(key) && stageRank(best.get(key)!.stage) >= stageRank(stage)) continue;
+                best.set(key, { kind: 'cultivator', id: person.id, name: person.name,
+                    statement: `${person.name} is ${tie.kind.replaceAll('_', ' ')} of ${holder.name}.`,
+                    stance: 'knows', sourceKind: 'witnessed', sourceNote: '',
+                    acquiredOnDay: tie.sinceDay, stage });
             }
         }
         return [...best.values()];

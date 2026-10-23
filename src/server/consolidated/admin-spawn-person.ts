@@ -10,6 +10,7 @@ import { DAYS_PER_YEAR } from '../../engine/cultivation/cultivation.js';
 import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
 import { forStream } from '../../engine/cultivation/rng.js';
 import { createNpc, upsertRelationship } from '../../engine/world/npc-state.js';
+import { andTheOtherEnd } from '../../engine/world/a-tie-has-two-ends.js';
 import { holdsASlaveSeal } from '../../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
 import { releasePersonSeal, rememberForcedService } from '../../engine/world/person-seals.js';
 import { writeObligations } from '../../storage/repos/obligation.repo.js';
@@ -149,7 +150,7 @@ export async function spawnPersonFromSpec(
             }
         }
         world.npcs.push(npc);
-        if (spec.disposition === 'close' || spec.disposition === 'sworn_sibling') {
+        if (spec.disposition) {
             let counterpart = world.npcs.find(person => person.id === toward.id);
             if (toward.id === player.id) {
                 const member = repos.sects.getMembership(player.id);
@@ -157,12 +158,12 @@ export async function spawnPersonFromSpec(
                     rankIndex: member?.rankIndex ?? -1, contribution: member?.contribution ?? 0 }, day) ?? undefined;
             }
             if (counterpart) {
-                const at = world.npcs.findIndex(person => person.id === counterpart!.id);
-                world.npcs[at] = upsertRelationship(counterpart, { targetId: npc.id, targetName: npc.name,
-                    kind: 'ally', standing: 1, note: 'ADMIN arranged an existing close tie.' }, day);
+                const close = spec.disposition === 'close' || spec.disposition === 'sworn_sibling';
+                andTheOtherEnd(world.npcs, npc, npc.relationships.find(tie => tie.targetId === toward.id)!, day,
+                    close ? { kind: 'ally', standing: 1, note: 'ADMIN arranged an existing close tie.' } : {});
                 if (spec.disposition === 'sworn_sibling') {
                     const before = world.obligations.length;
-                    recordSwornBrotherhood(world, npc, world.npcs[at], day);
+                    recordSwornBrotherhood(world, npc, world.npcs.find(person => person.id === toward.id)!, day);
                     if (toward.id === player.id) writeObligations(repos.db, world.obligations.splice(before));
                 }
             }

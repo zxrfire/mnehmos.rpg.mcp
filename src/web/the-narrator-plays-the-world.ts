@@ -18,6 +18,7 @@ import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import { getSect } from '../data/cultivation/sects.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import { swornSiblingsOf } from '../engine/world/close-people-go-together.js';
 import { readTie } from '../engine/world/reading-a-tie-against-the-roster.js';
 import type { SomethingTheyRemember } from '../engine/world/what-somebody-remembers.js';
 import type { Company, SomebodyInTheSquare, SomebodyWhoReplied } from './facts.js';
@@ -652,6 +653,17 @@ export function whatSomebodyHoldsPrivately(
     };
 }
 
+/** The speaker's bond and stance survive a realm gap or an old awareness note. */
+export function whatTheyHoldTowardThePlayer(world: WorldState, person: NpcRecord, player: { id: string; name: string }): string | null {
+    const ties = person.relationships.filter(tie => tie.targetId === player.id);
+    const sworn = swornSiblingsOf(world, person.id).has(player.id);
+    if (!ties.length && !sworn) return null;
+    const bond = sworn ? 'sworn sibling of the player' : ties.map(tie => `${tie.kind.replaceAll('_', ' ')} of the player`).join('; ');
+    const stance = ties.map(tie => tie.kind === 'enemy' ? 'hostile' : tie.standing === 1 ? 'close'
+        : tie.standing > 0 ? 'friendly' : tie.standing < 0 ? 'wary' : 'indifferent');
+    return `${bond}; ${[...new Set(stance)].join(', ')}. This person knows the player as ${player.name}. The cultivation gap does not erase this tie.`;
+}
+
 /** The kinds of tie somebody names when they need somebody behind them. */
 const WHO_THEY_WOULD_NAME = new Set(['parent', 'master', 'spouse']);
 
@@ -815,6 +827,7 @@ function aPersonsCard(
     const addressedHere = addressed === true ? ' (THE PLAYER IS SPEAKING TO THEM)'
         : addressed === 'just' ? ' (THE PLAYER SPOKE TO THEM THIS TURN; THEY MAY HAVE MOVED)' : '';
     const lines = [`- ${heading}${addressedHere}: ${who}.`];
+    if (person.towardPlayer) lines.push(`    Toward the player: ${person.towardPlayer}`);
     if (person.leftTheChair) lines.push(`    Known in their house: ${person.leftTheChair}.`);
     // Facts, and the narrator plays what follows from them. See `whatTheCardSaysOfALoss`.
     for (const line of person.whatTheyLost ?? []) lines.push(`    ${line}`);
@@ -952,7 +965,7 @@ export function howTheRoomReadsThem(company: Company, yourOrdinal: number): stri
         return '- The whole room, the crowd included, reads the player as far above anybody here: people '
             + 'give way, voices drop, and nobody who can see them jeers.';
     }
-    if (yours < lowest) return '- The whole room reads the player as the least of anybody here.';
+    if (yours < lowest) return '- The player stands below everyone here in cultivation. This says nothing about their personal ties or familiarity.';
     return null;
 }
 

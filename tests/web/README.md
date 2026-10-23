@@ -1,5 +1,10 @@
 # Played tests
 
+`an-arranged-tie-is-known-in-conversation.test.ts` plays an ADMIN sworn sibling
+and greeting through a scripted provider. The real tie, recognition and speaker
+card determine whether its scripted reply is familiar. Close, friendly and
+hostile controls also read both ends without writing extra knowledge records.
+
 `player-rulings.test.ts` separates the player rendering from the inspector and
 private narrator material. It checks ids, routine names and calibration language
 on played reads, while requiring the structural account to remain inspectable.
