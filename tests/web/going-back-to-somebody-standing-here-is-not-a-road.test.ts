@@ -26,6 +26,8 @@
  * the spawned sheet had no chosen area, so its sparse placement changed with
  * the hour. This control fixes its meeting area through ordinary standingIn
  * and requires an actual local crossing before measuring its single charge.
+ * The replay head's ADMIN can create a native world NPC rather than a SQL
+ * sheet. Read the actual added person and pin their meeting through its owner.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -34,6 +36,7 @@ import { makeGameInWorld } from './harness';
 import { worldLocationFor } from '../../src/web/entities';
 import { peopleInThisPlace } from '../../src/web/hearsay';
 import { crossToWhoeverTheyNamed } from '../../src/web/walking-across-a-place';
+import { routineTime } from '../../src/engine/world/npc-routines.js';
 
 function said(result: unknown): string {
     return String((result as { narration?: string }).narration ?? '');
@@ -49,24 +52,38 @@ describe('going back to somebody standing here', () => {
         });
         await game.newRun('Shen Wuyou');
         await game.act('I look around');
+        const beforeSpawn = new Set([...game.atHand!.npcs.map(person => person.id),
+            ...repos.cultivators.list().map(person => person.id)]);
         await game.act('ADMIN spawn_encounter ordinal=8 name=He Xuxue');
 
         const body = game.currentRun().cultivator;
         const world = game.atHand!;
         const place = worldLocationFor(world, body.location)!;
-        const person = db.prepare('SELECT id FROM cultivators WHERE name = ?').get('He Xuxue') as { id: string };
+        // ADMIN can create a native world person. The actual presence reader,
+        // rather than an assumed SQL row or requested name, owns this fixture.
+        const people = peopleInThisPlace(repos, body, world, place);
+        const person = people.people.find(person => !beforeSpawn.has(person.id));
         expect(person).toBeDefined();
-        const meetingArea = peopleInThisPlace(repos, body, world, place).whereIs.get(person.id);
+        const meetingArea = people.whereIs.get(person!.id);
         expect(meetingArea).toBeDefined();
-        repos.cultivators.standIn(person.id, meetingArea!);
-        expect(crossToWhoeverTheyNamed(game, body, 'He Xuxue', false)).not.toBeNull();
+        if (repos.cultivators.getById(person!.id)) repos.cultivators.standIn(person!.id, meetingArea!);
+        else {
+            const native = world.npcs.find(row => row.id === person!.id)!;
+            native.activity = { kind: 'talking', note: 'Holding this meeting.', withIds: [body.id],
+                sinceDay: routineTime(world), untilDay: routineTime(world) + 1, standingIn: meetingArea! };
+            game.theWorldMoved();
+        }
+        const departure = people.areas.find(area => area.id !== meetingArea && area.for === 'street')!;
+        expect(departure).toBeDefined();
+        repos.cultivators.standIn(body.id, departure.id);
+        expect(crossToWhoeverTheyNamed(game, game.currentRun().cultivator, person!.name, false)).not.toBeNull();
 
         const before = game.state().run.elapsedDays;
-        const done = await game.act('I go back to He Xuxue');
+        const done = await game.act(`I go back to ${person!.name}`);
 
         expect(said(done), said(done)).not.toMatch(/No road goes there/i);
         expect(said(done)).not.toMatch(/Unresolved destination/i);
-        expect(said(done)).toMatch(/He Xuxue/);
+        expect(said(done)).toContain(person!.name);
         expect(done.toolCalls.some(call => call.name === 'engine.approachUnfinished')).toBe(false);
         expect(game.currentRun().cultivator.standingIn).toBe(meetingArea);
         // A local crossing has one charge and no additional action charge.

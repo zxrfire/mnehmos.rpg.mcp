@@ -627,12 +627,14 @@ describe('folding several calls into one turn', () => {
         };
     }
 
-    it('keeps every word the engine said, on every channel', () => {
+    it('keeps every outcome headline and fact, on every channel', () => {
         const folded = foldTheCallsIntoOneTurn([
             call('first', 'the purse is in your hand'),
             call('second', 'he is holding it now', 'He is holding it now.')
         ]);
-        expect(folded.facts.lines).toEqual(['the purse is in your hand', 'he is holding it now']);
+        // The landed engine-line fix keeps headline-only outcomes in the
+        // narrator facts too. Losing either headline must make this red.
+        expect(folded.facts.lines).toEqual(['first', 'the purse is in your hand', 'second', 'he is holding it now']);
         expect(folded.facts.prose).toBe('first\n\nsecond');
         expect(folded.facts.structure).toHaveLength(2);
         expect(folded.facts.required).toEqual(['He is holding it now.']);
@@ -1117,7 +1119,7 @@ describe('a clause that is already the topic of a step', () => {
 
 /** Played blind: look/bills and work/board both reached the gate, and the answer was handed over twice. */
 describe('two steps that reached the same fact', () => {
-    it('say it once', () => {
+    it('says each shared headline and fact once', () => {
         const call = (lines: string[], prose: string) => ({
             facts: { headline: 'h', lines, structure: ['s'], prose },
             events: [], timeSkip: null, breakthrough: null, outcome: 'executed' as const, calls: [], hearing: null
@@ -1126,7 +1128,7 @@ describe('two steps that reached the same fact', () => {
             call(['Our board is inside.', '', 'A notice.'], 'The gate answers.'),
             call(['Our board is inside.', '', 'Another notice.'], 'The gate answers.')
         ] as never);
-        expect(folded.facts.lines).toEqual(['Our board is inside.', '', 'A notice.', '', 'Another notice.']);
+        expect(folded.facts.lines).toEqual(['h', 'Our board is inside.', '', 'A notice.', '', 'Another notice.']);
         expect(folded.facts.structure).toEqual(['s']);
         expect(folded.facts.prose).toBe('The gate answers.');
     });
