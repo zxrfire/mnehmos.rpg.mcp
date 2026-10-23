@@ -165,6 +165,10 @@ escape fails. Choosing to fight on while barely standing retains its death
 rule; newly lost HP does not rewrite a healthier earlier choice.
 
 Held-ticket purchase and actual boarding are distinct passage intents. Their
+travel-lane choices are `buy_ticket` (passage/ticket) and `board_passage`
+(passage/embark); `passage` reads the routes. A plain affirmative seat request
+at the counter is a ticket purchase, including a destination just quoted.
+The real route, fare and physical tally writer retain authority. Their
 counter phrasings are shared by both coverage walks. Personal contract intents
 are declared alongside other oaths and named in the verb glossary; accepting a
 named posted job still reaches its ordinary work handler.

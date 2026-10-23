@@ -209,8 +209,9 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         otherwise: 'status'
     },
     travel: {
-        says: 'going somewhere, on foot or otherwise',
-        intents: { walk: 'move', ride: 'ride', fold: 'fold', passage: 'passage' },
+        says: 'going somewhere, on foot or otherwise; buying a ticket holds a seat without boarding',
+        intents: { walk: 'move', ride: 'ride', fold: 'fold', passage: 'passage',
+            buy_ticket: 'passage', board_passage: 'passage' },
         otherwise: 'move'
     },
     cultivate: {

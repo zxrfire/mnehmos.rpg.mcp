@@ -440,8 +440,12 @@ Rules:
   destination or a house posture. Keep the following requested question or blow as its
   next step. A familiar honorific plus name is still that person, not a house rank.
   Do not drop "ask what she is selling" or a punch because the sentence begins with a walk.
-- A SEAT ON A PUBLIC SERVICE IS A TICKET, not its vehicle. Use passage with intent: ticket,
-  target: the requested destination, topic: the service. Buying it does not board it or
+- A SEAT ON A PUBLIC SERVICE IS A TICKET, not its vehicle. Choose travel/buy_ticket
+  (expands to passage/ticket), target: the requested destination, topic: the service.
+  An affirmative request at the counter, such as "one seat to the port please",
+  buys that seat even without the word "buy"; use the actual fare just listed.
+  Asking which routes run or what a seat costs reads the board with travel/passage.
+  Boarding a held seat is travel/board_passage. Buying it does not board it or
   travel there; do not invent a separate move to the destination. Preserve relative
   destinations such as "closest city" for the actual route board to resolve. Buying a
   carriage of your own remains buy. If no destination was supplied, show the actual board.
