@@ -329,6 +329,7 @@ export async function aSeatOnAShipOrACarriage(
                 ...(one.service === 'carriage' ? publicCarriageDepartureNotice(game, cultivator, one.to) : [])]),
             ...(displayed.more > 0 ? [`And ${displayed.more} more, further off, sold by name.`] : [])
         ];
+        board.push('No seat was bought and nothing was paid in this listing. These are quoted fares.');
         if (!reading && wanted.length >= 2) {
             const other = theLineTo(all, wanted, null, game.atHand?.locations);
             board.unshift(other

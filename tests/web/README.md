@@ -5,6 +5,10 @@ and greeting through a scripted provider. The real tie, recognition and speaker
 card determine whether its scripted reply is familiar. Close, friendly and
 hostile controls also read both ends without writing extra knowledge records.
 
+`a-fare-listing-is-not-a-payment.test.ts` sends real fare-listing results to a
+scripted narrator and checks that the card explicitly says nothing was bought
+or paid, including an unsuccessful destination lookup. The purse is unchanged.
+
 `player-rulings.test.ts` separates the player rendering from the inspector and
 private narrator material. It checks ids, routine names and calibration language
 on played reads, while requiring the structural account to remain inspectable.

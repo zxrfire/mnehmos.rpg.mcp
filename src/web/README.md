@@ -20,6 +20,10 @@ from the present cast; leaving somebody out of prose does not empty the scene.
 Previous model prose supplies conversation continuity, not evidence against the
 current engine state. A change of scene alone implies no change in qi quality.
 
+A passage board or unsuccessful fare lookup explicitly reports no purchase and
+no payment for that listing. This remains scoped to its own call when folded
+with other actions; prices alone are no receipt for a charge.
+
 The synchronous presence observation also shares default place-area reads.
 Explicit observer, carrier, compound and route projections retain their own
 read. Neither scope crosses an await or physical/roster mutation, and both
