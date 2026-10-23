@@ -4,6 +4,10 @@ Arranged dispositions use the ordinary two-ended tie writer. Close and sworn
 ties set mutual standing; other dispositions preserve the counterpart's own
 feeling. Their actual ties supply recognition and speaker cards.
 
+Spawn reports include the actual seal kind and holder/caster name. Exact realm
+and subrank labels take precedence over bare numbers and model ordinal guesses;
+the catalog owns the mapping, including numbered Qi Condensation layers.
+
 Spawn disposition and alignment use the ordinary world-person writer, including
 when supplied as explicit pairs. A null house means explicitly unaffiliated;
 an omitted house may be selected by its requested alignment. Personal alignment

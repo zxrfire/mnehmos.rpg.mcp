@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { LLMProvider } from '../agent/provider/types.js';
-import { MAX_ORDINAL, REALM_TIERS } from '../engine/cultivation/realms.js';
+import { MAX_ORDINAL, REALM_TIERS, rankName } from '../engine/cultivation/realms.js';
 import { SECTS } from '../data/cultivation/sects.js';
 import { HOUSE_TYPE_NOUNS, theHouseNameSaid } from './what-a-house-is-called.js';
 import { ordinalNamed } from '../server/consolidated/admin-said-as-a-sentence.js';
@@ -188,6 +188,10 @@ export async function readAdminSpawnSpec(
             const parsed = AdminSpawnSpecSchema.safeParse(extractJsonObject(result.text));
             if (parsed.success) {
                 const fallback = readWithoutAModel(input);
+                const named = ordinalNamed(input);
+                // The catalog owns exact rung labels, including their one-based layer numbers.
+                if (named && fallback.ordinal === named.ordinal
+                    && named.words.join(' ') === rankName(named.ordinal).toLowerCase()) parsed.data.ordinal = named.ordinal;
                 // Exact values in the sentence outrank the model's nearest-value interpretation.
                 for (const field of ['disposition', 'temperament', 'alignment'] as const) {
                     const schema = AdminSpawnSpecSchema.shape[field].unwrap();

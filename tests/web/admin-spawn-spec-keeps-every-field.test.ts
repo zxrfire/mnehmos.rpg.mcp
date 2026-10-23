@@ -4,9 +4,20 @@ import { describe, expect, it } from 'vitest';
 import { readAdminSpawnSpec, adminSpawnJsonSchema, AdminSpawnSpecSchema, needsSpawnReading } from '../../src/web/admin-spawn-spec.js';
 import { SpawnEncounterSchema } from '../../src/server/consolidated/admin-manage.js';
 import { REALM_TIERS } from '../../src/engine/cultivation/realms.js';
+import { ordinalNamed } from '../../src/server/consolidated/admin-said-as-a-sentence.js';
 import { ScriptedProvider } from './harness.js';
 
 describe('all spoken spawn facts reach the reader', () => {
+    it('reads each named rung before its bare number (replay R4)', () => {
+        for (const tier of REALM_TIERS) for (const [index, subrank] of tier.subRanks.entries()) {
+            const name = `${tier.name} ${subrank}`;
+            expect(ordinalNamed(name)?.ordinal, name).toBe(tier.ordinalStart + index);
+        }
+    });
+    it('keeps the exact catalog rung when a model counts layers as ordinals (replay R4)', async () => {
+        const provider = new ScriptedProvider({ narrations: [JSON.stringify({ ordinal: 9, sex: 'male' })] });
+        expect((await readAdminSpawnSpec('a man at qi condensation layer 9', { provider, model: 'test' })).ordinal).toBe(8);
+    });
     it('supplies a meaning for every allowed enum value, including seal kinds', () => {
         const check = (node: unknown): void => {
             if (!node || typeof node !== 'object') return;

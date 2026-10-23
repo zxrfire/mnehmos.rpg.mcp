@@ -3262,6 +3262,7 @@ export async function handleAdminManage(
                 'Rung': data.rung,
                 'Beast origin': data.species,
                 'Temperament': data.temperament,
+                'Seal': data.seal ? `${data.seal.kind}, ${data.seal.kind === 'slave' ? 'held' : 'laid'} by ${data.sealHolder ?? data.seal.byId}` : undefined,
                 'How they compare': data.gateLifted?.howTheyCompare,
                 'Power ratio': data.gateLifted?.powerRatio
             }));

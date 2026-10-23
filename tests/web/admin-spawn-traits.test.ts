@@ -55,6 +55,17 @@ async function spawned(h: Harness, line: string) {
 }
 
 describe('ADMIN spawn reads traits into real people', () => {
+    it('reports the actual slave seal and the requested layer (replay R4)', async () => {
+        const provider = new ScriptedProvider({ narrations: ['', JSON.stringify({
+            ordinal: 9, sex: 'male', temperament: 'reticent', seal: { kind: 'slave', holder: 'me' }, unusedWords: ['big']
+        }), ''] });
+        const h = await operating(provider);
+        const { npc, result } = await spawned(h, 'ADMIN spawn_encounter a big quiet man who carries a slave seal held by me, qi condensation layer 9');
+        const player = h.game.state().cultivator;
+        expect(npc.cultivation.seal).toMatchObject({ kind: 'slave', byId: player.id });
+        expect(result.narration).toContain(`Seal: slave, held by ${player.name}`);
+        expect(npc.cultivation.realmOrdinal).toBe(8);
+    });
     it('keeps model facts after an explicit ordinal in live ADMIN (findings 16, 19, 25, 34, 40)', async () => {
         const provider = new ScriptedProvider({ narrations: ['', JSON.stringify({
             ordinal: 29, sex: 'female', temperament: 'expressive', disposition: 'sworn_sibling',

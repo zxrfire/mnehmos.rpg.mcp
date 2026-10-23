@@ -183,7 +183,7 @@ export async function spawnPersonFromSpec(
         opponent: { id, name: npc.name, rank: rankName(ordinal) }, location: place.name,
         sex: npc.identity.sex, age, house: house?.name, rung: house?.ranks[rankIndex],
         species: species?.name, temperament: spec.temperament, disposition: spec.disposition,
-        alignment: house?.alignment, seal: npc.cultivation.seal,
+        alignment: house?.alignment, seal: npc.cultivation.seal, sealHolder: sealHolder?.name,
         guesses: (spec.guesses ?? []).map(guess => `Read '${guess.word}' as ${guess.field} ${guess.value}.`),
         unusedWords: spec.unusedWords ?? [],
         sayThis: ['who is here', 'talk to someone'],

@@ -10,6 +10,8 @@ ADMIN spawn reading includes prose after explicit pairs. Numeric pairs retain
 their requested value without consuming the following description. The Zod
 schema supplies the realm ladder, trait meanings and the handler's age default;
 explicitly unaffiliated people use a null house.
+Exact catalog rung labels retain their ordinals even when the model miscounts
+a layer number. The operator's spawn report shows the real seal and holder.
 
 Narration receives each executed call's outcome headline beside its details,
 including within a folded turn. Quotes remain quotes, purchases retain their

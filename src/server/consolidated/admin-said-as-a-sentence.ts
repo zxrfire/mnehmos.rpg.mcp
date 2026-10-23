@@ -147,14 +147,6 @@ export function ordinalNamed(
 ): { ordinal: number; how: string; /** The words that named it, for stripping. */ words: string[] } | null {
     const line = phrase.toLowerCase();
 
-    const bare = /(?:^|\s)(\d{1,2})(?=\s|$)/.exec(line);
-    if (bare) {
-        const n = Number(bare[1]);
-        if (n >= 0 && n <= MAX_ORDINAL) {
-            return { ordinal: n, how: `the number ${n} in the sentence`, words: [bare[1]] };
-        }
-    }
-
     // Longest realm name first, so "Tribulation Transcendence" is not shadowed.
     const tiers = [...REALM_TIERS].sort((a, b) => b.name.length - a.name.length);
 
@@ -162,13 +154,23 @@ export function ordinalNamed(
     for (const tier of tiers) {
         for (let i = 0; i < tier.subRanks.length; i++) {
             const sub = tier.subRanks[i].toLowerCase();
-            if (sub.length >= 3 && line.includes(`${tier.name.toLowerCase()} ${sub}`)) {
+            const named = `${tier.name.toLowerCase()} ${sub}`.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            if (sub.length >= 3 && new RegExp(`(?:^|\\W)${named}(?=\\W|$)`).test(line)) {
                 return {
                     ordinal: tier.ordinalStart + i,
                     how: `"${tier.name} ${tier.subRanks[i]}" is ordinal ${tier.ordinalStart + i}`,
                     words: `${tier.name} ${tier.subRanks[i]}`.toLowerCase().split(/\s+/)
                 };
             }
+        }
+    }
+
+    // A layer's number belongs to its named rung, not to this bare-ordinal fallback.
+    const bare = /(?:^|\s)(\d{1,2})(?=\s|$)/.exec(line);
+    if (bare) {
+        const n = Number(bare[1]);
+        if (n >= 0 && n <= MAX_ORDINAL) {
+            return { ordinal: n, how: `the number ${n} in the sentence`, words: [bare[1]] };
         }
     }
 
