@@ -4245,3 +4245,7 @@ roll place or influence is not materialized as inventory by a trade request.
 A missing or exhausted cultivation method makes sitting yield no progress. It
 does not veto the span or require special wording: ordinary days, provisions,
 body costs and interruptions still apply, followed by later requested acts.
+
+A command's listener resolves through the ordinary person target resolver before
+reading the act's victim. Mentioning another person cannot select their seal by
+roster order. An absent listener receives no order or narrator reply.

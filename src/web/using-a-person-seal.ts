@@ -25,8 +25,11 @@ export async function usingAPersonSeal(game: GameService, run: Run, body: Cultiv
     const world = game.atHand, day = routineTime(world), holder = actualPersonFor(game, body.id)!;
     const people = [...world.npcs.filter(person => !game.repos.cultivators.getById(person.id)),
         ...game.repos.cultivators.list().flatMap(person => actualPersonFor(game, person.id) ?? [])];
-    const addressed = command && action.target && game.somebodyAtHand(action.target, body);
-    const named = addressed ? actualPersonFor(game, addressed.id)
+    // The listener is the target. A victim mentioned in the order is not another
+    // candidate for whose seal carries it, whatever the roster's storage order.
+    const addressed = command && action.target
+        ? game.partyPutTo(body, action.target, game.scopeFor(body)) : null;
+    const named = command && action.target ? (addressed?.kind === 'cultivator' ? actualPersonFor(game, addressed.id) : undefined)
         : people.find(person => person.id !== body.id && raw.toLowerCase().includes(person.name.toLowerCase()));
     if (!/\b(?:slave|qi)[ -]seal(?:ed)?\b/i.test(raw) && !/\bslave\b/i.test(raw)
         && (!named || !holdsASlaveSeal(named.cultivation.seal, body.id, day))) return null;
