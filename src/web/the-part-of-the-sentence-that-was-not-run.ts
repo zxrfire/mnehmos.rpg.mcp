@@ -27,17 +27,8 @@
  *
  * ── WHAT THIS IS NOT ─────────────────────────────────────────────────────
  *
- * It is not command chaining, and deliberately so. The game's character is
- * that you say what you mean to do in your own words and the engine prices it;
- * a syntax for sequencing verbs would be a different game, and it would also
- * be dishonest about time - two verbs can legitimately cost two spans, and a
- * player who typed one sentence did not agree to spend two.
- *
- * So the turn still runs exactly one action. What changes is that the clause
- * it did not run is SAID OUT LOUD, with the sentence that would work beside
- * it - the same shape as every other refusal in the package.
- *
- * ── THE ONE RULE, AND HOW IT WAS SETTLED ─────────────────────────────────
+ * Chaining belongs to the plan executor. This is only the fallback's account
+ * of an instruction its reading omitted; it imposes no limit on attempts.
  *
  * > **A clause is worth reporting only if it would have COST something.**
  *
@@ -256,7 +247,7 @@ export function theClauseThisTurnDidNotRun(input: string, ran: ActionName): Clau
  * Names the thing that did not happen, says why one and not both, and says the
  * sentence that would work - which is the whole of what makes this a refusal
  * rather than a shrug. No mention of parsers, clauses or turns: a person
- * standing in a village is being told that they cannot do two things at once.
+ * standing in a village is told exactly what was not carried out.
  *
  * The ordinal changes with the side. Getting it wrong is not cosmetic - a
  * player told "only the first was done" when it was the second will go looking
@@ -266,13 +257,12 @@ export function sayingWhatWasNotDone(dropped: ClauseNotRun): string {
     const whichRan = dropped.side === 'after' ? 'first' : 'second';
     return `You said two things, and only the ${whichRan} of them was done. `
         + `"${dropped.clause}" was not. `
-        + 'One act at a time - each has its own price in days and in food, and nothing here will '
-        + `spend either on your behalf. Say "${dropped.clause}" on its own and it will happen.`;
+        + `Nothing was spent on it. You can ask for "${dropped.clause}" on its own.`;
 }
 
 /** The same fact for the log and the inspector, where precision is the point. */
 export function theStructureLineFor(dropped: ClauseNotRun, ran: ActionName): string {
     return `Ran ${ran}. Not run: "${dropped.clause}", standing ${dropped.side} it, `
         + `which on its own reads as ${dropped.action}. `
-        + 'One action is executed per turn; the clause was reported rather than dropped.';
+        + 'The reading omitted this act; no act-count limit applies.';
 }

@@ -6,7 +6,8 @@ import { actualPersonFor } from './the-actual-person-behind-a-world-row.js';
 import { applyActualPersonSeal, releaseActualPersonSeal } from './person-seals-at-the-actual-body.js';
 import { holdsASlaveSeal, theSealStillHolds } from '../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
 import { whatBreakingASealTakes } from '../engine/social/what-laying-a-qi-seal-takes.js';
-import { finishSlaveOrder, type PersonOrder } from '../engine/world/slave-orders.js';
+import { completeSlaveOrderStep, settleSlaveOrders } from '../engine/world/slave-orders.js';
+import { personOrdersRead } from './person-order-reading.js';
 import { commandAtTheActualBody } from './slave-orders-at-the-actual-body.js';
 import { endSlaveThroughSeal, liftPersonSeal } from '../engine/world/person-seals.js';
 import { routineTime } from '../engine/world/npc-routines.js';
@@ -41,23 +42,12 @@ export async function usingAPersonSeal(game: GameService, run: Run, body: Cultiv
         if (!holdsASlaveSeal(subject.cultivation.seal, body.id, day)) return no('That person is not slave-sealed to you.');
         if (!game.present(body).some(person => person.id === subject.id)) return no('Reach the actual person before giving the order.');
         const words = command ? action.topic ?? '' : /\bto\s+(.+)$/i.exec(raw)?.[1] ?? action.topic ?? '';
-        const attack = /\b(?:attack|kill|massacre|slaughter)\b/i.test(words);
-        const kind: PersonOrder['action'] = attack ? 'attack' : /\bguard\b/i.test(words) ? 'guard'
-            : /\b(?:fetch|bring)\b/i.test(words) ? 'fetch' : /\b(?:message|tell|deliver word)\b/i.test(words) ? 'message'
-                : /\b(?:follow|accompany|join my party)\b/i.test(words) ? 'company'
-                    : /\b(?:cultivate|seclude)\b/i.test(words) ? 'cultivate'
-                        : /\b(?:go|travel|walk|fly)\b/i.test(words) ? 'travel' : 'request';
-        const destination = world.locations.filter(place => words.toLowerCase().includes(place.name.toLowerCase()))
-            .sort((a, b) => b.name.length - a.name.length)[0];
-        const victim = people.find(person => person.id !== subject.id && words.toLowerCase().includes(person.name.toLowerCase()));
-        const object = world.objects.find(object => words.toLowerCase().includes(object.name.toLowerCase()));
-        if (attack && !destination && !victim) return no('Name the actual person or place to attack.');
-        if (victim && game.repos.cultivators.getById(victim.id))
-            return no('That attack must be resolved in the actual person\'s foreground fight.');
-        const destinationId = destination?.id ?? victim?.locationId ?? (object?.locationId as string | null) ?? game.worldPlaceOf(body);
-        if (!destinationId || !words) return no('State the order and its actual destination.');
-        const fact = commandAtTheActualBody(game, body.id, subject.id, { action: kind, destinationId,
-            ...(victim ? { targetId: victim.id } : {}), ...(object ? { objectId: object.id } : {}), words, days: action.days });
+        const read = personOrdersRead(game, body, subject, people, action, words);
+        if ('reason' in read) return no(read.reason);
+        const [first, ...following] = read.orders;
+        const kind = first.action;
+        const fact = commandAtTheActualBody(game, body.id, subject.id, { ...first,
+            ...(following.length ? { following } : {}) });
         if (!fact) return no('No living slave seal carries that order.');
         game.theWorldMoved();
         if (kind === 'request') {
@@ -69,13 +59,16 @@ export async function usingAPersonSeal(game: GameService, run: Run, body: Cultiv
                 [words, 'The order is recorded and remains pending. No physical result has been resolved.']));
             const done = await game.request(run, body, game.ambientFor(body, run), subject.name, requested.kind, requested.object ?? words, undefined,
                 `I ask ${subject.name} to ${words}`, action.days);
-            if (done.outcome === 'executed') finishSlaveOrder(world, fact, day, `The actual request path resolved the order. ${done.facts.lines.join(' ')}`);
+            if (done.outcome === 'executed') completeSlaveOrderStep(world, fact, day, `The actual request path resolved the order. ${done.facts.lines.join(' ')}`);
+            settleSlaveOrders(world, day);
             done.facts.lines.unshift(`${subject.name} is compelled by the slave seal. ${words}`);
             game.theWorldMoved();
             return done;
         }
-        return game.freeAction(run, 'oath', factsForToolResult(`${subject.name} is compelled to carry out the order.`,
+        const done = game.freeAction(run, 'oath', factsForToolResult(`${subject.name} is compelled to carry out the order.`,
             [`${subject.name} is compelled to carry out the order.`, words, 'The actual route, body and opposition decide what they achieve.']));
+        done.calls.push({ name: 'world.commandSlave', action: 'oath', ok: true, summary: fact.summary });
+        return done;
     }
     const seal = subject.cultivation.seal;
     if (/\b(?:kill|end .*life|destroy .*soul)\b/i.test(raw) && /\bslave\b/i.test(raw)) {

@@ -4253,3 +4253,16 @@ roster order. An absent listener receives no order or narrator reply.
 The private person card derives whether the player's actual live slave seal
 compels that speaker. Resentment can colour the voice; refusal cannot. The card
 grants no unresolved movement, injury or other outcome and exposes no visible mark.
+
+Orders can carry a sequence of interpreted acts in the speech action's `orders`
+field. Destination areas resolve through the ordinary local-area reader. The
+single historical command retains the remaining acts; actual completion receipts
+advance it, while a released seal, dead body or interrupted sitting stops it.
+Native local movement uses the ordinary timed approach; SQL bodies use the actual
+executor. Quoted instructions are never backfilled or reported as player acts.
+The fallback's report of an omitted act imposes no one-act convention.
+
+A question retains its mood across its subordinate verb fragments. A later
+explicit subject or semicolon permits an independent act; model-read steps retain
+their own requested sequence. Zero cultivation return cannot conceal a reader
+that accidentally turned the question's fragments into sitting.

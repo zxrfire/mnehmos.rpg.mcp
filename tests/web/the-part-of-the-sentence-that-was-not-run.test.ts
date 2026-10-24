@@ -96,6 +96,7 @@ describe('a clause standing before the one that ran', () => {
     it('names the clause and the sentence that would work', () => {
         const said = sayingWhatWasNotDone({ clause: 'eat', action: 'eat', side: 'after' });
         expect(said).toContain('"eat"');
+        expect(said).not.toContain('One act at a time');
         // A refusal names its cause AND the way through. Both halves, or it is
         // a shrug with better grammar.
         expect(said).toMatch(/on its own/);
@@ -314,12 +315,13 @@ describe('played', () => {
 
         // And in the log, which is the channel the narrator cannot dress.
         const engineSaid = result.state.log.filter(e => e.role === 'engine').map(e => e.text).join('\n');
-        expect(engineSaid).toContain('Not run: "eat"');
+        expect(engineSaid).toContain('"eat" was not.');
 
         // The inspector marks it as something that did not happen.
         const routing = result.toolCalls.filter(c => c.name === 'engine.parseIntent');
         expect(routing).toHaveLength(1);
         expect(routing[0]?.ok).toBe(false);
+        expect(routing[0]?.summary).toContain('Not run: "eat"');
     });
 
     /**

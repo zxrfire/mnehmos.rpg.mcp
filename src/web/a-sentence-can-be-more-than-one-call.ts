@@ -7,6 +7,7 @@ import {
     TARGETED_ACTIONS,
     carryWhatOnlyTheSentenceKnows,
     costsTheAskerNothing,
+    theWholeSentenceIsAQuestion,
     validatePlan,
     type ActionName,
     type Plan,
@@ -241,6 +242,19 @@ function spansInTheTail(spans: readonly ExplicitNameSpan[], offset: number): rea
 export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan[] = []): string[] {
     // A terms question keeps its named object; a comma does not order a purchase.
     if (isOneInformationExchange(input) || askingWhatItWouldTake(input)) return [input.trim()];
+    // A conjunction inside a question does not turn its bare verb into an
+    // imperative. An explicit later subject or semicolon starts a new act;
+    // model-supplied independent steps remain available even in one clause.
+    const boundaries = [...input.matchAll(CLAUSE_SEPARATOR)];
+    const opening = input.slice(0, boundaries[0]?.index ?? input.length);
+    if (theWholeSentenceIsAQuestion(opening)) {
+        const next = boundaries.find(boundary => boundary[0].includes(';')
+            || /^\s*(?:I|we)\b/i.test(input.slice(boundary.index! + boundary[0].length)));
+        if (!next) return [input.trim()];
+        const at = next.index! + next[0].length;
+        return [input.slice(0, next.index).trim(), ...theClausesOf(input.slice(at), spansInTheTail(nameSpans, at))];
+    }
+
     // "It wasn't me, it was X" is one account, a blame; split at the comma it became a bare denial.
     if (deedAccountInWords(input) === 'blame') return [input.trim()];
     // Keep the conversational prefix together when a distinct decision follows.
@@ -447,6 +461,9 @@ export async function theWholeSentenceAsAPlan(
     };
     if (fromTheReader.some(step => step.action.contract)) return {
         steps: [...fromTheReader], backfilled: [], why: ['Contract terms are promises, not further performed acts.']
+    };
+    if (fromTheReader.some(step => step.action.orders)) return {
+        steps: [...fromTheReader], backfilled: [], why: ['The listener\'s ordered acts belong to the spoken command.']
     };
     const clauses = theClausesOf(input, nameSpans);
     if (nameSpans.length > 0) fromTheReader = fromTheReader.map(step => {

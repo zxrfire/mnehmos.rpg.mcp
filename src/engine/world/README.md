@@ -5345,3 +5345,11 @@ and its wake. Its participants remain carried even while its cause is unknown.
 `a-hidden-killing-becomes-known.ts` applies the existing disclosure, relationships
 and house sentence. The native reader and focused scenarios share that writer;
 extracting it changes neither the chance nor its random stream.
+
+A slave order can retain following acts in its original hearing record. Real
+completion receipts advance that course; no parallel queue or progress field is
+stored. A local destination includes its actual area and uses the ordinary timed
+departure approach. Waiting starts after arrival and retains the post until its
+term ends or its named person arrives. Closed-door work completes through the
+ordinary sitting settlement before the next ordered act begins. Its interruption,
+seal release or death leaves later work unperformed.

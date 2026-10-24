@@ -82,13 +82,12 @@ import {
 } from './encounters.js';
 import {
     type EngineFacts,
-    factsForRefusal,
     factsForTimeSkip,
     factsForToolResult,
     humanDays,
     placeName
 } from './facts.js';
-import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
+import { skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import {
     HURRIED_BELOW_DAYS,
     PROVISIONED_PREPARATION,

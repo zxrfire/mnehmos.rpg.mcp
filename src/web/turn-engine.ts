@@ -30,7 +30,7 @@ import { actualPersonFor } from './the-actual-person-behind-a-world-row.js';
 import { bindingOf } from '../engine/social/open-contracts.js';
 import { theOrderOnTheActualPlayer } from './slave-orders-at-the-actual-body.js';
 import { passagePurchase } from './passage-purchase.js';
-import { finishSlaveOrder } from '../engine/world/slave-orders.js';
+import { completeSlaveOrderStep, currentSlaveOrder, finishSlaveOrder } from '../engine/world/slave-orders.js';
 import { privateWorkWithAPerson, privateWorkOffersAtTheBody, settlePrivateWorkAtTheBody, privateBusinessBoundaryDates } from './private-work-with-a-person.js';
 import { thePlayerReceivesPrivatePartyFinds } from './the-player-receives-a-private-party-find.js';
 import { recordAnActualPrivateGather } from '../engine/world/private-work-in-the-field.js';
@@ -3294,7 +3294,9 @@ export class GameService {
         }
 
         // AND THE PART OF THE SENTENCE THAT DID NOT RUN
-        const naming = theClauseThisTurnDidNotRun(trimmed, theTurnsPlan.action.action);
+        const orderedSpeech = theTurnsPlan.action.intent === 'command'
+            || execution.calls.some(call => call.name === 'world.commandSlave');
+        const naming = orderedSpeech ? null : theClauseThisTurnDidNotRun(trimmed, theTurnsPlan.action.action);
         const dropped = stepsOfThePlan(theTurnsPlan).length > 1
             || (naming !== null && sameActUnderTwoNames(theTurnsPlan.action.action, naming.action))
             ? null
@@ -4351,8 +4353,11 @@ export class GameService {
                 const done = await this.execute(command.action, run, this.repos.cultivators.getById(cultivator.id)!,
                     ambient, command.raw, true);
                 sayThisWhateverTheNarratorDoes(done.facts, `The slave seal compels the order: ${command.fact.summary}`);
-                if (done.outcome === 'executed' && JSON.parse(String(command.fact.data.order)).action === 'message')
-                    finishSlaveOrder(this.atHand!, command.fact, routineTime(this.atHand!), 'The ordered message was delivered through the actual speaker.');
+                if (done.cutShort || done.outcome === 'refused')
+                    finishSlaveOrder(this.atHand!, command.fact, routineTime(this.atHand!),
+                        'The actual body was stopped. The remaining ordered acts were not reached.');
+                if (done.outcome === 'executed' && currentSlaveOrder(this.atHand!, command.fact)?.action === 'message')
+                    completeSlaveOrderStep(this.atHand!, command.fact, routineTime(this.atHand!), 'The ordered message was delivered through the actual speaker.');
                 this.theWorldMoved();
                 return done;
             }

@@ -465,6 +465,14 @@ Rules:
   listener separate from anyone they are ordered to act on. The actual held seal
   or agreed terms decide authority; never assume obedience or add the commanded
   person's attack as an attack by the player. Questions about orders remain questions.
+  A sequence commanded of that listener stays inside ONE speech action, with orders:
+  [{action: travel, destination: "the landing", words: "go to the landing"},
+   {action: wait, target: "me", words: "wait for me there"}].
+  The ordered actions are attack | guard | fetch | message | travel | company |
+  cultivate | wait | request. Each may carry days, a named target and a destination.
+  Omit a later destination to retain the previous one; "me" means the speaker's
+  actual body. Preserve every ordered act. Never turn those acts into player waiting,
+  walking or fighting. A slave's route, body and opposition still decide the result.
 - WHILE A FIGHT IS IN PROGRESS, an answer to that fight may use action: interact and
   fightAnswer: strike | guard | press | break_off | call_for_help | spare | yield.
   This is a choice, never a guaranteed outcome. Read frightened or apologetic speech

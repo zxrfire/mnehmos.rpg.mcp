@@ -138,3 +138,9 @@ repository code (imports alone relocated), then the current native migration,
 world opening and spending authorities. Fresh DDL and repeated file reopening
 distinguish nullable absence from a real exhausted pool. These controls do not
 clear shared caches or author database balances through migration defaults.
+
+`an-ordered-body-reaches-the-local-post.test.ts` scripts a command containing
+travel and waiting, checks the real local-walk clock, saves/reopens it, then
+meets the actual body at the landing. The SQL control uses the same term and
+local walk through the actual executor. Native course controls cover consecutive
+journeys, a timed wait, release, completed sitting and interrupted sitting.

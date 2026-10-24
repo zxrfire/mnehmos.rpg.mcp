@@ -26,10 +26,15 @@ import { factsWithData, factsWithDataValue } from './witness-reaction-index.js';
 import { releasePersonSeal } from './person-seals.js';
 import { pathTo, reachThrough } from './architecture.js';
 import { theDoorKeysTheyActuallyCarry } from './door-key-custody.js';
+import { beginActualDepartureApproach, finishActualDepartureApproach } from './departure-approach.js';
+import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 
 export interface PersonOrder {
-    action: 'attack' | 'guard' | 'fetch' | 'message' | 'travel' | 'company' | 'cultivate' | 'request';
+    action: 'attack' | 'guard' | 'fetch' | 'message' | 'travel' | 'company' | 'cultivate' | 'wait' | 'request';
     destinationId: string;
+    destinationAreaId?: string;
+    /** Remaining ordered acts, recorded at the original hearing. */
+    following?: PersonOrder[];
     targetId?: string;
     objectId?: string;
     words: string;
@@ -49,12 +54,6 @@ export function commandSlave(state: WorldState, holder: NpcRecord, slave: NpcRec
             { id: slave.id, name: slave.name, role: 'compelled' }], summary: `${holder.name} ordered ${slave.name}: ${order.words}`,
         data: { slaveOrder: true, slaveId: slave.id, holderId: holder.id, order: JSON.stringify(order) } }), { recur: false, bystanders: false });
     rememberFact(state.memories, slave.id, fact, { kind: 'betrayal', tags: ['slave-order'] });
-    if (isTheWorldsToMove(slave)) {
-        const at = state.npcs.findIndex(person => person.id === slave.id);
-        const travelling = slave.locationId === order.destinationId ? slave
-            : goOnTheOrderedCourse(state, slave, order.destinationId, day, fact.summary);
-        state.npcs[at] = travelling.activity ? { ...travelling, activity: { ...travelling.activity, slaveOrderId: fact.id } } : travelling;
-    }
     settleSlaveOrders(state, day);
     return fact;
 }
@@ -73,6 +72,21 @@ export function finishSlaveOrder(state: WorldState, fact: HistoricalFact, day: n
 
 const finishOrder = finishSlaveOrder;
 
+/** Progress is derived from actual completion receipts, never a parallel queue/counter. */
+export function currentSlaveOrder(state: WorldState, fact: HistoricalFact): PersonOrder | null {
+    const root = JSON.parse(String(fact.data.order)) as PersonOrder;
+    const completed = factsWithDataValue(state, 'slaveOrderStepEnded', fact.id).length;
+    return [root, ...(root.following ?? [])][completed] ?? null;
+}
+
+export function completeSlaveOrderStep(state: WorldState, fact: HistoricalFact, day: number, note: string): void {
+    const step = factsWithDataValue(state, 'slaveOrderStepEnded', fact.id).length;
+    appendWorldFact(state, makeFact({ day, kind: 'opportunity', visibility: 'secret',
+        locationId: fact.locationId, causes: [fact.id], actors: fact.actors,
+        summary: note, data: { slaveOrderStepEnded: fact.id, step } }), { recur: false, bystanders: false });
+    if (!currentSlaveOrder(state, fact)) finishOrder(state, fact, day, note);
+}
+
 /** Appointments and foreground contact call this; no daily population walk is added. */
 export function settleSlaveOrders(state: WorldState, day: number): void {
     for (const id of new Set(factsWithDataValue(state, 'slaveOrder', true).map(fact => String(fact.data.slaveId)))) {
@@ -82,57 +96,122 @@ export function settleSlaveOrders(state: WorldState, day: number): void {
             releasePersonSeal(state, id, seal.liftsOnDay);
     }
     for (const fact of unfinishedSlaveOrders(state)) {
-        const at = state.npcs.findIndex(person => person.id === fact.data.slaveId), slave = state.npcs[at];
-        const holderId = String(fact.data.holderId), order = JSON.parse(String(fact.data.order)) as PersonOrder;
-        // A SQL person's status and effect are read by the actual-body port, never this projection.
-        if (slave && !isTheWorldsToMove(slave)) continue;
-        if (!slave || slave.status !== 'alive' || !holdsASlaveSeal(slave.cultivation.seal, holderId, day)) {
-            finishOrder(state, fact, day, 'The seal no longer holds. The order no longer compels.'); continue;
+        // Each true return has written a completion receipt; the finite original
+        // sequence bounds this loop, including several immediate acts at one clock.
+        while (settleCurrentOrder(state, fact, day)) { /* read the next original act */ }
+    }
+}
+
+function settleCurrentOrder(state: WorldState, fact: HistoricalFact, day: number): boolean {
+    const at = state.npcs.findIndex(person => person.id === fact.data.slaveId);
+    let slave = state.npcs[at];
+    const holderId = String(fact.data.holderId), order = currentSlaveOrder(state, fact);
+    if (!order) return false;
+    // SQL bodies act only through the actual-body port.
+    if (slave && !isTheWorldsToMove(slave)) return false;
+    if (!slave || slave.status !== 'alive' || !holdsASlaveSeal(slave.cultivation.seal, holderId, day)) {
+        finishOrder(state, fact, day, 'The seal no longer holds. The remaining order no longer compels.'); return false;
+    }
+    const clock = { ...state, currentDay: Math.floor(day), currentHour: day % 1 * 24 };
+    const place = routineLocationOf(clock, slave);
+    const object = order.objectId && state.objects.find(object => object.id === order.objectId);
+    const returning = order.action === 'fetch' && object && object.possessorId === slave.id;
+    const contact = playerAtTheContact(state);
+    const master = contact?.id === holderId ? contact.person : state.npcs.find(person => person.id === holderId && isTheWorldsToMove(person));
+    const delivery = contact?.id === holderId ? contact.placeId : master && routineLocationOf(clock, master);
+    const destination = returning ? delivery ?? fact.locationId : order.destinationId;
+    if (slave.activity?.departureApproach) return false;
+    if (place !== destination) {
+        if (!slave.activity || slave.activity.kind !== 'travelling') {
+            const journey = destination ? goOnTheOrderedCourse(state, { ...slave, locationId: place }, destination, day, fact.summary) : null;
+            if (journey?.activity) state.npcs[at] = { ...journey, activity: { ...journey.activity, slaveOrderId: fact.id } };
         }
-        // A real player's next act is handled against their SQL body by the played adapter.
-        const place = routineLocationOf({ ...state, currentDay: Math.floor(day), currentHour: day % 1 * 24 }, slave);
-        const object = order.objectId && state.objects.find(object => object.id === order.objectId);
-        const returning = order.action === 'fetch' && object && object.possessorId === slave.id;
-        const contact = playerAtTheContact(state);
-        const master = contact?.id === holderId ? contact.person : state.npcs.find(person => person.id === holderId && isTheWorldsToMove(person));
-        const delivery = contact?.id === holderId ? contact.placeId : master && routineLocationOf({ ...state, currentDay: day }, master);
-        const destination = returning ? delivery ?? fact.locationId : order.destinationId;
-        if (slave.activity?.departureApproach) continue;
-        if (place !== destination) {
-            if (!slave.activity || slave.activity.kind !== 'travelling') {
-                const current = { ...slave, locationId: place };
-                const journey = destination ? goOnTheOrderedCourse(state, current, destination, day, fact.summary) : null;
-                if (journey?.activity) state.npcs[at] = { ...journey, activity: { ...journey.activity, slaveOrderId: fact.id } };
-            }
-            continue;
+        return false;
+    }
+    // Areas are physical destinations too. Use the same timed approach and
+    // door/key authority as ordinary Native departures, with no teleport.
+    if (order.destinationAreaId && !returning) {
+        const request = { intentId: fact.id, target: { locationId: order.destinationId, areaId: order.destinationAreaId } };
+        const walking = slave.activity?.capitalMissionId === fact.id;
+        const result = walking ? finishActualDepartureApproach(clock, slave.id, request, day)
+            : beginActualDepartureApproach(clock, slave.id, request, day, { ...slave, locationId: place });
+        if (result.kind === 'approaching') {
+            state.npcs[at] = { ...result.actor, activity: { ...result.actor.activity!, slaveOrderId: fact.id } }; return false;
         }
-        if (order.action === 'request') continue; // The actual reached request adapter owns its work receipt.
-        // The existing journey projection supplies arrival, including its actual course duration.
-        state.npcs[at] = { ...slave, locationId: place, activity: null, updatedOnDay: day };
+        if (result.kind === 'waiting') return false;
+        if (result.kind !== 'ready') {
+            finishOrder(state, fact, day, result.kind === 'refused' ? result.reason : 'The actual body could not reach the ordered area.');
+            return false;
+        }
+        slave = !walking ? result.actor : { ...result.actor, locationId: place, activity: {
+            ...result.actor.activity!, kind: 'stationed', withIds: [], standingIn: order.destinationAreaId,
+            capitalMissionId: undefined, slaveOrderId: fact.id, sinceDay: day,
+            untilDay: null, note: 'Arrived at the ordered area.' } };
+        state.npcs[at] = slave;
+    }
+    if (order.action === 'request') return false; // Reached request adapter owns its receipt.
+    if (order.action === 'cultivate') {
+        const step = factsWithDataValue(state, 'slaveOrderStepEnded', fact.id).length;
+        let start = factsWithDataValue(state, 'slaveCultivationStarted', fact.id)
+            .find(row => row.data.slaveOrderStep === step);
+        if (!start) {
+            // A completed journey is not an ongoing away activity at admission.
+            state.npcs[at] = { ...slave, locationId: place, activity: null };
+            if (!beginClosedDoorCultivation(state, slave.id, day, order.days ?? 1)) return false;
+            const body = state.npcs[at];
+            state.npcs[at] = { ...body, activity: { ...body.activity!, slaveOrderId: fact.id } };
+            appendWorldFact(state, makeFact({ day, kind: 'opportunity', visibility: 'secret', locationId: place,
+                causes: [fact.id], actors: fact.actors, summary: `${slave.name} began the ordered sitting.`,
+                data: { slaveCultivationStarted: fact.id, slaveOrderStep: step } }), { recur: false, bystanders: false });
+            return false;
+        }
+        if (slave.activity?.kind === 'closed_door_cultivation' && slave.activity.slaveOrderId === fact.id) return false;
+        const ended = factsWithDataValue(state, 'closedDoorCultivationEnded', true).some(row => row.day >= start!.day + (order.days ?? 1)
+            && row.actors.some(actor => actor.id === slave.id));
+        if (!ended) {
+            finishOrder(state, fact, day, 'The ordered sitting was interrupted. The remaining course was not reached.');
+            return false;
+        }
+        completeSlaveOrderStep(state, fact, day, `${slave.name} finished the ordered sitting.`);
+        return currentSlaveOrder(state, fact) !== null;
+    }
+
+    if (order.action === 'guard' || order.action === 'wait') {
+        const previous = factsWithDataValue(state, 'slaveOrderStepEnded', fact.id).at(-1)?.day ?? fact.day;
+        const held = slave.activity?.kind === 'stationed' && slave.activity.slaveOrderId === fact.id
+            && slave.activity.note === order.words && slave.activity.sinceDay >= previous;
+        const since = held ? slave.activity!.sinceDay : day;
+        const until = order.days === undefined ? null : since + order.days;
+        state.npcs[at] = { ...slave, locationId: place, activity: { kind: 'stationed', note: order.words, withIds: [],
+            sinceDay: since, untilDay: until, standingIn: order.destinationAreaId ?? slave.activity?.standingIn, slaveOrderId: fact.id } };
+        const target = order.targetId ? (contact?.id === order.targetId ? contact.person : state.npcs.find(person => person.id === order.targetId)) : undefined;
+        const location = state.locations.find(location => location.id === place);
+        const areas = order.action === 'wait' && target && location && routineLocationOf(clock, target) === place ? theAreasOf(clock, location) : null;
+        const met = areas && areas.whereIs.get(target!.id) === areas.whereIs.get(slave.id);
+        if (until === null ? !met : day < until) return false;
+    } else {
+        state.npcs[at] = { ...slave, locationId: place, activity: order.destinationAreaId ? {
+            kind: 'stationed', note: order.words, withIds: [], sinceDay: day, untilDay: null, standingIn: order.destinationAreaId
+        } : null, updatedOnDay: day };
         if (order.action === 'attack') attackUnderCommand(state, state.npcs[at], fact, order, day);
-        else if (order.action === 'guard') state.npcs[at] = { ...state.npcs[at], activity: {
-            kind: 'stationed', note: fact.summary, withIds: order.targetId ? [order.targetId] : [],
-            sinceDay: day, untilDay: order.days === undefined ? null : day + order.days, slaveOrderId: fact.id } };
         else if (order.action === 'company') {
-            const changed = takeThemWithYou(state.npcs, { leaderId: holderId, party: [slave],
+            const changed = takeThemWithYou(state.npcs, { leaderId: holderId, party: [state.npcs[at]],
                 note: fact.summary, onDay: day, untilDay: order.days === undefined ? null : day + order.days });
             for (const person of changed) {
                 const index = state.npcs.findIndex(row => row.id === person.id);
                 state.npcs[index] = { ...person, activity: { ...person.activity!, slaveOrderId: fact.id } };
             }
-        } else if (order.action === 'cultivate') {
-            if (!beginClosedDoorCultivation(state, slave.id, day, order.days ?? 1)) continue;
         } else if (order.action === 'fetch') {
-            if (!object) continue;
+            if (!object) return false;
             if (returning) {
-                if (!master || delivery !== place) continue;
+                if (!master || delivery !== place) return false;
                 Object.assign(object, transferPossession(object, { toHolderId: holderId, toHolderName: master.name,
                     onDay: day, how: 'gifted', factId: fact.id, note: 'Delivered under the slave seal.' }));
-                finishOrder(state, fact, day, `${slave.name} delivered ${object.name} to ${master.name}.`);
-                continue;
+                completeSlaveOrderStep(state, fact, day, `${slave.name} delivered ${object.name} to ${master.name}.`);
+                return currentSlaveOrder(state, fact) !== null;
             }
             if (object.possessorId !== null && object.possessorId !== holderId
-                || object.possessorId === null && object.locationId !== place) continue;
+                || object.possessorId === null && object.locationId !== place) return false;
             Object.assign(object, transferPossession(object, { toHolderId: slave.id, toHolderName: slave.name,
                 onDay: day, how: 'found', note: 'Fetched at the holder\'s command.', factId: fact.id }));
             const back = delivery ?? fact.locationId;
@@ -140,16 +219,19 @@ export function settleSlaveOrders(state: WorldState, day: number): void {
                 const journey = goOnTheOrderedCourse(state, state.npcs[at], back, day, fact.summary);
                 state.npcs[at] = journey.activity ? { ...journey, activity: { ...journey.activity, slaveOrderId: fact.id } } : journey;
             }
-            continue;
+            return false;
         } else if (order.action === 'message') {
             const recipient = state.npcs.find(person => person.id === order.targetId && person.status === 'alive'
-                && routineLocationOf({ ...state, currentDay: day }, person) === place);
-            if (!recipient) continue;
+                && routineLocationOf(clock, person) === place);
+            if (!recipient) return false;
             rememberFact(state.memories, recipient.id, fact, { kind: 'history', summary: order.words });
         }
-        finishOrder(state, fact, day, order.action === 'attack' ? `${slave.name} made the ordered attack. The melee records its outcome.`
-            : `${slave.name} carried out ${order.words}`);
     }
+    completeSlaveOrderStep(state, fact, day, order.action === 'attack' ? `${slave.name} made the ordered attack. The melee records its outcome.`
+        : `${slave.name} carried out ${order.words}`);
+    if (!currentSlaveOrder(state, fact) && state.npcs[at]?.activity?.slaveOrderId === fact.id)
+        state.npcs[at] = { ...state.npcs[at], activity: { ...state.npcs[at].activity!, slaveOrderId: undefined, untilDay: null } };
+    return currentSlaveOrder(state, fact) !== null;
 }
 
 /** Compulsion supplies no key and cannot bypass a door or the body's entry bar. */

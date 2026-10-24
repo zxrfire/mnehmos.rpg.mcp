@@ -1855,6 +1855,7 @@ export function settlePracticeOnContact(state: WorldState, personIds: ReadonlySe
     const privateWork = settlePrivateWork(state, routineTime(state), undefined, personIds).length;
     const seclusion = settleClosedDoorCultivation(state, routineTime(state),
         (id, day) => applyAdvancement(state, Math.floor(day / DAYS_PER_YEAR), day, undefined, new Set([id])), personIds);
+    if (seclusion > 0) settleSlaveOrders(state, routineTime(state));
     const shuttle = settleHouseShuttleOnContact(state, personIds);
     const travel = settleNpcTravelOnContact(state, personIds) || shuttle;
     const year = Math.floor(state.currentDay / 365);
@@ -5126,14 +5127,15 @@ function bringHomeWhoeverIsDue(state: WorldState, onDay: number,
         const person = state.npcs.find(person => person.id === order.data.slaveId);
         if (person?.activity?.departureApproach) continueNpcDepartureApproach(state, person, day);
     }
+    // The actual sitting must close before its commanded next act can begin.
+    settleClosedDoorCultivation(state, day, (id, due) =>
+        applyAdvancement(state, Math.floor(due / DAYS_PER_YEAR), due, undefined, new Set([id])));
     settleSlaveOrders(state, day);
     for (const order of unfinishedSlaveOrders(state)) {
         const person = state.npcs.find(person => person.id === order.data.slaveId);
         const due = person?.activity?.untilDay;
         if (person && due != null && due > day) schedule?.(`slave-order:${person.id}:${due}`, due);
     }
-    settleClosedDoorCultivation(state, day, (id, due) =>
-        applyAdvancement(state, Math.floor(due / DAYS_PER_YEAR), due, undefined, new Set([id])));
     // Only the geographic graph is shared; every iteration reads the current row.
     const routes = routeQueriesFor(state.locations);
     settleHallService(state, day);

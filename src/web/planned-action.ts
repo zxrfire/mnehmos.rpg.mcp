@@ -49,6 +49,14 @@ export const PlannedActionSchema = z.object({
     action: z.enum(ACTION_NAMES),
     /** A semantic answer to a currently standing fight, never a declared ending. */
     fightAnswer: z.enum(['strike', 'guard', 'press', 'break_off', 'call_for_help', 'spare', 'yield']).optional(),
+    /** Acts ordered of the listener, not acts performed by the speaker. */
+    orders: z.array(z.object({
+        action: z.enum(['attack', 'guard', 'fetch', 'message', 'travel', 'company', 'cultivate', 'wait', 'request']),
+        destination: z.string().trim().min(1).optional(),
+        target: z.string().trim().min(1).optional(),
+        words: z.string().trim().min(1),
+        days: z.number().finite().positive().optional()
+    })).min(1).optional(),
     contract: z.object({
         yourTerms: z.string().min(1), theirTerms: z.string().min(1),
         binding: z.enum(['word', 'dao', 'blood', 'slave']),
@@ -331,6 +339,7 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
         deedAccount, blamed, reportWitnessedEvent } = parsed.data;
     const action: PlannedAction = { action: name };
     if (name === 'interact' && parsed.data.fightAnswer) action.fightAnswer = parsed.data.fightAnswer;
+    if (name === 'interact' && parsed.data.intent === 'command' && parsed.data.orders) action.orders = parsed.data.orders;
     if (name === 'oath' && parsed.data.contract) action.contract = parsed.data.contract;
     if (name === 'tell' && deedAccount) action.deedAccount = deedAccount;
     if (name === 'tell' && deedAccount === 'blame' && blamed) action.blamed = blamed;
