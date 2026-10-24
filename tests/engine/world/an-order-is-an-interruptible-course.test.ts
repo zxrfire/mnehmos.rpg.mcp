@@ -37,6 +37,8 @@ it('walks, waits the actual term without resetting it, then starts the next road
         { action: 'wait', destinationId: a.away.id, days: 1, words: 'wait one day' },
         { action: 'travel', destinationId: a.home.id, words: 'come home' }
     ] }, 0, true)!;
+    expect(a.world.memories.records.find(memory => memory.ownerId === a.body().id && memory.tags.includes('slave-order'))?.summary)
+        .toContain('come home');
     expect(a.body().activity?.untilDay).toBe(2);
     a.settle(2);
     expect(currentSlaveOrder(a.world, fact)?.action).toBe('wait');

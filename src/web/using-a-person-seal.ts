@@ -20,6 +20,8 @@ import { requestPutToSomebody } from './what-a-request-asks-and-of-whom.js';
 
 export async function usingAPersonSeal(game: GameService, run: Run, body: Cultivator, action: PlannedAction, raw: string) {
     const command = action.action === 'interact' && action.intent === 'command';
+    // Words about an order are not an order. The speech reader owns that choice.
+    if (action.action === 'interact' && !command) return null;
     if (!game.atHand || !command && !/\b(?:slave|qi)[ -]seal(?:ed)?\b/i.test(raw)
         && !/\b(?:order|command)\b/i.test(raw)) return null;
     if (/\b(?:offer|accept|agree|contract)\b/i.test(raw)) return null;

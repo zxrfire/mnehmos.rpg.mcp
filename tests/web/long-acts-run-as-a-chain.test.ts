@@ -4,7 +4,7 @@
  */
 import { expect, it, vi } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
-import { whatThisTurnMayRun, type PlanStep } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
+import { whatThisTurnMayRun, sayingWhereItStopped, type PlanStep } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 import { makeLocation, linkLocations } from '../../src/engine/world/locations.js';
 import { makeScheduledEffect } from '../../src/engine/world/world-state.js';
 import { routineTime } from '../../src/engine/world/npc-routines.js';
@@ -18,6 +18,13 @@ it('keeps two long acts in supplied order without an ordering word or a model ex
         { action: { action: 'move', target: 'the destination' }, said: 'walk to the destination' }
     ];
     expect(whatThisTurnMayRun(steps).toRun).toEqual(steps);
+});
+
+it('reports a stopped sequence without inventing dependence between its acts', () => {
+    const said = sayingWhereItStopped({ action: { action: 'cultivate', days: 30 }, said: 'sit for a month' },
+        [{ action: { action: 'move', target: 'the village' }, said: 'then walk to the village' }]);
+    expect(said).not.toContain('depended');
+    expect(said).toContain('Nothing was spent on what came after');
 });
 
 for (const mode of ['complete', 'interrupted', 'fallback', 'methodless'] as const) it(mode === 'interrupted'

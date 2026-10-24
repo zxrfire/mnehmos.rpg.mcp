@@ -144,3 +144,7 @@ travel and waiting, checks the real local-walk clock, saves/reopens it, then
 meets the actual body at the landing. The SQL control uses the same term and
 local walk through the actual executor. Native course controls cover consecutive
 journeys, a timed wait, release, completed sitting and interrupted sitting.
+
+The order-arrival test covers explicit ordered-act readings, full-topic readings
+and a bare trailing wait. The omission test's old rations case now requires both
+purchase and eating through the actual body: word count is not an act limit.

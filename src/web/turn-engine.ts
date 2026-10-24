@@ -4356,7 +4356,7 @@ export class GameService {
                 if (done.cutShort || done.outcome === 'refused')
                     finishSlaveOrder(this.atHand!, command.fact, routineTime(this.atHand!),
                         'The actual body was stopped. The remaining ordered acts were not reached.');
-                if (done.outcome === 'executed' && currentSlaveOrder(this.atHand!, command.fact)?.action === 'message')
+                if (!done.cutShort && done.outcome === 'executed' && currentSlaveOrder(this.atHand!, command.fact)?.action === 'message')
                     completeSlaveOrderStep(this.atHand!, command.fact, routineTime(this.atHand!), 'The ordered message was delivered through the actual speaker.');
                 this.theWorldMoved();
                 return done;

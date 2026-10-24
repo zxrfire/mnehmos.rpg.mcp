@@ -5,6 +5,8 @@
  * rations and did not eat, and said nothing about the eating - the hunger
  * banner stayed up until the player typed `I eat` on its own. The purchase was
  * correct; the silence was the defect.
+ * The ordered executor now attempts both acts, including a one-word trailing
+ * instruction. Omission reports below describe a reading gap, never an act limit.
  *
  * And it happens in both directions. The parser takes whichever verb its table
  * reaches first, so `I gather herbs and go to the market` browses a board and
@@ -300,28 +302,16 @@ describe('played', () => {
         expect(result.toolCalls.some(c => c.name === 'engine.parseIntent')).toBe(false);
     });
 
-    it('buys the rations, does not eat, and says so', async () => {
-        const { game } = makeGame({ worldEnabled: true });
-        await game.newRun('Shen Wuyou');
-
+    it('buys the rations then eats even when the last act is one word', async () => {
+        const { game, repos } = await makeGameInWorld({ seed: 'reading3-one-word-act', worldSeed: 'the-sounding-question' });
+        const { cultivator } = await game.newRun('Traveller');
+        repos.cultivators.update(cultivator.id, { satiety: 10 });
         const result = await game.act('I buy a month of rations and eat');
-
-        // Half one: the purchase happened, exactly as it did before.
-        expect(result.state.cultivator.spiritStones).toBeLessThan(30);
-
-        // Half two, which is the defect: the eating is mentioned rather than
-        // dropped, in the player's own word for it.
-        expect(result.narration).toContain('"eat"');
-
-        // And in the log, which is the channel the narrator cannot dress.
-        const engineSaid = result.state.log.filter(e => e.role === 'engine').map(e => e.text).join('\n');
-        expect(engineSaid).toContain('"eat" was not.');
-
-        // The inspector marks it as something that did not happen.
-        const routing = result.toolCalls.filter(c => c.name === 'engine.parseIntent');
-        expect(routing).toHaveLength(1);
-        expect(routing[0]?.ok).toBe(false);
-        expect(routing[0]?.summary).toContain('Not run: "eat"');
+        expect(result.state.cultivator.spiritStones).toBeLessThan(cultivator.spiritStones);
+        expect(result.toolCalls.filter(call => call.name === 'engine.step').at(-1)?.action).toBe('eat');
+        expect(result.toolCalls.some(call => call.name === 'cultivator.applyDeltas' && call.action === 'eat' && call.ok)).toBe(true);
+        expect(result.state.cultivator.satiety).toBeGreaterThan(10);
+        expect(result.narration).not.toContain('"eat" was not.');
     });
 
     /**

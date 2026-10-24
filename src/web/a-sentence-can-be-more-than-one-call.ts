@@ -285,8 +285,10 @@ export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan
         begin = boundary.index! + boundary[0].length;
     }
     parts.push(input.slice(begin));
-    const clauses = parts.map(part => part.trim())
-        .filter(part => part.split(/\s+/).filter(Boolean).length >= 2);
+    const clauses = parts.map(part => part.trim()).filter(Boolean)
+        // A bare act such as "wait" or "eat" counts. A name left by a
+        // vocative comma supplies no instruction of its own.
+        .filter(part => part.split(/\s+/).length > 1 || parseIntent(part).action !== 'unclear');
     for (let i = 1; i < clauses.length; i++) {
         if (theFragmentRestrainsTheBlow(clauses[i]!)
             && ['hunt', 'attack', 'coerce'].includes(parseIntent(clauses[i - 1]!).action)) {
@@ -1272,8 +1274,7 @@ export function sayingWhereItStopped(
         ? named[0]!
         : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
     return `That is as far as it went: "${whatThisStepIsCalled(stoppedOn)}" did not come off, `
-        + `and "${rest}" depended on it having done - so ${
-            named.length === 1 ? 'it never happened' : 'none of it happened'}. `
+        + `and "${rest}" ${named.length === 1 ? 'was' : 'were'} never reached. `
         + 'Nothing was spent on what came after.';
 }
 

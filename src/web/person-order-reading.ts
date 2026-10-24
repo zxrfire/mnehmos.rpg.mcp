@@ -7,6 +7,8 @@ import type { PersonOrder } from '../engine/world/slave-orders.js';
 import { routineLocationOf } from '../engine/world/npc-routines.js';
 import { theAreasOf } from '../engine/world/where-in-a-place-somebody-is-standing.js';
 import { theAreaNamed } from './walking-across-a-place.js';
+import { theClausesOf, explicitNameSpansIn } from './a-sentence-can-be-more-than-one-call.js';
+import { parseDuration } from './sentence-parts.js';
 
 function kindOf(words: string): PersonOrder['action'] {
     return /\b(?:attack|kill|massacre|slaughter)\b/i.test(words) ? 'attack' : /\bguard\b/i.test(words) ? 'guard'
@@ -20,7 +22,13 @@ export function personOrdersRead(game: GameService, holder: Cultivator, subject:
     people: readonly NpcRecord[], action: PlannedAction, words: string): { orders: PersonOrder[] } | { reason: string } {
     const world = game.atHand!, orders: PersonOrder[] = [];
     let destinationId = game.worldPlaceOf(holder), areaId: string | undefined;
-    const readings = action.orders ?? [{ action: kindOf(words), words, days: action.days, destination: undefined, target: undefined }];
+    const clauses = action.orders ? [] : theClausesOf(words, explicitNameSpansIn(words,
+        [...world.locations, ...people, ...world.objects].map(entity => entity.name)));
+    // Older readers supply the full spoken order in topic. Apply the existing
+    // clause reader inside that speech, never as further acts by the holder.
+    const readings = action.orders ?? clauses.map(clause => ({ action: kindOf(clause), words: clause,
+        days: parseDuration(clause) ?? (clauses.length === 1 ? action.days : undefined), destination: undefined, target: undefined }));
+    if (!readings.length) return { reason: 'State the order and its actual destination.' };
     for (const reading of readings) {
         const said = reading.words.toLowerCase(), destination = reading.destination?.toLowerCase().trim();
         const target = reading.target?.toLowerCase().trim();

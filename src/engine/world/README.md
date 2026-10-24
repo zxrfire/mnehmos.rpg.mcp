@@ -5357,3 +5357,6 @@ seal release or death leaves later work unperformed.
 Ordered melee rechecks the target's real journey location and, when specified,
 local area at attack time. A named target who left is not struck through their
 old location, and no attack completion is recorded without a reached defender.
+
+Command summaries and the slave's memory retain the whole heard course, including
+following acts. Completion receipts remain distinct from that instruction memory.

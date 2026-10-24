@@ -13,7 +13,8 @@ import { commandAtTheActualBody } from '../../src/web/slave-orders-at-the-actual
 import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 import { forgetWorld, worldForRun } from '../../src/server/state/cultivation-world.js';
 
-it('goes to the real landing, then waits there for the holder through save and arrival', async () => {
+for (const reading of ['ordered acts', 'full topic', 'bare wait'] as const) it(`goes to the landing then waits through save and arrival (${reading})`, async () => {
+    const structured = reading === 'ordered acts';
     const plans: string[] = [];
     const provider = new ScriptedProvider({ plans, narrations: ['The order is heard.', 'Time passes.', 'You reach the landing.'] });
     const h = await makeGameInWorld({ seed: 'reading3-orders', worldSeed: 'reading3-orders-world', provider });
@@ -35,17 +36,19 @@ it('goes to the real landing, then waits there for the holder through save and a
         writeActualPersonSeal(h.game, slave.id, { kind: 'slave', byId: cultivator.id,
             sinceDay: day, liftsOnDay: null, note: 'Actual held seal.' }, day);
         h.game.theWorldMoved();
+        const words = `go to ${landing.name} and ${reading === 'bare wait' ? 'wait' : 'wait for me there'}`;
         plans.push(JSON.stringify({ lane: 'speak', intent: 'command_person', target: slave.name,
-            topic: `go to ${landing.name} and wait for me there`, orders: [
+            topic: words, orders: structured ? [
                 { action: 'travel', destination: landing.name, words: `go to ${landing.name}` },
                 { action: 'wait', target: 'me', words: 'wait for me there' }
-            ] }));
+            ] : undefined }));
         const before = h.game.currentRun().run.elapsedDays;
-        const ordered = await h.game.act(`${slave.name}, I command you to go to ${landing.name} and wait for me there`);
+        const ordered = await h.game.act(`${slave.name}, I command you to ${words}`);
         expect(h.game.currentRun().run.elapsedDays).toBe(before);
         expect(ordered.narration).not.toContain('One act at a time');
         const order = unfinishedSlaveOrders(h.game.atHand!).find(fact => fact.data.slaveId === slave.id);
         expect(order).toBeDefined();
+        expect(JSON.parse(String(order!.data.order)).following?.[0].action).toBe('wait');
         const body = () => h.game.atHand!.npcs.find(person => person.id === slave.id)!;
         expect(body().activity?.untilDay).toBeCloseTo(day + LOCAL_WALK_DAYS);
         expect(routineOf(h.game.atHand!, body()).standingIn).not.toBe(landing.id);

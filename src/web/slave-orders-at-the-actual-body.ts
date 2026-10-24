@@ -81,4 +81,3 @@ export function theOrderOnTheActualPlayer(game: GameService, body: Cultivator, r
     game.theWorldMoved();
     return currentSlaveOrder(world, fact) ? theOrderOnTheActualPlayer(game, body, requested) : null;
 }
-

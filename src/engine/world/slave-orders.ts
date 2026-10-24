@@ -49,9 +49,10 @@ export function commandSlave(state: WorldState, holder: NpcRecord, slave: NpcRec
         || !state.locations.some(place => place.id === order.destinationId)) return null;
     for (const previous of unfinishedSlaveOrders(state)) if (previous.data.slaveId === slave.id)
         finishOrder(state, previous, day, `${holder.name} superseded the prior order.`);
+    const words = [order, ...(order.following ?? [])].map(act => act.words).join('; then ');
     const fact = appendWorldFact(state, makeFact({ day, kind: 'opportunity', locationId: slave.locationId,
         visibility: 'secret', actors: [{ id: holder.id, name: holder.name, role: 'commanded' },
-            { id: slave.id, name: slave.name, role: 'compelled' }], summary: `${holder.name} ordered ${slave.name}: ${order.words}`,
+            { id: slave.id, name: slave.name, role: 'compelled' }], summary: `${holder.name} ordered ${slave.name}: ${words}`,
         data: { slaveOrder: true, slaveId: slave.id, holderId: holder.id, order: JSON.stringify(order) } }), { recur: false, bystanders: false });
     rememberFact(state.memories, slave.id, fact, { kind: 'betrayal', tags: ['slave-order'] });
     settleSlaveOrders(state, day);

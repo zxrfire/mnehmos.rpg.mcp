@@ -60,6 +60,11 @@ for (const binding of ['slave', 'word', 'none', 'absent'] as const) it(`reads a 
         if (binding === 'slave') {
             expect(h.game.atHand!.history.facts.some(fact => fact.data.slaveOrder === true && fact.data.slaveId === subject.id)).toBe(true);
             expect(h.game.atHand!.memories.records.some(memory => memory.ownerId === subject.id && memory.tags.includes('slave-order'))).toBe(true);
+            const heardOrders = h.game.atHand!.history.facts.filter(fact => fact.data.slaveOrder === true).length;
+            plans.push(JSON.stringify({ lane: 'speak', intent: 'ask_them_a_question', target: subject.name,
+                topic: 'what would happen if I command you to wait here?' }));
+            await h.game.act(`${subject.name}, what would happen if I command you to wait here?`);
+            expect(h.game.atHand!.history.facts.filter(fact => fact.data.slaveOrder === true)).toHaveLength(heardOrders);
             const victim = createNpc(world.seed, { id: 'reading2-victim', name: 'The Other Person',
                 onDay: day, bornOnDay: day - 25 * 365, locationId: place.id });
             // Replay2 N3: the named victim can precede the commanded person in the roster.

@@ -4266,3 +4266,14 @@ A question retains its mood across its subordinate verb fragments. A later
 explicit subject or semicolon permits an independent act; model-read steps retain
 their own requested sequence. Zero cultivation return cannot conceal a reader
 that accidentally turned the question's fragments into sitting.
+
+A full-topic command from an older reader is segmented with the existing clause
+reader and literal-name protection inside the speech act. It retains the same
+ordered work as an explicit `orders` reading. The slave's command memory retains
+all heard acts; a stopped player chain reports what was not reached without
+asserting that sequence alone made the later act dependent.
+
+Speech classified as a question or ordinary talk cannot acquire seal effects from
+the word "command" in its text. A recognised bare act, including trailing "wait"
+or "eat", is a complete instruction; an unrecognised vocative name remains an
+address. Existing name protection keeps conjunctions inside printed names intact.
