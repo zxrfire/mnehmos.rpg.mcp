@@ -13,6 +13,7 @@ import { theAreasOf } from '../../src/engine/world/where-in-a-place-somebody-is-
 import { agreeOpenContract } from '../../src/engine/social/open-contracts.js';
 import { writeObligations } from '../../src/storage/repos/obligation.repo.js';
 import { makeLocation } from '../../src/engine/world/locations.js';
+import { unfinishedSlaveOrders } from '../../src/engine/world/slave-orders.js';
 
 it('keeps a command distinct from a question in the speech lane', () => {
     expect(validatePlan({ lane: 'speak', intent: 'command_person', target: 'the listener', topic: 'Kneel before me.' })).toEqual({
@@ -65,6 +66,15 @@ for (const binding of ['slave', 'word', 'none', 'absent'] as const) it(`reads a 
                 topic: 'what would happen if I command you to wait here?' }));
             await h.game.act(`${subject.name}, what would happen if I command you to wait here?`);
             expect(h.game.atHand!.history.facts.filter(fact => fact.data.slaveOrder === true)).toHaveLength(heardOrders);
+            // A literal order is already read as an instruction. The fallback
+            // verb vocabulary must not erase a bodily request it cannot execute.
+            plans.push(JSON.stringify({ lane: 'speak', intent: 'command_person', target: subject.name, topic: 'dance and wait' }));
+            await h.game.act(`${subject.name}, I command you: dance and wait`);
+            const pending = unfinishedSlaveOrders(h.game.atHand!).find(fact => fact.data.slaveId === subject.id)!;
+            const literal = JSON.parse(String(pending.data.order));
+            expect(literal.action).toBe('request');
+            expect(literal.words).toBe('dance');
+            expect(literal.following[0].action).toBe('wait');
             const victim = createNpc(world.seed, { id: 'reading2-victim', name: 'The Other Person',
                 onDay: day, bornOnDay: day - 25 * 365, locationId: place.id });
             // Replay2 N3: the named victim can precede the commanded person in the roster.

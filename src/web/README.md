@@ -4277,3 +4277,9 @@ Speech classified as a question or ordinary talk cannot acquire seal effects fro
 the word "command" in its text. A recognised bare act, including trailing "wait"
 or "eat", is a complete instruction; an unrecognised vocative name remains an
 address. Existing name protection keeps conjunctions inside printed names intact.
+
+A command with an already resolved listener retains literal instruction fragments
+even when the fallback does not recognise their verb. Such a bodily request keeps
+its existing pending-order behavior; later acts are retained and no physical
+result is invented. The outer sentence's unrecognised vocative still supplies no
+separate instruction.

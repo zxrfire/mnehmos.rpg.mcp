@@ -23,7 +23,7 @@ export function personOrdersRead(game: GameService, holder: Cultivator, subject:
     const world = game.atHand!, orders: PersonOrder[] = [];
     let destinationId = game.worldPlaceOf(holder), areaId: string | undefined;
     const clauses = action.orders ? [] : theClausesOf(words, explicitNameSpansIn(words,
-        [...world.locations, ...people, ...world.objects].map(entity => entity.name)));
+        [...world.locations, ...people, ...world.objects].map(entity => entity.name)), true);
     // Older readers supply the full spoken order in topic. Apply the existing
     // clause reader inside that speech, never as further acts by the holder.
     const readings = action.orders ?? clauses.map(clause => ({ action: kindOf(clause), words: clause,

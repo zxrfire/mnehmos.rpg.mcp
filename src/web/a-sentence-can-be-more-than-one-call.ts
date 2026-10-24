@@ -239,7 +239,8 @@ function spansInTheTail(spans: readonly ExplicitNameSpan[], offset: number): rea
     return spans.filter(span => span.start >= offset).map(span => ({ start: span.start - offset, end: span.end - offset }));
 }
 
-export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan[] = []): string[] {
+export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan[] = [],
+    wordsAreInstructions = false): string[] {
     // A terms question keeps its named object; a comma does not order a purchase.
     if (isOneInformationExchange(input) || askingWhatItWouldTake(input)) return [input.trim()];
     // A conjunction inside a question does not turn its bare verb into an
@@ -252,7 +253,7 @@ export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan
             || /^\s*(?:I|we)\b/i.test(input.slice(boundary.index! + boundary[0].length)));
         if (!next) return [input.trim()];
         const at = next.index! + next[0].length;
-        return [input.slice(0, next.index).trim(), ...theClausesOf(input.slice(at), spansInTheTail(nameSpans, at))];
+        return [input.slice(0, next.index).trim(), ...theClausesOf(input.slice(at), spansInTheTail(nameSpans, at), wordsAreInstructions)];
     }
 
     // "It wasn't me, it was X" is one account, a blame; split at the comma it became a bare denial.
@@ -267,7 +268,7 @@ export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan
         // boundary where an independently requested act actually starts.
         if (/^(?:what|who|where|when|how|which|whether|your name|can you|could you|do you|would you)\b/i.test(after)) continue;
         if (after && (isOneInformationExchange(before) || askingWhatItWouldTake(before))) {
-            return [before, ...theClausesOf(after, spansInTheTail(nameSpans, input.indexOf(after, boundary.index! + boundary[0].length)))];
+            return [before, ...theClausesOf(after, spansInTheTail(nameSpans, input.indexOf(after, boundary.index! + boundary[0].length)), wordsAreInstructions)];
         }
     }
     const parts: string[] = [];
@@ -287,8 +288,10 @@ export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan
     parts.push(input.slice(begin));
     const clauses = parts.map(part => part.trim()).filter(Boolean)
         // A bare act such as "wait" or "eat" counts. A name left by a
-        // vocative comma supplies no instruction of its own.
-        .filter(part => part.split(/\s+/).length > 1 || parseIntent(part).action !== 'unclear');
+        // vocative comma supplies no instruction of its own. Inside an already
+        // addressed command, every fragment is instruction text, even when the
+        // fallback vocabulary has no bodily adapter for it.
+        .filter(part => wordsAreInstructions || part.split(/\s+/).length > 1 || parseIntent(part).action !== 'unclear');
     for (let i = 1; i < clauses.length; i++) {
         if (theFragmentRestrainsTheBlow(clauses[i]!)
             && ['hunt', 'attack', 'coerce'].includes(parseIntent(clauses[i - 1]!).action)) {
