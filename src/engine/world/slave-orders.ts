@@ -193,7 +193,7 @@ function settleCurrentOrder(state: WorldState, fact: HistoricalFact, day: number
         state.npcs[at] = { ...slave, locationId: place, activity: order.destinationAreaId ? {
             kind: 'stationed', note: order.words, withIds: [], sinceDay: day, untilDay: null, standingIn: order.destinationAreaId
         } : null, updatedOnDay: day };
-        if (order.action === 'attack') attackUnderCommand(state, state.npcs[at], fact, order, day);
+        if (order.action === 'attack' && !attackUnderCommand(state, state.npcs[at], fact, order, day)) return false;
         else if (order.action === 'company') {
             const changed = takeThemWithYou(state.npcs, { leaderId: holderId, party: [state.npcs[at]],
                 note: fact.summary, onDay: day, untilDay: order.days === undefined ? null : day + order.days });
@@ -243,12 +243,16 @@ function goOnTheOrderedCourse(state: WorldState, person: NpcRecord, destinationI
     return startNpcJourney(state, person, destinationId, day, note);
 }
 
-function attackUnderCommand(state: WorldState, slave: NpcRecord, fact: HistoricalFact, order: PersonOrder, day: number): void {
+function attackUnderCommand(state: WorldState, slave: NpcRecord, fact: HistoricalFact, order: PersonOrder, day: number): boolean {
+    const clock = { ...state, currentDay: Math.floor(day), currentHour: day % 1 * 24 };
+    const place = order.destinationAreaId && state.locations.find(place => place.id === order.destinationId);
+    const areas = place ? theAreasOf(clock, place) : null;
     const defenders = state.npcs.filter(person => person.id !== slave.id && person.id !== fact.data.holderId
         && person.status === 'alive' && isTheWorldsToMove(person)
-        && (order.targetId ? person.id === order.targetId : routineLocationOf({ ...state, currentDay: day }, person) === order.destinationId));
-    if (!defenders.length) return;
-    const clock = { ...state, currentDay: Math.floor(day), currentHour: day % 1 * 24 };
+        && routineLocationOf(clock, person) === order.destinationId
+        && (!areas || areas.whereIs.get(person.id) === order.destinationAreaId)
+        && (!order.targetId || person.id === order.targetId));
+    if (!defenders.length) return false;
     const people = [slave, ...defenders], originals = new Map(people.map(person => [person.id, person]));
     const inputs = people.map(person => combatantOf(person, clock));
     const result = resolveMelee([{ id: slave.id, name: slave.name, members: [inputs[0]],
@@ -287,6 +291,7 @@ function attackUnderCommand(state: WorldState, slave: NpcRecord, fact: Historica
             name: originals.get(exchange.attackerId)?.name ?? '', role: 'broke it' }, object, day,
             locationId: order.destinationId, how: `Broken in the ordered fight: ${weapon!.exposure.cause}.` });
     }
+    return true;
 }
 
 /** The existing witness and deed readers receive the commander's responsibility as well as the hand's. */

@@ -5353,3 +5353,7 @@ departure approach. Waiting starts after arrival and retains the post until its
 term ends or its named person arrives. Closed-door work completes through the
 ordinary sitting settlement before the next ordered act begins. Its interruption,
 seal release or death leaves later work unperformed.
+
+Ordered melee rechecks the target's real journey location and, when specified,
+local area at attack time. A named target who left is not struck through their
+old location, and no attack completion is recorded without a reached defender.
