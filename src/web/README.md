@@ -4249,3 +4249,7 @@ body costs and interruptions still apply, followed by later requested acts.
 A command's listener resolves through the ordinary person target resolver before
 reading the act's victim. Mentioning another person cannot select their seal by
 roster order. An absent listener receives no order or narrator reply.
+
+The private person card derives whether the player's actual live slave seal
+compels that speaker. Resentment can colour the voice; refusal cannot. The card
+grants no unresolved movement, injury or other outcome and exposes no visible mark.

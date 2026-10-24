@@ -26,6 +26,7 @@ import { joiningAPrivateParty, privatePartyInvitationLines } from './joining-a-p
 import { swearingBrotherhoodWithAPerson, brotherhoodOfferedOnContact } from './swearing-brotherhood-with-a-person.js';
 import { openContractsWithAPerson, contractOffersAtBody } from './open-contracts-with-a-person.js';
 import { usingAPersonSeal } from './using-a-person-seal.js';
+import { actualPersonFor } from './the-actual-person-behind-a-world-row.js';
 import { bindingOf } from '../engine/social/open-contracts.js';
 import { theOrderOnTheActualPlayer } from './slave-orders-at-the-actual-body.js';
 import { passagePurchase } from './passage-purchase.js';
@@ -1006,6 +1007,7 @@ import {
 import { aSealHereMeansAnUndrawnPocket } from '../engine/world/locations.js';
 import {
     whatTheSealLooksLike,
+    holdsASlaveSeal,
     whatThisPersonCanDrawFrom
 } from '../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
 import {
@@ -21234,6 +21236,8 @@ ${fit.line}`;
                     .filter(id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id))
                     .map(nameOf);
                 named.push({
+                    slaveSealedToPlayer: !!this.atHand && holdsASlaveSeal(
+                        actualPersonFor(this, person.id)?.cultivation.seal ?? null, cultivator.id, routineTime(this.atHand)),
                     towardPlayer: row && this.atHand ? whatTheyHoldTowardThePlayer(this.atHand, row, cultivator) : null,
                     id: person.id,
                     name: person.name,

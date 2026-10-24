@@ -1465,6 +1465,8 @@ export interface SomebodyWhoReplied extends SomebodyInTheSquare {
 }
 
 export interface SomebodyInTheSquare {
+    /** Private voicing constraint, derived from this person's actual live seal. */
+    slaveSealedToPlayer?: boolean;
     /** The speaker's actual directed ties, distinct from what the player heard. */
     towardPlayer?: string | null;
     /**

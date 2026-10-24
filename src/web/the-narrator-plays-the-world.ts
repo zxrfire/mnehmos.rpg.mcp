@@ -827,6 +827,9 @@ function aPersonsCard(
     const addressedHere = addressed === true ? ' (THE PLAYER IS SPEAKING TO THEM)'
         : addressed === 'just' ? ' (THE PLAYER SPOKE TO THEM THIS TURN; THEY MAY HAVE MOVED)' : '';
     const lines = [`- ${heading}${addressedHere}: ${who}.`];
+    if (person.slaveSealedToPlayer) lines.push("    Compelled by the player's slave seal: obedience to the holder is absolute. "
+        + 'Resentment is possible; refusal is not. Only engine-resolved acts have happened; do not invent success, movement or harm. '
+        + 'This is private voicing information, not a visible mark or an invitation to recite the seal record.');
     if (person.towardPlayer) lines.push(`    Toward the player: ${person.towardPlayer}`);
     if (person.leftTheChair) lines.push(`    Known in their house: ${person.leftTheChair}.`);
     // Facts, and the narrator plays what follows from them. See `whatTheCardSaysOfALoss`.
