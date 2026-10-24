@@ -119,8 +119,7 @@ describe('a span spent on its feet', () => {
         const { game } = made;
         await game.newRun('Runner');
         const before = game.state().log.length;
-        // "anyway" because a cultivator with no manual is refused the sitting
-        // outright, and the refusal is not a time skip at all.
+        // A methodless sitting still has the ordinary seclusion clock.
         await game.act('I cultivate for 20 days anyway');
         const engineLines = game.state().log.slice(before)
             .filter(e => e.role === 'engine').map(e => e.text);

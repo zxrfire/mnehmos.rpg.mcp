@@ -47,9 +47,8 @@ const THE_WORLD = 'w1';
 /**
  * Open a run, give it a method and a purse, and sit until somebody arrives.
  *
- * The purse and the method are there so the sitting is not refused for a reason
- * that has nothing to do with what is being tested - a zero-return stretch and
- * an empty pack are both separately correct refusals with their own tests.
+ * The purse funds provisions; the method gives this sitting ordinary progress.
+ * Neither arranges the interruption under test.
  */
 async function sitUntilSomebodyComes(seed: string): Promise<{
     game: GameService;

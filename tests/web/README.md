@@ -10,7 +10,8 @@ scripted narrator and checks that the card explicitly says nothing was bought
 or paid, including an unsuccessful destination lookup. The purse is unchanged.
 
 `long-acts-run-as-a-chain.test.ts` keeps a month of meditation and an actual
-two-day road in one ordered chain, including fallback reading without "then".
+two-day road in one ordered chain, including methodless sitting and fallback
+reading without "then".
 An actual scheduled interruption stops the sitting before the movement handler
 is called; later clauses neither run nor spend time. No ordering question is held.
 

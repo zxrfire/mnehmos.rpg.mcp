@@ -97,9 +97,7 @@ describe('played', () => {
         const quoted = game.provisionsForAStretch(days);
         expect(quoted.cost).toBeGreaterThan(0);
 
-        // `anyway` because a cultivator with no manual is refused a stretch
-        // that returns nothing, which is a different and correct gate. The
-        // food is bought either way, and the food is what this is about.
+        // Methodless sitting still consumes the ordinary provisions.
         const result = await game.cultivate(days, { anyway: true });
 
         // NET OF WHAT THE SKIP ITSELF EARNED OR SPENT, which is the same

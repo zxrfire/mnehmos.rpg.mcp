@@ -4241,3 +4241,7 @@ purses and any backing pouch/food quantity. Unknown catalog value means no
 stated price, not an untradeable item. Incoming offers require a real reached
 buyer with a relevant want and knowledge of the actual item. An office, post,
 roll place or influence is not materialized as inventory by a trade request.
+
+A missing or exhausted cultivation method makes sitting yield no progress. It
+does not veto the span or require special wording: ordinary days, provisions,
+body costs and interruptions still apply, followed by later requested acts.

@@ -20,7 +20,7 @@ it('keeps two long acts in supplied order without an ordering word or a model ex
     expect(whatThisTurnMayRun(steps).toRun).toEqual(steps);
 });
 
-for (const mode of ['complete', 'interrupted', 'fallback'] as const) it(mode === 'interrupted'
+for (const mode of ['complete', 'interrupted', 'fallback', 'methodless'] as const) it(mode === 'interrupted'
     ? 'an actual interruption in the month stops before the two-day walk'
     : `meditates for a month and walks the actual two-day road in ${mode} order`, async () => {
     const interrupted = mode === 'interrupted';
@@ -36,10 +36,10 @@ for (const mode of ['complete', 'interrupted', 'fallback'] as const) it(mode ===
         linkLocations(home, destination, 'road', 2);
         world.locations = [home, destination]; world.npcs = []; world.factions = []; world.objects = []; world.schedule = [];
         const method = 'lesser-qi-gathering-manual';
-        h.repos.techniques.learn(cultivator.id, method, 0.6);
+        if (mode !== 'methodless') h.repos.techniques.learn(cultivator.id, method, 0.6);
         const hp = maxHpForOrdinal(cultivator.attributes.might, cultivator.realmOrdinal);
         h.repos.cultivators.update(cultivator.id, { location: home.name, hp, maxHp: hp,
-            knownTechniques: [method], spiritStones: 10000 });
+            knownTechniques: mode === 'methodless' ? [] : [method], spiritStones: 10000 });
         h.repos.cultivators.standIn(cultivator.id, null);
         writeFlag(h.db, cultivator.id, 'rations_held', '20');
         h.game.noteEncounter(h.game.currentRun().cultivator, h.game.currentRun().run,
@@ -52,6 +52,7 @@ for (const mode of ['complete', 'interrupted', 'fallback'] as const) it(mode ===
             { action: 'move', intent: 'travel', target: destination.name, said: `walk to ${destination.name}` }
         ] }));
         const before = h.game.currentRun().run.elapsedDays;
+        const progress = h.game.currentRun().cultivator.cultivationProgress;
         const walk = vi.spyOn(h.game, 'move');
         const turn = await h.game.act(`I meditate for a month and ${mode === 'fallback' ? '' : 'then '}walk to ${destination.name}`);
         const opened = turn.toolCalls.filter(call => call.name === 'engine.step').map(call => call.action);
@@ -70,6 +71,11 @@ for (const mode of ['complete', 'interrupted', 'fallback'] as const) it(mode ===
             expect(h.game.currentRun().run.elapsedDays - before).toBeCloseTo(32);
             expect(h.game.currentRun().cultivator.location).toBe(destination.name);
             expect(walk).toHaveBeenCalledOnce();
+            // Replay2 N5: no method means no gain, not a refusal to spend the month.
+            if (mode === 'methodless') {
+                expect(h.game.currentRun().cultivator.cultivationProgress).toBe(progress);
+                expect(turn.narration).toContain('No cultivation method');
+            }
         }
     } finally { vi.restoreAllMocks(); h.db.close(); }
 });

@@ -86,8 +86,7 @@ import {
     factsForTimeSkip,
     factsForToolResult,
     humanDays,
-    placeName,
-    theRung
+    placeName
 } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import {
@@ -348,14 +347,11 @@ export const seclusionVerbs = {
             && holder.holderFactionId === (cultivator.sectId ?? null);
         const startDay = Math.floor(run.elapsedDays);
 
-        // A STRETCH WHOSE RETURN IS ZERO IS NOT SOLD SILENTLY
+        // A missing or exhausted method changes progress, never the right to sit.
         const wall = techniqueCeiling(
             cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap,
             copyNamesHeldBy(this.db, cultivator.id)
         );
-        if (wall.multiplier === 0 && !options.acknowledged) {
-            return this.sittingWouldReturnNothing(cultivator, wall, days);
-        }
 
         // `cultivate` reaches here without an action-level world load, and the
         // encounter layer reads the place and the people standing in it.
@@ -949,47 +945,6 @@ export const seclusionVerbs = {
             + `${crossroads.daysAsked} were forfeited. Nothing was refunded and nothing further `
             + 'was rolled for them.'
         );
-    },
-
-    /**
-     * The zero-return refusal, and where the next volume is.
-     */
-    async sittingWouldReturnNothing(
-        this: GameService,
-        cultivator: Cultivator,
-        wall: ReturnType<typeof techniqueCeiling>,
-        days: number
-    ): Promise<Execution> {
-        const next = await this.theNextVolume(cultivator);
-
-        const wouldBe = wall.state === 'no_method'
-            // The ceiling line above has already said why. This says what it
-            // cost, which is the part that is about this stretch.
-            ? 'The stretch returns nothing.'
-            : 'The book has ended, so the stretch returns nothing.';
-
-        const pointer = next
-            ? `${next} carries further than you stand, and you could be taught it. `
-              + 'Ask who would teach you, or what there is to learn.'
-            : 'Ask what there is to learn, and who would teach you. Neither costs a day.';
-
-        return refused('engine.techniqueCeiling', 'cultivate', factsForRefusal(
-            `${humanDays(days)} of sitting would produce nothing.`,
-            `${wall.line} ${wouldBe} ${pointer} `
-            + 'Say it again with "anyway" and the years go by regardless - they are yours to spend.',
-            // THE FINDING, NOT THE ARITHMETIC THAT PRODUCED IT. This read
-            // "the rate multiplier at Qi Condensation Layer 1 is 0", which is
-            // the engine reading its own coefficient aloud in a channel the
-            // player sees in every mode. What is true and worth saying is that
-            // nothing accumulates - see `the-engine-states-findings-not-its-
-            // rubric.test.ts`, which is the same defect one screen over.
-            (wall.state === 'no_method'
-                ? 'No method is practised, so nothing accumulates at '
-                : 'The manual has ended, so nothing further accumulates at ')
-            + `${theRung(cultivator.realmOrdinal)} however long the sitting runs. `
-            + `${days} day${days === 1 ? ' was' : 's were'} refused before anything was spent: `
-            + 'no provisioning, no encounter roll, no time passed.'
-        ));
     },
 
     /**
