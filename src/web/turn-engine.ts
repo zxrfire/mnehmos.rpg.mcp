@@ -390,7 +390,7 @@ import {
 import { theHouseThisNameReaches, theHouseWhoseGateThisIs, theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import { aWorkTopic, theGateAStrangerStandsAt, theGateIsAsked, theTownBelowTheGate, whatTheGateSaysOfItsWork } from './the-gate-speaks-for-its-house.js';
 import { whereFoodComesFromHere, whereFoodIsSoldInstead } from './where-food-is-sold.js';
-import { theNoticesTurnedIn, turnInWhatANoticeAsks } from './turning-in-what-a-notice-asks.js';
+import { theNoticesTurnedIn, turnInWhatANoticeAsks, whereANoticeIsTurnedIn } from './turning-in-what-a-notice-asks.js';
 import { settleWhatYourHouseHasIssuedYou } from './what-your-house-has-issued-you.js';
 import { settleLeavingHouse } from '../engine/world/leaving-a-house.js';
 import { mastersNoticeAHeavenlySeedling } from './masters-notice-a-heavenly-seedling.js';
@@ -9097,6 +9097,11 @@ ${noticed}`;
                     return turnInAPrice(this, run, cultivator, target);
                 }
                 if (atTheGate) return turnInWhatANoticeAsks(this, run, cultivator, atTheGate, target);
+                // AWAY FROM ANY GATE, somebody off every roll is told which gate takes what a notice asks.
+                if (!this.repos.sects.getMembership(cultivator.id)) {
+                    const elsewhere = whereANoticeIsTurnedIn(this, run, cultivator, target);
+                    if (elsewhere) return elsewhere;
+                }
                 return this.handItInToTheHouse(run, cultivator, target);
             }
 

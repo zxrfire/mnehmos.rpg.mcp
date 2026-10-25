@@ -332,6 +332,30 @@ export interface WallReading {
     learned: string[];
 }
 
+/** What is nailed up where this cultivator is standing, read without anybody learning from it. */
+export function theNoticesOnThisWall(
+    cultivator: Cultivator,
+    run: Run,
+    alsoAsking: ReadonlyMap<string, readonly TheAsk[]> = new Map(),
+    turnedIn: ReadonlySet<string> = new Set(),
+    competitionCalendar?: { seed: string; onDay: number }
+): Notice[] {
+    const placeName = (cultivator.location ?? '').trim();
+    const onDay = Math.floor(run.elapsedDays);
+    return noticesOnTheWall({
+        field: openDoorsInTheWorld(),
+        placeName,
+        ground: postingGroundOf(placeName),
+        placeProvinceId: provinceOfPlace(placeName),
+        onDay,
+        seed: run.seed,
+        competitionCalendar,
+        speaking: housesWithSomethingToSay(alsoAsking, onDay),
+        // FIRST COME, FIRST PAID: a notice somebody turned in is down. See `a-notice-is-turned-in.ts`.
+        isDown: theNoticesThatAreDown({ runSeed: run.seed, today: onDay, windowDays: A_BILL_STAYS_UP_FOR_DAYS, turnedIn })
+    });
+}
+
 /**
  * Read whatever is nailed up where this cultivator is standing.
  *
@@ -354,23 +378,8 @@ export function readTheWall(
     turnedIn: ReadonlySet<string> = new Set(),
     competitionCalendar?: { seed: string; onDay: number }
 ): WallReading {
-    const placeName = (cultivator.location ?? '').trim();
     const onDay = Math.floor(run.elapsedDays);
-    const wall = {
-        field: openDoorsInTheWorld(),
-        placeName,
-        ground: postingGroundOf(placeName),
-        placeProvinceId: provinceOfPlace(placeName),
-        onDay,
-        seed: run.seed
-    };
-    const notices = noticesOnTheWall({
-        ...wall,
-        competitionCalendar,
-        speaking: housesWithSomethingToSay(alsoAsking, onDay),
-        // FIRST COME, FIRST PAID: a notice somebody turned in is down. See `a-notice-is-turned-in.ts`.
-        isDown: theNoticesThatAreDown({ runSeed: run.seed, today: onDay, windowDays: A_BILL_STAYS_UP_FOR_DAYS, turnedIn })
-    });
+    const notices = theNoticesOnThisWall(cultivator, run, alsoAsking, turnedIn, competitionCalendar);
     const bills = notices.flatMap(notice => notice.bill ?? []);
 
     const learned: string[] = [];

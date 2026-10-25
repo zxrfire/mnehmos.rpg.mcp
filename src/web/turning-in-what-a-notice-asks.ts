@@ -21,6 +21,7 @@ import { matchScore } from './entities.js';
 import {
     everythingEachHouseIsAsking,
     housesWithSomethingToSay,
+    theNoticesOnThisWall,
     whatEachHouseHasAPriceOn,
     whoEachHouseIsLookingFor
 } from './what-is-posted-on-the-wall-here.js';
@@ -50,6 +51,50 @@ function whatTheHouseAsksBrought(game: GameService, run: Run, playerId: string, 
         });
         return [{ noticeId, wants, status }];
     });
+}
+
+/**
+ * Where what they are handing in is turned in, said to a stranger away from any house's gate: the
+ * gate of every house whose notice asks for the thing they named, or of the notices on the wall
+ * where they stand when they named only "the notice". Null where no notice up is what they mean,
+ * and handing in is somebody else's question.
+ */
+export function whereANoticeIsTurnedIn(
+    game: GameService,
+    run: Run,
+    cultivator: Cultivator,
+    said: string | undefined
+): Execution | null {
+    const world = game.atHand;
+    if (!world) return null;
+    const asking = everythingEachHouseIsAsking(whoEachHouseIsLookingFor(world), whatEachHouseHasAPriceOn(world));
+    const turnedIn = theNoticesTurnedIn(game, cultivator.id);
+    const named = (said ?? '').trim();
+    const byName = named.length === 0 ? [] : housesWithSomethingToSay(asking, Math.floor(run.elapsedDays))
+        .flatMap(house => house.postsInPublic ? house.asks.flatMap(ask =>
+            ask.kind === 'work' && ask.item && matchScore(named, ask.item.name) > 60
+                && whatTheHouseAsksBrought(game, run, cultivator.id, house.id)
+                    .some(row => row.wants.id === ask.item!.id && !row.status.down)
+                ? [{ houseId: house.id, houseName: house.name, item: ask.item }] : []) : []);
+    const onThisWall = byName.length > 0 || !/\bnotices?\b/i.test(named) ? [] : theNoticesOnThisWall(cultivator, run, asking, turnedIn)
+        .flatMap(notice => notice.kind === 'work' && notice.item
+            ? [{ houseId: notice.houseId, houseName: notice.houseName, item: notice.item }] : []);
+    const wanted = byName.length > 0 ? byName : onThisWall;
+    if (wanted.length === 0) return null;
+    const seatOf = (houseId: string): string | null => {
+        const seat = world.factions.find(row => row.id === houseId)?.seatLocationId;
+        return world.locations.find(row => row.id === seat)?.name ?? null;
+    };
+    const lines = wanted.slice(0, 3).map(row => {
+        const seat = seatOf(row.houseId);
+        return `${row.houseName} takes in the ${row.item.count} ${row.item.name} its notice asks for at `
+            + `its own gate${seat ? `, at ${seat}` : ''}.`;
+    });
+    return refused('engine.turnInANotice', 'sect', factsForRefusal(
+        'A notice is turned in at the gate of the house that put it up.',
+        `${lines.join(' ')} Nothing is handed over here.`,
+        `whereANoticeIsTurnedIn: ${wanted.length} notice(s) ask for what was named; not at any of their gates.`
+    ));
 }
 
 /** How many of one thing the player carries. */

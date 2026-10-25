@@ -29,6 +29,7 @@ import { realmForOrdinal } from '../cultivation/realms.js';
 import type { WhatTheHouseWants } from './a-house-knows-its-own-by-a-lamp-and-a-token.js';
 import { whatThisHouseHasOnPaper } from './a-competition-anybody-may-enter.js';
 import type { WhatIsBrought } from '../encounters/a-notice-is-turned-in.js';
+import { TechniqueGradeSchema, type TechniqueGrade } from '../../schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE FIELD
@@ -139,6 +140,31 @@ export const BILLS_A_WALL_CARRIES: Record<PostingGround, number> = {
     site: 0,
     unplaceable: 0
 };
+
+/**
+ * The highest tier of thing a notice on a wall here asks for. The owner: higher-tier asks go up
+ * only where the people who could answer them pass, "you get to higher and higher level areas".
+ * A city carries every tier, and so does the town below a house's own gate for that house's own
+ * notices; see `aWallCarriesThisTier`.
+ */
+export const THE_TIER_A_WALL_CARRIES: Record<PostingGround, TechniqueGrade | null> = {
+    city: 'chaos',
+    sect_town: 'earth',
+    market_town: 'earth',
+    waystation: 'mortal',
+    village: 'mortal',
+    hamlet: null,
+    site: null,
+    unplaceable: null
+};
+
+/** Whether a wall carries a house's notice for something of this tier. */
+function aWallCarriesThisTier(wall: { ground: PostingGround; placeName: string }, houseName: string, grade: TechniqueGrade): boolean {
+    if (`${houseName} town`.toLowerCase() === wall.placeName.trim().toLowerCase()) return true;
+    const ceiling = THE_TIER_A_WALL_CARRIES[wall.ground];
+    return ceiling !== null
+        && TechniqueGradeSchema.options.indexOf(grade) <= TechniqueGradeSchema.options.indexOf(ceiling);
+}
 
 /**
  * How long a bill stays up before the wall is a different wall.
@@ -599,7 +625,8 @@ export function noticesOnTheWall(input: WallInput & {
     // pool: see the nails of its own below.
     const pool = reaching
         .flatMap(house => house.asks
-            .filter(ask => ask.kind !== 'wanted' && !(input.isDown?.(house.id, ask) ?? false))
+            .filter(ask => ask.kind !== 'wanted' && !(input.isDown?.(house.id, ask) ?? false)
+                && !(ask.kind === 'work' && ask.item && !aWallCarriesThisTier(input, house.name, ask.item.grade)))
             .map(ask => ({ house, ask })))
         .sort((a, b) => a.house.id.localeCompare(b.house.id)
             || a.ask.kind.localeCompare(b.ask.kind));

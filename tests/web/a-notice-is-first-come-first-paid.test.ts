@@ -26,6 +26,8 @@ import { addToPouch, listPouch } from '../../src/server/consolidated/cultivation
 import { housesWithSomethingToSay } from '../../src/web/what-is-posted-on-the-wall-here';
 import { noticesOnTheWall } from '../../src/engine/world/houses-that-have-to-advertise-for-disciples';
 import { makeGameInWorld } from './harness';
+import { REGIONS } from '../../src/data/cultivation/regions';
+import type { TechniqueGrade } from '../../src/schema/cultivation';
 
 /**
  * A stranger at the gate of a house with a notice up today that somebody else has, or has not,
@@ -205,5 +207,41 @@ describe('a notice is first come, first paid', () => {
         expect(turned.narration).toMatch(/Somebody else brought .* on day \d+.*The second to bring it gets nothing/s);
         expect(repos.cultivators.getById(cultivator.id)!.spiritStones).toBe(10);
         expect(listPouch(db, cultivator.id).find(row => row.itemId === item.id)?.quantity).toBe(item.count);
+    }, 240_000);
+});
+
+/**
+ * Where a notice goes up and where it is turned in. The owner, asked whether a chaos-grade ask
+ * belonged on a small island's wall: high tiers go up only where the people who could answer them
+ * pass, "you get to higher and higher level areas". And a stranger who tries to hand one in away
+ * from the house's gate is told which gate takes it.
+ */
+describe('a notice goes up where it can be answered, and is turned in at its own gate', () => {
+    const asking = (grade: TechniqueGrade) => ({
+        kind: 'work' as const, what: `a ${grade} thing`, days: A_BILL_STAYS_UP_FOR_DAYS, hands: 1,
+        item: { id: `item-${grade}`, name: `${grade} thing`, grade, ...A_NOTICE_OF_EACH_TIER[grade] }
+    });
+    // Offered only a heaven-grade ask, so a wall that may not carry it shows nothing at all.
+    const tiersOn = (placeName: string, ground: 'city' | 'sect_town' | 'village') => noticesOnTheWall({
+        field: [], placeName, ground, placeProvinceId: null, onDay: 0, seed: 'tiers',
+        speaking: [{ id: 'a-house', name: 'A House', provinceId: null, postsInPublic: true, asks: [asking('heaven')] }]
+    }).flatMap(notice => notice.item ? [notice.item.grade] : []);
+
+    it('puts a high tier up in a city and below the house own gate, and never on a small wall', () => {
+        expect(tiersOn('A City', 'city')).toContain('heaven');
+        expect(tiersOn('A House town', 'sect_town')).toContain('heaven');
+        expect(tiersOn('Another House town', 'sect_town')).not.toContain('heaven');
+        expect(tiersOn('A Village', 'village')).toEqual([]);
+    });
+
+    it('tells a stranger away from the gate which gate takes it, and takes nothing', async () => {
+        const at = await atAGateWithANotice('notice-elsewhere', false);
+        expect(at, 'no house with a notice up').not.toBeNull();
+        const city = REGIONS.flatMap(region => region.places).find(place => place.kind === 'city')!;
+        at!.repos.cultivators.update(at!.id, { location: city.name });
+        addToPouch(at!.db, at!.id, at!.item.id, 'herb', at!.item.count);
+        const turned = await at!.game.act(`I turn in the ${at!.item.name}`);
+        expect(turned.narration).toMatch(new RegExp(`takes in the ${at!.item.count} ${at!.item.name} its notice asks for at its own gate`));
+        expect(listPouch(at!.db, at!.id).find(row => row.itemId === at!.item.id)?.quantity).toBe(at!.item.count);
     }, 240_000);
 });
