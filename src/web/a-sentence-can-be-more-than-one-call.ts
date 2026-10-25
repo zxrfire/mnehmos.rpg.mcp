@@ -163,6 +163,7 @@ function forMatching(text: string): string {
 /** Literal ranges supplied in this sentence, used only to preserve lexical names. */
 export interface ExplicitNameSpan { readonly start: number; readonly end: number }
 const CLAUSE_SEPARATOR = /,|;|\band then\b|\bthen\b|\band\b|\bafter that\b|\bbefore that\b|\bafterwards\b/gi;
+const AN_INFORMATION_QUESTION = /^(?:what|who|where|when|how|which|whether|your name|can you|could you|do you|would you)\b/i;
 export function hasClauseSeparators(input: string): boolean {
     return !input.matchAll(CLAUSE_SEPARATOR).next().done;
 }
@@ -243,6 +244,23 @@ export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan
     wordsAreInstructions = false): string[] {
     // A terms question keeps its named object; a comma does not order a purchase.
     if (isOneInformationExchange(input) || askingWhatItWouldTake(input)) return [input.trim()];
+    // "It wasn't me, it was X" is one account, a blame; split at the comma it became a bare denial.
+    if (deedAccountInWords(input) === 'blame') return [input.trim()];
+    // Keep the conversational prefix together when a distinct decision follows.
+    // Bounded information and terms questions qualify, never arbitrary acts.
+    for (const boundary of input.matchAll(/\band(?:\s+then)?\b|\bthen\b|;/gi)) {
+        if (insideAnExplicitName(boundary.index!, boundary[0].length, nameSpans)) continue;
+        const before = input.slice(0, boundary.index).trim();
+        const after = input.slice(boundary.index! + boundary[0].length).trim();
+        // A further question belongs to this exchange; keep looking for the
+        // boundary where an independently requested act actually starts.
+        if (AN_INFORMATION_QUESTION.test(after)) continue;
+        if (after && (isOneInformationExchange(before) || askingWhatItWouldTake(before))) {
+            return [before, ...theClausesOf(after, spansInTheTail(nameSpans, input.indexOf(after, boundary.index! + boundary[0].length)), wordsAreInstructions)];
+        }
+    }
+    // Resolve a bounded exchange and its following act before applying broader
+    // question scope, so "treat me" after the exchange stays an actual request.
     // A conjunction inside a question does not turn its bare verb into an
     // imperative. An explicit later subject or semicolon starts a new act;
     // model-supplied independent steps remain available even in one clause.
@@ -255,21 +273,13 @@ export function theClausesOf(input: string, nameSpans: readonly ExplicitNameSpan
         const at = next.index! + next[0].length;
         return [input.slice(0, next.index).trim(), ...theClausesOf(input.slice(at), spansInTheTail(nameSpans, at), wordsAreInstructions)];
     }
-
-    // "It wasn't me, it was X" is one account, a blame; split at the comma it became a bare denial.
-    if (deedAccountInWords(input) === 'blame') return [input.trim()];
-    // Keep the conversational prefix together when a distinct decision follows.
-    // Bounded information and terms questions qualify, never arbitrary acts.
-    for (const boundary of input.matchAll(/\band(?:\s+then)?\b|\bthen\b|;/gi)) {
-        if (insideAnExplicitName(boundary.index!, boundary[0].length, nameSpans)) continue;
-        const before = input.slice(0, boundary.index).trim();
-        const after = input.slice(boundary.index! + boundary[0].length).trim();
-        // A further question belongs to this exchange; keep looking for the
-        // boundary where an independently requested act actually starts.
-        if (/^(?:what|who|where|when|how|which|whether|your name|can you|could you|do you|would you)\b/i.test(after)) continue;
-        if (after && (isOneInformationExchange(before) || askingWhatItWouldTake(before))) {
-            return [before, ...theClausesOf(after, spansInTheTail(nameSpans, input.indexOf(after, boundary.index! + boundary[0].length)), wordsAreInstructions)];
-        }
+    // A final question mark can govern statement-shaped fragments together.
+    // An independently worded question has its own scope (buy, then ask price).
+    // Keep literal names protected and already interpreted commands as acts.
+    if (!wordsAreInstructions && input.trimEnd().endsWith('?')) {
+        const separate = boundaries.some(boundary => !insideAnExplicitName(boundary.index!, boundary[0].length, nameSpans)
+            && (boundary[0].includes(';') || AN_INFORMATION_QUESTION.test(input.slice(boundary.index! + boundary[0].length).trim())));
+        if (!separate) return [input.trim()];
     }
     const parts: string[] = [];
     let begin = 0;

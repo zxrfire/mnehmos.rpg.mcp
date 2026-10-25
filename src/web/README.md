@@ -4264,10 +4264,14 @@ Native local movement uses the ordinary timed approach; SQL bodies use the actua
 executor. Quoted instructions are never backfilled or reported as player acts.
 The fallback's report of an omitted act imposes no one-act convention.
 
-A question retains its mood across its subordinate verb fragments. A later
-explicit subject or semicolon permits an independent act; model-read steps retain
-their own requested sequence. Zero cultivation return cannot conceal a reader
-that accidentally turned the question's fragments into sitting.
+A question retains its mood across subordinate fragments, including when the
+closing mark supplies that mood. Read this scope before choosing a first clause.
+An opening question can still be followed by an explicitly requested act;
+semicolons, interpreted command instructions and model-read steps retain their
+own sequences. An independently worded information question keeps its own scope
+after a requested act. Bounded exchanges separate from following acts before
+broader question scope applies. A real methodless sitting spends its days; a
+question about one does not. The zero-return refusal concealed that reader defect.
 
 A full-topic command from an older reader is segmented with the existing clause
 reader and literal-name protection inside the speech act. It retains the same

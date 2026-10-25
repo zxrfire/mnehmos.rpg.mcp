@@ -15,6 +15,12 @@ reading without "then".
 An actual scheduled interruption stops the sitting before the movement handler
 is called; later clauses neither run nor spend time. No ordering question is held.
 
+`a-question-keeps-its-clause-scope.test.ts` pins a closing question across its
+conjunctions before the native reader selects a first clause. Independent acts
+and literal orders remain sequences. The existing played question corpus checks
+no elapsed time, purse change or aging; the long-act controls keep real
+methodless sitting and its following road.
+
 `player-rulings.test.ts` separates the player rendering from the inspector and
 private narrator material. It checks ids, routine names and calibration language
 on played reads, while requiring the structural account to remain inspectable.
