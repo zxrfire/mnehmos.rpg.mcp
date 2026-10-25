@@ -7,6 +7,7 @@
  * ordinary proximity does not put them beside the player. Distant settlement
  * left their completed walk expiring and discarded it at the next check. */
 import {expect,it} from 'vitest';
+import {LOCAL_WALK_DAYS} from '../../../src/engine/world/local-walking-cost.js';
 import {createWorld} from '../../../src/engine/world/world-state.js';
 import {createNpc,setRealm,PLAYER_ROW_TAG} from '../../../src/engine/world/npc-state.js';
 import {makeLocation} from '../../../src/engine/world/locations.js';
@@ -43,7 +44,7 @@ function gatheredOutsideProximity(){
  const person=h.world.npcs[0]!;
  h.world.npcs[0]={...person,activity:{...person.activity!,departureApproach:{
   ...person.activity!.departureApproach!,destinationId:h.port.id,service:'gather'}}};
- h.world.currentDay+=.25;
+ h.world.currentDay+=LOCAL_WALK_DAYS;
  return h;
 }
 it('keeps an explicitly gathered rider at the landing after their walk has finished',()=>{
@@ -69,9 +70,9 @@ it('keeps transport deadlines exact without enumerating unrelated background pra
  const h=scene(),day=h.world.currentDay;
  h.world.npcs.push({...createNpc(h.world.seed,{id:'practising-neighbour',locationId:h.port.id,
   onDay:day,bornOnDay:day-20*365}),activity:{kind:'their_practice',note:'Practising.',
-  withIds:[],sinceDay:day,untilDay:day+.125,returnTo:h.port.id}});
- expect(nextWorldClockBoundary(h.world,day,day+1,[],{intensity:0},'transport')?.onDay).toBe(day+.25);
- expect(nextWorldClockBoundary(h.world,day,day+1,[],{intensity:0})?.onDay).toBe(day+.125);
+  withIds:[],sinceDay:day,untilDay:day+LOCAL_WALK_DAYS/2,returnTo:h.port.id}});
+ expect(nextWorldClockBoundary(h.world,day,day+1,[],{intensity:0},'transport')?.onDay).toBe(day+LOCAL_WALK_DAYS);
+ expect(nextWorldClockBoundary(h.world,day,day+1,[],{intensity:0})?.onDay).toBe(day+LOCAL_WALK_DAYS/2);
 });
 it('an actual cabin occupant starts the same hull course without a shore approach',()=>{
  const h=scene(),day=h.world.currentDay;
@@ -100,17 +101,17 @@ it('uses a timed station approach in the ordinary world driver before actual boa
  expect(h.world.npcs[0]!.spiritStones).toBe(h.passenger.spiritStones);
  expect(h.world.npcs[0]!.locationId).toBe(h.room.id);
  expect(h.world.objects).toHaveLength(0);
- const moved=advanceWorldForPlay(h.world,{days:.25,access:{actorId:'observer',locationId:h.port.id,factionId:null,
+ const moved=advanceWorldForPlay(h.world,{days:LOCAL_WALK_DAYS,access:{actorId:'observer',locationId:h.port.id,factionId:null,
   knowsNpc:()=>false,knowsFaction:()=>false,knowsPlace:()=>false}});
  const actual=moved.state.npcs.find(n=>n.id===h.passenger.id)!;
  expect(actual.activity?.vesselId).toBeTruthy();
- expect(actual.activity?.sinceDay).toBeCloseTo(day+.25);
+ expect(actual.activity?.sinceDay).toBeCloseTo(day+LOCAL_WALK_DAYS);
  expect(actual.spiritStones).toBeLessThan(h.passenger.spiritStones);
  expect(moved.state.history.facts.some(f=>f.data.actualBoarding===true&&f.actors.some(a=>a.id===actual.id))).toBe(true);
  expect(moved.state.objects.some(o=>o.id===actual.activity?.vesselId)).toBe(true);
 });
 it('leaves a locked-in passenger and their purse at the actual room',()=>{
- const h=scene();h.room.sealed=true;h.world.currentDay+=.25;
+ const h=scene();h.room.sealed=true;h.world.currentDay+=LOCAL_WALK_DAYS;
  expect(continueNpcDepartureApproach(h.world,h.world.npcs[0]!,h.world.currentDay)).toBe(true);
  expect(h.world.npcs[0]!.locationId).toBe(h.room.id);
  expect(h.world.npcs[0]!.spiritStones).toBe(h.passenger.spiritStones);
@@ -129,15 +130,15 @@ it('walks to the actual owned carriage station before beginning its finite road 
  const approach=startNpcJourney(h.world,h.passenger,town.id,day,'Carrying wares to Pine Bridge.',carriage);
  expect(approach.activity?.departureApproach?.vehicleId).toBe(carriage.id);
  expect(approach.locationId).toBe(h.room.id);expect(approach.activity?.vesselId).toBeUndefined();
- h.world.npcs[0]=approach;h.world.currentDay+=.25;
+ h.world.npcs[0]=approach;h.world.currentDay+=LOCAL_WALK_DAYS;
  continueNpcDepartureApproach(h.world,approach,h.world.currentDay);
  const actual=h.world.npcs[0]!;
  expect(actual.locationId).toBe(h.port.id);
  expect(actual.activity?.vesselId).toBe(carriage.id);
  expect(actual.activity?.fromLocationId,JSON.stringify(actual.activity)).toBe(h.port.id);
  expect(actual.activity?.returnTo).toBe(town.id);
- expect(actual.activity?.sinceDay).toBe(day+.25);
- expect(actual.activity!.untilDay).toBeGreaterThan(day+.25);
+ expect(actual.activity?.sinceDay).toBe(day+LOCAL_WALK_DAYS);
+ expect(actual.activity!.untilDay).toBeGreaterThan(day+LOCAL_WALK_DAYS);
 });
 it('leaves its actual lodging before setting out on foot in the ordinary clock',()=>{
  const h=scene(),day=h.world.currentDay;
@@ -149,14 +150,14 @@ it('leaves its actual lodging before setting out on foot in the ordinary clock',
  expect(approach.locationId).toBe(h.room.id);
  expect(approach.activity?.departureApproach).toBeDefined();
  h.world.npcs[0]=approach;
- const moved=advanceWorldForPlay(h.world,{days:.25,access:{actorId:'observer',locationId:h.port.id,factionId:null,
+ const moved=advanceWorldForPlay(h.world,{days:LOCAL_WALK_DAYS,access:{actorId:'observer',locationId:h.port.id,factionId:null,
   knowsNpc:()=>false,knowsFaction:()=>false,knowsPlace:()=>false}});
  const actual=moved.state.npcs.find(person=>person.id===h.passenger.id)!;
  expect(actual.locationId).toBe(h.port.id);
  expect(actual.activity?.fromLocationId,JSON.stringify(actual.activity)).toBe(h.port.id);
  expect(actual.activity?.returnTo).toBe(town.id);
- expect(actual.activity?.sinceDay).toBeCloseTo(day+.25);
- expect(actual.activity!.untilDay).toBeGreaterThan(day+.25);
+ expect(actual.activity?.sinceDay).toBeCloseTo(day+LOCAL_WALK_DAYS);
+ expect(actual.activity!.untilDay).toBeGreaterThan(day+LOCAL_WALK_DAYS);
  expect(actual.spiritStones).toBe(h.passenger.spiritStones);
  expect(actual.activity?.vesselId).toBeNull();
 });

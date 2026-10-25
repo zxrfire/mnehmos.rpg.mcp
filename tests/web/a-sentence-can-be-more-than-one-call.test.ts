@@ -109,7 +109,7 @@ describe('the budget', () => {
     });
 
     /** Local departure formerly counted as a whole-day journey. The owner's
-     * fractional-clock ruling makes it a quarter-day walk. The later agency
+     * fractional-clock ruling makes it a fifteen-minute walk. The later agency
      * ruling also retires the costly-act budget, so each ordered act can run. */
     it('runs the framing sentence with its fractional departure', () => {
         const budget = whatThisTurnMayRun([THEFT, HANDOFF, WALK]);

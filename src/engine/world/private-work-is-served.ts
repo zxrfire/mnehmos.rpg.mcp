@@ -14,7 +14,6 @@ import { hadAs, isRuined, transferPossession } from './possessions.js';
 import { witnessIndexFor, factsWithDataValue } from './witness-reaction-index.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
-import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
 import type { ObligationRecord } from '../social/grudges.js';
 import type { PrivateWorkBodies, PrivateWorkTerms } from './private-paid-work.js';
 import { beginActualDepartureApproach, finishActualDepartureApproach } from './departure-approach.js';
@@ -156,10 +155,11 @@ export function servePrivateWork(state: WorldState, offer: HistoricalFact, term:
     if (!venue) return;
     const known = whatOneOfTheWorldsOwnPeopleKnows({ ...state, currentDay: Math.floor(day), currentHour: (day % 1) * 24 });
     if (!isAtLeast(known(worker.id, 'place', destination), 'placed')) return;
-    const workDays = objective.kind === 'gather' ? objective.quantity * GATHERING_DAYS : LOCAL_WALK_DAYS;
+    // On-site work retains its existing quarter day; the approach is priced separately.
+    const workDays = objective.kind === 'gather' ? objective.quantity * GATHERING_DAYS : 0.25;
     sendHouseMission(state, null, venue, [worker], 'private paid work', day, { days: workDays, returnByDay: terms.dueOnDay },
         undefined, undefined, undefined, { privateWorkId: term.id, leaderId: worker.id,
             privateVenture: venue.kind === 'ruin' || venue.kind === 'forbidden_zone',
             privateReasonId: venue.kind === 'forbidden_zone' ? 'sending-to-the-edge-of-forbidden-ground' : 'sending-to-open-an-inheritance',
-            pitchOrdinal: venue.thresholds.operational, dutyDays: LOCAL_WALK_DAYS }, worker);
+            pitchOrdinal: venue.thresholds.operational, dutyDays: 0.25 }, worker);
 }

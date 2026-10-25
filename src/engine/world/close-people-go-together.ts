@@ -15,7 +15,6 @@ import { invitePlayerToPrivateParty } from './a-private-party-invites-the-player
 import { whatOneOfTheWorldsOwnPeopleKnows } from './what-one-of-the-worlds-own-people-knows.js';
 import { isAtLeast } from '../social/discovery.js';
 import { sendHouseMission } from './capital-missions-and-calendar.js';
-import { LOCAL_WALK_DAYS } from './local-walking-cost.js';
 import { HUNTING_DAYS } from './hunting-a-spirit-beast.js';
 import { theAreasOf } from './where-in-a-place-somebody-is-standing.js';
 
@@ -98,7 +97,8 @@ export function formPrivateParty(state: WorldState, leaderId: string, destinatio
         return undertakePrivateVenture(state, leader.id, destination, members, departure, undefined, onDue, false);
     return sendHouseMission(state, null, destination, [state.npcs.find(person => person.id === leaderId)!, ...members],
         venture === 'hunt' ? 'a private hunt with company' : 'a private journey with company', departure,
-        { days: venture === 'hunt' ? HUNTING_DAYS : LOCAL_WALK_DAYS }, onDue, undefined, undefined,
+        // The on-site visit keeps its existing quarter day, separately from walking.
+        { days: venture === 'hunt' ? HUNTING_DAYS : 0.25 }, onDue, undefined, undefined,
         { leaderId: leaderId, privateVenture: false, privateHunt: venture === 'hunt' }, state.npcs.find(person => person.id === leaderId)!);
 }
 

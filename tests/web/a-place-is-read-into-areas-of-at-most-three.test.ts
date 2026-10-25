@@ -13,7 +13,7 @@
  *
  *   OPENING        a run opens in an area of its town, among the faces it knows first, three at most
  *   WALKING IN     "I go to the inn" puts the player in the inn and the people in it in front of
- *                  them, and spends a quarter day; "I go back out to the street" brings them back
+ *                  them, and spends fifteen minutes; "I go back out to the street" brings them back
  *   LEAVING        any change of place clears where they stood in the last one
  *   THE GATE       a stranger arriving at a house stands outside its gate with the one on watch,
  *                  and the arrival says who that is; somebody of the house the gate lets in
@@ -27,6 +27,7 @@
  * the whole of Cloud Gate standing where the run opened.
  */
 
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
@@ -84,14 +85,14 @@ describe('a place is read into areas of at most three', () => {
         expect(inside.standingIn).toBe(inn.id);
         expect(inside.location).toBe(cultivator.location);
         expect(ids(game.present(inside))).toEqual(ids(npcsInTheArea(world, inn.id)));
-        expect(routineTime((await game.loadWorld())!) - day).toBeCloseTo(1 / 4);
-        expect(game.currentRun().run.elapsedDays - before).toBeCloseTo(1 / 4);
+        expect(routineTime((await game.loadWorld())!) - day).toBeCloseTo(LOCAL_WALK_DAYS);
+        expect(game.currentRun().run.elapsedDays - before).toBeCloseTo(LOCAL_WALK_DAYS);
 
         await game.act('I go back out to the street');
         const out = repos.cultivators.getById(cultivator.id)!;
         expect(out.standingIn).toBe(street.id);
         expect(ids(game.present(out))).toEqual(ids(npcsInTheArea(world, street.id)));
-        expect(game.currentRun().run.elapsedDays - before).toBeCloseTo(1 / 2);
+        expect(game.currentRun().run.elapsedDays - before).toBeCloseTo(2 * LOCAL_WALK_DAYS);
     }, 300_000);
 
     /**

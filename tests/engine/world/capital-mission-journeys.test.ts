@@ -36,6 +36,7 @@
  * Admission can use a member's own fare or that recruiter's sponsorship at
  * the same place. Neither payment invents money or grants a water route.
  */
+import { LOCAL_WALK_DAYS } from '../../../src/engine/world/local-walking-cost.js';
 import { describe, expect, it } from 'vitest';
 
 import { advancePublicCapitalMission, journeySelectedToHouseSeat,
@@ -103,7 +104,7 @@ describe('capital missions', () => {
         const selected=journeySelectedToHouseSeat(state,house,member,day);
         expect(selected?.activity?.capitalMissionId).not.toBe('earlier-intention');
         expect(selected?.activity?.sinceDay).toBe(day);
-        expect(selected?.activity?.untilDay).toBe(day+.25);
+        expect(selected?.activity?.untilDay).toBe(day+LOCAL_WALK_DAYS);
         expect(selected?.activity?.standingIn).toBe(room.id);
         expect(selected?.locationId).toBe(from.id);
     });

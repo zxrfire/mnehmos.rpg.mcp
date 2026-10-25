@@ -8,12 +8,13 @@ import { lesserActionDays } from '../../src/web/lesser-action-costs.js';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
 import { peopleInThisPlace } from '../../src/web/hearsay.js';
 import { worldLocationFor } from '../../src/web/entities.js';
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 
 it('does not price words or a counter exchange as an implicit wait', () => {
     expect(lesserActionDays({ action: 'interact', intent: 'talk' })).toBe(0);
     expect(lesserActionDays({ action: 'passage', intent: 'ticket' })).toBe(0);
     expect(lesserActionDays({ action: 'eat' })).toBe(0.125);
-    expect(lesserActionDays({ action: 'move', target: 'the market' })).toBe(0.25);
+    expect(lesserActionDays({ action: 'move', target: 'the market' })).toBe(LOCAL_WALK_DAYS);
 });
 
 it('approaches a listener in the same area and asks without any wait span', async () => {

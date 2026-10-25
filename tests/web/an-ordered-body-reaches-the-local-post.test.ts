@@ -53,7 +53,7 @@ for (const reading of ['ordered acts', 'full topic', 'bare wait'] as const) it(`
         expect(body().activity?.untilDay).toBeCloseTo(day + LOCAL_WALK_DAYS);
         expect(routineOf(h.game.atHand!, body()).standingIn).not.toBe(landing.id);
         plans.push(JSON.stringify({ action: 'wait', days: LOCAL_WALK_DAYS / 2 }));
-        await h.game.act('I wait for 3 hours');
+        await h.game.act(`I wait for ${LOCAL_WALK_DAYS * 24 / 2} hours`);
         expect(routineOf(h.game.atHand!, body()).standingIn).not.toBe(landing.id);
         expect(unfinishedSlaveOrders(h.game.atHand!).some(fact => fact.id === order!.id)).toBe(true);
         // The pending order and local walk survive ordinary storage, not a transient callback.
@@ -86,7 +86,7 @@ it('a sealed SQL body keeps the term and takes the local road through the actual
         writeActualPersonSeal(h.game, cultivator.id, { kind: 'slave', byId: holder.id,
             sinceDay: day, liftsOnDay: null, note: 'The actual SQL body is bound.' }, day);
         const order = commandAtTheActualBody(h.game, holder.id, cultivator.id, {
-            action: 'wait', destinationId: place.id, days: LOCAL_WALK_DAYS / 2, words: 'wait three hours', following: [
+            action: 'wait', destinationId: place.id, days: LOCAL_WALK_DAYS / 2, words: 'wait half the local walking span', following: [
                 { action: 'travel', destinationId: place.id, destinationAreaId: landing.id, words: 'then go to the landing' }
             ]
         });

@@ -41,10 +41,10 @@ async function fixture() {
     h.game.atHand=await prepareWorldClockForPreciseSpan(h.game.currentRun().run,h.game.currentRun().cultivator);
     if(!h.game.atHand)throw Error('Native counter world missing');
     // Native clock arrangement, never a rewind or worker teleport. Starting a
-    // six-hour local walk at nine reaches the ordinary afternoon work period.
+    // local walk starts during the ordinary afternoon work period.
     const now=routineTime(h.game.atHand);
-    const nextNine=Math.floor(now)+(now%1<9/24?0:1)+9/24;
-    const waited=await passHours(h.game,h.game.currentRun().run,h.game.currentRun().cultivator,(nextNine-now)*24);
+    const nextAfternoon=Math.floor(now)+(now%1<15/24?0:1)+15/24;
+    const waited=await passHours(h.game,h.game.currentRun().run,h.game.currentRun().cultivator,(nextAfternoon-now)*24);
     if(!waited.finished)throw Error('Native setup wait interrupted before the counter chapter');
     if(!h.game.atHand)throw Error('Native wait lost the counter world');
     return {...h,plans,provider,world:h.game.atHand};

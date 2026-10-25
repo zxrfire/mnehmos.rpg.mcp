@@ -346,7 +346,7 @@ twenty-day work earns three times the lecture figures for the same span and
 audience. A settled duty pays nothing on repeated completion.
 
 An indoor traveller uses `walking-to-a-departure.ts` before boarding. Its SQL
-body reads the same containment, locks and quarter-day station approach as an
+body reads the same containment, locks and fifteen-minute station approach as an
 NPC, with the ordinary body/world span and interruptions. Geographic legs keep
 the existing route knowledge and walking authorities. No room name grants a key
 or passage. Spirit boats depart from the actual Spirit Boat Berth (灵舟坞).
@@ -528,7 +528,7 @@ of company in a private area; naming somebody or their door grants no invitation
 Public city destinations remain discoverable when empty, including the auction house at
 the existing exchange, inn, teahouse and market rows. Local area walks preserve the city
 location/calendar identity. A route never creates free stock, grants a vault key, or declares
-an NPC present who is in another area. Local walks spend 1/4 day; routine activity reads the
+an NPC present who is in another area. Local walks spend fifteen minutes; routine activity reads the
 arrival hour, with at most three other people plus the active player party in an area.
 Prepared bench work pays that same walk before its work days. Failed preparation never
 moves the maker, and an inaccessible work room refuses before materials are consumed.
@@ -542,7 +542,7 @@ The offer list has four item slots (`OFFERS_SHOWN`), drawn from at most three
 local sellers. Its former name, `SELLERS_SHOWN`, described the wrong count.
 
 `lesser-action-costs.ts` covers every action. Existing day spans retain their costs;
-otherwise meals and quick trades take 1/8 day, local walks take 1/4,
+otherwise meals and quick trades take 1/8 day, local walks take fifteen minutes,
 and a thorough investigation takes 1/2. Conversation and passage-counter exchanges
 add no hours. A same-area person approach adds no walk or waiting span.
 Scene and sheet reads stay free.
@@ -3458,7 +3458,7 @@ Auction winners receive their counted medicines/materials in that same pouch.
 Posting acceptance reserves the duty; physical arrival starts the handover. A served
 standing post completes after replacement and its shared day, with ordinary duty merit.
 
-Inn bookings use the existing present-counter assignment, not a separate innkeeper roster. A new booking approaches the inn via the actual quarter-day local walk, then reads the arrival clock, provider, price and pouch again. The purchase keeps its separate eighth-day cost. The exact present person's repository purse (or actual world-NPC purse when there is no repository person) receives the debit. Already-paid coverage needs no approach, provider or payment. Refused or interrupted rental retains any real approach and never starts the requested sleep; inn-targeted dawn/morning waits resolve only after successful coverage. Ordinary hourly waits retain their existing path.
+Inn bookings use the existing present-counter assignment, not a separate innkeeper roster. A new booking approaches the inn via the actual fifteen-minute local walk, then reads the arrival clock, provider, price and pouch again. The purchase keeps its separate eighth-day cost. The exact present person's repository purse (or actual world-NPC purse when there is no repository person) receives the debit. Already-paid coverage needs no approach, provider or payment. Refused or interrupted rental retains any real approach and never starts the requested sleep; inn-targeted dawn/morning waits resolve only after successful coverage. Ordinary hourly waits retain their existing path.
 
 The 2026-10-06 route ruling distinguishes a remembered name from a way there.
 An explicit real remote destination still needs existing `canPointAtLocation`
@@ -3808,7 +3808,7 @@ receipts and the actual dated operator/body source. Company and passenger
 projection use the same pre-cap hull selection and offered areas. SQL
 `standingIn` remains the chosen area; a geographical crossing carries its local
 deck suffix only when the same current accepted hull still offers that area.
-Local offered deck movement runs the existing quarter-day native span before
+Local offered deck movement runs the existing fifteen-minute native span before
 committing the destination area, then rechecks the fresh hull/course. It does
 not change the passage destination, charge another fare, invent cabins, or
 recruit ordinary passengers into a party. Function-only carrier/presence module
@@ -4146,7 +4146,7 @@ readiness, single debit and cooldown writer; separated proxies keep their
 existing sustaining resource contract. This does not add flee costs or a
 new NPC HP model.
 
-A canonical province approach may resolve to the settlement the body already occupies. Its native zero-day course uses the existing quarter-day local walk before any stopped-road cursor is written. A stopped road remains strictly positive; every positive fractional continuation still uses native foot checks and its sole physical cursor. Combat15 diagnostic51857 measured different printed names resolving to the same Iron Crest endpoint, producing road0 rejected by its own cursor reader. No road geometry, route knowledge, world interruption or encounter rule changes.
+A canonical province approach may resolve to the settlement the body already occupies. Its native zero-day course uses the existing fifteen-minute local walk before any stopped-road cursor is written. A stopped road remains strictly positive; every positive fractional continuation still uses native foot checks and its sole physical cursor. Combat15 diagnostic51857 measured different printed names resolving to the same Iron Crest endpoint, producing road0 rejected by its own cursor reader. No road geometry, route knowledge, world interruption or encounter rule changes.
 
 Actual passage results retain the encounter recorder's existing events and money deltas alongside their factual lines. A binding's actual journey-ending reason is included when that reason stops its held span. Following buys no additional fare.
 

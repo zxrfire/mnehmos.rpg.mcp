@@ -37,7 +37,8 @@ the model's job; drop an unresolved field and let the verb answer generally.
 Count session refusals: needless ones reveal a reader unable to carry a player's plan.
 Free reads chain through the sentence. `freeAction` records facts without elapsed span;
 `lesser-action-costs.ts` owns act prices: meals, quick trades and combat exchanges
-cost 1/8 day each; local walks 1/4; thorough searches 1/2. Conversation and passage-counter
+cost 1/8 day each; local walks take fifteen minutes; thorough searches 1/2 day.
+Conversation and passage-counter
 exchanges add no hours. Reaching another area retains its actual walking cost;
 existing day spans retain their costs. Budget actual cost, not number of calls.
 Fractional acts add in requested order. Never infer an extra time-spending act, quietly

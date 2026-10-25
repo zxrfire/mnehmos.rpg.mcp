@@ -20,12 +20,13 @@
  *   THE SHOUT         reaches the house's people in its other rooms.
  *
  * Hourly sparse placement can leave a hall's entrance empty. These scenes choose
- * a hall with people at its entrance when the quarter-day walk ends, and assert that area's company, not everyone
+ * a hall with people at its entrance when the fifteen-minute walk ends, and assert that area's company, not everyone
  * elsewhere in the hall.
  *
  * Red-checked: reading `npcsAt` in `othersPresent` again leaves the lecture
  * hall empty to a player standing in it.
  */
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
@@ -70,11 +71,11 @@ async function atTheGateOfAHouseWithATalkOn(
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD, adminMode: true });
     await harness.game.newRun('Prober');
     await harness.game.act('I buy a year of provisions');
-    // Set out before dawn; the six-hour crossing arrives during training.
+    // Set out during training; the short local crossing retains that real hour.
     await harness.game.act('I wait until night');
-    await harness.game.act('I wait for 5 hours');
+    await harness.game.act('I wait for 11 hours');
     const beforeWalk = (await harness.game.loadWorld())!;
-    const world = { ...beforeWalk, currentHour: (beforeWalk.currentHour! + 6) % 24 };
+    const world = { ...beforeWalk, currentHour: (beforeWalk.currentHour! + LOCAL_WALK_DAYS * 24) % 24 };
     const compounds = whereCompoundsAre(world);
     const found = [...compounds.bySeat.values()]
         .sort((a, b) => (a.seat.id < b.seat.id ? -1 : 1))
@@ -148,7 +149,7 @@ describe('walking in and out', () => {
         const before = harness.game.currentRun().run.elapsedDays;
         const walked = await harness.game.act('I go to the lecture hall') as Turn;
         expect(harness.game.currentRun().cultivator.location, everythingSaid(walked)).toBe(hall.name);
-        expect(harness.game.currentRun().run.elapsedDays - before).toBeCloseTo(1 / 4);
+        expect(harness.game.currentRun().run.elapsedDays - before).toBeCloseTo(LOCAL_WALK_DAYS);
         const inside = harness.game.present(harness.game.currentRun().cultivator).map(row => row.id);
         expect(inside).toEqual(expect.arrayContaining(inTheHall));
 

@@ -49,6 +49,7 @@
  * are asserted here beside the asking ones so that a future fix to one cannot
  * quietly delete the other.
  */
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 
 import { describe, it, expect } from 'vitest';
 import type Database from 'better-sqlite3';
@@ -472,10 +473,10 @@ describe('asking whether somebody could be moved does not move them', () => {
      * The marker frees the read, not the feet. A face one can name across the
      * same settlement is still in another actual area, and `crossToWhoeverTheyNamed`
      * moves the actor before the read. This uses that real placement, rather
-     * than inserting an approach receipt, so the one quarter-day charge proves
+     * than inserting an approach receipt, so the one fifteen-minute charge proves
      * the marker cannot erase an already-completed walk.
      */
-    it('keeps the quarter-day approach to a known person in another area', async () => {
+    it('keeps the fifteen-minute approach to a known person in another area', async () => {
         const { game, approach } = await inTheBusiestSquare('read-across-a-place');
         const me = game.currentRun().cultivator;
         expect(game.present(me).some(person => person.id === approach.id),
@@ -508,7 +509,7 @@ describe('asking whether somebody could be moved does not move them', () => {
         expect(targetNow, 'the approached person no longer occupies this place').toBeDefined();
         expect(current.standingIn).toBe(targetNow);
         expect(game.present(current).some(person => person.id === approach.id)).toBe(true);
-        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.25);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(LOCAL_WALK_DAYS);
     }, 120_000);
 
     /**
@@ -529,7 +530,7 @@ describe('asking whether somebody could be moved does not move them', () => {
         expect(turn.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(true);
         expect(turn.toolCalls.some(call => call.name === 'engine.lesserActionTime'
             && call.action === 'interact')).toBe(false);
-        expect(game.state().run.elapsedDays - before).toBeCloseTo(0.25);
+        expect(game.state().run.elapsedDays - before).toBeCloseTo(LOCAL_WALK_DAYS);
     }, 120_000);
 
     /**
@@ -728,7 +729,7 @@ describe('asking whether somebody could be moved does not move them', () => {
             const spentDays = game.state().run.elapsedDays - before;
             // Every `interact` now spends at least the conversational-reply
             // eighth of a day (`lesser-action-costs.ts`), pressing or not, plus
-            // a further quarter day if it had to approach whoever it reached
+            // a further fifteen minutes if it had to approach whoever it reached
             // (`engine.approachTime`) - so an ordinary reply can cost as much as
             // 0.375. `ASK_DAYS` floors a pressing attempt at a full day, which
             // is the gap the threshold below actually reads.

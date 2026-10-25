@@ -30,7 +30,7 @@ import { betweenRoadEndpoints } from './a-road-stopped-partway.js';
  * forecourt, the gatehouse or the gate is going back to the seat, and nothing
  * stops anybody walking out of a building.
  *
- * Crossing a compound takes a quarter day on the run clock.
+ * Crossing a compound spends the shared local-walk span on the run clock.
  */
 
 import { isAtLeast } from '../engine/social/discovery.js';

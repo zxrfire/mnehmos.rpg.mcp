@@ -4,10 +4,11 @@
  * Different names need not mean different physical vertices. This control asks
  * the existing province approach for its real endpoint, arranges a healthy SQL
  * body there and existing told route knowledge, then plays the printed name.
- * The actual quarter-day local walk must keep that body there with no ghost
+ * The actual fifteen-minute local walk must keep that body there with no ghost
  * cursor. Positive fractional continuation remains a road (retained sibling).
  * No catalog route, NPC, calendar, encounter or geometry is substituted.
  */
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 import { expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { whereTheRoadEndsIn } from '../../src/engine/world/public-transport-at-a-place.js';
@@ -42,7 +43,7 @@ it('plays a known province name whose actual approach is the present settlement 
     expect(result.narration).toContain(endpoint.name);
     expect(actual.cultivator.alive).toBe(true);
     expect(actual.cultivator.location).toBe(endpoint.name);
-    expect(actual.run.elapsedDays - before.run.elapsedDays).toBeCloseTo(0.25);
+    expect(actual.run.elapsedDays - before.run.elapsedDays).toBeCloseTo(LOCAL_WALK_DAYS);
     expect(readFlag(game.db, me.id, FLAG_ROAD_STOPPED)).toBeNull();
     expect(stoppedRoadFor(game.db, actual.cultivator, game.atHand)).toBeNull();
     expect(betweenRoadEndpoints(game.db, actual.cultivator)).toBe(false);

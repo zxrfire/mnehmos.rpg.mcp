@@ -53,7 +53,7 @@ describe('arrivals take space in the played roster', () => {
         }
         // Overflow visitors remain visible when the player walks to their area.
         //
-        // A walk across a place now spends a quarter day of its own
+        // A walk across a place spends fifteen minutes of its own
         // (`walking-across-a-place.ts`), and which area a null-`standingIn` body
         // overflows into is drawn per hour (`where-in-a-place-somebody-is-standing.ts`),
         // so the area read before walking there can already be stale by the time

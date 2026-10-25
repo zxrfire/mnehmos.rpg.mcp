@@ -14,7 +14,6 @@ import { factsWithDataValue } from '../engine/world/witness-reaction-index.js';
 import { appendWorldFact } from '../engine/world/who-was-there-when-it-happened.js';
 import { makeFact } from '../engine/world/history.js';
 import { HUNTING_DAYS } from '../engine/world/hunting-a-spirit-beast.js';
-import { LOCAL_WALK_DAYS } from '../engine/world/local-walking-cost.js';
 import { factsForToolResult, factsForRefusal } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import { passHours } from './routine-invitations.js';
@@ -142,7 +141,8 @@ export async function joiningAPrivateParty(game: GameService, run: Run, body: Cu
         ? undertakePrivateVenture(world, leader.id, venue, [...members, world.npcs[pupilAt]], routineTime(world) + preparation, auction,
             undefined, offer!.data.partyKind === 'elder', new Set([body.id]))
         : sendHouseMission(world, null, venue, [leader, ...members, world.npcs[pupilAt]], 'a private journey with company',
-            routineTime(world) + preparation, { days: offer!.data.partyKind === 'hunt' ? HUNTING_DAYS : LOCAL_WALK_DAYS }, undefined,
+            // Preserve the native on-site visit; shorter walking does not shorten its work.
+            routineTime(world) + preparation, { days: offer!.data.partyKind === 'hunt' ? HUNTING_DAYS : 0.25 }, undefined,
             undefined, undefined, { leaderId: leader.id, privateHunt: offer!.data.partyKind === 'hunt' }, leader));
     if (!itinerary) return refused('world.privateParty', 'request', factsForRefusal('The private party cannot depart.',
         'The actual route, access, bodies and sponsor purse cannot admit this company. Nothing paid.'));

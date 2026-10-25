@@ -4518,7 +4518,7 @@ export class GameService {
             // has no further lesser charge. A reply or search reached after
             // crossing keeps its own action cost in `execute`.
             if (action.action === 'move') done.timeDisposition = 'approach_only';
-            done.calls.push({ name: 'engine.approachTime', action: 'move', summary: 'A quarter day spent crossing the place.', ok: true });
+            done.calls.push({ name: 'engine.approachTime', action: 'move', summary: `${humanDays(LESSER_ACTION_DAYS.move)} spent crossing the place.`, ok: true });
             done.facts.lines.unshift(approachCrossing!.line);
             done.facts.structure.push(approachCrossing!.structure);
         }

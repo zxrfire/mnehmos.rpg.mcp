@@ -5,6 +5,7 @@
  * service bin before ordinary packing. Existing rental/privacy assertions stay
  * unchanged; explicit rooms, company, absence and offshift work remain real.
  * This successor has not been compiled or run; prior proof is native, not model. */
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 /** Diagnostic07 limits the observer to canonical inn-first selection. It uses
  * only the new pure worker helper on the baseline, without candidate service
  * exports or any baseline engine caller. Later counters cannot alter inn choice.
@@ -33,17 +34,9 @@ import type { GameService } from '../../src/web/turn-engine.js';
  * reached a house's interior room somewhere else and was refused, and the sleep
  * after it was dropped with it.
  *
- * A run now opens at 08:00 (`turn-engine.ts`'s `newRun` advances the clock a
- * third of a day before any act), and a lesser act spends a fraction of a day
- * (`lesser-action-costs.ts`), so the clock is no longer pinned at 0 the way it
- * was when this file was written. A walk from one area of a place to another -
- * up to a room, back down, out to the street - now genuinely costs a quarter
- * day each hop (`walkAcrossThePlace`'s own "A quarter day passed"); that is
- * new and correct, the stairs just no longer being free rather than the walk
- * itself. The two assertions updated below expect that quarter day, and the
- * "already paid for" assertion moved to a delta against a baseline, which is
- * what it was actually about: a repeated buy that changes nothing spends
- * nothing MORE, even though the run clock itself is no longer zero.
+ * A run opens at 08:00. Local stairs and street crossings spend the shared
+ * fifteen-minute walk. Buying already-paid coverage spends nothing more;
+ * lodging's nights retain their own elapsed time.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -96,14 +89,14 @@ describe('a room at the inn', () => {
 
         const up = await game.act('I go up to my room');
         expect(up.narration).toMatch(/to your room at the inn/);
-        // Walking to another area of the same place is a quarter day
+        // Walking to another area of the same place spends the local span.
         // (`walkAcrossThePlace`), not the full day on the road the played bug
         // spent - "not a day" is the claim, and it never meant free.
-        expect(game.state().run.elapsedDays, 'a walk up the stairs is not a day').toBe(before + 0.25);
+        expect(game.state().run.elapsedDays, 'a walk up the stairs is not a day').toBe(before + LOCAL_WALK_DAYS);
         expect(game.present(repos.cultivators.getById(cultivator.id)!)).toEqual([]);
 
         const slept = await game.act('I sleep for 2 nights');
-        expect(game.state().run.elapsedDays - before - 0.25).toBeCloseTo(2);
+        expect(game.state().run.elapsedDays - before - LOCAL_WALK_DAYS).toBeCloseTo(2);
         expect(slept.narration).not.toMatch(/seclusion|worn the body/);
     }, 120_000);
 
@@ -148,7 +141,7 @@ describe('a room at the inn', () => {
     /**
      * Played: "head back downstairs" came as move(the town they stood in) and spent a day on
      * the road. The bug was the ROAD day - walking out of a place you stand in is never that -
-     * not the quarter day `walkAcrossThePlace` now spends on a genuine area-to-area hop, which
+     * not the fifteen minutes `walkAcrossThePlace` now spends on a genuine area-to-area hop, which
      * this test's two moves both still are. Only the final, repeated "go to town" - naming the
      * area already stood in - is the free, refused no-op the title is about.
      */
@@ -162,12 +155,12 @@ describe('a room at the inn', () => {
 
         const down = await game.act(`I go to ${town}`);
         expect(down.narration).toMatch(/from your room at the inn to /);
-        expect(game.state().run.elapsedDays).toBe(before + 0.25);
+        expect(game.state().run.elapsedDays).toBe(before + LOCAL_WALK_DAYS);
 
         await game.act('I go out to the street');
         const there = await game.act(`I go to ${town}`);
         expect(there.narration).toMatch(/already/i);
-        expect(game.state().run.elapsedDays).toBe(before + 0.5);
+        expect(game.state().run.elapsedDays).toBeCloseTo(before + 2 * LOCAL_WALK_DAYS);
     }, 120_000);
 
     // Played: "crash for the night" in the paid room read as nothing, and the model's sleep was

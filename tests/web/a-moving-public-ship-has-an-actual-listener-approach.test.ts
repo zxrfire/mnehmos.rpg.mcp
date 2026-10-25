@@ -88,9 +88,10 @@ it('real ship landfall during a deck approach retains arrival and never performs
     const h = await onActualWater();
     try {
         const remaining = h.quote.arrivalDay - routineTime(h.game.atHand!);
-        expect(remaining).toBeGreaterThan(.125);
+        const halfWalk = LESSER_ACTION_DAYS.move / 2;
+        expect(remaining).toBeGreaterThan(halfWalk);
         expect((await passHours(h.game, h.game.currentRun().run, h.game.currentRun().cultivator,
-            (remaining - .125) * 24)).finished).toBe(true);
+            (remaining - halfWalk) * 24)).finished).toBe(true);
         expect(isWater(worldLocationFor(h.game.atHand!, h.game.currentRun().cultivator.location)!)).toBe(true);
         const actual = shipPassengerAt(h.game.atHand!, h.receipt.id, routineTime(h.game.atHand!))!;
         const listener = listenerAcrossAnActualPublicArea(h.game, actual.crew[0]!.id, 'deck');

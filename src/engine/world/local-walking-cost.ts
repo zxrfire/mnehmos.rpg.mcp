@@ -1,2 +1,2 @@
-/** The ordinary quarter-day walk across one enclosing place. */
-export const LOCAL_WALK_DAYS = 0.25;
+/** Fifteen minutes crosses a town or compound; roads retain their measured time. */
+export const LOCAL_WALK_DAYS = 15 / (24 * 60);

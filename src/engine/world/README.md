@@ -303,7 +303,9 @@ passenger roster, speculative arrival receipt or future course is stored.
 
 Departures use `departure-approach.ts`: containment supplies the enclosing exterior,
 actual doors and carried keys decide the exit, and `LOCAL_WALK_DAYS` supplies the
-existing quarter-day walk to the departure area. An approach holds an intention
+fifteen-minute walk to the departure area. On-site private work and visits keep
+their existing quarter-day spans, independently of this local walking price.
+An approach holds an intention
 in the person's existing activity. It holds no paid seat, fare or future arrival.
 Admission rechecks the body and doors at the reached clock. A real occupant of
 the requested hull is already aboard; its cabin is not a shore departure.

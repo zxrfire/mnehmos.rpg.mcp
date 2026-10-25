@@ -11,7 +11,7 @@ import { betweenRoadEndpoints, stoppedRoadFor } from './a-road-stopped-partway.j
  * WHERE THE PLAYER IS, stored as the area they walked to (`Cultivator.standingIn`) and cleared by
  * any change of `location`, so arriving anywhere by road lands where a road arrives.
  *
- * A local crossing takes a quarter day on the run clock.
+ * A local crossing spends the shared local-walk span on the run clock.
  */
 
 import {
@@ -29,7 +29,7 @@ import type { Cultivator, Run } from '../schema/cultivation.js';
 import { thePlayerIsSureItIsThem } from './the-narrator-plays-the-world.js';
 import { worldLocationFor } from './entities.js';
 import { personNamedByAddress } from './person-addresses.js';
-import { factsForRefusal, factsForToolResult } from './facts.js';
+import { factsForRefusal, factsForToolResult, humanDays } from './facts.js';
 import { refused } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
@@ -316,7 +316,7 @@ export async function aWalkAcrossThePlace(
             : `${people.length} ${people.length === 1 ? 'person is' : 'people are'} there.`
     ]);
     facts.structure.push(
-        `walkAcrossThePlace: ${here.area.id} to ${destination.id}, in ${here.place.id}. A quarter day passed; `
+        `walkAcrossThePlace: ${here.area.id} to ${destination.id}, in ${here.place.id}. ${humanDays(LESSER_ACTION_DAYS.move)} passed; `
         + `${people.length} standing in the arrival area.`
     );
     return {
@@ -328,7 +328,7 @@ export async function aWalkAcrossThePlace(
         calls: [{
             name: 'world.walkAcrossThePlace',
             action: 'move',
-            summary: `${cultivator.name} walked to ${destination.name} in ${here.place.name}. A quarter day passed.`,
+            summary: `${cultivator.name} walked to ${destination.name} in ${here.place.name}. ${humanDays(LESSER_ACTION_DAYS.move)} passed.`,
             ok: true
         }]
     };
@@ -370,7 +370,7 @@ export function crossToWhoeverTheyNamed(
         personId: named.id, areaId: theirs.id,
         cultivator: game.repos.cultivators.getById(cultivator.id) ?? cultivator,
         line: `You cross to ${theirs.name}, where ${named.name} is.`,
-        structure: `${cultivator.name} crossed to ${theirs.name} to reach ${named.name}. A quarter day passed.`
+        structure: `${cultivator.name} crossed to ${theirs.name} to reach ${named.name}.`
     };
 }
 

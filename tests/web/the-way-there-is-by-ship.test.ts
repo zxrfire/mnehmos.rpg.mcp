@@ -8,7 +8,7 @@
  * sea crossing in the catalog has an end on open water, so an end there is the test
  * (`the-way-there-is-by-ship.ts`). At the landing a move says what the seat costs and who sells
  * it. Reading the route remains free, but the successful lesser move that reaches
- * the landing answer costs its quarter-day; anywhere else it walks to the
+ * the landing answer costs its fifteen-minute; anywhere else it walks to the
  * landing and says the way on.
  *
  * Played on `road-world`, where a new run opens at The Furnace Flank, inland.
@@ -16,6 +16,7 @@
  * A long paid voyage can also stop for a real encounter; arrival requires
  * continuing that same accepted sailing, without another fare or an assigned port.
  */
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 
 import { describe, expect, it } from 'vitest';
 
@@ -47,7 +48,7 @@ describe('the way there is by ship', () => {
             expect(done.narration).toMatch(/sells the seats at the landing here/);
             expect(done.narration).not.toMatch(/nights? in the open|took to the road/);
             expect(game.state().cultivator.location).toBe('Sweet Spring Island');
-            expect(game.state().run.elapsedDays).toBeCloseTo(before + 0.25);
+            expect(game.state().run.elapsedDays).toBeCloseTo(before + LOCAL_WALK_DAYS);
 
             await game.act('I take the ship to Silver Island');
             expect(game.state().cultivator.location).toBe('Silver Island');
@@ -100,7 +101,7 @@ describe('the way there is by ship', () => {
             expect(asked.narration, name).not.toMatch(/From .+ the way goes on to/);
             expect(game.state().cultivator.location).toBe('Sweet Spring Island');
         }
-        expect(game.state().run.elapsedDays).toBeCloseTo(before + destinations.length * 0.25);
+        expect(game.state().run.elapsedDays).toBeCloseTo(before + destinations.length * LOCAL_WALK_DAYS);
     }, 300_000);
 
     it('the board shows the six nearest and says how many more, and one it does not show still sells', async () => {

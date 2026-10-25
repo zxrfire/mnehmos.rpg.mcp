@@ -12,7 +12,7 @@
  * there. Unresolved destination 'He Xuxue'"*.
  *
  * Going back to somebody in the same place is a local approach.
- * Crossing an actual area costs the ordinary quarter day. It is also the sentence people open a
+ * Crossing an actual area costs the ordinary fifteen minutes. It is also the sentence people open a
  * parting or an apology with, which is why it is worth a beat rather than a
  * refusal.
  *
@@ -22,7 +22,7 @@
  * to the reader - both `move/travel` - and nothing in the words separates
  * them. Who is standing here is the world's to know, so the answer is where
  * the world is.
- * Oct11 integration spent that quarter day but could not finish the approach:
+ * Oct11 integration spent the local walking time but could not finish the approach:
  * the spawned sheet had no chosen area, so its sparse placement changed with
  * the hour. This control fixes its meeting area through ordinary standingIn
  * and requires an actual local crossing before measuring its single charge.
@@ -89,7 +89,9 @@ describe('going back to somebody standing here', () => {
         // A local crossing has one charge and no additional action charge.
         expect(done.toolCalls.filter(call =>
             call.name === 'engine.approachTime' || call.name === 'engine.lesserActionTime')).toHaveLength(1);
-        expect(game.state().run.elapsedDays - before, JSON.stringify(done.toolCalls)).toBeCloseTo(0.25);
+        // Replay3's landing-to-well crossing spent six hours. A local approach
+        // is fifteen minutes, including when speech follows the walk.
+        expect((game.state().run.elapsedDays - before) * 24 * 60, JSON.stringify(done.toolCalls)).toBeCloseTo(15);
     }, 120_000);
 
     /**

@@ -87,7 +87,9 @@ city destinations and auction-house movement without changing the calendar's cit
 Medical, pill refining and cultivation names reuse their generated room purposes;
 even the highest house rank does not pass a treasury door without its key.
 It also checks night arrivals and uninvited private-door/person approaches against the
-same privacy and area-presence rules, with quarter-day walking costs.
+same privacy and area-presence rules, with fifteen-minute walking costs.
+The named-person approach pins that price in minutes; native departures use
+the same span. Scheduled interruption controls stop halfway through the walk.
 
 `real-travellers-have-a-road.test.ts` follows actual travellers on foot, in a paid
 carriage, in an owned spirit boat and aboard a paid ship. It checks independent

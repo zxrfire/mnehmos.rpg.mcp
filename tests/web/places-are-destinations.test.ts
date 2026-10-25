@@ -3,7 +3,7 @@
  * training grounds and an exit into town; a city needs its auction house, inn and
  * ordinary xianxia destinations. Existing elder offices and craft rooms are reused.
  * Places must fit the other rulings: known is not permitted, private quarters are
- * isolated, company is actual same-area company, and local walks spend a quarter day.
+ * isolated, company is actual same-area company, and local walks spend fifteen minutes.
  *
  * Defects: empty destinations disappeared from the scene; 'my room' at the sect
  * seat made a second home unrelated to rank-assigned lodging; night arrivals could
@@ -13,6 +13,7 @@
  * building and enclosure counts. Those counts must agree with an actual look;
  * the look still sees finite stock and respects every private-room boundary.
  */
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { theAreasOf, aRoomOfTheirOwn, whereInThisPlaceTheyStand } from '../../src/engine/world/where-in-a-place-somebody-is-standing';
@@ -86,7 +87,7 @@ describe('places are destinations', () => {
         const atBench = game.state().run.elapsedDays;
         const approached = await walkIntoTheRoomTheWorkIsDoneIn(game, game.currentRun().run, before, 'an_artifact');
         expect(approached?.outcome).toBe('executed');
-        expect(game.state().run.elapsedDays - atBench).toBeCloseTo(0.25);
+        expect(game.state().run.elapsedDays - atBench).toBeCloseTo(LOCAL_WALK_DAYS);
         expect(await walkIntoTheRoomTheWorkIsDoneIn(game, game.currentRun().run,
             repos.cultivators.getById(me.id)!, 'an_artifact')).toBeNull();
         const atTreasury = repos.cultivators.getById(me.id)!;
@@ -128,7 +129,7 @@ describe('places are destinations', () => {
         const training = await game.act('I go to the training grounds');
         expect(training.toolCalls.some(c => c.name === 'world.walkInsideTheWalls' && c.ok)).toBe(true);
         expect(repos.cultivators.getById(me.id)!.location).toBe(compound.rooms.get('practice_yard')!.name);
-        expect(game.state().run.elapsedDays - start).toBeCloseTo(0.5);
+        expect(game.state().run.elapsedDays - start).toBeCloseTo(2 * LOCAL_WALK_DAYS);
     }, 180_000);
 
     it('my quarters is the rank-assigned lodging, with a separate holder area, and leads out to town', async () => {
@@ -176,7 +177,7 @@ describe('places are destinations', () => {
         const after = repos.cultivators.getById(me.id)!;
         expect(after.location).toBe(city.name);
         expect(after.standingIn).toBe(theAreasOf(game.atHand!, city).areas.find(a => a.name === 'the auction house')!.id);
-        expect(game.state().run.elapsedDays - start).toBeCloseTo(0.25);
+        expect(game.state().run.elapsedDays - start).toBeCloseTo(LOCAL_WALK_DAYS);
         expect(game.present(after)).toHaveLength(0);
     }, 180_000);
 

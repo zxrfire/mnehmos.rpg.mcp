@@ -1,17 +1,18 @@
 /**
  * executeAction used to stand in the listener's area and resolve the requested
- * act BEFORE spending the quarter-day approach; it discarded that receipt.
+ * act BEFORE spending the actual approach; it discarded that receipt.
  * execute then discarded a successful lesser receipt, or replaced an earlier
  * valid reply with a later interrupted span. These controls use game.act and
  * native shortSkip/world/apply paths. The listener's actual existing public
  * area is held by an ordinary dated redirect, not by a parallel scene store.
- * An actual scheduled world appointment splits the quarter-day at .125; selected
+ * An actual scheduled world appointment splits the local walk halfway through; selected
  * world consequences run after that real advance, never instead of it. The
  * reply adds no waiting span (replay R1/R3); actual approach interruptions still apply.
  * Red controls remove only deferred area commit / ordered receipt composition /
  * deferred native completion respectively, keeping the same fixture and world.
  * Candidate controls remain pending root compiler and runtime verification.
  */
+import { LOCAL_WALK_DAYS } from '../../src/engine/world/local-walking-cost.js';
 import { expect, it, vi } from 'vitest';
 import { makeGameInWorld } from './harness.js';
 import { makeLocation } from '../../src/engine/world/locations.js';
@@ -69,8 +70,9 @@ for (const consequence of ['death', 'relocation'] as const) it('does not commit 
     const { game, db, narrator, world, now, target, fromArea, targetArea, elsewhere, receipts } = await arranged();
     // Distant, uninvolved work no longer splits the player's clock. Use the actual
     // scheduled boundary whose interruption ordering this control is about.
+    const due = now + LOCAL_WALK_DAYS / 2;
     world.schedule.push(makeScheduledEffect({ id: 'approach-boundary', kind: 'custom',
-        dueOnDay: now + .125, summary: 'An arranged world appointment.', interrupts: false }));
+        dueOnDay: due, summary: 'An arranged world appointment.', interrupts: false }));
     game.theWorldMoved();
     try {
         vi.spyOn(narrator, 'plan').mockResolvedValue({ action: { action: 'interact', target: target.name, intent: 'talk' }, source: 'fallback' });
@@ -97,9 +99,12 @@ for (const consequence of ['death', 'relocation'] as const) it('does not commit 
         expect(receipts).toHaveLength(1);
         expect(result.toolCalls.some(call => call.name === 'engine.approachUnfinished')).toBe(true);
         expect(result.toolCalls.filter(call => call.name === 'engine.approachTime')).toEqual([]);
-        expect(journeyTimeHasReached(game.currentRun().run.elapsedDays - before.run.elapsedDays, .125)).toBe(true);
-        expect(journeyTimeHasReached(.125, game.currentRun().run.elapsedDays - before.run.elapsedDays)).toBe(true);
-        expect(receipts[0]!.timeSkip?.simulatedDays).toBe(.125);
+        // Compare the actual absolute boundary before subtracting large world
+        // dates; the run's fractional span retains sub-millisecond precision.
+        expect(journeyTimeHasReached(routineTime(game.atHand!), due)).toBe(true);
+        expect(journeyTimeHasReached(due, routineTime(game.atHand!))).toBe(true);
+        expect(game.currentRun().run.elapsedDays - before.run.elapsedDays).toBeCloseTo(LOCAL_WALK_DAYS / 2, 9);
+        expect(receipts[0]!.timeSkip?.simulatedDays).toBeCloseTo(LOCAL_WALK_DAYS / 2, 9);
         if (consequence === 'relocation') expect(game.currentRun().run.turn).toBe(before.run.turn + 1);
         if (consequence === 'death') expect(game.currentRun().cultivator.alive).toBe(false);
         else expect(game.currentRun().cultivator.location).toBe(elsewhere.name);
@@ -119,8 +124,8 @@ it('keeps the actual successful approach receipt when the following object reque
         expect(receipts).toHaveLength(1);
         const facts = narrated.mock.calls.at(-1)![0];
         for (const line of receipts[0]!.facts.lines) expect(facts.lines).toContain(line);
-        expect(journeyTimeHasReached(game.currentRun().run.elapsedDays, before.run.elapsedDays + .25)).toBe(true);
-        expect(journeyTimeHasReached(before.run.elapsedDays + .25, game.currentRun().run.elapsedDays)).toBe(true);
+        expect(journeyTimeHasReached(game.currentRun().run.elapsedDays, before.run.elapsedDays + LOCAL_WALK_DAYS)).toBe(true);
+        expect(journeyTimeHasReached(before.run.elapsedDays + LOCAL_WALK_DAYS, game.currentRun().run.elapsedDays)).toBe(true);
         expect(game.currentRun().run.turn).toBe(before.run.turn + 1);
     } finally { vi.restoreAllMocks(); db.close(); }
 }, 120_000);
@@ -134,14 +139,14 @@ it('retains the reply and actual approach span with one action completion', asyn
         const result = await game.act('I greet ' + target.name);
         expect(handler).toHaveBeenCalledOnce();
         const reply = await handler.mock.results[0]!.value;
-        expect(receipts.map(receipt => receipt.timeSkip?.simulatedDays)).toEqual([.25]);
+        expect(receipts.map(receipt => receipt.timeSkip?.simulatedDays)).toEqual([LOCAL_WALK_DAYS]);
         const facts = narrated.mock.calls.at(-1)![0];
         for (const receipt of receipts) for (const line of receipt.facts.lines) expect(facts.lines).toContain(line);
         expect(result.toolCalls.some(call => call.name === 'engine.approachTime')).toBe(true);
         for (const line of reply.facts.lines) expect(facts.lines).toContain(line);
         expect(result.toolCalls.some(call => call.name === 'engine.lesserActionTime')).toBe(false);
-        expect(journeyTimeHasReached(game.currentRun().run.elapsedDays, before.run.elapsedDays + .25)).toBe(true);
-        expect(journeyTimeHasReached(before.run.elapsedDays + .25, game.currentRun().run.elapsedDays)).toBe(true);
+        expect(journeyTimeHasReached(game.currentRun().run.elapsedDays, before.run.elapsedDays + LOCAL_WALK_DAYS)).toBe(true);
+        expect(journeyTimeHasReached(before.run.elapsedDays + LOCAL_WALK_DAYS, game.currentRun().run.elapsedDays)).toBe(true);
         expect(game.currentRun().run.turn).toBe(before.run.turn + 1);
     } finally { vi.restoreAllMocks(); db.close(); }
 }, 120_000);
