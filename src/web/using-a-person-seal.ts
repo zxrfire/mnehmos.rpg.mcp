@@ -6,7 +6,7 @@ import { actualPersonFor } from './the-actual-person-behind-a-world-row.js';
 import { applyActualPersonSeal, releaseActualPersonSeal } from './person-seals-at-the-actual-body.js';
 import { holdsASlaveSeal, theSealStillHolds } from '../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
 import { whatBreakingASealTakes } from '../engine/social/what-laying-a-qi-seal-takes.js';
-import { completeSlaveOrderStep, settleSlaveOrders } from '../engine/world/slave-orders.js';
+import { completeSlaveOrderStep, settleSlaveOrders, slaveOrderReport } from '../engine/world/slave-orders.js';
 import { personOrdersRead } from './person-order-reading.js';
 import { commandAtTheActualBody } from './slave-orders-at-the-actual-body.js';
 import { endSlaveThroughSeal, liftPersonSeal } from '../engine/world/person-seals.js';
@@ -68,8 +68,8 @@ export async function usingAPersonSeal(game: GameService, run: Run, body: Cultiv
             return done;
         }
         const done = game.freeAction(run, 'oath', factsForToolResult(`${subject.name} is compelled to carry out the order.`,
-            [`${subject.name} is compelled to carry out the order.`, words, 'The actual route, body and opposition decide what they achieve.']));
-        done.calls.push({ name: 'world.commandSlave', action: 'oath', ok: true, summary: fact.summary });
+            [`${subject.name} is compelled to carry out the order.`, words, ...slaveOrderReport(world, fact)]));
+        done.calls.push({ name: 'world.commandSlave', action: 'oath', ok: true, summary: done.facts.lines.join('\n') });
         return done;
     }
     const seal = subject.cultivation.seal;

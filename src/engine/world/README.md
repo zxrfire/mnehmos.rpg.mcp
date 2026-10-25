@@ -5356,7 +5356,10 @@ seal release or death leaves later work unperformed.
 
 Ordered melee rechecks the target's real journey location and, when specified,
 local area at attack time. A named target who left is not struck through their
-old location, and no attack completion is recorded without a reached defender.
+old location. An absent target ends the course with the actual unreached place,
+without a station substituting for an attack or a false completion. A reached
+fight's existing completion receipt states each body's actual outcome, including
+death, surviving withdrawal and talisman escape. The order cannot override escape.
 
 Command summaries and the slave's memory retain the whole heard course, including
 following acts. Completion receipts remain distinct from that instruction memory.

@@ -148,3 +148,8 @@ journeys, a timed wait, release, completed sitting and interrupted sitting.
 The order-arrival test covers explicit ordered-act readings, full-topic readings
 and a bare trailing wait. The omission test's old rations case now requires both
 purchase and eating through the actual body: word count is not an act limit.
+
+`an-ordered-fight-reports-its-outcome.test.ts` checks a real commanded death,
+holder attribution, retained memory and its delivery to the scripted narrator.
+The engine attack controls reproduce replay3's surviving withdrawal and reject
+a target who has actually left; an instruction is not a combat outcome.

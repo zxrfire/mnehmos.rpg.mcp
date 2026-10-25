@@ -88,6 +88,17 @@ export function completeSlaveOrderStep(state: WorldState, fact: HistoricalFact, 
     if (!currentSlaveOrder(state, fact)) finishOrder(state, fact, day, note);
 }
 
+/** Existing completion receipts say what happened; the instruction itself does not. */
+export function slaveOrderReport(state: WorldState, fact: HistoricalFact): string[] {
+    const steps = factsWithDataValue(state, 'slaveOrderStepEnded', fact.id).map(row => row.summary);
+    const ended = factsWithDataValue(state, 'slaveOrderEnded', fact.id).at(-1);
+    if (ended) return [...steps, ...(steps.at(-1) === ended.summary ? [] : [ended.summary])];
+    const person = state.npcs.find(person => person.id === fact.data.slaveId);
+    return [...steps, person?.activity?.kind === 'travelling'
+        ? `${person.name} is on the way. The remaining order has not been carried out; no further attack or harm is resolved.`
+        : 'The remaining order is pending. No further physical act or harm has been resolved.'];
+}
+
 /** Appointments and foreground contact call this; no daily population walk is added. */
 export function settleSlaveOrders(state: WorldState, day: number): void {
     for (const id of new Set(factsWithDataValue(state, 'slaveOrder', true).map(fact => String(fact.data.slaveId)))) {
@@ -177,6 +188,7 @@ function settleCurrentOrder(state: WorldState, fact: HistoricalFact, day: number
         return currentSlaveOrder(state, fact) !== null;
     }
 
+    let attackSummary: string | null = null;
     if (order.action === 'guard' || order.action === 'wait') {
         const previous = factsWithDataValue(state, 'slaveOrderStepEnded', fact.id).at(-1)?.day ?? fact.day;
         const held = slave.activity?.kind === 'stationed' && slave.activity.slaveOrderId === fact.id
@@ -191,11 +203,20 @@ function settleCurrentOrder(state: WorldState, fact: HistoricalFact, day: number
         const met = areas && areas.whereIs.get(target!.id) === areas.whereIs.get(slave.id);
         if (until === null ? !met : day < until) return false;
     } else {
-        state.npcs[at] = { ...slave, locationId: place, activity: order.destinationAreaId ? {
+        // Read reach before replacing the activity which helped place these bodies.
+        if (order.action === 'attack') {
+            attackSummary = attackUnderCommand(state, slave, fact, order, day);
+            if (!attackSummary) {
+                const target = state.npcs.find(person => person.id === order.targetId);
+                const ground = state.locations.find(place => place.id === order.destinationId);
+                const area = ground && order.destinationAreaId && theAreasOf(clock, ground).areas.find(area => area.id === order.destinationAreaId);
+                finishOrder(state, fact, day, `${target?.name ?? 'The ordered target'} is not at ${area ? `${area.name} in ` : ''}${ground?.name ?? 'the ordered ground'}. No attack occurred. The remaining course was not reached.`);
+                return false;
+            }
+        } else state.npcs[at] = { ...slave, locationId: place, activity: order.destinationAreaId ? {
             kind: 'stationed', note: order.words, withIds: [], sinceDay: day, untilDay: null, standingIn: order.destinationAreaId
         } : null, updatedOnDay: day };
-        if (order.action === 'attack' && !attackUnderCommand(state, state.npcs[at], fact, order, day)) return false;
-        else if (order.action === 'company') {
+        if (order.action === 'company') {
             const changed = takeThemWithYou(state.npcs, { leaderId: holderId, party: [state.npcs[at]],
                 note: fact.summary, onDay: day, untilDay: order.days === undefined ? null : day + order.days });
             for (const person of changed) {
@@ -228,7 +249,8 @@ function settleCurrentOrder(state: WorldState, fact: HistoricalFact, day: number
             rememberFact(state.memories, recipient.id, fact, { kind: 'history', summary: order.words });
         }
     }
-    completeSlaveOrderStep(state, fact, day, order.action === 'attack' ? `${slave.name} made the ordered attack. The melee records its outcome.`
+    completeSlaveOrderStep(state, fact, day, attackSummary
+        ? `${slave.name} made the ordered attack. ${attackSummary}`
         : `${slave.name} carried out ${order.words}`);
     if (!currentSlaveOrder(state, fact) && state.npcs[at]?.activity?.slaveOrderId === fact.id)
         state.npcs[at] = { ...state.npcs[at], activity: { ...state.npcs[at].activity!, slaveOrderId: undefined, untilDay: null } };
@@ -244,7 +266,7 @@ function goOnTheOrderedCourse(state: WorldState, person: NpcRecord, destinationI
     return startNpcJourney(state, person, destinationId, day, note);
 }
 
-function attackUnderCommand(state: WorldState, slave: NpcRecord, fact: HistoricalFact, order: PersonOrder, day: number): boolean {
+function attackUnderCommand(state: WorldState, slave: NpcRecord, fact: HistoricalFact, order: PersonOrder, day: number): string | null {
     const clock = { ...state, currentDay: Math.floor(day), currentHour: day % 1 * 24 };
     const place = order.destinationAreaId && state.locations.find(place => place.id === order.destinationId);
     const areas = place ? theAreasOf(clock, place) : null;
@@ -253,7 +275,7 @@ function attackUnderCommand(state: WorldState, slave: NpcRecord, fact: Historica
         && routineLocationOf(clock, person) === order.destinationId
         && (!areas || areas.whereIs.get(person.id) === order.destinationAreaId)
         && (!order.targetId || person.id === order.targetId));
-    if (!defenders.length) return false;
+    if (!defenders.length) return null;
     const people = [slave, ...defenders], originals = new Map(people.map(person => [person.id, person]));
     const inputs = people.map(person => combatantOf(person, clock));
     const result = resolveMelee([{ id: slave.id, name: slave.name, members: [inputs[0]],
@@ -292,7 +314,15 @@ function attackUnderCommand(state: WorldState, slave: NpcRecord, fact: Historica
             name: originals.get(exchange.attackerId)?.name ?? '', role: 'broke it' }, object, day,
             locationId: order.destinationId, how: `Broken in the ordered fight: ${weapon!.exposure.cause}.` });
     }
-    return true;
+    return result.combatants.map(verdict => {
+        const actual = state.npcs.find(person => person.id === verdict.id)!;
+        if (actual.status === 'physically_dead') return `${actual.name} died.`;
+        if (actual.status === 'remnant') return `${actual.name}'s body was destroyed; their remnant survives.`;
+        if (escaped.has(verdict.id)) return `${actual.name} escaped by teleportation talisman, alive.`;
+        if (verdict.fate === 'withdrew' || verdict.fate === 'crippled') return `${actual.name} withdrew from the fight alive${verdict.fate === 'crippled' ? ', crippled' : ''}.`;
+        if (verdict.fate === 'captured') return `${actual.name} was taken alive.`;
+        return `${actual.name} survived and remains here.`;
+    }).join(' ');
 }
 
 /** The existing witness and deed readers receive the commander's responsibility as well as the hand's. */
